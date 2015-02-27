@@ -1,0 +1,457 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Heap: Sizing and Swapping</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide" /><link rel="up" href="deploy.html" title="Production Deployment" /><link rel="prev" href="_don_8217_t_touch_these_settings.html" title="Don’t Touch These Settings!" /><link rel="next" href="_file_descriptors_and_mmap.html" title="File Descriptors and MMap" />
+  
+ 
+ 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+ 	
+	<meta name="description" content="" />
+	<meta name="keywords" content="" />
+
+
+
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+	<link rel="icon" href="/favicon.ico" type="image/x-icon">
+	<link type="text/css" rel="stylesheet" href="/static/css/skel.css" />		
+	
+	<script src="/static/js/jquery.min.js"></script>
+	<script src="/static/js/loading.js"></script>
+	<script src="/static/js/skel.min.js"></script>
+	<script src="/static/js/skel-layers.min.js"></script>
+	<script src="/static/js/classie.js"></script>	
+	<script type="text/javascript">form_name = "common_layout"</script>
+	<script src="/static/js/init.js"></script>
+	
+	<link type="text/css" rel="stylesheet" href="/static/css/prettify.css" />	
+	<script type="text/javascript" src="/static/js/prettify.js"></script>
+
+
+
+<link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+<link rel="stylesheet" type="text/css" href="styles.css" />
+<script type="text/javascript">
+  jQuery(function() {
+    jQuery('#guide a[id]').each(function() { this.href='#'+this.id });
+    jQuery('pre.prettyprint').each(function() {
+      var pre = jQuery(this);
+      pre.css('position','absolute');
+      pre.css('width','auto');
+      var height = pre.innerHeight();
+      pre.wrap('<div class="pre_wrapper" style="height:' + height + 'px"></div>');
+    })
+  });
+</script>
+<script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
+
+</head>
+<body >
+	<!-- Google Tag Manager -->
+	<script>dataLayer = [];</script><noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-58RLH5"
+													  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+			new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+			j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+			'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	})(window,document,'script','dataLayer','GTM-58RLH5');</script>
+	<!-- End Google Tag Manager -->
+	
+	<div class="header-cont">
+		<div id="header-wrapper">
+			
+
+<div class="container">
+	<div class="row">
+		<div class="12u">
+			<section>
+				<div class="row">
+					<div class="8u 6u(small) 5u(xsmall)">
+						<div id="elastic">
+							<h1><a href="/"></a></h1>
+						</div>
+						<!-- Searchbar Input box -->
+						<div class="header-search-form">
+						   <input type="text" id="search-header" name="q" class="form-control global-input" placeholder="{elastic} search">
+						</div>
+					</div>
+					<div class="4u 6u(small) 7u(xsmall)">
+						<!-- Mobile Menu -->
+						<div class="mobile-menu-wrapper">
+							<ul class="m-shortcuts">
+								<li><a id="header-search" class="m-search" href="#"></a></li>
+								<li><a class="m-guide" href="#"></a></li>
+							</ul>											
+							<nav class="nav-menu">
+								<div class="menu-button">
+									<span></span>
+								</div>
+								<div class="nav-menu-list-wrap">
+									<div class="nav-menu-list">
+										<h3><a href="#">Products</a></h3>
+										<ul>
+											<li><a href="#">elasticsearch</a></li>
+											<li><a href="#">logstash</a></li>
+											<li><a href="#">kibana</a></li>
+											<li><a href="#">shield</a></li>
+											<li><a href="#">marvel</a></li>
+											<li><a href="#">hadoop</a></li>
+											<li><a href="#">support</a></li>
+											<li><a href="#">downloads</a></li>
+										</ul>
+										<h3><a href="#">SUBSCRIPTIONS</a></h3>
+										<h3><a href="#">LEARN</a></h3>
+										<ul>
+											<li><a href="#">guide</a></li>
+											<li><a href="#">videos</a></li>
+											<li><a href="#">training</a></li>
+											<li><a href="#">blog</a></li>
+										</ul>
+									</div>
+								</div>
+							</nav>
+						</div>
+						<!-- Shortcuts -->
+						<nav id="shortcuts">
+							<ul class="links">
+								
+									<li class="sc-downloads grayscale"><a href="/downloads" id="header_downloads">downloads</a></li>
+								
+									<li class="sc-guide grayscale"><a href="/guide" id="header_guide">guide</a></li>
+								
+									<li class="sc-support grayscale"><a href="/subscriptions" id="header_subscriptions">support</a></li>
+								
+									<li class="sc-contact grayscale"><a href="/contact" id="header_contact">contact</a></li>
+								
+							</ul>
+						</nav>
+					</div>
+				</div>
+			</section>
+			
+
+<section class="desktop-main-nav">
+	<div class="row">
+		<div class="9u">
+			<!-- Nav -->
+			<nav id="nav">
+				<ul>
+					
+					<li>
+						<a href="/products" id="nav_products" >PRODUCTS</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/products/elasticsearch" id="nav_elasticsearch" >elasticsearch</a></li>								
+							
+								<li><a href="/products/logstash" id="nav_logstash" >logstash</a></li>								
+							
+								<li><a href="/products/kibana" id="nav_kibana" >kibana</a></li>								
+							
+								<li><a href="/products/shield" id="nav_shield" >shield</a></li>								
+							
+								<li><a href="/products/marvel" id="nav_marvel" >marvel</a></li>								
+							
+								<li><a href="/products/hadoop" id="nav_hadoop" >hadoop</a></li>								
+							
+								<li><a href="/subscriptions" id="nav_support" >support</a></li>								
+							
+								<li><a href="/downloads" id="nav_downloads" >downloads</a></li>								
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/subscriptions" id="nav_subscriptions" >SUBSCRIPTIONS</a>
+						
+						<ul class="dropdown">
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/learn" id="nav_learn" >LEARN</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/guide" id="nav_guide" >guide</a></li>								
+							
+								<li><a href="/videos" id="nav_videos" >videos</a></li>								
+							
+								<li><a href="http://purchases.elasticsearch.com" id="nav_training" >training</a></li>								
+							
+								<li><a href="/blog" id="nav_learn_blog" >blog</a></li>								
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/community" id="nav_community" >COMMUNITY</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/community/meetups" id="nav_meetups" >meetups</a></li>								
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/use-cases" id="nav_usecases" >USE CASES</a>
+						
+						<ul class="dropdown">
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/blog" id="nav_blog" >BLOG</a>
+						
+						<ul class="dropdown">
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/about" id="nav_about" >ABOUT</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/about/leadership" id="nav_leadership" >leadership</a></li>								
+							
+								<li><a href="/about/board" id="nav_board" >board of directors</a></li>								
+							
+								<li><a href="/about/careers" id="nav_careers" >careers</a></li>								
+							
+								<li><a href="/about/partners" id="nav_partners" >partners</a></li>								
+							
+								<li><a href="/about/press" id="nav_press" >press</a></li>								
+								
+						</ul>							
+					</li>
+					
+				</ul>
+			</nav>
+		</div>
+		<!-- Search -->
+		<div class="3u">
+			<div id="searchbar">
+				<form method="get" action="/search" name="searchForm">
+					<input type="text" value="" name="q" placeholder="{elastic} search">
+					<a class="button icon" onclick="searchForm.submit()">GO</a>
+				</form>
+			</div>
+		</div>
+	</div>
+</section>
+
+		</div>
+	</div>
+</div>
+
+<style>	
+	
+		.sc-downloads{ background: url("/assets/blt0b75d0822b89593e/shortcuts.png") no-repeat;}
+	
+		.sc-guide{ background: url("/assets/blt0b75d0822b89593e/shortcuts.png") no-repeat;}
+	
+		.sc-support{ background: url("/assets/blt0b75d0822b89593e/shortcuts.png") no-repeat;}
+	
+		.sc-contact{ background: url("/assets/blt0b75d0822b89593e/shortcuts.png") no-repeat;}
+		
+</style>
+		</div>
+	</div>
+  	<div id="content">
+  		
+            <div id="pageheader">
+    <div class="container">
+        <header>
+            <h1>Learn |</h1>
+            <h2>Docs</h2>
+        </header>
+    </div>
+</div>
+<section id="guide">
+
+            <!-- start body -->
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch: The Definitive Guide</a></span> » <span class="breadcrumb-link"><a href="administration.html">Administration, Monitoring, and Deployment </a></span> » <span class="breadcrumb-link"><a href="deploy.html">Production Deployment</a></span> » <span class="breadcrumb-node">Heap: Sizing and Swapping</span></div><div class="navheader"><span class="prev"><a href="_don_8217_t_touch_these_settings.html">
+              « 
+              Don’t Touch These Settings!</a>
+           
+        </span><span class="next">
+           
+          <a href="_file_descriptors_and_mmap.html">File Descriptors and MMap
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="heap-sizing"></a>Heap: Sizing and Swapping<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="hardware.html">Hardware</a></span></dt><dt><span class="section"><a href="_java_virtual_machine.html">Java Virtual Machine</a></span></dt><dt><span class="section"><a href="_transport_client_versus_node_client.html">Transport Client Versus Node Client</a></span></dt><dt><span class="section"><a href="_configuration_management.html">Configuration Management</a></span></dt><dt><span class="section"><a href="_important_configuration_changes.html">Important Configuration Changes</a></span></dt><dt><span class="section"><a href="_don_8217_t_touch_these_settings.html">Don’t Touch These Settings!</a></span></dt><dt><span class="section"><a href="heap-sizing.html">Heap: Sizing and Swapping</a></span></dt><dt><span class="section"><a href="_file_descriptors_and_mmap.html">File Descriptors and MMap</a></span></dt><dt><span class="section"><a href="_revisit_this_list_before_production.html">Revisit This List Before Production</a></span></dt></dl></div><p>The default installation of Elasticsearch is configured with a 1 GB heap. <a id="id-1.9.4.11.2.1" class="indexterm"></a>
+<a id="id-1.9.4.11.2.2" class="indexterm"></a><a id="id-1.9.4.11.2.3" class="indexterm"></a>
+<a id="id-1.9.4.11.2.4" class="indexterm"></a> For
+just about every deployment, this number is far too small.  If you are using the
+default heap values, your cluster is probably configured incorrectly.</p><p>There are two ways to change the heap size in Elasticsearch.  The easiest is to
+set an environment variable called <code class="literal">ES_HEAP_SIZE</code>.<a id="id-1.9.4.11.3.2" class="indexterm"></a>  When the server process
+starts, it will read this environment variable and set the heap accordingly.
+As an example, you can set it via the command line as follows:</p><pre class="programlisting prettyprint lang-bash">export ES_HEAP_SIZE=10g</pre><p>Alternatively, you can pass in the heap size via a command-line argument when starting
+the process, if that is easier for your setup:</p><pre class="programlisting prettyprint lang-bash">./bin/elasticsearch -Xmx10g -Xms10g <a id="CO310-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO310-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Ensure that the min (<code class="literal">Xms</code>) and max (<code class="literal">Xmx</code>) sizes are the same to prevent
+the heap from resizing at runtime, a very costly process.
+</p></td></tr></table></div><p>Generally, setting the <code class="literal">ES_HEAP_SIZE</code> environment variable is preferred over setting
+explicit <code class="literal">-Xmx</code> and <code class="literal">-Xms</code> values.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_give_half_your_memory_to_lucene"></a>Give Half Your Memory to Lucene<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A common problem is configuring a heap that is <span class="emphasis"><em>too</em></span> large. <a id="id-1.9.4.11.9.2.2" class="indexterm"></a>
+<a id="id-1.9.4.11.9.2.3" class="indexterm"></a>
+<a id="id-1.9.4.11.9.2.4" class="indexterm"></a> You have a 64 GB
+machine—and by golly, you want to give Elasticsearch all 64 GB of memory.  More
+is better!</p><p>Heap is definitely important to Elasticsearch.  It is used by many in-memory data
+structures to provide fast operation.  But with that said, there is another major
+user of memory that is <span class="emphasis"><em>off heap</em></span>: Lucene.</p><p>Lucene is designed to leverage the underlying OS for caching in-memory data structures.<a id="id-1.9.4.11.9.4.1" class="indexterm"></a>
+<a id="id-1.9.4.11.9.4.2" class="indexterm"></a>
+Lucene segments are stored in individual files.  Because segments are immutable,
+these files never change.  This makes them very cache friendly, and the underlying
+OS will happily keep hot segments resident in memory for faster access.</p><p>Lucene’s performance relies on this interaction with the OS.  But if you give all
+available memory to Elasticsearch’s heap, there won’t be any left over for Lucene.
+This can seriously impact the performance of full-text search.</p><p>The standard recommendation is to give 50% of the available memory to Elasticsearch
+heap, while leaving the other 50% free.  It won’t go unused; Lucene will happily
+gobble up whatever is left over.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="compressed_oops"></a>Don’t Cross 32 GB!<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There is another reason to not allocate enormous heaps to Elasticsearch. As it turns<a id="id-1.9.4.11.10.2.1" class="indexterm"></a>
+<a id="id-1.9.4.11.10.2.2" class="indexterm"></a>
+<a id="id-1.9.4.11.10.2.3" class="indexterm"></a><a id="id-1.9.4.11.10.2.4" class="indexterm"></a>
+out, the JVM uses a trick to compress object pointers when heaps are less than
+~32 GB.</p><p>In Java, all objects are allocated on the heap and referenced by a pointer.
+Ordinary object pointers (OOP) point at these objects, and are traditionally
+the size of the CPU’s native <span class="emphasis"><em>word</em></span>: either 32 bits or 64 bits, depending on the
+processor.  The pointer references the exact byte location of the value.</p><p>For 32-bit systems, this means the maximum heap size is 4 GB.  For 64-bit systems,
+the heap size can get much larger, but the overhead of 64-bit pointers means there
+is more wasted space simply because the pointer is larger.  And worse than wasted
+space, the larger pointers eat up more bandwidth when moving values between
+main memory and various caches (LLC, L1, and so forth).</p><p>Java uses a trick called <a class="ulink" href="https://wikis.oracle.com/display/HotSpotInternals/CompressedOops" target="_top">compressed oops</a><a id="id-1.9.4.11.10.5.2" class="indexterm"></a>
+to get around this problem.  Instead of pointing at exact byte locations in
+memory, the pointers reference <span class="emphasis"><em>object offsets</em></span>.<a id="id-1.9.4.11.10.5.4" class="indexterm"></a>  This means a 32-bit pointer can
+reference four billion <span class="emphasis"><em>objects</em></span>, rather than four billion bytes.  Ultimately, this
+means the heap can grow to around 32 GB of physical size while still using a 32-bit
+pointer.</p><p>Once you cross that magical ~30–32 GB boundary, the pointers switch back to
+ordinary object pointers.  The size of each pointer grows, more CPU-memory
+bandwidth is used, and you effectively lose memory.  In fact, it takes until around
+40–50 GB of allocated heap before you have the same <span class="emphasis"><em>effective</em></span> memory of a 32 GB
+heap using compressed oops.</p><p>The moral of the story is this: even when you have memory to spare, try to avoid
+crossing the 32 GB heap boundary.  It wastes memory, reduces CPU performance, and
+makes the GC struggle with large heaps.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>I Have a Machine with 1 TB RAM!</strong></p></div></div></div><p>The 32 GB line is fairly important.  So what do you do when your machine has a lot
+of memory?  It is becoming increasingly common to see super-servers with 300–500 GB
+of RAM.</p><p>First, we would recommend avoiding such large machines (see <a class="xref" href="hardware.html" title="Hardware">Hardware</a>).</p><p>But if you already have the machines, you have two practical options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Are you doing mostly full-text search?  Consider giving 32 GB to Elasticsearch
+and letting Lucene use the rest of memory via the OS filesystem cache.  All that
+memory will cache segments and lead to blisteringly fast full-text search.
+</li><li class="listitem"><p class="simpara">
+Are you doing a lot of sorting/aggregations?  You’ll likely want that memory
+in the heap then.  Instead of one node with 32 GB+ of RAM, consider running two or
+more nodes on a single machine.  Still adhere to the 50% rule, though.  So if your
+machine has 128 GB of RAM, run two nodes, each with 32 GB.  This means 64 GB will be
+used for heaps, and 64 will be left over for Lucene.
+</p><p class="simpara">If you choose this option, set <code class="literal">cluster.routing.allocation.same_shard.host: true</code>
+in your config.  This will prevent a primary and a replica shard from colocating
+to the same physical machine (since this would remove the benefits of replica high availability).</p></li></ul></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_swapping_is_the_death_of_performance"></a>Swapping Is the Death of Performance<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It should be obvious,<a id="id-1.9.4.11.11.2.1" class="indexterm"></a>
+<a id="id-1.9.4.11.11.2.2" class="indexterm"></a>
+<a id="id-1.9.4.11.11.2.3" class="indexterm"></a><a id="id-1.9.4.11.11.2.4" class="indexterm"></a>
+<a id="id-1.9.4.11.11.2.5" class="indexterm"></a><a id="id-1.9.4.11.11.2.6" class="indexterm"></a> but it bears spelling out clearly: swapping main memory
+to disk will <span class="emphasis"><em>crush</em></span> server performance.  Think about it: an in-memory operation
+is one that needs to execute quickly.</p><p>If memory swaps to disk, a 100-microsecond operation becomes one that take 10
+milliseconds.  Now repeat that increase in latency for all other 10us operations.
+It isn’t difficult to see why swapping is terrible for performance.</p><p>The best thing to do is disable swap completely on your system.  This can be done
+temporarily:</p><pre class="programlisting prettyprint lang-bash">sudo swapoff -a</pre><p>To disable it permanently, you’ll likely need to edit your <code class="literal">/etc/fstab</code>.  Consult
+the documentation for your OS.</p><p>If disabling swap completely is not an option, you can try to lower <code class="literal">swappiness</code>.
+This value controls how aggressively the OS tries to swap memory.
+This prevents swapping under normal circumstances, but still allows the OS to swap
+under emergency memory situations.</p><p>For most Linux systems, this is configured using the <code class="literal">sysctl</code> value:</p><pre class="programlisting prettyprint lang-bash">vm.swappiness = 1 <a id="CO311-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO311-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+A <code class="literal">swappiness</code> of <code class="literal">1</code> is better than <code class="literal">0</code>, since on some kernel versions a <code class="literal">swappiness</code>
+of <code class="literal">0</code> can invoke the OOM-killer.
+</p></td></tr></table></div><p>Finally, if neither approach is possible, you should enable <code class="literal">mlockall</code>.
+ file.  This allows the JVM to lock its memory and prevent
+it from being swapped by the OS.  In your <code class="literal">elasticsearch.yml</code>, set this:</p><pre class="programlisting prettyprint lang-yaml">bootstrap.mlockall: true</pre></div></div><div class="navfooter"><span class="prev"><a href="_don_8217_t_touch_these_settings.html">
+              « 
+              Don’t Touch These Settings!</a>
+           
+        </span><span class="next">
+           
+          <a href="_file_descriptors_and_mmap.html">File Descriptors and MMap
+               »
+            </a></span></div>
+<!-- end body -->
+
+            </section>
+<script type="text/javascript" >
+  (function ($, $a, $title, $list) {
+    $a = $('[id^="js-api-method-index"]');
+    if (!$a.size()) return;
+    $('#guide').addClass('js-client-docs');
+    $list = $a.siblings('.itemizedlist').detach();
+    $title = $(document.createElement('h2')).text('api methods')
+    $a.parent().remove();
+    $('.toc').first().append($(document.createElement('div')).addClass('js-api-method-index').append($title).append($list));
+  }(jQuery));
+</script>
+
+            <!-- Footer -->
+        
+	<div id="footer-wrapper">
+		<section id="footer" class="container">
+			<div class="row">
+				<div class="12u">
+					<!-- Copyright -->
+					<div id="copyright">
+						<p>&copy; 2015. All Rights Reserved - Elasticsearch</p>
+						<ul class="links">
+							<li>Elasticsearch is a trademark of Elasticsearch BV, registered in the U.S. and in other countries</li>
+							
+							<li><a href="/legal/trademarks" id="footer_trademarks">Trademarks</a></li>
+							
+							<li><a href="/legal/terms-of-use" id="footer_terms">Terms</a></li>
+							
+							<li><a href="/legal/privacy-policy" id="footer_privacy">Privacy</a></li>
+							
+						</ul>
+					</div>
+				</div>
+			</div>					
+		</section>
+	</div>
+			
+	<!-- Social Media -->
+	<div id="socialmedia-wrapper">
+		<section id="socialmedia" class="container">
+			<!-- social icons -->
+			<div id="social">
+				<ul class="links">
+					
+						<li class="facebook grayscale"><a href="http://www.facebook.com/elastic.co" target="_blank" id="footer_facebook"></a></li>
+					
+						<li class="twitter grayscale"><a href="https://www.twitter.com/elastic" target="_blank" id="footer_twitter"></a></li>
+					
+						<li class="linkedin grayscale"><a href="http://www.linkedin.com/company/elastic.co" target="_blank" id="footer_linkedin"></a></li>
+					
+						<li class="xing grayscale"><a href="https://www.xing.com/companies/elasticsearch" target="_blank" id="footer_xing"></a></li>
+					
+				</ul>
+			</div>
+		</section>
+	</div>
+
+
+<style type="text/css">
+	
+		.facebook{background:url("/assets/blte0d4d10ae3bd8337/social-media.png") no-repeat;}		
+	
+		.twitter{background:url("/assets/blte0d4d10ae3bd8337/social-media.png") no-repeat;}		
+	
+		.linkedin{background:url("/assets/blte0d4d10ae3bd8337/social-media.png") no-repeat;}		
+	
+		.xing{background:url("/assets/blte0d4d10ae3bd8337/social-media.png") no-repeat;}		
+	
+</style>	
+
+  	</div>
+  	<div class="preloader">
+    	<div class="status"></div>
+	</div>
+  	<style></style>
+   	<link type="text/css" rel="stylesheet" href="/static/css/flexslider.css" >
+
+<script src="/static/js/jquery.flexslider.min.js"></script>
+<script src="/static/js/jquery.dropdown.min.js"></script>
+<script src="/static/js/script.js"></script>
+   	
+</body>

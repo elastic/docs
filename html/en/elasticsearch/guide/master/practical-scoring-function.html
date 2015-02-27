@@ -1,0 +1,533 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Lucene’s Practical Scoring Function</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide" /><link rel="up" href="controlling-relevance.html" title="Controlling Relevance" /><link rel="prev" href="scoring-theory.html" title="Theory Behind Relevance Scoring" /><link rel="next" href="query-time-boosting.html" title="Query-Time Boosting" />
+  
+ 
+ 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+ 	
+	<meta name="description" content="" />
+	<meta name="keywords" content="" />
+
+
+
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+	<link rel="icon" href="/favicon.ico" type="image/x-icon">
+	<link type="text/css" rel="stylesheet" href="/static/css/skel.css" />		
+	
+	<script src="/static/js/jquery.min.js"></script>
+	<script src="/static/js/loading.js"></script>
+	<script src="/static/js/skel.min.js"></script>
+	<script src="/static/js/skel-layers.min.js"></script>
+	<script src="/static/js/classie.js"></script>	
+	<script type="text/javascript">form_name = "common_layout"</script>
+	<script src="/static/js/init.js"></script>
+	
+	<link type="text/css" rel="stylesheet" href="/static/css/prettify.css" />	
+	<script type="text/javascript" src="/static/js/prettify.js"></script>
+
+
+
+<link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+<link rel="stylesheet" type="text/css" href="styles.css" />
+<script type="text/javascript">
+  jQuery(function() {
+    jQuery('#guide a[id]').each(function() { this.href='#'+this.id });
+    jQuery('pre.prettyprint').each(function() {
+      var pre = jQuery(this);
+      pre.css('position','absolute');
+      pre.css('width','auto');
+      var height = pre.innerHeight();
+      pre.wrap('<div class="pre_wrapper" style="height:' + height + 'px"></div>');
+    })
+  });
+</script>
+<script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
+
+</head>
+<body >
+	<!-- Google Tag Manager -->
+	<script>dataLayer = [];</script><noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-58RLH5"
+													  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+			new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+			j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+			'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	})(window,document,'script','dataLayer','GTM-58RLH5');</script>
+	<!-- End Google Tag Manager -->
+	
+	<div class="header-cont">
+		<div id="header-wrapper">
+			
+
+<div class="container">
+	<div class="row">
+		<div class="12u">
+			<section>
+				<div class="row">
+					<div class="8u 6u(small) 5u(xsmall)">
+						<div id="elastic">
+							<h1><a href="/"></a></h1>
+						</div>
+						<!-- Searchbar Input box -->
+						<div class="header-search-form">
+						   <input type="text" id="search-header" name="q" class="form-control global-input" placeholder="{elastic} search">
+						</div>
+					</div>
+					<div class="4u 6u(small) 7u(xsmall)">
+						<!-- Mobile Menu -->
+						<div class="mobile-menu-wrapper">
+							<ul class="m-shortcuts">
+								<li><a id="header-search" class="m-search" href="#"></a></li>
+								<li><a class="m-guide" href="#"></a></li>
+							</ul>											
+							<nav class="nav-menu">
+								<div class="menu-button">
+									<span></span>
+								</div>
+								<div class="nav-menu-list-wrap">
+									<div class="nav-menu-list">
+										<h3><a href="#">Products</a></h3>
+										<ul>
+											<li><a href="#">elasticsearch</a></li>
+											<li><a href="#">logstash</a></li>
+											<li><a href="#">kibana</a></li>
+											<li><a href="#">shield</a></li>
+											<li><a href="#">marvel</a></li>
+											<li><a href="#">hadoop</a></li>
+											<li><a href="#">support</a></li>
+											<li><a href="#">downloads</a></li>
+										</ul>
+										<h3><a href="#">SUBSCRIPTIONS</a></h3>
+										<h3><a href="#">LEARN</a></h3>
+										<ul>
+											<li><a href="#">guide</a></li>
+											<li><a href="#">videos</a></li>
+											<li><a href="#">training</a></li>
+											<li><a href="#">blog</a></li>
+										</ul>
+									</div>
+								</div>
+							</nav>
+						</div>
+						<!-- Shortcuts -->
+						<nav id="shortcuts">
+							<ul class="links">
+								
+									<li class="sc-downloads grayscale"><a href="/downloads" id="header_downloads">downloads</a></li>
+								
+									<li class="sc-guide grayscale"><a href="/guide" id="header_guide">guide</a></li>
+								
+									<li class="sc-support grayscale"><a href="/subscriptions" id="header_subscriptions">support</a></li>
+								
+									<li class="sc-contact grayscale"><a href="/contact" id="header_contact">contact</a></li>
+								
+							</ul>
+						</nav>
+					</div>
+				</div>
+			</section>
+			
+
+<section class="desktop-main-nav">
+	<div class="row">
+		<div class="9u">
+			<!-- Nav -->
+			<nav id="nav">
+				<ul>
+					
+					<li>
+						<a href="/products" id="nav_products" >PRODUCTS</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/products/elasticsearch" id="nav_elasticsearch" >elasticsearch</a></li>								
+							
+								<li><a href="/products/logstash" id="nav_logstash" >logstash</a></li>								
+							
+								<li><a href="/products/kibana" id="nav_kibana" >kibana</a></li>								
+							
+								<li><a href="/products/shield" id="nav_shield" >shield</a></li>								
+							
+								<li><a href="/products/marvel" id="nav_marvel" >marvel</a></li>								
+							
+								<li><a href="/products/hadoop" id="nav_hadoop" >hadoop</a></li>								
+							
+								<li><a href="/subscriptions" id="nav_support" >support</a></li>								
+							
+								<li><a href="/downloads" id="nav_downloads" >downloads</a></li>								
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/subscriptions" id="nav_subscriptions" >SUBSCRIPTIONS</a>
+						
+						<ul class="dropdown">
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/learn" id="nav_learn" >LEARN</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/guide" id="nav_guide" >guide</a></li>								
+							
+								<li><a href="/videos" id="nav_videos" >videos</a></li>								
+							
+								<li><a href="http://purchases.elasticsearch.com" id="nav_training" >training</a></li>								
+							
+								<li><a href="/blog" id="nav_learn_blog" >blog</a></li>								
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/community" id="nav_community" >COMMUNITY</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/community/meetups" id="nav_meetups" >meetups</a></li>								
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/use-cases" id="nav_usecases" >USE CASES</a>
+						
+						<ul class="dropdown">
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/blog" id="nav_blog" >BLOG</a>
+						
+						<ul class="dropdown">
+								
+						</ul>							
+					</li>
+					
+					<li>
+						<a href="/about" id="nav_about" >ABOUT</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/about/leadership" id="nav_leadership" >leadership</a></li>								
+							
+								<li><a href="/about/board" id="nav_board" >board of directors</a></li>								
+							
+								<li><a href="/about/careers" id="nav_careers" >careers</a></li>								
+							
+								<li><a href="/about/partners" id="nav_partners" >partners</a></li>								
+							
+								<li><a href="/about/press" id="nav_press" >press</a></li>								
+								
+						</ul>							
+					</li>
+					
+				</ul>
+			</nav>
+		</div>
+		<!-- Search -->
+		<div class="3u">
+			<div id="searchbar">
+				<form method="get" action="/search" name="searchForm">
+					<input type="text" value="" name="q" placeholder="{elastic} search">
+					<a class="button icon" onclick="searchForm.submit()">GO</a>
+				</form>
+			</div>
+		</div>
+	</div>
+</section>
+
+		</div>
+	</div>
+</div>
+
+<style>	
+	
+		.sc-downloads{ background: url("/assets/blt0b75d0822b89593e/shortcuts.png") no-repeat;}
+	
+		.sc-guide{ background: url("/assets/blt0b75d0822b89593e/shortcuts.png") no-repeat;}
+	
+		.sc-support{ background: url("/assets/blt0b75d0822b89593e/shortcuts.png") no-repeat;}
+	
+		.sc-contact{ background: url("/assets/blt0b75d0822b89593e/shortcuts.png") no-repeat;}
+		
+</style>
+		</div>
+	</div>
+  	<div id="content">
+  		
+            <div id="pageheader">
+    <div class="container">
+        <header>
+            <h1>Learn |</h1>
+            <h2>Docs</h2>
+        </header>
+    </div>
+</div>
+<section id="guide">
+
+            <!-- start body -->
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch: The Definitive Guide</a></span> » <span class="breadcrumb-link"><a href="search-in-depth.html">Search in Depth </a></span> » <span class="breadcrumb-link"><a href="controlling-relevance.html">Controlling Relevance</a></span> » <span class="breadcrumb-node">Lucene’s Practical Scoring Function</span></div><div class="navheader"><span class="prev"><a href="scoring-theory.html">
+              « 
+              Theory Behind Relevance Scoring</a>
+           
+        </span><span class="next">
+           
+          <a href="query-time-boosting.html">Query-Time Boosting
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="practical-scoring-function"></a>Lucene’s Practical Scoring Function<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/170_Relevance/15_Practical_scoring.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="scoring-theory.html">Theory Behind Relevance Scoring</a></span></dt><dt><span class="section"><a href="practical-scoring-function.html">Lucene’s Practical Scoring Function</a></span></dt><dt><span class="section"><a href="query-time-boosting.html">Query-Time Boosting</a></span></dt><dt><span class="section"><a href="query-scoring.html">Manipulating Relevance with Query Structure</a></span></dt><dt><span class="section"><a href="not-quite-not.html">Not Quite Not</a></span></dt><dt><span class="section"><a href="ignoring-tfidf.html">Ignoring TF/IDF</a></span></dt><dt><span class="section"><a href="function-score-query.html">function_score Query</a></span></dt><dt><span class="section"><a href="boosting-by-popularity.html">Boosting by Popularity</a></span></dt><dt><span class="section"><a href="function-score-filters.html">Boosting Filtered Subsets</a></span></dt><dt><span class="section"><a href="random-scoring.html">Random Scoring</a></span></dt><dt><span class="section"><a href="decay-functions.html">The Closer, The Better</a></span></dt><dt><span class="section"><a href="Understanding-the-price-Clause.html">Understanding the price Clause</a></span></dt><dt><span class="section"><a href="script-score.html">Scoring with Scripts</a></span></dt><dt><span class="section"><a href="pluggable-similarites.html">Pluggable Similarity Algorithms</a></span></dt><dt><span class="section"><a href="changing-similarities.html">Changing Similarities</a></span></dt><dt><span class="section"><a href="relevance-conclusion.html">Relevance Tuning Is the Last 10%</a></span></dt></dl></div><p>For multiterm queries, Lucene takes<a id="id-1.4.8.9.2.1" class="indexterm"></a>
+<a id="id-1.4.8.9.2.2" class="indexterm"></a>
+<a id="id-1.4.8.9.2.3" class="indexterm"></a><a id="id-1.4.8.9.2.4" class="indexterm"></a> the <a class="link" href="scoring-theory.html#boolean-model" title="Boolean Model">Boolean model</a>,
+<a class="link" href="scoring-theory.html#tfidf" title="Term Frequency/Inverse Document Frequency (TF/IDF)">TF/IDF</a>, and the <a class="link" href="scoring-theory.html#vector-space-model" title="Vector Space Model">vector space model</a> and
+combines <a id="id-1.4.8.9.2.8" class="indexterm"></a><a id="id-1.4.8.9.2.9" class="indexterm"></a> them in a single efficient package that collects matching
+documents and scores them as it goes.</p><p>A multiterm query like</p><pre class="programlisting prettyprint lang-json">GET /my_index/doc/_search
+{
+  "query": {
+    "match": {
+      "text": "quick fox"
+    }
+  }
+}</pre><p>is rewritten internally to look like this:</p><pre class="programlisting prettyprint lang-json">GET /my_index/doc/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {"term": { "text": "quick" }},
+        {"term": { "text": "fox"   }}
+      ]
+    }
+  }
+}</pre><p>The <code class="literal">bool</code> query implements the Boolean model and, in this example, will
+include only documents that contain either the term <code class="literal">quick</code> or the term <code class="literal">fox</code> or
+both.</p><p>As soon as a document matches a query, Lucene calculates its score for that
+query, combining the scores of each matching term.  The formula used for
+scoring is called the <span class="emphasis"><em>practical scoring function</em></span>.<a id="id-1.4.8.9.8.2" class="indexterm"></a> It looks intimidating, but
+don’t be put off—most of the components you already know. It introduces a
+few new elements that we discuss next.</p><pre class="literallayout">score(q,d)  =  <a id="CO107-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            queryNorm(q)  <a id="CO107-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          · coord(q,d)    <a id="CO107-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+          · ∑ (           <a id="CO107-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+                tf(t in d)   <a id="CO107-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+              · idf(t)²      <a id="CO107-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+              · t.getBoost() <a id="CO107-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
+              · norm(t,d)    <a id="CO107-8"></a><span><img src="images/icons/callouts/8.png" alt="" /></span>
+            ) (t in q)    <a id="CO107-9"></a><span><img src="images/icons/callouts/9.png" alt="" /></span></pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">score(q,d)</code> is the relevance score of document <code class="literal">d</code> for query <code class="literal">q</code>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">queryNorm(q)</code> is the <a class="link" href="practical-scoring-function.html#query-norm" title="Query Normalization Factor"><span class="emphasis"><em>query normalization</em></span> factor</a> (new).
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">coord(q,d)</code> is the <a class="link" href="practical-scoring-function.html#coord" title="Query Coordination"><span class="emphasis"><em>coordination</em></span> factor</a> (new).
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> <a href="#CO107-9"><span><img src="images/icons/callouts/9.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The sum of the weights for each term <code class="literal">t</code> in the query <code class="literal">q</code> for document <code class="literal">d</code>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">tf(t in d)</code> is the <a class="link" href="scoring-theory.html#tf" title="Term frequency">term frequency</a> for term <code class="literal">t</code> in document <code class="literal">d</code>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">idf(t)</code> is the <a class="link" href="scoring-theory.html#idf" title="Inverse document frequency">inverse document frequency</a> for term <code class="literal">t</code>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">t.getBoost()</code> is the <a class="link" href="query-time-boosting.html" title="Query-Time Boosting"><span class="emphasis"><em>boost</em></span></a>  that has been
+    applied to the query (new).
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-8"><span><img src="images/icons/callouts/8.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">norm(t,d)</code> is the <a class="link" href="scoring-theory.html#field-norm" title="Field-length norm">field-length norm</a>, combined with the
+    <a class="link" href="practical-scoring-function.html#index-boost" title="Index-Time Field-Level Boosting">index-time field-level boost</a>, if any. (new).
+</p></td></tr></table></div><p>You should recognize <code class="literal">score</code>, <code class="literal">tf</code>, and <code class="literal">idf</code>. The  <code class="literal">queryNorm</code>, <code class="literal">coord</code>,
+<code class="literal">t.getBoost</code>, and <code class="literal">norm</code> are new.</p><p>We will talk more about <a class="link" href="query-time-boosting.html" title="Query-Time Boosting">query-time boosting</a>  later in
+this chapter, but first let’s get query normalization, coordination, and
+index-time field-level boosting out of the way.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="query-norm"></a>Query Normalization Factor<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/170_Relevance/15_Practical_scoring.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <span class="emphasis"><em>query normalization factor</em></span> (<code class="literal">queryNorm</code>) is <a id="id-1.4.8.9.13.2.3" class="indexterm"></a>
+<a id="id-1.4.8.9.13.2.4" class="indexterm"></a><a id="id-1.4.8.9.13.2.5" class="indexterm"></a><a id="id-1.4.8.9.13.2.6" class="indexterm"></a>
+<a id="id-1.4.8.9.13.2.7" class="indexterm"></a>an attempt to <span class="emphasis"><em>normalize</em></span> a
+query so that the results from one query may be compared with the results of
+another.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Even though the intent of the query norm is to make results from different
+queries comparable, it doesn’t work very well. The only purpose of
+the relevance <code class="literal">_score</code> is to sort the results of the current query in the
+correct order. You should not try to compare the relevance scores from
+different queries.</p></div></div><p>This factor is calculated at the beginning of the query. The actual
+calculation depends on the queries involved, but a typical implementation is as follows:</p><pre class="literallayout">queryNorm = 1 / √sumOfSquaredWeights <a id="CO108-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO108-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">sumOfSquaredWeights</code> is calculated by adding together the IDF of each
+    term in the query, squared.
+</p></td></tr></table></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The same query normalization factor is applied to every document, and you
+have no way of changing it. For all intents and purposes, it can be ignored.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="coord"></a>Query Coordination<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/170_Relevance/15_Practical_scoring.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <span class="emphasis"><em>coordination factor</em></span> (<code class="literal">coord</code>) is used to<a id="id-1.4.8.9.14.2.3" class="indexterm"></a><a id="id-1.4.8.9.14.2.4" class="indexterm"></a><a id="id-1.4.8.9.14.2.5" class="indexterm"></a>
+<a id="id-1.4.8.9.14.2.6" class="indexterm"></a> reward documents that contain a
+higher percentage of the query terms. The more query terms that appear in
+the document, the greater the chances that the document is a good match for
+the query.</p><p>Imagine that we have a query for <code class="literal">quick brown fox</code>, and that the
+weight for each term is 1.5.  Without the coordination factor, the score would
+just be the sum of the weights of the terms in a document. For instance:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Document with <code class="literal">fox</code> → score: 1.5
+</li><li class="listitem">
+Document with <code class="literal">quick fox</code> → score: 3.0
+</li><li class="listitem">
+Document with <code class="literal">quick brown fox</code> → score: 4.5
+</li></ul></div><p>The coordination factor multiplies the score by the number of matching terms
+in the document, and divides it by the total number of terms in the query.
+With the coordination factor, the scores would be as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Document with <code class="literal">fox</code> → score: <code class="literal">1.5 * 1 / 3</code> = 0.5
+</li><li class="listitem">
+Document with <code class="literal">quick fox</code> → score: <code class="literal">3.0 * 2 / 3</code> = 2.0
+</li><li class="listitem">
+Document with <code class="literal">quick brown fox</code> → score: <code class="literal">4.5 * 3 / 3</code> = 4.5
+</li></ul></div><p>The coordination factor results in the document that contains all three terms
+being much more relevant than the document that contains just two of them.</p><p>Remember that the query for <code class="literal">quick brown fox</code> is rewritten into a <code class="literal">bool</code> query
+like this:</p><pre class="programlisting prettyprint lang-json">GET /_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        { "term": { "text": "quick" }},
+        { "term": { "text": "brown" }},
+        { "term": { "text": "fox"   }}
+      ]
+    }
+  }
+}</pre><p>The <code class="literal">bool</code> query uses query coordination by default for all <code class="literal">should</code> clauses,
+but it does allow you to disable coordination.  Why might you want to do this?
+Well, usually the answer is, you don’t.  Query coordination is usually a good
+thing.  When you use a <code class="literal">bool</code> query to wrap several high-level queries like
+the <code class="literal">match</code> query, it also makes sense to leave coordination enabled. The more
+clauses that match, the higher the degree of overlap between your search
+request and the documents that are returned.</p><p>However, in some advanced use cases, it might make sense to disable
+coordination.  Imagine that you are looking for the synonyms <code class="literal">jump</code>, <code class="literal">leap</code>, and
+<code class="literal">hop</code>.  You don’t care how many of these synonyms are present, as they all
+represent the same concept. In fact, only one of the synonyms is likely to be
+present.  This would be a good case for disabling the coordination factor:</p><pre class="programlisting prettyprint lang-json">GET /_search
+{
+  "query": {
+    "bool": {
+      "disable_coord": true,
+      "should": [
+        { "term": { "text": "jump" }},
+        { "term": { "text": "hop"  }},
+        { "term": { "text": "leap" }}
+      ]
+    }
+  }
+}</pre><p>When you use synonyms (see <a class="xref" href="synonyms.html" title="Synonyms"><em>Synonyms</em></a>), this is exactly what
+happens internally: the rewritten query disables coordination for the
+synonyms. <a id="id-1.4.8.9.14.13.2" class="indexterm"></a>
+<a id="id-1.4.8.9.14.13.3" class="indexterm"></a>  Most use cases for disabling coordination are handled
+automatically; you don’t need to worry about it.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="index-boost"></a>Index-Time Field-Level Boosting<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/170_Relevance/15_Practical_scoring.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>We will talk about <span class="emphasis"><em>boosting</em></span> a field—making it <a id="id-1.4.8.9.15.2.2" class="indexterm"></a>
+<a id="id-1.4.8.9.15.2.3" class="indexterm"></a><a id="id-1.4.8.9.15.2.4" class="indexterm"></a>
+<a id="id-1.4.8.9.15.2.5" class="indexterm"></a><a id="id-1.4.8.9.15.2.6" class="indexterm"></a>
+<a id="id-1.4.8.9.15.2.7" class="indexterm"></a>more important than other
+fields—at query time in <a class="xref" href="query-time-boosting.html" title="Query-Time Boosting">Query-Time Boosting</a>.  It is also possible
+to apply a boost to a field at index time.  Actually, this boost is applied to
+every term in the field, rather than to the field itself.</p><p>To store this boost value in the index without using more space
+than necessary, this field-level index-time boost is combined with the <a id="id-1.4.8.9.15.3.1" class="indexterm"></a>field-length norm (see  <a class="xref" href="scoring-theory.html#field-norm" title="Field-length norm">Field-length norm</a>) and stored in the index as a single byte.
+This is the value returned by <code class="literal">norm(t,d)</code> in the preceding formula.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>We strongly recommend against using field-level index-time boosts for a few
+reasons:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Combining the boost with the field-length norm and storing it in a single
+    byte means that the field-length norm loses precision. The result is that
+    Elasticsearch is unable to distinguish between a field containing three words
+    and a field containing five words.
+</li><li class="listitem">
+To change an index-time boost, you have to reindex all your documents.
+    A query-time boost, on the other hand, can be changed with every query.
+</li><li class="listitem">
+If a field with an index-time boost has multiple values, the boost is
+    multiplied by itself for every value, dramatically increasing
+    the weight for that field.
+</li></ul></div><p><a class="link" href="query-time-boosting.html" title="Query-Time Boosting">Query-time boosting</a> is a much simpler, cleaner, more
+flexible option.</p></div></div><p>With query normalization, coordination, and index-time boosting out of the way,
+we can now move on to the most useful tool for influencing the relevance
+calculation: query-time boosting.<a id="id-1.4.8.9.15.5.1" class="indexterm"></a>
+<a id="id-1.4.8.9.15.5.2" class="indexterm"></a>
+<a id="id-1.4.8.9.15.5.3" class="indexterm"></a></p></div></div><div class="navfooter"><span class="prev"><a href="scoring-theory.html">
+              « 
+              Theory Behind Relevance Scoring</a>
+           
+        </span><span class="next">
+           
+          <a href="query-time-boosting.html">Query-Time Boosting
+               »
+            </a></span></div>
+<!-- end body -->
+
+            </section>
+<script type="text/javascript" >
+  (function ($, $a, $title, $list) {
+    $a = $('[id^="js-api-method-index"]');
+    if (!$a.size()) return;
+    $('#guide').addClass('js-client-docs');
+    $list = $a.siblings('.itemizedlist').detach();
+    $title = $(document.createElement('h2')).text('api methods')
+    $a.parent().remove();
+    $('.toc').first().append($(document.createElement('div')).addClass('js-api-method-index').append($title).append($list));
+  }(jQuery));
+</script>
+
+            <!-- Footer -->
+        
+	<div id="footer-wrapper">
+		<section id="footer" class="container">
+			<div class="row">
+				<div class="12u">
+					<!-- Copyright -->
+					<div id="copyright">
+						<p>&copy; 2015. All Rights Reserved - Elasticsearch</p>
+						<ul class="links">
+							<li>Elasticsearch is a trademark of Elasticsearch BV, registered in the U.S. and in other countries</li>
+							
+							<li><a href="/legal/trademarks" id="footer_trademarks">Trademarks</a></li>
+							
+							<li><a href="/legal/terms-of-use" id="footer_terms">Terms</a></li>
+							
+							<li><a href="/legal/privacy-policy" id="footer_privacy">Privacy</a></li>
+							
+						</ul>
+					</div>
+				</div>
+			</div>					
+		</section>
+	</div>
+			
+	<!-- Social Media -->
+	<div id="socialmedia-wrapper">
+		<section id="socialmedia" class="container">
+			<!-- social icons -->
+			<div id="social">
+				<ul class="links">
+					
+						<li class="facebook grayscale"><a href="http://www.facebook.com/elastic.co" target="_blank" id="footer_facebook"></a></li>
+					
+						<li class="twitter grayscale"><a href="https://www.twitter.com/elastic" target="_blank" id="footer_twitter"></a></li>
+					
+						<li class="linkedin grayscale"><a href="http://www.linkedin.com/company/elastic.co" target="_blank" id="footer_linkedin"></a></li>
+					
+						<li class="xing grayscale"><a href="https://www.xing.com/companies/elasticsearch" target="_blank" id="footer_xing"></a></li>
+					
+				</ul>
+			</div>
+		</section>
+	</div>
+
+
+<style type="text/css">
+	
+		.facebook{background:url("/assets/blte0d4d10ae3bd8337/social-media.png") no-repeat;}		
+	
+		.twitter{background:url("/assets/blte0d4d10ae3bd8337/social-media.png") no-repeat;}		
+	
+		.linkedin{background:url("/assets/blte0d4d10ae3bd8337/social-media.png") no-repeat;}		
+	
+		.xing{background:url("/assets/blte0d4d10ae3bd8337/social-media.png") no-repeat;}		
+	
+</style>	
+
+  	</div>
+  	<div class="preloader">
+    	<div class="status"></div>
+	</div>
+  	<style></style>
+   	<link type="text/css" rel="stylesheet" href="/static/css/flexslider.css" >
+
+<script src="/static/js/jquery.flexslider.min.js"></script>
+<script src="/static/js/jquery.dropdown.min.js"></script>
+<script src="/static/js/script.js"></script>
+   	
+</body>
