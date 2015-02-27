@@ -294,7 +294,7 @@ will use location <code class="literal">/mount/backups/my_backup</code> to store
         "location": "/mount/backups/my_backup",
         "compress": true
     }
-}'</pre><p>Once repository is registered, its information can be obtained using the following command:</p><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_snapshot/my_backup?pretty'</pre><pre class="programlisting prettyprint lang-js">{
+}'</pre><p>Once a repository is registered, its information can be obtained using the following command:</p><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_snapshot/my_backup?pretty'</pre><pre class="programlisting prettyprint lang-js">{
   "my_backup" : {
     "type" : "fs",
     "settings" : {
@@ -377,7 +377,7 @@ cluster. A snapshot with the name <code class="literal">snapshot_1</code> in the
 command:</p><pre class="programlisting prettyprint lang-js">$ curl -XPUT "localhost:9200/_snapshot/my_backup/snapshot_1?wait_for_completion=true"</pre><p>The <code class="literal">wait_for_completion</code> parameter specifies whether or not the request should return immediately after snapshot
 initialization (default) or wait for snapshot completion. During snapshot initialization, information about all
 previous snapshots is loaded into the memory, which means that in large repositories it may take several seconds (or
-even minutes) for this command to return even if the <code class="literal">wait_for_completion</code> parameter is set to <code class="literal">false</code>.</p><p>By default snapshot of all open and started indices in the cluster is created. This behavior can be changed by
+even minutes) for this command to return even if the <code class="literal">wait_for_completion</code> parameter is set to <code class="literal">false</code>.</p><p>By default a snapshot of all open and started indices in the cluster is created. This behavior can be changed by
 specifying the list of indices in the body of the snapshot request.</p><pre class="programlisting prettyprint lang-js">$ curl -XPUT "localhost:9200/_snapshot/my_backup/snapshot_1" -d '{
     "indices": "index_1,index_2",
     "ignore_unavailable": "true",
@@ -387,21 +387,21 @@ supports <a class="link" href="search-search.html#search-multi-index-type" title
 <code class="literal">ignore_unavailable</code> option. Setting it to <code class="literal">true</code> will cause indices that do not exist to be ignored during snapshot
 creation. By default, when <code class="literal">ignore_unavailable</code> option is not set and an index is missing the snapshot request will fail.
 By setting <code class="literal">include_global_state</code> to false it’s possible to prevent the cluster global state to be stored as part of
-the snapshot. By default, entire snapshot will fail if one or more indices participating in the snapshot don’t have
+the snapshot. By default, the entire snapshot will fail if one or more indices participating in the snapshot don’t have
 all primary shards available. This behaviour can be changed by setting <code class="literal">partial</code> to <code class="literal">true</code>.</p><p>The index snapshot process is incremental. In the process of making the index snapshot Elasticsearch analyses
 the list of the index files that are already stored in the repository and copies only files that were created or
 changed since the last snapshot. That allows multiple snapshots to be preserved in the repository in a compact form.
 Snapshotting process is executed in non-blocking fashion. All indexing and searching operation can continue to be
 executed against the index that is being snapshotted. However, a snapshot represents the point-in-time view of the index
-at the moment when snapshot was created, so no records that were added to the index after snapshot process had started
+at the moment when snapshot was created, so no records that were added to the index after the snapshot process was started
 will be present in the snapshot. The snapshot process starts immediately for the primary shards that has been started
 and are not relocating at the moment. Elasticsearch waits for
 relocation or initialization of shards to complete before snapshotting them.</p><p>Besides creating a copy of each index the snapshot process can also store global cluster metadata, which includes persistent
 cluster settings and templates. The transient settings and registered snapshot repositories are not stored as part of
 the snapshot.</p><p>Only one snapshot process can be executed in the cluster at any time. While snapshot of a particular shard is being
 created this shard cannot be moved to another node, which can interfere with rebalancing process and allocation
-filtering. Once snapshot of the shard is finished Elasticsearch will be able to move shard to another node according
-to the current allocation filtering settings and rebalancing algorithm.</p><p>Once a snapshot is created information about this snapshot can be obtained using the following command:</p><pre class="programlisting prettyprint lang-shell">$ curl -XGET "localhost:9200/_snapshot/my_backup/snapshot_1"</pre><p>All snapshots currently stored in the repository can be listed using the following command:</p><pre class="programlisting prettyprint lang-shell">$ curl -XGET "localhost:9200/_snapshot/my_backup/_all"</pre><p>A snapshot can be deleted from the repository using the following command:</p><pre class="programlisting prettyprint lang-shell">$ curl -XDELETE "localhost:9200/_snapshot/my_backup/snapshot_1"</pre><p>When a snapshot is deleted from a repository, Elasticsearch deletes all files that are associated with the deleted
+filtering. Elasticsearch will only be able to move a shard to another node (according to the current allocation
+filtering settings and rebalancing algorithm) once the snapshot is finished.</p><p>Once a snapshot is created information about this snapshot can be obtained using the following command:</p><pre class="programlisting prettyprint lang-shell">$ curl -XGET "localhost:9200/_snapshot/my_backup/snapshot_1"</pre><p>All snapshots currently stored in the repository can be listed using the following command:</p><pre class="programlisting prettyprint lang-shell">$ curl -XGET "localhost:9200/_snapshot/my_backup/_all"</pre><p>A snapshot can be deleted from the repository using the following command:</p><pre class="programlisting prettyprint lang-shell">$ curl -XDELETE "localhost:9200/_snapshot/my_backup/snapshot_1"</pre><p>When a snapshot is deleted from a repository, Elasticsearch deletes all files that are associated with the deleted
 snapshot and not used by any other snapshots. If the deleted snapshot operation is executed while the snapshot is being
 created the snapshotting process will be aborted and all files created as part of the snapshotting process will be
 cleaned. Therefore, the delete snapshot operation can be used to cancel long running snapshot operations that were
@@ -422,7 +422,7 @@ Set <code class="literal">include_aliases</code> to <code class="literal">false<
 <a class="link" href="indices-open-close.html" title="Open / Close Index API">closed</a>. The restore operation automatically opens restored indices if they were closed and creates new indices if they
 didn’t exist in the cluster. If cluster state is restored, the restored templates that don’t currently exist in the
 cluster are added and existing templates with the same name are replaced by the restored templates. The restored
-persistent settings are added to the existing persistent settings.</p><h3><a id="_partial_restore"></a>Partial restore<a href="https://github.com/elasticsearch/elasticsearch/edit/1.x/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default, entire restore operation will fail if one or more indices participating in the operation don’t have
+persistent settings are added to the existing persistent settings.</p><h3><a id="_partial_restore"></a>Partial restore<a href="https://github.com/elasticsearch/elasticsearch/edit/1.x/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default, the entire restore operation will fail if one or more indices participating in the operation don’t have
 snapshots of all shards available. It can occur if some shards failed to snapshot for example. It is still possible to
 restore such indices by setting <code class="literal">partial</code> to <code class="literal">true</code>. Please note, that only successfully snapshotted shards will be
 restored in this case and all missing shards will be recreated empty.</p><h3><a id="_changing_index_settings_during_restore"></a>Changing index settings during restore<a href="https://github.com/elasticsearch/elasticsearch/edit/1.x/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Most of index settings can be overridden during the restore process. For example, the following command will restore
@@ -447,10 +447,10 @@ state. Once recovery of primary shards is completed Elasticsearch is switching t
 creates the required number of replicas at this moment cluster switches to the <code class="literal">yellow</code> state. Once all required replicas
 are created, the cluster switches to the <code class="literal">green</code> states.</p><p>The cluster health operation provides only a high level status of the restore process. It’s possible to get more
 detailed insight into the current state of the recovery process by using <a class="link" href="indices-recovery.html" title="Indices Recovery">indices recovery</a> and
-<a class="link" href="cat-recovery.html" title="cat recovery">cat recovery</a> APIs.</p><h3><a id="_stopping_currently_running_snapshot_and_restore_operations"></a>Stopping currently running snapshot and restore operations<a href="https://github.com/elasticsearch/elasticsearch/edit/1.x/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The snapshot and restore framework allows running only one snapshot or one restore operation at a time. If currently
-running snapshot was executed by mistake or takes unusually long, it can be terminated using snapshot delete operation.
-The snapshot delete operation checks if deleted snapshot is currently running and if it does, the delete operation stops
-such snapshot before deleting the snapshot data from the repository.</p><p>The restore operation uses the standard shard recovery mechanism. Therefore, any currently running restore operation can
+<a class="link" href="cat-recovery.html" title="cat recovery">cat recovery</a> APIs.</p><h3><a id="_stopping_currently_running_snapshot_and_restore_operations"></a>Stopping currently running snapshot and restore operations<a href="https://github.com/elasticsearch/elasticsearch/edit/1.x/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The snapshot and restore framework allows running only one snapshot or one restore operation at a time. If a currently
+running snapshot was executed by mistake, or takes unusually long, it can be terminated using the snapshot delete operation.
+The snapshot delete operation checks if the deleted snapshot is currently running and if it does, the delete operation stops
+that snapshot before deleting the snapshot data from the repository.</p><p>The restore operation uses the standard shard recovery mechanism. Therefore, any currently running restore operation can
 be canceled by deleting indices that are being restored. Please note that data for all deleted indices will be removed
 from the cluster as a result of this operation.</p></div><div class="navfooter"><span class="prev"><a href="_transport_tracer.html">
               « 
