@@ -284,8 +284,8 @@
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="shingles"></a>Finding Associated Words<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="phrase-matching.html">Phrase Matching</a></span></dt><dt><span class="section"><a href="slop.html">Mixing It Up</a></span></dt><dt><span class="section"><a href="_multivalue_fields_2.html">Multivalue Fields</a></span></dt><dt><span class="section"><a href="_closer_is_better.html">Closer Is Better</a></span></dt><dt><span class="section"><a href="proximity-relevance.html">Proximity for Relevance</a></span></dt><dt><span class="section"><a href="_improving_performance.html">Improving Performance</a></span></dt><dt><span class="section"><a href="shingles.html">Finding Associated Words</a></span></dt></dl></div><p>As useful as phrase and proximity queries can be, they still have a downside.
 They are overly strict: all terms must be present for a phrase query to match,
-even when using <code class="literal">slop</code>.<a id="id-1.4.6.16.2.2" class="indexterm"></a>
-<a id="id-1.4.6.16.2.3" class="indexterm"></a></p><p>The flexibility in word ordering that you gain with <code class="literal">slop</code> also comes at a
+even when using <code class="literal">slop</code>.<a id="id-1.5.6.16.2.2" class="indexterm"></a>
+<a id="id-1.5.6.16.2.3" class="indexterm"></a></p><p>The flexibility in word ordering that you gain with <code class="literal">slop</code> also comes at a
 price, because you lose the association between word pairs.  While you can
 identify documents in which <code class="literal">sue</code>, <code class="literal">alligator</code>, and <code class="literal">ate</code> occur close together,
 you can’t tell whether <span class="emphasis"><em>Sue ate</em></span> or the <span class="emphasis"><em>alligator ate</em></span>.</p><p>When words are used in conjunction with each other, they express an idea that
@@ -293,16 +293,16 @@ is bigger or more meaningful than each word in isolation. The two clauses
 <span class="emphasis"><em>I’m not happy I’m working</em></span> and <span class="emphasis"><em>I’m happy I’m not working</em></span> contain the sames words, in
 close proximity, but have quite different meanings.</p><p>If, instead of indexing each word independently, we were to index pairs of
 words, then we could retain more of the context in which the words were used.</p><p>For the sentence <code class="literal">Sue ate the alligator</code>, we would not only index each word
-(or <span class="emphasis"><em>unigram</em></span>) as<a id="id-1.4.6.16.6.3" class="indexterm"></a> a term</p><pre class="literallayout">["sue", "ate", "the", "alligator"]</pre><p>but also each word <span class="emphasis"><em>and its neighbor</em></span> as single terms:</p><pre class="literallayout">["sue ate", "ate the", "the alligator"]</pre><p>These word <a id="id-1.4.6.16.10.1" class="indexterm"></a>pairs (or <span class="emphasis"><em>bigrams</em></span>) are <a id="id-1.4.6.16.10.3" class="indexterm"></a>known as <span class="emphasis"><em>shingles</em></span>.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Shingles are not restricted to being pairs of words; you could index word
-triplets (<span class="emphasis"><em>trigrams</em></span>) as <a id="id-1.4.6.16.11.1.2" class="indexterm"></a>well:</p><pre class="literallayout">["sue ate the", "ate the alligator"]</pre><p>Trigrams give you a higher degree of precision, but greatly increase the
+(or <span class="emphasis"><em>unigram</em></span>) as<a id="id-1.5.6.16.6.3" class="indexterm"></a> a term</p><pre class="literallayout">["sue", "ate", "the", "alligator"]</pre><p>but also each word <span class="emphasis"><em>and its neighbor</em></span> as single terms:</p><pre class="literallayout">["sue ate", "ate the", "the alligator"]</pre><p>These word <a id="id-1.5.6.16.10.1" class="indexterm"></a>pairs (or <span class="emphasis"><em>bigrams</em></span>) are <a id="id-1.5.6.16.10.3" class="indexterm"></a>known as <span class="emphasis"><em>shingles</em></span>.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Shingles are not restricted to being pairs of words; you could index word
+triplets (<span class="emphasis"><em>trigrams</em></span>) as <a id="id-1.5.6.16.11.1.2" class="indexterm"></a>well:</p><pre class="literallayout">["sue ate the", "ate the alligator"]</pre><p>Trigrams give you a higher degree of precision, but greatly increase the
 number of unique terms in the index. Bigrams are sufficient for most use
 cases.</p></div></div><p>Of course, shingles are useful only if the user enters the query in the same
 order as in the original document; a query for <code class="literal">sue alligator</code> would match
 the individual words but none of our shingles.</p><p>Fortunately, users tend to express themselves using constructs similar to
 those that appear in the data they are searching. But this point is an
 important one: it is not enough to index just bigrams; we still need unigrams,
-but we can use matching bigrams as a signal to increase the relevance score.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_producing_shingles"></a>Producing Shingles<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Shingles need to be created at index time as part of the analysis process.<a id="id-1.4.6.16.14.2.1" class="indexterm"></a>
-<a id="id-1.4.6.16.14.2.2" class="indexterm"></a> We
+but we can use matching bigrams as a signal to increase the relevance score.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_producing_shingles"></a>Producing Shingles<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Shingles need to be created at index time as part of the analysis process.<a id="id-1.5.6.16.14.2.1" class="indexterm"></a>
+<a id="id-1.5.6.16.14.2.2" class="indexterm"></a> We
 could index both unigrams and bigrams into a single field, but it is cleaner
 to keep unigrams and bigrams in separate fields that can be queried
 independently.  The unigram field would form the basis of our search, with the
@@ -353,7 +353,7 @@ Sue ate the alligator</pre><p>Sure enough, we get back three terms:</p><div clas
 </li><li class="listitem">
 <code class="literal">the alligator</code>
 </li></ul></div><p>Now we can proceed to setting up a field to use the new analyzer.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multifields"></a>Multifields<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>We said that it is cleaner to index unigrams and bigrams separately, so we
-will create the <code class="literal">title</code> field <a id="id-1.4.6.16.15.2.2" class="indexterm"></a>as a multifield (see <a class="xref" href="multi-fields.html" title="String Sorting and Multifields">String Sorting and Multifields</a>):</p><pre class="programlisting prettyprint lang-js">PUT /my_index/_mapping/my_type
+will create the <code class="literal">title</code> field <a id="id-1.5.6.16.15.2.2" class="indexterm"></a>as a multifield (see <a class="xref" href="multi-fields.html" title="String Sorting and Multifields">String Sorting and Multifields</a>):</p><pre class="programlisting prettyprint lang-js">PUT /my_index/_mapping/my_type
 {
     "my_type": {
         "properties": {
@@ -376,8 +376,8 @@ that we can query these fields independently.</p><p>And finally, we can index ou
 { "index": { "_id": 2 }}
 { "title": "The alligator ate Sue" }
 { "index": { "_id": 3 }}
-{ "title": "Sue never goes anywhere without her alligator skin purse" }</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_searching_for_shingles"></a>Searching for Shingles<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To understand the benefit <a id="id-1.4.6.16.16.2.1" class="indexterm"></a>
-<a id="id-1.4.6.16.16.2.2" class="indexterm"></a>that the <code class="literal">shingles</code> field adds, let’s first look at
+{ "title": "Sue never goes anywhere without her alligator skin purse" }</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_searching_for_shingles"></a>Searching for Shingles<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To understand the benefit <a id="id-1.5.6.16.16.2.1" class="indexterm"></a>
+<a id="id-1.5.6.16.16.2.2" class="indexterm"></a>that the <code class="literal">shingles</code> field adds, let’s first look at
 the results from a simple <code class="literal">match</code> query for “The hungry alligator ate Sue”:</p><pre class="programlisting prettyprint lang-js">GET /my_index/my_type/_search
 {
    "query": {
@@ -462,16 +462,16 @@ first place because it matched the shingled term <code class="literal">ate sue</
   ]
 }</pre><p>Even though our query included the word <code class="literal">hungry</code>, which doesn’t appear in
 any of our documents, we still managed to use word proximity to return the
-most relevant document first.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_performance"></a>Performance<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Not only are shingles more flexible than phrase queries,<a id="id-1.4.6.16.17.2.1" class="indexterm"></a>
-<a id="id-1.4.6.16.17.2.2" class="indexterm"></a> but they perform better
+most relevant document first.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_performance"></a>Performance<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Not only are shingles more flexible than phrase queries,<a id="id-1.5.6.16.17.2.1" class="indexterm"></a>
+<a id="id-1.5.6.16.17.2.2" class="indexterm"></a> but they perform better
 as well.  Instead of paying the price of a phrase query every time you search,
 queries for shingles are just as efficient as a simple <code class="literal">match</code> query. A small price is paid at index time, because more terms need to
 be indexed, which also means that fields with shingles use more disk space.
 However, most applications write once and read many times, so it makes sense
 to optimize for fast queries.</p><p>This is a theme that you will encounter frequently in Elasticsearch: enables you to achieve a lot at search time, without requiring any up-front
 setup. Once you understand your requirements more clearly, you can achieve better results with better performance by modeling your data correctly at index time.
-<a id="id-1.4.6.16.17.3.1" class="indexterm"></a>
-<a id="id-1.4.6.16.17.3.2" class="indexterm"></a></p></div></div><div class="navfooter"><span class="prev"><a href="_improving_performance.html">
+<a id="id-1.5.6.16.17.3.1" class="indexterm"></a>
+<a id="id-1.5.6.16.17.3.2" class="indexterm"></a></p></div></div><div class="navfooter"><span class="prev"><a href="_improving_performance.html">
               « 
               Improving Performance</a>
            

@@ -283,10 +283,10 @@
           <a href="_filter_order.html">Filter Order
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="filter-caching"></a>All About Caching<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/080_Structured_Search/40_bitsets.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="_finding_exact_values.html">Finding Exact Values</a></span></dt><dt><span class="section"><a href="combining-filters.html">Combining Filters</a></span></dt><dt><span class="section"><a href="_finding_multiple_exact_values.html">Finding Multiple Exact Values</a></span></dt><dt><span class="section"><a href="_ranges.html">Ranges</a></span></dt><dt><span class="section"><a href="_dealing_with_null_values.html">Dealing with Null Values</a></span></dt><dt><span class="section"><a href="filter-caching.html">All About Caching</a></span></dt><dt><span class="section"><a href="_filter_order.html">Filter Order</a></span></dt></dl></div><p>Earlier in this chapter (<a class="xref" href="_finding_exact_values.html#_internal_filter_operation" title="Internal Filter Operation">Internal Filter Operation</a>), we briefly discussed
-how filters are calculated.<a id="id-1.4.3.11.2.2" class="indexterm"></a>
-<a id="id-1.4.3.11.2.3" class="indexterm"></a><a id="id-1.4.3.11.2.4" class="indexterm"></a>
-<a id="id-1.4.3.11.2.5" class="indexterm"></a><a id="id-1.4.3.11.2.6" class="indexterm"></a><a id="id-1.4.3.11.2.7" class="indexterm"></a>
-<a id="id-1.4.3.11.2.8" class="indexterm"></a>  At their heart is a bitset representing which
+how filters are calculated.<a id="id-1.5.3.11.2.2" class="indexterm"></a>
+<a id="id-1.5.3.11.2.3" class="indexterm"></a><a id="id-1.5.3.11.2.4" class="indexterm"></a>
+<a id="id-1.5.3.11.2.5" class="indexterm"></a><a id="id-1.5.3.11.2.6" class="indexterm"></a><a id="id-1.5.3.11.2.7" class="indexterm"></a>
+<a id="id-1.5.3.11.2.8" class="indexterm"></a>  At their heart is a bitset representing which
 documents match the filter. Elasticsearch aggressively caches these bitsets for later use.  Once cached,
 these bitsets can be reused <span class="emphasis"><em>wherever</em></span> the same filter is used, without having
 to reevaluate the entire filter again.</p><p>These cached bitsets are “smart”: they are updated incrementally. As you
@@ -294,8 +294,8 @@ index new documents, only those new documents need to be added to the existing
 bitsets, rather than having to recompute the entire cached filter over and
 over. Filters are real-time like the rest of the system; you don’t need to
 worry about cache expiry.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_independent_filter_caching"></a>Independent Filter Caching<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/080_Structured_Search/40_bitsets.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Each filter is calculated and cached independently, regardless of where it is
-used.<a id="id-1.4.3.11.4.2.1" class="indexterm"></a>
-<a id="id-1.4.3.11.4.2.2" class="indexterm"></a> If two different queries use the same filter, the same filter bitset
+used.<a id="id-1.5.3.11.4.2.1" class="indexterm"></a>
+<a id="id-1.5.3.11.4.2.2" class="indexterm"></a> If two different queries use the same filter, the same filter bitset
 will be reused.  Likewise, if a single query uses the same filter in multiple
 places, only one bitset is calculated and then reused.</p><p>Let’s look at this example query, which looks for emails that are either of the following:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 In the inbox and have not been read
@@ -329,29 +329,29 @@ the cached bitset.</p><p>This ties in nicely with the composability of the query
 move filters around, or reuse the same filter in multiple places within the
 same query.  This isn’t just convenient to the developer—it has direct
 performance benefits.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_controlling_caching"></a>Controlling Caching<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/080_Structured_Search/40_bitsets.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Most <span class="emphasis"><em>leaf filters</em></span>—those dealing directly with fields like the <code class="literal">term</code>
-filter—are cached, while<a id="id-1.4.3.11.5.2.3" class="indexterm"></a><a id="id-1.4.3.11.5.2.4" class="indexterm"></a>
-<a id="id-1.4.3.11.5.2.5" class="indexterm"></a><a id="id-1.4.3.11.5.2.6" class="indexterm"></a>
-<a id="id-1.4.3.11.5.2.7" class="indexterm"></a> compound filters, like the <code class="literal">bool</code> filter, are not.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Leaf filters have to consult the inverted index on disk, so it makes sense to
+filter—are cached, while<a id="id-1.5.3.11.5.2.3" class="indexterm"></a><a id="id-1.5.3.11.5.2.4" class="indexterm"></a>
+<a id="id-1.5.3.11.5.2.5" class="indexterm"></a><a id="id-1.5.3.11.5.2.6" class="indexterm"></a>
+<a id="id-1.5.3.11.5.2.7" class="indexterm"></a> compound filters, like the <code class="literal">bool</code> filter, are not.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Leaf filters have to consult the inverted index on disk, so it makes sense to
 cache them. Compound filters, on the other hand, use fast bit logic to combine
 the bitsets resulting from their inner clauses, so it is efficient to
 recalculate them every time.</p></div></div><p>Certain leaf filters, however, are not cached by default, because it
 doesn’t make sense to do so:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 Script filters
 </span></dt><dd>
-The results<a id="id-1.4.3.11.5.5.1.2.1.1" class="indexterm"></a> from <a class="ulink" href="http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/filter-caching.html#_controlling_caching" target="_top"><code class="literal">script</code> filters</a> cannot
+The results<a id="id-1.5.3.11.5.5.1.2.1.1" class="indexterm"></a> from <a class="ulink" href="http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/filter-caching.html#_controlling_caching" target="_top"><code class="literal">script</code> filters</a> cannot
 be cached because the meaning of the script is opaque to Elasticsearch.
 </dd><dt><span class="term">
 Geo-filters
 </span></dt><dd>
-The geolocation filters, which<a id="id-1.4.3.11.5.5.2.2.1.1" class="indexterm"></a> we cover in more detail in <a class="xref" href="geoloc.html" title="Geolocation">Geolocation </a>, are
+The geolocation filters, which<a id="id-1.5.3.11.5.5.2.2.1.1" class="indexterm"></a> we cover in more detail in <a class="xref" href="geoloc.html" title="Geolocation">Geolocation </a>, are
 usually used to filter results based on the geolocation of a specific user.
 Since each user has a unique geolocation, it is unlikely that geo-filters will be reused, so it makes no sense to cache them.
 </dd><dt><span class="term">
 Date ranges
 </span></dt><dd>
-Date ranges that <a id="id-1.4.3.11.5.5.3.2.1.1" class="indexterm"></a>
-<a id="id-1.4.3.11.5.5.3.2.1.2" class="indexterm"></a><a id="id-1.4.3.11.5.5.3.2.1.3" class="indexterm"></a>
-<a id="id-1.4.3.11.5.5.3.2.1.4" class="indexterm"></a>use the <code class="literal">now</code> function (for example <code class="literal">"now-1h"</code>), result in values
+Date ranges that <a id="id-1.5.3.11.5.5.3.2.1.1" class="indexterm"></a>
+<a id="id-1.5.3.11.5.5.3.2.1.2" class="indexterm"></a><a id="id-1.5.3.11.5.5.3.2.1.3" class="indexterm"></a>
+<a id="id-1.5.3.11.5.5.3.2.1.4" class="indexterm"></a>use the <code class="literal">now</code> function (for example <code class="literal">"now-1h"</code>), result in values
 accurate to the millisecond. Every time the filter is run, <code class="literal">now</code> returns a new
 time. Older filters will never be reused, so caching is disabled by default.
 However, when using <code class="literal">now</code> with rounding (for example, <code class="literal">now/d</code> rounds to the nearest day),
@@ -359,8 +359,8 @@ caching is enabled by default.
 </dd></dl></div><p>Sometimes the default caching strategy is not correct. Perhaps you have a
 complicated <code class="literal">bool</code> expression that is reused several times in the same query.
 Or you have a filter on a <code class="literal">date</code> field that will never be reused.  The default
-caching strategy <a id="id-1.4.3.11.5.6.3" class="indexterm"></a><a id="id-1.4.3.11.5.6.4" class="indexterm"></a>
-<a id="id-1.4.3.11.5.6.5" class="indexterm"></a>can be overridden on almost any filter by setting the
+caching strategy <a id="id-1.5.3.11.5.6.3" class="indexterm"></a><a id="id-1.5.3.11.5.6.4" class="indexterm"></a>
+<a id="id-1.5.3.11.5.6.5" class="indexterm"></a>can be overridden on almost any filter by setting the
 <code class="literal">_cache</code> flag:</p><pre class="programlisting prettyprint lang-js">{
     "range" : {
         "timestamp" : {

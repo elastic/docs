@@ -283,12 +283,12 @@
           <a href="match-multi-word.html">Multiword Queries
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="match-query"></a>The match Query<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/100_Full_Text_Search/05_Match_query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="term-vs-full-text.html">Term-Based Versus Full-Text</a></span></dt><dt><span class="section"><a href="match-query.html">The match Query</a></span></dt><dt><span class="section"><a href="match-multi-word.html">Multiword Queries</a></span></dt><dt><span class="section"><a href="bool-query.html">Combining Queries</a></span></dt><dt><span class="section"><a href="_how_match_uses_bool.html">How match Uses bool</a></span></dt><dt><span class="section"><a href="_boosting_query_clauses.html">Boosting Query Clauses</a></span></dt><dt><span class="section"><a href="_controlling_analysis.html">Controlling Analysis</a></span></dt><dt><span class="section"><a href="relevance-is-broken.html">Relevance Is Broken!</a></span></dt></dl></div><p>The <code class="literal">match</code> query is the <span class="emphasis"><em>go-to</em></span> query—the first query that you should
-reach for whenever you need to query any field.<a id="id-1.4.4.7.2.3" class="indexterm"></a><a id="id-1.4.4.7.2.4" class="indexterm"></a>
-<a id="id-1.4.4.7.2.5" class="indexterm"></a> It is a high-level <span class="emphasis"><em>full-text
+reach for whenever you need to query any field.<a id="id-1.5.4.7.2.3" class="indexterm"></a><a id="id-1.5.4.7.2.4" class="indexterm"></a>
+<a id="id-1.5.4.7.2.5" class="indexterm"></a> It is a high-level <span class="emphasis"><em>full-text
 query</em></span>, meaning that it knows how to deal with both full-text fields and exact-value fields.</p><p>That said, the main use case for the <code class="literal">match</code> query is for full-text search. So
-let’s take a look at how full-text search works with a simple example.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="match-test-data"></a>Index Some Data<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/100_Full_Text_Search/05_Match_query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>First, we’ll create a new index and index some<a id="id-1.4.4.7.4.2.1" class="indexterm"></a>
-<a id="id-1.4.4.7.4.2.2" class="indexterm"></a>
-<a id="id-1.4.4.7.4.2.3" class="indexterm"></a> documents using the
+let’s take a look at how full-text search works with a simple example.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="match-test-data"></a>Index Some Data<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/100_Full_Text_Search/05_Match_query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>First, we’ll create a new index and index some<a id="id-1.5.4.7.4.2.1" class="indexterm"></a>
+<a id="id-1.5.4.7.4.2.2" class="indexterm"></a>
+<a id="id-1.5.4.7.4.2.3" class="indexterm"></a> documents using the
 <a class="link" href="bulk.html" title="Cheaper in Bulk"><code class="literal">bulk</code> API</a>:</p><pre class="programlisting prettyprint lang-js">DELETE /my_index <a id="CO57-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
 PUT /my_index
@@ -307,10 +307,10 @@ Delete the index in case it already exists.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO57-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Later, in <a class="xref" href="relevance-is-broken.html" title="Relevance Is Broken!">Relevance Is Broken!</a>, we explain why
     we created this index with only one primary shard.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_a_single_word_query"></a>A Single-Word Query<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/100_Full_Text_Search/05_Match_query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Our first example explains what<a id="id-1.4.4.7.5.2.1" class="indexterm"></a>
-<a id="id-1.4.4.7.5.2.2" class="indexterm"></a>
-<a id="id-1.4.4.7.5.2.3" class="indexterm"></a><a id="id-1.4.4.7.5.2.4" class="indexterm"></a>
-<a id="id-1.4.4.7.5.2.5" class="indexterm"></a> happens when we use the <code class="literal">match</code> query to
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_a_single_word_query"></a>A Single-Word Query<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/100_Full_Text_Search/05_Match_query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Our first example explains what<a id="id-1.5.4.7.5.2.1" class="indexterm"></a>
+<a id="id-1.5.4.7.5.2.2" class="indexterm"></a>
+<a id="id-1.5.4.7.5.2.3" class="indexterm"></a><a id="id-1.5.4.7.5.2.4" class="indexterm"></a>
+<a id="id-1.5.4.7.5.2.5" class="indexterm"></a> happens when we use the <code class="literal">match</code> query to
 search within a full-text field for a single word:</p><pre class="programlisting prettyprint lang-js">GET /my_index/my_type/_search
 {
     "query": {
@@ -318,8 +318,8 @@ search within a full-text field for a single word:</p><pre class="programlisting
             "title": "QUICK!"
         }
     }
-}</pre><a class="sense_widget" href="sense_widget.html?snippets/100_Full_Text_Search/05_Match_query.json" target="sense">View in Sense</a><p>Elasticsearch executes the preceding <code class="literal">match</code> query<a id="id-1.4.4.7.5.5.2" class="indexterm"></a>
-<a id="id-1.4.4.7.5.5.3" class="indexterm"></a> as follows:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+}</pre><a class="sense_widget" href="sense_widget.html?snippets/100_Full_Text_Search/05_Match_query.json" target="sense">View in Sense</a><p>Elasticsearch executes the preceding <code class="literal">match</code> query<a id="id-1.5.4.7.5.5.2" class="indexterm"></a>
+<a id="id-1.5.4.7.5.5.3" class="indexterm"></a> as follows:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 <span class="emphasis"><em>Check the field type</em></span>.
 </p><p class="simpara">The <code class="literal">title</code> field is a full-text (<code class="literal">analyzed</code>) <code class="literal">string</code> field, which means that
 the query string should be analyzed too.</p></li><li class="listitem"><p class="simpara">
@@ -333,8 +333,8 @@ list of documents that contain that term—in this case, documents 1, 2, and
 3.</p></li><li class="listitem"><p class="simpara">
 <span class="emphasis"><em>Score each doc</em></span>.
 </p><p class="simpara">The <code class="literal">term</code> query calculates the relevance <code class="literal">_score</code> for each matching document,
-by combining the<a id="id-1.4.4.7.5.6.4.2.3" class="indexterm"></a>
-<a id="id-1.4.4.7.5.6.4.2.4" class="indexterm"></a> term frequency (how often <code class="literal">quick</code> appears in the <code class="literal">title</code>
+by combining the<a id="id-1.5.4.7.5.6.4.2.3" class="indexterm"></a>
+<a id="id-1.5.4.7.5.6.4.2.4" class="indexterm"></a> term frequency (how often <code class="literal">quick</code> appears in the <code class="literal">title</code>
 field of each document), with the inverse document frequency (how often
 <code class="literal">quick</code> appears in the <code class="literal">title</code> field in <span class="emphasis"><em>all</em></span> documents in the index), and the
 length of each field (shorter fields are considered more relevant).

@@ -283,9 +283,9 @@
           <a href="nested-objects.html">Nested Objects
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="concurrency-solutions"></a>Solving Concurrency Issues<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/400_Relationships/26_Concurrency_solutions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="application-joins.html">Application-side Joins</a></span></dt><dt><span class="section"><a href="denormalization.html">Denormalizing Your Data</a></span></dt><dt><span class="section"><a href="top-hits.html">Field Collapsing</a></span></dt><dt><span class="section"><a href="denormalization-concurrency.html">Denormalization and Concurrency</a></span></dt><dt><span class="section"><a href="concurrency-solutions.html">Solving Concurrency Issues</a></span></dt></dl></div><p>The problem comes when we want to allow more than one person to rename files
-or directories <span class="emphasis"><em>at the same time</em></span>. <a id="id-1.8.3.17.2.2" class="indexterm"></a>
-<a id="id-1.8.3.17.2.3" class="indexterm"></a><a id="id-1.8.3.17.2.4" class="indexterm"></a>
-<a id="id-1.8.3.17.2.5" class="indexterm"></a> Imagine that you rename the <code class="literal">/clinton</code>
+or directories <span class="emphasis"><em>at the same time</em></span>. <a id="id-1.9.3.17.2.2" class="indexterm"></a>
+<a id="id-1.9.3.17.2.3" class="indexterm"></a><a id="id-1.9.3.17.2.4" class="indexterm"></a>
+<a id="id-1.9.3.17.2.5" class="indexterm"></a> Imagine that you rename the <code class="literal">/clinton</code>
 directory, which contains hundreds of thousands of files.  Meanwhile, another
 user renames the single file <code class="literal">/clinton/projects/elasticsearch/README.txt</code>.
 That user’s change, although it started after yours, will probably finish more
@@ -297,10 +297,10 @@ You have decided to use <code class="literal">version</code> numbers, in which c
 You didn’t use versioning, and your changes will overwrite the changes from
     the other user.
 </li></ul></div><p>The problem is that Elasticsearch does not support
-<a class="ulink" href="http://en.wikipedia.org/wiki/ACID_transactions" target="_top">ACID transactions</a>.<a id="id-1.8.3.17.5.2" class="indexterm"></a>  Changes to
+<a class="ulink" href="http://en.wikipedia.org/wiki/ACID_transactions" target="_top">ACID transactions</a>.<a id="id-1.9.3.17.5.2" class="indexterm"></a>  Changes to
 individual documents are ACIDic, but not changes involving multiple documents.</p><p>If your main data store is a relational database, and Elasticsearch is simply
-being used as a search engine<a id="id-1.8.3.17.6.1" class="indexterm"></a>
-<a id="id-1.8.3.17.6.2" class="indexterm"></a> or as a way to improve performance, make
+being used as a search engine<a id="id-1.9.3.17.6.1" class="indexterm"></a>
+<a id="id-1.9.3.17.6.2" class="indexterm"></a> or as a way to improve performance, make
 your changes in the database first and replicate those changes to
 Elasticsearch after they have succeeded. This way, you benefit from the ACID
 transactions available in the database, and all changes to Elasticsearch happen
@@ -314,8 +314,8 @@ Document Locking
 Tree Locking
 </li></ul></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The solutions described in this section could also be implemented by applying the same
 principles while using an external system instead of Elasticsearch.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="global-lock"></a>Global Locking<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/400_Relationships/26_Concurrency_solutions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>We can avoid concurrency issues completely by allowing only one process to
-make changes at any time.<a id="id-1.8.3.17.10.2.1" class="indexterm"></a>
-<a id="id-1.8.3.17.10.2.2" class="indexterm"></a><a id="id-1.8.3.17.10.2.3" class="indexterm"></a>  Most changes will involve only a few files and will
+make changes at any time.<a id="id-1.9.3.17.10.2.1" class="indexterm"></a>
+<a id="id-1.9.3.17.10.2.2" class="indexterm"></a><a id="id-1.9.3.17.10.2.3" class="indexterm"></a>  Most changes will involve only a few files and will
 complete very quickly.  A rename of a top-level directory may block all other
 changes for longer, but these are likely to be much less frequent.</p><p>Because document-level changes in Elasticsearch are ACIDic, we can use the
 existence or absence of a document as a global lock.  To request a
@@ -327,8 +327,8 @@ global lock and we can continue with our changes.  Once we are finished, we
 must release the lock by deleting the global lock document:</p><pre class="programlisting prettyprint lang-json">DELETE /fs/lock/global</pre><p>Depending on how frequent changes are, and how long they take, a global lock
 could restrict the performance of a system significantly.  We can increase
 parallelism by making our locking more fine-grained.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="document-locking"></a>Document Locking<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/400_Relationships/26_Concurrency_solutions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Instead of locking the whole filesystem, we could lock individual documents
-by using the same technique as previously described.<a id="id-1.8.3.17.11.2.1" class="indexterm"></a>
-<a id="id-1.8.3.17.11.2.2" class="indexterm"></a><a id="id-1.8.3.17.11.2.3" class="indexterm"></a>  A process could use a
+by using the same technique as previously described.<a id="id-1.9.3.17.11.2.1" class="indexterm"></a>
+<a id="id-1.9.3.17.11.2.2" class="indexterm"></a><a id="id-1.9.3.17.11.2.3" class="indexterm"></a>  A process could use a
 <a class="link" href="scan-scroll.html" title="scan and scroll">scan-and-scroll</a> request to retrieve the IDs of all documents
 that would be affected by the change, and would need to create a lock file for
 each of them:</p><pre class="programlisting prettyprint lang-json">PUT /fs/lock/_bulk
@@ -369,7 +369,7 @@ document <span class="emphasis"><em>does</em></span> exist, the script will look
 document.  If it is the same as ours, it aborts the update (<code class="literal">noop</code>) and
 returns success.  If it is different, the <code class="literal">assert false</code> throws an exception
 and we know that the lock has failed.</p><p>Once all locks have been successfully created, the rename operation can begin.
-Afterward, we must release<a id="id-1.8.3.17.11.12.1" class="indexterm"></a> all of the locks, which we can do with a
+Afterward, we must release<a id="id-1.9.3.17.11.12.1" class="indexterm"></a> all of the locks, which we can do with a
 <code class="literal">delete-by-query</code> request:</p><pre class="programlisting prettyprint lang-json">POST /fs/_refresh <a id="CO267-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
 DELETE /fs/lock/_query
@@ -386,8 +386,8 @@ The <code class="literal">refresh</code> call ensures that all <code class="lite
 files for millions of documents can be expensive.  In certain scenarios, such
 as this example with directory trees, it is possible to achieve fine-grained
 locking with much less work.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="tree-locking"></a>Tree Locking<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/400_Relationships/26_Concurrency_solutions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Rather than locking every involved document, as in the previous option, we
-could lock just part of the directory tree.<a id="id-1.8.3.17.12.2.1" class="indexterm"></a>
-<a id="id-1.8.3.17.12.2.2" class="indexterm"></a>  We will need exclusive access
+could lock just part of the directory tree.<a id="id-1.9.3.17.12.2.1" class="indexterm"></a>
+<a id="id-1.9.3.17.12.2.2" class="indexterm"></a>  We will need exclusive access
 to the file or directory that we want to rename, which can be achieved with an
 <span class="emphasis"><em>exclusive lock</em></span> document:</p><pre class="programlisting prettyprint lang-json">{ "lock_type": "exclusive" }</pre><p>And we need shared locks on any parent directories, with a <span class="emphasis"><em>shared lock</em></span>
 document:</p><pre class="programlisting prettyprint lang-json">{

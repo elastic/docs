@@ -282,18 +282,18 @@
            
           <a href="user-based.html">User-Based Data
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="retiring-data"></a>Retiring Data<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/410_Scaling/55_Retiring_data.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="shard-scale.html">The Unit of Scale</a></span></dt><dt><span class="section"><a href="overallocation.html">Shard Overallocation</a></span></dt><dt><span class="section"><a href="kagillion-shards.html">Kagillion Shards</a></span></dt><dt><span class="section"><a href="capacity-planning.html">Capacity Planning</a></span></dt><dt><span class="section"><a href="replica-shards.html">Replica Shards</a></span></dt><dt><span class="section"><a href="multiple-indices.html">Multiple Indices</a></span></dt><dt><span class="section"><a href="time-based.html">Time-Based Data</a></span></dt><dt><span class="section"><a href="index-templates.html">Index Templates</a></span></dt><dt><span class="section"><a href="retiring-data.html">Retiring Data</a></span></dt><dt><span class="section"><a href="user-based.html">User-Based Data</a></span></dt><dt><span class="section"><a href="shared-index.html">Shared Index</a></span></dt><dt><span class="section"><a href="faking-it.html">Faking Index per User with Aliases</a></span></dt><dt><span class="section"><a href="one-big-user.html">One Big User</a></span></dt><dt><span class="section"><a href="finite-scale.html">Scale Is Not Infinite</a></span></dt></dl></div><p>As time-based data ages, it becomes less relevant.<a id="id-1.8.6.15.2.1" class="indexterm"></a>
-<a id="id-1.8.6.15.2.2" class="indexterm"></a>  It’s possible that we
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="retiring-data"></a>Retiring Data<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/410_Scaling/55_Retiring_data.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="shard-scale.html">The Unit of Scale</a></span></dt><dt><span class="section"><a href="overallocation.html">Shard Overallocation</a></span></dt><dt><span class="section"><a href="kagillion-shards.html">Kagillion Shards</a></span></dt><dt><span class="section"><a href="capacity-planning.html">Capacity Planning</a></span></dt><dt><span class="section"><a href="replica-shards.html">Replica Shards</a></span></dt><dt><span class="section"><a href="multiple-indices.html">Multiple Indices</a></span></dt><dt><span class="section"><a href="time-based.html">Time-Based Data</a></span></dt><dt><span class="section"><a href="index-templates.html">Index Templates</a></span></dt><dt><span class="section"><a href="retiring-data.html">Retiring Data</a></span></dt><dt><span class="section"><a href="user-based.html">User-Based Data</a></span></dt><dt><span class="section"><a href="shared-index.html">Shared Index</a></span></dt><dt><span class="section"><a href="faking-it.html">Faking Index per User with Aliases</a></span></dt><dt><span class="section"><a href="one-big-user.html">One Big User</a></span></dt><dt><span class="section"><a href="finite-scale.html">Scale Is Not Infinite</a></span></dt></dl></div><p>As time-based data ages, it becomes less relevant.<a id="id-1.9.6.15.2.1" class="indexterm"></a>
+<a id="id-1.9.6.15.2.2" class="indexterm"></a>  It’s possible that we
 will want to see what happened last week, last month, or even last year, but
-for the most part, we’re interested in only the here and now.</p><p>The nice thing about an index per time frame <a id="id-1.8.6.15.3.1" class="indexterm"></a>
-<a id="id-1.8.6.15.3.2" class="indexterm"></a>
-<a id="id-1.8.6.15.3.3" class="indexterm"></a><a id="id-1.8.6.15.3.4" class="indexterm"></a>
-<a id="id-1.8.6.15.3.5" class="indexterm"></a>is that it enables us to easily
+for the most part, we’re interested in only the here and now.</p><p>The nice thing about an index per time frame <a id="id-1.9.6.15.3.1" class="indexterm"></a>
+<a id="id-1.9.6.15.3.2" class="indexterm"></a>
+<a id="id-1.9.6.15.3.3" class="indexterm"></a><a id="id-1.9.6.15.3.4" class="indexterm"></a>
+<a id="id-1.9.6.15.3.5" class="indexterm"></a>is that it enables us to easily
 delete old data: just delete the indices that are no longer relevant:</p><pre class="programlisting prettyprint lang-json">DELETE /logs_2013*</pre><p>Deleting a whole index is much more efficient than deleting individual
 documents: Elasticsearch just removes whole directories.</p><p>But deleting an index is very <span class="emphasis"><em>final</em></span>.  There are a number of things we can
 do to help data age gracefully, before we decide to delete it completely.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="migrate-indices"></a>Migrate Old Indices<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/410_Scaling/55_Retiring_data.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>With logging data, there is likely to be one <span class="emphasis"><em>hot</em></span> index—the index for
-today.<a id="id-1.8.6.15.7.2.2" class="indexterm"></a>
-<a id="id-1.8.6.15.7.2.3" class="indexterm"></a>  All new documents will be added to that index, and almost all queries
+today.<a id="id-1.9.6.15.7.2.2" class="indexterm"></a>
+<a id="id-1.9.6.15.7.2.3" class="indexterm"></a>  All new documents will be added to that index, and almost all queries
 will target that index.  It should use your best hardware.</p><p>How does Elasticsearch know which servers are your best servers? You tell it,
 by assigning arbitrary tags to each server.  For instance, you could start a
 node as follows:</p><pre class="literallayout">./bin/elasticsearch --node.box_type strong</pre><p>The <code class="literal">box_type</code> parameter is completely arbitrary—you could have named it
@@ -308,15 +308,15 @@ the following settings:</p><pre class="programlisting prettyprint lang-json">PUT
 it to the nodes tagged as <code class="literal">medium</code> by updating its index settings:</p><pre class="programlisting prettyprint lang-json">POST /logs_2014-09-30/_settings
 {
   "index.routing.allocation.include.box_type" : "medium"
-}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="optimize-indices"></a>Optimize Indices<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/410_Scaling/55_Retiring_data.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Yesterday’s index is unlikely to change.<a id="id-1.8.6.15.8.2.1" class="indexterm"></a>
-<a id="id-1.8.6.15.8.2.2" class="indexterm"></a>  Log events are static: what
+}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="optimize-indices"></a>Optimize Indices<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/410_Scaling/55_Retiring_data.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Yesterday’s index is unlikely to change.<a id="id-1.9.6.15.8.2.1" class="indexterm"></a>
+<a id="id-1.9.6.15.8.2.2" class="indexterm"></a>  Log events are static: what
 happened in the past stays in the past.  If we merge each shard down to just a
 single segment, it’ll use fewer resources and will be quicker to query. We
 can do this with the <a class="xref" href="merge-process.html#optimize-api" title="optimize API">optimize API</a>.</p><p>It would be a bad idea to optimize the index while it was still allocated to
 the <code class="literal">strong</code> boxes, as the optimization process could swamp the I/O on those
 nodes and impact the indexing of today’s logs.  But the <code class="literal">medium</code> boxes aren’t
-doing very much at all, so we are safe to optimize.</p><p>Yesterday’s index may have replica shards.<a id="id-1.8.6.15.8.4.1" class="indexterm"></a>
-<a id="id-1.8.6.15.8.4.2" class="indexterm"></a> If we issue an optimize request, it
+doing very much at all, so we are safe to optimize.</p><p>Yesterday’s index may have replica shards.<a id="id-1.9.6.15.8.4.1" class="indexterm"></a>
+<a id="id-1.9.6.15.8.4.2" class="indexterm"></a> If we issue an optimize request, it
 will optimize the primary shard and the replica shards, which is a waste.
 Instead, we can remove the replicas temporarily, optimize, and then restore the
 replicas:</p><pre class="programlisting prettyprint lang-json">POST /logs_2014-09-30/_settings
@@ -326,10 +326,10 @@ POST /logs_2014-09-30/_optimize?max_num_segments=1
 
 POST /logs_2014-09-30/_settings
 { "number_of_replicas": 1 }</pre><p>Of course, without replicas, we run the risk of losing data if a disk suffers
-catastrophic failure.  You may<a id="id-1.8.6.15.8.6.1" class="indexterm"></a> want to back up the data first, with the
+catastrophic failure.  You may<a id="id-1.9.6.15.8.6.1" class="indexterm"></a> want to back up the data first, with the
 <a class="ulink" href="http://bit.ly/14ED13A" target="_top"><code class="literal">snapshot-restore</code> API</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="close-indices"></a>Closing Old Indices<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/410_Scaling/55_Retiring_data.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>As indices get even older, they reach a point where they are almost never
-accessed.<a id="id-1.8.6.15.9.2.1" class="indexterm"></a>
-<a id="id-1.8.6.15.9.2.2" class="indexterm"></a>  We could delete them at this stage, but perhaps you want to keep
+accessed.<a id="id-1.9.6.15.9.2.1" class="indexterm"></a>
+<a id="id-1.9.6.15.9.2.2" class="indexterm"></a>  We could delete them at this stage, but perhaps you want to keep
 them around just in case somebody asks for them in six months.</p><p>These indices can be closed. They will still exist in the cluster, but they
 won’t consume resources other than disk space.  Reopening an index is much
 quicker than restoring it from backup.</p><p>Before closing, it is worth flushing the index to make sure that there are no
@@ -342,8 +342,8 @@ Flush all indices from January to empty the transaction logs.
 Close all indices from January.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO299-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 When you need access to them again, reopen them with the <code class="literal">open</code> API.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="archive-indices"></a>Archiving Old Indices<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/410_Scaling/55_Retiring_data.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Finally, very old indices <a id="id-1.8.6.15.10.2.1" class="indexterm"></a>
-<a id="id-1.8.6.15.10.2.2" class="indexterm"></a>can be archived off to some long-term storage like a
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="archive-indices"></a>Archiving Old Indices<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/410_Scaling/55_Retiring_data.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Finally, very old indices <a id="id-1.9.6.15.10.2.1" class="indexterm"></a>
+<a id="id-1.9.6.15.10.2.2" class="indexterm"></a>can be archived off to some long-term storage like a
 shared disk or Amazon’s S3 using the
 <a class="ulink" href="http://bit.ly/14ED13A" target="_top"><code class="literal">snapshot-restore</code> API</a>, just in case you may need
 to access them in the future.  Once a backup exists, the index can be deleted

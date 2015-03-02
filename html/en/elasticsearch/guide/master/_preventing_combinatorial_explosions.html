@@ -283,8 +283,8 @@
           <a href="_closing_thoughts.html">Closing Thoughts
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_preventing_combinatorial_explosions"></a>Preventing Combinatorial Explosions<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/300_Aggregations/120_breadth_vs_depth.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="fielddata.html">Fielddata</a></span></dt><dt><span class="section"><a href="aggregations-and-analysis.html">Aggregations and Analysis</a></span></dt><dt><span class="section"><a href="_limiting_memory_usage.html">Limiting Memory Usage</a></span></dt><dt><span class="section"><a href="_fielddata_filtering.html">Fielddata Filtering</a></span></dt><dt><span class="section"><a href="doc-values.html">Doc Values</a></span></dt><dt><span class="section"><a href="preload-fielddata.html">Preloading Fielddata</a></span></dt><dt><span class="section"><a href="_preventing_combinatorial_explosions.html">Preventing Combinatorial Explosions</a></span></dt></dl></div><p>The <code class="literal">terms</code> bucket dynamically builds buckets based on your data; it doesn’t
-know up front how many buckets will be generated. <a id="id-1.6.12.8.2.2" class="indexterm"></a><a id="id-1.6.12.8.2.3" class="indexterm"></a>
-<a id="id-1.6.12.8.2.4" class="indexterm"></a> While this is fine with a
+know up front how many buckets will be generated. <a id="id-1.7.12.8.2.2" class="indexterm"></a><a id="id-1.7.12.8.2.3" class="indexterm"></a>
+<a id="id-1.7.12.8.2.4" class="indexterm"></a> While this is fine with a
 single aggregation, think about what can happen when one aggregation contains
 another aggregation, which contains another aggregation, and so forth. The combination of
 unique values in each of these aggregations can lead to an explosion in the
@@ -315,9 +315,9 @@ with an aggregation:</p><pre class="programlisting prettyprint lang-js">{
   }
 }</pre><p>This will return a list of the top 10 actors, and for each actor, a list of their
 top five costars.  This seems like a very modest aggregation; only 50
-values will be returned!</p><p>However, this seemingly <a id="id-1.6.12.8.8.1" class="indexterm"></a>
-<a id="id-1.6.12.8.8.2" class="indexterm"></a>
-<a id="id-1.6.12.8.8.3" class="indexterm"></a>innocuous query can easily consume a vast amount of
+values will be returned!</p><p>However, this seemingly <a id="id-1.7.12.8.8.1" class="indexterm"></a>
+<a id="id-1.7.12.8.8.2" class="indexterm"></a>
+<a id="id-1.7.12.8.8.3" class="indexterm"></a>innocuous query can easily consume a vast amount of
 memory. You can visualize a <code class="literal">terms</code> aggregation as building a tree in memory.
 The <code class="literal">actors</code> aggregation will build the first level of the tree, with a bucket
 for every actor.  Then, nested under each node in the first level, the
@@ -331,13 +331,13 @@ and the aggregation is pretty tame.  What if you had 200 million documents, want
 the top 100 actors and their top 20 costars, as well as the costars' costars?</p><p>You can appreciate how quickly combinatorial expansion can grow, making this
 strategy untenable.  There is not enough memory in the world to support uncontrolled
 combinatorial explosions.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_depth_first_versus_breadth_first"></a>Depth-First Versus Breadth-First<a href="https://github.com/elasticsearch/elasticsearch-definitive-guide/edit/master/300_Aggregations/120_breadth_vs_depth.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Elasticsearch allows you to change the <span class="emphasis"><em>collection mode</em></span> of an aggregation, for
-exactly this situation. <a id="id-1.6.12.8.16.2.2" class="indexterm"></a> <a id="id-1.6.12.8.16.2.3" class="indexterm"></a>
-<a id="id-1.6.12.8.16.2.4" class="indexterm"></a>
-<a id="id-1.6.12.8.16.2.5" class="indexterm"></a>The strategy we outlined previously—building the tree fully
-and then pruning—is called <span class="emphasis"><em>depth-first</em></span> and it is the default. <a id="id-1.6.12.8.16.2.7" class="indexterm"></a> Depth-first
+exactly this situation. <a id="id-1.7.12.8.16.2.2" class="indexterm"></a> <a id="id-1.7.12.8.16.2.3" class="indexterm"></a>
+<a id="id-1.7.12.8.16.2.4" class="indexterm"></a>
+<a id="id-1.7.12.8.16.2.5" class="indexterm"></a>The strategy we outlined previously—building the tree fully
+and then pruning—is called <span class="emphasis"><em>depth-first</em></span> and it is the default. <a id="id-1.7.12.8.16.2.7" class="indexterm"></a> Depth-first
 works well for the majority of aggregations, but can fall apart in situations
 like our actors and costars example.</p><p>For these special cases, you should use an alternative collection strategy called
-<span class="emphasis"><em>breadth-first</em></span>.  <a id="id-1.6.12.8.16.3.2" class="indexterm"></a>This strategy works a little differently.  It executes the first
+<span class="emphasis"><em>breadth-first</em></span>.  <a id="id-1.7.12.8.16.3.2" class="indexterm"></a>This strategy works a little differently.  It executes the first
 layer of aggregations, and <span class="emphasis"><em>then</em></span> performs a pruning phase before continuing, as illustrated in <a class="xref" href="_preventing_combinatorial_explosions.html#breadth-first-1" title="Figure 45. Build first level">Figure 45, “Build first level”</a> through <a class="xref" href="_preventing_combinatorial_explosions.html#breadth-first-3" title="Figure 47. Prune first level">Figure 47, “Prune first level”</a>.</p><p>In our example, the <code class="literal">actors</code> aggregation would be executed first.  At this
 point, we have a single layer in the tree, but we already know who the top 10
 actors are! There is no need to keep the other actors since they won’t be in
@@ -345,7 +345,7 @@ the top 10 anyway.</p><div class="figure"><a id="breadth-first-1"></a><p class="
 long tail. After pruning, the next layer is populated based on <span class="emphasis"><em>its</em></span> execution mode,
 and the process repeats until the aggregation is done, as illustrated in <a class="xref" href="_preventing_combinatorial_explosions.html#breadth-first-4" title="Figure 48. Populate full depth for remaining nodes">Figure 48, “Populate full depth for remaining nodes”</a>. This prevents the
 combinatorial explosion of buckets and drastically reduces memory requirements
-for classes of queries that are amenable to breadth-first.</p><div class="figure"><a id="breadth-first-4"></a><p class="title"><strong>Figure 48. Populate full depth for remaining nodes</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/300_120_breadth_first_4.svg" alt="Step 4: populate full depth for remaining nodes" /></div></div></div><br class="figure-break" /><p>To use breadth-first, simply <a id="id-1.6.12.8.16.10.1" class="indexterm"></a>enable it via the <code class="literal">collect</code> parameter:</p><pre class="programlisting prettyprint lang-js">{
+for classes of queries that are amenable to breadth-first.</p><div class="figure"><a id="breadth-first-4"></a><p class="title"><strong>Figure 48. Populate full depth for remaining nodes</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/300_120_breadth_first_4.svg" alt="Step 4: populate full depth for remaining nodes" /></div></div></div><br class="figure-break" /><p>To use breadth-first, simply <a id="id-1.7.12.8.16.10.1" class="indexterm"></a>enable it via the <code class="literal">collect</code> parameter:</p><pre class="programlisting prettyprint lang-js">{
   "aggs" : {
     "actors" : {
       "terms" : {
