@@ -284,39 +284,30 @@
            
           <a href="whats-new.html">What’s New in Kibana 4
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="production"></a>Using Kibana in a Production Environment<a href="https://github.com/elasticsearch/kibana/edit/4.0/docs/production.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="toc"><dl><dt><span class="chapter"><a href="introduction.html">Introduction</a></span></dt><dt><span class="chapter"><a href="setup.html">Getting Kibana Up and Running</a></span></dt><dt><span class="chapter"><a href="access.html">Accessing Kibana</a></span></dt><dt><span class="chapter"><a href="discover.html">Discover</a></span></dt><dt><span class="chapter"><a href="visualize.html">Visualize</a></span></dt><dt><span class="chapter"><a href="dashboard.html">Dashboard</a></span></dt><dt><span class="chapter"><a href="settings.html">Settings</a></span></dt><dt><span class="chapter"><a href="production.html">Using Kibana in a Production Environment</a></span></dt><dt><span class="chapter"><a href="whats-new.html">What’s New in Kibana 4</a></span></dt></dl></div><p>When you set up Kibana in a production environment, rather than on your local
-machine, you need to consider:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Where you are going to run Kibana.
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="production"></a>Using Kibana in a Production Environment<a href="https://github.com/elasticsearch/kibana/edit/4.0/docs/production.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="toc"><dl><dt><span class="chapter"><a href="introduction.html">Introduction</a></span></dt><dt><span class="chapter"><a href="setup.html">Getting Kibana Up and Running</a></span></dt><dt><span class="chapter"><a href="access.html">Accessing Kibana</a></span></dt><dt><span class="chapter"><a href="discover.html">Discover</a></span></dt><dt><span class="chapter"><a href="visualize.html">Visualize</a></span></dt><dt><span class="chapter"><a href="dashboard.html">Dashboard</a></span></dt><dt><span class="chapter"><a href="settings.html">Settings</a></span></dt><dt><span class="chapter"><a href="production.html">Using Kibana in a Production Environment</a></span></dt><dt><span class="chapter"><a href="whats-new.html">What’s New in Kibana 4</a></span></dt></dl></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="production.html#configuring-kibana-shield" title="Configuring Kibana to Work with Shieldedit">Configuring Kibana to Work with Shield</a>
 </li><li class="listitem">
-Whether you need to encrypt communications to and from Kibana.
+<a class="link" href="production.html#enabling-ssl" title="Enabling SSLedit">Enabling SSL</a>
 </li><li class="listitem">
-If you need to control access to your data.
-</li></ul></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_deployment_considerations"></a>Deployment Considerations<a href="https://github.com/elasticsearch/kibana/edit/4.0/docs/production.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>How you deploy Kibana largely depends on your use case. If you are the only user,
+<a class="link" href="production.html#controlling-access" title="Controlling accessedit">Controlling Access</a>
+</li><li class="listitem">
+<a class="link" href="production.html#load-balancing" title="Load Balancing Across Multiple Elasticsearch Nodesedit">Load Balancing Across Multiple Elasticsearch Nodes</a>
+</li></ul></div><p>How you deploy Kibana largely depends on your use case. If you are the only user,
 you can run Kibana on your local machine and configure it to point to whatever
 Elasticsearch instance you want to interact with. Conversely, if you have a large
 number of heavy Kibana users, you might need to load balance across multiple
 Kibana instances that are all connected to the same Elasticsearch instance.</p><p>While Kibana isn’t terribly resource intensive, we still recommend running Kibana
-on its own node, rather than on one of your Elasticsearch nodes.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_configuring_kibana_to_work_with_shield"></a>Configuring Kibana to Work with Shield<a href="https://github.com/elasticsearch/kibana/edit/4.0/docs/production.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you are using Shield to authenticate Elasticsearch users, you need to provide
-Kibana with user credentials so it can access the <code class="literal">.kibana</code> index. The Kibana user
-needs permission to perform the following actions on the <code class="literal">.kibana</code> index:</p><pre class="screen">'.kibana':
-      - indices:admin/create
-      - indices:admin/exists
-      - indices:admin/mapping/put
-      - indices:admin/mappings/fields/get
-      - indices:admin/refresh
-      - indices:admin/validate/query
-      - indices:data/read/get
-      - indices:data/read/mget
-      - indices:data/read/search
-      - indices:data/write/delete
-      - indices:data/write/index
-      - indices:data/write/update
-      - indices:admin/create</pre><p>For more information about configuring access in Shield,
-see <a class="ulink" href="https://www.elasticsearch.org/guide/en/shield/current/_shield_with_kibana_4.html" target="_top">Shield with Kibana 4</a>
-in the Shield documentation.</p><p>To configure credentials for Kibana, set the <code class="literal">kibana_elasticsearch_username</code> and
+separate from  your Elasticsearch data or master nodes. To distribute Kibana
+traffic across the nodes in your Elasticsearch cluster, you can run Kibana
+and an Elasticsearch client node on the same machine. For more information, see
+<a class="link" href="production.html#load-balancing" title="Load Balancing Across Multiple Elasticsearch Nodesedit">Load Balancing Across Multiple Elasticsearch Nodes</a>.</p><h3><a id="configuring-kibana-shield"></a>Configuring Kibana to Work with Shield<a href="https://github.com/elasticsearch/kibana/edit/4.0/docs/production.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you are using Shield to authenticate Elasticsearch users, you need to provide
+the Kibana server with credentials so it can access the <code class="literal">.kibana</code> index and monitor
+the cluster.</p><p>To configure credentials the Kibana server, set the <code class="literal">kibana_elasticsearch_username</code> and
 <code class="literal">kibana_elasticsearch_password</code> properties in <code class="literal">kibana.yml</code>:</p><pre class="screen"># If your Elasticsearch is protected with basic auth:
 kibana_elasticsearch_username: kibana4
-kibana_elasticsearch_password: kibana4</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_enabling_ssl"></a>Enabling SSL<a href="https://github.com/elasticsearch/kibana/edit/4.0/docs/production.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Kibana supports SSL encryption for both client requests and the requests the Kibana server
+kibana_elasticsearch_password: kibana4</pre><p>For information about assigning the Kibana server the necessary permissions in Shield,
+see <a class="ulink" href="https://www.elasticsearch.org/guide/en/shield/current/_shield_with_kibana_4.html" target="_top">Shield with Kibana 4</a>
+in the Shield documentation.</p><h3><a id="enabling-ssl"></a>Enabling SSL<a href="https://github.com/elasticsearch/kibana/edit/4.0/docs/production.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Kibana supports SSL encryption for both client requests and the requests the Kibana server
 sends to Elasticsearch.</p><p>To encrypt communications between the browser and the Kibana server, you configure the <code class="literal">ssl_key_file `and `ssl_cert_file</code> properties in <code class="literal">kibana.yml</code>:</p><pre class="screen"># SSL for outgoing requests from the Kibana Server (PEM formatted)
 ssl_key_file: /path/to/your/server.key
 ssl_cert_file: /path/to/your/server.crt</pre><p>If you are using Shield or a proxy that provides an HTTPS endpoint for Elasticsearch,
@@ -325,13 +316,33 @@ the Kibana server and Elasticsearch are encrypted.</p><p>To do this, you specify
 protocol when you configure the Elasticsearch URL in <code class="literal">kibana.yml</code>:</p><pre class="screen">elasticsearch: "https://&lt;your_elasticsearch_host&gt;.com:9200"</pre><p>If you are using a self-signed certificate for Elasticsearch, set the <code class="literal">ca</code> property in
 <code class="literal">kibana.yml</code> to specify the location of the PEM file. Setting the <code class="literal">ca</code> property lets you  leave the <code class="literal">verify_ssl</code> option enabled.</p><pre class="screen"># If you need to provide a CA certificate for your Elasticsarech instance, put
 # the path of the pem file here.
-ca: /path/to/your/ca/cacert.pem</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_controlling_access"></a>Controlling access<a href="https://github.com/elasticsearch/kibana/edit/4.0/docs/production.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You can use <a class="ulink" href="http://www.elasticsearch.org/overview/shield/" target="_top">Elasticsearch Shield</a>
+ca: /path/to/your/ca/cacert.pem</pre><h3><a id="controlling-access"></a>Controlling access<a href="https://github.com/elasticsearch/kibana/edit/4.0/docs/production.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can use <a class="ulink" href="http://www.elasticsearch.org/overview/shield/" target="_top">Elasticsearch Shield</a>
 (Shield) to control what Elasticsearch data users can access through Kibana.
 Shield provides index-level access control. If a user isn’t authorized to run
 the query that populates a Kibana visualization, the user just sees an empty
-visualization.</p><p>To configure access to Kibana using Shield, you create one or more Shield roles
+visualization.</p><p>To configure access to Kibana using Shield, you create Shield roles
 for Kibana using the <code class="literal">kibana4</code> default role as a starting point. For more
-information, see <a class="ulink" href="http://www.elasticsearch.org/guide/en/shield/current/_shield_with_kibana_4.html" target="_top">Using Shield with Kibana 4</a>.</p></div></div><div class="navfooter"><span class="prev"><a href="settings.html">
+information, see <a class="ulink" href="http://www.elasticsearch.org/guide/en/shield/current/_shield_with_kibana_4.html" target="_top">Using Shield with Kibana 4</a>.</p><h3><a id="load-balancing"></a>Load Balancing Across Multiple Elasticsearch Nodes<a href="https://github.com/elasticsearch/kibana/edit/4.0/docs/production.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you have multiple nodes in your Elasticsearch cluster, the easiest way to distribute Kibana requests
+across the nodes is to run an Elasticsearch <span class="emphasis"><em>client</em></span> node on the same machine as Kibana.
+Elasticsearch client nodes are essentially smart load balancers that are part of the cluster. They
+process incoming HTTP requests, redirect operations to the other nodes in the cluster as needed, and
+gather and return the results. For more information, see <a class="ulink" href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-node.html" target="_top">Node</a> in the Elasticsearch reference.</p><p>To use a local client node to load balance Kibana requests:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Install Elasticsearch on the same machine as Kibana.
+</li><li class="listitem"><p class="simpara">
+Configure the node as a client node. In <code class="literal">elasticsearch.yml</code>, set both <code class="literal">node.data</code> and <code class="literal">node.master</code> to <code class="literal">false</code>:
+</p><pre class="screen"># 3. You want this node to be neither master nor data node, but
+#    to act as a "search load balancer" (fetching data from nodes,
+#    aggregating results, etc.)
+#
+node.master: false
+node.data: false</pre></li><li class="listitem"><p class="simpara">
+Configure the client node to join your Elasticsearch cluster. In <code class="literal">elasticsearch.yml</code>, set the <code class="literal">cluster.name</code> to the
+name of your cluster.
+</p><pre class="screen">cluster.name: "my_cluster"</pre></li><li class="listitem"><p class="simpara">
+Make sure Kibana is configured to point to your local client node. In <code class="literal">kibana.yml</code>, the <code class="literal">elasticsearch_url</code> should be set to
+<code class="literal">localhost:9200</code>.
+</p><pre class="screen"># The Elasticsearch instance to use for all your queries.
+elasticsearch_url: "http://localhost:9200"</pre></li></ol></div></div><div class="navfooter"><span class="prev"><a href="settings.html">
               « 
               Settings</a>
            
