@@ -12,7 +12,7 @@ our $JSON = JSON::XS->new->utf8->pretty;
 
 our $Site_Index   = 'site';
 our $Docs_Index   = 'docs';
-our $Base_URL     = 'http://elasticsearch:w&jAh&9gU%3F@dev-elasticsearch.raweng.net';
+our $Base_URL     = 'https://stagelastic:6LG+XAy!yU@www.elastic.co/';
 our $Sitemap_Path = '/sitemap.xml';
 our $Guide_Prefix = '/guide';
 
