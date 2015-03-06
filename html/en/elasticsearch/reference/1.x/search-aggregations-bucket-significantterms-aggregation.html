@@ -455,7 +455,74 @@ However, the <code class="literal">size</code> and <code class="literal">shard s
          }</pre><p><code class="literal">gnd</code> also accepts the <code class="literal">background_is_superset</code> parameter.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_percentage"></a>Percentage<a href="https://github.com/elasticsearch/elasticsearch/edit/1.x/docs/reference/search/aggregations/bucket/significantterms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>A simple calculation of the number of documents in the foreground sample with a term divided by the number of documents in the background with the term.
 By default this produces a score greater than zero and less than one.</p><p>The benefit of this heuristic is that the scoring logic is simple to explain to anyone familiar with a "per capita" statistic. However, for fields with high cardinality there is a tendency for this heuristic to select the rarest terms such as typos that occur only once because they score 1/1 = 100%.</p><p>It would be hard for a seasoned boxer to win a championship if the prize was awarded purely on the basis of percentage of fights won - by these rules a newcomer with only one fight under his belt would be impossible to beat.
 Multiple observations are typically required to reinforce a view so it is recommended in these cases to set both <code class="literal">min_doc_count</code> and <code class="literal">shard_min_doc_count</code> to a higher value such as 10 in order to filter out the low-frequency terms that otherwise take precedence.</p><pre class="programlisting prettyprint lang-js">         "percentage": {
-         }</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_which_one_is_best"></a>Which one is best?<a href="https://github.com/elasticsearch/elasticsearch/edit/1.x/docs/reference/search/aggregations/bucket/significantterms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Roughly, <code class="literal">mutual_information</code> prefers high frequent terms even if they occur also frequently in the background. For example, in an analysis of natural language text this might lead to selection of stop words. <code class="literal">mutual_information</code> is unlikely to select very rare terms like misspellings. <code class="literal">gnd</code> prefers terms with a high co-occurence and avoids selection of stopwords. It might be better suited for synonym detection. However, <code class="literal">gnd</code> has a tendency to select very rare terms that are, for example, a result of misspelling. <code class="literal">chi_square</code> and <code class="literal">jlh</code> are somewhat in-between.</p><p>It is hard to say which one of the different heuristics will be the best choice as it depends on what the significant terms are used for (see for example [Yang and Pedersen, "A Comparative Study on Feature Selection in Text Categorization", 1997](<a class="ulink" href="http://courses.ischool.berkeley.edu/i256/f06/papers/yang97comparative.pdf" target="_top">http://courses.ischool.berkeley.edu/i256/f06/papers/yang97comparative.pdf</a>) for a study on using significant terms for feature selection for text classification).</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_size_amp_shard_size"></a>Size &amp; Shard Size<a href="https://github.com/elasticsearch/elasticsearch/edit/1.x/docs/reference/search/aggregations/bucket/significantterms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">size</code> parameter can be set to define how many term buckets should be returned out of the overall terms list. By
+         }</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_which_one_is_best"></a>Which one is best?<a href="https://github.com/elasticsearch/elasticsearch/edit/1.x/docs/reference/search/aggregations/bucket/significantterms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Roughly, <code class="literal">mutual_information</code> prefers high frequent terms even if they occur also frequently in the background. For example, in an analysis of natural language text this might lead to selection of stop words. <code class="literal">mutual_information</code> is unlikely to select very rare terms like misspellings. <code class="literal">gnd</code> prefers terms with a high co-occurence and avoids selection of stopwords. It might be better suited for synonym detection. However, <code class="literal">gnd</code> has a tendency to select very rare terms that are, for example, a result of misspelling. <code class="literal">chi_square</code> and <code class="literal">jlh</code> are somewhat in-between.</p><p>It is hard to say which one of the different heuristics will be the best choice as it depends on what the significant terms are used for (see for example [Yang and Pedersen, "A Comparative Study on Feature Selection in Text Categorization", 1997](<a class="ulink" href="http://courses.ischool.berkeley.edu/i256/f06/papers/yang97comparative.pdf" target="_top">http://courses.ischool.berkeley.edu/i256/f06/papers/yang97comparative.pdf</a>) for a study on using significant terms for feature selection for text classification).</p><p>If none of the above measures suits your usecase than another option is to implement a custom significance measure:</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_scripted"></a>scripted<a href="https://github.com/elasticsearch/elasticsearch/edit/1.x/docs/reference/search/aggregations/bucket/significantterms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Coming in 1.5.0.</p></div></div><p>Customized scores can be implemented via a script:</p><pre class="programlisting prettyprint lang-js">            "script_heuristic": {
+              "script": "_subset_freq/(_superset_freq - _subset_freq + 1)"
+            }</pre><p>Scripts can be inline (as in above example), indexed or stored on disk. For details on the options, see <a class="link" href="modules-scripting.html" title="Scripting">script documentation</a>.
+Parameters need to be set as follows:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">script</code>
+</p>
+</td><td valign="top">
+<p>
+Inline script, name of script file or name of indexed script. Mandatory.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">script_type</code>
+</p>
+</td><td valign="top">
+<p>
+One of "inline" (default), "indexed" or "file".
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">lang</code>
+</p>
+</td><td valign="top">
+<p>
+Script language (default "groovy")
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">params</code>
+</p>
+</td><td valign="top">
+<p>
+Script parameters (default empty).
+</p>
+</td></tr></tbody></table></div><p>Available parameters in the script are</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">_subset_freq</code>
+</p>
+</td><td valign="top">
+<p>
+Number of documents the term appears in in the subset.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">_superset_freq</code>
+</p>
+</td><td valign="top">
+<p>
+Number of documents the term appears in in the superset.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">_subset_size</code>
+</p>
+</td><td valign="top">
+<p>
+Number of documents in the subset.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">_superset_size</code>
+</p>
+</td><td valign="top">
+<p>
+Number of documents in the superset.
+</p>
+</td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_size_amp_shard_size"></a>Size &amp; Shard Size<a href="https://github.com/elasticsearch/elasticsearch/edit/1.x/docs/reference/search/aggregations/bucket/significantterms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">size</code> parameter can be set to define how many term buckets should be returned out of the overall terms list. By
 default, the node coordinating the search process will request each shard to provide its own top term buckets
 and once all shards respond, it will reduce the results to the final list that will then be returned to the client.
 If the number of unique terms is greater than <code class="literal">size</code>, the returned list can be slightly off and not accurate
