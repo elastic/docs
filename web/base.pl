@@ -15,6 +15,8 @@ our $Docs_Index   = 'docs';
 our $Base_URL     = 'https://stagelastic:6LG+XAy!yU@www.elastic.co/';
 our $Sitemap_Path = '/sitemap.xml';
 our $Guide_Prefix = '/guide';
+our $Max_Page     = 10;
+our $Page_Size    = 15;
 
 our $es = Search::Elasticsearch->new( nodes => 'http://localhost:9200' );
 

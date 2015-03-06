@@ -10,7 +10,7 @@ use Search::Elasticsearch;
 use HTML::Entities qw(encode_entities decode_entities);
 use JSON::XS;
 
-our ( $es, $Docs_Index, $Site_Index );
+our ( $es, $Docs_Index, $Site_Index, $Max_Page, $Page_Size );
 
 use FindBin;
 
@@ -19,12 +19,13 @@ BEGIN {
     do "web/base.pl" or die $!;
 }
 
-our $JSON       = JSON::XS->new->utf8->pretty;
-our $Referer_RE = qr{
-    ^https?://[^/]+/guide/
+our $JSON           = JSON::XS->new->utf8->pretty;
+our $Remove_Host_RE = qr{^https?://[^/]+/guide/};
+our $Referer_RE     = qr{
+    ^
     (.+?)                           # book
     (?:/(current|master|\d[^/]+))?  # version
-    (/[^/]+)                        # remainder
+    /[^/]+                          # remainder
     $}x;
 
 builder {
@@ -53,29 +54,45 @@ sub search {
     my $q = eval { $req->query_parameters->get_one('q') }
         or return _as_json( 200, { hits => [] } );
 
+    my $page = eval { $req->query_parameters->get_one('page') } || 1;
+    $page = $Max_Page if $page > $Max_Page;
+
     my $ref
         = eval { $req->query_parameters->get_one('book') }
-        || $req->headers->referer
+        || ( $page == 1 and $req->headers->referer )
         || '';
+
     my ( $book, $version );
-    if ( $ref =~ /$Referer_RE/ ) {
-        $book    = $1;
-        $version = $2;
+    if ($ref) {
+        $ref =~ s/$Remove_Host_RE//;
+        if ( $ref =~ /$Referer_RE/ ) {
+            $book    = $1;
+            $version = $2;
+        }
     }
 
-    my @requests = _to_msearch( _get_request( $q, 'search' ) );
+    my @requests;
+    if ( $page == 1 or not $book ) {
+        push @requests, _to_msearch( _get_request( $q, 'search', $page ) );
+    }
+
     if ($book) {
         push @requests,
-            _to_msearch( _get_request( $q, 'search', $book, $version ) );
+            _to_msearch( _get_request( $q, 'search', $page, $book, $version ) );
     }
 
     my $response = eval { $es->msearch( body => \@requests )->{responses} }
         or return _as_json( 500, { error => $@ } );
 
-    my %results = ( site => _format_hits( $response->[0]->{hits} ) );
-    $results{book} = _format_hits( $response->[1]->{hits} )
-        if $book;
+    my %results;
+    if ($book) {
+        $results{book}
+            = _format_hits( pop(@$response)->{hits}, $page, $q, $ref );
+    }
 
+    if (@$response) {
+        $results{site} = _format_hits( pop(@$response)->{hits}, $page, $q );
+    }
     return _as_json( 200, \%results );
 }
 
@@ -84,6 +101,7 @@ sub _format_hits {
 #===================================
     my $results = shift;
     my @hits;
+
     for ( @{ $results->{hits} } ) {
         my %hit = (
             url   => $_->{_id},
@@ -94,14 +112,40 @@ sub _format_hits {
         }
         push @hits, \%hit;
     }
-    return { hits => \@hits };
+
+    my %response = ( hits => \@hits, total => $results->{total} );
+    if ( my $page = shift ) {
+        my $q    = shift;
+        my $book = shift;
+        my @pages;
+        my $last_page = int( $results->{total} / $Page_Size ) + 1;
+        $last_page = $Max_Page if $Max_Page < $last_page;
+
+        for ( 1 .. $last_page ) {
+            if ( $page == $_ ) {
+                push @pages, { page => $_, current => 1 };
+            }
+            else {
+                push @pages,
+                    {
+                    page => $_,
+                    q    => $q,
+                    $book ? ( book => $book ) : ()
+                    };
+            }
+        }
+        $response{pages} = \@pages;
+    }
+    return \%response;
 }
 
 #===================================
 sub _get_request {
 #===================================
-    my ( $q, $type, $book, $version ) = @_;
+    my ( $q, $type, $page, $book, $version ) = @_;
+
     $version ||= 'current';
+    $page    ||= 1;
 
     my ( $filter, @index, @fields, $highlight );
 
@@ -175,7 +219,8 @@ sub _get_request {
         index => \@index,
         body  => {
             _source => ['title'],
-            size    => 10,
+            size    => $Page_Size,
+            from    => ( $page - 1 ) * $Page_Size,
             query   => {
                 function_score => {
                     query => {
