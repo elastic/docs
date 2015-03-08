@@ -86,13 +86,14 @@ sub search {
 
     my %results;
     if ($book) {
-        $results{book}
-            = _format_hits( pop(@$response)->{hits}, $page, $q, $ref );
+        $results{book} = _format_hits( pop(@$response)->{hits}, $page );
+        $results{book}{book} = $ref;
     }
 
     if (@$response) {
-        $results{site} = _format_hits( pop(@$response)->{hits}, $page, $q );
+        $results{site} = _format_hits( pop(@$response)->{hits}, $page );
     }
+
     return _as_json( 200, \%results );
 }
 
@@ -112,29 +113,12 @@ sub _format_hits {
         }
         push @hits, \%hit;
     }
-
     my %response = ( hits => \@hits, total => $results->{total} );
     if ( my $page = shift ) {
-        my $q    = shift;
-        my $book = shift;
-        my @pages;
-        my $last_page = int( $results->{total} / $Page_Size ) + 1;
-        $last_page = $Max_Page if $Max_Page < $last_page;
-
-        for ( 1 .. $last_page ) {
-            if ( $page == $_ ) {
-                push @pages, { page => $_, current => 1 };
-            }
-            else {
-                push @pages,
-                    {
-                    page => $_,
-                    q    => $q,
-                    $book ? ( book => $book ) : ()
-                    };
-            }
-        }
-        $response{pages} = \@pages;
+        $response{total}     = $results->{total};
+        $response{page}      = $page;
+        $response{page_size} = $Page_Size;
+        $response{max_page}  = $Max_Page;
     }
     return \%response;
 }
