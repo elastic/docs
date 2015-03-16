@@ -144,6 +144,14 @@ sub _fetch_template {
         }xs
             or die "Couldn't add BODY tags\n";
 
+        # last in page
+        $content =~s {
+            </body>
+        }{
+            <!-- DOCS FINAL -->
+            </body>
+        }xs;
+
         $template = $self->path->file( time . ".html" );
         $template->spew( iomode => '>:utf8', $content );
         1;
