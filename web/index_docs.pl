@@ -105,10 +105,9 @@ sub index_docs {
             }
 
             for my $page ( _load_file( $file, $single ) ) {
-                my $title
-                    = $page->{title}
-                    ? "$product | " . $page->{title} . " » " . $book_title
-                    : "$product | $book_title";
+                my $title = $page->{title}
+                    ? $page->{title} . " | $book_title | $product"
+                    : "$book_title | $product";
 
                 $bulk->index(
                     {   _id     => $url . $page->{id},
