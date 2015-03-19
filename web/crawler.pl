@@ -12,6 +12,8 @@ BEGIN {
     do "web/base.pl" or die $!;
 }
 
+binmode( STDOUT, ':utf8' );
+
 use Proc::PID::File;
 die "$0 already running\n" if Proc::PID::File->running( dir => '.run' );
 
@@ -52,12 +54,14 @@ sub index_changes {
 
         my $doc = ES::SiteParser->new()->parse($html)->output;
         $doc->{published_at} = $new->{$url};
-        my ($tag) = ( $doc->{title} =~ /^\s*(\w[^|]+?)\s*\|/ );
-        unless ($tag) {
-            ($tag) = map {ucfirst} grep {$_} split '/', $url;
-            $doc->{title} = "$tag | " . $doc->{title} if $tag;
+        $doc->{title} =~ s/\s*\|\s*Elastic//;
+
+        my ( undef, @tags ) = grep {$_} reverse split '/', $url;
+        for (@tags) {
+            s/[_-]/ /g;
+            $doc->{title} = $doc->{title} . " | " . ucfirst($_);
         }
-        $doc->{tags} = ( $tag || 'General' );
+
         $bulk->index( { id => $url, source => $doc } );
     }
     $bulk->flush;

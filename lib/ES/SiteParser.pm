@@ -9,14 +9,15 @@ sub new {
 #===================================
     shift()->SUPER::new(
         api_version     => 3,
-        ignore_elements => [ 'script', 'style', 'head' ],
+        ignore_elements => [ 'script', 'style' ],
         report_tags     => [
             "article", "aside",      "blockquote", "br",
             "caption", "dd",         "div",        "dl",
             "dt",      "figcaption", "h1",         "h2",
             "h3",      "h4",         "h5",         "h6",
             "header",  "li",         "output",     "p",
-            "pre",     "section",    "textarea",   "th"
+            "pre",     "section",    "textarea",   "th",
+            "title"
         ],
         handlers => {
             text           => [ \&text,      'self, dtext' ],
@@ -56,12 +57,13 @@ sub text {
 sub start {
 #===================================
     my ( $self, $tag, $attr ) = @_;
+    if ( $tag eq 'title' ) {
+        return $self->{dest} = 'title';
+    }
     if ( $tag eq 'div' ) {
         my $id = $attr->{id} || '';
         return $self->{dest} = 'content'
             if $self->{dest} eq 'ignore' and $id eq 'content';
-        $self->{dest} = 'title'
-            if $self->{dest} eq 'content' and $id eq 'pageheader';
         $self->{dest} = 'ignore' if $id eq 'footer-wrapper';
     }
     return if $self->{dest} eq 'ignore';
@@ -74,12 +76,12 @@ sub end {
 #===================================
     my ( $self, $tag ) = @_;
     return if $self->{dest} eq 'ignore';
+    return $self->{dest} = 'ignore'
+        if $tag eq 'title';
     my $stack = $self->{stack};
     while ( my $old = pop @$stack ) {
         last if $old eq $tag;
     }
-    $self->{dest} = 'content'
-        if @$stack == 0 && $self->{dest} eq 'title';
     my $dest = $self->{ $self->{dest} };
     push @$dest, "\n" if @$dest and $dest->[-1] ne "\n";
 }
