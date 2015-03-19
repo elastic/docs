@@ -20,6 +20,7 @@ die "$0 already running\n" if Proc::PID::File->running( dir => '.run' );
 use ES::Util qw(timestamp get_url);
 use ES::SiteParser;
 
+my $force        = @ARGV && $ARGV[0] =~ /^-f|--force/;
 my $now          = timestamp();
 my $sitemap_urls = get_sitemap( $Base_URL, $Sitemap_Path );
 my $known_urls   = get_known_urls($Site_Index);
@@ -36,7 +37,7 @@ sub index_changes {
             $bulk->delete_ids($_);
             print "Deleting doc ($_)\n";
         }
-        elsif ( $new->{$_} eq $old->{$_} ) {
+        elsif ( !$force and $new->{$_} eq $old->{$_} ) {
             delete $new->{$_};
             print "Doc ($_) unchanged\n";
         }
