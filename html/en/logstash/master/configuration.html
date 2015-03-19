@@ -433,7 +433,90 @@ when <code class="literal">grok</code> is successful:</p><pre class="programlist
   if "_grokparsefailure" not in [tags] {
     elasticsearch { ... }
   }
-}</pre><p>For more complex examples, see <a class="link" href="config-examples.html#using-conditionals" title="Using Conditionalsedit">Using Conditionals</a>.</p></div><div class="navfooter"><span class="prev"><a href="_command_line_flags.html">
+}</pre><p>For more complex examples, see <a class="link" href="config-examples.html#using-conditionals" title="Using Conditionalsedit">Using Conditionals</a>.</p><h4><a id="metadata"></a>The @metadata field<a href="https://github.com/elasticsearch/logstash-docs/edit/master/docs/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In Logstash 1.5 there is a new, special field, called <code class="literal">@metadata</code>.  The contents
+of <code class="literal">@metadata</code> will not be part of any of your events at output time, which
+makes it great to use for conditionals, or extending and building event fields
+with field reference and sprintf formatting.</p><p>The following configuration file will yield events from STDIN.  Whatever is
+typed will become the <code class="literal">message</code> field in the event.  The <code class="literal">mutate</code> events in the
+filter block will add a few fields, some nested in the <code class="literal">@metadata</code> field.</p><pre class="programlisting prettyprint lang-ruby">input { stdin { } }
+
+filter {
+  mutate { add_field =&gt; { "show" =&gt; "This data will be in the output" } }
+  mutate { add_field =&gt; { "[@metadata][test]" =&gt; "Hello" } }
+  mutate { add_field =&gt; { "[@metadata][no_show]" =&gt; "This data will not be in the output" } }
+}
+
+output {
+  if [@metadata][test] == "Hello" {
+    stdout { codec =&gt; rubydebug }
+  }
+}</pre><p>Let’s see what comes out:</p><pre class="programlisting prettyprint lang-ruby">$ bin/logstash -f ../test.conf
+Logstash startup completed
+asdf
+{
+       "message" =&gt; "asdf",
+      "@version" =&gt; "1",
+    "@timestamp" =&gt; "2015-03-18T23:09:29.595Z",
+          "host" =&gt; "example.com",
+          "show" =&gt; "This data will be in the output"
+}</pre><p>The "asdf" typed in became the <code class="literal">message</code> field contents, and the conditional
+successfully evaluated the contents of the <code class="literal">test</code> field nested within the
+<code class="literal">@metadata</code> field.  But the output did not show a field called <code class="literal">@metadata</code>, or
+its contents.</p><p>The <code class="literal">rubydebug</code> codec allows you to reveal the contents of the <code class="literal">@metadata</code> field
+if you add a config flag, <code class="literal">metadata =&gt; true</code>:</p><pre class="programlisting prettyprint lang-ruby">    stdout { codec =&gt; rubydebug { metadata =&gt; true } }</pre><p>Let’s see what the output looks like with this change:</p><pre class="programlisting prettyprint lang-ruby">$ bin/logstash -f ../test.conf
+Logstash startup completed
+asdf
+{
+       "message" =&gt; "asdf",
+      "@version" =&gt; "1",
+    "@timestamp" =&gt; "2015-03-18T23:10:19.859Z",
+          "host" =&gt; "example.com",
+          "show" =&gt; "This data will be in the output",
+     "@metadata" =&gt; {
+           "test" =&gt; "Hello",
+        "no_show" =&gt; "This data will not be in the output"
+    }
+}</pre><p>Now you can see the <code class="literal">@metadata</code> field and its sub-fields.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Only the <code class="literal">rubydebug</code> codec allows you to show the contents of the
+<code class="literal">@metadata</code> field.</p></div></div><p>Make use of the <code class="literal">@metadata</code> field any time you need a temporary field but do not
+want it to be in the final output.</p><p>Perhaps one of the most common use cases for this new field is with the <code class="literal">date</code>
+filter and having a temporary timestamp.</p><p>This configuration file has been simplified, but uses the timestamp format
+common to Apache and Nginx web servers.  In the past, you’d have to delete
+the timestamp field yourself, after using it to overwrite the <code class="literal">@timestamp</code>
+field.  With the <code class="literal">@metadata</code> field, this is no longer necessary:</p><pre class="programlisting prettyprint lang-ruby">input { stdin { } }
+
+filter {
+  grok { match =&gt; [ "message", "%{HTTPDATE:[@metadata][timestamp]}" ] }
+  date { match =&gt; [ "[@metadata][timestamp]", "dd/MMM/yyyy:HH:mm:ss Z" ] }
+}
+
+output {
+  stdout { codec =&gt; rubydebug }
+}</pre><p>Notice that this configuration puts the extracted date into the
+<code class="literal">[@metadata][timestamp]</code> field in the <code class="literal">grok</code> filter.  Let’s feed this
+configuration a sample date string and see what comes out:</p><pre class="programlisting prettyprint lang-ruby">$ bin/logstash -f ../test.conf
+Logstash startup completed
+02/Mar/2014:15:36:43 +0100
+{
+       "message" =&gt; "02/Mar/2014:15:36:43 +0100",
+      "@version" =&gt; "1",
+    "@timestamp" =&gt; "2014-03-02T14:36:43.000Z",
+          "host" =&gt; "example.com"
+}</pre><p>That’s it!  No extra fields in the output, and a cleaner config file because you
+do not have to delete a "timestamp" field after conversion in the <code class="literal">date</code> filter.</p><p>Another use case is the CouchDB Changes input plugin (See
+<a class="ulink" href="https://github.com/logstash-plugins/logstash-input-couchdb_changes" target="_top">https://github.com/logstash-plugins/logstash-input-couchdb_changes</a>).
+This plugin automatically captures CouchDB document field metadata into the
+<code class="literal">@metadata</code> field within the input plugin itself.  When the events pass through
+to be indexed by Elasticsearch, the Elasticsearch output plugin allows you to
+specify the <code class="literal">action</code> (delete, update, insert, etc.) and the <code class="literal">document_id</code>, like
+this:</p><pre class="programlisting prettyprint lang-ruby">output {
+  elasticsearch {
+    action =&gt; "%{[@metadata][action]}"
+    document_id =&gt; "%{[@metadata][_id]}"
+    host =&gt; "example.com"
+    index =&gt; "index_name"
+    protocol =&gt; "http"
+  }
+}</pre></div><div class="navfooter"><span class="prev"><a href="_command_line_flags.html">
               « 
               Command-line flags</a>
            
