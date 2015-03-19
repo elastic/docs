@@ -6,12 +6,13 @@ use v5.10;
 
 use File::Copy::Recursive qw(fcopy rcopy);
 use Capture::Tiny qw(capture_merged tee_merged);
-use HTTP::Tiny();
 use Encode qw(decode_utf8);
 use Path::Class qw(dir);
 
+binmode( STDOUT, ':encoding(utf8)' );
+
 require Exporter;
-our @ISA = qw(Exporter);
+our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
     run $Opts
     build_chunked build_single
@@ -21,7 +22,6 @@ our @EXPORT_OK = qw(
     write_html_redirect
 );
 
-my $http = HTTP::Tiny->new( agent => 'http://search.elastic.co' );
 our $Opts = {};
 
 #===================================
@@ -69,7 +69,7 @@ sub build_chunked {
     my ($chunk_dir) = grep { -d and /\.chunked$/ } $build->children
         or die "Couldn't find chunk dir in <$build>";
 
-    finish_build($index->parent,$chunk_dir);
+    finish_build( $index->parent, $chunk_dir );
     $dest->rmtree;
     rename $chunk_dir, $dest
         or die "Couldn't move <$chunk_dir> to <$dest>: $!";
@@ -117,14 +117,14 @@ sub build_single {
             : die join "\n", @warn;
     }
 
-    finish_build($index->parent,$dest);
+    finish_build( $index->parent, $dest );
 
 }
 
 #===================================
 sub finish_build {
 #===================================
-    my ($source,$dest) = @_;
+    my ( $source, $dest ) = @_;
     $Opts->{template}->apply($dest);
 
     fcopy( 'resources/styles.css', $dest )
@@ -207,21 +207,19 @@ sub get_url {
 #===================================
     my $url   = shift;
     my $retry = 1;
-    my $res;
+    my ( $res, $error );
     while ( $retry-- ) {
-        $res = $http->get($url);
-        last if $res->{success};
+        eval {
+            $res = run( 'curl', '-s', '-A', 'http://search.elastic.co', $url );
+        }
+            && last;
+        $error = $@;
         sleep 1;
     }
-    if ( $res->{success} ) {
-        return decode_utf8( $res->{content} );
-    }
-    my $reason = $res->{reason};
-    if ( $res->{status} eq '599' ) {
-        $reason = $res->{content};
-    }
 
-    die "URL ($url) returned status ($res->{status}): $reason\n";
+    return $res if $res;
+
+    die "URL ($url) failed with $error\n";
 }
 
 #===================================
@@ -236,7 +234,8 @@ sub sha_for {
 #===================================
 sub timestamp {
 #===================================
-    my ( $sec, $min, $hour, $mday, $mon, $year ) = gmtime(@_ ? shift(): time());
+    my ( $sec, $min, $hour, $mday, $mon, $year )
+        = gmtime( @_ ? shift() : time() );
     $year += 1900;
     $mon++;
     sprintf "%04d-%02d-%02dT%02d:%02d:%02d+00:00", $year, $mon, $mday, $hour,

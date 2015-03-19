@@ -7,7 +7,7 @@ use Data::Dumper qw(Dumper);
 use Encode qw(decode_utf8 encode_utf8);
 use Digest::MD5 qw(md5_hex);
 use Path::Class qw(dir);
-use HTTP::Tiny();
+use ES::Util qw(get_url);
 
 #===================================
 sub new {
@@ -107,17 +107,10 @@ sub _init {
 sub _fetch_template {
 #===================================
     my $self = shift;
-    my $req  = HTTP::Tiny->new->get( $self->template_url );
     my $template;
     eval {
-              die "URL <"
-            . $self->template_url
-            . "> returned ["
-            . $req->{status} . "] "
-            . $req->{reason} . "\n"
-            unless $req->{success};
-
-        my $content = decode_utf8( $req->{content} );
+        my $content = eval { get_url( $self->template_url ); }
+            or die "URL <" . $self->template_url . "> returned [$@]\n";
 
         # remove title
         $content =~ s{<title>.*</title>}{}s
@@ -145,7 +138,7 @@ sub _fetch_template {
             or die "Couldn't add BODY tags\n";
 
         # last in page
-        $content =~s {
+        $content =~ s {
             </body>
         }{
             <!-- DOCS FINAL -->

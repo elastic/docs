@@ -12,8 +12,6 @@ BEGIN {
     do "web/base.pl" or die $!;
 }
 
-binmode( STDOUT, ':utf8' );
-
 use Proc::PID::File;
 die "$0 already running\n" if Proc::PID::File->running( dir => '.run' );
 
