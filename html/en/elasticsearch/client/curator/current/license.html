@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Q: Can I delete only certain data from within indices?</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Curator Reference" /><link rel="up" href="faq.html" title="Frequently Asked Questions" /><link rel="prev" href="_q_how_can_i_report_an_error_in_the_documentation.html" title="Q: How can I report an error in the documentation?" /><link rel="next" href="_contributing_to_curator.html" title="Contributing to Curator" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>License</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Curator Reference" /><link rel="up" href="about.html" title="About" /><link rel="prev" href="about-api.html" title="Application Program Interface (API)" /><link rel="next" href="site-corrections.html" title="Site Corrections" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -278,49 +278,27 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Curator Reference</a></span> » <span class="breadcrumb-link"><a href="faq.html">Frequently Asked Questions </a></span> » <span class="breadcrumb-node">Q: Can I delete only certain data from within indices?</span></div><div class="navheader"><span class="prev"><a href="_q_how_can_i_report_an_error_in_the_documentation.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Curator Reference</a></span> » <span class="breadcrumb-link"><a href="about.html">About </a></span> » <span class="breadcrumb-node">License</span></div><div class="navheader"><span class="prev"><a href="about-api.html">
               « 
-              Q: How can I report an error in the documentation?</a>
+              Application Program Interface (API)</a>
            
         </span><span class="next">
            
-          <a href="_contributing_to_curator.html">Contributing to Curator 
+          <a href="site-corrections.html">Site Corrections
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="_q_can_i_delete_only_certain_data_from_within_indices"></a>Q: Can I delete only certain data from within indices?<a href="https://github.com/elastic/curator/edit/master/docs/asciidoc/misc/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="chapter"><a href="_q_how_can_i_report_an_error_in_the_documentation.html">Q: How can I report an error in the documentation?</a></span></dt><dt><span class="chapter"><a href="_q_can_i_delete_only_certain_data_from_within_indices.html">Q: Can I delete only certain data from within indices?</a></span></dt></dl></div><h3><a id="_a_it_8217_s_complicated"></a>A: It’s complicated<a href="https://github.com/elastic/curator/edit/master/docs/asciidoc/misc/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><h4><a id="_tl_dr_no_curator_can_only_delete_entire_indices"></a>TL;DR: No. Curator can only delete entire indices.<a href="https://github.com/elastic/curator/edit/master/docs/asciidoc/misc/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><h4><a id="_full_answer"></a>Full answer:<a href="https://github.com/elastic/curator/edit/master/docs/asciidoc/misc/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>As a thought exercise, think of Elasticsearch indices as being like databases,
-or tablespaces within a database. If you had hundreds of millions of rows to
-delete from your database, would you run a separate
-<code class="literal">DELETE from TABLE where date&lt;YYYY.MM.dd</code> to assemble hundreds of millions of
-individual delete operations every day, or would you partition your tables in a
-way that you could simply run <code class="literal">DROP table TABLENAME.YYYY.MM.dd</code>? The strain on
-your database would be astronomical on the former and next to nothing on the
-latter. Elasticsearch works much the same way. While Elasticsearch <span class="emphasis"><em>can</em></span>
-technically do both methods, for use-cases with time-series data (like logging),
-we recommend dropping entire indices vs. the extremely I/O expensive search and
-delete method. Curator was created to help fill that need.</p><p>While you can store different types within different indices (e.g.
-syslog-2014.05.05, apache-2015.05.06), this gets very expensive, very quickly in
-a totally different way. Each shard in Elasticsearch is a Lucene index. Each
-index requires a portion of the heap to exist and be kept current. If you have 3
-daily indices with 5 primary shards each, you suddenly have reduced the
-available heap space for shard management by a factor of 3, having gone from 5
-shards to 15, <span class="emphasis"><em>per index,</em></span> not counting multiple indexes per day. The ways to
-mitigate this (if you pursue this route) include massive daily indexing boxes
-and using shard allocation/routing to move indices to specific members of the
-cluster where they can have less effect; keeping fewer days of information;
-having more nodes in your cluster, and so forth.</p><h4><a id="_conclusion"></a>Conclusion:<a href="https://github.com/elastic/curator/edit/master/docs/asciidoc/misc/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>While it may be desirable to have different life-cycles for your data, sometimes
-it’s just easier and cheaper to store everything as long as the longest
-life-cycle you wish to maintain.</p><h4><a id="_post_script"></a>Post-script:<a href="https://github.com/elastic/curator/edit/master/docs/asciidoc/misc/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Even though it is neither recommended*, nor best practices, it is still possible
-to perform these search &amp; delete operations yourself, using the Elasticsearch
-API. Curator will not be modified to perform operations such as these, however.
-Curator is meant to manage at the index level, rather than the data level.</p><p>*There are reasons Elasticsearch does not recommend this, particularly for
-time-series data. For more information read
-<a class="ulink" href="http://blog.mikemccandless.com/2011/02/visualizing-lucenes-segment-merges.html" target="_top">http://blog.mikemccandless.com/2011/02/visualizing-lucenes-segment-merges.html</a>
-and watch what happens to your segments when you delete data.</p><p></p></div><div class="navfooter"><span class="prev"><a href="_q_how_can_i_report_an_error_in_the_documentation.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="license"></a>License<a href="https://github.com/elastic/curator/edit/master/docs/asciidoc/misc/about.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="chapter"><a href="_origin.html">Origin</a></span></dt><dt><span class="chapter"><a href="_features.html">Features</a></span></dt><dt><span class="chapter"><a href="about-cli.html">Command-Line Interface (CLI)</a></span></dt><dt><span class="chapter"><a href="about-api.html">Application Program Interface (API)</a></span></dt><dt><span class="chapter"><a href="license.html">License</a></span></dt><dt><span class="chapter"><a href="site-corrections.html">Site Corrections</a></span></dt></dl></div><p>Copyright 2011–2015 Elastic <a class="ulink" href="http://elastic.co" target="_top">http://elastic.co</a> and contributors.</p><p>Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p><pre class="literallayout">http://www.apache.org/licenses/LICENSE-2.0</pre><p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.</p></div><div class="navfooter"><span class="prev"><a href="about-api.html">
               « 
-              Q: How can I report an error in the documentation?</a>
+              Application Program Interface (API)</a>
            
         </span><span class="next">
            
-          <a href="_contributing_to_curator.html">Contributing to Curator 
+          <a href="site-corrections.html">Site Corrections
                »
             </a></span></div>
 <!-- end body -->
