@@ -307,7 +307,7 @@ the <span class="emphasis"><em>coordinating node</em></span>, which combines the
 This allows frequently used (and potentially heavy) search requests to return
 results almost instantly. The query cache is a very good fit for the logging
 use case, where only the most recent index is being actively updated — results from older indices will be served directly from the cache.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>For now, the query cache will only cache the results of search requests
-where <a class="link" href="search-request-search-type.html#count" title="Count"><code class="literal">?search_type=count</code></a>, so it will not cache <code class="literal">hits</code>,
+where <code class="literal">size=0</code>, so it will not cache <code class="literal">hits</code>,
 but it will cache <code class="literal">hits.total</code>,  <a class="link" href="search-aggregations.html" title="Aggregations">aggregations</a>, and
 <a class="link" href="search-suggesters.html" title="Suggesters">suggestions</a>.</p><p>Queries that use <code class="literal">now</code> (see <a class="xref" href="mapping-date-format.html#date-math" title="Date Mathedit">the section called “Date Math<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/date-format.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a>) cannot be cached.</p></div></div><h3><a id="_cache_invalidation"></a>Cache invalidation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/query-cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The cache is smart — it keeps the same <span class="emphasis"><em>near real-time</em></span> promise as uncached
 search.</p><p>Cached results are invalidated automatically whenever the shard refreshes, but
@@ -326,8 +326,9 @@ index as follows:</p><pre class="programlisting prettyprint lang-json">curl -XPU
 <a class="link" href="indices-update-settings.html" title="Update Indices Settings"><code class="literal">update-settings</code></a> API:</p><pre class="programlisting prettyprint lang-json">curl -XPUT localhost:9200/my_index/_settings -d'
 { "index.cache.query.enable": true }
 '</pre><h3><a id="_enabling_caching_per_request"></a>Enabling caching per request<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/query-cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">query_cache</code> query-string parameter can be used to enable or disable
-caching on a <span class="strong"><strong>per-query</strong></span> basis.  If set, it overrides the index-level setting:</p><pre class="programlisting prettyprint lang-json">curl 'localhost:9200/my_index/_search?search_type=count&amp;query_cache=true' -d'
+caching on a <span class="strong"><strong>per-query</strong></span> basis.  If set, it overrides the index-level setting:</p><pre class="programlisting prettyprint lang-json">curl 'localhost:9200/my_index/_search?query_cache=true' -d'
 {
+  "size": 0,
   "aggs": {
     "popular_colors": {
       "terms": {
