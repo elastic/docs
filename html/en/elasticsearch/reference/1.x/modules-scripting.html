@@ -443,10 +443,12 @@ but they will be enabled/disabled according to fine-grained settings
 specified in <code class="literal">elasticsearch.yml</code>. <span class="coming">
       [<span class="version">coming in 1.6.0</span>]
       <span class="detail">Coming in 1.6.0. <code class="literal">mustache</code> scripts were previously always on regardless of whether dynamic scripts were enabled or not.</span></span></p></div></div><p>It is also possible to control which operations can execute scripts. The
-supported operations are:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Value </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">aggs</code></p></td><td align="left" valign="top"><p>Aggregations (wherever they may be used)</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">mapping</code></p></td><td align="left" valign="top"><p>Mappings (script transform feature)</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">search</code></p></td><td align="left" valign="top"><p>Search api, Percolator api and Suggester api (e.g filters, script_fields)</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">update</code></p></td><td align="left" valign="top"><p>Update api</p></td></tr></tbody></table></div><p>The following example disables scripting for <code class="literal">update</code> and <code class="literal">mapping</code> operations,
+supported operations are:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Value </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">aggs</code></p></td><td align="left" valign="top"><p>Aggregations (wherever they may be used)</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">mapping</code></p></td><td align="left" valign="top"><p>Mappings (script transform feature)</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">search</code></p></td><td align="left" valign="top"><p>Search api, Percolator api and Suggester api (e.g filters, script_fields)</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">update</code></p></td><td align="left" valign="top"><p>Update api</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">plugin</code></p></td><td align="left" valign="top"><p>Any plugin that makes use of scripts under the generic <code class="literal">plugin</code> category</p></td></tr></tbody></table></div><p>Plugins can also define custom operations that they use scripts for instead
+of using the generic <code class="literal">plugin</code> category. Those operations can be referred to
+in the following form: <code class="literal">${pluginName}_${operation}</code>.</p><p>The following example disables scripting for <code class="literal">update</code> and <code class="literal">mapping</code> operations,
 regardless of the script source, for any engine. Scripts can still be
-executed from sandboxed languages as part of <code class="literal">aggregations</code> and <code class="literal">search</code>
-operations though, as the above defaults still get applied.</p><pre class="programlisting prettyprint lang-yaml">script.update: off
+executed from sandboxed languages as part of <code class="literal">aggregations</code>, <code class="literal">search</code>
+and plugins execution though, as the above defaults still get applied.</p><pre class="programlisting prettyprint lang-yaml">script.update: off
 script.mapping: off</pre><p>Generic settings get applied in order, operation based ones have precedence
 over source based ones. Language specific settings are supported too. They
 need to be prefixed with the <code class="literal">script.engine.&lt;engine&gt;</code> prefix and have
@@ -454,14 +456,17 @@ precedence over any other generic settings.</p><pre class="programlisting pretty
 script.engine.groovy.file.mapping: on
 script.engine.groovy.file.search: on
 script.engine.groovy.file.update: on
+script.engine.groovy.file.plugin: on
 script.engine.groovy.indexed.aggs: on
 script.engine.groovy.indexed.mapping: off
 script.engine.groovy.indexed.search: on
 script.engine.groovy.indexed.update: off
+script.engine.groovy.indexed.plugin: off
 script.engine.groovy.inline.aggs: on
 script.engine.groovy.inline.mapping: off
 script.engine.groovy.inline.search: off
-script.engine.groovy.inline.update: off</pre><h3><a id="_default_scripting_language"></a>Default Scripting Language<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/modules/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The default scripting language (assuming no <code class="literal">lang</code> parameter is provided) is
+script.engine.groovy.inline.update: off
+script.engine.groovy.inline.plugin: off</pre><h3><a id="_default_scripting_language"></a>Default Scripting Language<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/modules/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The default scripting language (assuming no <code class="literal">lang</code> parameter is provided) is
 <code class="literal">groovy</code>. In order to change it, set the <code class="literal">script.default_lang</code> to the
 appropriate language.</p><h3><a id="_groovy_sandboxing"></a>Groovy Sandboxing<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/modules/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elasticsearch sandboxes Groovy scripts that are compiled and executed in order
 to ensure they don’t perform unwanted actions. There are a number of options
