@@ -128,7 +128,7 @@ sub _fetch_template {
         $content =~ s{
             <div \s+ id="pageheader"
             .+?
-            (<!--.Footer.-->)
+            (<div \s+ id="rtpcontainer")
         }{
             <!-- DOCS PREBODY -->
             <!-- DOCS BODY -->
