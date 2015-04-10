@@ -261,6 +261,8 @@ sub push_changes {
 #===================================
     my $build_dir = shift;
 
+    $build_dir->file('revision.txt')->spew( ES::Repo->all_repo_branches );
+
     run qw( git add -A), $build_dir;
 
     if ( run qw(git status -s -- ), $build_dir ) {

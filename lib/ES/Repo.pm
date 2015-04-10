@@ -174,6 +174,31 @@ sub edit_url {
 }
 
 #===================================
+sub all_repo_branches {
+#===================================
+    my $class = shift;
+    my @out;
+    for ( sort keys %Repos ) {
+        my $repo     = $Repos{$_};
+        my $git_dir  = $repo->git_dir;
+        my @branches = split /\n/,
+            run( 'git', '--git-dir', $git_dir, 'branch', '-vv' );
+
+        push @out, "Repo: " . $repo->name;
+        push @out, '-' x 80;
+
+        for my $line (@branches) {
+            $line =~ s/^\*/ /;
+            next unless $line =~ /^\s+_/;
+            push @out, $line;
+        }
+        push @out, '';
+
+    }
+    return join "\n", @out;
+}
+
+#===================================
 sub name     { shift->{name} }
 sub dir      { shift->{dir} }
 sub git_dir  { shift->{git_dir} }
