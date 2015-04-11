@@ -120,7 +120,7 @@ sub build {
                     version   => $branch,
                     multi     => $multi,
                     edit_url  => $edit_url,
-                    template => $self->template
+                    template  => $self->template
                 );
             }
             $repo->mark_done( $src_path, $branch );
@@ -158,7 +158,7 @@ sub build {
     $self->remove_old_branches;
 
     return {
-        title => $self->title . ( $versions ? " -- $current" : '' ),
+        title => $self->title . ( $versions ? " [$current\\]" : '' ),
         url      => $self->prefix . '/current/index.html',
         versions => $versions,
     };

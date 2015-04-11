@@ -137,7 +137,7 @@ sub build_all {
     build_entries( $build_dir, $toc, @$contents );
 
     say "Writing main TOC";
-    $toc->write($build_dir);
+    $toc->write( $build_dir, 0 );
 
     say "Writing extra HTML redirects";
     for ( @{ $Conf->{redirects} } ) {

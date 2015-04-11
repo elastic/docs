@@ -26,11 +26,12 @@ sub add_entry {
 #===================================
 sub write {
 #===================================
-    my ( $self, $dir ) = @_;
+    my ( $self, $dir, $indent ) = @_;
+    $indent = 1 unless defined $indent;
 
     my $index = $dir->file('index.html');
 
-    my $adoc = join "\n", "= " . $self->title, '', $self->render(1);
+    my $adoc = join "\n", "= " . $self->title, '', $self->render($indent);
     my $adoc_file = $dir->file('index.asciidoc');
     $adoc_file->spew( iomode => '>:utf8', $adoc );
 
@@ -47,19 +48,21 @@ sub render {
     my ( $self, $indent ) = @_;
     my @adoc;
 
-    my $prefix = ' ' . ( '*' x $indent ) . ' ';
+    my $prefix = $indent ? ' ' . ( '*' x $indent ) . ' ' : "[float]\n=== ";
 
     for my $entry ( $self->entries ) {
         if ( ref($entry) eq 'ES::Toc' ) {
             push @adoc, $prefix . $entry->{title};
+            push @adoc, '' unless $indent;
             push @adoc, $entry->render( $indent + 1 );
+            push @adoc, '' unless $indent;
         }
         else {
             push @adoc, $prefix . "link:$entry->{url}" . "[$entry->{title}]";
             if ( $entry->{versions} ) {
-                $adoc[-1]
-                    .= " --  link:$entry->{versions}" . "[other versions]";
+                $adoc[-1] .= " -- link:$entry->{versions}" . "[other versions]";
             }
+            push @adoc, '' unless $indent;
         }
     }
     return @adoc;
