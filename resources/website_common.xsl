@@ -27,12 +27,30 @@
 
   <xsl:param name="generate.toc"></xsl:param>
 
+
   <!-- Edit me links -->
 
+  <xsl:template match="processing-instruction('edit_url')"/>
   <xsl:template match="ulink[@role='edit_me']">
-    <xsl:if test="$local.edit_url">
-        <xsl:variable name="url" select="concat($local.edit_url,substring(attribute::url,string-length($local.root_dir)+1))" />
-        <a href="{$url}" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>
+    <xsl:variable name="custom_edit_url">
+        <xsl:value-of select="normalize-space(preceding::processing-instruction('edit_url')[1])"/>
+    </xsl:variable>
+
+    <xsl:variable name="edit_url">
+        <xsl:choose>
+            <xsl:when test="$custom_edit_url != ''">
+                <xsl:value-of select="$custom_edit_url" />
+            </xsl:when>
+            <xsl:when test="$local.edit_url">
+                <xsl:value-of select="concat($local.edit_url,substring(attribute::url,string-length($local.root_dir)+1))" />
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="''" />
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:variable>
+    <xsl:if test="$edit_url != ''">
+        <a href="{$edit_url}" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>
     </xsl:if>
   </xsl:template>
 
