@@ -353,7 +353,70 @@ sum of total term frequencies (the sum of total term frequencies of
       [<span class="version">coming in 2.0</span>]
       <span class="detail">Coming in 2.0.</span></span><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/termvectors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Setting <code class="literal">dfs</code> to <code class="literal">true</code> (default is <code class="literal">false</code>) will return the term statistics
 or the field statistics of the entire index, and not just at the shard. Use it
-with caution as distributed frequencies can have a serious performance impact.</p><h3><a id="_behaviour"></a>Behaviour<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/termvectors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The term and field statistics are not accurate. Deleted documents
+with caution as distributed frequencies can have a serious performance impact.</p><h4><a id="_terms_filtering_phrase_revisionflag_changed_revision_coming_in_2_0_coming_in_2_0_phrase"></a>Terms Filtering <span class="coming">
+      [<span class="version">coming in 2.0</span>]
+      <span class="detail">Coming in 2.0.</span></span><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/termvectors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>With the parameter <code class="literal">filter</code>, the terms returned could also be filtered based
+on their tf-idf scores. This could be useful in order find out a good
+characteristic vector of a document. This feature works in a similar manner to
+the <a class="link" href="query-dsl-mlt-query.html#mlt-query-term-selection" title="Term Selection Parametersedit">second phase</a> of the
+<a class="link" href="query-dsl-mlt-query.html" title="More Like This Query">More Like This Query</a>. See <a class="link" href="docs-termvectors.html#docs-termvectors-terms-filtering" title="Example 5edit">example 5</a>
+for usage.</p><p>The following sub-parameters are supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">max_num_terms</code>
+</p>
+</td><td valign="top">
+<p>
+  Maximum number of terms that must be returned per field. Defaults to <code class="literal">25</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">min_term_freq</code>
+</p>
+</td><td valign="top">
+<p>
+  Ignore words with less than this frequency in the source doc. Defaults to <code class="literal">1</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">max_term_freq</code>
+</p>
+</td><td valign="top">
+<p>
+  Ignore words with more than this frequency in the source doc. Defaults to unbounded.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">min_doc_freq</code>
+</p>
+</td><td valign="top">
+<p>
+  Ignore terms which do not occur in at least this many docs. Defaults to <code class="literal">1</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">max_doc_freq</code>
+</p>
+</td><td valign="top">
+<p>
+  Ignore words which occur in more than this many docs. Defaults to unbounded.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">min_word_length</code>
+</p>
+</td><td valign="top">
+<p>
+  The minimum word length below which words will be ignored. Defaults to <code class="literal">0</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">max_word_length</code>
+</p>
+</td><td valign="top">
+<p>
+  The maximum word length above which words will be ignored. Defaults to unbounded (<code class="literal">0</code>).
+</p>
+</td></tr></tbody></table></div><h3><a id="_behaviour"></a>Behaviour<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/termvectors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The term and field statistics are not accurate. Deleted documents
 are not taken into account. The information is only retrieved for the
 shard the requested document resides in, unless <code class="literal">dfs</code> is set to <code class="literal">true</code>.
 The term and field statistics are therefore only useful as relative measures
@@ -524,6 +587,60 @@ vectors, the term vectors will be re-generated.</p><pre class="programlisting pr
        }
     }
   }
+}</pre><h3><a id="docs-termvectors-terms-filtering"></a>Example 5<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/termvectors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Finally, the terms returned could be filtered based on their tf-idf scores. In
+the example below we obtain the three most "interesting" keywords from the
+artificial document having the given "plot" field value. Additionally, we are
+asking for distributed frequencies to obtain more accurate results. Notice
+that the keyword "Tony" or any stop words are not part of the response, as
+their tf-idf must be too low.</p><pre class="programlisting prettyprint lang-js">GET /imdb/movies/_termvectors
+{
+    "doc": {
+      "plot": "When wealthy industrialist Tony Stark is forced to build an armored suit after a life-threatening incident, he ultimately decides to use its technology to fight against evil."
+    },
+    "term_statistics" : true,
+    "field_statistics" : true,
+    "dfs": true,
+    "positions": false,
+    "offsets": false,
+    "filter" : {
+      "max_num_terms" : 3,
+      "min_term_freq" : 1,
+      "min_doc_freq" : 1
+    }
+}</pre><p>Response:</p><pre class="programlisting prettyprint lang-js">{
+   "_index": "imdb",
+   "_type": "movies",
+   "_version": 0,
+   "found": true,
+   "term_vectors": {
+      "plot": {
+         "field_statistics": {
+            "sum_doc_freq": 3384269,
+            "doc_count": 176214,
+            "sum_ttf": 3753460
+         },
+         "terms": {
+            "armored": {
+               "doc_freq": 27,
+               "ttf": 27,
+               "term_freq": 1,
+               "score": 9.74725
+            },
+            "industrialist": {
+               "doc_freq": 88,
+               "ttf": 88,
+               "term_freq": 1,
+               "score": 8.590818
+            },
+            "stark": {
+               "doc_freq": 44,
+               "ttf": 47,
+               "term_freq": 1,
+               "score": 9.272792
+            }
+         }
+      }
+   }
 }</pre></div><div class="navfooter"><span class="prev"><a href="docs-delete-by-query.html">
               « 
               Delete By Query API</a>
