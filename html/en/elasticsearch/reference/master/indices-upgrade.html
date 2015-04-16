@@ -320,14 +320,31 @@ with previous formats.</p><h3><a id="_start_an_upgrade"></a>Start an upgrade<a h
 single shard per node at a time.  It also is not allowed to run at the same
 time as optimize.</p></div></div><p>This call will block until the upgrade is complete. If the http connection
 is lost, the request will continue in the background, and
-any new requests will block until the previous upgrade is complete.</p><h3><a id="_check_upgrade_status"></a>Check upgrade status<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Use a <code class="literal">GET</code> request to monitor how much of an index is upgraded.  This
-can also be used prior to starting an upgrade to identify which indices
-you want to upgrade at the same time.</p><pre class="programlisting prettyprint lang-sh">curl 'http://localhost:9200/twitter/_upgrade?pretty&amp;human'</pre><pre class="programlisting prettyprint lang-js">{
+any new requests will block until the previous upgrade is complete.</p><h4><a id="upgrade-parameters"></a>Request Parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">upgrade</code> API accepts the following request parameters:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">only_ancient_segments</code>
+</p>
+</td><td valign="top">
+<p>
+If true, only very old segments (from a
+previous Lucene major release) will be upgraded.  While this will do
+the minimal work to ensure the next major release of Elasticsearch can
+read the segments, it’s dangerous because it can leave other very old
+segments in sub-optimal formats.  Defaults to <code class="literal">false</code>.
+</p>
+</td></tr></tbody></table></div><h3><a id="_check_upgrade_status"></a>Check upgrade status<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Use a <code class="literal">GET</code> request to monitor how much of an index is upgraded.  This
+can also be used prior to starting an upgrade to identify which
+indices you want to upgrade at the same time.</p><p>The <code class="literal">ancient</code> byte values that are returned indicate total bytes of
+segments whose version is extremely old (Lucene major version is
+different from the current version), showing how much upgrading is
+necessary when you run with <code class="literal">only_ancient_segments=true</code>.</p><pre class="programlisting prettyprint lang-sh">curl 'http://localhost:9200/twitter/_upgrade?pretty&amp;human'</pre><pre class="programlisting prettyprint lang-js">{
    "twitter": {
       "size": "21gb",
       "size_in_bytes": "21000000000",
       "size_to_upgrade": "10gb",
       "size_to_upgrade_in_bytes": "10000000000"
+      "size_to_upgrade_ancient": "1gb",
+      "size_to_upgrade_ancient_in_bytes": "1000000000"
    }
 }</pre></div><div class="navfooter"><span class="prev"><a href="indices-optimize.html">
               « 
