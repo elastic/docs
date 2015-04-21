@@ -394,78 +394,7 @@
         }
     }
 }</pre><p>The <code class="literal">terms</code> filter is also aliased with <code class="literal">in</code> as the filter name for
-simpler usage.</p><h4><a id="_execution_mode"></a>Execution Mode<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filters/terms-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The way terms filter executes is by iterating over the terms provided
-and finding matches docs (loading into a bitset) and caching it.
-Sometimes, we want a different execution model that can still be
-achieved by building more complex queries in the DSL, but we can support
-them in the more compact model that terms filter provides.</p><p>The <code class="literal">execution</code> option now has the following options :</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">plain</code>
-</p>
-</td><td valign="top">
-<p>
-    The default. Works as today. Iterates over all the terms,
-    building a bit set matching it, and filtering. The total filter is
-    cached.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">fielddata</code>
-</p>
-</td><td valign="top">
-<p>
-    Generates a terms filters that uses the fielddata cache to
-    compare terms.  This execution mode is great to use when filtering
-    on a field that is already loaded into the fielddata cache from
-    aggregating, sorting, or index warmers.  When filtering on
-    a large number of terms, this execution can be considerably faster
-    than the other modes.  The total filter is not cached unless
-    explicitly configured to do so.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">bool</code>
-</p>
-</td><td valign="top">
-<p>
-    Generates a term filter (which is cached) for each term, and
-    wraps those in a bool filter. The bool filter itself is not cached as it
-    can operate very quickly on the cached term filters.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">and</code>
-</p>
-</td><td valign="top">
-<p>
-    Generates a term filter (which is cached) for each term, and
-    wraps those in an and filter. The and filter itself is not cached.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">or</code>
-</p>
-</td><td valign="top">
-<p>
-    Generates a term filter (which is cached) for each term, and
-    wraps those in an or filter. The or filter itself is not cached.
-    Generally, the <code class="literal">bool</code> execution mode should be preferred.
-</p>
-</td></tr></tbody></table></div><p>If you don’t want the generated individual term queries to be cached,
-you can use: <code class="literal">bool_nocache</code>, <code class="literal">and_nocache</code> or <code class="literal">or_nocache</code> instead, but
-be aware that this will affect performance.</p><p>The "total" terms filter caching can still be explicitly controlled
-using the <code class="literal">_cache</code> option. Note the default value for it depends on the
-execution value.</p><p>For example:</p><pre class="programlisting prettyprint lang-js">{
-    "constant_score" : {
-        "filter" : {
-            "terms" : {
-                "user" : ["kimchy", "elasticsearch"],
-                "execution" : "bool",
-                "_cache": true
-            }
-        }
-    }
-}</pre><h4><a id="_caching_16"></a>Caching<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filters/terms-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The result of the filter is cached if there is evidence of reuse. It is
+simpler usage.</p><h4><a id="_caching_16"></a>Caching<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filters/terms-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The result of the filter is cached if there is evidence of reuse. It is
 possible to enable caching explicitely by setting <code class="literal">_cache</code> to <code class="literal">true</code> and
 to disable caching by setting <code class="literal">_cache</code> to <code class="literal">false</code>.</p><h4><a id="_terms_lookup_mechanism"></a>Terms lookup mechanism<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filters/terms-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When it’s needed to specify a <code class="literal">terms</code> filter with a lot of terms it can
 be beneficial to fetch those term values from a document in an index. A
