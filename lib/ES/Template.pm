@@ -83,7 +83,7 @@ sub _init {
 
     my $created = $old ? $old->basename : 0;
     $created =~ s/\.html//;
-    if ( not $force and time - $created < 24 * 60 * 60 ) {
+    if ( not $force and time - $created < 20 * 60 ) {
         $new = $old;
     }
     else {
