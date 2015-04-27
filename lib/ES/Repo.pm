@@ -189,7 +189,14 @@ sub all_repo_branches {
 
         for my $line (@branches) {
             $line =~ s/^\*/ /;
-            next unless $line =~ /^\s+_/;
+            next unless $line =~ s{^\s+_}{  };
+            $line =~ s/
+                ^(  \s+
+                    \S+   \s+       # branch
+                    \w{7} \s        # sha
+                 )
+                 \[[^\]]+\]         # remote branch
+             /$1/x;
             push @out, $line;
         }
         push @out, '';
