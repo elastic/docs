@@ -489,6 +489,11 @@ The document field/property name containing the document parent. To specify a co
 </span></dt><dd>
 The document field/property name containing the document version. To specify a constant, use the <code class="literal">&lt;CONSTANT&gt;</code> format.
 </dd><dt><span class="term">
+<code class="literal">es.mapping.version.type</code> (default depends on <code class="literal">es.mapping.version</code>)
+</span></dt><dd>
+Indicates the <a class="ulink" href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-index_.html#_version_types" target="_top">type of versioning</a> used.
+If <code class="literal">es.mapping.version</code> is undefined (default), its value is unspecified. If <code class="literal">es.mapping.version</code> is specified, its value becomes <code class="literal">external</code>.
+</dd><dt><span class="term">
 <code class="literal">es.mapping.routing</code> (default none)
 </span></dt><dd>
 The document field/property name containing the document routing. To specify a constant, use the <code class="literal">&lt;CONSTANT&gt;</code> format.
@@ -500,11 +505,37 @@ The document field/property name containing the document time-to-live. To specif
 <code class="literal">es.mapping.timestamp</code> (default none)
 </span></dt><dd>
 The document field/property name containing the document timestamp. To specify a constant, use the <code class="literal">&lt;CONSTANT&gt;</code> format.
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Added in 2.1.</p></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.mapping.date.rich</code> (default true)
+</span></dt><dd>
+Whether to create a <span class="emphasis"><em>rich</em></span> <code class="literal">Date</code> like object for <code class="literal">Date</code> fields in Elasticsearch or returned them as primitives (<code class="literal">String</code> or <code class="literal">long</code>). By default this is
+true. The actual object type is based on the library used; noteable exception being Map/Reduce which provides no built-in <code class="literal">Date</code> object and as such
+<code class="literal">LongWritable</code> and <code class="literal">Text</code> are returned regardless of this setting.
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Added in 2.1.</p></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.mapping.include</code> (default none)
+</span></dt><dd>
+Field/property to be included in final the document. Useful for <span class="emphasis"><em>extracting</em></span> the needed data from entities. The syntax is similar
+to that of Elasticsearch <a class="ulink" href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-source-filtering.html" target="_top">include/exclude</a>.
+Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included.
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Added in 2.1.</p></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.mapping.exclude</code> (default none)
+</span></dt><dd>
+Field/property to be excluded in final the document. Useful for <span class="emphasis"><em>eliminating</em></span> unneeded data from entities. The syntax is similar
+to that of Elasticsearch <a class="ulink" href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-source-filtering.html" target="_top">include/exclude</a>.
+Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are excluded
 </dd></dl></div><p>For example:</p><pre class="programlisting prettyprint lang-ini"># extracting the id from the field called 'uuid'
 es.mapping.id = uuid
 
 # specifying a parent with id '123'
-es.mapping.parent = &lt;123&gt;</pre><h4><a id="_metadata"></a>Metadata<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.Beta/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+es.mapping.parent = &lt;123&gt;
+
+# combine include / exclude for complete control
+# include
+es.mapping.include = u*, foo.*
+# exclude
+es.mapping.exclude = *.description</pre><p>Using the configuration above, each entry will have only its top-level fields, starting with u and nested fields under <code class="literal">foo</code> included
+in the document with the exception of any nested field named <code class="literal">description</code>. Additionally the document parent will be <code class="literal">123</code> while the
+document id extracted from field <code class="literal">uuid</code>.</p><h4><a id="_metadata"></a>Metadata<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.Beta/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">es.read.metadata</code> (default false)
 </span></dt><dd>
 Whether to include the document metadata (such as id and version) in the results or not (default).
@@ -528,11 +559,11 @@ Script language. By default, no value is specified applying the node configurati
 Script parameters (if any). The document (currently read) field/property who’s value is used. To specify a constant, use the <code class="literal">&lt;CONSTANT&gt;</code> format.
 Multiple values can be specified through commas (<code class="literal">,</code>)
 </dd></dl></div><p>For example:</p><pre class="programlisting prettyprint lang-ini"># specifying 2 parameters, one extracting the value from field 'number', the other containing the value '123':
-es.update.params = param1:number,param2:&lt;123&gt;</pre><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+es.update.script.params = param1:number,param2:&lt;123&gt;</pre><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">es.update.script.params.json</code>
 </span></dt><dd>
 Script parameters specified in <code class="literal">raw</code>, JSON format. The specified value is passed as is, without any further processing or filtering. Typically used for migrating existing update scripts.
-</dd></dl></div><p>For example:</p><pre class="programlisting prettyprint lang-ini">es.update.params.json = {"param1":1, "param2":2}</pre><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+</dd></dl></div><p>For example:</p><pre class="programlisting prettyprint lang-ini">es.update.script.params.json = {"param1":1, "param2":2}</pre><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">es.update.retry.on.conflict</code> (default 0)
 </span></dt><dd>
 How many times an update to a document is retried in case of conflict. Useful in concurrent environments.
@@ -569,7 +600,11 @@ an exception is thrown, halting the job, if a field is missing
    in the Elasticsearch mapping specified; did you mean [name, location.address]?</pre><h4><a id="_network"></a>Network<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.Beta/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">es.nodes.discovery</code> (default true)
 </span></dt><dd>
-Whether to discovery the nodes within the Elasticsearch cluster or only to use the ones given in <code class="literal">es.nodes</code> for metadata queries. Note that when reading and writing, elasticsearch-hadoop uses the target index shards (and their hosting nodes), regardless of this setting.
+Whether to discovery the nodes within the Elasticsearch cluster or only to use the ones given in <code class="literal">es.nodes</code> for metadata queries. Note that this setting only applies during start-up; afterwards when reading and writing, elasticsearch-hadoop uses the target index shards (and their hosting nodes) unless <code class="literal">es.nodes.client.only</code> is enabled.
+</dd><dt><span class="term">
+<code class="literal">es.nodes.client.only</code> (default false)
+</span></dt><dd>
+Whether to use Elasticsearch <a class="ulink" href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-node.html#modules-node" target="_top">client nodes</a> (or <span class="emphasis"><em>load-balancers</em></span>). When enabled, elasticsearch-hadoop will route <span class="emphasis"><em>all</em></span> its requests (after nodes discovery, if enabled) through the <span class="emphasis"><em>client</em></span> nodes within the cluster. Note this typically significantly reduces the node parallelism and thus it is disabled by default.
 </dd><dt><span class="term">
 <code class="literal">es.http.timeout</code> (default 1m)
 </span></dt><dd>
@@ -577,7 +612,7 @@ Timeout for HTTP/REST connections to Elasticsearch.
 </dd><dt><span class="term">
 <code class="literal">es.http.retries</code> (default 3)
 </span></dt><dd>
-Number of retries for estabilishing a (broken) http connection. The retries are applied for each <span class="emphasis"><em>conversation</em></span> with an Elasticsearch node. Once the retries are depleted, the connection will automatically be re-reouted to the next
+Number of retries for establishing a (broken) http connection. The retries are applied for each <span class="emphasis"><em>conversation</em></span> with an Elasticsearch node. Once the retries are depleted, the connection will automatically be re-reouted to the next
 available Elasticsearch node (based on the declaration of <code class="literal">es.nodes</code>, followed by the discovered nodes - if enabled).
 </dd><dt><span class="term">
 <code class="literal">es.scroll.keepalive</code> (default 10m)
@@ -591,7 +626,7 @@ Number of results/items returned by each individual scroll.
 <code class="literal">es.action.heart.beat.lead</code> (default 15s)
 </span></dt><dd>
 The lead to task timeout before elasticsearch-hadoop informs Hadoop the task is still running to prevent task restart.
-</dd></dl></div><h4><a id="_basic_authentication"></a>Basic Authentication<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.Beta/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Added in 2.1.</p></div></div><h4><a id="_basic_authentication"></a>Basic Authentication<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.Beta/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">es.net.http.auth.user</code>
 </span></dt><dd>
 Basic Authentication user name
@@ -599,7 +634,7 @@ Basic Authentication user name
 <code class="literal">es.net.http.auth.pass</code>
 </span></dt><dd>
 Basic Authentication password
-</dd></dl></div><h4><a id="_ssl"></a>SSL<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.Beta/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Added in 2.1.</p></div></div><h4><a id="_ssl"></a>SSL<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.Beta/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">es.net.ssl</code> (default false)
 </span></dt><dd>
 Enable SSL
