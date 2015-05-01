@@ -98,31 +98,42 @@ sub build {
         if ($changed) {
             say "   - Building";
             $repo->checkout( $src_path, $branch );
-            if ( $self->single ) {
-                $branch_dir->rmtree;
-                $branch_dir->mkpath;
-                build_single(
-                    $repo->dir->file($index),
-                    $branch_dir,
-                    version  => $branch,
-                    multi    => $multi,
-                    edit_url => $edit_url,
-                    toc      => $add_toc,
-                    template => $self->template
-                );
-            }
-            else {
-                build_chunked(
-                    $repo->dir->file($index),
-                    $branch_dir,
-                    chunk     => $chunk,
-                    toc_level => $toc_level,
-                    version   => $branch,
-                    multi     => $multi,
-                    edit_url  => $edit_url,
-                    template  => $self->template
-                );
-            }
+
+            eval {
+                if ( $self->single ) {
+                    $branch_dir->rmtree;
+                    $branch_dir->mkpath;
+                    build_single(
+                        $repo->dir->file($index),
+                        $branch_dir,
+                        version  => $branch,
+                        multi    => $multi,
+                        edit_url => $edit_url,
+                        toc      => $add_toc,
+                        template => $self->template
+                    );
+                }
+                else {
+                    build_chunked(
+                        $repo->dir->file($index),
+                        $branch_dir,
+                        chunk     => $chunk,
+                        toc_level => $toc_level,
+                        version   => $branch,
+                        multi     => $multi,
+                        edit_url  => $edit_url,
+                        template  => $self->template
+                    );
+                }
+                1;
+            } || do {
+                my $error = $@;
+                die "\nERROR building "
+                    . $self->title
+                    . " branch $branch\n\n"
+                    . $repo->dump_recent_commits( $src_path, $branch )
+                    . $error . "\n";
+            };
             $repo->mark_done( $src_path, $branch );
         }
         else {

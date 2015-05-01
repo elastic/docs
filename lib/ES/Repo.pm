@@ -174,6 +174,37 @@ sub edit_url {
 }
 
 #===================================
+sub dump_recent_commits {
+#===================================
+    my ( $self, $src_path, $branch ) = @_;
+    local $ENV{GIT_DIR} = $self->git_dir;
+    my $rev_range
+        = $self->tracker_branch( $src_path, $branch ) . "...origin/$branch";
+
+    my $commits
+        = run( 'git', 'log', $rev_range,
+        '--pretty=format:%h -%d %s (%cr) <%an>',
+        '-n', 10, '--abbrev-commit', '--date=relative', '--', $src_path );
+
+    unless ( $commits =~ /\S/ ) {
+        $commits = run(
+            'git',             'log',
+            "origin/$branch",  '--pretty=format:%h -%d %s (%cr) <%an>',
+            '-n',              10,
+            '--abbrev-commit', '--date=relative',
+            '--',              $src_path
+        );
+    }
+
+    my $title = "Recent commits in " . $self->name . "/$branch - $src_path:";
+    return
+          $title . "\n"
+        . ( '-' x length($title) ) . "\n"
+        . $commits
+        . "\n\n";
+}
+
+#===================================
 sub all_repo_branches {
 #===================================
     my $class = shift;
