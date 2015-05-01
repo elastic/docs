@@ -125,21 +125,36 @@ sub build_single {
 sub finish_build {
 #===================================
     my ( $source, $dest ) = @_;
+
+    # Apply template to HTML files
     $Opts->{template}->apply($dest);
 
+    # Copy stylesheet
     fcopy( 'resources/styles.css', $dest )
         or die "Couldn't copy <styles.css> to <$dest>: $!";
 
-    my $snippets = $source->subdir('snippets');
-    return unless -e $snippets;
+    my $snippets_dest = $dest->subdir('snippets');
+    my $snippets_src;
 
-    fcopy( 'resources/sense_widget.html', $dest )
-        or die "Couldn't copy <sense_widget.html> to <$dest>: $!";
+    # If lenient, look for snippets in parent directories
+    my $levels = $Opts->{lenient} ? 5 : 1;
+    while ($levels--) {
+        $snippets_src = $source->subdir('snippets');
+        last if -e $snippets_src;
+        $source = $source->parent;
+    }
 
-    $dest = $dest->subdir('snippets');
-    rcopy( $snippets, $dest )
-        or die "Couldn't copy <$snippets> to <$dest>: $!";
+    # Copy custom sense snippets to dest
+    if ( -e $snippets_src ) {
+        rcopy( $snippets_src, $snippets_dest )
+            or die "Couldn't copy <$snippets_src> to <$snippets_dest>: $!";
+    }
 
+    # Copy sense widget if custom or auto sense snippets
+    if ( -e $snippets_dest ) {
+        fcopy( 'resources/sense_widget.html', $dest )
+            or die "Couldn't copy <sense_widget.html> to <$dest>: $!";
+    }
 }
 
 #===================================

@@ -42,16 +42,23 @@ sub apply {
 #===================================
     my $self = shift;
     my $dir  = shift;
-    my $map  = $self->_map;
+
+    my $map = $self->_map;
 
     for my $file ( $dir->children ) {
         next if $file->is_dir or $file->basename !~ /\.html$/;
         my $contents = $file->slurp( iomode => '<:encoding(UTF-8)' );
+
+        # Strip XML guff
         $contents =~ s/\s+xmlns="[^"]*"//g;
         $contents =~ s/\s+xml:lang="[^"]*"//g;
         $contents =~ s/^<\?xml[^>]+>\n//;
-        $contents =~ s/\s+$//;
-        $contents .= "\n";
+        $contents =~ s/\s*$/\n/;
+
+        # Extract AUTOSENSE snippets
+        $contents = $self->_autosense_snippets( $file, $contents );
+
+        # Fill in template
         my @parts  = @{ $self->_parts };
         my ($head) = ( $contents =~ m{<head>(.+?)</head>}s );
         my ($body) = ( $contents =~ m{<body>(.+?)</body>}s );
@@ -62,6 +69,44 @@ sub apply {
         $file->spew( iomode => '>:utf8', join "", @parts );
     }
     $dir->file('template.md5')->spew( $self->md5 );
+}
+
+my $Autosense_RE = qr{
+        (<pre \s class="programlisting[^>]+>
+         ((?:(?!</pre>).)+?)
+         </pre>
+         <a \s class="sense_widget" \s href="sense_widget.html\?snippets/
+        )
+        :AUTOSENSE:
+    }xs;
+
+#===================================
+sub _autosense_snippets {
+#===================================
+    my ( $self, $file, $contents ) = (@_);
+    my $counter  = 1;
+    my $filename = $file->basename;
+    $filename =~ s/\.html$//;
+
+    my $snippet_dir = $file->parent->subdir('snippets')->subdir($filename);
+    while ( $contents =~ s|$Autosense_RE|$1$filename/${counter}.json| ) {
+        $snippet_dir->mkpath if $counter == 1;
+
+        # Remove callouts from snippet
+        my $snippet = $2;
+        $snippet =~ s{<a.+?</span>}{}gs;
+
+        # Unescape HTML entities
+        $snippet =~ s/&lt;/</g;
+        $snippet =~ s/&gt;/>/g;
+        $snippet =~ s/&amp;/&/g;
+
+        # Write snippet
+        $snippet_dir->file("$counter.json")
+            ->spew( iomode => '>:utf8', $snippet . "\n" );
+        $counter++;
+    }
+    return $contents;
 }
 
 #===================================

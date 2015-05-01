@@ -210,6 +210,9 @@
     <xsl:template match="remark[parent::answer|parent::appendix|parent::article|parent::bibliodiv|                                 parent::bibliography|parent::blockquote|parent::caution|parent::chapter|                                 parent::glossary|parent::glossdiv|parent::important|parent::index|                                 parent::indexdiv|parent::listitem|parent::note|parent::orderedlist|                                 parent::partintro|parent::preface|parent::procedure|parent::qandadiv|                                 parent::qandaset|parent::question|parent::refentry|parent::refnamediv|                                 parent::refsect1|parent::refsect2|parent::refsect3|parent::refsection|                                 parent::refsynopsisdiv|parent::sect1|parent::sect2|parent::sect3|parent::sect4|                                 parent::sect5|parent::section|parent::setindex|parent::sidebar|                                 parent::simplesect|parent::taskprerequisites|parent::taskrelated|                                 parent::tasksummary|parent::warning|parent::topic]">
       <xsl:if test="$show.comments != 0">
         <xsl:choose>
+        <xsl:when test="contains(text(),'AUTOSENSE')">
+            <a class="sense_widget" href="sense_widget.html?snippets/:AUTOSENSE:" target="sense">View in Sense</a>
+        </xsl:when>
         <xsl:when test="contains(text(),'SENSE:')">
             <xsl:variable name="sense_url" select="translate(substring-after(text(),'SENSE:'),' ','')" />
             <a class="sense_widget" href="sense_widget.html?snippets/{$sense_url}" target="sense">View in Sense</a>
