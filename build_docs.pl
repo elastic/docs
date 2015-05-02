@@ -30,6 +30,7 @@ use YAML qw(LoadFile);
 use Path::Class qw(dir file);
 use Browser::Open qw(open_browser);
 
+use ES::BranchTracker();
 use ES::Repo();
 use ES::Book();
 use ES::Toc();
@@ -237,6 +238,10 @@ sub init_repos {
 #===================================
     say "Updating repositories";
 
+    my $tracker_path = $Conf->{paths}{branch_tracker}
+        or die "Missing <paths.branch_tracker> in config";
+    my $tracker = ES::BranchTracker->new( file($tracker_path) );
+
     my $repos_dir = $Conf->{paths}{repos}
         or die "Missing <paths.repos> in config";
 
@@ -248,8 +253,9 @@ sub init_repos {
 
     for my $name ( sort keys %$conf ) {
         my $repo = ES::Repo->new(
-            name => $name,
-            dir  => $repos_dir,
+            name    => $name,
+            dir     => $repos_dir,
+            tracker => $tracker,
             %{ $conf->{$name} }
         );
         $repo->update_from_remote();

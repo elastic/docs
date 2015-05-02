@@ -37,7 +37,8 @@ sub new {
         url      => $url,
         current  => $current,
         branches => $branches,
-        private  => $args{private} || 0
+        private  => $args{private} || 0,
+        tracker  => $args{tracker},
     }, $class;
     $Repos{$name} = $self;
 }
@@ -56,7 +57,8 @@ sub update_from_remote {
     my $self = shift;
     my $dir  = $self->dir;
 
-    local $ENV{GIT_DIR} = $self->git_dir;
+    local $ENV{GIT_DIR}       = $self->git_dir;
+    local $ENV{GIT_WORK_TREE} = $self->dir;
 
     my $name = $self->name;
     eval {
@@ -68,6 +70,19 @@ sub update_from_remote {
         1;
     }
         or die "Error updating repo <$name>: $@";
+
+    my %local = map { $_ => 1 } $self->_local_branches;
+
+    # Reset branches to those contained in the branch tracker
+    my $shas = $self->tracker->shas_for_repo( $self->name );
+    run qw(git checkout --detach HEAD);
+    for my $branch ( keys %$shas ) {
+        delete $local{$branch};
+        eval { run qw( git branch -f), $branch, $shas->{$branch} };
+    }
+    for ( keys %local ) {
+        run qw(git branch -D), $_;
+    }
 }
 
 #===================================
@@ -95,6 +110,20 @@ sub _try_to_fetch {
     say " - Fetching: " . $self->name;
     run qw(git fetch);
     return 1;
+}
+
+#===================================
+sub _local_branches {
+#===================================
+    my $self = shift;
+    local $ENV{GIT_DIR} = $self->git_dir;
+    my @branches = grep { !m/detached from HEAD/ } split "\n",
+        run qw(git branch);
+    for (@branches) {
+        s/^[ *]+//;
+        s/\s+$//;
+    }
+    return @branches;
 }
 
 #===================================
@@ -143,13 +172,29 @@ sub mark_done {
     my $self = shift;
     my ( $path, $branch ) = @_;
 
-    my $tracker = $self->tracker_branch(@_);
+    my $tracker_branch = $self->tracker_branch(@_);
 
     local $ENV{GIT_DIR}       = $self->git_dir;
     local $ENV{GIT_WORK_TREE} = $self->dir;
 
-    run qw( git checkout -B), $tracker, "refs/remotes/origin/$branch";
+    run qw( git checkout -B), $tracker_branch, "refs/remotes/origin/$branch";
     run qw( git branch -D _build_docs);
+
+    $self->tracker->set_sha_for_branch( $self->name, $tracker_branch,
+        sha_for($tracker_branch) );
+
+}
+
+#===================================
+sub delete_branch {
+#===================================
+    my $self = shift;
+    my ( $path, $branch ) = @_;
+
+    my $tracker_branch = $self->tracker_branch(@_);
+    local $ENV{GIT_DIR} = $self->git_dir;
+    eval { run( qw(git br -D ), $tracker_branch ) };
+    $self->tracker->delete_branch( $self->name, $tracker_branch );
 }
 
 #===================================
@@ -197,11 +242,7 @@ sub dump_recent_commits {
     }
 
     my $title = "Recent commits in " . $self->name . "/$branch - $src_path:";
-    return
-          $title . "\n"
-        . ( '-' x length($title) ) . "\n"
-        . $commits
-        . "\n\n";
+    return $title . "\n" . ( '-' x length($title) ) . "\n" . $commits . "\n\n";
 }
 
 #===================================
@@ -244,6 +285,7 @@ sub url      { shift->{url} }
 sub current  { shift->{current} }
 sub branches { shift->{branches} }
 sub private  { shift->{private} }
+sub tracker  { shift->{tracker} }
 #===================================
 
 1

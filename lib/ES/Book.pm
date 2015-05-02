@@ -211,6 +211,7 @@ sub remove_old_branches {
         next if $branches{$version};
         say " - Deleting old branch: $version";
         $child->rmtree;
+        $self->repo->delete_branch( $self->src_path, $version );
     }
 }
 
