@@ -28,6 +28,7 @@ sub new {
 
     my $index = $args{index}
         or die "No <index> specfied for book <$title>";
+    $index = Path::Class::file($index),;
 
     my $chunk     = $args{chunk}     || 0;
     my $toc_level = $args{toc_level} || 1;
@@ -55,7 +56,8 @@ sub new {
         toc       => $toc,
         toc_level => $toc_level,
         single    => $args{single},
-        index     => Path::Class::file($index),
+        index     => $index,
+        src_path  => $index->parent,
         branches  => $branches,
         current   => $current
     }, $class;
@@ -68,111 +70,132 @@ sub build {
 
     say "Book: " . $self->title;
 
-    my $repo        = $self->repo;
-    my $branches    = $self->branches;
-    my $current     = $self->current;
-    my $current_url = 'current/index.html';
-    my $index       = $self->index;
-    my $src_path    = $index->parent;
-    my $toc         = ES::Toc->new( $self->title );
-    my $dir         = $self->dir;
-    my $chunk       = $self->chunk;
-    my $toc_level   = $self->toc_level;
-    my $add_toc     = $self->toc;
-
+    my $toc = ES::Toc->new( $self->title );
+    my $dir = $self->dir;
     $dir->mkpath;
 
-    my $multi = @$branches > 1;
-    for my $branch (@$branches) {
+    for my $branch ( @{ $self->branches } ) {
 
         say " - Branch: $branch";
+        $self->_build_book($branch);
 
-        my $branch_dir = $dir->subdir($branch);
-        my $edit_url = $self->repo->edit_url( $branch, $index );
-
-        my $changed
-            = !-e $branch_dir
-            || $self->template->md5_changed($branch_dir)
-            || $repo->has_changed( $src_path, $branch );
-
-        if ($changed) {
-            say "   - Building";
-            $repo->checkout( $src_path, $branch );
-
-            eval {
-                if ( $self->single ) {
-                    $branch_dir->rmtree;
-                    $branch_dir->mkpath;
-                    build_single(
-                        $repo->dir->file($index),
-                        $branch_dir,
-                        version  => $branch,
-                        multi    => $multi,
-                        edit_url => $edit_url,
-                        toc      => $add_toc,
-                        template => $self->template
-                    );
+        if ( $branch eq $self->current ) {
+            $self->_copy_branch_to_current($branch);
+            $toc->add_entry(
+                {   title => "Version: $branch (current)",
+                    url   => "current/index.html"
                 }
-                else {
-                    build_chunked(
-                        $repo->dir->file($index),
-                        $branch_dir,
-                        chunk     => $chunk,
-                        toc_level => $toc_level,
-                        version   => $branch,
-                        multi     => $multi,
-                        edit_url  => $edit_url,
-                        template  => $self->template
-                    );
-                }
-                1;
-            } || do {
-                my $error = $@;
-                die "\nERROR building "
-                    . $self->title
-                    . " branch $branch\n\n"
-                    . $repo->dump_recent_commits( $src_path, $branch )
-                    . $error . "\n";
-            };
-            $repo->mark_done( $src_path, $branch );
+            );
+
         }
         else {
-            say "   - Reusing existing";
+            $toc->add_entry(
+                {   title => "Version: $branch",
+                    url   => "$branch/index.html"
+                }
+            );
         }
 
-        my $url   = $branch . '/index.html';
-        my $title = 'Version: ' . $branch;
-
-        if ( $branch eq $current ) {
-            say "   - Copying to current";
-            $url = $current_url;
-            $title .= ' (current)';
-            my $current_dir = $dir->subdir('current');
-            $current_dir->rmtree;
-            rcopy( $branch_dir, $current_dir )
-                or die "Couldn't copy <$branch_dir> to <$current_dir>: $!";
-        }
-        $toc->add_entry( { title => $title, url => $url } );
-    }
-
-    my $versions = $self->prefix . '/index.html';
-    if ( @$branches > 1 ) {
-        say " - Writing versions TOC";
-        $toc->write($dir);
-    }
-    else {
-        say " - Writing redirect to current branch";
-        write_html_redirect( $dir, $current_url );
-        undef $versions;
     }
 
     $self->remove_old_branches;
 
+    if ( $self->is_multi_version ) {
+        say " - Writing versions TOC";
+        $toc->write($dir);
+        return {
+            title    => $self->title . " [" . $self->current . "\\]",
+            url      => $self->prefix . '/current/index.html',
+            versions => $self->prefix . '/index.html',
+        };
+    }
+
+    say " - Writing redirect to current branch";
+    write_html_redirect( $dir, "current/index.html" );
+
     return {
-        title => $self->title . ( $versions ? " [$current\\]" : '' ),
-        url      => $self->prefix . '/current/index.html',
-        versions => $versions,
+        title => $self->title,
+        url   => $self->prefix . '/current/index.html'
     };
+}
+
+#===================================
+sub _build_book {
+#===================================
+    my ( $self, $branch ) = @_;
+
+    my $branch_dir = $self->dir->subdir($branch);
+    my $repo       = $self->repo;
+    my $template   = $self->template;
+    my $src_path   = $self->src_path;
+    my $index      = $self->index;
+    my $edit_url   = $repo->edit_url( $branch, $index );
+
+    return say "   - Reusing existing"
+        if -e $branch_dir
+        && not $template->md5_changed($branch_dir)
+        && not $repo->has_changed( $src_path, $branch );
+
+    say "   - Building";
+    $repo->checkout( $src_path, $branch );
+
+    eval {
+        if ( $self->single ) {
+            $branch_dir->rmtree;
+            $branch_dir->mkpath;
+            build_single(
+                $repo->dir->file($index),
+                $branch_dir,
+                version  => $branch,
+                edit_url => $edit_url,
+                multi    => $self->is_multi_version,
+                toc      => $self->toc,
+                template => $template
+            );
+        }
+        else {
+            build_chunked(
+                $repo->dir->file($index),
+                $branch_dir,
+                version   => $branch,
+                edit_url  => $edit_url,
+                chunk     => $self->chunk,
+                toc_level => $self->toc_level,
+                multi     => $self->is_multi_version,
+                template  => $template
+            );
+        }
+        $repo->mark_done( $src_path, $branch );
+        1;
+    } && return;
+
+    my $error = $@;
+    die "\nERROR building "
+        . $self->title
+        . " branch $branch\n\n"
+        . $repo->dump_recent_commits( $src_path, $branch )
+        . $error . "\n";
+}
+
+#===================================
+sub _copy_branch_to_current {
+#===================================
+    my ( $self, $branch ) = @_;
+
+    say "   - Copying to current";
+
+    my $branch_dir  = $self->dir->subdir($branch);
+    my $current_dir = $self->dir->subdir('current');
+
+    $current_dir->rmtree;
+    rcopy( $branch_dir, $current_dir )
+        or die "Couldn't copy <$branch_dir> to <$current_dir>: $!";
+
+    return {
+        title => "Version: $branch (current)",
+        url   => 'current/index.html'
+        }
+
 }
 
 #===================================
@@ -192,18 +215,20 @@ sub remove_old_branches {
 }
 
 #===================================
-sub title     { shift->{title} }
-sub dir       { shift->{dir} }
-sub template  { shift->{template} }
-sub repo      { shift->{repo} }
-sub prefix    { shift->{prefix} }
-sub chunk     { shift->{chunk} }
-sub toc       { shift->{toc} }
-sub toc_level { shift->{toc_level} }
-sub single    { shift->{single} }
-sub index     { shift->{index} }
-sub branches  { shift->{branches} }
-sub current   { shift->{current} }
+sub title            { shift->{title} }
+sub dir              { shift->{dir} }
+sub src_path         { shift->{src_path} }
+sub template         { shift->{template} }
+sub repo             { shift->{repo} }
+sub prefix           { shift->{prefix} }
+sub chunk            { shift->{chunk} }
+sub toc              { shift->{toc} }
+sub toc_level        { shift->{toc_level} }
+sub single           { shift->{single} }
+sub index            { shift->{index} }
+sub branches         { shift->{branches} }
+sub current          { shift->{current} }
+sub is_multi_version { @{ shift->branches } > 1 }
 #===================================
 
 1;
