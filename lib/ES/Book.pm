@@ -133,8 +133,8 @@ sub _build_book {
 
     return say "   - Reusing existing"
         if -e $branch_dir
-        && not $template->md5_changed($branch_dir)
-        && not $repo->has_changed( $src_path, $branch );
+        && ! $template->md5_changed($branch_dir)
+        && ! $repo->has_changed( $src_path, $branch );
 
     say "   - Building";
     $repo->checkout( $src_path, $branch );
