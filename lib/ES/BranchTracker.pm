@@ -6,8 +6,7 @@ use v5.10;
 
 use Path::Class();
 use ES::Util qw(run sha_for);
-use JSON();
-my $JSON = JSON->new->utf8->canonical->pretty;
+use YAML qw(Dump Load);
 
 my %Repos;
 
@@ -19,7 +18,7 @@ sub new {
 
     if ( -e $file ) {
         my $json = $file->slurp( iomode => '<:raw' );
-        $shas = $JSON->decode($json);
+        $shas = Load($json);
     }
 
     return bless {
@@ -67,7 +66,7 @@ sub delete_branch {
 sub write {
 #===================================
     my $self = shift;
-    $self->file->spew( iomode => '>:raw', $JSON->encode( $self->shas ) );
+    $self->file->spew( iomode => '>:raw', Dump( $self->shas ) );
 
 }
 #===================================
