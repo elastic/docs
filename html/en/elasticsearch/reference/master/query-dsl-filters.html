@@ -476,50 +476,12 @@
 for binary yes/no searches
 </li><li class="listitem">
 for queries on exact values
-</li></ul></div><h3><a id="caching"></a>Filters and Caching<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Filters can be a great candidate for caching. Caching the result of a
-filter does not require a lot of memory, and will cause other queries
-executing against the same filter (same parameters) to be blazingly
-fast.</p><p>However the cost of caching is not the same for all filters. For
-instance some filters are already fast out of the box while caching could
-add significant overhead, and some filters produce results that are already
-cacheable so caching them is just a matter of putting the result in the
-cache.</p><p>The default caching policy, <code class="literal">_cache: auto</code>, tracks the 1000 most recently
-used filters on a per-index basis and makes decisions based on their
-frequency.</p><h4><a id="_filters_that_read_directly_the_index_structure"></a>Filters that read directly the index structure<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Some filters can directly read the index structure and potentially jump
-over large sequences of documents that are not worth evaluating (for
-instance when these documents do not match the query). Caching these
-filters introduces overhead given that all documents that the filter
-matches need to be consumed in order to be loaded into the cache.</p><p>These filters, which include the <a class="link" href="query-dsl-term-filter.html" title="Term Filter">term</a> and
-<a class="link" href="query-dsl-term-query.html" title="Term Query">query</a> filters, are only cached after they
-appear 5 times or more in the history of the 1000 most recently used
-filters.</p><h4><a id="_filters_that_produce_results_that_are_already_cacheable"></a>Filters that produce results that are already cacheable<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Some filters produce results that are already cacheable, and the difference
-between caching and not caching them is the act of placing the result in
-the cache or not. These filters, which include the
-<a class="link" href="query-dsl-terms-filter.html" title="Terms Filter">terms</a>,
-<a class="link" href="query-dsl-prefix-filter.html" title="Prefix Filter">prefix</a>, and
-<a class="link" href="query-dsl-range-filter.html" title="Range Filter">range</a> filters, are by default cached after they
-appear twice or more in the history of the most 1000 recently used filters.</p><h4><a id="_computational_filters"></a>Computational filters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Some filters need to run some computation in order to figure out whether
-a given document matches a filter. These filters, which include the geo and
-<a class="link" href="query-dsl-script-filter.html" title="Script Filter">script</a> filters, but also the
-<a class="link" href="query-dsl-terms-filter.html" title="Terms Filter">terms</a>  and <a class="link" href="query-dsl-range-filter.html" title="Range Filter">range</a>
-filters when using the <code class="literal">fielddata</code> execution mode are never cached by default,
-as it would require to evaluate the filter on all documents in your indices
-while they can otherwise be only evaluated on documents that match the query.</p><h4><a id="_compound_filters"></a>Compound filters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The last type of filters are those working with other filters, and includes
-the <a class="link" href="query-dsl-bool-filter.html" title="Bool Filter">bool</a>,
-<a class="link" href="query-dsl-and-filter.html" title="And Filter">and</a>,
-<a class="link" href="query-dsl-not-filter.html" title="Not Filter">not</a> and
-<a class="link" href="query-dsl-or-filter.html" title="Or Filter">or</a> filters.</p><p>There is no general rule about these filters. Depending on the filters that
-they wrap, they will sometimes return a filter that dynamically evaluates the
-sub filters and sometimes evaluate the sub filters eagerly in order to return
-a result that is already cacheable, so depending on the case, these filters
-will be cached after they appear 2+ or 5+ times in the history of the most
-1000 recently used filters.</p><h4><a id="_overriding_the_default_behaviour"></a>Overriding the default behaviour<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>All filters allow to set <code class="literal">_cache</code> element on them to explicitly control
-caching. It accepts 3 values: <code class="literal">true</code> in order to cache the filter, <code class="literal">false</code>
-to make sure that the filter will not be cached, and <code class="literal">auto</code>, which is the
-default and will decide on whether to cache the filter based on the cost
-to cache it and how often it has been used as explained above.</p><p>Filters also allow to set <code class="literal">_cache_key</code> which will be used as the
-caching key for that filter. This can be handy when using very large
-filters (like a terms filter with many elements in it).</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-template-query.html">
+</li></ul></div><h3><a id="caching"></a>Filters and Caching<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Filters can be a great candidate for caching. Caching the document set that
+a filter matches does not require much memory and can help improve
+execution speed of queries.</p><p>Elasticsearch decides to cache filters based on how often they are used. For
+this reason you might occasionally see better performance by splitting
+complex filters into a static part that Elasticsearch will cache and a dynamic
+part which is least costly than the original filter.</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-template-query.html">
               « 
               Template Query</a>
            
