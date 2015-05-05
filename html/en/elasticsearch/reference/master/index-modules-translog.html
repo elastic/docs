@@ -520,17 +520,18 @@
            
           <a href="index-modules-cache.html">Cache
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-translog"></a>Translog<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="chapter"><a href="index-modules-analysis.html">Analysis</a></span></dt><dt><span class="chapter"><a href="index-modules-allocation.html">Index Shard Allocation</a></span></dt><dt><span class="chapter"><a href="index-modules-slowlog.html">Index Slow Log</a></span></dt><dt><span class="chapter"><a href="index-modules-merge.html">Merge</a></span></dt><dt><span class="chapter"><a href="index-modules-store.html">Store</a></span></dt><dt><span class="chapter"><a href="index-modules-mapper.html">Mapper</a></span></dt><dt><span class="chapter"><a href="index-modules-translog.html">Translog</a></span></dt><dt><span class="chapter"><a href="index-modules-cache.html">Cache</a></span></dt><dt><span class="chapter"><a href="index-modules-shard-query-cache.html">Shard query cache</a></span></dt><dt><span class="chapter"><a href="index-modules-fielddata.html">Field data</a></span></dt><dt><span class="chapter"><a href="fielddata-formats.html">Field data formats</a></span></dt><dt><span class="chapter"><a href="index-modules-similarity.html">Similarity module</a></span></dt></dl></div><p>Changes to a shard are only persisted to disk when the shard is “flushed”,
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-translog"></a>Translog<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="chapter"><a href="index-modules-analysis.html">Analysis</a></span></dt><dt><span class="chapter"><a href="index-modules-allocation.html">Index Shard Allocation</a></span></dt><dt><span class="chapter"><a href="index-modules-slowlog.html">Index Slow Log</a></span></dt><dt><span class="chapter"><a href="index-modules-merge.html">Merge</a></span></dt><dt><span class="chapter"><a href="index-modules-store.html">Store</a></span></dt><dt><span class="chapter"><a href="index-modules-mapper.html">Mapper</a></span></dt><dt><span class="chapter"><a href="index-modules-translog.html">Translog</a></span></dt><dt><span class="chapter"><a href="index-modules-cache.html">Cache</a></span></dt><dt><span class="chapter"><a href="index-modules-shard-query-cache.html">Shard query cache</a></span></dt><dt><span class="chapter"><a href="index-modules-fielddata.html">Field data</a></span></dt><dt><span class="chapter"><a href="fielddata-formats.html">Field data formats</a></span></dt><dt><span class="chapter"><a href="index-modules-similarity.html">Similarity module</a></span></dt></dl></div><p>Changes to Lucene are only persisted to disk during a Lucene commit,
 which is a relatively heavy operation and so cannot be performed after every
-index or delete operation. Instead, changes are accumulated in an in-memory
-indexing buffer and only written to disk periodically. This would mean that
-the contents of the in-memory buffer would be lost in the event of power
-failure or some other hardware crash.</p><p>To prevent this data loss, each shard has a <span class="emphasis"><em>transaction log</em></span> or write ahead
-log associated with it. Any index or delete operation is first written to the
-translog before being processed by the internal Lucene index. This translog is
-only cleared once the shard has been flushed and the data in the in-memory
-buffer persisted to disk as a Lucene segment.</p><p>In the event of a crash, recent transactions can be replayed from the
-transaction log when the shard recovers.</p><h3><a id="_flush_settings"></a>Flush settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following <a class="link" href="indices-update-settings.html" title="Update Indices Settings">dynamically updatable</a> settings
+index or delete operation. Changes that happen after one commit and before another
+will be lost in the event of process exit or HW failure.</p><p>To prevent this data loss, each shard has a <span class="emphasis"><em>transaction log</em></span> or write ahead
+log associated with it. Any index or delete operation is written to the
+translog after being processed by the internal Lucene index.</p><p>In the event of a crash, recent transactions can be replayed from the
+transaction log when the shard recovers.</p><p>An Elasticsearch flush is the process of performing a Lucene commit and
+starting a new translog. It is done automatically in the background in order
+to make sure the transaction log doesn’t grow too large, which would make
+replaying its operations take a considerable amount of time during recovery.
+It is also exposed through an API, though its rarely needed to be performed
+manually.</p><h3><a id="_flush_settings"></a>Flush settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following <a class="link" href="indices-update-settings.html" title="Update Indices Settings">dynamically updatable</a> settings
 control how often the in-memory buffer is flushed to disk:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">index.translog.flush_threshold_size</code>
 </span></dt><dd>
@@ -554,7 +555,8 @@ cache and could potentially be lost in the event of hardware failure.</p><p>The 
 control the behaviour of the transaction log:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">index.translog.sync_interval</code>
 </span></dt><dd>
-How often the translog is <code class="literal">fsync</code>ed to disk. Defaults to <code class="literal">5s</code>.
+How often the translog is <code class="literal">fsync</code>ed to disk. Defaults to <code class="literal">5s</code>. Can be set to
+<code class="literal">0</code> to sync after each operation.
 </dd><dt><span class="term">
 <code class="literal">index.translog.fs.type</code>
 </span></dt><dd>
@@ -563,16 +565,18 @@ writing to disk, or a <code class="literal">simple</code> translog which writes 
 immediately.  Whichever is used, these writes are only <code class="literal">fsync</code>ed according
 to the <code class="literal">sync_interval</code>.
 </dd></dl></div><p>The <code class="literal">buffered</code> translog is written to disk when it reaches 64kB in size, or
-whenever an <code class="literal">fsync</code> is triggered by the <code class="literal">sync_interval</code>.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Why don’t we <code class="literal">fsync</code> the translog after every write?</strong></p></div></div></div><p>The disk is the slowest part of any server. An <code class="literal">fsync</code> ensures that data in
+whenever a <code class="literal">sync</code> is triggered by the <code class="literal">sync_interval</code>.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Why don’t we <code class="literal">fsync</code> the translog after every write?</strong></p></div></div></div><p>The disk is the slowest part of any server. An <code class="literal">fsync</code> ensures that data in
 the file system buffer has been physically written to disk, but this
 persistence comes with a performance cost.</p><p>However, the translog is not the only persistence mechanism in Elasticsearch.
 Any index or update request is first written to the primary shard, then
 forwarded in parallel to any replica shards. The primary waits for the action
-to be completed on the replicas before returning to success to the client.</p><p>If the node holding the primary shard dies for some reason, its transaction
+to be completed on the replicas before returning success to the client.</p><p>If the node holding the primary shard dies for some reason, its transaction
 log could be missing the last 5 seconds of data. However, that data should
 already be available on a replica shard on a different node.  Of course, if
 the whole data centre loses power at the same time, then it is possible that
-you could lose the last 5 seconds (or <code class="literal">sync_interval</code>) of data.</p></div></div><div class="navfooter"><span class="prev"><a href="index-modules-mapper.html">
+you could lose the last 5 seconds (or <code class="literal">sync_interval</code>) of data.</p><p>We are constantly monitoring the perfromance implications of better default
+translog sync semantics, so the default might change as time passes and HW,
+virtualization, and other aspects improve.</p></div></div><div class="navfooter"><span class="prev"><a href="index-modules-mapper.html">
               « 
               Mapper</a>
            
