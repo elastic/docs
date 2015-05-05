@@ -5,6 +5,7 @@ use warnings;
 use v5.10;
 
 use Path::Class();
+use Encode qw(decode_utf8);
 use ES::Util qw(run sha_for);
 
 my %Repos;
@@ -227,7 +228,7 @@ sub dump_recent_commits {
         = $self->tracker_branch( $src_path, $branch ) . "...origin/$branch";
 
     my $commits
-        = run( 'git', 'log', $rev_range,
+        = decode_utf8 run( 'git', 'log', $rev_range,
         '--pretty=format:%h -%d %s (%cr) <%an>',
         '-n', 10, '--abbrev-commit', '--date=relative', '--', $src_path );
 
