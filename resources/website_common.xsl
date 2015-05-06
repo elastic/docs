@@ -228,6 +228,9 @@
     <xsl:template match="comment|remark">
       <xsl:if test="$show.comments != 0">
         <xsl:choose>
+        <xsl:when test="contains(text(),'AUTOSENSE')">
+            <a class="sense_widget" href="sense_widget.html?snippets/:AUTOSENSE:" target="sense">View in Sense</a>
+        </xsl:when>
         <xsl:when test="contains(text(),'SENSE:')">
             <xsl:variable name="sense_url" select="translate(substring-after(text(),'SENSE:'),' ','')" />
             <a class="sense_widget" href="sense_widget.html?snippets/{$sense_url}" target="sense">View in Sense</a>
