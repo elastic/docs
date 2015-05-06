@@ -13,6 +13,8 @@
 
 
 
+
+
 	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 	<link rel="icon" href="/favicon.ico" type="image/x-icon">
 	<!-- For third-generation iPad with high-resolution Retina display: -->
@@ -26,6 +28,7 @@
 
 	<link rel="apple-touch-icon-precomposed" sizes="16x16" href="/favicon_16x16.png">
 	<!-- <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'> -->
+	
 	<link type="text/css" rel="stylesheet" href="/static/css/skel.css" />	
 	<link type="text/css" rel="stylesheet" href="/static/css/style.css" />	
 	<script src="/static/js/skel.min.js"></script>
@@ -288,35 +291,35 @@
 				<ul class="links">
 					
 						<li class="shortcut-1 grayscale">
-							<a href="/downloads" id="header_downloads">
+							<a href="/downloads" id="header_downloads" >
 								<span class="img"></span>
 								<span class="txt">downloads</span>	
 							</a>
 						</li>
 					
 						<li class="shortcut-2 grayscale">
-							<a href="/guide" id="header_guide">
+							<a href="/guide" id="header_guide" >
 								<span class="img"></span>
 								<span class="txt">docs</span>	
 							</a>
 						</li>
 					
 						<li class="shortcut-3 grayscale">
-							<a href="/subscriptions" id="header_subscriptions">
+							<a href="/subscriptions" id="header_subscriptions" >
 								<span class="img"></span>
 								<span class="txt">support</span>	
 							</a>
 						</li>
 					
 						<li class="shortcut-4 grayscale">
-							<a href="https://discuss.elastic.co" id="header_discuss">
+							<a href="https://discuss.elastic.co" id="header_discuss" target="_blank">
 								<span class="img"></span>
 								<span class="txt">discuss</span>	
 							</a>
 						</li>
 					
 						<li class="shortcut-5 grayscale">
-							<a href="/contact" id="header_contact">
+							<a href="/contact" id="header_contact" >
 								<span class="img"></span>
 								<span class="txt">contact</span>	
 							</a>
@@ -533,9 +536,9 @@ etc
 </li></ul></div><p>Moving averages are a simple method to smooth sequential data.  Moving averages are typically applied to time-based data,
 such as stock prices or server metrics.  The smoothing can be used to eliminate high frequency fluctuations or random noise,
 which allows the lower frequency trends to be more easily visualized, such as seasonality.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_syntax_5"></a>Syntax<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/reducer/movavg-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A <code class="literal">moving_avg</code> aggregation looks like this in isolation:</p><pre class="programlisting prettyprint lang-js">{
-    "movavg": {
+    "moving_avg": {
         "buckets_path": "the_sum",
-        "model": "double_exp",
+        "model": "holt",
         "window": 5,
         "gap_policy": "insert_zero",
         "settings": {
@@ -592,7 +595,7 @@ the "lag" behind the data’s mean, since older points have less influence.</p><
 }</pre><p>A <code class="literal">linear</code> model has no special settings to configure</p><p>Like the <code class="literal">simple</code> model, window size can change the behavior of the moving average.  For example, a small window (<code class="literal">"window": 10</code>)
 will closely track the data and only smooth out small scale fluctuations:</p><div class="figure"><a id="linear_10window"></a><p class="title"><strong>Figure 3. Linear moving average with window of size 10</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/linear_10window.png" alt="images/reducers_movavg/linear_10window.png" /></div></div></div><br class="figure-break" /><p>In contrast, a <code class="literal">linear</code> moving average with larger window (<code class="literal">"window": 100</code>) will smooth out all higher-frequency fluctuations,
 leaving only low-frequency, long term trends.  It also tends to "lag" behind the actual data by a substantial amount,
-although typically less than the <code class="literal">simple</code> model:</p><div class="figure"><a id="linear_100window"></a><p class="title"><strong>Figure 4. Linear moving average with window of size 100</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/linear_100window.png" alt="images/reducers_movavg/linear_100window.png" /></div></div></div><br class="figure-break" /></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_single_exponential"></a>Single Exponential<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/reducer/movavg-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">single_exp</code> model is similar to the <code class="literal">linear</code> model, except older data-points become exponentially less important,
+although typically less than the <code class="literal">simple</code> model:</p><div class="figure"><a id="linear_100window"></a><p class="title"><strong>Figure 4. Linear moving average with window of size 100</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/linear_100window.png" alt="images/reducers_movavg/linear_100window.png" /></div></div></div><br class="figure-break" /></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_ewma_exponentially_weighted"></a>EWMA (Exponentially Weighted)<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/reducer/movavg-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">ewma</code> model (aka "single-exponential") is similar to the <code class="literal">linear</code> model, except older data-points become exponentially less important,
 rather than linearly less important.  The speed at which the importance decays can be controlled with an <code class="literal">alpha</code>
 setting.  Small values make the weight decay slowly, which provides greater smoothing and takes into account a larger
 portion of the window.  Larger valuers make the weight decay quickly, which reduces the impact of older values on the
@@ -600,27 +603,27 @@ moving average.  This tends to make the moving average track the data more close
     "the_movavg":{
         "moving_avg":{
             "buckets_path": "the_sum",
-            "model" : "single_exp",
+            "model" : "ewma",
             "settings" : {
                 "alpha" : 0.5
             }
         }
-}</pre><div class="figure"><a id="single_0.2alpha"></a><p class="title"><strong>Figure 5. Single Exponential moving average with window of size 10, alpha = 0.2</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/single_0.2alpha.png" alt="images/reducers_movavg/single_0.2alpha.png" /></div></div></div><br class="figure-break" /><div class="figure"><a id="single_0.7alpha"></a><p class="title"><strong>Figure 6. Single Exponential moving average with window of size 10, alpha = 0.7</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/single_0.7alpha.png" alt="images/reducers_movavg/single_0.7alpha.png" /></div></div></div><br class="figure-break" /></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_double_exponential"></a>Double Exponential<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/reducer/movavg-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">double_exp</code> model, sometimes called "Holt’s Linear Trend" model, incorporates a second exponential term which
+}</pre><div class="figure"><a id="single_0.2alpha"></a><p class="title"><strong>Figure 5. Single Exponential moving average with window of size 10, alpha = 0.2</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/single_0.2alpha.png" alt="images/reducers_movavg/single_0.2alpha.png" /></div></div></div><br class="figure-break" /><div class="figure"><a id="single_0.7alpha"></a><p class="title"><strong>Figure 6. Single Exponential moving average with window of size 10, alpha = 0.7</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/single_0.7alpha.png" alt="images/reducers_movavg/single_0.7alpha.png" /></div></div></div><br class="figure-break" /></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_holt_linear"></a>Holt-Linear<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/reducer/movavg-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">holt</code> model (aka "double exponential") incorporates a second exponential term which
 tracks the data’s trend.  Single exponential does not perform well when the data has an underlying linear trend.  The
-double exponential model calculates two values internally: a "level" and a "trend".</p><p>The level calculation is similar to <code class="literal">single_exp</code>, and is an exponentially weighted view of the data.  The difference is
+double exponential model calculates two values internally: a "level" and a "trend".</p><p>The level calculation is similar to <code class="literal">ewma</code>, and is an exponentially weighted view of the data.  The difference is
 that the previously smoothed value is used instead of the raw value, which allows it to stay close to the original series.
 The trend calculation looks at the difference between the current and last value (e.g. the slope, or trend, of the
 smoothed data).  The trend value is also exponentially weighted.</p><p>Values are produced by multiplying the level and trend components.</p><p>The default value of <code class="literal">alpha</code> and <code class="literal">beta</code> is <code class="literal">0.5</code>, and the settings accept any float from 0-1 inclusive.</p><pre class="programlisting prettyprint lang-js">{
     "the_movavg":{
         "moving_avg":{
             "buckets_path": "the_sum",
-            "model" : "double_exp",
+            "model" : "holt",
             "settings" : {
                 "alpha" : 0.5,
                 "beta" : 0.5
             }
         }
-}</pre><p>In practice, the <code class="literal">alpha</code> value behaves very similarly in <code class="literal">double_exp</code> as <code class="literal">single_exp</code>: small values produce more smoothing
+}</pre><p>In practice, the <code class="literal">alpha</code> value behaves very similarly in <code class="literal">holt</code> as <code class="literal">ewma</code>: small values produce more smoothing
 and more lag, while larger values produce closer tracking and less lag.  The value of <code class="literal">beta</code> is often difficult
 to see.  Small values emphasize long-term trends (such as a constant linear trend in the whole series), while larger
 values emphasize short-term trends.  This will become more apparently when you are predicting values.</p><div class="figure"><a id="double_0.2beta"></a><p class="title"><strong>Figure 7. Double Exponential moving average with window of size 100, alpha = 0.5, beta = 0.2</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/double_0.2beta.png" alt="images/reducers_movavg/double_0.2beta.png" /></div></div></div><br class="figure-break" /><div class="figure"><a id="double_0.7beta"></a><p class="title"><strong>Figure 8. Double Exponential moving average with window of size 100, alpha = 0.5, beta = 0.7</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/double_0.7beta.png" alt="images/reducers_movavg/double_0.7beta.png" /></div></div></div><br class="figure-break" /></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_prediction"></a>Prediction<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/reducer/movavg-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>All the moving average model support a "prediction" mode, which will attempt to extrapolate into the future given the
@@ -633,8 +636,8 @@ as your buckets:</p><pre class="programlisting prettyprint lang-js">{
             "model" : "simple",
             "predict" 10
         }
-}</pre><p>The <code class="literal">simple</code>, <code class="literal">linear</code> and <code class="literal">single_exp</code> models all produce "flat" predictions: they essentially converge on the mean
-of the last value in the series, producing a flat:</p><div class="figure"><a id="simple_prediction"></a><p class="title"><strong>Figure 9. Simple moving average with window of size 10, predict = 50</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/simple_prediction.png" alt="images/reducers_movavg/simple_prediction.png" /></div></div></div><br class="figure-break" /><p>In contrast, the <code class="literal">double_exp</code> model can extrapolate based on local or global constant trends.  If we set a high <code class="literal">beta</code>
+}</pre><p>The <code class="literal">simple</code>, <code class="literal">linear</code> and <code class="literal">ewma</code> models all produce "flat" predictions: they essentially converge on the mean
+of the last value in the series, producing a flat:</p><div class="figure"><a id="simple_prediction"></a><p class="title"><strong>Figure 9. Simple moving average with window of size 10, predict = 50</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/simple_prediction.png" alt="images/reducers_movavg/simple_prediction.png" /></div></div></div><br class="figure-break" /><p>In contrast, the <code class="literal">holt</code> model can extrapolate based on local or global constant trends.  If we set a high <code class="literal">beta</code>
 value, we can extrapolate based on local constant trends (in this case the predictions head down, because the data at the end
 of the series was heading in a downward direction):</p><div class="figure"><a id="double_prediction_local"></a><p class="title"><strong>Figure 10. Double Exponential moving average with window of size 100, predict = 20, alpha = 0.5, beta = 0.8</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/double_prediction_local.png" alt="images/reducers_movavg/double_prediction_local.png" /></div></div></div><br class="figure-break" /><p>In contrast, if we choose a small <code class="literal">beta</code>, the predictions are based on the global constant trend.  In this series, the
 global trend is slightly positive, so the prediction makes a sharp u-turn and begins a positive slope:</p><div class="figure"><a id="double_prediction_global"></a><p class="title"><strong>Figure 11. Double Exponential moving average with window of size 100, predict = 20, alpha = 0.5, beta = 0.1</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/reducers_movavg/double_prediction_global.png" alt="images/reducers_movavg/double_prediction_global.png" /></div></div></div><br class="figure-break" /></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-reducer-min-bucket-aggregation.html">
@@ -735,6 +738,9 @@ global trend is slightly positive, so the prediction makes a sharp u-turn and be
    	
    	
    	<script type="application/ld+json">
+	
+		
+	
 	{
 	  	"@context": "http://schema.org",
 	  	"@type": "Organization",
