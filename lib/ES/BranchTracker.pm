@@ -13,18 +13,27 @@ my %Repos;
 #===================================
 sub new {
 #===================================
-    my ( $class, $file ) = @_;
-    my $shas = {};
+    my ( $class, $file, @repos ) = @_;
+    my $old  = {};
+    my $yaml = '';
 
     if ( -e $file ) {
-        my $json = $file->slurp( iomode => '<:raw' );
-        $shas = Load($json);
+        my $yaml = $file->slurp( iomode => '<:raw' );
+        $old = Load($yaml);
     }
 
-    return bless {
+    my %new;
+    for (@repos) {
+        $new{$_} = $old->{$_} || {};
+    }
+
+    my $self = bless {
         file => $file,
-        shas => $shas
-    };
+        shas => \%new,
+        yaml => $yaml,
+    }, $class;
+    $self->write;
+    return $self;
 
 }
 
@@ -66,7 +75,10 @@ sub delete_branch {
 sub write {
 #===================================
     my $self = shift;
-    $self->file->spew( iomode => '>:raw', Dump( $self->shas ) );
+    my $new  = Dump( $self->shas );
+    return if $new eq $self->{yaml};
+    $self->file->spew( iomode => '>:raw', $new );
+    $self->{yaml} = $new;
 
 }
 #===================================

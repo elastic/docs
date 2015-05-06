@@ -238,10 +238,6 @@ sub init_repos {
 #===================================
     say "Updating repositories";
 
-    my $tracker_path = $Conf->{paths}{branch_tracker}
-        or die "Missing <paths.branch_tracker> in config";
-    my $tracker = ES::BranchTracker->new( file($tracker_path) );
-
     my $repos_dir = $Conf->{paths}{repos}
         or die "Missing <paths.repos> in config";
 
@@ -251,7 +247,14 @@ sub init_repos {
     my $conf = $Conf->{repos}
         or die "Missing <repos> in config";
 
-    for my $name ( sort keys %$conf ) {
+    my @repo_names = sort keys %$conf;
+
+    my $tracker_path = $Conf->{paths}{branch_tracker}
+        or die "Missing <paths.branch_tracker> in config";
+
+    my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
+
+    for my $name (@repo_names) {
         my $repo = ES::Repo->new(
             name    => $name,
             dir     => $repos_dir,
@@ -260,6 +263,7 @@ sub init_repos {
         );
         $repo->update_from_remote();
     }
+
 }
 
 #===================================
