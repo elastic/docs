@@ -523,11 +523,10 @@
            
           <a href="hadoop.html">Shield with Elasticsearch for Apache Hadoop
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_shield_with_kibana_4"></a>Shield with Kibana 4</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="_java_clients.html">Java clients</a></span></dt><dt><span class="section"><a href="_http_rest_clients.html">HTTP/REST Clients</a></span></dt><dt><span class="section"><a href="logstash.html">Shield with Logstash</a></span></dt><dt><span class="section"><a href="marvel.html">Shield with Marvel</a></span></dt><dt><span class="section"><a href="kibana.html">Kibana</a></span></dt><dt><span class="section"><a href="_shield_with_kibana_3.html">Shield with Kibana 3</a></span></dt><dt><span class="section"><a href="_shield_with_kibana_4.html">Shield with Kibana 4</a></span></dt><dt><span class="section"><a href="hadoop.html">Shield with Elasticsearch for Apache Hadoop</a></span></dt></dl></div><p>Kibana 4 adds a server-side component that changes the integration with Shield and the steps required to configure Shield, Elasticsearch, and Kibana to work together. With Kibana 4, the browser makes requests to the Kibana 4 server, and not to Elasticsearch directly. The Kibana 4 server then makes requests to Elasticsearch on behalf of the browser.</p><p>The Kibana server needs user credentials that enable it to access the <code class="literal">.kibana</code> index on startup.
-You need to tell Kibana what credentials to use by setting the <code class="literal">kibana_elasticsearch_username</code> and
-<code class="literal">kibana_elasticsearch_password</code> properties in the Kibana configuration file, <code class="literal">kibana.yml</code>.</p><p>Kibana users need access to the indices that they will be working with and the <code class="literal">.kibana</code> index, where their
-saved searches, visualizations, and dashboards are stored.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The default Kibana 4 user role grants read access to all indices. We strongly recommend deriving
-custom roles for your Kibana users that limit access to specific indices according to your organization’s goals and policies.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="kibana4-roles"></a>Shield configuration</h3></div></div></div><p>Shield includes a default role for Kibana 4 users that grants read access to all indices and full access to the <code class="literal">.kibana</code> index where Kibana stores saved searches, visualizations, and dashboards.</p><pre class="programlisting prettyprint lang-yaml">kibana4:
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_shield_with_kibana_4"></a>Shield with Kibana 4</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="_java_clients.html">Java clients</a></span></dt><dt><span class="section"><a href="_http_rest_clients.html">HTTP/REST Clients</a></span></dt><dt><span class="section"><a href="logstash.html">Shield with Logstash</a></span></dt><dt><span class="section"><a href="marvel.html">Shield with Marvel</a></span></dt><dt><span class="section"><a href="kibana.html">Kibana</a></span></dt><dt><span class="section"><a href="_shield_with_kibana_3.html">Shield with Kibana 3</a></span></dt><dt><span class="section"><a href="_shield_with_kibana_4.html">Shield with Kibana 4</a></span></dt><dt><span class="section"><a href="hadoop.html">Shield with Elasticsearch for Apache Hadoop</a></span></dt></dl></div><p>Kibana 4 adds a server-side component that changes the integration with Shield and the steps required to configure Shield, Elasticsearch, and Kibana to work together. With Kibana 4, the browser makes requests to the Kibana 4 server, and not to Elasticsearch directly. The Kibana 4 server then makes requests to Elasticsearch on behalf of the browser. We recommend using separate roles for your users who log into Kibana and for the Kibana 4 server itself.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="kibana4-roles"></a>Configuring Roles for Kibana 4 Users</h3></div></div></div><p>Kibana users need access to the indices that they will be working with and the <code class="literal">.kibana</code> index where their
+saved searches, visualizations, and dashboards are stored.  Shield includes a default <code class="literal">kibana4</code> role that grants
+read access to all indices and full access to the <code class="literal">.kibana</code> index.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The default Kibana 4 user role grants read access to all indices. We strongly recommend deriving
+custom roles for your Kibana users that limit access to specific indices according to your organization’s goals and policies.</p></div></div><pre class="programlisting prettyprint lang-yaml">kibana4:
   cluster:
       - cluster:monitor/nodes/info
       - cluster:monitor/health
@@ -550,7 +549,7 @@ custom roles for your Kibana users that limit access to specific indices accordi
       - indices:data/write/delete
       - indices:data/write/index
       - indices:data/write/update
-      - indices:admin/create</pre><p>The cluster permission is required because Kibana 4 uses a few monitoring APIs to check version and health status.</p><p>Kibana 4 users need read access to any indices they are allowed to access through Kibana. In the default <code class="literal">kibana4</code> role, the wildcard grants read access to all indices. To constrain Kibana’s access to specific indices, explicitly specify the index names in your role. When configuring a role for a Kibana user and granting access to a specific index, at a minimum the user needs the following privileges on the index:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+      - indices:admin/create</pre><p>To constrain Kibana’s access to specific indices, explicitly specify the index names in your role. When configuring a role for a Kibana user and granting access to a specific index, at a minimum the user needs the following privileges on the index:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">indices:admin/mappings/fields/get</code>
 </li><li class="listitem">
 <code class="literal">indices:admin/validate/query</code>
@@ -560,12 +559,15 @@ custom roles for your Kibana users that limit access to specific indices accordi
 <code class="literal">indices:data/read/msearch</code>
 </li><li class="listitem">
 <code class="literal">indices:admin/get</code>
-</li></ul></div><p>Users also need access to the <code class="literal">.kibana</code> index to save searches, visualizations, and dashboards.</p><p>The Kibana 4 server needs access to the cluster monitoring APIs and the <code class="literal">.kibana</code> index. However, the server
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="kibana4-server-role"></a>Configuring a Role for the Kibana 4 Server</h3></div></div></div><p>The Kibana 4 server needs access to the cluster monitoring APIs and the <code class="literal">.kibana</code> index. However, the server
 does not need access to user indexes. The following <code class="literal">kibana4_server</code> role shows the privileges required
 by the Kibana 4 server.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This role is included in roles.yml by default as of Shield 1.1. If you are running an older version of Shield,
-you may need to add it yourself.</p></div></div><pre class="programlisting prettyprint lang-yaml">kibana4_server:
+you need to add it yourself.</p></div></div><pre class="programlisting prettyprint lang-yaml">kibana4_server:
+  cluster:
+      - cluster:monitor/nodes/info
+      - cluster:monitor/health
+  indices:
     '.kibana':
-      - indices:admin/create
       - indices:admin/exists
       - indices:admin/mapping/put
       - indices:admin/mappings/fields/get
@@ -576,66 +578,8 @@ you may need to add it yourself.</p></div></div><pre class="programlisting prett
       - indices:data/read/search
       - indices:data/write/delete
       - indices:data/write/index
-      - indices:data/write/update</pre><p>To configure the Kibana 4 server, you must assign this role to a user and add the user credentials to <code class="literal">kibana.yml</code>.</p><pre class="screen">kibana_elasticsearch_username: &lt;username&gt;
-kibana_elasticsearch_password: &lt;password&gt;</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_from_the_browser_to_the_kibana_4_server"></a>From the browser to the Kibana 4 server</h3></div></div></div><p>The Kibana 4 server does not support inbound SSL/TLS.  In order to enable SSL from the browser to the Kibana server,
-you will have to install a reverse proxy that terminates the SSL connection from the browser and sends clear text HTTP
-to the Kibana server. The procedure for this is beyond the scope of this document.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_from_the_kibana_4_server_to_elasticsearch"></a>From the Kibana 4 server to Elasticsearch</h3></div></div></div><p>You can configure the Kibana 4 server to use SSL to access Elasticsearch. For example, to enable Kibana to
-use HTTPS on port 9200 to access Elasticsearch, add the following line to your <code class="literal">kibana.yml</code> file:</p><pre class="programlisting prettyprint lang-yaml">elasticsearch: "https://localhost:9200"</pre><p>If the server’s certificate chain does not include a trusted authority, you will get a <code class="literal">certificate_unknown</code> error.
-If you are acting as your own certificate authority (CA), you can either add your CA certificate to the trust chain or
-disable verification of the server certificate by adding the following line to your <code class="literal">kibana.yml</code> file:</p><pre class="programlisting prettyprint lang-yaml">verify_ssl: false</pre><p>Note that disabling SSL verification instructs Kibana to completely disregard the validity of the certificate.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_adding_ssl_certificates"></a>Adding SSL certificates</h4></div></div></div><p>The procedure in this section imports the root certificate authority (CA) public PEM certificate to the
-<code class="literal">/usr/share/ca-certificates/</code> directory. Once the root CA PEM certificate is imported, Kibana can validate SSL
-connections to the Elasticsearch server.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This procedure is for the Debian Linux distributions.</p></div></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Copy the public certificate for your own CA to the <code class="literal">/usr/share/ca-certificates/</code> directory.
-</p><pre class="programlisting prettyprint lang-shell">elk@securelk:/opt/elk/kibana-4.0.0-BETA2/bin$ find /usr/share/ca-certificates/elk/
-/usr/share/ca-certificates/elk/
-/usr/share/ca-certificates/elk/cacert.crt</pre></li><li class="listitem"><p class="simpara">
-Add the following line to the <code class="literal">/etc/ca-certificates.conf</code> file:
-</p><pre class="programlisting prettyprint lang-shell">elk@securelk:/opt/elk/kibana-4.0.0-BETA2/bin$ tail -1 /etc/ca-certificates.conf
-elk/cacert.crt</pre></li><li class="listitem"><p class="simpara">
-Run the <code class="literal">update-ca-certificates --verbose --fresh</code> command. The end of this command’s output contains a line similar to the following:
-</p><pre class="programlisting prettyprint lang-shell">Adding debian:cacert.pem</pre></li><li class="listitem"><p class="simpara">
-Validate successful certificate importation with the <code class="literal">keytool</code> command, as in the following example:
-</p><pre class="programlisting prettyprint lang-shell">elk@securelk:/opt/elk/kibana-4.0.0-BETA2/bin$ keytool -list -keystore /etc/ssl/certs/java/cacerts -v  | egrep -i 'barcelona' -A10 -B10
-Enter keystore password:  changeit
-
-*******************************************
-*******************************************
-
-Alias name: debian:cacert.pem
-Creation date: Nov 17, 2014
-Entry type: trustedCertEntry
-
-Owner: CN=securelk, C=ES, ST=Catalunia, L=Barcelona, EMAILADDRESS=cacert@elasticsupport.test.not, OU=Support CA Services, O=Elasticsearch
-Issuer: CN=securelk, C=ES, ST=Catalunia, L=Barcelona, EMAILADDRESS=cacert@elasticsupport.test.not, OU=Support CA Services, O=Elasticsearch
-Serial number: 8cd077587fa35413
-Valid from: Wed Nov 12 11:56:30 EST 2014 until: Sat Nov 09 11:56:30 EST 2024
-Certificate fingerprints:
-     MD5:  6C:12:5B:92:22:A4:3A:4F:4D:C0:72:84:2F:B9:82:0A
-     SHA1: DE:88:42:F4:D9:06:3C:EA:3F:2A:4B:56:12:E8:20:5C:E6:9D:5E:01
-     Signature algorithm name: SHA1withRSA
-     Version: 3
-
-Extensions:
-
---
-  PathLen:2147483647
-]
-
-#3: ObjectId: 2.5.29.35 Criticality=false
-AuthorityKeyIdentifier [
-KeyIdentifier [
-0000: 26 47 80 D6 6D AB B0 32   5B E1 4D CC A6 E1 27 BB  &amp;G..m..2[.M...'.
-0010: F8 5A 9D 98                                        .Z..
-]
-
-[CN=securelk, C=ES, ST=Catalunia, L=Barcelona, EMAILADDRESS=cacert@elasticsupport.test.not, OU=Support CA Services, O=Elasticsearch]
-SerialNumber: [    8cd07758 7fa35413]
-]
-
-*******************************************
-*******************************************</pre></li><li class="listitem">
-Restart the Kibana process.
-</li></ol></div></div></div></div><div class="navfooter"><span class="prev"><a href="_shield_with_kibana_3.html">
+      - indices:data/write/update</pre><p>To configure the Kibana 4 server, you must assign this role to a user and add the user credentials to <code class="literal">kibana.yml</code>.
+For more information, see <a class="ulink" href="http://www.elastic.co/guide/en/kibana/current/production.html#configuring-kibana-shield" target="_top">Configuring Kibana to Work with Shield</a> in the Kibana 4 User Guide.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_configuring_kibana_4_to_use_ssl"></a>Configuring Kibana 4 to Use SSL</h3></div></div></div><p>You should also configure Kibana 4 to use SSL encryption for both client requests and the requests the Kibana server sends to Elasticsearch. For more information, see <a class="ulink" href="http://www.elastic.co/guide/en/kibana/current/production.html#enabling-ssl" target="_top">Enabling SSL</a> in the Kibana 4 User Guide.</p></div></div><div class="navfooter"><span class="prev"><a href="_shield_with_kibana_3.html">
               « 
               Shield with Kibana 3</a>
            
