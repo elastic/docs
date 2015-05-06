@@ -666,6 +666,75 @@ monthly sales:</p><pre class="programlisting prettyprint lang-js">{
 }</pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO51-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO51-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 No second derivative for the first two buckets since we need at least 2 data points from the first derivative to calculate the
 second derivative
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_units"></a>Units<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/reducer/derivative-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The derivative aggregation allows the units of the derivative values to be specified. This returns an extra field in the response
+<code class="literal">normalized_value</code> which reports the derivative value in the desired x-axis units.  In the below example we calculate the derivative
+of the total sales per month but ask for the derivative of the sales as in the units of sales per day:</p><pre class="programlisting prettyprint lang-js">{
+    "aggs" : {
+        "sales_per_month" : {
+            "date_histogram" : {
+                "field" : "date",
+                "interval" : "month"
+            },
+            "aggs": {
+                "sales": {
+                    "sum": {
+                        "field": "price"
+                    }
+                },
+                "sales_deriv": {
+                    "derivative": {
+                        "buckets_paths": "sales",
+                        "unit": "day" <a id="CO52-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    }
+                }
+            }
+        }
+    }
+}</pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO52-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">unit</code> specifies what unit to use for the x-axis of the derivative calculation
+</p></td></tr></table></div><p>And the following may be the response:</p><pre class="programlisting prettyprint lang-js">{
+   "aggregations": {
+      "sales_per_month": {
+         "buckets": [
+            {
+               "key_as_string": "2015/01/01 00:00:00",
+               "key": 1420070400000,
+               "doc_count": 3,
+               "sales": {
+                  "value": 550
+               } <a id="CO53-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            },
+            {
+               "key_as_string": "2015/02/01 00:00:00",
+               "key": 1422748800000,
+               "doc_count": 2,
+               "sales": {
+                  "value": 60
+               },
+               "sales_deriv": {
+                  "value": -490, <a id="CO53-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                  "normalized_value": -17.5 <a id="CO53-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+               }
+            },
+            {
+               "key_as_string": "2015/03/01 00:00:00",
+               "key": 1425168000000,
+               "doc_count": 2,
+               "sales": {
+                  "value": 375
+               },
+               "sales_deriv": {
+                  "value": 315,
+                  "normalized_value": 10.16129032258065
+               }
+            }
+         ]
+      }
+   }
+}</pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO53-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO53-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">value</code> is reported in the original units of <span class="emphasis"><em>per month</em></span>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO53-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">normalized_value</code> is reported in the desired units of <span class="emphasis"><em>per day</em></span>
 </p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-reducer.html">
               « 
               Reducer Aggregations</a>
