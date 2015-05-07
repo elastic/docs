@@ -91,7 +91,7 @@ sub build_local {
         if ( my $pid = fork ) {
 
             # parent
-            $SIG{CHLD} = sub {
+            $SIG{INT} = sub {
                 kill -9, $pid;
             };
             if ( $Opts->{open} ) {
