@@ -216,7 +216,7 @@ SITEMAP_START
             return unless $item->basename =~ /\.html$/;
             return $item->PRUNE unless $item->parent->basename eq 'current';
             my $date = timestamp( ( stat($item) )[9] );
-            my $url = 'https://www.elastic.co/guide/' . $item->relative($dir);
+            my $url = 'http://www.elastic.co/guide/' . $item->relative($dir);
             say $fh <<ENTRY;
 <url>
     <loc>$url</loc>
