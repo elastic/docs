@@ -161,6 +161,9 @@ sub _fetch_template {
         $content =~ s{<title>.*</title>}{}s
             or die "Couldn't remove <title>\n";
 
+        # remove guide_template.css
+        $content =~s{<link rel="stylesheet" type="text/css" href="/static/css/guide_template.css" />}{};
+
         # prehead
         $content =~ s{(<head>)}{$1\n<!-- DOCS PREHEAD -->}
             or die "Couldn't add PREHEAD\n";
