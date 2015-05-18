@@ -5,6 +5,7 @@ use warnings;
 use v5.10;
 
 our ($Old_Pwd);
+our @Old_ARGV = @ARGV;
 
 use Cwd;
 use FindBin;
@@ -25,6 +26,7 @@ use ES::Util qw(
     timestamp
     write_html_redirect
 );
+
 use Getopt::Long;
 use YAML qw(LoadFile);
 use Path::Class qw(dir file);
@@ -37,20 +39,25 @@ use ES::Toc();
 use ES::LinkCheck();
 use ES::Template();
 
-init_env();
-
-our $Conf = LoadFile('conf.yaml');
-
 GetOptions(
     $Opts,    #
     'all', 'push',    #
     'single', 'doc=s', 'out=s', 'toc', 'chunk=i', 'toc_level=i', 'comments',
-    'open',   'web',
+    'open',   'web',   'staging',
     'lenient', 'verbose', 'reload_template'
-);
+) || exit usage();
+
+our $Conf = LoadFile('conf.yaml');
+
+checkout_staging_or_master();
+init_env();
+
+my $template_urls
+    = $Conf->{template}{branch}{ $Opts->{staging} ? 'staging' : 'default' };
 
 $Opts->{template} = ES::Template->new(
     %{ $Conf->{template} },
+    %$template_urls,
     lenient  => $Opts->{lenient},
     force    => $Opts->{reload_template},
     abs_urls => $Opts->{doc}
@@ -301,8 +308,6 @@ sub push_changes {
 #===================================
 sub init_env {
 #===================================
-    chdir($FindBin::RealBin) or die $!;
-
     $ENV{SGML_CATALOG_FILES} = $ENV{XML_CATALOG_FILES} = join ' ',
         file('resources/docbook-xsl-1.78.1/catalog.xml')->absolute,
         file('resources/docbook-xml-4.5/catalog.xml')->absolute;
@@ -312,6 +317,54 @@ sub init_env {
 
     eval { run( 'xsltproc', '--version' ) }
         or die "Please install <xsltproc>";
+}
+
+#===================================
+sub checkout_staging_or_master {
+#===================================
+    my $current = run qw(git symbolic-ref --short HEAD);
+    chomp $current;
+
+    my $build_dir = $Conf->{paths}{build}
+        or die "Missing <paths.build> in config";
+
+    $build_dir = dir($build_dir);
+    $build_dir->mkpath;
+
+    if ( $Opts->{staging} ) {
+        return say "*** USING staging BRANCH ***"
+            if $current eq 'staging';
+
+        say "*** SWITCHING FROM $current TO staging BRANCH ***";
+        run qw(git checkout -B staging);
+        restart();
+    }
+    elsif ( $current eq 'staging' ) {
+        say "*** SWITCHING FROM staging TO master BRANCH ***";
+        run qw(git checkout master);
+        restart();
+    }
+    elsif ( $current ne 'master' ) {
+        say "*** USING $current BRANCH ***";
+    }
+}
+
+#===================================
+sub restart {
+#===================================
+    # Delete template to force reloading
+    dir( $Conf->{template}{path} )->recurse(
+        callback => sub {
+            my $file = shift;
+            return if $file->is_dir || $file !~ /\.html/;
+            $file->remove;
+        }
+    );
+
+    # reexecute script in case it has changed
+    my $bin = file($0)->absolute($Old_Pwd);
+    say "Restarting";
+    exec( $^X, $bin, @Old_ARGV );
 }
 
 #===================================
@@ -335,6 +388,7 @@ sub usage {
           --open            Open the docs in a browser once built.
           --web             Serve the docs via a webserver once built.
           --lenient         Ignore linking errors
+          --staging         Use the template from the staging website
           --reload_template Force retrieving the latest web template
           --verbose
 
@@ -346,6 +400,8 @@ sub usage {
 
         Opts:
           --push            Commit the updated docs and push to origin
+          --staging         Use the template from the staging website
+                            and push to the staging branch
           --verbose
 
 USAGE

@@ -138,7 +138,7 @@ sub finish_build {
 
     # If lenient, look for snippets in parent directories
     my $levels = $Opts->{lenient} ? 5 : 1;
-    while ($levels--) {
+    while ( $levels-- ) {
         $snippets_src = $source->subdir('snippets');
         last if -e $snippets_src;
         $source = $source->parent;
@@ -220,21 +220,15 @@ sub run (@) {
 #===================================
 sub get_url {
 #===================================
-    my $url   = shift;
-    my $retry = 1;
-    my ( $res, $error );
-    while ( $retry-- ) {
-        eval {
-            $res = run( 'curl', '-s', '-A', 'http://search.elastic.co', $url );
-        }
-            && last;
-        $error = $@;
-        sleep 1;
-    }
+    my ( $url, $cred ) = @_;
 
-    return $res if $res;
+    my @cmd = qw(curl -s -S -f -A http://search.elastic.co);
+    push @cmd, ( '--user', $cred ) if $cred;
 
-    die "URL ($url) failed with $error\n";
+    my $res;
+    eval { $res = run( @cmd, $url ); } && return $res;
+
+    die "URL ($url) failed with $@\n";
 }
 
 #===================================

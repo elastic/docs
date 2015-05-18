@@ -8,6 +8,7 @@ use Encode qw(decode_utf8 encode_utf8);
 use Digest::MD5 qw(md5_hex);
 use Path::Class qw(dir);
 use ES::Util qw(get_url);
+use YAML qw(LoadFile DumpFile);
 
 #===================================
 sub new {
@@ -16,6 +17,8 @@ sub new {
 
     my $path = $args{path}
         or die "No <path> specified: " . Dumper( \%args );
+    $path = dir($path);
+    $path->mkpath;
 
     my $base_url = $args{base_url}
         or die "No <base_url> specified: " . Dumper( \%args );
@@ -27,7 +30,7 @@ sub new {
     my $lenient  = $args{lenient}  || 0;
 
     my $self = bless {
-        path         => dir($path),
+        path         => $path,
         base_url     => $base_url,
         template_url => $template_url,
         defaults     => $defaults,
@@ -124,7 +127,7 @@ sub _init {
     my ( $self, $force ) = @_;
 
     my ( $new, $old );
-    ($old) = $self->path->children( no_hidden => 1 );
+    ($old) = grep {/\.html$/} $self->path->children( no_hidden => 1 );
 
     my $created = $old ? $old->basename : 0;
     $created =~ s/\.html//;
@@ -132,7 +135,7 @@ sub _init {
         $new = $old;
     }
     else {
-        $new = eval { $self->_fetch_template() };
+        $new = eval { $self->_update_template() };
         if ($new) {
             $old->remove if $old and $old ne $new;
         }
@@ -149,20 +152,20 @@ sub _init {
 }
 
 #===================================
-sub _fetch_template {
+sub _update_template {
 #===================================
     my $self = shift;
     my $template;
     eval {
-        my $content = eval { get_url( $self->template_url ); }
-            or die "URL <" . $self->template_url . "> returned [$@]\n";
+        my $content = $self->_fetch_template;
 
         # remove title
         $content =~ s{<title>.*</title>}{}s
             or die "Couldn't remove <title>\n";
 
         # remove guide_template.css
-        $content =~s{<link rel="stylesheet" type="text/css" href="/static/css/guide_template.css" />}{};
+        $content
+            =~ s{<link rel="stylesheet" type="text/css" href="/static/css/guide_template.css" />}{};
 
         # prehead
         $content =~ s{(<head>)}{$1\n<!-- DOCS PREHEAD -->}
@@ -198,6 +201,54 @@ sub _fetch_template {
         1;
     } or die "Unable to update template: $@";
     return $template;
+}
+
+#===================================
+sub _fetch_template {
+#===================================
+    my $self = shift;
+
+    my $content;
+    my $cred = $self->_creds_for_url();
+
+    eval { $content = get_url( $self->template_url, $cred ) }
+        and return $content;
+
+    die $@ unless $@ =~ m/401 Unauthorized|error: 401/;
+
+    say
+        "The docs template is password protected. Please enter your credentials:";
+
+    $|++;
+    print "Username: ";
+    my $user = <STDIN>;
+    chomp $user;
+    exit unless $user;
+
+    print "Password: ";
+    my $pass = <STDIN>;
+    chomp $pass;
+    exit unless $pass;
+
+    $self->_add_creds_for_url("$user:$pass");
+    return $self->_fetch_template;
+}
+
+#===================================
+sub _creds_for_url {
+#===================================
+    my $self = shift;
+    my $creds = eval { LoadFile $self->creds_file } || {};
+    return $creds->{ $self->template_url };
+}
+
+#===================================
+sub _add_creds_for_url {
+#===================================
+    my ( $self, $cred ) = @_;
+    my $creds = eval { LoadFile $self->creds_file } || {};
+    $creds->{ $self->template_url } = $cred;
+    DumpFile( $self->creds_file, $creds );
 }
 
 #===================================
@@ -241,6 +292,7 @@ sub abs_urls     { shift->{abs_urls} }
 sub md5          { shift->{md5} }
 sub _map         { shift->{map} }
 sub _parts       { shift->{parts} }
+sub creds_file   { shift->path->file('creds.yml') }
 #===================================
 
 1;
