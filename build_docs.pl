@@ -352,15 +352,6 @@ sub checkout_staging_or_master {
 #===================================
 sub restart {
 #===================================
-    # Delete template to force reloading
-    dir( $Conf->{template}{path} )->recurse(
-        callback => sub {
-            my $file = shift;
-            return if $file->is_dir || $file !~ /\.html/;
-            $file->remove;
-        }
-    );
-
     # reexecute script in case it has changed
     my $bin = file($0)->absolute($Old_Pwd);
     say "Restarting";

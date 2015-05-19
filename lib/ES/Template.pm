@@ -126,22 +126,31 @@ sub _init {
 #===================================
     my ( $self, $force ) = @_;
 
-    my ( $new, $old );
-    ($old) = grep {/\.html$/} $self->path->children( no_hidden => 1 );
+    my $prefix = $self->template_url;
+    $prefix =~ s/\W//g;
 
-    my $created = $old ? $old->basename : 0;
-    $created =~ s/\.html//;
-    if ( not $force and time - $created < 20 * 60 ) {
-        $new = $old;
+    my $new = $self->path->file( "$prefix-" . time . ".html" );
+    my @old = sort grep {/(^|\/)${prefix}-\d+\.html$/}
+        $self->path->children( no_hidden => 1 );
+
+    my $latest = 0;
+    if ( @old && $old[-1] =~ /-(\d+)\.html/ ) {
+        $latest = $1;
+    }
+
+    my $created = $1 || 0;
+    if ( not $force and time - $latest < 20 * 60 ) {
+        $new = $old[-1];
     }
     else {
-        $new = eval { $self->_update_template() };
-        if ($new) {
-            $old->remove if $old and $old ne $new;
+        my $template = eval { $self->_update_template() };
+        if ($template) {
+            $_->remove for @old;
+            $new->spew( iomode => '>:utf8', $template );
         }
-        elsif ( $self->lenient && $old ) {
+        elsif ( $self->lenient && @old ) {
             print "$@Reusing existing template\n";
-            $new = $old;
+            $new = $old[-1];
         }
         else {
             die $@;
@@ -155,17 +164,16 @@ sub _init {
 sub _update_template {
 #===================================
     my $self = shift;
-    my $template;
+    my $content;
     eval {
-        my $content = $self->_fetch_template;
+        $content = $self->_fetch_template;
 
         # remove title
         $content =~ s{<title>.*</title>}{}s
             or die "Couldn't remove <title>\n";
 
         # remove guide_template.css
-        $content
-            =~ s{<link rel="stylesheet" type="text/css" href="/static/css/guide_template.css" />}{};
+        $content =~ s{<[^<>]+guide_template.css"[^>]+>}{};
 
         # prehead
         $content =~ s{(<head>)}{$1\n<!-- DOCS PREHEAD -->}
@@ -196,11 +204,9 @@ sub _update_template {
             </body>
         }xs;
 
-        $template = $self->path->file( time . ".html" );
-        $template->spew( iomode => '>:utf8', $content );
         1;
     } or die "Unable to update template: $@";
-    return $template;
+    return $content;
 }
 
 #===================================
