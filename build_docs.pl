@@ -297,8 +297,14 @@ sub push_changes {
     } || '';
 
     if ( sha_for('HEAD') ne $remote_sha ) {
-        say "Pushing changes";
-        run qw(git push origin HEAD );
+        if ( $Opts->{staging} ) {
+            say "Force pushing changes to staging";
+            run qw(git push -f origin HEAD );
+        }
+        else {
+            say "Pushing changes";
+            run qw(git push -f origin HEAD );
+        }
     }
     else {
         say "No changes to push";
