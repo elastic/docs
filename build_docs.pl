@@ -379,7 +379,7 @@ sub usage {
           --toc             Include a TOC at the beginning of the page.
           --out dest/dir/   Defaults to ./html_docs.
           --chunk=1         Also chunk sections into separate files
-          --toc_level=1     How many sections deep should the main ToC display
+          --toc_level=5     How many sections deep should the main ToC display
           --comments        Make // comments visible
 
           --open            Open the docs in a browser once built.
