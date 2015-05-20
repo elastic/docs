@@ -328,7 +328,7 @@ sub init_env {
 #===================================
 sub checkout_staging_or_master {
 #===================================
-    my $current = run qw(git symbolic-ref --short HEAD);
+    my $current = eval{run qw(git symbolic-ref --short HEAD)} || 'DETACHED';
     chomp $current;
 
     my $build_dir = $Conf->{paths}{build}
