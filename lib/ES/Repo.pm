@@ -58,8 +58,7 @@ sub update_from_remote {
     my $self = shift;
     my $dir  = $self->dir;
 
-    local $ENV{GIT_DIR}       = $self->git_dir;
-    local $ENV{GIT_WORK_TREE} = $self->dir;
+    local $ENV{GIT_DIR} = $self->git_dir;
 
     my $name = $self->name;
     eval {
@@ -71,6 +70,8 @@ sub update_from_remote {
         1;
     }
         or die "Error updating repo <$name>: $@";
+
+    local $ENV{GIT_WORK_TREE} = $self->dir;
 
     my %local = map { $_ => 1 } $self->_local_branches;
 
