@@ -31,7 +31,7 @@ sub new {
     $index = Path::Class::file($index),;
 
     my $chunk     = $args{chunk}     || 0;
-    my $toc_level = $args{toc_level} || 5;
+    my $toc_level = $args{toc_level} || 1;
     my $toc       = $args{toc}       || 0;
 
     my $branches = $args{branches} || $repo->branches;
@@ -133,8 +133,8 @@ sub _build_book {
 
     return say "   - Reusing existing"
         if -e $branch_dir
-        && !$template->md5_changed($branch_dir)
-        && !$repo->has_changed( $src_path, $branch );
+        && ! $template->md5_changed($branch_dir)
+        && ! $repo->has_changed( $src_path, $branch );
 
     say "   - Building";
     $repo->checkout( $src_path, $branch );

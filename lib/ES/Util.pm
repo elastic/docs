@@ -34,7 +34,7 @@ sub build_chunked {
     my $version   = $opts{version} || 'test build';
     my $multi     = $opts{multi} || 0;
     my $lenient   = $opts{lenient} || '';
-    my $toc_level = $opts{toc_level} || 5;
+    my $toc_level = $opts{toc_level} || 1;
     my $edit_url  = $opts{edit_url} || '';
 
     my $output = run(
