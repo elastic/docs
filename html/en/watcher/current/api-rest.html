@@ -806,11 +806,11 @@ The build hash of the plugin
 The time the plugin was built
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO33-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Whether or not this plugin was a development snapshot build
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-rest-stats"></a>Stats API</h3></div></div></div><p>The watcher <code class="literal">stats</code> API returns information on the aspects of watcher on your cluster.</p><p>The following example queries the <code class="literal">stats</code> API :</p><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_watcher/stats'</pre><p>A successful call returns a JSON structure similar to the following example:</p><pre class="programlisting prettyprint lang-js">{
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-rest-stats"></a>Stats API</h3></div></div></div><p>The watcher <code class="literal">stats</code> API returns information on the aspects of watcher on your cluster.</p><p>The watcher <code class="literal">stats</code> API supports the following request options</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top"> Name               </th><th align="left" valign="top"> Required </th><th align="left" valign="top"> Default </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p>metric</p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>null</p></td><td align="left" valign="top"><p>What metric should be returned.</p></td></tr></tbody></table></div><p>The supported metric values:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top"> Metric             </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p>executing_watches</p></td><td align="left" valign="top"><p>Include the current executing watches in the response.</p></td></tr><tr><td align="left" valign="top"><p>_all</p></td><td align="left" valign="top"><p>Include all metrics in the response.</p></td></tr></tbody></table></div><p>The watcher <code class="literal">stats</code> API always returns basic metrics regardless of the <code class="literal">metric</code> option.</p><p>The following example queries the <code class="literal">stats</code> API including the basic metrics:</p><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_watcher/stats'</pre><p>A successful call returns a JSON structure similar to the following example:</p><pre class="programlisting prettyprint lang-js">{
    "watcher_state": "started",  <a id="CO34-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
    "watch_count": 1, <a id="CO34-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
    "execution_queue": {
-      "size": 0, <a id="CO34-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+      "size": 1000, <a id="CO34-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
       "max_size": 1 <a id="CO34-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
    }
 }</pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO34-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
@@ -821,7 +821,40 @@ The number of watches currently registered in watcher.
 The number of watches that were triggere and currently pending execution.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO34-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The largest size of the of the execution queue during this instance of the watcher service. This statistic is reset when the cluster restarts or when the master changes.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-rest-stop"></a>Stop API</h3></div></div></div><p>The <code class="literal">stop</code> watcher API stops the watcher service if the service is running, as in the following example:</p><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/_watcher/_stop'</pre><p>Watcher returns the following response if the request is successful:</p><pre class="programlisting prettyprint lang-js">{
+</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_current_executing_watches_metric"></a>Current executing watches metric</h4></div></div></div><p>The current executing watches metric gives insight into the watches that are currently being executed by Watcher.
+Per watch that is executing information is shared, like the <code class="literal">watch_id</code>, when execution started and at what phase the
+execution is.</p><p>To include this metric, the <code class="literal">metric</code> option should be set to <code class="literal">executing_watches</code> or <code class="literal">_all</code>.</p><p>The following example specifies the <code class="literal">metric</code> option as a query string argument and will include the basic metrics and
+metrics about the current watches being executed:</p><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_watcher/stats?metric=executing_watches'</pre><p>The following example specifies the <code class="literal">metric</code> option as part of the url path:</p><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_watcher/stats/current_watches'</pre><p>An example of a successful json response that captures a watch in execution:</p><pre class="programlisting prettyprint lang-js">{
+   "watcher_state": "started",
+   "watch_count": 2,
+   "execution_queue": {
+      "size": 1000,
+      "max_size": 20
+   },
+   "current_watches": [ <a id="CO35-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      {
+         "watch_id": "slow_condition", <a id="CO35-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+         "watch_record_id": "slow_condition_3-2015-05-13T07:42:32.179Z", <a id="CO35-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+         "triggered_time": "2015-05-12T11:53:51.800Z", <a id="CO35-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+         "execution_time": "2015-05-13T07:42:32.179Z", <a id="CO35-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+         "execution_phase": "condition" <a id="CO35-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+      }
+   ]
+}</pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO35-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+A list of all the Watches that are currently being executed by Watcher. In case of an empty array no executing watches
+    had been captured. The captured watches are sorted by execution time in descending order. So the longest running watch
+    is always on top.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO35-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The id of the watch being executed.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO35-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The id of the watch record.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO35-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The time the watch was triggered by the trigger engine.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO35-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The time the watch was executed. This is just before the input is being executed.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO35-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The current execution phase the watch is in. Can be <code class="literal">input</code>, <code class="literal">condition</code> or <code class="literal">action</code>.
+</p></td></tr></table></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-rest-stop"></a>Stop API</h3></div></div></div><p>The <code class="literal">stop</code> watcher API stops the watcher service if the service is running, as in the following example:</p><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/_watcher/_stop'</pre><p>Watcher returns the following response if the request is successful:</p><pre class="programlisting prettyprint lang-js">{
    "acknowledged": true
 }</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-rest-start"></a>Start API</h3></div></div></div><p>The <code class="literal">start</code> watcher API starts the watcher service if the service is not already running, as in the following example:</p><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/_watcher/_start'</pre><p>Watcher returns the following response if the request is successful:</p><pre class="programlisting prettyprint lang-js">{
    "acknowledged": true
