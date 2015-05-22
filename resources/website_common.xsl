@@ -165,6 +165,10 @@
 
   <!-- Don't display in ToC -->
   <xsl:template match="phrase" mode="no.anchor.mode" />
+  <xsl:template match="part[@role='exclude']
+                      |chapter[@role='exclude']
+                      |section[@role='exclude']
+                      |sect1[@role='exclude']"  mode="toc" />
 
     <xsl:template name="graphical.admonition">
       <xsl:variable name="admon.type">
