@@ -559,21 +559,21 @@
            
           <a href="indices-shadow-replicas.html">Shadow replica indices
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-seal"></a>Seal<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/seal.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="chapter"><a href="indices-create-index.html">Create Index</a></span></dt><dt><span class="chapter"><a href="indices-delete-index.html">Delete Index</a></span></dt><dt><span class="chapter"><a href="indices-get-index.html">Get Index</a></span></dt><dt><span class="chapter"><a href="indices-exists.html">Indices Exists</a></span></dt><dt><span class="chapter"><a href="indices-open-close.html">Open / Close Index API</a></span></dt><dt><span class="chapter"><a href="indices-put-mapping.html">Put Mapping</a></span></dt><dt><span class="chapter"><a href="indices-get-mapping.html">Get Mapping</a></span></dt><dt><span class="chapter"><a href="indices-get-field-mapping.html">Get Field Mapping</a></span></dt><dt><span class="chapter"><a href="indices-types-exists.html">Types Exists</a></span></dt><dt><span class="chapter"><a href="indices-aliases.html">Index Aliases</a></span></dt><dt><span class="chapter"><a href="indices-update-settings.html">Update Indices Settings</a></span></dt><dt><span class="chapter"><a href="indices-get-settings.html">Get Settings</a></span></dt><dt><span class="chapter"><a href="indices-analyze.html">Analyze</a></span></dt><dt><span class="chapter"><a href="indices-templates.html">Index Templates</a></span></dt><dt><span class="chapter"><a href="indices-warmers.html">Warmers</a></span></dt><dt><span class="chapter"><a href="indices-stats.html">Indices Stats</a></span></dt><dt><span class="chapter"><a href="indices-segments.html">Indices Segments</a></span></dt><dt><span class="chapter"><a href="indices-recovery.html">Indices Recovery</a></span></dt><dt><span class="chapter"><a href="indices-clearcache.html">Clear Cache</a></span></dt><dt><span class="chapter"><a href="indices-flush.html">Flush</a></span></dt><dt><span class="chapter"><a href="indices-refresh.html">Refresh</a></span></dt><dt><span class="chapter"><a href="indices-optimize.html">Optimize</a></span></dt><dt><span class="chapter"><a href="indices-seal.html">Seal</a></span></dt><dt><span class="chapter"><a href="indices-shadow-replicas.html">Shadow replica indices</a></span></dt><dt><span class="chapter"><a href="indices-upgrade.html">Upgrade</a></span></dt></dl></div><p>The seal API allows to flush one or more indices and adds a marker to
-primaries and replicas if there are no pending write operations. The seal
-marker is used during recovery after a node restarts. If a replica is
-allocated on a node which already has a shard copy with the same seal as the
-primary then no files will be copied during recovery. Sealing is a best effort
-operation. If write operations are ongoing while the sealing is in progress
-then writing the seal might fail on some copies.</p><p>A seal marks a point in time snapshot (a low level Lucene commit). This mark
-can be used to decide if the initial, rather resource heavy, recovery phase
-where segments or event the entire lucene index is copied over the network can
-be skipped. If the indices on both sides of the recovery have the same seal no
-segment files need to be copied and transaction log replay can start
-immediately. The seal breaks as soon as the shard issues a new lucene commit,
-uncommitted operations in the transaction log do not break the seal until they
-are committed.</p><pre class="programlisting prettyprint lang-js">curl -XPOST 'http://localhost:9200/twitter/_seal'</pre><p>The response contains details about for which shards a seal was written and
-the reason in case of failure.</p><p>Response in case all copies of a shard successfully wrote the seal:</p><pre class="programlisting prettyprint lang-js">{
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-seal"></a>Seal<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/seal.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="chapter"><a href="indices-create-index.html">Create Index</a></span></dt><dt><span class="chapter"><a href="indices-delete-index.html">Delete Index</a></span></dt><dt><span class="chapter"><a href="indices-get-index.html">Get Index</a></span></dt><dt><span class="chapter"><a href="indices-exists.html">Indices Exists</a></span></dt><dt><span class="chapter"><a href="indices-open-close.html">Open / Close Index API</a></span></dt><dt><span class="chapter"><a href="indices-put-mapping.html">Put Mapping</a></span></dt><dt><span class="chapter"><a href="indices-get-mapping.html">Get Mapping</a></span></dt><dt><span class="chapter"><a href="indices-get-field-mapping.html">Get Field Mapping</a></span></dt><dt><span class="chapter"><a href="indices-types-exists.html">Types Exists</a></span></dt><dt><span class="chapter"><a href="indices-aliases.html">Index Aliases</a></span></dt><dt><span class="chapter"><a href="indices-update-settings.html">Update Indices Settings</a></span></dt><dt><span class="chapter"><a href="indices-get-settings.html">Get Settings</a></span></dt><dt><span class="chapter"><a href="indices-analyze.html">Analyze</a></span></dt><dt><span class="chapter"><a href="indices-templates.html">Index Templates</a></span></dt><dt><span class="chapter"><a href="indices-warmers.html">Warmers</a></span></dt><dt><span class="chapter"><a href="indices-stats.html">Indices Stats</a></span></dt><dt><span class="chapter"><a href="indices-segments.html">Indices Segments</a></span></dt><dt><span class="chapter"><a href="indices-recovery.html">Indices Recovery</a></span></dt><dt><span class="chapter"><a href="indices-clearcache.html">Clear Cache</a></span></dt><dt><span class="chapter"><a href="indices-flush.html">Flush</a></span></dt><dt><span class="chapter"><a href="indices-refresh.html">Refresh</a></span></dt><dt><span class="chapter"><a href="indices-optimize.html">Optimize</a></span></dt><dt><span class="chapter"><a href="indices-seal.html">Seal</a></span></dt><dt><span class="chapter"><a href="indices-shadow-replicas.html">Shadow replica indices</a></span></dt><dt><span class="chapter"><a href="indices-upgrade.html">Upgrade</a></span></dt></dl></div><p>The seal API flushes and adds a "seal" marker to the shards of one or more
+indices. The seal is used during recovery or restarts to skip the first and
+most costly phase of the process if all copies of the shard have the same seal.
+No segment files need to be copied and the transaction log replay phase of the
+recovery can start immediately which makes recovery much faster.</p><p>There are two important points about seals:
+1. They are best effort in that if there are any outstanding write operations
+while the seal operation is being performed then the shards which those writes
+target won’t be sealed but all others will be. See below for more.
+2. The seal breaks as soon as the shard issues a new lucene commit. Uncommitted
+operations in the transaction log do not break the seal. That is because a seal
+marks a point in time snapshot of the segments, a low level lucene commit.
+Practically that means that every write operation on the index will remove the
+seal.</p><pre class="programlisting prettyprint lang-bash">$ curl -XPOST 'http://localhost:9200/twitter/_seal'</pre><p>The response contains details about which shards wrote the seal and the reason
+in case they failed to write the seal.</p><p>Here is what it looks like when all copies single shard index successfully
+wrote the seal:</p><pre class="programlisting prettyprint lang-js">{
    "twitter": [
       {
          "shard_id": 0,
@@ -583,7 +583,7 @@ the reason in case of failure.</p><p>Response in case all copies of a shard succ
          },
          "message": "success"
       }
-}</pre><p>Response in case some copies of a shard failed:</p><pre class="programlisting prettyprint lang-js">{
+}</pre><p>Here is what it looks like when one copy fails:</p><pre class="programlisting prettyprint lang-js">{
    "twitter": [
       {
          "shard_id": 0,
@@ -593,7 +593,7 @@ the reason in case of failure.</p><p>Response in case all copies of a shard succ
          },
          "message": "failed on some copies"
       }
-}</pre><p>Response in case all copies of a shard failed:</p><pre class="programlisting prettyprint lang-js">{
+}</pre><p>Sometimes the failures can be shard wide and they’ll look like this:</p><pre class="programlisting prettyprint lang-js">{
    "twitter": [
       {
          "shard_id": 0,
