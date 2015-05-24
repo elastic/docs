@@ -166,6 +166,7 @@
   <!-- Don't display in ToC -->
   <xsl:template match="phrase" mode="no.anchor.mode" />
   <xsl:template match="part[@role='exclude']
+                      |appendix[@role='exclude']
                       |chapter[@role='exclude']
                       |section[@role='exclude']
                       |sect1[@role='exclude']"  mode="toc" />

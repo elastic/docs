@@ -109,6 +109,12 @@
   </xsl:choose>
 </xsl:template>
 
+  <xsl:template match="part[@role='exclude']
+                      |appendix[@role='exclude']
+                      |chapter[@role='exclude']
+                      |section[@role='exclude']
+                      |sect1[@role='exclude']"  mode="toc" />
+
   <!--  Display part-level TOC before the partintro -->
     <xsl:template match="partintro">
       <xsl:call-template name="id.warning"/>
