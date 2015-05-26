@@ -12,150 +12,47 @@
   <xsl:param name="chunker.output.omit-xml-declaration">no</xsl:param>
 
   <!-- toc -->
-  <xsl:param name="generate.section.toc.level"  select="$chunk.section.depth"/>
-  <xsl:param name="toc.section.depth"           select="$chunk.section.depth"/>
-  <xsl:param name="toc.max.depth"               select="1"/>
+  <xsl:param name="generate.section.toc.level"  select="chunk.section.depth"/>
+  <xsl:param name="toc.section.depth"           select="chunk.section.depth"/>
+  <xsl:param name="toc.max.depth"               select="5"/>
   <xsl:param name="generate.toc">
     book      toc
-    chapter   toc
-    part      toc
-    section   toc
   </xsl:param>
 
   <!-- Include link to other versions on the homepage ToC -->
     <xsl:template name="user.header.content" />
 
+  <!-- Generate ToC for book and parts -->
   <xsl:template name="division.toc">
     <xsl:param name="toc-context" select="."/>
-    <xsl:param name="toc.title.p" select="true()"/>
+    <xsl:param name="toc.title.p" select="false()"/>
     <xsl:param name="local.check.multi" select="true()" />
 
-    <xsl:call-template name="make.toc">
-      <xsl:with-param name="toc-context" select="$toc-context"/>
-      <xsl:with-param name="toc.title.p" select="$toc.title.p"/>
-      <xsl:with-param name="nodes" select="part|reference                                          |preface|chapter|appendix                                          |article                                          |topic                                          |bibliography|glossary|index                                          |refentry                                          |bridgehead[$bridgehead.in.toc != 0]"/>
-
-    </xsl:call-template>
-    <xsl:if test="$local.check.multi">
-      <xsl:if test="local-name(.)='book'">
-        <xsl:if test="$local.book.multi_version &gt; 0">
-          <p>
-             These docs are for branch: <xsl:value-of select="$local.book.version" />.
-             <a href="../index.html">Other versions</a>.
-          </p>
-        </xsl:if>
-      </xsl:if>
-    </xsl:if>
-  </xsl:template>
-
-  <!-- generate part-level toc if chapter has no descendants -->
-  <xsl:template name="component.toc">
-    <xsl:param name="toc-context" select="."/>
-
-    <xsl:variable name="nodes" select="section|sect1
-                                           |simplesect[$simplesect.in.toc != 0]
-                                           |refentry
-                                           |article|bibliography|glossary
-                                           |appendix|index
-                                           |bridgehead[not(@renderas)
-                                                       and $bridgehead.in.toc != 0]
-                                           |.//bridgehead[@renderas='sect1'
-                                                          and $bridgehead.in.toc != 0]"/>
-    <xsl:choose>
-      <xsl:when test="count($nodes) &lt; 2 or $chunk.section.depth = 0">
-        <xsl:for-each select="parent::book | parent::part">
-          <xsl:call-template name="division.toc">
-            <xsl:with-param name="toc-context" select="." />
-            <xsl:with-param name="local.check.multi" select="false()" />
-          </xsl:call-template>
-        </xsl:for-each>
-      </xsl:when>
-      <xsl:otherwise>
+    <xsl:comment>START_TOC</xsl:comment>
+    <xsl:for-each select="self::book | ancestor::book">
         <xsl:call-template name="make.toc">
-          <xsl:with-param name="toc-context" select="$toc-context"/>
-          <xsl:with-param name="nodes" select="$nodes"/>
+          <xsl:with-param name="toc-context" select="."/>
+          <xsl:with-param name="toc.title.p" select="$toc.title.p"/>
+          <xsl:with-param name="nodes" select="part|reference                                          |preface|chapter|appendix                                          |article                                          |topic                                          |bibliography|glossary|index                                          |refentry                                          |bridgehead[$bridgehead.in.toc != 0]"/>
         </xsl:call-template>
-      </xsl:otherwise>
-    </xsl:choose>
-  </xsl:template>
-
-  <!-- generate chapter-level toc for all top-level sections -->
-  <xsl:template name="section.toc">
-    <xsl:for-each select="parent::chapter">
-      <xsl:call-template name="component.toc">
-        <xsl:with-param name="toc-context" select="." />
-      </xsl:call-template>
     </xsl:for-each>
+    <xsl:comment>END_TOC</xsl:comment>
+
   </xsl:template>
 
-<xsl:template match="preface|chapter|appendix|article" mode="toc">
-  <xsl:param name="toc-context" select="."/>
+  <!-- added and deprecated markup -->
+  <xsl:template match="phrase[@revisionflag='added']" mode="toc" />
+  <xsl:template match="phrase[@revisionflag='changed']" mode="toc" />
+  <xsl:template match="phrase[@revisionflag='deleted']" mode="toc" />
+  <xsl:template match="phrase[@role='experimental']" mode="toc" />
 
-  <xsl:choose>
-    <xsl:when test="local-name($toc-context) = 'book'">
-      <xsl:call-template name="subtoc">
-        <xsl:with-param name="toc-context" select="$toc-context"/>
-        <xsl:with-param name="nodes"
-              select="section|sect1|glossary|bibliography|index
-                     |bridgehead[$bridgehead.in.toc != 0]"/>
-      </xsl:call-template>
-    </xsl:when>
-    <xsl:otherwise>
-      <xsl:call-template name="subtoc">
-        <xsl:with-param name="toc-context" select="$toc-context"/>
-        <xsl:with-param name="nodes" select="foo"/>
-      </xsl:call-template>
-    </xsl:otherwise>
-  </xsl:choose>
-</xsl:template>
 
-  <xsl:template match="part[@role='exclude']
-                      |appendix[@role='exclude']
-                      |chapter[@role='exclude']
-                      |section[@role='exclude']
-                      |sect1[@role='exclude']"  mode="toc" />
+  <!-- generate book-level toc for all chapters -->
+  <xsl:template name="component.toc" />
 
-  <!--  Display part-level TOC before the partintro -->
-    <xsl:template match="partintro">
-      <xsl:call-template name="id.warning"/>
+  <!-- generate book-level toc for all top-level sections -->
+  <xsl:template name="section.toc" />
 
-      <div>
-        <xsl:call-template name="common.html.attributes"/>
-        <xsl:call-template name="id.attribute">
-          <xsl:with-param name="conditional" select="0"/>
-        </xsl:call-template>
-
-        <xsl:call-template name="partintro.titlepage"/>
-
-        <xsl:variable name="toc.params">
-          <xsl:call-template name="find.path.params">
-            <xsl:with-param name="node" select="parent::*"/>
-            <xsl:with-param name="table" select="normalize-space($generate.toc)"/>
-          </xsl:call-template>
-        </xsl:variable>
-        <xsl:if test="contains($toc.params, 'toc')">
-          <!-- not ancestor::part because partintro appears in reference -->
-          <xsl:apply-templates select="parent::*" mode="make.part.toc"/>
-        </xsl:if>
-        <xsl:apply-templates/>
-        <xsl:call-template name="process.footnotes"/>
-      </div>
-    </xsl:template>
-
-  <!-- Disable the TOC title -->
-  <xsl:template name="make.toc">
-    <xsl:param name="toc-context" select="."/>
-    <xsl:param name="nodes" select="/NOT-AN-ELEMENT"/>
-    <xsl:if test="$nodes">
-      <div class="toc">
-        <xsl:element name="{$toc.list.type}">
-          <xsl:apply-templates select="$nodes" mode="toc">
-            <xsl:with-param name="toc-context" select="$toc-context"/>
-          </xsl:apply-templates>
-        </xsl:element>
-      </div>
-    </xsl:if>
-  </xsl:template>
 
   <!-- breadcrumbs -->
   <xsl:template name="breadcrumbs">

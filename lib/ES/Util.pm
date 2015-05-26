@@ -29,13 +29,12 @@ sub build_chunked {
 #===================================
     my ( $index, $dest, %opts ) = @_;
 
-    my $chunk     = $opts{chunk} || 0;
-    my $build     = $dest->parent;
-    my $version   = $opts{version} || 'test build';
-    my $multi     = $opts{multi} || 0;
-    my $lenient   = $opts{lenient} || '';
-    my $toc_level = $opts{toc_level} || 1;
-    my $edit_url  = $opts{edit_url} || '';
+    my $chunk    = $opts{chunk} || 0;
+    my $build    = $dest->parent;
+    my $version  = $opts{version} || 'test build';
+    my $multi    = $opts{multi} || 0;
+    my $lenient  = $opts{lenient} || '';
+    my $edit_url = $opts{edit_url} || '';
 
     my $output = run(
         'a2x', '-v',
@@ -49,7 +48,8 @@ sub build_chunked {
         ( $lenient ? '-L' : () ),
         docinfo($index),
         xsltopts(
-            "toc.max.depth"            => $toc_level,
+            "toc.max.depth"            => 5,
+            "toc.section.depth"        => $chunk,
             "chunk.section.depth"      => $chunk,
             "local.book.version"       => $version,
             "local.book.multi_version" => $multi,
@@ -70,6 +70,7 @@ sub build_chunked {
         or die "Couldn't find chunk dir in <$build>";
 
     finish_build( $index->parent, $chunk_dir );
+    extract_toc_from_index($chunk_dir);
     $dest->rmtree;
     rename $chunk_dir, $dest
         or die "Couldn't move <$chunk_dir> to <$dest>: $!";
@@ -80,8 +81,8 @@ sub build_single {
 #===================================
     my ( $index, $dest, %opts ) = @_;
 
-    my $toc = $opts{toc} ? 'book toc' : '';
-    my $type     = $opts{type}     || 'book';
+    my $type = $opts{type} || 'book';
+    my $toc = $opts{toc} ? "$type toc" : '';
     my $lenient  = $opts{lenient}  || '';
     my $version  = $opts{version}  || 'test build';
     my $multi    = $opts{multi}    || 0;
@@ -101,6 +102,7 @@ sub build_single {
         docinfo($index),
         xsltopts(
             "generate.toc"             => $toc,
+            "toc.section.depth"        => 0,
             "local.book.version"       => $version,
             "local.book.multi_version" => $multi,
             "local.root_dir"           => $index->dir->absolute,
@@ -117,6 +119,15 @@ sub build_single {
             : die join "\n", @warn;
     }
 
+    my $base_name = $index->basename;
+    $base_name =~ s/\.[^.]+$/.html/;
+
+    if ( $base_name ne 'index.html' ) {
+        my $src = $dest->file($base_name);
+        rename $src, $dest->file('index.html')
+            or die "Couldn't rename <$src> to <index.html>: $!";
+    }
+
     finish_build( $index->parent, $dest );
 
 }
@@ -128,10 +139,6 @@ sub finish_build {
 
     # Apply template to HTML files
     $Opts->{template}->apply($dest);
-
-    # Copy stylesheet
-    fcopy( 'resources/styles.css', $dest )
-        or die "Couldn't copy <styles.css> to <$dest>: $!";
 
     my $snippets_dest = $dest->subdir('snippets');
     my $snippets_src;
@@ -152,9 +159,20 @@ sub finish_build {
 
     # Copy sense widget if custom or auto sense snippets
     if ( -e $snippets_dest ) {
-        fcopy( 'resources/sense_widget.html', $dest )
+        fcopy( 'resources/web/sense_widget.html', $dest )
             or die "Couldn't copy <sense_widget.html> to <$dest>: $!";
     }
+}
+
+#===================================
+sub extract_toc_from_index {
+#===================================
+    my $dir = shift;
+    my $html
+        = $dir->file('index.html')->slurp( 'iomode' => '<:encoding(UTF-8)' );
+    $html =~ s/^.+<!--START_TOC-->//s;
+    $html =~ s/<!--END_TOC-->.*$//s;
+    $dir->file('toc.html')->spew( iomode => '>:utf8', $html );
 }
 
 #===================================

@@ -30,9 +30,8 @@ sub new {
         or die "No <index> specfied for book <$title>";
     $index = Path::Class::file($index),;
 
-    my $chunk     = $args{chunk}     || 0;
-    my $toc_level = $args{toc_level} || 1;
-    my $toc       = $args{toc}       || 0;
+    my $chunk = $args{chunk} || 0;
+    my $toc   = $args{toc}   || 0;
 
     my $branches = $args{branches} || $repo->branches;
     my $current  = $args{current}  || $repo->current;
@@ -47,19 +46,18 @@ sub new {
         or die "No <template> specified for book <$title>";
 
     bless {
-        title     => $title,
-        dir       => $dir->subdir($prefix),
-        template  => $template,
-        repo      => $repo,
-        prefix    => $prefix,
-        chunk     => $chunk,
-        toc       => $toc,
-        toc_level => $toc_level,
-        single    => $args{single},
-        index     => $index,
-        src_path  => $index->parent,
-        branches  => $branches,
-        current   => $current
+        title    => $title,
+        dir      => $dir->subdir($prefix),
+        template => $template,
+        repo     => $repo,
+        prefix   => $prefix,
+        chunk    => $chunk,
+        toc      => $toc,
+        single   => $args{single},
+        index    => $index,
+        src_path => $index->parent,
+        branches => $branches,
+        current  => $current
     }, $class;
 }
 
@@ -133,8 +131,8 @@ sub _build_book {
 
     return say "   - Reusing existing"
         if -e $branch_dir
-        && ! $template->md5_changed($branch_dir)
-        && ! $repo->has_changed( $src_path, $branch );
+        && !$template->md5_changed($branch_dir)
+        && !$repo->has_changed( $src_path, $branch );
 
     say "   - Building";
     $repo->checkout( $src_path, $branch );
@@ -157,13 +155,13 @@ sub _build_book {
             build_chunked(
                 $repo->dir->file($index),
                 $branch_dir,
-                version   => $branch,
-                edit_url  => $edit_url,
-                chunk     => $self->chunk,
-                toc_level => $self->toc_level,
-                multi     => $self->is_multi_version,
-                template  => $template
+                version  => $branch,
+                edit_url => $edit_url,
+                chunk    => $self->chunk,
+                multi    => $self->is_multi_version,
+                template => $template
             );
+            $self->_add_title_to_toc( $branch, $branch_dir );
         }
         $repo->mark_done( $src_path, $branch );
         1;
@@ -175,6 +173,32 @@ sub _build_book {
         . " branch $branch\n\n"
         . $repo->dump_recent_commits( $src_path, $branch )
         . $error . "\n";
+}
+
+#===================================
+sub _add_title_to_toc {
+#===================================
+    my ( $self, $branch, $dir ) = @_;
+    my $title = $self->title;
+    if ( $self->is_multi_version ) {
+        $title .= ': <select>';
+        for ( @{ $self->branches } ) {
+            my $option = '<option value="' . $_ . '"';
+            $option .= ' selected'  if $branch eq $_;
+            $option .= '>' . $_;
+            $option .= ' (current)' if $self->current eq $_;
+            $option .= '</option>';
+            $title  .= $option;
+        }
+        $title .= '</select>';
+    }
+    $title = '<li id="book_title"><span>' . $title . '</span></li>';
+    for ( 'toc.html', 'index.html' ) {
+        my $file = $dir->file($_);
+        my $html = $file->slurp( iomode => "<:encoding(UTF-8)" );
+        $html =~ s/<ul class="toc"><li>/<ul class="toc">${title}<li>/;
+        $file->spew( iomode => '>:utf8', $html );
+    }
 }
 
 #===================================
@@ -194,8 +218,7 @@ sub _copy_branch_to_current {
     return {
         title => "Version: $branch (current)",
         url   => 'current/index.html'
-        }
-
+    };
 }
 
 #===================================
@@ -224,7 +247,6 @@ sub repo             { shift->{repo} }
 sub prefix           { shift->{prefix} }
 sub chunk            { shift->{chunk} }
 sub toc              { shift->{toc} }
-sub toc_level        { shift->{toc_level} }
 sub single           { shift->{single} }
 sub index            { shift->{index} }
 sub branches         { shift->{branches} }

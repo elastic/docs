@@ -86,16 +86,18 @@ sub index_docs {
     my @versions   = grep { $_->is_dir } $book_dir->children();
 
     for my $version_dir (@versions) {
+        my @files;
+        my $toc = $version_dir->file('toc.html');
+        if ( -e $toc ) {
+            my $content = $toc->slurp( iomode => "<:encoding(UTF-8)" );
+            @files = ( $content =~ /href="([^"]+)"/g );
+        }
+        else {
+            @files = 'index.html';
+        }
 
-        for my $file ( $version_dir->children ) {
-            next if $file->is_dir;
-
-            my $name = $file->basename;
-            next
-                if ( $name eq 'index.html' and !$single )
-                || $name eq 'sense_widget.html'
-                || $name !~ s/\.html$//;
-
+        for (@files) {
+            my $file = $version_dir->file($_);
             my $url = $Guide_Prefix . substr( $file, $length_dir );
             my ( $product, $book_title ) = split '/', $tags;
 
@@ -105,7 +107,8 @@ sub index_docs {
             }
 
             for my $page ( _load_file( $file, $single ) ) {
-                my $title = $page->{title}
+                my $title
+                    = $page->{title}
                     ? $page->{title} . " | $book_title | $product"
                     : "$book_title | $product";
 
@@ -146,7 +149,8 @@ sub _load_file {
         $page_text .= "\n\n" . $section->{title} . "\n\n" . $section->{text};
         $section->{title} .= " » $page_title" unless $single;
     }
-    return ( { title => $page_title, text => $page_text, id => '', main => 1 },
+    return (
+        { title => $page_title, text => $page_text, id => '', main => 1 },
         @$sections );
 }
 

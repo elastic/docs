@@ -9,6 +9,7 @@ use Digest::MD5 qw(md5_hex);
 use Path::Class qw(dir);
 use ES::Util qw(get_url);
 use YAML qw(LoadFile DumpFile);
+use File::Copy::Recursive qw(fcopy);
 
 #===================================
 sub new {
@@ -71,6 +72,15 @@ sub apply {
 
         $file->spew( iomode => '>:utf8', join "", @parts );
     }
+
+    # Copy stylesheet
+    fcopy( 'resources/web/styles.css', $dir )
+        or die "Couldn't copy <styles.css> to <$dir>: $!";
+
+    # Copy javascript
+    fcopy( 'resources/web/docs.js', $dir )
+        or die "Couldn't copy <docs.js> to <$dir>: $!";
+
     $dir->file('template.md5')->spew( $self->md5 );
 }
 

@@ -26,6 +26,7 @@
   <xsl:param name="highlight.source"        select="1"/>
 
   <xsl:param name="generate.toc"></xsl:param>
+  <xsl:param name="toc.list.type"           select="'ul'"/>
 
 
   <!-- Edit me links -->
@@ -118,6 +119,12 @@
       <xsl:with-param name="class" select="$class"/>
     </xsl:apply-templates>
     <xsl:call-template name="generate.html.title"/>
+  </xsl:template>
+
+  <xsl:template match="programlisting">
+    <div class="pre_wrapper">
+        <xsl:apply-imports />
+    </div>
   </xsl:template>
 
   <!-- Make callouts non-selectable -->

@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use v5.10;
 use ES::Util qw(build_single);
-use File::Copy::Recursive qw(fcopy);
 
 #===================================
 sub new {
@@ -35,10 +34,7 @@ sub write {
     my $adoc_file = $dir->file('index.asciidoc');
     $adoc_file->spew( iomode => '>:utf8', $adoc );
 
-    build_single( $adoc_file, $dir );
-    fcopy( 'resources/styles.css', $dir )
-        or die "Couldn't copy <styles.css> to <" . $dir . ">: $!";
-
+    build_single( $adoc_file, $dir, type => 'article' );
     $adoc_file->remove;
 }
 
@@ -60,7 +56,8 @@ sub render {
         else {
             push @adoc, $prefix . "link:$entry->{url}" . "[$entry->{title}]";
             if ( $entry->{versions} ) {
-                $adoc[-1] .= " -- link:$entry->{versions}" . "[other versions]";
+                $adoc[-1]
+                    .= " -- link:$entry->{versions}" . "[other versions]";
             }
             push @adoc, '' unless $indent;
         }

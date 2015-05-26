@@ -42,8 +42,8 @@ use ES::Template();
 GetOptions(
     $Opts,    #
     'all', 'push',    #
-    'single', 'doc=s', 'out=s', 'toc', 'chunk=i', 'toc_level=i', 'comments',
-    'open',   'web',   'staging',
+    'single',  'doc=s',   'out=s', 'toc', 'chunk=i', 'comments',
+    'open',    'web',     'staging',
     'lenient', 'verbose', 'reload_template'
 ) || exit usage();
 
@@ -78,22 +78,19 @@ sub build_local {
     say "Building HTML from $doc";
 
     my $dir = dir( $Opts->{out} || 'html_docs' )->absolute($Old_Pwd);
-    my $html;
     if ( $Opts->{single} ) {
         $dir->rmtree;
         $dir->mkpath;
         build_single( $index, $dir, %$Opts );
-        $html = $index->basename;
-        $html =~ s/\.[^.]+$/.html/;
     }
     else {
         build_chunked( $index, $dir, %$Opts );
-        $html = 'index.html';
     }
 
-    $html = $dir->file($html);
-
     say "Done";
+
+    my $html = $dir->file('index.html');
+
     if ( $Opts->{web} ) {
         if ( my $pid = fork ) {
 
@@ -103,7 +100,7 @@ sub build_local {
             };
             if ( $Opts->{open} ) {
                 sleep 1;
-                open_browser( 'http://localhost:8000/' . $html->basename );
+                open_browser('http://localhost:8000/index.html');
             }
 
             wait;
@@ -119,7 +116,7 @@ sub build_local {
         }
     }
     elsif ( $Opts->{open} ) {
-        say "Opening: $html";
+        say "Opening: " . $html;
         open_browser($html);
     }
     else {
@@ -211,27 +208,36 @@ sub build_sitemap {
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 SITEMAP_START
 
-    $dir->recurse(
-        callback => sub {
-            my $item = shift;
-
-            if ( $item->is_dir ) {
-                return $item->PRUNE
-                    if $item->basename eq 'images';
-                return;
-            }
-            return unless $item->basename =~ /\.html$/;
-            return $item->PRUNE unless $item->parent->basename eq 'current';
-            my $date = timestamp( ( stat($item) )[9] );
-            my $url = 'https://www.elastic.co/guide/' . $item->relative($dir);
-            say $fh <<ENTRY;
+    my $date     = timestamp();
+    my $add_link = sub {
+        my $file = shift;
+        my $url  = 'https://www.elastic.co/guide/' . $file->relative($dir);
+        say $fh <<ENTRY;
 <url>
     <loc>$url</loc>
     <lastmod>$date</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.5</priority>
 </url>
 ENTRY
+
+    };
+
+    $dir->recurse(
+        callback => sub {
+            my $item = shift;
+
+            return unless $item->is_dir && $item->basename eq 'current';
+            if ( -e $item->file('toc.html') ) {
+                my $content = $item->file('toc.html')
+                    ->slurp( iomode => '<:encoding(UTF-8)' );
+                $add_link->( $item->file($_) )
+                    for ( $content =~ /href="([^"]+)"/g );
+            }
+            elsif ( -e $item->file('index.html') ) {
+                $add_link->( $item->file('index.html') );
+            }
+            return $item->PRUNE;
         }
     );
 
@@ -328,7 +334,8 @@ sub init_env {
 #===================================
 sub checkout_staging_or_master {
 #===================================
-    my $current = eval{run qw(git symbolic-ref --short HEAD)} || 'DETACHED';
+    my $current
+        = eval { run qw(git symbolic-ref --short HEAD) } || 'DETACHED';
     chomp $current;
 
     my $build_dir = $Conf->{paths}{build}
@@ -379,7 +386,6 @@ sub usage {
           --toc             Include a TOC at the beginning of the page.
           --out dest/dir/   Defaults to ./html_docs.
           --chunk=1         Also chunk sections into separate files
-          --toc_level=1     How many sections deep should the main ToC display
           --comments        Make // comments visible
 
           --open            Open the docs in a browser once built.
