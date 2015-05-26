@@ -541,8 +541,8 @@
             <div id="pageheader">
     <div class="container">
         <header>
-            <h1>Learn |</h1>
-            <h2>Docs</h2>
+            <h1><a href="/learn" title="Learn">Learn</a> |</h1>
+            <h2><a href="/guide" title="Docs">Docs</a></h2>
         </header>
     </div>
 </div>
@@ -557,7 +557,7 @@
            
           <a href="partial-matching.html">Partial Matching
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="shingles"></a>Finding Associated Words<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="phrase-matching.html">Phrase Matching</a></span></dt><dt><span class="section"><a href="slop.html">Mixing It Up</a></span></dt><dt><span class="section"><a href="_multivalue_fields_2.html">Multivalue Fields</a></span></dt><dt><span class="section"><a href="_closer_is_better.html">Closer Is Better</a></span></dt><dt><span class="section"><a href="proximity-relevance.html">Proximity for Relevance</a></span></dt><dt><span class="section"><a href="_improving_performance.html">Improving Performance</a></span></dt><dt><span class="section"><a href="shingles.html">Finding Associated Words</a></span></dt></dl></div><p>As useful as phrase and proximity queries can be, they still have a downside.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="shingles"></a>Finding Associated Words<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>As useful as phrase and proximity queries can be, they still have a downside.
 They are overly strict: all terms must be present for a phrase query to match,
 even when using <code class="literal">slop</code>.<a id="id-1.5.6.16.2.2" class="indexterm"></a>
 <a id="id-1.5.6.16.2.3" class="indexterm"></a></p><p>The flexibility in word ordering that you gain with <code class="literal">slop</code> also comes at a
@@ -581,7 +581,7 @@ but we can use matching bigrams as a signal to increase the relevance score.</p>
 could index both unigrams and bigrams into a single field, but it is cleaner
 to keep unigrams and bigrams in separate fields that can be queried
 independently.  The unigram field would form the basis of our search, with the
-bigram field being used to boost relevance.</p><p>First, we need to create an analyzer that uses the <code class="literal">shingle</code> token filter:</p><pre class="programlisting prettyprint lang-js">DELETE /my_index
+bigram field being used to boost relevance.</p><p>First, we need to create an analyzer that uses the <code class="literal">shingle</code> token filter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE /my_index
 
 PUT /my_index
 {
@@ -608,7 +608,7 @@ PUT /my_index
             }
         }
     }
-}</pre><a class="sense_widget" href="sense_widget.html?snippets/120_Proximity_Matching/35_Shingles.json" target="sense">View in Sense</a><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO88-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/120_Proximity_Matching/35_Shingles.json" target="sense">View in Sense</a><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO88-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 See <a class="xref" href="relevance-is-broken.html" title="Relevance Is Broken!">Relevance Is Broken!</a>.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO88-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO88-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The default min/max shingle size is <code class="literal">2</code> so we don’t really need to set
@@ -620,15 +620,15 @@ The <code class="literal">shingle</code> token filter outputs unigrams by defaul
 The <code class="literal">my_shingle_analyzer</code> uses our custom <code class="literal">my_shingles_filter</code> token
     filter.
 </p></td></tr></table></div><p>First, let’s test that our analyzer is working as expected with the <code class="literal">analyze</code>
-API:</p><pre class="programlisting prettyprint lang-js">GET /my_index/_analyze?analyzer=my_shingle_analyzer
-Sue ate the alligator</pre><p>Sure enough, we get back three terms:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_index/_analyze?analyzer=my_shingle_analyzer
+Sue ate the alligator</pre></div><p>Sure enough, we get back three terms:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">sue ate</code>
 </li><li class="listitem">
 <code class="literal">ate the</code>
 </li><li class="listitem">
 <code class="literal">the alligator</code>
 </li></ul></div><p>Now we can proceed to setting up a field to use the new analyzer.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multifields"></a>Multifields<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>We said that it is cleaner to index unigrams and bigrams separately, so we
-will create the <code class="literal">title</code> field <a id="id-1.5.6.16.15.2.2" class="indexterm"></a>as a multifield (see <a class="xref" href="multi-fields.html" title="String Sorting and Multifields">String Sorting and Multifields</a>):</p><pre class="programlisting prettyprint lang-js">PUT /my_index/_mapping/my_type
+will create the <code class="literal">title</code> field <a id="id-1.5.6.16.15.2.2" class="indexterm"></a>as a multifield (see <a class="xref" href="multi-fields.html" title="String Sorting and Multifields">String Sorting and Multifields</a>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_index/_mapping/my_type
 {
     "my_type": {
         "properties": {
@@ -643,25 +643,25 @@ will create the <code class="literal">title</code> field <a id="id-1.5.6.16.15.2
             }
         }
     }
-}</pre><p>With this mapping, values from  our JSON document in the field <code class="literal">title</code> will be
+}</pre></div><p>With this mapping, values from  our JSON document in the field <code class="literal">title</code> will be
 indexed both as unigrams (<code class="literal">title</code>) and as bigrams (<code class="literal">title.shingles</code>), meaning
-that we can query these fields independently.</p><p>And finally, we can index our example documents:</p><pre class="programlisting prettyprint lang-js">POST /my_index/my_type/_bulk
+that we can query these fields independently.</p><p>And finally, we can index our example documents:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /my_index/my_type/_bulk
 { "index": { "_id": 1 }}
 { "title": "Sue ate the alligator" }
 { "index": { "_id": 2 }}
 { "title": "The alligator ate Sue" }
 { "index": { "_id": 3 }}
-{ "title": "Sue never goes anywhere without her alligator skin purse" }</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_searching_for_shingles"></a>Searching for Shingles<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To understand the benefit <a id="id-1.5.6.16.16.2.1" class="indexterm"></a>
+{ "title": "Sue never goes anywhere without her alligator skin purse" }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_searching_for_shingles"></a>Searching for Shingles<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To understand the benefit <a id="id-1.5.6.16.16.2.1" class="indexterm"></a>
 <a id="id-1.5.6.16.16.2.2" class="indexterm"></a>that the <code class="literal">shingles</code> field adds, let’s first look at
-the results from a simple <code class="literal">match</code> query for “The hungry alligator ate Sue”:</p><pre class="programlisting prettyprint lang-js">GET /my_index/my_type/_search
+the results from a simple <code class="literal">match</code> query for “The hungry alligator ate Sue”:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_index/my_type/_search
 {
    "query": {
         "match": {
            "title": "the hungry alligator ate sue"
         }
    }
-}</pre><p>This query returns all three documents, but note that documents 1 and 2
-have the same relevance score because they contain the same words:</p><pre class="programlisting prettyprint lang-js">{
+}</pre></div><p>This query returns all three documents, but note that documents 1 and 2
+have the same relevance score because they contain the same words:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "hits": [
      {
         "_id": "1",
@@ -685,7 +685,7 @@ have the same relevance score because they contain the same words:</p><pre class
         }
      }
   ]
-}</pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO89-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO89-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO89-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO89-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Both documents contain <code class="literal">the</code>, <code class="literal">alligator</code>, and <code class="literal">ate</code> and so have the
     same score.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO89-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
@@ -694,7 +694,7 @@ We could have excluded document 3 by setting the <code class="literal">minimum_s
 </p></td></tr></table></div><p>Now let’s add the <code class="literal">shingles</code> field into the query.  Remember that we want
 matches on the <code class="literal">shingles</code> field to act as a signal—to increase the
 relevance score—so we still need to include the query on the main <code class="literal">title</code>
-field:</p><pre class="programlisting prettyprint lang-js">GET /my_index/my_type/_search
+field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_index/my_type/_search
 {
    "query": {
       "bool": {
@@ -710,8 +710,8 @@ field:</p><pre class="programlisting prettyprint lang-js">GET /my_index/my_type/
          }
       }
    }
-}</pre><p>We still match all three documents, but document 2 has now been bumped into
-first place because it matched the shingled term <code class="literal">ate sue</code>.</p><pre class="programlisting prettyprint lang-js">{
+}</pre></div><p>We still match all three documents, but document 2 has now been bumped into
+first place because it matched the shingled term <code class="literal">ate sue</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "hits": [
      {
         "_id": "2",
@@ -735,7 +735,7 @@ first place because it matched the shingled term <code class="literal">ate sue</
         }
      }
   ]
-}</pre><p>Even though our query included the word <code class="literal">hungry</code>, which doesn’t appear in
+}</pre></div><p>Even though our query included the word <code class="literal">hungry</code>, which doesn’t appear in
 any of our documents, we still managed to use word proximity to return the
 most relevant document first.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_performance"></a>Performance<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/120_Proximity_Matching/35_Shingles.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Not only are shingles more flexible than phrase queries,<a id="id-1.5.6.16.17.2.1" class="indexterm"></a>
 <a id="id-1.5.6.16.17.2.2" class="indexterm"></a> but they perform better
@@ -903,31 +903,8 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 	}
 </script>	
 
-            <script type="text/javascript">
-  jQuery(function() {
-    jQuery('#rtpcontainer').prependTo('#guide');
-    jQuery('#guide a[id]').each(function() { this.href='#'+this.id });
-    jQuery('pre.prettyprint').each(function() {
-      var pre = jQuery(this);
-      pre.css('position','absolute');
-      pre.css('width','auto');
-      var height = pre.innerHeight();
-      pre.wrap('<div class="pre_wrapper" style="height:' + (10 + height) + 'px"></div>');
-    })
-  });
-</script>
+            <script type="text/javascript" src="docs.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
-<script type="text/javascript" >
-  (function ($, $a, $title, $list) {
-    $a = $('[id^="js-api-method-index"]');
-    if (!$a.size()) return;
-    $('#guide').addClass('js-client-docs');
-    $list = $a.siblings('.itemizedlist').detach();
-    $title = $(document.createElement('h2')).text('api methods')
-    $a.parent().remove();
-    $('.toc').first().append($(document.createElement('div')).addClass('js-api-method-index').append($title).append($list));
-  }(jQuery));
-</script>
 
             </body>
         

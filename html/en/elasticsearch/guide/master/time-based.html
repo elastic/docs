@@ -541,8 +541,8 @@
             <div id="pageheader">
     <div class="container">
         <header>
-            <h1>Learn |</h1>
-            <h2>Docs</h2>
+            <h1><a href="/learn" title="Learn">Learn</a> |</h1>
+            <h2><a href="/guide" title="Docs">Docs</a></h2>
         </header>
     </div>
 </div>
@@ -557,7 +557,7 @@
            
           <a href="index-templates.html">Index Templates
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="time-based"></a>Time-Based Data<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/410_Scaling/45_Index_per_timeframe.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="shard-scale.html">The Unit of Scale</a></span></dt><dt><span class="section"><a href="overallocation.html">Shard Overallocation</a></span></dt><dt><span class="section"><a href="kagillion-shards.html">Kagillion Shards</a></span></dt><dt><span class="section"><a href="capacity-planning.html">Capacity Planning</a></span></dt><dt><span class="section"><a href="replica-shards.html">Replica Shards</a></span></dt><dt><span class="section"><a href="multiple-indices.html">Multiple Indices</a></span></dt><dt><span class="section"><a href="time-based.html">Time-Based Data</a></span></dt><dt><span class="section"><a href="index-templates.html">Index Templates</a></span></dt><dt><span class="section"><a href="retiring-data.html">Retiring Data</a></span></dt><dt><span class="section"><a href="user-based.html">User-Based Data</a></span></dt><dt><span class="section"><a href="shared-index.html">Shared Index</a></span></dt><dt><span class="section"><a href="faking-it.html">Faking Index per User with Aliases</a></span></dt><dt><span class="section"><a href="one-big-user.html">One Big User</a></span></dt><dt><span class="section"><a href="finite-scale.html">Scale Is Not Infinite</a></span></dt></dl></div><p>One of the most common use cases for Elasticsearch is for logging,<a id="id-1.9.6.13.2.1" class="indexterm"></a>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="time-based"></a>Time-Based Data<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/410_Scaling/45_Index_per_timeframe.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>One of the most common use cases for Elasticsearch is for logging,<a id="id-1.9.6.13.2.1" class="indexterm"></a>
 <a id="id-1.9.6.13.2.2" class="indexterm"></a><a id="id-1.9.6.13.2.3" class="indexterm"></a><a id="id-1.9.6.13.2.4" class="indexterm"></a>
 <a id="id-1.9.6.13.2.5" class="indexterm"></a> so common
 in fact that Elasticsearch provides an integrated<a id="id-1.9.6.13.2.6" class="indexterm"></a> logging platform called the
@@ -574,7 +574,7 @@ and searches mostly target the most recent documents.  As documents age, they
 lose value.</p><p>We need to adapt our index design to function with the flow of time-based
 data.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="index-per-timeframe"></a>Index per Time Frame<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/410_Scaling/45_Index_per_timeframe.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If we were to have one big index for documents of this type, we would soon run
 out of space. Logging events just keep on coming, without pause or
-interruption. We could delete the old events, with a <code class="literal">delete-by-query</code>:</p><pre class="programlisting prettyprint lang-json">DELETE /logs/event/_query
+interruption. We could delete the old events, with a <code class="literal">delete-by-query</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">DELETE /logs/event/_query
 {
   "query": {
     "range": {
@@ -583,7 +583,7 @@ interruption. We could delete the old events, with a <code class="literal">delet
       }
     }
   }
-}</pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO296-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO296-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Deletes all documents where Logstash’s <code class="literal">@timestamp</code> field is
     older than 90 days.
 </p></td></tr></table></div><p>But this approach is <span class="emphasis"><em>very inefficient</em></span>.  Remember that when you delete a
@@ -601,7 +601,7 @@ per day.  It doesn’t matter—you can adjust to new circumstances at any
 time.</p><p>Aliases can help make switching indices more transparent.<a id="id-1.9.6.13.7.8.1" class="indexterm"></a>  For indexing,
 you can point <code class="literal">logs_current</code> to the index currently accepting new log events,
 and for searching, update <code class="literal">last_3_months</code> to point to all indices for the
-previous three months:</p><pre class="programlisting prettyprint lang-json">POST /_aliases
+previous three months:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">POST /_aliases
 {
   "actions": [
     { "add":    { "alias": "logs_current",  "index": "logs_2014-10" }}, <a id="CO297-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
@@ -609,7 +609,7 @@ previous three months:</p><pre class="programlisting prettyprint lang-json">POST
     { "add":    { "alias": "last_3_months", "index": "logs_2014-10" }}, <a id="CO297-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
     { "remove": { "alias": "last_3_months", "index": "logs_2014-07" }}  <a id="CO297-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
   ]
-}</pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO297-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO297-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO297-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO297-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Switch <code class="literal">logs_current</code> from September to October.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO297-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO297-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Add October to <code class="literal">last_3_months</code> and remove July.
@@ -770,31 +770,8 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 	}
 </script>	
 
-            <script type="text/javascript">
-  jQuery(function() {
-    jQuery('#rtpcontainer').prependTo('#guide');
-    jQuery('#guide a[id]').each(function() { this.href='#'+this.id });
-    jQuery('pre.prettyprint').each(function() {
-      var pre = jQuery(this);
-      pre.css('position','absolute');
-      pre.css('width','auto');
-      var height = pre.innerHeight();
-      pre.wrap('<div class="pre_wrapper" style="height:' + (10 + height) + 'px"></div>');
-    })
-  });
-</script>
+            <script type="text/javascript" src="docs.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
-<script type="text/javascript" >
-  (function ($, $a, $title, $list) {
-    $a = $('[id^="js-api-method-index"]');
-    if (!$a.size()) return;
-    $('#guide').addClass('js-client-docs');
-    $list = $a.siblings('.itemizedlist').detach();
-    $title = $(document.createElement('h2')).text('api methods')
-    $a.parent().remove();
-    $('.toc').first().append($(document.createElement('div')).addClass('js-api-method-index').append($title).append($list));
-  }(jQuery));
-</script>
 
             </body>
         

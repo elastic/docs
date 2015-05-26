@@ -541,8 +541,8 @@
             <div id="pageheader">
     <div class="container">
         <header>
-            <h1>Learn |</h1>
-            <h2>Docs</h2>
+            <h1><a href="/learn" title="Learn">Learn</a> |</h1>
+            <h2><a href="/guide" title="Docs">Docs</a></h2>
         </header>
     </div>
 </div>
@@ -559,7 +559,7 @@
            
           <a href="docs-multi-get.html">Multi Get API
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-update"></a>Update API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="chapter"><a href="docs-index_.html">Index API</a></span></dt><dt><span class="chapter"><a href="docs-get.html">Get API</a></span></dt><dt><span class="chapter"><a href="docs-delete.html">Delete API</a></span></dt><dt><span class="chapter"><a href="docs-update.html">Update API</a></span></dt><dt><span class="chapter"><a href="docs-multi-get.html">Multi Get API</a></span></dt><dt><span class="chapter"><a href="docs-bulk.html">Bulk API</a></span></dt><dt><span class="chapter"><a href="docs-delete-by-query.html">Delete By Query API</a></span></dt><dt><span class="chapter"><a href="docs-termvectors.html">Term Vectors</a></span></dt><dt><span class="chapter"><a href="docs-multi-termvectors.html">Multi termvectors API</a></span></dt></dl></div><p>The update API allows to update a document based on a script provided.
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-update"></a>Update API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The update API allows to update a document based on a script provided.
 The operation gets the document (collocated with the shard) from the
 index, runs the script (with optional script language and parameters),
 and index back the result (also allows to delete, or ignore the
@@ -567,56 +567,56 @@ operation). It uses versioning to make sure no updates have happened
 during the "get" and "reindex".</p><p>Note, this operation still means full reindex of the document, it just
 removes some network roundtrips and reduces chances of version conflicts
 between the get and the index. The <code class="literal">_source</code> field need to be enabled
-for this feature to work.</p><p>For example, lets index a simple doc:</p><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/type1/1 -d '{
+for this feature to work.</p><p>For example, lets index a simple doc:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/type1/1 -d '{
     "counter" : 1,
     "tags" : ["red"]
-}'</pre><p>Now, we can execute a script that would increment the counter:</p><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}'</pre></div><p>Now, we can execute a script that would increment the counter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.counter += count",
     "params" : {
         "count" : 4
     }
-}'</pre><p>We can also add a tag to the list of tags (note, if the tag exists, it
-will still add it, since its a list):</p><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}'</pre></div><p>We can also add a tag to the list of tags (note, if the tag exists, it
+will still add it, since its a list):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.tags += tag",
     "params" : {
         "tag" : "blue"
     }
-}'</pre><p>We can also add a new field to the document:</p><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}'</pre></div><p>We can also add a new field to the document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.name_of_new_field = \"value_of_new_field\""
-}'</pre><p>We can also remove a field from the document:</p><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}'</pre></div><p>We can also remove a field from the document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.remove(\"name_of_field\")"
-}'</pre><p>And, we can delete the doc if the tags contain blue, or ignore (noop):</p><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}'</pre></div><p>And, we can delete the doc if the tags contain blue, or ignore (noop):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.tags.contains(tag) ? ctx.op = \"delete\" : ctx.op = \"none\"",
     "params" : {
         "tag" : "blue"
     }
-}'</pre><p><span class="strong"><strong>Note</strong></span>: Be aware of MVEL and handling of ternary operators and
+}'</pre></div><p><span class="strong"><strong>Note</strong></span>: Be aware of MVEL and handling of ternary operators and
 assignments. Assignment operations have lower precedence than the
-ternary operator. Compare the following statements:</p><pre class="programlisting prettyprint lang-js">// Will NOT update the tags array
+ternary operator. Compare the following statements:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">// Will NOT update the tags array
 ctx._source.tags.contains(tag) ? ctx.op = \"none\" : ctx._source.tags += tag
 // Will update
 ctx._source.tags.contains(tag) ? (ctx.op = \"none\") : ctx._source.tags += tag
 // Also works
-if (ctx._source.tags.contains(tag)) { ctx.op = \"none\" } else { ctx._source.tags += tag }</pre><p>The update API also support passing a partial document,
+if (ctx._source.tags.contains(tag)) { ctx.op = \"none\" } else { ctx._source.tags += tag }</pre></div><p>The update API also support passing a partial document,
 which will be merged into the existing document (simple recursive merge,
 inner merging of objects, replacing core "keys/values" and arrays). For
-example:</p><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "doc" : {
         "name" : "new_name"
     }
-}'</pre><p>If both <code class="literal">doc</code> and <code class="literal">script</code> is specified, then <code class="literal">doc</code> is ignored. Best is
+}'</pre></div><p>If both <code class="literal">doc</code> and <code class="literal">script</code> is specified, then <code class="literal">doc</code> is ignored. Best is
 to put your field pairs of the partial document in the script itself.</p><p>By default if <code class="literal">doc</code> is specified then the document is always updated even
 if the merging process doesn’t cause any changes.  Specifying <code class="literal">detect_noop</code>
 as <code class="literal">true</code> will cause Elasticsearch to check if there are changes and, if
-there aren’t, turn the update request into a noop. For example:</p><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+there aren’t, turn the update request into a noop. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "doc" : {
         "name" : "new_name"
     },
     "detect_noop": true
-}'</pre><p>If <code class="literal">name</code> was <code class="literal">new_name</code> before the request was sent then the entire update
+}'</pre></div><p>If <code class="literal">name</code> was <code class="literal">new_name</code> before the request was sent then the entire update
 request is ignored.</p><h3><a id="upserts"></a>Upserts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>There is also support for <code class="literal">upsert</code>. If the document does
 not already exists, the content of the <code class="literal">upsert</code> element will be used to
-index the fresh doc:</p><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+index the fresh doc:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.counter += count",
     "params" : {
         "count" : 4
@@ -624,10 +624,10 @@ index the fresh doc:</p><pre class="programlisting prettyprint lang-js">curl -XP
     "upsert" : {
         "counter" : 1
     }
-}'</pre><p>If the document does not exist you may want your update script to
+}'</pre></div><p>If the document does not exist you may want your update script to
 run anyway in order to initialize the document contents using
 business logic unknown to the client. In this case pass the
-new <code class="literal">scripted_upsert</code> parameter with the value <code class="literal">true</code>.</p><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/sessions/session/dh3sgudg8gsrgl/_update' -d '{
+new <code class="literal">scripted_upsert</code> parameter with the value <code class="literal">true</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/sessions/session/dh3sgudg8gsrgl/_update' -d '{
     "script_id" : "my_web_session_summariser",
     "scripted_upsert":true,
     "params" : {
@@ -639,7 +639,7 @@ new <code class="literal">scripted_upsert</code> parameter with the value <code 
     },
     "upsert" : {
     }
-}'</pre><p>The default <code class="literal">scripted_upsert</code> setting is <code class="literal">false</code> meaning the script is not executed for inserts.
+}'</pre></div><p>The default <code class="literal">scripted_upsert</code> setting is <code class="literal">false</code> meaning the script is not executed for inserts.
 However, in scenarios like the one above we may be using a non-trivial script stored
 using the new "indexed scripts" feature. The script may be deriving properties
 like the duration of our web session based on observing multiple page view events so the
@@ -647,12 +647,12 @@ client can supply a blank "upsert" document and allow the script to fill in most
 using the events passed in the <code class="literal">params</code> element.</p><p>Last, the upsert facility also supports <code class="literal">doc_as_upsert</code>. So that the
 provided document will be inserted if the document does not already
 exist. This will reduce the amount of data that needs to be sent to
-elasticsearch.</p><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+elasticsearch.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "doc" : {
         "name" : "new_name"
     },
     "doc_as_upsert" : true
-}'</pre><h3><a id="_parameters_3"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update operation supports similar parameters as the index API,
+}'</pre></div><h3><a id="_parameters_3"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update operation supports similar parameters as the index API,
 including:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">routing</code>
@@ -889,31 +889,8 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 	}
 </script>	
 
-            <script type="text/javascript">
-  jQuery(function() {
-    jQuery('#rtpcontainer').prependTo('#guide');
-    jQuery('#guide a[id]').each(function() { this.href='#'+this.id });
-    jQuery('pre.prettyprint').each(function() {
-      var pre = jQuery(this);
-      pre.css('position','absolute');
-      pre.css('width','auto');
-      var height = pre.innerHeight();
-      pre.wrap('<div class="pre_wrapper" style="height:' + (10 + height) + 'px"></div>');
-    })
-  });
-</script>
+            <script type="text/javascript" src="docs.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
-<script type="text/javascript" >
-  (function ($, $a, $title, $list) {
-    $a = $('[id^="js-api-method-index"]');
-    if (!$a.size()) return;
-    $('#guide').addClass('js-client-docs');
-    $list = $a.siblings('.itemizedlist').detach();
-    $title = $(document.createElement('h2')).text('api methods')
-    $a.parent().remove();
-    $('.toc').first().append($(document.createElement('div')).addClass('js-api-method-index').append($title).append($list));
-  }(jQuery));
-</script>
 
             </body>
         

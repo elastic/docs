@@ -541,8 +541,8 @@
             <div id="pageheader">
     <div class="container">
         <header>
-            <h1>Learn |</h1>
-            <h2>Docs</h2>
+            <h1><a href="/learn" title="Learn">Learn</a> |</h1>
+            <h2><a href="/guide" title="Docs">Docs</a></h2>
         </header>
     </div>
 </div>
@@ -557,10 +557,10 @@
            
           <a href="parent-child-performance.html">Practical Considerations
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="grandparents"></a>Grandparents and Grandchildren<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/404_Parent_Child/65_Grandparents.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="parent-child-mapping.html">Parent-Child Mapping</a></span></dt><dt><span class="section"><a href="indexing-parent-child.html">Indexing Parents and Children</a></span></dt><dt><span class="section"><a href="has-child.html">Finding Parents by Their Children</a></span></dt><dt><span class="section"><a href="has-parent.html">Finding Children by Their Parents</a></span></dt><dt><span class="section"><a href="children-agg.html">Children Aggregation</a></span></dt><dt><span class="section"><a href="grandparents.html">Grandparents and Grandchildren</a></span></dt><dt><span class="section"><a href="parent-child-performance.html">Practical Considerations</a></span></dt></dl></div><p>The parent-child relationship can extend across more than one generation—grandchildren can <a id="id-1.9.5.12.2.1" class="indexterm"></a>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="grandparents"></a>Grandparents and Grandchildren<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/404_Parent_Child/65_Grandparents.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The parent-child relationship can extend across more than one generation—grandchildren can <a id="id-1.9.5.12.2.1" class="indexterm"></a>
 <a id="id-1.9.5.12.2.2" class="indexterm"></a><a id="id-1.9.5.12.2.3" class="indexterm"></a>have grandparents—but it requires an extra step to ensure
 that documents from all generations are indexed on the same shard.</p><p>Let’s change our previous example to make the <code class="literal">country</code> type a parent of the
-<code class="literal">branch</code> type:</p><pre class="programlisting prettyprint lang-json">PUT /company
+<code class="literal">branch</code> type:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /company
 {
   "mappings": {
     "country": {},
@@ -575,12 +575,12 @@ that documents from all generations are indexed on the same shard.</p><p>Let’s
       }
     }
   }
-}</pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO288-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO288-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 <code class="literal">branch</code> is a child of <code class="literal">country</code>.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO288-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 <code class="literal">employee</code> is a child of <code class="literal">branch</code>.
 </p></td></tr></table></div><p>Countries and branches have a simple parent-child relationship, so we use the
-same process as we used in <a class="xref" href="indexing-parent-child.html" title="Indexing Parents and Children">Indexing Parents and Children</a>:</p><pre class="programlisting prettyprint lang-json">POST /company/country/_bulk
+same process as we used in <a class="xref" href="indexing-parent-child.html" title="Indexing Parents and Children">Indexing Parents and Children</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">POST /company/country/_bulk
 { "index": { "_id": "uk" }}
 { "name": "UK" }
 { "index": { "_id": "france" }}
@@ -592,31 +592,31 @@ POST /company/branch/_bulk
 { "index": { "_id": "liverpool", "parent": "uk" }}
 { "name": "Liverpool Central" }
 { "index": { "_id": "paris", "parent": "france" }}
-{ "name": "Champs Élysées" }</pre><p>The <code class="literal">parent</code> ID has ensured that each <code class="literal">branch</code> document is routed to the same
+{ "name": "Champs Élysées" }</pre></div><p>The <code class="literal">parent</code> ID has ensured that each <code class="literal">branch</code> document is routed to the same
 shard as its parent <code class="literal">country</code> document.  However, look what would happen if we
-were to use the same technique with the <code class="literal">employee</code> grandchildren:</p><pre class="programlisting prettyprint lang-json">PUT /company/employee/1?parent=london
+were to use the same technique with the <code class="literal">employee</code> grandchildren:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /company/employee/1?parent=london
 {
   "name":  "Alice Smith",
   "dob":   "1970-10-24",
   "hobby": "hiking"
-}</pre><p>The shard routing of the employee document would be decided by the parent ID—<code class="literal">london</code>—but the <code class="literal">london</code> document was routed to a shard by <span class="emphasis"><em>its own</em></span>
+}</pre></div><p>The shard routing of the employee document would be decided by the parent ID—<code class="literal">london</code>—but the <code class="literal">london</code> document was routed to a shard by <span class="emphasis"><em>its own</em></span>
 parent ID—<code class="literal">uk</code>.  It is very likely that the grandchild would end up on
 a different shard from its parent and grandparent, which would prevent the
 same-shard parent-child mapping from functioning.</p><p>Instead, we need to add an extra <code class="literal">routing</code> parameter, set to the ID of the
 grandparent, to ensure that all three generations are indexed on the same
-shard.  The indexing request should look like this:</p><pre class="programlisting prettyprint lang-json">PUT /company/employee/1?parent=london&amp;routing=uk <a id="CO289-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+shard.  The indexing request should look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /company/employee/1?parent=london&amp;routing=uk <a id="CO289-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 {
   "name":  "Alice Smith",
   "dob":   "1970-10-24",
   "hobby": "hiking"
-}</pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO289-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO289-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">routing</code> value overrides the <code class="literal">parent</code> value.
 </p></td></tr></table></div><p>The <code class="literal">parent</code> parameter is still used to link the employee document with its
 parent, but the <code class="literal">routing</code> parameter ensures that it is stored on the same
 shard as its parent and grandparent. The <code class="literal">routing</code> value needs to be provided
 for all single-document requests.</p><p>Querying and aggregating across generations works, as long as you step through
 each generation. For instance, to find countries where employees enjoy hiking,
-we need to join countries with branches, and branches with employees:</p><pre class="programlisting prettyprint lang-json">GET /company/country/_search
+we need to join countries with branches, and branches with employees:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">GET /company/country/_search
 {
   "query": {
     "has_child": {
@@ -633,7 +633,7 @@ we need to join countries with branches, and branches with employees:</p><pre cl
       }
     }
   }
-}</pre></div><div class="navfooter"><span class="prev"><a href="children-agg.html">
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="children-agg.html">
               « 
               Children Aggregation</a>
            
@@ -790,31 +790,8 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 	}
 </script>	
 
-            <script type="text/javascript">
-  jQuery(function() {
-    jQuery('#rtpcontainer').prependTo('#guide');
-    jQuery('#guide a[id]').each(function() { this.href='#'+this.id });
-    jQuery('pre.prettyprint').each(function() {
-      var pre = jQuery(this);
-      pre.css('position','absolute');
-      pre.css('width','auto');
-      var height = pre.innerHeight();
-      pre.wrap('<div class="pre_wrapper" style="height:' + (10 + height) + 'px"></div>');
-    })
-  });
-</script>
+            <script type="text/javascript" src="docs.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
-<script type="text/javascript" >
-  (function ($, $a, $title, $list) {
-    $a = $('[id^="js-api-method-index"]');
-    if (!$a.size()) return;
-    $('#guide').addClass('js-client-docs');
-    $list = $a.siblings('.itemizedlist').detach();
-    $title = $(document.createElement('h2')).text('api methods')
-    $a.parent().remove();
-    $('.toc').first().append($(document.createElement('div')).addClass('js-api-method-index').append($title).append($list));
-  }(jQuery));
-</script>
 
             </body>
         

@@ -541,8 +541,8 @@
             <div id="pageheader">
     <div class="container">
         <header>
-            <h1>Learn |</h1>
-            <h2>Docs</h2>
+            <h1><a href="/learn" title="Learn">Learn</a> |</h1>
+            <h2><a href="/guide" title="Docs">Docs</a></h2>
         </header>
     </div>
 </div>
@@ -557,15 +557,15 @@
            
           <a href="_monitoring_individual_nodes.html">Monitoring Individual Nodes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_cluster_health"></a>Cluster Health<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/500_Cluster_Admin/20_health.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="_marvel_for_monitoring.html">Marvel for Monitoring</a></span></dt><dt><span class="section"><a href="_cluster_health.html">Cluster Health</a></span></dt><dt><span class="section"><a href="_monitoring_individual_nodes.html">Monitoring Individual Nodes</a></span></dt><dt><span class="section"><a href="_cluster_stats.html">Cluster Stats</a></span></dt><dt><span class="section"><a href="_index_stats.html">Index Stats</a></span></dt><dt><span class="section"><a href="_pending_tasks.html">Pending Tasks</a></span></dt><dt><span class="section"><a href="_cat_api.html">cat API</a></span></dt></dl></div><p>An Elasticsearch cluster may consist of a single node with a single index.  Or it<a id="id-1.10.3.6.2.1" class="indexterm"></a><a id="id-1.10.3.6.2.2" class="indexterm"></a>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_cluster_health"></a>Cluster Health<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/500_Cluster_Admin/20_health.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>An Elasticsearch cluster may consist of a single node with a single index.  Or it<a id="id-1.10.3.6.2.1" class="indexterm"></a><a id="id-1.10.3.6.2.2" class="indexterm"></a>
 <a id="id-1.10.3.6.2.3" class="indexterm"></a>
 <a id="id-1.10.3.6.2.4" class="indexterm"></a>
 may have a hundred data nodes, three dedicated masters, a few dozen client nodes—all operating on a thousand indices (and tens of thousands of shards).</p><p>No matter the scale of the cluster, you’ll want a quick way to assess the status
 of your cluster.  The <code class="literal">Cluster Health</code> API fills that role.  You can think of it
 as a 10,000-foot view of your cluster.  It can reassure you that everything
-is all right, or alert you to a problem somewhere in your cluster.</p><p>Let’s execute a <code class="literal">cluster-health</code> API and see what the response looks like:</p><pre class="programlisting prettyprint lang-bash">GET _cluster/health</pre><p>Like other APIs in Elasticsearch, <code class="literal">cluster-health</code> will return a JSON response.
+is all right, or alert you to a problem somewhere in your cluster.</p><p>Let’s execute a <code class="literal">cluster-health</code> API and see what the response looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">GET _cluster/health</pre></div><p>Like other APIs in Elasticsearch, <code class="literal">cluster-health</code> will return a JSON response.
 This makes it convenient to parse for automation and alerting.  The response
-contains some critical information about your cluster:</p><pre class="programlisting prettyprint lang-js">{
+contains some critical information about your cluster:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
    "cluster_name": "elasticsearch_zach",
    "status": "green",
    "timed_out": false,
@@ -576,7 +576,7 @@ contains some critical information about your cluster:</p><pre class="programlis
    "relocating_shards": 0,
    "initializing_shards": 0,
    "unassigned_shards": 0
-}</pre><p>The most important piece of information in the response is the <code class="literal">status</code> field.
+}</pre></div><p>The most important piece of information in the response is the <code class="literal">status</code> field.
 The status may be one of three values:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">green</code>
 </span></dt><dd>
@@ -623,7 +623,7 @@ replicas in a single-node cluster.  Unassigned shards will also be present if yo
 cluster is <code class="literal">red</code> (since primaries are missing).
 </li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_drilling_deeper_finding_problematic_indices"></a>Drilling Deeper: Finding Problematic Indices<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/500_Cluster_Admin/20_health.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Imagine something goes wrong one day,<a id="id-1.10.3.6.12.2.1" class="indexterm"></a>
 <a id="id-1.10.3.6.12.2.2" class="indexterm"></a> and you notice that your cluster health
-looks like this:</p><pre class="programlisting prettyprint lang-js">{
+looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
    "cluster_name": "elasticsearch_zach",
    "status": "red",
    "timed_out": false,
@@ -634,16 +634,16 @@ looks like this:</p><pre class="programlisting prettyprint lang-js">{
    "relocating_shards": 0,
    "initializing_shards": 0,
    "unassigned_shards": 20
-}</pre><p>OK, so what can we deduce from this health status?  Well, our cluster is <code class="literal">red</code>,
+}</pre></div><p>OK, so what can we deduce from this health status?  Well, our cluster is <code class="literal">red</code>,
 which means we are missing data (primary + replicas).  We know our cluster has
 10 nodes, but see only 8 data nodes listed in the health.  Two of our nodes
 have gone missing.  We see that there are 20 unassigned shards.</p><p>That’s about all the information we can glean.  The nature of those missing
 shards are still a mystery.  Are we missing 20 indices with 1 primary shard each?
 Or 1 index with 20 primary shards? Or 10 indices with 1 primary + 1 replica?
 Which index?</p><p>To answer these questions, we need to ask <code class="literal">cluster-health</code> for a little more
-information by using the <code class="literal">level</code> parameter:</p><pre class="programlisting prettyprint lang-bash">GET _cluster/health?level=indices</pre><p>This parameter will make the <code class="literal">cluster-health</code> API add a list of indices in our
+information by using the <code class="literal">level</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">GET _cluster/health?level=indices</pre></div><p>This parameter will make the <code class="literal">cluster-health</code> API add a list of indices in our
 cluster and details about each of those indices (status, number of shards,
-unassigned shards, and so forth):</p><pre class="programlisting prettyprint lang-js">{
+unassigned shards, and so forth):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
    "cluster_name": "elasticsearch_zach",
    "status": "red",
    "timed_out": false,
@@ -687,20 +687,20 @@ unassigned shards, and so forth):</p><pre class="programlisting prettyprint lang
       },
       ....
    }
-}</pre><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO306-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO306-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 We can now see that the <code class="literal">v2</code> index is the index that has made the cluster <code class="literal">red</code>.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO306-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 And it becomes clear that all 20 missing shards are from this index.
 </p></td></tr></table></div><p>Once we ask for the indices output, it becomes immediately clear which index is
 having problems: the <code class="literal">v2</code> index.  We also see that the index has 10 primary shards
 and one replica, and that all 20 shards are missing.  Presumably these 20 shards
-were on the two nodes that are missing from our cluster.</p><p>The <code class="literal">level</code> parameter accepts one more option:</p><pre class="programlisting prettyprint lang-bash">GET _cluster/health?level=shards</pre><p>The <code class="literal">shards</code> option will provide a very verbose output, which lists the status
+were on the two nodes that are missing from our cluster.</p><p>The <code class="literal">level</code> parameter accepts one more option:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">GET _cluster/health?level=shards</pre></div><p>The <code class="literal">shards</code> option will provide a very verbose output, which lists the status
 and location of every shard inside every index.  This output is sometimes useful,
 but because of the verbosity can be difficult to work with.  Once you know the index
 that is having problems, other APIs that we discuss in this chapter will tend
 to be more helpful.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_blocking_for_status_changes"></a>Blocking for Status Changes<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/500_Cluster_Admin/20_health.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">cluster-health</code> API has another neat trick that is useful when building
 unit and integration tests, or automated scripts that work with Elasticsearch.
-You can specify a <code class="literal">wait_for_status</code> parameter, which will only return after the status is satisfied.  For example:</p><pre class="programlisting prettyprint lang-bash">GET _cluster/health?wait_for_status=green</pre><p>This call will <span class="emphasis"><em>block</em></span> (not return control to your program) until the <code class="literal">cluster-health</code> has turned <code class="literal">green</code>, meaning all primary and replica shards have been allocated.
+You can specify a <code class="literal">wait_for_status</code> parameter, which will only return after the status is satisfied.  For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">GET _cluster/health?wait_for_status=green</pre></div><p>This call will <span class="emphasis"><em>block</em></span> (not return control to your program) until the <code class="literal">cluster-health</code> has turned <code class="literal">green</code>, meaning all primary and replica shards have been allocated.
 This is important for automated scripts and tests.</p><p>If you create an index, Elasticsearch must broadcast the change in cluster state
 to all nodes.  Those nodes must initialize those new shards, and then respond to the
 master that the shards are <code class="literal">Started</code>.  This process is fast, but because network
@@ -867,31 +867,8 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 	}
 </script>	
 
-            <script type="text/javascript">
-  jQuery(function() {
-    jQuery('#rtpcontainer').prependTo('#guide');
-    jQuery('#guide a[id]').each(function() { this.href='#'+this.id });
-    jQuery('pre.prettyprint').each(function() {
-      var pre = jQuery(this);
-      pre.css('position','absolute');
-      pre.css('width','auto');
-      var height = pre.innerHeight();
-      pre.wrap('<div class="pre_wrapper" style="height:' + (10 + height) + 'px"></div>');
-    })
-  });
-</script>
+            <script type="text/javascript" src="docs.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
-<script type="text/javascript" >
-  (function ($, $a, $title, $list) {
-    $a = $('[id^="js-api-method-index"]');
-    if (!$a.size()) return;
-    $('#guide').addClass('js-client-docs');
-    $list = $a.siblings('.itemizedlist').detach();
-    $title = $(document.createElement('h2')).text('api methods')
-    $a.parent().remove();
-    $('.toc').first().append($(document.createElement('div')).addClass('js-api-method-index').append($title).append($list));
-  }(jQuery));
-</script>
 
             </body>
         

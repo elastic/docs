@@ -541,8 +541,8 @@
             <div id="pageheader">
     <div class="container">
         <header>
-            <h1>Learn |</h1>
-            <h2>Docs</h2>
+            <h1><a href="/learn" title="Learn">Learn</a> |</h1>
+            <h2><a href="/guide" title="Docs">Docs</a></h2>
         </header>
     </div>
 </div>
@@ -557,7 +557,7 @@
            
           <a href="finite-scale.html">Scale Is Not Infinite
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="one-big-user"></a>One Big User<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/410_Scaling/75_One_big_user.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="shard-scale.html">The Unit of Scale</a></span></dt><dt><span class="section"><a href="overallocation.html">Shard Overallocation</a></span></dt><dt><span class="section"><a href="kagillion-shards.html">Kagillion Shards</a></span></dt><dt><span class="section"><a href="capacity-planning.html">Capacity Planning</a></span></dt><dt><span class="section"><a href="replica-shards.html">Replica Shards</a></span></dt><dt><span class="section"><a href="multiple-indices.html">Multiple Indices</a></span></dt><dt><span class="section"><a href="time-based.html">Time-Based Data</a></span></dt><dt><span class="section"><a href="index-templates.html">Index Templates</a></span></dt><dt><span class="section"><a href="retiring-data.html">Retiring Data</a></span></dt><dt><span class="section"><a href="user-based.html">User-Based Data</a></span></dt><dt><span class="section"><a href="shared-index.html">Shared Index</a></span></dt><dt><span class="section"><a href="faking-it.html">Faking Index per User with Aliases</a></span></dt><dt><span class="section"><a href="one-big-user.html">One Big User</a></span></dt><dt><span class="section"><a href="finite-scale.html">Scale Is Not Infinite</a></span></dt></dl></div><p>Big, popular forums start out as small forums.<a id="id-1.9.6.19.2.1" class="indexterm"></a>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="one-big-user"></a>One Big User<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/410_Scaling/75_One_big_user.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Big, popular forums start out as small forums.<a id="id-1.9.6.19.2.1" class="indexterm"></a>
 <a id="id-1.9.6.19.2.2" class="indexterm"></a>  One day we will find that one
 shard in our shared index is doing a lot more work than the other shards,
 because it holds the documents for a forum that has become very popular. That
@@ -565,34 +565,34 @@ forum now needs its own index.</p><p>The index aliases that we’re using to fak
 migration path for the big forum.<a id="id-1.9.6.19.3.1" class="indexterm"></a>
 <a id="id-1.9.6.19.3.2" class="indexterm"></a>
 <a id="id-1.9.6.19.3.3" class="indexterm"></a></p><p>The first step is to create a new index dedicated to the forum, and with the
-appropriate number of shards to allow for expected growth:</p><pre class="programlisting prettyprint lang-json">PUT /baking_v1
+appropriate number of shards to allow for expected growth:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /baking_v1
 {
   "settings": {
     "number_of_shards": 3
   }
-}</pre><p>The next step is to migrate the data from the shared index into the dedicated
+}</pre></div><p>The next step is to migrate the data from the shared index into the dedicated
 index, which can be done using <a class="link" href="scan-scroll.html" title="scan and scroll">scan-and-scroll</a> and the
 <a class="link" href="bulk.html" title="Cheaper in Bulk"><code class="literal">bulk</code> API</a>.  As soon as the migration is finished, the index alias
-can be updated to point to the new index:</p><pre class="programlisting prettyprint lang-json">POST /_aliases
+can be updated to point to the new index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">POST /_aliases
 {
   "actions": [
     { "remove": { "alias": "baking", "index": "forums"    }},
     { "add":    { "alias": "baking", "index": "baking_v1" }}
   ]
-}</pre><p>Updating the alias is atomic; it’s like throwing a switch.  Your application
+}</pre></div><p>Updating the alias is atomic; it’s like throwing a switch.  Your application
 continues talking to the <code class="literal">baking</code> API and is completely unaware that it now
 points to a new dedicated index.</p><p>The dedicated index no longer needs the filter or the routing values. We can
 just rely on the default sharding that Elasticsearch does using each
 document’s <code class="literal">_id</code> field.</p><p>The last step is to remove the old documents from the shared index, which can
 be done with a <code class="literal">delete-by-query</code> request, using the original routing value and
-forum ID:</p><pre class="programlisting prettyprint lang-json">DELETE /forums/post/_query?routing=baking
+forum ID:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">DELETE /forums/post/_query?routing=baking
 {
   "query": {
     "term": {
       "forum_id": "baking"
     }
   }
-}</pre><p>The beauty of this index-per-user model is that it allows you to reduce
+}</pre></div><p>The beauty of this index-per-user model is that it allows you to reduce
 resources, keeping costs low, while still giving you the flexibility to scale
 out when necessary, and with zero downtime.</p></div><div class="navfooter"><span class="prev"><a href="faking-it.html">
               « 
@@ -751,31 +751,8 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 	}
 </script>	
 
-            <script type="text/javascript">
-  jQuery(function() {
-    jQuery('#rtpcontainer').prependTo('#guide');
-    jQuery('#guide a[id]').each(function() { this.href='#'+this.id });
-    jQuery('pre.prettyprint').each(function() {
-      var pre = jQuery(this);
-      pre.css('position','absolute');
-      pre.css('width','auto');
-      var height = pre.innerHeight();
-      pre.wrap('<div class="pre_wrapper" style="height:' + (10 + height) + 'px"></div>');
-    })
-  });
-</script>
+            <script type="text/javascript" src="docs.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
-<script type="text/javascript" >
-  (function ($, $a, $title, $list) {
-    $a = $('[id^="js-api-method-index"]');
-    if (!$a.size()) return;
-    $('#guide').addClass('js-client-docs');
-    $list = $a.siblings('.itemizedlist').detach();
-    $title = $(document.createElement('h2')).text('api methods')
-    $a.parent().remove();
-    $('.toc').first().append($(document.createElement('div')).addClass('js-api-method-index').append($title).append($list));
-  }(jQuery));
-</script>
 
             </body>
         

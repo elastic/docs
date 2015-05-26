@@ -541,8 +541,8 @@
             <div id="pageheader">
     <div class="container">
         <header>
-            <h1>Learn |</h1>
-            <h2>Docs</h2>
+            <h1><a href="/learn" title="Learn">Learn</a> |</h1>
+            <h2><a href="/guide" title="Docs">Docs</a></h2>
         </header>
     </div>
 </div>
@@ -559,15 +559,15 @@
            
           <a href="logging.html">Logging
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-runtime"></a>Hadoop runtime options<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.0/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="toc"><dl><dt><span class="chapter"><a href="arch.html">Architecture</a></span></dt><dt><span class="chapter"><a href="configuration.html">Configuration</a></span></dt><dt><span class="chapter"><a href="configuration-runtime.html">Hadoop runtime options</a></span></dt><dt><span class="chapter"><a href="logging.html">Logging</a></span></dt><dt><span class="chapter"><a href="mapreduce.html">Map/Reduce integration</a></span></dt><dt><span class="chapter"><a href="cascading.html">Cascading support</a></span></dt><dt><span class="chapter"><a href="hive.html">Apache Hive integration</a></span></dt><dt><span class="chapter"><a href="pig.html">Apache Pig support</a></span></dt><dt><span class="chapter"><a href="spark.html">Apache Spark support</a></span></dt><dt><span class="chapter"><a href="mapping.html">Mapping and Types</a></span></dt><dt><span class="chapter"><a href="metrics.html">Hadoop Metrics</a></span></dt><dt><span class="chapter"><a href="troubleshooting.html">Troubleshooting</a></span></dt></dl></div><p>When using elasticsearch-hadoop, it is important to be aware of the following Hadoop configurations that can influence the way Map/Reduce tasks are executed and in return elasticsearch-hadoop.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Unfortunately, these settings need to be setup <span class="strong"><strong>manually</strong></span> <span class="strong"><strong>before</strong></span> the job / script configuration. Since elasticsearch-hadoop is called too late in the life-cycle, after the task has been tasks have been already dispatched and as such, cannot influence the execution anymore.</p></div></div><h3><a id="_speculative_execution"></a>Speculative execution<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.0/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="blockquote"><table border="0" class="blockquote" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p>As most of the tasks in a job are coming to a close, <a class="ulink" href="http://developer.yahoo.com/hadoop/tutorial/module4.html#tolerance" target="_top">speculative execution</a> will schedule redundant copies of the remaining tasks across several nodes which do not have other work to perform. Therefore, the same input can be processed multiple times in parallel, to exploit differences in machine capabilities.</p></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-runtime"></a>Hadoop runtime options<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.0/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When using elasticsearch-hadoop, it is important to be aware of the following Hadoop configurations that can influence the way Map/Reduce tasks are executed and in return elasticsearch-hadoop.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Unfortunately, these settings need to be setup <span class="strong"><strong>manually</strong></span> <span class="strong"><strong>before</strong></span> the job / script configuration. Since elasticsearch-hadoop is called too late in the life-cycle, after the task has been tasks have been already dispatched and as such, cannot influence the execution anymore.</p></div></div><h3><a id="_speculative_execution"></a>Speculative execution<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.0/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="blockquote"><table border="0" class="blockquote" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p>As most of the tasks in a job are coming to a close, <a class="ulink" href="http://developer.yahoo.com/hadoop/tutorial/module4.html#tolerance" target="_top">speculative execution</a> will schedule redundant copies of the remaining tasks across several nodes which do not have other work to perform. Therefore, the same input can be processed multiple times in parallel, to exploit differences in machine capabilities.</p></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">
 Yahoo! developer network
 </span></td></tr></table></div><p>In other words, speculative execution is an <span class="strong"><strong>optimization</strong></span>, enabled by default, that allows Hadoop to create duplicates tasks of those which it considers hanged or slowed down. When doing data crunching or reading resources, having duplicate tasks is harmless and means at most a waste of computation resources; however when writing data to an external store, this can cause data corruption through duplicates or unnecessary updates.
 Since the <span class="emphasis"><em>speculative execution</em></span> behavior can be triggered by external factors (such as network or CPU load which in turn cause false positive) even in stable environments (virtualized clusters are particularly prone to this) and has a direct impact on data, elasticsearch-hadoop disables this optimization for data safety.</p><p>Speculative execution can be disabled for the map and reduce phase - we recommend disabling in both cases - by setting to <code class="literal">false</code> the following two properties:</p><p><code class="literal">mapred.map.tasks.speculative.execution</code>
-<code class="literal">mapred.reduce.tasks.speculative.execution</code></p><p>One can either set the properties by name manually on the <code class="literal">Configuration</code>/<code class="literal">JobConf</code> client:</p><pre class="programlisting prettyprint lang-java">jobConf.setSpeculativeExecution(false);
+<code class="literal">mapred.reduce.tasks.speculative.execution</code></p><p>One can either set the properties by name manually on the <code class="literal">Configuration</code>/<code class="literal">JobConf</code> client:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">jobConf.setSpeculativeExecution(false);
 // or
 configuration.setBoolean("mapred.map.tasks.speculative.execution", false);
-configuration.setBoolean("mapred.reduce.tasks.speculative.execution", false);</pre><p>or by passing them as arguments to the command line:</p><pre class="programlisting prettyprint lang-bash">$ bin/hadoop jar -Dmapred.map.tasks.speculative.execution=false \
-                 -Dmapred.reduce.tasks.speculative.execution=false &lt;jar&gt;</pre></div><div class="navfooter"><span class="prev"><a href="configuration.html">
+configuration.setBoolean("mapred.reduce.tasks.speculative.execution", false);</pre></div><p>or by passing them as arguments to the command line:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ bin/hadoop jar -Dmapred.map.tasks.speculative.execution=false \
+                 -Dmapred.reduce.tasks.speculative.execution=false &lt;jar&gt;</pre></div></div><div class="navfooter"><span class="prev"><a href="configuration.html">
               « 
               Configuration</a>
            
@@ -724,31 +724,8 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 	}
 </script>	
 
-            <script type="text/javascript">
-  jQuery(function() {
-    jQuery('#rtpcontainer').prependTo('#guide');
-    jQuery('#guide a[id]').each(function() { this.href='#'+this.id });
-    jQuery('pre.prettyprint').each(function() {
-      var pre = jQuery(this);
-      pre.css('position','absolute');
-      pre.css('width','auto');
-      var height = pre.innerHeight();
-      pre.wrap('<div class="pre_wrapper" style="height:' + (10 + height) + 'px"></div>');
-    })
-  });
-</script>
+            <script type="text/javascript" src="docs.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
-<script type="text/javascript" >
-  (function ($, $a, $title, $list) {
-    $a = $('[id^="js-api-method-index"]');
-    if (!$a.size()) return;
-    $('#guide').addClass('js-client-docs');
-    $list = $a.siblings('.itemizedlist').detach();
-    $title = $(document.createElement('h2')).text('api methods')
-    $a.parent().remove();
-    $('.toc').first().append($(document.createElement('div')).addClass('js-api-method-index').append($title).append($list));
-  }(jQuery));
-</script>
 
             </body>
         

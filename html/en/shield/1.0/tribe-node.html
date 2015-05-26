@@ -541,8 +541,8 @@
             <div id="pageheader">
     <div class="container">
         <header>
-            <h1>Learn |</h1>
-            <h2>Docs</h2>
+            <h1><a href="/learn" title="Learn">Learn</a> |</h1>
+            <h2><a href="/guide" title="Docs">Docs</a></h2>
         </header>
     </div>
 </div>
@@ -559,15 +559,15 @@
            
           <a href="example.html">Appendix 6. Full <code class="literal">esusers</code> Example
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="tribe-node"></a>Appendix 5. Tribe Node</h1></div></div></div><div class="toc"><dl><dt><span class="chapter"><a href="introduction.html">Introduction</a></span></dt><dt><span class="chapter"><a href="architecture.html">Architecture Overview</a></span></dt><dt><span class="chapter"><a href="quick-getting-started.html">Getting Started (Short Version)</a></span></dt><dt><span class="chapter"><a href="getting-started.html">Getting Started (Long Version)</a></span></dt><dt><span class="chapter"><a href="authorization.html">Authorization</a></span></dt><dt><span class="chapter"><a href="authentication.html">Authentication</a></span></dt><dt><span class="chapter"><a href="securing-nodes.html">Securing Nodes</a></span></dt><dt><span class="chapter"><a href="auditing.html">Auditing</a></span></dt><dt><span class="chapter"><a href="clients.html">Integrating Shield with clients</a></span></dt><dt><span class="chapter"><a href="certificate-authority.html">Appendix 1. Running a Certificate Authority</a></span></dt><dt><span class="chapter"><a href="license-management.html">Appendix 2. License Management</a></span></dt><dt><span class="chapter"><a href="limitations.html">Appendix 3. Limitations</a></span></dt><dt><span class="chapter"><a href="securing-aliases.html">Appendix 4. Securing Indices &amp; Aliases</a></span></dt><dt><span class="chapter"><a href="tribe-node.html">Appendix 5. Tribe Node</a></span></dt><dt><span class="chapter"><a href="example.html">Appendix 6. Full <code class="literal">esusers</code> Example</a></span></dt><dt><span class="chapter"><a href="trouble-shooting.html">Appendix 7. Trouble Shooting</a></span></dt><dt><span class="chapter"><a href="reference.html">Appendix 8. Reference</a></span></dt><dt><span class="chapter"><a href="release-notes.html">Appendix 9. Release Notes</a></span></dt></dl></div><p>Shield supports the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-tribe.html" target="_top">Tribe Node</a>, which acts as a federated client across multiple clusters.
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="tribe-node"></a>Appendix 5. Tribe Node</h1></div></div></div><p>Shield supports the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-tribe.html" target="_top">Tribe Node</a>, which acts as a federated client across multiple clusters.
 When using Tribe Node with Shield, you must have the same Shield configurations (users, roles, user-role mappings, SSL/TLS CA)
 on each cluster, and on the Tribe Node itself, where security checking is primarily done. This, of course, also means
 that all clusters must be running Shield. The following are the current limitations to keep in mind when using the
 Tribe Node in combination with Shield.</p><h3><a id="_same_privileges_on_all_connected_clusters"></a>Same privileges on all connected clusters</h3><p>The Tribe Node has its own configuration and privileges, which need to grant access to actions and indices on all of the
 connected clusters. Also, each cluster needs to grant access to indices belonging to other connected clusters as well.</p><p>Let’s look at an example: assuming we have two clusters, <code class="literal">cluster1</code> and <code class="literal">cluster2</code>, each one holding an index, <code class="literal">index1</code>
-and <code class="literal">index2</code>. A search request that targets multiple clusters, as follows</p><pre class="programlisting prettyprint lang-shell">curl -XGET tribe_node:9200/index1,index2/_search -u tribe_user:tribe_user</pre><p>requires <code class="literal">search</code> privileges for both <code class="literal">index1</code> and <code class="literal">index2</code> on the Tribe Node:</p><pre class="programlisting prettyprint lang-yaml">tribe_user:
+and <code class="literal">index2</code>. A search request that targets multiple clusters, as follows</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET tribe_node:9200/index1,index2/_search -u tribe_user:tribe_user</pre></div><p>requires <code class="literal">search</code> privileges for both <code class="literal">index1</code> and <code class="literal">index2</code> on the Tribe Node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">tribe_user:
   indices:
-    'index*': search</pre><p>Also, the same privileges need to be granted on the connected clusters, meaning that <code class="literal">cluster1</code> has to grant access to
+    'index*': search</pre></div><p>Also, the same privileges need to be granted on the connected clusters, meaning that <code class="literal">cluster1</code> has to grant access to
 <code class="literal">index2</code> even though <code class="literal">index2</code> only exists on <code class="literal">cluster2</code>; the same requirement applies for <code class="literal">index1</code> on <code class="literal">cluster2</code>. This
 applies to any indices action. As for cluster state read operations (e.g. cluster state api, get mapping api etc.),
 they always get executed locally on the Tribe Node, to make sure that the merged cluster state gets returned; their
@@ -580,11 +580,11 @@ and then copied over to all of the other nodes in each cluster and the Tribe Nod
 administration tasks (e.g. create index) cannot be performed through the Tribe Node but need to be sent directly to the
 corresponding cluster. The users that need to be created on Tribe Node are those that allow to get back data merged from
 the different clusters through the Tribe Node itself. Let’s for instance create as follows a <code class="literal">tribe_user</code> user, with
-role <code class="literal">user</code>, that has <code class="literal">read</code> privileges on any index.</p><pre class="programlisting prettyprint lang-shell">./bin/shield/esusers useradd tribe_user -p tribe_user -r user</pre><p>The above command needs to be executed on each cluster, since the same user needs to be present on the Tribe Node as well
+role <code class="literal">user</code>, that has <code class="literal">read</code> privileges on any index.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">./bin/shield/esusers useradd tribe_user -p tribe_user -r user</pre></div><p>The above command needs to be executed on each cluster, since the same user needs to be present on the Tribe Node as well
 as on every connected cluster.</p><p>The following is the configuration required on the Tribe Node, that needs to be added to <code class="literal">elasticsearch.yml</code>.
 Elasticsearch allows to list specific settings per cluster. We disable multicast discovery as described in the
 <a class="link" href="_configure_the_keystores_and_enable_ssl.html#disable-multicast" title="Disable multicast">Disable Multicast section</a> and configure the proper unicast discovery hosts for each cluster,
-as well as their cluster names:</p><pre class="programlisting prettyprint lang-yaml">tribe:
+as well as their cluster names:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">tribe:
   t1:
     cluster.name: tribe1
     discovery.zen.ping.multicast.enabled: false
@@ -592,8 +592,8 @@ as well as their cluster names:</p><pre class="programlisting prettyprint lang-y
   t2:
     cluster.name: tribe2
     discovery.zen.ping.multicast.enabled: false
-    discovery.zen.ping.unicast.hosts: ["tribe2:9300"]</pre><p>The Tribe Node can then be started and once initialized it will be ready to accept requests like the following search,
-which will return documents coming from the different connected clusters:</p><pre class="programlisting prettyprint lang-shell">curl -XGET localhost:9200/_search -u tribe_user:tribe_user</pre><p>As for encrypted communication, the required settings are the same as described in <a class="link" href="securing-nodes.html" title="Securing Nodes">Securing Nodes</a>,
+    discovery.zen.ping.unicast.hosts: ["tribe2:9300"]</pre></div><p>The Tribe Node can then be started and once initialized it will be ready to accept requests like the following search,
+which will return documents coming from the different connected clusters:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET localhost:9200/_search -u tribe_user:tribe_user</pre></div><p>As for encrypted communication, the required settings are the same as described in <a class="link" href="securing-nodes.html" title="Securing Nodes">Securing Nodes</a>,
 but need to be specified per tribe as we did for discovery settings above.</p></div><div class="navfooter"><span class="prev"><a href="securing-aliases.html">
               « 
               Appendix 4. Securing Indices &amp; Aliases</a>
@@ -751,31 +751,8 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 	}
 </script>	
 
-            <script type="text/javascript">
-  jQuery(function() {
-    jQuery('#rtpcontainer').prependTo('#guide');
-    jQuery('#guide a[id]').each(function() { this.href='#'+this.id });
-    jQuery('pre.prettyprint').each(function() {
-      var pre = jQuery(this);
-      pre.css('position','absolute');
-      pre.css('width','auto');
-      var height = pre.innerHeight();
-      pre.wrap('<div class="pre_wrapper" style="height:' + (10 + height) + 'px"></div>');
-    })
-  });
-</script>
+            <script type="text/javascript" src="docs.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
-<script type="text/javascript" >
-  (function ($, $a, $title, $list) {
-    $a = $('[id^="js-api-method-index"]');
-    if (!$a.size()) return;
-    $('#guide').addClass('js-client-docs');
-    $list = $a.siblings('.itemizedlist').detach();
-    $title = $(document.createElement('h2')).text('api methods')
-    $a.parent().remove();
-    $('.toc').first().append($(document.createElement('div')).addClass('js-api-method-index').append($title).append($list));
-  }(jQuery));
-</script>
 
             </body>
         
