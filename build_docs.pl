@@ -309,7 +309,7 @@ sub push_changes {
         }
         else {
             say "Pushing changes";
-            run qw(git push -f origin HEAD );
+            run qw(git push origin HEAD );
         }
     }
     else {

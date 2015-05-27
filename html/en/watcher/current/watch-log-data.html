@@ -584,12 +584,10 @@ For example, the following Watch searches the <code class="literal">logs</code> 
 }'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Schedules are typically configured to run less frequently. This example
 sets the interval to 10 seconds so you can easily see the watches being triggered.
-Since this watch runs so frequently, don’t forget to <a class="link" href="watch-log-data.html#log-delete" title="Delete the Watch">delete the watch</a>
-when you’re done experimenting.
 </p></td></tr></table></div><p>If you check the watch history you’ll see that the watch is being triggered every
 10 seconds. However, the search isn’t returning any results so nothing is loaded
 into the watch payload.</p><p>For example, the following snippet gets the last ten watch executions (a.k.a watch records)
-from the watch history:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/.watch_history*/_search?pretty' -d '{
+from the watch history:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/.watch_history*/_search' -d '{
   "sort" : [
     { "execution_result.execution_time" : "desc" }
   ]
@@ -616,30 +614,30 @@ into the watch, you can define a condition that checks to see if any errors were
 The <a class="link" href="anatomy-condition.html#anatomy-condition-compare" title="Compare Condition">compare</a> condition lets you easily compare against
 values in the execution context without enabling dynamic scripting.
 </p></td></tr></table></div><p>The condition result is recorded as part of the <code class="literal">watch_record</code> each time the watch
-executes. Since there are currently no log events in the <code class="literal">logs</code> index, the watch condition
-will not be met. If you search the history for watch executions where the condition was met
-during the last 5 seconds, there are no hits:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/.watch_history*/_search?pretty' -d '{
+executes. Since there are currently no log events in the <code class="literal">logs</code> index, our watch condition
+will not be met. Thus, searching the history for watch executions in the last 5 seconds
+where the condition was met will return no results:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost/.watch_history*/_search' -d '{
   "query" : {
     "bool" : {
       "must" : [
         { "match" : { "execution_result.condition.met" : true }},
-        { "range" : { "execution_result.execution_time" : { "from" : "now-10s"}}}
+        { "range" : { "execution_result.execution_time" : { "from" : "now-5s"}}}
       ]
     }
   }
 }'</pre></div><p>For the condition in the example above to evaluate to <code class="literal">true</code>, you need to add
-an event to the <code class="literal">logs</code> index that contains an error.</p><p>For example, the following snippet adds a 404 error to the <code class="literal">logs</code> index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'http://localhost:9200/logs/event' -d '{
+an event to the <code class="literal">logs</code> index that contains an error.</p><p>For example, the following snippet adds a 404 error to the <code class="literal">logs</code> index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'http://localhost/logs/event' -d '{
     "timestamp" : "2015-05-17T18:12:07.613Z",
     "request" : "GET index.html",
     "status_code" : 404,
     "message" : "Error: File not found"
-}</pre></div><p>Once you add this event, the next time the watch executes its condition will
-evaluate to <code class="literal">true</code>. You can verify this by searching the watch history:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/.watch_history*/_search?pretty' -d '{
+}</pre></div><p>Once you add the event above, the next time the watch executes, its condition will
+be evaluated to <code class="literal">true</code>. You can verify this by searching the watch history:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost/.watch_history*/_search' -d '{
   "query" : {
     "bool" : {
       "must" : [
         { "match" : { "execution_result.condition.met" : true }},
-        { "range" : { "execution_result.execution_time" : { "from" : "now-10s"}}}
+        { "range" : { "execution_result.execution_time" : { "from" : "now-5s"}}}
       ]
     }
   }
@@ -671,10 +669,7 @@ to an Elasticsearch or log messages to the standards Elasticsearch log files.</p
       }
     }
   }
-}'</pre></div><h4><a id="log-delete"></a>Delete the Watch</h4><p>Since the <code class="literal">log_error_watch</code> is configured to run every 10 seconds, make
-sure you delete it when you’re done experimenting. Otherwise, the noise
-from this sample watch will make it hard to see what else is going on in
-your watch history and log file.</p><p>To remove the watch, use the <a class="link" href="api-rest.html#api-rest-delete-watch" title="Delete Watch API">DELETE watch</a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XDELETE 'http://localhost:9200/_watcher/watch/log_error_watch'</pre></div></div><div class="navfooter"><span class="prev"><a href="getting-started.html">
+}'</pre></div></div><div class="navfooter"><span class="prev"><a href="getting-started.html">
               « 
               Getting Started</a>
            

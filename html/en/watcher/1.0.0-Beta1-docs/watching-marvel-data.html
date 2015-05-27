@@ -568,8 +568,6 @@ you could set up watches to alert on:</p><div class="itemizedlist"><ul class="it
 </li><li class="listitem">
 <a class="link" href="watching-marvel-data.html#watching-open-file-descriptors" title="Watching Open File Descriptors">High file descriptor usage</a>
 </li><li class="listitem">
-<a class="link" href="watching-marvel-data.html#watching-fielddata" title="Watching Field Data Utilization">High fielddata cache usage</a>
-</li><li class="listitem">
 <a class="link" href="watching-marvel-data.html#watching-nodes" title="Watching for Nodes Joining or Leaving a Cluster">Nodes joining or leaving the cluster</a>
 </li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>These watches query the index where your cluster’s Marvel data is stored.
 If you don’t have Marvel installed, the queries won’t return any results, the conditions
@@ -958,105 +956,6 @@ To send email notifications, you must configure at least one email account in <c
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO23-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Specify the email address you want to notify.
 </p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This example uses an inline script, which requires you to enable dynamic scripting  in Elasticsearch. While this is convenient when you’re experimenting with Watcher, in a production
-environment we recommend disabling dynamic scripting and using file scripts.</p></div></div><h4><a id="watching-fielddata"></a>Watching Field Data Utilization</h4><p>This watch runs once a minute and takes action if there are nodes that
-are using 80% or more of their field data cache.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-The watch schedule is set to execute the watch every minute.
-</li><li class="listitem">
-The watch input gets the average field data memory usage on each node from the <code class="literal">.marvel-*</code> indices.
-The input search returns the top ten nodes with the highest average field data usage.
-</li><li class="listitem">
-The watch condition checks the cluster status to see if any node’s average field data usage is 80% or more of the field data
-cache size.
-</li><li class="listitem">
-The watch action is to send an email. (You could also call a <code class="literal">webhook</code> or store the event.)
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT _watcher/watch/fielddata_utilization
-{
-  "metadata": {
-    "fielddata_cache_size": 100000, <a id="CO24-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    "threshold": 0.8
-  },
-  "trigger": {
-    "schedule": {
-      "interval": "1m"
-    }
-  },
-  "input": {
-    "search": {
-      "request": {
-        "indices": [
-          ".marvel-*"
-        ],
-        "types": "node_stats",
-        "search_type": "count",
-        "body": {
-          "query": {
-            "filtered": {
-              "filter": {
-                "range": {
-                  "@timestamp": {
-                    "gte": "now-1m",
-                    "lte": "now"
-                  }
-                }
-              }
-            }
-          },
-          "aggs": {
-            "minutes": {
-              "date_histogram": {
-                "field": "@timestamp",
-                "interval": "5s"
-              },
-              "aggs": {
-                "nodes": {
-                  "terms": {
-                    "field": "node.name.raw",
-                    "size": 10,
-                    "order": {
-                      "fielddata": "desc"
-                    }
-                  },
-                  "aggs": {
-                    "fielddata": {
-                      "avg": {
-                        "field": "indices.fielddata.memory_size_in_bytes"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "throttle_period": "30m", <a id="CO24-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-  "condition": {
-    "script": "if (ctx.payload.aggregations.minutes.buckets.size() == 0) return false; def latest = ctx.payload.aggregations.minutes.buckets[-1]; def node = latest.nodes.buckets[0]; return node &amp;&amp; node.fielddata &amp;&amp; node.fielddata.value &gt;= (ctx.metadata.fielddata_cache_size * ctx.metadata.threshold);"
-  },
-  "actions": {
-    "send_email": { <a id="CO24-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-      "transform": {
-        "script": "def latest = ctx.payload.aggregations.minutes.buckets[-1]; return latest.nodes.buckets.findAll({ return it.fielddata &amp;&amp; it.fielddata.value &gt;= (ctx.metadata.fielddata_cache_size * ctx.metadata.threshold) }).collect({ it.fielddata.percent = Math.round((it.fielddata.value/ctx.metadata.fielddata_cache_size)*100); it });"
-      },
-      "email": {
-        "to": "&lt;username&gt;@&lt;domainname&gt;", <a id="CO24-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-        "subject": "Watcher Notification - NODES WITH 80% FIELDDATA UTILIZATION",
-        "body": "Nodes with 80% FIELDDATA UTILIZATION (above 80%):\n\n{{#ctx.payload._value}}\"{{key}}\" - Fielddata utilization is at {{fielddata.value}} bytes ({{fielddata.percent}}%)\n{{/ctx.payload._value}}"
-      }
-    }
-  }
-}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/:AUTOSENSE:" target="sense">View in Sense</a><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The size of the field data cache. Set to the actual cache size configured for your nodes.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The throttle period prevents notifications from being sent more than once a minute.
-You can change the throttle period to receive notifications more or less frequently.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-To send email notifications, you must configure at least one email account in <code class="literal">elasticsearch.yml</code>. See <a class="link" href="email-services.html" title="Working with Various Email Services">Configuring Email Services</a> for more information.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Specify the email address you want to notify.
-</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This example uses an inline script, which requires you to enable dynamic scripting  in Elasticsearch. While this is convenient when you’re experimenting with Watcher, in a production
 environment we recommend disabling dynamic scripting and using file scripts.</p></div></div><h4><a id="watching-nodes"></a>Watching for Nodes Joining or Leaving a Cluster</h4><p>This watch checks every minute to see if a node has joined or left the cluster:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 The watch schedule is set to execute the watch every minute.
 </li><li class="listitem">
@@ -1124,27 +1023,27 @@ The watch action is to send an email. (You could also call a <code class="litera
       }
     }
   },
-  "throttle_period": "60s", <a id="CO25-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  "throttle_period": "60s", <a id="CO24-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
   "condition": {
     "script": {
       "inline": "ctx.payload.hits.size() &gt; 0 "
     }
   },
   "actions": {
-    "send_email": { <a id="CO25-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    "send_email": { <a id="CO24-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
       "email": {
-        "to": "&lt;username&gt;@&lt;domainname&gt;", <a id="CO25-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        "to": "&lt;username&gt;@&lt;domainname&gt;", <a id="CO24-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
         "subject": "{{ctx.payload.hits.hits.0.fields.event}} the cluster",
         "body": "{{ctx.payload.hits.hits.0.fields.message}} the cluster {{ctx.payload.hits.hits.0.fields.cluster_name}} "
       }
     }
   }
-}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/:AUTOSENSE:" target="sense">View in Sense</a><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO25-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/:AUTOSENSE:" target="sense">View in Sense</a><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The throttle period prevents notifications from being sent more than once a minute.
 You can change the throttle period to receive notifications more or less frequently.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO25-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 To send email notifications, you must configure at least one email account in <code class="literal">elasticsearch.yml</code>. See <a class="link" href="email-services.html" title="Working with Various Email Services">Configuring Email Services</a> for more information.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO25-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Specify the email address you want to notify.
 </p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This example uses an inline script, which requires you to enable dynamic scripting  in Elasticsearch. While this is convenient when you’re experimenting with Watcher, in a production
 environment we recommend disabling dynamic scripting and using file scripts.</p></div></div></div><div class="navfooter"><span class="prev"><a href="cookbook.html">
