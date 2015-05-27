@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>cat APIs</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index.html" title="Elasticsearch Reference [master]" /><link rel="prev" href="indices-upgrade.html" title="Upgrade" /><link rel="next" href="cat-alias.html" title="cat aliases" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shipper</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Packetbeat reference" /><link rel="up" href="_configuration.html" title="Configuration" /><link rel="prev" href="_configuration.html" title="Configuration" /><link rel="next" href="configuration-interfaces.html" title="Interfaces" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -549,55 +549,81 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [master]
-    </a></span> » <span class="breadcrumb-node">cat APIs </span></div><div class="navheader"><span class="prev"><a href="indices-upgrade.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Packetbeat reference</a></span> » <span class="breadcrumb-link"><a href="_configuration.html">Configuration</a></span> » <span class="breadcrumb-node">Shipper</span></div><div class="navheader"><span class="prev"><a href="_configuration.html">
               « 
-              Upgrade</a>
+              Configuration</a>
            
         </span><span class="next">
            
-          <a href="cat-alias.html">cat aliases
+          <a href="configuration-interfaces.html">Interfaces
                »
-            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="cat"></a>cat APIs <a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><h2><a id="intro"></a>Introduction<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>JSON is great… for computers.  Even if it’s pretty-printed, trying
-to find relationships in the data is tedious.  Human eyes, especially
-when looking at an ssh terminal, need compact and aligned text.  The
-cat API aims to meet this need.</p><p>All the cat commands accept a query string parameter <code class="literal">help</code> to see all
-the headers and info they provide, and the <code class="literal">/_cat</code> command alone lists all
-the available commands.</p><h2><a id="common-parameters"></a>Common parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><h3><a id="verbose"></a>Verbose<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">v</code> to turn on
-verbose output.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'localhost:9200/_cat/master?v'
-id                     ip        node
-EGtKWZlWQYWDmX29fUnp3Q 127.0.0.1 Grey, Sara</pre></div><h3><a id="help"></a>Help<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">help</code> which will
-output its available columns.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'localhost:9200/_cat/master?help'
-id   | node id
-ip   | node transport ip address
-node | node name</pre></div><h3><a id="headers"></a>Headers<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">h</code> which forces
-only those columns to appear.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'n1:9200/_cat/nodes?h=ip,port,heapPercent,name'
-192.168.56.40 9300 40.3 Captain Universe
-192.168.56.20 9300 15.3 Kaluu
-192.168.56.50 9300 17.0 Yellowjacket
-192.168.56.10 9300 12.3 Remy LeBeau
-192.168.56.30 9300 43.9 Ramsey, Doug</pre></div><p>You can also request multiple columns using simple wildcards like
-<code class="literal">/_cat/thread_pool?h=ip,bulk.*</code> to get all headers (or aliases) starting
-with <code class="literal">bulk.</code>.</p><h3><a id="numeric-formats"></a>Numeric formats<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Many commands provide a few types of numeric output, either a byte
-value or a time value.  By default, these types are human-formatted,
-for example, <code class="literal">3.5mb</code> instead of <code class="literal">3763212</code>.  The human values are not
-sortable numerically, so in order to operate on these values where
-order is important, you can change it.</p><p>Say you want to find the largest index in your cluster (storage used
-by all the shards, not number of documents).  The <code class="literal">/_cat/indices</code> API
-is ideal.  We only need to tweak two things.  First, we want to turn
-off human mode.  We’ll use a byte-level resolution.  Then we’ll pipe
-our output into <code class="literal">sort</code> using the appropriate column, which in this
-case is the eight one.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl '192.168.56.10:9200/_cat/indices?bytes=b' | sort -rnk8
-green wiki2 3 0 10000   0 105274918 105274918
-green wiki1 3 0 10000 413 103776272 103776272
-green foo   1 0   227   0   2065131   2065131</pre></div></div></div><div class="navfooter"><span class="prev"><a href="indices-upgrade.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-shipper"></a>Shipper<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The shipper section contains options for the Packetbeat shipper itself and some
+general settings regarding its behaviour.</p><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shipper:
+  # The name of the shipper that publishes the network data. It can be used to group
+  # all the transactions sent by a single shipper in the web interface.
+  # If this options is not defined, the hostname is used.
+  #name:
+
+  # The tags of the shipper are included in their own field with each
+  # transaction published. Tags make it easy to group servers by different
+  # logical properties.
+  tags: ["service-X", "web-tier"]
+
+  # Uncomment the following if you want to ignore transactions created
+  # by the server on which the shipper is installed. This option is useful
+  # to remove duplicates if shippers are installed on multiple servers.
+  ignore_outgoing: true
+
+  # How often (in seconds) shippers are publishing their IPs to the topology map.
+  # The default is 10 seconds.
+  refresh_topology_freq: 10
+
+  # Expiration time (in seconds) of the IPs published by a shipper to the topology map.
+  # All the IPs will be deleted afterwards. Note, that the value must be higher than
+  # refresh_topology_freq. The default is 15 seconds.
+  topology_expire: 15</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_options"></a>Options<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_name"></a>name<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The name of the Packetbeat shipper. If empty, the <code class="literal">hostname</code> of the server is
+used. This information is included in each transaction (the <code class="literal">shipper</code> field)
+published by the shipper and it can be used to group all the transactions sent by
+a single shipper.</p><p>At startup, every Packetbeat shipper registers itself to the network topology by
+publishing to Elasticsearch the IP and port together with its shipper name. This
+information is used to set both the <code class="literal">server</code> and <code class="literal">client_server</code> fields
+from transactions even when they are sniffed by another shipper.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shipper:
+  name: "my-shipper"</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_tags"></a>tags<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The tags of the shipper are included in the <code class="literal">tags</code> field with each transaction
+published. Tags make it easy to group servers by different logical properties.
+For example, if you have a cluster of web servers, you can add to the shippers on
+each of them the tag "webservers" and then use filters and queries in the
+Kibana web interface to get visualisations for the whole group of servers.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shipper:
+  tags: ["my-service", "hardware", "test"]</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_ignore_outgoing"></a>ignore_outgoing<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If the <code class="literal">ignore_outgoing</code> option is enabled, Packetbeat shipper ignores all the
+transactions initiated from the server running the shipper.</p><p>This is useful when two shippers publish the same transactions because one sees
+it in its outgoing queue and the other sees it in its incoming queue. In order
+to remove the duplications, you can enable this option on one of the servers.</p><p><span class="inlinemediaobject"><img src="./images/option_ignore_outgoing.png" alt="Shippers Architecture" /></span></p><p>For example, in case a shipper is installed on each server from a 3 servers
+architecture, t1 is the transaction exchanged between Server1 and Server2 and
+t2 is the transaction between Server2 and Server3, then both transactions are
+indexed twice as Shipper2 sees both transactions:</p><p>Published transactions (ignore outgoing is false):</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Shipper1: t1
+</li><li class="listitem">
+Shipper2: t1 and t2
+</li><li class="listitem">
+Shipper3: t2
+</li></ul></div><p>To avoid duplications, you can enforce your shippers to send only the incoming
+transactions and ignore the transactions created by the local server:</p><p>Published transactions (ignore outgoing is true):</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Shipper1: none
+</li><li class="listitem">
+Shipper2: t1
+</li><li class="listitem">
+Shipper3: t2
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_refresh_topology_freq"></a>refresh_topology_freq<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>This setting settings controls the refreshing interval of the topology map in
+seconds. In other words, how often each shipper publishes its IP addresses to the
+topology map. The default is 10 seconds.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_topology_expire"></a>topology_expire<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>This setting controls the expiration time for the topology in seconds. This is
+useful in case a shipper stops publishing its IP addresses.  The IP addresses
+are removed automatically from the topology map after expiration. The default
+is 15 seconds.</p></div></div></div><div class="navfooter"><span class="prev"><a href="_configuration.html">
               « 
-              Upgrade</a>
+              Configuration</a>
            
         </span><span class="next">
            
-          <a href="cat-alias.html">cat aliases
+          <a href="configuration-interfaces.html">Interfaces
                »
             </a></span></div>
 <!-- end body -->

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>cat APIs</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index.html" title="Elasticsearch Reference [master]" /><link rel="prev" href="indices-upgrade.html" title="Upgrade" /><link rel="next" href="cat-alias.html" title="cat aliases" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Kibana Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Packetbeat reference" /><link rel="up" href="_kibana_query_and_filter.html" title="Kibana query and filter" /><link rel="prev" href="_kibana_query_and_filter.html" title="Kibana query and filter" /><link rel="next" href="_kibana_filter.html" title="Kibana Filter" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -549,55 +549,35 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [master]
-    </a></span> » <span class="breadcrumb-node">cat APIs </span></div><div class="navheader"><span class="prev"><a href="indices-upgrade.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Packetbeat reference</a></span> » <span class="breadcrumb-link"><a href="_kibana_query_and_filter.html">Kibana query and filter</a></span> » <span class="breadcrumb-node">Kibana Query</span></div><div class="navheader"><span class="prev"><a href="_kibana_query_and_filter.html">
               « 
-              Upgrade</a>
+              Kibana query and filter</a>
            
         </span><span class="next">
            
-          <a href="cat-alias.html">cat aliases
+          <a href="_kibana_filter.html">Kibana Filter
                »
-            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="cat"></a>cat APIs <a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><h2><a id="intro"></a>Introduction<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>JSON is great… for computers.  Even if it’s pretty-printed, trying
-to find relationships in the data is tedious.  Human eyes, especially
-when looking at an ssh terminal, need compact and aligned text.  The
-cat API aims to meet this need.</p><p>All the cat commands accept a query string parameter <code class="literal">help</code> to see all
-the headers and info they provide, and the <code class="literal">/_cat</code> command alone lists all
-the available commands.</p><h2><a id="common-parameters"></a>Common parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><h3><a id="verbose"></a>Verbose<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">v</code> to turn on
-verbose output.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'localhost:9200/_cat/master?v'
-id                     ip        node
-EGtKWZlWQYWDmX29fUnp3Q 127.0.0.1 Grey, Sara</pre></div><h3><a id="help"></a>Help<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">help</code> which will
-output its available columns.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'localhost:9200/_cat/master?help'
-id   | node id
-ip   | node transport ip address
-node | node name</pre></div><h3><a id="headers"></a>Headers<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">h</code> which forces
-only those columns to appear.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'n1:9200/_cat/nodes?h=ip,port,heapPercent,name'
-192.168.56.40 9300 40.3 Captain Universe
-192.168.56.20 9300 15.3 Kaluu
-192.168.56.50 9300 17.0 Yellowjacket
-192.168.56.10 9300 12.3 Remy LeBeau
-192.168.56.30 9300 43.9 Ramsey, Doug</pre></div><p>You can also request multiple columns using simple wildcards like
-<code class="literal">/_cat/thread_pool?h=ip,bulk.*</code> to get all headers (or aliases) starting
-with <code class="literal">bulk.</code>.</p><h3><a id="numeric-formats"></a>Numeric formats<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Many commands provide a few types of numeric output, either a byte
-value or a time value.  By default, these types are human-formatted,
-for example, <code class="literal">3.5mb</code> instead of <code class="literal">3763212</code>.  The human values are not
-sortable numerically, so in order to operate on these values where
-order is important, you can change it.</p><p>Say you want to find the largest index in your cluster (storage used
-by all the shards, not number of documents).  The <code class="literal">/_cat/indices</code> API
-is ideal.  We only need to tweak two things.  First, we want to turn
-off human mode.  We’ll use a byte-level resolution.  Then we’ll pipe
-our output into <code class="literal">sort</code> using the appropriate column, which in this
-case is the eight one.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl '192.168.56.10:9200/_cat/indices?bytes=b' | sort -rnk8
-green wiki2 3 0 10000   0 105274918 105274918
-green wiki1 3 0 10000 413 103776272 103776272
-green foo   1 0   227   0   2065131   2065131</pre></div></div></div><div class="navfooter"><span class="prev"><a href="indices-upgrade.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_kibana_query"></a>Kibana Query<a href="https://github.com/elastic/packetbeat/edit/master/docs/filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The search field under the <span class="strong"><strong>Discover</strong></span> page provides a way to query
+a specific subset of the transactions from the selected time frame.
+The query syntax is based on the
+<a class="ulink" href="http://lucene.apache.org/core/3_5_0/queryparsersyntax.html" target="_top">Lucene query syntax</a>.
+It allows boolean operators, wildcards and field filtering. For example, if
+you want to find the http redirects, you can search for
+<code class="literal">type: http AND http.code: 302</code>.</p><p><span class="inlinemediaobject"><img src="./images/kibana-query-filtering.png" alt="Kibana query" /></span></p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_string_query"></a>String Query<a href="https://github.com/elastic/packetbeat/edit/master/docs/filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A query may consists of one or more words or a phrase. A phrase is a
+group of words surrounded by double quotes such as "test search".</p><p>To search for all http requests initiated by Mozilla Web browser version 5.0:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">"Mozilla/5.0"</pre></div><p>To search for all the transactions that contain the following message:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">"Cannot change the info of a user"</pre></div><p>Note: Double quotes are mandatory here to search for the exact
+string. Without any quotes, the search would match documents containing one of the following words:"Cannot" OR "change" OR "the" OR "info" OR "a" OR "user".</p><p>To search for all transactions with the "chunked" encoding:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">"Transfer-Encoding: chunked"</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_field_based_query"></a>Field based Query<a href="https://github.com/elastic/packetbeat/edit/master/docs/filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To only view HTTP transactions:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">type: http</pre></div><p>To only view failed transactions:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">status: Error</pre></div><p>To only view MySQL INSERT queries:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">mysql.method: INSERT</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_regexp_query"></a>Regexp Query<a href="https://github.com/elastic/packetbeat/edit/master/docs/filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Kibana supports regular expression for filters and expressions.  For example,
+to search for all http responses with json as returned value type:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">http.content_type: *json</pre></div><p>See
+<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-regexp-query.html" target="_top">Elasticsearch regexp query</a>
+for more details about the syntax.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_range_query"></a>Range Query<a href="https://github.com/elastic/packetbeat/edit/master/docs/filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Range queries allow a field to have values between the lower and upper bound.
+The interval can include or exclude the bounds depending on the type of
+brackets used.</p><p>To search for slow transactions with a responsetime greater or equal than 10ms:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">responsetime: [10 TO *]</pre></div><p>To search for slow transactions with a responsetime greater than 10ms:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">responsetime: {10 TO *}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_bool_query"></a>Bool Query<a href="https://github.com/elastic/packetbeat/edit/master/docs/filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Boolean operators (AND, OR, NOT) allow combining multiple sub queries through logic operators.
+Note: Operators such as AND, OR and NOT must be CAPITALIZED. See <a class="ulink" href="http://lucene.apache.org/core/3_5_0/queryparsersyntax.html" target="_top">Lucene query syntax</a> for more details about the boolean operators.</p><p>To search for all transactions except MySQL transactions:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">NOT type: mysql</pre></div><p>To search for all MySQL SELECT queries with large attachments:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">mysql.method: SELECT AND mysql.size: [10000 TO *]</pre></div><p>Lucene also supports parentheses to group sub queries.</p><p>To search for either INSERT or UPDATE MySQL queries with a responsetime greater or equal with 30ms:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">(mysql.method: INSERT OR mysql.method: UPDATE) AND responsetime: [30 TO *]</pre></div></div></div><div class="navfooter"><span class="prev"><a href="_kibana_query_and_filter.html">
               « 
-              Upgrade</a>
+              Kibana query and filter</a>
            
         </span><span class="next">
            
-          <a href="cat-alias.html">cat aliases
+          <a href="_kibana_filter.html">Kibana Filter
                »
             </a></span></div>
 <!-- end body -->

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>cat APIs</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index.html" title="Elasticsearch Reference [master]" /><link rel="prev" href="indices-upgrade.html" title="Upgrade" /><link rel="next" href="cat-alias.html" title="cat aliases" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Outputs</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Packetbeat reference" /><link rel="up" href="_configuration.html" title="Configuration" /><link rel="prev" href="configuration-protocols.html" title="Protocols" /><link rel="next" href="configuration-processes.html" title="Processes (optional)" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -549,55 +549,129 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [master]
-    </a></span> » <span class="breadcrumb-node">cat APIs </span></div><div class="navheader"><span class="prev"><a href="indices-upgrade.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Packetbeat reference</a></span> » <span class="breadcrumb-link"><a href="_configuration.html">Configuration</a></span> » <span class="breadcrumb-node">Outputs</span></div><div class="navheader"><span class="prev"><a href="configuration-protocols.html">
               « 
-              Upgrade</a>
+              Protocols</a>
            
         </span><span class="next">
            
-          <a href="cat-alias.html">cat aliases
+          <a href="configuration-processes.html">Processes (optional)
                »
-            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="cat"></a>cat APIs <a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><h2><a id="intro"></a>Introduction<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>JSON is great… for computers.  Even if it’s pretty-printed, trying
-to find relationships in the data is tedious.  Human eyes, especially
-when looking at an ssh terminal, need compact and aligned text.  The
-cat API aims to meet this need.</p><p>All the cat commands accept a query string parameter <code class="literal">help</code> to see all
-the headers and info they provide, and the <code class="literal">/_cat</code> command alone lists all
-the available commands.</p><h2><a id="common-parameters"></a>Common parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><h3><a id="verbose"></a>Verbose<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">v</code> to turn on
-verbose output.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'localhost:9200/_cat/master?v'
-id                     ip        node
-EGtKWZlWQYWDmX29fUnp3Q 127.0.0.1 Grey, Sara</pre></div><h3><a id="help"></a>Help<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">help</code> which will
-output its available columns.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'localhost:9200/_cat/master?help'
-id   | node id
-ip   | node transport ip address
-node | node name</pre></div><h3><a id="headers"></a>Headers<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">h</code> which forces
-only those columns to appear.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'n1:9200/_cat/nodes?h=ip,port,heapPercent,name'
-192.168.56.40 9300 40.3 Captain Universe
-192.168.56.20 9300 15.3 Kaluu
-192.168.56.50 9300 17.0 Yellowjacket
-192.168.56.10 9300 12.3 Remy LeBeau
-192.168.56.30 9300 43.9 Ramsey, Doug</pre></div><p>You can also request multiple columns using simple wildcards like
-<code class="literal">/_cat/thread_pool?h=ip,bulk.*</code> to get all headers (or aliases) starting
-with <code class="literal">bulk.</code>.</p><h3><a id="numeric-formats"></a>Numeric formats<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Many commands provide a few types of numeric output, either a byte
-value or a time value.  By default, these types are human-formatted,
-for example, <code class="literal">3.5mb</code> instead of <code class="literal">3763212</code>.  The human values are not
-sortable numerically, so in order to operate on these values where
-order is important, you can change it.</p><p>Say you want to find the largest index in your cluster (storage used
-by all the shards, not number of documents).  The <code class="literal">/_cat/indices</code> API
-is ideal.  We only need to tweak two things.  First, we want to turn
-off human mode.  We’ll use a byte-level resolution.  Then we’ll pipe
-our output into <code class="literal">sort</code> using the appropriate column, which in this
-case is the eight one.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl '192.168.56.10:9200/_cat/indices?bytes=b' | sort -rnk8
-green wiki2 3 0 10000   0 105274918 105274918
-green wiki1 3 0 10000 413 103776272 103776272
-green foo   1 0   227   0   2065131   2065131</pre></div></div></div><div class="navfooter"><span class="prev"><a href="indices-upgrade.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-output"></a>Outputs<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Starting with Packetbeat version 0.3.0, multiple outputs can be configured for
+exporting the correlated transactions. Currently the following output types are
+supported:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Elasticsearch
+</li><li class="listitem">
+Redis
+</li><li class="listitem">
+File
+</li></ul></div><p>One or multiple outputs can be enabled at a time. The output plugins are
+responsible for sending the transaction data in JSON format to the next step in
+the pipeline. In addition, they are also responsible for maintaining the
+network topology.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="maintaining-topology"></a>Maintaining the real-time state of the network topology<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>One of the important features of Packetbeat is that it knows for each
+transaction which is the source server and is the destination server by names.
+It does this without the requirement of maintaining a central configuration.
+Instead each shipper notes the hostname of the server on which it runs on, and
+maps that to the list of IP addresses of that server. This information is
+shared between shippers by using the mechanisms provided by the output plugins.</p><p>For example, the Redis output plugin stores the topology in a dedicated Redis
+database and the Elasticsearch output plugin stores the topology in an
+Elasticsearch index.</p><p>While multiple output plugins can be enabled at the same time, only one of them
+can be used for sharing the topology. If you have both Redis and Elasticsearch
+enabled as outputs, we suggest using Redis for saving the topology. This can be
+controlled from the <code class="literal">save_topology</code> configuration option.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_elasticsearch_output"></a>Elasticsearch Output<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Sends the transactions directly to Elasticsearch by using the Elasticsearch
+HTTP API.</p><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
+  elasticsearch:
+    # Uncomment out this option if you want to output to Elasticsearch. The
+    # default is false.
+    enabled: true
+
+    # Set the host and port where to find Elasticsearch.
+    host: "localhost"
+    port: 9200
+
+    # Optional protocol and basic auth credentials
+    # protocol: "https"
+    # username: "admin"
+    # password: "s3cr3t"
+
+    # Comment this option if you don't want to store the topology in
+    # Elasticsearch. The default is false.
+    save_topology: true
+
+    # Optional index name. The default is packetbeat and generates
+    # [packetbeat-]YYYY.MM.DD keys.
+    index: "packetbeat"
+
+    # Optional HTTP Path
+    path: "/elasticsearch"</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled"></a>enabled<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean option that enables Elasticsearch as output. The default is true.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_host"></a>host<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The host of the Elasticsearch server.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_port"></a>port<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The port of the Elasticsearch server.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_protocol"></a>protocol<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The name of the protocol Elasticsearch is reachable on. The options are:
+<code class="literal">http</code> or <code class="literal">https</code>. The default is <code class="literal">http</code>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_username"></a>username<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Basic authentication username for connecting to Elasticsearch.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_password"></a>password<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Basic authentication password for connecting to Elasticsearch.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_save_topology"></a>save_topology<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean that sets if the topology is kept in Elasticsearch. The default is
+false. See <a class="xref" href="configuration-output.html#maintaining-topology" title="Maintaining the real-time state of the network topology">Maintaining the real-time state of the network topology</a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_index"></a>index<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The index root name where to write events to. The default is <code class="literal">packetbeat</code> and
+generates <code class="literal">[packetbeat-]YYYY.MM.DD</code> indexes (e.g. <code class="literal">packetbeat-2015.04.26</code>).</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_path"></a>path<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>An HTTP path prefix that is prepended to the HTTP API calls. This is useful for
+the cases where Elasticsearch listens behind an HTTP reverse proxy that exports
+the API under a custom prefix.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="redis-output"></a>Redis Output<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Inserts the transaction in a Redis list. This output plugin is compatibile with
+<a class="ulink" href="http://logstash.net/docs/1.4.2/inputs/redis" target="_top">Redis input plugin</a> from Logstash,
+so Redis can be used as queue between the Packetbeat shippers and Logstash.</p><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
+
+  redis:
+    # Uncomment out this option if you want to output to Redis. The default is false.
+    enabled: true
+
+    # Set the host and port where to find Redis.
+    host: "localhost"
+    port: 6379
+
+    # Uncomment out this option if you want to store the topology in Redis.
+    # The default is false.
+    save_topology: true
+
+    # Optional index name. The default is packetbeat and generates packetbeat keys.
+    index: "packetbeat"
+
+    # Optional Redis database number where the events are stored
+    # The default is 0.
+    db: 0
+
+    # Optional Redis database number where the topology is stored
+    # The default is 1. It must have a different value than db.
+    db_topology: 1
+
+    # Optional password to authenticate with. By default, no
+    # password is set.
+    # password: ""
+
+    # Optional Redis initial connection timeout in seconds.
+    # The default is 5 seconds.
+    timeout: 5
+
+    # Optional interval for reconnecting to failed Redis connections.
+    # The default is 1 second.
+    reconnect_interval: 1</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled_2"></a>enabled<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean option that enables Redis as output. The default is false.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_host_2"></a>host<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Host of the Redis server.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_port_2"></a>port<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Port of the Redis server.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_db"></a>db<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Redis database number where the events are published. The default is 0.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_db_topology"></a>db_topology<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Redis database number where the topology information is stored. The default is 1.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_index_2"></a>index<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Name of the Redis list where the events are published. The default is
+<code class="literal">packetbeat</code>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_password_2"></a>password<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Password to authenticate with. The default is no authentication.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_timeout"></a>timeout<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Redis initial connection timeout in seconds. The default is 5 seconds.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_reconnect_interval"></a>reconnect_interval<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Interval for reconnecting failed Redis connections. The default is 1 second.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_file_output"></a>File Output<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
+
+  # File as output
+  # Options:
+  # path: where to save the files
+  # filename: name of the files
+  # rotate_every_kb: maximum size of the files in path
+  # number of files: maximum number of files in path
+  file:
+    enabled: true
+    path: "/tmp/packetbeat"
+    filename: packetbeat
+    rotate_every_kb: 1000
+    number_of_files: 7</pre></div><p>Dumps the transactions in a file where each transaction is in a JSON format.
+Currently, this output is used for testing, but it can be used as input for
+Logstash.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled_3"></a>enabled<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean option that enables File as output. The default is false.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_path_2"></a>path<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Path to the directory where to save the generated files. The option is
+mandatory.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_filename"></a>filename<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Name of the generated files. The default is <code class="literal">packetbeat</code> and it generates files: <code class="literal">packetbeat</code>, <code class="literal">packetbeat.1</code>, <code class="literal">packetbeat.2</code>, etc.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_rotate_every_kb"></a>rotate_every_kb<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Maximum size in kilobytes of each file. When this size is reached, the files are
+rotated. The default value is 10 MB.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_number_of_files"></a>number_of_files<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Maximum number of files under path. When this number of files is reached, the
+oldest file is deleted and the rest are shifted from last to first. The default
+is 7 files.</p></div></div></div><div class="navfooter"><span class="prev"><a href="configuration-protocols.html">
               « 
-              Upgrade</a>
+              Protocols</a>
            
         </span><span class="next">
            
-          <a href="cat-alias.html">cat aliases
+          <a href="configuration-processes.html">Processes (optional)
                »
             </a></span></div>
 <!-- end body -->

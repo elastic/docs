@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>cat APIs</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index.html" title="Elasticsearch Reference [master]" /><link rel="prev" href="indices-upgrade.html" title="Upgrade" /><link rel="next" href="cat-alias.html" title="cat aliases" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using Packetbeat with Logstash</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Packetbeat reference" /><link rel="up" href="index.html" title="Packetbeat reference" /><link rel="prev" href="exported-fields-raw.html" title="Raw fields" /><link rel="next" href="sample-dashboards.html" title="Sample dashboards" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -549,55 +549,70 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [master]
-    </a></span> » <span class="breadcrumb-node">cat APIs </span></div><div class="navheader"><span class="prev"><a href="indices-upgrade.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Packetbeat reference</a></span> » <span class="breadcrumb-node">Using Packetbeat with Logstash</span></div><div class="navheader"><span class="prev"><a href="exported-fields-raw.html">
               « 
-              Upgrade</a>
+              Raw fields</a>
            
         </span><span class="next">
            
-          <a href="cat-alias.html">cat aliases
+          <a href="sample-dashboards.html">Sample dashboards
                »
-            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="cat"></a>cat APIs <a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><h2><a id="intro"></a>Introduction<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>JSON is great… for computers.  Even if it’s pretty-printed, trying
-to find relationships in the data is tedious.  Human eyes, especially
-when looking at an ssh terminal, need compact and aligned text.  The
-cat API aims to meet this need.</p><p>All the cat commands accept a query string parameter <code class="literal">help</code> to see all
-the headers and info they provide, and the <code class="literal">/_cat</code> command alone lists all
-the available commands.</p><h2><a id="common-parameters"></a>Common parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><h3><a id="verbose"></a>Verbose<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">v</code> to turn on
-verbose output.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'localhost:9200/_cat/master?v'
-id                     ip        node
-EGtKWZlWQYWDmX29fUnp3Q 127.0.0.1 Grey, Sara</pre></div><h3><a id="help"></a>Help<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">help</code> which will
-output its available columns.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'localhost:9200/_cat/master?help'
-id   | node id
-ip   | node transport ip address
-node | node name</pre></div><h3><a id="headers"></a>Headers<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">h</code> which forces
-only those columns to appear.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'n1:9200/_cat/nodes?h=ip,port,heapPercent,name'
-192.168.56.40 9300 40.3 Captain Universe
-192.168.56.20 9300 15.3 Kaluu
-192.168.56.50 9300 17.0 Yellowjacket
-192.168.56.10 9300 12.3 Remy LeBeau
-192.168.56.30 9300 43.9 Ramsey, Doug</pre></div><p>You can also request multiple columns using simple wildcards like
-<code class="literal">/_cat/thread_pool?h=ip,bulk.*</code> to get all headers (or aliases) starting
-with <code class="literal">bulk.</code>.</p><h3><a id="numeric-formats"></a>Numeric formats<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Many commands provide a few types of numeric output, either a byte
-value or a time value.  By default, these types are human-formatted,
-for example, <code class="literal">3.5mb</code> instead of <code class="literal">3763212</code>.  The human values are not
-sortable numerically, so in order to operate on these values where
-order is important, you can change it.</p><p>Say you want to find the largest index in your cluster (storage used
-by all the shards, not number of documents).  The <code class="literal">/_cat/indices</code> API
-is ideal.  We only need to tweak two things.  First, we want to turn
-off human mode.  We’ll use a byte-level resolution.  Then we’ll pipe
-our output into <code class="literal">sort</code> using the appropriate column, which in this
-case is the eight one.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl '192.168.56.10:9200/_cat/indices?bytes=b' | sort -rnk8
-green wiki2 3 0 10000   0 105274918 105274918
-green wiki1 3 0 10000 413 103776272 103776272
-green foo   1 0   227   0   2065131   2065131</pre></div></div></div><div class="navfooter"><span class="prev"><a href="indices-upgrade.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="packetbeat-logstash"></a>Using Packetbeat with Logstash<a href="https://github.com/elastic/packetbeat/edit/master/docs/logstash.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Our <a class="xref" href="packetbeat-getting-started.html" title="Getting started"><em>Getting started</em></a> guide walks you through installing the
+simplest architecture for the Packetbeat system. This is nice and easy to get
+started with and enough for networks with small traffic. It also uses the
+minimum amount of servers: a single machine running Elasticsearch + Kibana. The
+Packetbeat shippers insert the transactions directly into the Elasticsearch
+instance.</p><p>This article explains how to use Packetbeat together with Redis and Logstash to
+provide buffering and efficient indexing.  Another important advantage is that
+you have the opportunity in Logstash to modify the data captured by Packetbeat
+any way you like. You can also use Logstash’s many output plugins to integrate
+with other systems.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The Redis output is meant to be used only temporarily until the direct
+integration between Packetbeat and Logstash is implemented. We plan to use the
+same protocol as it is used between the
+<a class="ulink" href="https://github.com/elastic/logstash-forwarder" target="_top">Logstash Forwarder</a> and Logstash.</p></div></div><p><span class="inlinemediaobject"><img src="./images/packetbeat_logstash.png" alt="Integration with Logstash" /></span></p><p>In this setup, the Packetbeat shippers use the <code class="literal">RPUSH</code> Redis command to insert
+into a list stored in memory by Redis. Logstash reads from this key using the
+<a class="ulink" href="http://www.elastic.co/guide/en/logstash/current/plugins-inputs-redis.html" target="_top">Redis
+input plugin</a> and then sends the transactions to Elasticsearch using the
+<a class="ulink" href="http://www.elastic.co/guide/en/logstash/current/plugins-outputs-elasticsearch.html" target="_top">Elasticsearch
+output plugin</a>. The Elasticsearch plugin of Logstash uses the bulk API, making
+indexing very efficient.</p><p>To use this setup, disable the Elasticsearch output and use instead the
+<a class="link" href="configuration-output.html#redis-output" title="Redis Output">Redis output</a> in the Packetbeat configuration file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
+  redis:
+    # Uncomment out this option if you want to output to Redis.
+    # The default is false.
+    enabled: true
+
+    # Set the host and port where to find Redis.
+    host: "127.0.0.1"
+    port: 6379
+    save_topology: true</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you want Packetbeat to monitor Redis traffic, it’s better to change
+the port for the Redis instance that you use for collecting the traffic.
+Otherwise, you create a loop where the shipper captures the traffic it sends.</p></div></div><p>Then, configure Logstash to read from Redis and index into Elasticsearch. Here
+is a sample configuration that you can save under <code class="literal">/etc/logstash/conf.d/</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">input {
+    redis {
+        codec =&gt; "json"
+        host =&gt; "127.0.0.1"
+        port =&gt; 6379
+        data_type =&gt; "list"
+        key =&gt; "packetbeat"
+    }
+}
+
+output {
+    elasticsearch {
+        protocol =&gt; "http"
+        host =&gt; "127.0.0.1"
+        sniffing =&gt; true
+        manage_template =&gt; false
+        index =&gt; "packetbeat-%{+YYYY.MM.dd}"
+    }
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="exported-fields-raw.html">
               « 
-              Upgrade</a>
+              Raw fields</a>
            
         </span><span class="next">
            
-          <a href="cat-alias.html">cat aliases
+          <a href="sample-dashboards.html">Sample dashboards
                »
             </a></span></div>
 <!-- end body -->

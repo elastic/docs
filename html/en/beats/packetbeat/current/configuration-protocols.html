@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>cat APIs</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index.html" title="Elasticsearch Reference [master]" /><link rel="prev" href="indices-upgrade.html" title="Upgrade" /><link rel="next" href="cat-alias.html" title="cat aliases" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Protocols</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Packetbeat reference" /><link rel="up" href="_configuration.html" title="Configuration" /><link rel="prev" href="configuration-interfaces.html" title="Interfaces" /><link rel="next" href="configuration-output.html" title="Outputs" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -549,55 +549,146 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [master]
-    </a></span> » <span class="breadcrumb-node">cat APIs </span></div><div class="navheader"><span class="prev"><a href="indices-upgrade.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Packetbeat reference</a></span> » <span class="breadcrumb-link"><a href="_configuration.html">Configuration</a></span> » <span class="breadcrumb-node">Protocols</span></div><div class="navheader"><span class="prev"><a href="configuration-interfaces.html">
               « 
-              Upgrade</a>
+              Interfaces</a>
            
         </span><span class="next">
            
-          <a href="cat-alias.html">cat aliases
+          <a href="configuration-output.html">Outputs
                »
-            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="cat"></a>cat APIs <a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><h2><a id="intro"></a>Introduction<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>JSON is great… for computers.  Even if it’s pretty-printed, trying
-to find relationships in the data is tedious.  Human eyes, especially
-when looking at an ssh terminal, need compact and aligned text.  The
-cat API aims to meet this need.</p><p>All the cat commands accept a query string parameter <code class="literal">help</code> to see all
-the headers and info they provide, and the <code class="literal">/_cat</code> command alone lists all
-the available commands.</p><h2><a id="common-parameters"></a>Common parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><h3><a id="verbose"></a>Verbose<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">v</code> to turn on
-verbose output.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'localhost:9200/_cat/master?v'
-id                     ip        node
-EGtKWZlWQYWDmX29fUnp3Q 127.0.0.1 Grey, Sara</pre></div><h3><a id="help"></a>Help<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">help</code> which will
-output its available columns.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'localhost:9200/_cat/master?help'
-id   | node id
-ip   | node transport ip address
-node | node name</pre></div><h3><a id="headers"></a>Headers<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of the commands accepts a query string parameter <code class="literal">h</code> which forces
-only those columns to appear.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl 'n1:9200/_cat/nodes?h=ip,port,heapPercent,name'
-192.168.56.40 9300 40.3 Captain Universe
-192.168.56.20 9300 15.3 Kaluu
-192.168.56.50 9300 17.0 Yellowjacket
-192.168.56.10 9300 12.3 Remy LeBeau
-192.168.56.30 9300 43.9 Ramsey, Doug</pre></div><p>You can also request multiple columns using simple wildcards like
-<code class="literal">/_cat/thread_pool?h=ip,bulk.*</code> to get all headers (or aliases) starting
-with <code class="literal">bulk.</code>.</p><h3><a id="numeric-formats"></a>Numeric formats<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Many commands provide a few types of numeric output, either a byte
-value or a time value.  By default, these types are human-formatted,
-for example, <code class="literal">3.5mb</code> instead of <code class="literal">3763212</code>.  The human values are not
-sortable numerically, so in order to operate on these values where
-order is important, you can change it.</p><p>Say you want to find the largest index in your cluster (storage used
-by all the shards, not number of documents).  The <code class="literal">/_cat/indices</code> API
-is ideal.  We only need to tweak two things.  First, we want to turn
-off human mode.  We’ll use a byte-level resolution.  Then we’ll pipe
-our output into <code class="literal">sort</code> using the appropriate column, which in this
-case is the eight one.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% curl '192.168.56.10:9200/_cat/indices?bytes=b' | sort -rnk8
-green wiki2 3 0 10000   0 105274918 105274918
-green wiki1 3 0 10000 413 103776272 103776272
-green foo   1 0   227   0   2065131   2065131</pre></div></div></div><div class="navfooter"><span class="prev"><a href="indices-upgrade.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-protocols"></a>Protocols<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A section for each supported protocol is defined to configure options like
+<code class="literal">ports</code>, <code class="literal">send_request</code>, <code class="literal">send_response</code> or options that are protocol specific.</p><p>Currently, Packetbeat supports the following protocols:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+HTTP
+</li><li class="listitem">
+Mysql
+</li><li class="listitem">
+PostgreSQL
+</li><li class="listitem">
+Redis
+</li><li class="listitem">
+Thrift-RPC
+</li></ul></div><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">protocols:
+  http:
+    ports: [80, 8080, 8000, 5000, 8002]
+
+  mysql:
+    ports: [3306]
+
+  redis:
+    ports: [6379]
+
+  pgsql:
+    ports: [5432]
+
+  thrift:
+    ports: [9090]</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_common_protocol_options"></a>Common protocol options<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following options are available for all protocols:</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_ports"></a>ports<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The Packetbeat shipper installs a BPF filter based on the ports configured in
+this section.
+If a packet doesn’t match the filter, very little CPU is required to discard
+the packet. The shipper also uses the ports configured here to decide which
+parser to use for each packet.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_send_request"></a>send_request<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If this option is enabled, the raw message of the request (<code class="literal">request</code> field) is
+sent to Elasticsearch. The default is false. This is useful in case you want to
+index the whole request. Note that for HTTP, the body is not included by
+default, only the HTTP headers.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_send_response"></a>send_response<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If this option is enabled, the raw message of the response (<code class="literal">response</code> field)
+is sent to Elasticsearch. The default is false.  This is useful in case you
+want to index the whole request. Note that for HTTP, the body is not included
+by default, only the HTTP headers.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_http_configuration"></a>HTTP configuration<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Http protocol has several specific configuration options. Here is a
+sample configuration section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">protocols:
+  http:
+
+    # Configure the ports where to listen for HTTP traffic. You can disable
+    # the http protocol by commenting the list of ports.
+    ports: [80, 8080, 8000, 5000, 8002]
+
+    # Uncomment the following to hide certain parameters in URL or forms attached
+    # to HTTP requests. The names of the parameters are case insensitive.
+    # The value of the parameters will be replaced with the 'xxxxx' string.
+    # This is generally useful for avoiding storing user passwords or other
+    # sensitive information.
+    hide_keywords: ["pass", "password", "passwd"]
+
+    # Uncomment the following to export a list of extra HTTP headers. By
+    default is none sent.
+    send_headers: ["User-Agent", "Cookie", "Set-Cookie"]
+
+    # Uncomment the following to export Cookie or Set-Cookie headers. By
+    # default is false.
+    split_coookie: true
+
+    # Configure the HTTP header that contains the real IP address.
+    real_ip_header: "X-Forwarded-For"</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_hide_keywords"></a>hide_keywords<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The Packetbeat shipper has the option of automatically censor certain strings
+from the transactions it saves. This is done because while the SQL traffic
+typically only contains the hashes of the passwords, it is possible that the
+HTTP traffic contains sensitive data. In order to reduce the security risks,
+the shipper can automatically avoid sending the contents of certain HTTP POST
+parameters. The sensitive content associated with these keywords is replaced
+by ``xxxxx``. By default, no changes are made to the HTTP messages.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This option replaces query parameters from GET requests and top level
+parameters from POST requests. If the sensitive data is encoded inside a
+parameter with a different name, we cannot censor it there. Also, note that if
+you enable saving the raw request and response fields (see the <code class="literal">send_requset</code>
+and the <code class="literal">send_response</code> options), the sensitive data will be present in those
+fields.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_send_headers"></a>send_headers<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>A list of header names to be captured and send to Elasticsearch. These
+headers are placed under the <code class="literal">headers</code> dictionary in the resulting JSON.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_send_all_headers"></a>send_all_headers<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Alternatively to sending a white list of headers to Elasticsearch, you can
+send all headers by setting this option to true. The default is false.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_split_cookie"></a>split_cookie<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If the <code class="literal">Cookie</code> or <code class="literal">Set-Cookie</code> headers are sent, this option controls whether
+they are split into individual values. For example, with this option set, a
+HTTP response might result in the following JSON:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">"response": {
+  "code": 200,
+  "headers": {
+    "connection": "close",
+    "content-language": "en",
+    "content-type": "text/html; charset=utf-8",
+    "date": "Fri, 21 Nov 2014 17:07:34 GMT",
+    "server": "gunicorn/19.1.1",
+    "set-cookie": { <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "csrftoken": "S9ZuJF8mvIMT5CL4T1Xqn32wkA6ZSeyf",
+      "expires": "Fri, 20-Nov-2015 17:07:34 GMT",
+      "max-age": "31449600",
+      "path": "/"
+    },
+    "vary": "Cookie, Accept-Language"
+  },
+  "phrase": "OK"
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Note that <code class="literal">set-cookie</code> is a map having the cookie names as keys.
+</p></td></tr></table></div><p>The default is false.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_real_ip_header"></a>real_ip_header<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The header field to extract the real IP from. This is often useful when
+capturing behind a reverse proxy and still wanting to get the geo-location
+information. If this header is present and contains a valid IP addresses, the
+information is used for the <code class="literal">real_ip</code> and <code class="literal">client_location</code> indexed
+fields.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_mysql_and_pgsql_configuration"></a>MySQL and PgSQL configuration<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_max_rows"></a>max_rows<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Maximum number of rows from the SQL message to publish to Elasticsearch. The
+default is 10 rows in order to publish data as little as needed.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_max_row_length"></a>max_row_length<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Maximum length in bytes of a row from the SQL message to publish to
+Elasticsearch. The default is 1024 bytes.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="configuration-thrift"></a>Thrift configuration<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Thrift protocol has several specific configuration options. Here is a
+sample configuration section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">thrift:
+  transport_type: socket
+  protocol_type: binary
+  idl_files: ["tutorial.thrift", "shared.thrift"]
+  string_max_size: 200
+  collection_max_size: 20
+  capture_reply: true
+  obfuscate_strings: true
+  drop_after_n_struct_fields: 100</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_transport_type"></a>transport_type<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Thrift transport type. Currently this option accepts the options <code class="literal">socket</code>
+for TSocket which is the default Thrift transport and <code class="literal">framed</code> which
+corresponds to the TFramed Thrift transport. The default is <code class="literal">socket</code>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_protocol_type"></a>protocol_type<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Thrift protocol type. Currently the only accepted value is <code class="literal">binary</code>
+corresponding to the TBinary protocol, which is the default Thrift protocol.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_idl_files"></a>idl_files<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The Thrift Interface description language (IDL) files for the service that the
+shipper is monitoring. Providing the IDL files is optional, because the Thrift
+messages contain enough information to decode them without having the IDL
+files. However, providing the IDL will additionally fill in parameter and
+exceptions names.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_string_max_size"></a>string_max_size<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If a string from one of the parameters or from the return value is longer than
+this value, the string is automatically truncated to this length. Dots are added
+at the end of the string to mark that it was truncated. The default is 200.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_collection_max_size"></a>collection_max_size<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If a Thrift list, set, map or structure has more elements than this value, only
+this many number of elements will be captured. A fictive last element <code class="literal">...</code> is
+added at the end to mark that the collection was truncated. The default is 15.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_capture_reply"></a>capture_reply<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If set to false, the Packetbeat shipper only decodes the method name from
+the reply and simply skip the rest of the response message. This can be useful
+for performance, disk usage or data retention reasons. The default is true.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_obfuscate_strings"></a>obfuscate_strings<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If enabled, this option replaces all strings found in the method parameters or
+in the return code or in the exception structures with the <code class="literal">"*"</code> string.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_drop_after_n_struct_fields"></a>drop_after_n_struct_fields<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If a structure has more fields than this given value, the Packetbeat shipper will
+ignore the whole transaction. This is a memory protection mechanism (so that
+the shipper’s memory doesn’t grow indefinitely), so you would topically set this
+to a relatively high value. The default is 500.</p></div></div></div><div class="navfooter"><span class="prev"><a href="configuration-interfaces.html">
               « 
-              Upgrade</a>
+              Interfaces</a>
            
         </span><span class="next">
            
-          <a href="cat-alias.html">cat aliases
+          <a href="configuration-output.html">Outputs
                »
             </a></span></div>
 <!-- end body -->
