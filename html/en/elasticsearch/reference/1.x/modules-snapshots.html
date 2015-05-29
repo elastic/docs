@@ -562,12 +562,10 @@
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="modules-snapshots"></a>Snapshot And Restore<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The snapshot and restore module allows to create snapshots of individual indices or an entire cluster into a remote
 repository. At the time of the initial release only shared file system repository was supported, but now a range of
 backends are available via officially supported repository plugins.</p><h3><a id="_repositories"></a>Repositories<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Before any snapshot or restore operation can be performed a snapshot repository should be registered in
-Elasticsearch. The following command registers a shared file system repository with the name <code class="literal">my_backup</code> that
-will use location <code class="literal">/mount/backups/my_backup</code> to store snapshots.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/_snapshot/my_backup' -d '{
-    "type": "fs",
+Elasticsearch. The repository settings are repository-type specific. See below for details.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/_snapshot/my_backup' -d '{
+    "type": "REPOSITORY TYPE",
     "settings": {
-        "location": "/mount/backups/my_backup",
-        "compress": true
+        ... repository specific settings ...
     }
 }'</pre></div><p>Once a repository is registered, its information can be obtained using the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_snapshot/my_backup?pretty'</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "my_backup" : {
@@ -578,9 +576,25 @@ will use location <code class="literal">/mount/backups/my_backup</code> to store
     }
   }
 }</pre></div><p>If a repository name is not specified, or <code class="literal">_all</code> is used as repository name Elasticsearch will return information about
-all repositories currently registered in the cluster:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_snapshot'</pre></div><p>or</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_snapshot/_all'</pre></div><h5><a id="_shared_file_system_repository"></a>Shared File System Repository<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The shared file system repository (<code class="literal">"type": "fs"</code>) uses the shared file system to store snapshots. The path
-specified in the <code class="literal">location</code> parameter should point to the same location in the shared filesystem and be accessible
-on all data and master nodes. The following settings are supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+all repositories currently registered in the cluster:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_snapshot'</pre></div><p>or</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_snapshot/_all'</pre></div><h5><a id="_shared_file_system_repository"></a>Shared File System Repository<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The shared file system repository (<code class="literal">"type": "fs"</code>) uses the shared file system to store snapshots. In order to register
+the shared file system repository it is necessary to mount the same shared filesystem to the same location on all
+master and data nodes. This location (or one of its parent directories) has to be registered in the <code class="literal">path.repo</code>
+setting on all master and data nodes.</p><p>Assuming that the shared filesystem is mounted to <code class="literal">/mount/backups/my_backup</code>, the following setting should be added to
+<code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">path.repo: ["/mount/backups", "/mount/longterm_backups"]</pre></div><p>After all nodes are restarted, the following command can be used to register the shared file system repository with
+the name <code class="literal">my_backup</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/_snapshot/my_backup' -d '{
+    "type": "fs",
+    "settings": {
+        "location": "/mount/backups/my_backup",
+        "compress": true
+    }
+}'</pre></div><p>If the repository location is specified as a relative path this path will be resolved against the first path specified
+in <code class="literal">path.repo</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/_snapshot/my_backup' -d '{
+    "type": "fs",
+    "settings": {
+        "location": "my_backup",
+        "compress": true
+    }
+}'</pre></div><p>The following settings are supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">location</code>
 </p>
