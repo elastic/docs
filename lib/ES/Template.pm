@@ -88,6 +88,7 @@ my $Autosense_RE = qr{
         (<pre \s class="programlisting[^>]+>
          ((?:(?!</pre>).)+?)
          </pre>
+         </div>
          <a \s class="sense_widget" \s href="sense_widget.html\?snippets/
         )
         :AUTOSENSE:
