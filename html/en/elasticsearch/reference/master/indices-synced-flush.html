@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Seal</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-optimize.html" title="Optimize" /><link rel="next" href="indices-shadow-replicas.html" title="Shadow replica indices" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Synced Flush</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="indices-flush.html" title="Flush" /><link rel="prev" href="indices-flush.html" title="Flush" /><link rel="next" href="indices-refresh.html" title="Refresh" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -551,64 +551,134 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-node">Seal</span></div><div class="navheader"><span class="prev"><a href="indices-optimize.html">
+    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-link"><a href="indices-flush.html">Flush</a></span> » <span class="breadcrumb-node">Synced Flush</span></div><div class="navheader"><span class="prev"><a href="indices-flush.html">
               « 
-              Optimize</a>
+              Flush</a>
            
         </span><span class="next">
            
-          <a href="indices-shadow-replicas.html">Shadow replica indices
+          <a href="indices-refresh.html">Refresh
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-seal"></a>Seal<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/seal.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The seal API flushes and adds a "seal" marker to the shards of one or more
-indices. The seal is used during recovery or restarts to skip the first and
-most costly phase of the process if all copies of the shard have the same seal.
-No segment files need to be copied and the transaction log replay phase of the
-recovery can start immediately which makes recovery much faster.</p><p>There are two important points about seals:
-1. They are best effort in that if there are any outstanding write operations
-while the seal operation is being performed then the shards which those writes
-target won’t be sealed but all others will be. See below for more.
-2. The seal breaks as soon as the shard issues a new lucene commit. Uncommitted
-operations in the transaction log do not break the seal. That is because a seal
-marks a point in time snapshot of the segments, a low level lucene commit.
-Practically that means that every write operation on the index will remove the
-seal.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ curl -XPOST 'http://localhost:9200/twitter/_seal'</pre></div><p>The response contains details about which shards wrote the seal and the reason
-in case they failed to write the seal.</p><p>Here is what it looks like when all copies single shard index successfully
-wrote the seal:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "twitter": [
-      {
-         "shard_id": 0,
-         "responses": {
-            "5wjOIntuRqy9F_7JRrrLwA": "success",
-            "M2iCBe-nS5yaInE8volfSg": "success"
-         },
-         "message": "success"
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="indices-synced-flush"></a>Synced Flush<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/flush.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch tracks the indexing activity of each shard. Shards that have not
+received any indexing operations for 30 minutes are automatically marked as inactive. This presents
+an opportunity for Elasticsearch to reduce shard resources and also perform
+a special kind of flush, called <code class="literal">synced flush</code>. A synced flush performs a normal flush, then adds
+a generated unique marker (sync_id) to all shards.</p><p>Since the sync id marker was added when there were no ongoing indexing operations, it can
+be used as a quick way to check if the two shards' lucene indices are identical. This quick sync id
+comparison (if present) is used during recovery or restarts to skip the first and
+most costly phase of the process. In that case, no segment files need to be copied and
+the transaction log replay phase of the recovery can start immediately. Note that since the sync id
+marker was applied together with a flush, it is very likely that the transaction log will be empty,
+speeding up recoveries even more.</p><p>This is particularly useful for use cases having lots of indices which are
+never or very rarely updated, such as time based data. This use case typically generates lots of indices whose
+recovery without the synced flush marker would take a long time.</p><p>To check whether a shard has a marker or not, look for the <code class="literal">commit</code> section of shard stats returned by
+the <a class="link" href="indices-stats.html" title="Indices Stats">indices stats</a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">GET /twitter/_stats/commit?level=shards</pre></div><a class="sense_widget" href="sense_widget.html?snippets/:AUTOSENSE:" target="sense">View in Sense</a><p>which returns something similar to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   ...
+   "indices": {
+      "twitter": {
+         "primaries": {},
+         "total": {},
+         "shards": {
+            "0": [
+               {
+                  "routing": {
+                     ...
+                  },
+                  "commit": {
+                     "id": "te7zF7C4UsirqvL6jp/vUg==",
+                     "generation": 2,
+                     "user_data": {
+                        "sync_id": "AU2VU0meX-VX2aNbEUsD" <a id="CO77-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>,
+                        ...
+                     },
+                     "num_docs": 0
+                  }
+               }
+               ...
+            ],
+            ...
+         }
       }
-}</pre></div><p>Here is what it looks like when one copy fails:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "twitter": [
-      {
-         "shard_id": 0,
-         "responses": {
-            "M2iCBe-nS5yaInE8volfSg": "pending operations",
-            "5wjOIntuRqy9F_7JRrrLwA": "success"
-         },
-         "message": "failed on some copies"
-      }
-}</pre></div><p>Sometimes the failures can be shard wide and they’ll look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "twitter": [
-      {
-         "shard_id": 0,
-         "message": "operation counter on primary is non zero [2]"
-      }
-}</pre></div><h3><a id="seal-multi-index"></a>Multi Index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/seal.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The seal API can be applied to more than one index with a single call,
-or even on <code class="literal">_all</code> the indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'http://localhost:9200/kimchy,elasticsearch/_seal'
+   }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO77-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the <code class="literal">sync id</code> marker
+</p></td></tr></table></div><h3><a id="_synced_flush_api"></a>Synced Flush API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/flush.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Synced Flush API allows an administrator to initiate a synced flush manually. This can be particularly useful for
+a planned (rolling) cluster restart where you can stop indexing and don’t want to wait the default 30 minutes for
+idle indices to be sync-flushed automatically.</p><p>While handy, there are a couple of caveats for this API:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Synced flush is a best effort operation. Any ongoing indexing operations will cause
+the synced flush to fail on that shard. This means that some shards may be synced flushed while others aren’t. See below for more.
+</li><li class="listitem">
+The <code class="literal">sync_id</code> marker is removed as soon as the shard is flushed again. That is because a flush replaces the low level
+lucene commit point where the marker is stored. Uncommitted operations in the transaction log do not remove the marker.
+In practice, one should consider any indexing operation on an index as removing the marker as a flush can be triggered by Elasticsearch
+at any time.
+</li></ol></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>It is harmless to request a synced flush while there is ongoing indexing. Shards that are idle will succeed and shards
+ that are not will fail. Any shards that succeeded will have faster recovery times.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">POST /twitter/_flush/synced</pre></div><a class="sense_widget" href="sense_widget.html?snippets/:AUTOSENSE:" target="sense">View in Sense</a><p>The response contains details about how many shards were successfully sync-flushed and information about any failure.</p><p>Here is what it looks like when all shards of a two shards and one replica index successfully
+sync-flushed:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "_shards": {
+      "total": 4,
+      "successful": 4,
+      "failed": 0
+   },
+   "twitter": {
+      "total": 4,
+      "successful": 4,
+      "failed": 0
+   }
+}</pre></div><p>Here is what it looks like when one shard group failed due to pending operations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "_shards": {
+      "total": 4,
+      "successful": 2,
+      "failed": 2
+   },
+   "twitter": {
+      "total": 4,
+      "successful": 2,
+      "failed": 2,
+      "failures": [
+         {
+            "shard": 1,
+            "reason": "[2] ongoing operations on primary"
+         }
+      ]
+   }
+}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The above error is shown when the synced flush failes due to concurrent indexing operations. The HTTP
+status code in that case will be <code class="literal">409 CONFLICT</code>.</p></div></div><p>Sometimes the failures are specific to a shard copy. The copies that failed will not be eligible for
+fast recovery but those that succeeded still will be. This case is reported as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "_shards": {
+      "total": 4,
+      "successful": 1,
+      "failed": 1
+   },
+   "twitter": {
+      "total": 4,
+      "successful": 3,
+      "failed": 1,
+      "failures": [
+         {
+            "shard": 1,
+            "reason": "unexpected error",
+            "routing": {
+               "state": "STARTED",
+               "primary": false,
+               "node": "SZNr2J_ORxKTLUCydGX4zA",
+               "relocating_node": null,
+               "shard": 1,
+               "index": "twitter"
+            }
+         }
+      ]
+   }
+}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When a shard copy fails to sync-flush, the HTTP status code returned will be <code class="literal">409 CONFLICT</code>.</p></div></div><p>The synced flush API can be applied to more than one index with a single call,
+or even on <code class="literal">_all</code> the indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /kimchy,elasticsearch/_flush/synced
 
-curl -XPOST 'http://localhost:9200/_seal'</pre></div></div><div class="navfooter"><span class="prev"><a href="indices-optimize.html">
+POST /_flush/synced</pre></div><a class="sense_widget" href="sense_widget.html?snippets/:AUTOSENSE:" target="sense">View in Sense</a></div><div class="navfooter"><span class="prev"><a href="indices-flush.html">
               « 
-              Optimize</a>
+              Flush</a>
            
         </span><span class="next">
            
-          <a href="indices-shadow-replicas.html">Shadow replica indices
+          <a href="indices-refresh.html">Refresh
                »
             </a></span></div>
 <!-- end body -->
