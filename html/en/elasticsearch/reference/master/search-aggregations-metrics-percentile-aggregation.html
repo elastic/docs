@@ -640,9 +640,11 @@ a script to convert them on-the-fly:</p><div class="pre_wrapper"><pre class="pro
     "aggs" : {
         "load_time_outlier" : {
             "percentiles" : {
-                "script" : "doc['load_time'].value / timeUnit", <a id="CO30-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                "params" : {
-                    "timeUnit" : 1000   <a id="CO30-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                "script" : {
+                    "inline": "doc['load_time'].value / timeUnit", <a id="CO30-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    "params" : {
+                        "timeUnit" : 1000   <a id="CO30-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                    }
                 }
             }
         }
@@ -652,7 +654,20 @@ The <code class="literal">field</code> parameter is replaced with a <code class=
 script to generate values which percentiles are calculated on
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Scripting supports parameterized input just like any other script
-</p></td></tr></table></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">script</code> parameter expects an inline script. Use <code class="literal">script_id</code> for indexed scripts and <code class="literal">script_file</code> for scripts in the <code class="literal">config/scripts/</code> directory.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="search-aggregations-metrics-percentile-aggregation-approximation"></a>Percentiles are (usually) approximate<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/metrics/percentile-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There are many different algorithms to calculate percentiles.  The naive
+</p></td></tr></table></div><p>This will interpret the <code class="literal">script</code> parameter as an <code class="literal">inline</code> script with the default script language and no script parameters. To use a file script use the following syntax:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "aggs" : {
+        "load_time_outlier" : {
+            "percentiles" : {
+                "script" : {
+                    "file": "my_script",
+                    "params" : {
+                        "timeUnit" : 1000
+                    }
+                }
+            }
+        }
+    }
+}</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>for indexed scripts replace the <code class="literal">file</code> parameter with an <code class="literal">id</code> parameter.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="search-aggregations-metrics-percentile-aggregation-approximation"></a>Percentiles are (usually) approximate<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/metrics/percentile-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There are many different algorithms to calculate percentiles.  The naive
 implementation simply stores all the values in a sorted array.  To find the 50th
 percentile, you simply find the value that is at <code class="literal">my_array[count(my_array) * 0.5]</code>.</p><p>Clearly, the naive implementation does not scale — the sorted array grows
 linearly with the number of values in your dataset.  To calculate percentiles

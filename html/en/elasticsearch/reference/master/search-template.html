@@ -583,7 +583,7 @@
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-template"></a>Search Template<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">/_search/template</code> endpoint allows to use the mustache language to pre render search requests,
 before they are executed and fill existing templates with template parameters.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search/template
 {
-    "template" : {
+    "inline" : {
       "query": { "match" : { "{{my_field}}" : "{{my_value}}" } },
       "size" : "{{my_size}}"
     },
@@ -599,7 +599,7 @@ scripting language, hence it obeys settings that may be used to enable or
 disable scripts per language, source and operation as described in
 <a class="link" href="modules-scripting.html#enable-dynamic-scripting" title="Enabling dynamic scriptingedit">scripting docs</a></p></div></div><h4><a id="_more_template_examples"></a>More template examples<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><h5><a id="_filling_in_a_query_string_with_a_single_value"></a>Filling in a query string with a single value<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search/template
 {
-    "template": {
+    "inline": {
         "query": {
             "match": {
                 "title": "{{query_string}}"
@@ -611,7 +611,7 @@ disable scripts per language, source and operation as described in
     }
 }</pre></div><h5><a id="_passing_an_array_of_strings"></a>Passing an array of strings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search/template
 {
-  "template": {
+  "inline": {
     "query": {
       "terms": {
         "status": [
@@ -631,7 +631,7 @@ disable scripts per language, source and operation as described in
     "status": [ "pending", "published" ]
   }
 }</pre></div><h5><a id="_default_values"></a>Default values<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>A default value is written as <code class="literal">{{var}}{{^var}}default{{/var}}</code> for instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "template": {
+  "inline": {
     "query": {
       "range": {
         "line_no": {
@@ -713,12 +713,10 @@ Fill in the value of param <code class="literal">line_no.end</code>
 </p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>As written above, this template is not valid JSON because it includes the
 <span class="emphasis"><em>section</em></span> markers like <code class="literal">{{#line_no}}</code>.  For this reason, the template should
 either be stored in a file (see <a class="xref" href="search-template.html#pre-registered-templates" title="Pre-registered templateedit">the section called “Pre-registered template<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a>) or, when used
-via the REST API, should be written as a string:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">"template": "{\"query\":{\"filtered\":{\"query\":{\"match\":{\"line\":\"{{text}}\"}},\"filter\":{{{#line_no}}\"range\":{\"line_no\":{{{#start}}\"gte\":\"{{start}}\"{{#end}},{{/end}}{{/start}}{{#end}}\"lte\":\"{{end}}\"{{/end}}}}{{/line_no}}}}}}"</pre></div></div></div><h5><a id="pre-registered-templates"></a>Pre-registered template<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>You can register search templates by storing it in the <code class="literal">config/scripts</code> directory, in a file using the <code class="literal">.mustache</code> extension.
+via the REST API, should be written as a string:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">"inline": "{\"query\":{\"filtered\":{\"query\":{\"match\":{\"line\":\"{{text}}\"}},\"filter\":{{{#line_no}}\"range\":{\"line_no\":{{{#start}}\"gte\":\"{{start}}\"{{#end}},{{/end}}{{/start}}{{#end}}\"lte\":\"{{end}}\"{{/end}}}}{{/line_no}}}}}}"</pre></div></div></div><h5><a id="pre-registered-templates"></a>Pre-registered template<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>You can register search templates by storing it in the <code class="literal">config/scripts</code> directory, in a file using the <code class="literal">.mustache</code> extension.
 In order to execute the stored template, reference it by it’s name under the <code class="literal">template</code> key:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search/template
 {
-    "template": {
-        "file": "storedTemplate" <a id="CO13-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    },
+    "file": "storedTemplate", <a id="CO13-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     "params": {
         "query_string": "search for these words"
     }
@@ -744,9 +742,7 @@ There are REST APIs to manage these indexed templates.</p><div class="pre_wrappe
     }
 }</pre></div><p>This template can be deleted by</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE /_search/template/&lt;templatename&gt;</pre></div><p>To use an indexed template at search time use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search/template
 {
-    "template": {
-        "id": "templateName" <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    },
+    "id": "templateName", <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     "params": {
         "query_string": "search for these words"
     }
