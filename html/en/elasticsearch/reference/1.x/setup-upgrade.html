@@ -601,11 +601,17 @@ $ curl -XPUT 'http://localhost:9200/_cluster/settings' -d '{
     }
 }'</pre></div><h4><a id="_1_0_and_later"></a>1.0 and later<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/setup/upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To back up a running 1.0 or later system, it is simplest to use the snapshot feature.  See the complete instructions for <a class="link" href="modules-snapshots.html" title="Snapshot And Restore">backup and restore with snapshots</a>.</p><h3><a id="rolling-upgrades"></a>Rolling upgrade process<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/setup/upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A rolling upgrade allows the ES cluster to be upgraded one node at a time, with no observable downtime for end users.  Running multiple versions of Elasticsearch in the same cluster for any length of time beyond that required for an upgrade is not supported, as shard replication from the more recent version to the previous versions will not work.</p><p>Within minor or maintenance releases after release 1.0, rolling upgrades are supported.  To perform a rolling upgrade:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Disable shard reallocation (optional).  This is done to allow for a faster startup after cluster shutdown.  If this step is not performed, the nodes will immediately start trying to replicate shards to each other on startup and will spend a lot of time on wasted I/O.  With shard reallocation disabled, the nodes will join the cluster with their indices intact, without attempting to rebalance.  After startup is complete, reallocation will be turned back on.
-</li></ul></div><p>This syntax applies to Elasticsearch 1.0 and later:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">        curl -XPUT localhost:9200/_cluster/settings -d '{
-                "transient" : {
-                    "cluster.routing.allocation.enable" : "none"
-                }
-        }'</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><p>This syntax applies to Elasticsearch 1.0 and later:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPUT localhost:9200/_cluster/settings -d '{
+        "transient" : {
+            "cluster.routing.allocation.enable" : "none"
+        }
+}'</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+There is no problem continuing to index while doing the upgrade. However, you can speed the process considerably
+by <span class="strong"><strong>temporarily</strong></span> stopping non-essential indexing and issuing a manual <a class="link" href="indices-synced-flush.html" title="Synced Flush">synced flush</a>.
+A synced flush is special kind of flush which can seriously speed up recovery of shards. Elasticsearch automatically
+uses it when an index has been inactive for a while (default is <code class="literal">30m</code>) but you can manuallky trigger it using the following command:
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPOST localhost:9200/_all/_flush/synced</pre></div><p>Note that a synced flush call is a best effort operation. It will fail there are any pending indexing operations. It is safe to issue
+it multiple times if needed.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Shut down a single node within the cluster.
 </li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPOST 'http://localhost:9200/_cluster/nodes/_local/_shutdown'</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Confirm that all shards are correctly reallocated to the remaining running nodes.
@@ -625,11 +631,11 @@ Use <code class="literal">rpm</code> or <code class="literal">dpkg</code> to ins
 Start the now upgraded node.  Confirm that it joins the cluster.
 </li><li class="listitem">
 Re-enable shard reallocation:
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">        curl -XPUT localhost:9200/_cluster/settings -d '{
-                "transient" : {
-                    "cluster.routing.allocation.enable" : "all"
-                }
-        }'</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPUT localhost:9200/_cluster/settings -d '{
+        "transient" : {
+            "cluster.routing.allocation.enable" : "all"
+        }
+}'</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Observe that all shards are properly allocated on all nodes.  Balancing may take some time.
 </li><li class="listitem">
 Repeat this process for all remaining nodes.
@@ -643,11 +649,11 @@ cluster health will be status <code class="literal">yellow</code>.  As soon as a
 higher version joins the cluster, the replicas should be assigned and the
 cluster health will reach status <code class="literal">green</code>.</p></div></div><p>It may be possible to perform the upgrade by installing the new software while the service is running.  This would reduce downtime by ensuring the service was ready to run on the new version as soon as it is stopped on the node being upgraded.  This can be done by installing the new version in its own directory and using the symbolic link method outlined above.  It is important to test this procedure first to be sure that site-specific configuration data and production indices will not be overwritten during the upgrade process.</p><h3><a id="restart-upgrade"></a>Cluster restart upgrade process<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/setup/upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elasticsearch releases prior to 1.0 and releases after 1.0 are not compatible with each other, so a rolling upgrade is not possible.  In order to upgrade a pre-1.0 system to 1.0 or later, a full cluster stop and start is required.  In order to perform this upgrade:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Disable shard reallocation (optional).  This is done to allow for a faster startup after cluster shutdown.  If this step is not performed, the nodes will immediately start trying to replicate shards to each other on startup and will spend a lot of time on wasted I/O.  With shard reallocation disabled, the nodes will join the cluster with their indices intact, without attempting to rebalance.  After startup is complete, reallocation will be turned back on.
-</li></ul></div><p>This syntax is from versions prior to 1.0:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">        curl -XPUT localhost:9200/_cluster/settings -d '{
-                "persistent" : {
-                "cluster.routing.allocation.disable_allocation" : true
-                }
-        }'</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><p>This syntax is from versions prior to 1.0:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPUT localhost:9200/_cluster/settings -d '{
+    "persistent" : {
+    "cluster.routing.allocation.disable_allocation" : true
+    }
+}'</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Stop all Elasticsearch services on all nodes in the cluster.
 </li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">        curl -XPOST 'http://localhost:9200/_shutdown'</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 On the first node to be upgraded, extract the archive or install the new package as described above in the Rolling Upgrades section.  Repeat for all nodes.
@@ -659,12 +665,12 @@ Start master-eligible nodes first, one at a time.  Verify that a quorum has been
 Start data nodes and then client nodes one at a time, verifying that they successfully join the cluster.
 </li></ul></div></li><li class="listitem">
 When the cluster is running and reaches a yellow state, shard reallocation can be enabled.
-</li></ul></div><p>This syntax is from release 1.0 and later:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">        curl -XPUT localhost:9200/_cluster/settings -d '{
-                "persistent" : {
-                "cluster.routing.allocation.disable_allocation": false,
-                "cluster.routing.allocation.enable" : "all"
-                }
-        }'</pre></div><p>The cluster upgrade can be streamlined by installing the software before stopping cluster services.  If this is done, testing must be performed to ensure that no production data or configuration files are overwritten prior to restart.</p></div><div class="navfooter"><span class="prev"><a href="setup-repositories.html">
+</li></ul></div><p>This syntax is from release 1.0 and later:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPUT localhost:9200/_cluster/settings -d '{
+        "persistent" : {
+    "cluster.routing.allocation.disable_allocation": false,
+        "cluster.routing.allocation.enable" : "all"
+        }
+}'</pre></div><p>The cluster upgrade can be streamlined by installing the software before stopping cluster services.  If this is done, testing must be performed to ensure that no production data or configuration files are overwritten prior to restart.</p></div><div class="navfooter"><span class="prev"><a href="setup-repositories.html">
               « 
               Repositories</a>
            
