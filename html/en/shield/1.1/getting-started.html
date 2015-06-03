@@ -663,9 +663,23 @@ The <code class="literal">rdeniro</code> user with password <code class="literal
 The <code class="literal">alpacino</code> user with password <code class="literal">godfather</code>, with the <code class="literal">user</code> role in the cluster
 </li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To ensure that Elasticsearch can read the user and role information at startup, run <code class="literal">esusers useradd</code> as the
       same user you use to run Elasticsearch. Running the command as root or some other user will update the permissions
-      for the <code class="literal">users</code> and <code class="literal">users_roles</code> files and prevent Elasticsearch from accessing them.</p></div></div><p>Now that we’ve defined the roles and the users of the cluster, you can start the Elasticsearch node. You can check the
-startup logs to verify that the Shield plugin has loaded and is using the <code class="literal">esusers</code> realm. In the next section, we’ll
-configure the clients to interact with Elasticsearch using Shield.</p><h3><a id="clientauth"></a>Configuring HTTP REST Clients</h3><p>Elasticsearch works with standard HTTP <a class="ulink" href="http://en.wikipedia.org/wiki/Basic_access_authentication" target="_top">basic authentication</a>
+      for the <code class="literal">users</code> and <code class="literal">users_roles</code> files and prevent Elasticsearch from accessing them.</p></div></div><p>Now that we’ve defined the roles and the users of the cluster, you can start the Elasticsearch node and we’ll verify that
+Shield plugin has been loaded.</p><h4><a id="_verifying_shield_installation"></a>Verifying Shield Installation</h4><p>Once your Elasticsearch node is running, you can issue a <code class="literal">curl</code> command to verify that Shield has been loaded and is the
+expected version.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl --user rdeniro:taxidriver 'localhost:9200/_shield'</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  "status" : "enabled",
+  "name" : "Mimic",
+  "cluster_name" : "elasticsearch",
+  "version" : {
+    "number" : "1.1.1",
+    "build_hash" : "384744ad93db16e455b8f4a26a2c6f658b835f4f",
+    "build_timestamp" : "2015-04-29T16:06:34Z",
+    "build_snapshot" : false
+  },
+  "tagline" : "You know, for security"
+}</pre></div><p>You can also check the startup logs to verify that the Shield plugin has loaded and the network transports are using Shield.
+A successful installation will show lines similar to the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">[2014-10-09 13:47:38,841][INFO ][transport ] [Ezekiel Stane] Using [org.elasticsearch.shield.transport.ShieldServerTransportService] as transport service, overridden by [shield]
+[2014-10-09 13:47:38,841][INFO ][transport ] [Ezekiel Stane] Using [org.elasticsearch.shield.transport.netty.ShieldNettyTransport] as transport, overridden by [shield]
+[2014-10-09 13:47:38,842][INFO ][http      ] [Ezekiel Stane] Using [org.elasticsearch.shield.transport.netty.ShieldNettyHttpServerTransport] as http transport, overridden by [shield]</pre></div><p>In the next section, we’ll use a simple HTTP client to interact with Elasticsearch protected by Shield.</p><h3><a id="clientauth"></a>Configuring HTTP REST Clients</h3><p>Elasticsearch works with standard HTTP <a class="ulink" href="http://en.wikipedia.org/wiki/Basic_access_authentication" target="_top">basic authentication</a>
 headers to identify the requester. Since Elasticsearch is stateless, this header must be sent with every request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">Authorization: Basic &lt;TOKEN&gt; <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">&lt;TOKEN&gt;</code> is computed as <code class="literal">base64(USERNAME:PASSWORD)</code>
 </p></td></tr></table></div><h4><a id="_client_examples"></a>Client examples</h4><p>Using <code class="literal">curl</code> without basic authentication to create an index has the following result:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XPUT 'localhost:9200/idx'</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
@@ -679,9 +693,7 @@ authorizes successfully, resulting in normal execution of the request. Creating 
 results in the following error:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl --user alpacino:godfather -XPUT 'localhost:9200/idx2'</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
   "error":  "AuthorizationException[Action [indices:admin/create] is unauthorized for user [alpacino]]",
   "status": 403
-}</pre></div><p>As user <code class="literal">alpacino</code> does not have any index administration rights, the request is rejected with an authorization error.</p><h3><a id="_check_the_log"></a>Check the Log</h3><p>Take a look in your log file to make sure that your network transports are using Shield. A successful installation will show lines similar to the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">[2014-10-09 13:47:38,841][INFO ][transport ] [Ezekiel Stane] Using [org.elasticsearch.shield.transport.SecuredTransportService] as transport service, overridden by [shield]
-[2014-10-09 13:47:38,841][INFO ][transport ] [Ezekiel Stane] Using [org.elasticsearch.shield.transport.netty.NettySecuredTransport] as transport, overridden by [shield]
-[2014-10-09 13:47:38,842][INFO ][http      ] [Ezekiel Stane] Using [org.elasticsearch.shield.transport.netty.NettySecuredHttpServerTransport] as http transport, overridden by [shield]</pre></div><h3><a id="_next_steps_2"></a>Next Steps</h3><p>Now you have a working cluster with authentication and access control enabled.
+}</pre></div><p>As user <code class="literal">alpacino</code> does not have any index administration rights, the request is rejected with an authorization error.</p><h3><a id="_next_steps_2"></a>Next Steps</h3><p>Now you have a working cluster with authentication and access control enabled.
 In the <a class="link" href="authorization.html" title="Authorization"><span class="emphasis"><em>Authorization</em></span></a> section, we explain how to manage users and their roles. The
 <a class="link" href="authentication.html" title="Authentication"><span class="emphasis"><em>Authentication</em></span></a> section explains how to use Shield’s authentication realms and LDAP integration. The
 <a class="link" href="securing-nodes.html" title="Securing Nodes"><span class="emphasis"><em>Securing Nodes</em></span></a> section discusses enabling SSL/TLS encryption for nodes and clients.</p></div><div class="navfooter"><span class="prev"><a href="quick-getting-started.html">
