@@ -584,7 +584,14 @@
 settings to choose where on disk the data for an index should be kept, as well
 as how Elasticsearch should replay operations on all the replica shards of an
 index.</p><p>In order to fully utilize the <code class="literal">index.data_path</code> and <code class="literal">index.shadow_replicas</code>
-settings, you need to enable using it in elasticsearch.yml:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.enable_custom_paths: true</pre></div><p>You can then create an index with a custom data path, where each node will use
+settings, you need to enable using it in elasticsearch.yml:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.enable_custom_paths: true</pre></div><p>You will also need to disable the default security manager that Elasticsearch
+runs with. You can do this by either passing
+<code class="literal">-Des.security.manager.enabled=false</code> with the parameters while starting
+Elasticsearch, or you can disable it in elasticsearch.yml:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">security.manager.enabled: false</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Disabling the security manager means that the Elasticsearch process is not
+limited to the directories and files that it can read and write. However,
+because the <code class="literal">index.data_path</code> setting is set when creating the index, the
+security manager would prevent writing or reading from the index’s location, so
+it must be disabled.</p></div></div><p>You can then create an index with a custom data path, where each node will use
 this path for the data:</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Because shadow replicas do not index the document on replica shards, it’s
 possible for the replica’s known mapping to be behind the index’s known mapping
 if the latest cluster state has not yet been processed on the node containing
@@ -632,6 +639,13 @@ settings API:</p><div class="variablelist"><dl class="variablelist"><dt><span cl
 </span></dt><dd>
     Boolean value indicating this index uses a shared filesystem. Defaults to
     the <code class="literal">true</code> if <code class="literal">index.shadow_replicas</code> is set to true, <code class="literal">false</code> otherwise.
+</dd><dt><span class="term">
+<code class="literal">index.shared_filesystem.recover_on_any_node</code>
+</span></dt><dd>
+    Boolean value indicating whether the primary shards for the index should be
+    allowed to recover on any node in the cluster, regardless of the number of
+    replicas or whether the node has previously had the shard allocated to it
+    before. Defaults to <code class="literal">false</code>.
 </dd></dl></div></div><div class="navfooter"><span class="prev"><a href="indices-optimize.html">
               « 
               Optimize</a>
