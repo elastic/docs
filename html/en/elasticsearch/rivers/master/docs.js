@@ -74,12 +74,7 @@ jQuery(function() {
         this.href = '#' + this.id;
 
         // Extract on-this-page headers, without embedded links
-        var title_container = jQuery(this).parent('h1,h2,h3,h4,h5').clone();
-        if (title_container.length == 0) {
-          title_container = jQuery(this).parent('div.example').find('>p')
-            .clone();
-        }
-
+        var title_container = jQuery(this).parent('h1,h2,h3').clone();
         if (title_container.length > 0) {
           // Exclude page title
           if (0 < items++) {
