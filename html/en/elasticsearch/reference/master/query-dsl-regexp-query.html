@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Regexp Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="query-dsl.html" title="Query DSL" /><link rel="prev" href="query-dsl-range-query.html" title="Range Query" /><link rel="next" href="regexp-syntax.html" title="Regular expression syntax" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Regexp Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="term-level-queries.html" title="Term level queries" /><link rel="prev" href="query-dsl-wildcard-query.html" title="Wildcard Query" /><link rel="next" href="query-dsl-fuzzy-query.html" title="Fuzzy Query" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -572,16 +572,16 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-node">Regexp Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-range-query.html">
+    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-link"><a href="term-level-queries.html">Term level queries</a></span> » <span class="breadcrumb-node">Regexp Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-wildcard-query.html">
               « 
-              Range Query</a>
+              Wildcard Query</a>
            
         </span><span class="next">
            
-          <a href="regexp-syntax.html">Regular expression syntax
+          <a href="query-dsl-fuzzy-query.html">Fuzzy Query
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-regexp-query"></a>Regexp Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/regexp-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">regexp</code> query allows you to use regular expression term queries.
-See <a class="xref" href="regexp-syntax.html" title="Regular expression syntax">Regular expression syntax</a> for details of the supported regular expression language.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-regexp-query"></a>Regexp Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/regexp-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">regexp</code> query allows you to use regular expression term queries.
+See <a class="xref" href="query-dsl-regexp-query.html#regexp-syntax" title="Regular expression syntax">Regular expression syntax</a> for details of the supported regular expression language.
 The "term queries" in that first sentence means that Elasticsearch will apply
 the regexp to the terms produced by the tokenizer for that field, and not
 to the original text of the field.</p><p><span class="strong"><strong>Note</strong></span>: The performance of a <code class="literal">regexp</code> query heavily depends on the
@@ -622,13 +622,127 @@ this limit to allow more complex regular expressions to execute.</p><div class="
             "max_determinized_states": 20000
         }
     }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-range-query.html">
+}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="regexp-syntax"></a>Regular expression syntax<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/regexp-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Regular expression queries are supported by the <code class="literal">regexp</code> and the <code class="literal">query_string</code>
+queries.  The Lucene regular expression engine
+is not Perl-compatible but supports a smaller range of operators.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>We will not attempt to explain regular expressions, but
+just explain the supported operators.</p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_standard_operators"></a>Standard operators<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/regexp-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Anchoring
+</span></dt><dd><p class="simpara">Most regular expression engines allow you to match any part of a string.
+If you want the regexp pattern to start at the beginning of the string or
+finish at the end of the string, then you have to <span class="emphasis"><em>anchor</em></span> it specifically,
+using <code class="literal">^</code> to indicate the beginning or <code class="literal">$</code> to indicate the end.</p><p class="simpara">Lucene’s patterns are always anchored.  The pattern provided must match
+the entire string. For string <code class="literal">"abcde"</code>:</p><pre class="literallayout">ab.*     # match
+abcd     # no match</pre></dd><dt><span class="term">
+Allowed characters
+</span></dt><dd><p class="simpara">Any Unicode characters may be used in the pattern, but certain characters
+are reserved and must be escaped.  The standard reserved characters are:</p><pre class="literallayout">. ? + * | { } [ ] ( ) " \</pre><p class="simpara">If you enable optional features (see below) then these characters may
+also be reserved:</p><pre class="literallayout"># @ &amp; &lt; &gt;  ~</pre><p class="simpara">Any reserved character can be escaped with a backslash <code class="literal">"\*"</code> including
+a literal backslash character: <code class="literal">"\\"</code></p><p class="simpara">Additionally, any characters (except double quotes) are interpreted literally
+when surrounded by double quotes:</p><pre class="literallayout">john"@smith.com"</pre></dd><dt><span class="term">
+Match any character
+</span></dt><dd><p class="simpara">The period <code class="literal">"."</code> can be used to represent any character.  For string <code class="literal">"abcde"</code>:</p><pre class="literallayout">ab...   # match
+a.c.e   # match</pre></dd><dt><span class="term">
+One-or-more
+</span></dt><dd><p class="simpara">The plus sign <code class="literal">"+"</code> can be used to repeat the preceding shortest pattern
+once or more times. For string <code class="literal">"aaabbb"</code>:</p><pre class="literallayout">a+b+        # match
+aa+bb+      # match
+a+.+        # match
+aa+bbb+     # match</pre></dd><dt><span class="term">
+Zero-or-more
+</span></dt><dd><p class="simpara">The asterisk <code class="literal">"*"</code> can be used to match the preceding shortest pattern
+zero-or-more times.  For string <code class="literal">"aaabbb</code>":</p><pre class="literallayout">a*b*        # match
+a*b*c*      # match
+.*bbb.*     # match
+aaa*bbb*    # match</pre></dd><dt><span class="term">
+Zero-or-one
+</span></dt><dd><p class="simpara">The question mark <code class="literal">"?"</code> makes the preceding shortest pattern optional. It
+matches zero or one times.  For string <code class="literal">"aaabbb"</code>:</p><pre class="literallayout">aaa?bbb?    # match
+aaaa?bbbb?  # match
+.....?.?    # match
+aa?bb?      # no match</pre></dd><dt><span class="term">
+Min-to-max
+</span></dt><dd><p class="simpara">Curly brackets <code class="literal">"{}"</code> can be used to specify a minimum and (optionally)
+a maximum number of times the preceding shortest pattern can repeat.  The
+allowed forms are:</p><pre class="literallayout">{5}     # repeat exactly 5 times
+{2,5}   # repeat at least twice and at most 5 times
+{2,}    # repeat at least twice</pre><p class="simpara">For string <code class="literal">"aaabbb"</code>:</p><pre class="literallayout">a{3}b{3}        # match
+a{2,4}b{2,4}    # match
+a{2,}b{2,}      # match
+.{3}.{3}        # match
+a{4}b{4}        # no match
+a{4,6}b{4,6}    # no match
+a{4,}b{4,}      # no match</pre></dd><dt><span class="term">
+Grouping
+</span></dt><dd><p class="simpara">Parentheses <code class="literal">"()"</code> can be used to form sub-patterns. The quantity operators
+listed above operate on the shortest previous pattern, which can be a group.
+For string <code class="literal">"ababab"</code>:</p><pre class="literallayout">(ab)+       # match
+ab(ab)+     # match
+(..)+       # match
+(...)+      # no match
+(ab)*       # match
+abab(ab)?   # match
+ab(ab)?     # no match
+(ab){3}     # match
+(ab){1,2}   # no match</pre></dd><dt><span class="term">
+Alternation
+</span></dt><dd><p class="simpara">The pipe symbol <code class="literal">"|"</code> acts as an OR operator. The match will succeed if
+the pattern on either the left-hand side OR the right-hand side matches.
+The alternation applies to the <span class="emphasis"><em>longest pattern</em></span>, not the shortest.
+For string <code class="literal">"aabb"</code>:</p><pre class="literallayout">aabb|bbaa   # match
+aacc|bb     # no match
+aa(cc|bb)   # match
+a+|b+       # no match
+a+b+|b+a+   # match
+a+(b|c)+    # match</pre></dd><dt><span class="term">
+Character classes
+</span></dt><dd><p class="simpara">Ranges of potential characters may be represented as character classes
+by enclosing them in square brackets <code class="literal">"[]"</code>. A leading <code class="literal">^</code>
+negates the character class. The allowed forms are:</p><pre class="literallayout">[abc]   # 'a' or 'b' or 'c'
+[a-c]   # 'a' or 'b' or 'c'
+[-abc]  # '-' or 'a' or 'b' or 'c'
+[abc\-] # '-' or 'a' or 'b' or 'c'
+[^abc]  # any character except 'a' or 'b' or 'c'
+[^a-c]  # any character except 'a' or 'b' or 'c'
+[^-abc]  # any character except '-' or 'a' or 'b' or 'c'
+[^abc\-] # any character except '-' or 'a' or 'b' or 'c'</pre><p class="simpara">Note that the dash <code class="literal">"-"</code> indicates a range of characters, unless it is
+the first character or if it is escaped with a backslash.</p><p class="simpara">For string <code class="literal">"abcd"</code>:</p><pre class="literallayout">ab[cd]+     # match
+[a-d]+      # match
+[^a-d]+     # no match</pre></dd></dl></div><p>====== Optional operators</p><p>These operators are available by default as the <code class="literal">flags</code> parameter defaults to <code class="literal">ALL</code>.
+Different flag combinations (concatened with <code class="literal">"\"</code>) can be used to enable/disable
+specific operators:</p><pre class="literallayout">{
+    "regexp": {
+        "username": {
+            "value": "john~athon&lt;1-5&gt;",
+            "flags": "COMPLEMENT|INTERVAL"
+        }
+    }
+}</pre><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Complement
+</span></dt><dd><p class="simpara">The complement is probably the most useful option. The shortest pattern that
+follows a tilde <code class="literal">"~"</code> is negated.  For the string <code class="literal">"abcdef"</code>:</p><pre class="literallayout">ab~df     # match
+ab~cf     # no match
+a~(cd)f   # match
+a~(bc)f   # no match</pre><p class="simpara">Enabled with the <code class="literal">COMPLEMENT</code> or <code class="literal">ALL</code> flags.</p></dd><dt><span class="term">
+Interval
+</span></dt><dd><p class="simpara">The interval option enables the use of numeric ranges, enclosed by angle
+brackets <code class="literal">"&lt;&gt;"</code>. For string: <code class="literal">"foo80"</code>:</p><pre class="literallayout">foo&lt;1-100&gt;     # match
+foo&lt;01-100&gt;    # match
+foo&lt;001-100&gt;   # no match</pre><p class="simpara">Enabled with the <code class="literal">INTERVAL</code> or <code class="literal">ALL</code> flags.</p></dd><dt><span class="term">
+Intersection
+</span></dt><dd><p class="simpara">The ampersand <code class="literal">"&amp;"</code> joins two patterns in a way that both of them have to
+match. For string <code class="literal">"aaabbb"</code>:</p><pre class="literallayout">aaa.+&amp;.+bbb     # match
+aaa&amp;bbb         # no match</pre><p class="simpara">Using this feature usually means that you should rewrite your regular
+expression.</p><p class="simpara">Enabled with the <code class="literal">INTERSECTION</code> or <code class="literal">ALL</code> flags.</p></dd><dt><span class="term">
+Any string
+</span></dt><dd><p class="simpara">The at sign <code class="literal">"@"</code> matches any string in its entirety.  This could be combined
+with the intersection and complement above to express “everything except”.
+For instance:</p><pre class="literallayout">@&amp;~(foo.+)      # anything except string beginning with "foo"</pre><p class="simpara">Enabled with the <code class="literal">ANYSTRING</code> or <code class="literal">ALL</code> flags.</p></dd></dl></div></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-wildcard-query.html">
               « 
-              Range Query</a>
+              Wildcard Query</a>
            
         </span><span class="next">
            
-          <a href="regexp-syntax.html">Regular expression syntax
+          <a href="query-dsl-fuzzy-query.html">Fuzzy Query
                »
             </a></span></div>
 <!-- end body -->

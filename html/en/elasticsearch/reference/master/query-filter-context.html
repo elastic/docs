@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Stored templates</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="query-dsl-template-query.html" title="Template Query" /><link rel="prev" href="query-dsl-template-query.html" title="Template Query" /><link rel="next" href="query-dsl-type-query.html" title="Type Query" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Query and filter context</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="query-dsl.html" title="Query DSL" /><link rel="prev" href="query-dsl.html" title="Query DSL" /><link rel="next" href="query-dsl-match-all-query.html" title="Match All Query" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -572,51 +572,79 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-link"><a href="query-dsl-template-query.html">Template Query</a></span> » <span class="breadcrumb-node">Stored templates</span></div><div class="navheader"><span class="prev"><a href="query-dsl-template-query.html">
+    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-node">Query and filter context</span></div><div class="navheader"><span class="prev"><a href="query-dsl.html">
               « 
-              Template Query</a>
+              Query DSL </a>
            
         </span><span class="next">
            
-          <a href="query-dsl-type-query.html">Type Query
+          <a href="query-dsl-match-all-query.html">Match All Query
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_stored_templates"></a>Stored templates<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/template-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You can register a template by storing it in the <code class="literal">config/scripts</code> directory, in a file using the <code class="literal">.mustache</code> extension.
-In order to execute the stored template, reference it by name in the <code class="literal">file</code>
-parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="query-filter-context"></a>Query and filter context<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/query_filter_context.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The behaviour of a query clause depends on whether it is used in <span class="emphasis"><em>query context</em></span> or
+in <span class="emphasis"><em>filter context</em></span>:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Query context
+</span></dt><dd><p class="simpara">A query clause used in query context answers the question “<span class="emphasis"><em>How well does this
+document match this query clause?</em></span>” Besides deciding whether or not the
+document matches, the query clause also calculated a <code class="literal">_score</code> representing how
+well the document matches, relative to other documents.</p><p class="simpara">Query context is in effect whenever a query clause is passed to a <code class="literal">query</code> parameter,
+such as the <code class="literal">query</code> parameter in the <a class="link" href="search-request-query.html" title="Query"><code class="literal">search</code></a> API.</p></dd><dt><span class="term">
+Filter context
+</span></dt><dd><p class="simpara">In <span class="emphasis"><em>filter</em></span> context, a query clause answers the question “<span class="emphasis"><em>Does this document
+match this query clause?</em></span>”  The answer is a simple Yes or No — no scores are
+calculated.  Filter context is mostly used for filtering structured data, e.g.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="emphasis"><em>Does this <code class="literal">timestamp</code> fall into the range 2015 to 2016?</em></span>
+</li><li class="listitem">
+<span class="emphasis"><em>Is the <code class="literal">status</code>  field set to <code class="literal">"published"</code></em></span>?
+</li></ul></div><p class="simpara">Frequently used filters will be cached automatically by Elasticsearch, to
+speed up performance.</p><p class="simpara">Filter context is in effect whenever a query clause is passed to a <code class="literal">filter</code>
+parameter, such as the <code class="literal">filter</code> or <code class="literal">must_not</code> parameters in the
+<a class="link" href="query-dsl-bool-query.html" title="Bool Query"><code class="literal">bool</code></a> query, the <code class="literal">filter</code> parameter in the
+<a class="link" href="query-dsl-constant-score-query.html" title="Constant Score Query"><code class="literal">constant_score</code></a> query, or the
+<a class="link" href="search-aggregations-bucket-filter-aggregation.html" title="Filter Aggregation"><code class="literal">filter</code></a> aggregation.</p></dd></dl></div><p>Below is an example of query clauses being used in query and filter context
+in the <code class="literal">search</code> API.  This query will match documents where all of the following
+conditions are met:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The <code class="literal">title</code> field contains the word <code class="literal">search</code>.
+</li><li class="listitem">
+The <code class="literal">content</code> field contains the word <code class="literal">elasticsearch</code>.
+</li><li class="listitem">
+The <code class="literal">status</code> field contains the exact word <code class="literal">published</code>.
+</li><li class="listitem">
+The <code class="literal">publish_date</code> field contains a date from 1 Jan 2015 onwards.
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">GET _search
 {
-    "query": {
-        "template": {
-            "file": "my_template", <a id="CO98-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            "params" : {
-                "query_string" : "all about search"
-            }
-        }
+  "query": { <a id="CO79-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "bool": { <a id="CO79-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+      "must": [
+        { "match": { "title":   "Search"        }}, <a id="CO79-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        { "match": { "content": "Elasticsearch" }}  <a id="CO79-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+      ],
+      "filter": [ <a id="CO79-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+        { "term":  { "status": "published" }}, <a id="CO79-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+        { "range": { "publish_date": { "gte": "2015-01-01" }}} <a id="CO79-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
+      ]
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO98-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Name of the the query template in <code class="literal">config/scripts/</code>, i.e., <code class="literal">my_template.mustache</code>.
-</p></td></tr></table></div><p>Alternatively, you can register a query template in the special <code class="literal">.scripts</code> index with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_search/template/my_template
-{
-    "template": { "match": { "text": "{{query_string}}" }},
-}</pre></div><p>and refer to it in the <code class="literal">template</code> query with the <code class="literal">id</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
-{
-    "query": {
-        "template": {
-            "id": "my_template", <a id="CO99-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            "params" : {
-                "query_string" : "all about search"
-            }
-        }
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO99-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Name of the the query template in <code class="literal">config/scripts/</code>, i.e., <code class="literal">storedTemplate.mustache</code>.
-</p></td></tr></table></div><p>There is also a dedicated <code class="literal">template</code> endpoint, allows you to template an entire search request.
-Please see <a class="xref" href="search-template.html" title="Search Template"><em>Search Template</em></a> for more details.</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-template-query.html">
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO79-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">query</code> parameter indicates query context.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO79-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO79-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO79-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">bool</code> and two <code class="literal">match</code> clauses are used in query context,
+    which means that they are used to score how well each document
+    matches.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO79-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">filter</code> parameter indicates filter context.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO79-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> <a href="#CO79-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">term</code> and <code class="literal">range</code> clauses are used in filter context.
+    They will filter out documents which do not match, but they will
+    not affect the score for matching documents.
+</p></td></tr></table></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Use query clauses in query context for conditions which should affect the
+score of matching documents (i.e. how well does the document match), and use
+all other query clauses in filter context.</p></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl.html">
               « 
-              Template Query</a>
+              Query DSL </a>
            
         </span><span class="next">
            
-          <a href="query-dsl-type-query.html">Type Query
+          <a href="query-dsl-match-all-query.html">Match All Query
                »
             </a></span></div>
 <!-- end body -->
