@@ -580,9 +580,40 @@
            
           <a href="cat.html">cat APIs 
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-upgrade"></a>Upgrade<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The upgrade API allows to upgrade one or more indices to the latest format
-through an API. The upgrade process converts any segments written
-with previous formats.</p><h3><a id="_start_an_upgrade"></a>Start an upgrade<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">$ curl -XPOST 'http://localhost:9200/twitter/_upgrade'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Upgrading is an I/O intensive operation, and is limited to processing a
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-upgrade"></a>Upgrade<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The upgrade API allows to upgrade one or more indices to the latest Lucene
+format through an API. The upgrade process converts any segments written with
+older formats.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>When to use the <code class="literal">upgrade</code> API</strong></p></div></div></div><p>Newer versions of Lucene often come with a new index format which provides bug
+fixes and performance improvements. In order to take advantage of these
+improvements, the segments in each shard need to be rewritten using the latest
+Lucene format.</p><p><strong>Automatic upgrading. </strong>Indices that are actively being written to will automatically write new
+segments in the latest format.  The background merge process which combines
+multiple small segments into a single bigger segment will also write the new
+merged segment in the latest format.</p><p><strong>Optional manual upgrades. </strong>Some old segments may never be merged away because they are already too big to
+be worth merging, and indices that no longer receive changes will not be
+upgraded automatically.  Upgrading segments is not required for most
+Elasticsearch upgrades because it can read older formats from the current and
+previous major version of Lucene.</p><p>You can, however, choose to upgrade old segments manually to take advantage of
+the latest format. The <code class="literal">upgrade</code> API will rewrite any old segments in the
+latest Lucene format.  It can be run on one index, multiple or all indices, so
+you can control when it is run and how many indices it should upgrade.</p><p><strong>When you must use the <code class="literal">upgrade</code> API. </strong>Elasticsearch can only read formats from the current and previous major
+version of Lucene.  For instance, Elasticsearch 2.x (Lucene 5) can read disk
+formats from Elasticsearch 0.90 and 1.x (Lucene 4), but not from Elasticsearch
+0.20 and before (Lucene 3).</p><p>In fact, an Elasticsearch 2.0 cluster will refuse to start if any indices
+created before Elasticsearch 0.90 are present, and it will refuse to open them
+if they are imported as dangling indices later on.  It will not be possible to
+restore an index created with Elasticsearch 0.20.x and before into a 2.0
+cluster.</p><p>These ancient indices must either be deleted or upgraded before migrating to
+Elasticsearch 2.0.  Upgrading will:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Rewrite old segments in the latest Lucene format.
+</li><li class="listitem">
+Add the <code class="literal">index.version.minimum_compatible</code> setting to the index, to mark it as
+  2.0 compatible <span class="coming">
+      [<span class="version">coming in 1.6.0</span>]
+      <span class="detail">Coming in 1.6.0.</span></span>.
+</li></ul></div><p>Instead of upgrading all segments that weren’t written with the most recent
+version of Lucene, you can choose to do the minimum work required before
+moving to Elasticsearch 2.0, by specifying the <code class="literal">only_ancient_segments</code> option,
+which will only rewrite segments written by Lucene 3.</p></div><h3><a id="_start_an_upgrade"></a>Start an upgrade<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">$ curl -XPOST 'http://localhost:9200/twitter/_upgrade'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Upgrading is an I/O intensive operation, and is limited to processing a
 single shard per node at a time.  It also is not allowed to run at the same
 time as optimize.</p></div></div><p>This call will block until the upgrade is complete. If the http connection
 is lost, the request will continue in the background, and
