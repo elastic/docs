@@ -600,18 +600,19 @@ using the <a class="xref" href="cluster-nodes-info.html" title="Nodes Info"><em>
 operating system limits on mmap counts is likely to be too low, which may
 result in out of memory exceptions.  On Linux, you can increase the limits by
 running the following command as <code class="literal">root</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">sysctl -w vm.max_map_count=262144</pre></div><p>To set this value permanently, update the <code class="literal">vm.max_map_count</code> setting in
-<code class="literal">/etc/sysctl.conf</code>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you installed Elasticsearch using a package (.deb, .rpm) this setting will be changed automatically.  To verify, run <code class="literal">sysctl vm.max_map_count</code>.</p></div></div><h4><a id="setup-configuration-memory"></a>Memory Settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The Linux kernel tries to use as much memory as possible for file system
-caches and eagerly swaps out unused application memory, possibly resulting
+<code class="literal">/etc/sysctl.conf</code>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you installed Elasticsearch using a package (.deb, .rpm) this setting will be changed automatically.  To verify, run <code class="literal">sysctl vm.max_map_count</code>.</p></div></div><h4><a id="setup-configuration-memory"></a>Memory Settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Most operating systems try to use as much memory as possible for file system
+caches and eagerly swap out unused application memory, possibly resulting
 in the elasticsearch process being swapped. Swapping is very bad for
 performance and for node stability, so it should be avoided at all costs.</p><p>There are three options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
 <span class="strong"><strong>Disable swap</strong></span>
 </p><p class="simpara">The simplest option is to completely disable swap. Usually Elasticsearch
 is the only service running on a box, and its memory usage is controlled
 by the <code class="literal">ES_HEAP_SIZE</code> environment variable.  There should be no need
-to have swap enabled.  On Linux systems, you can disable swap temporarily
+to have swap enabled.</p><p class="simpara">On Linux systems, you can disable swap temporarily
 by running: <code class="literal">sudo swapoff -a</code>. To disable it permanently, you will need
 to edit the <code class="literal">/etc/fstab</code> file and comment out any lines that contain the
-word <code class="literal">swap</code>.</p></li><li class="listitem"><p class="simpara">
+word <code class="literal">swap</code>.</p><p class="simpara">On Windows, the equivalent can be achieved by disabling the paging file entirely
+via <code class="literal">System Properties → Advanced → Performance → Advanced → Virtual memory</code>.</p></li><li class="listitem"><p class="simpara">
 <span class="strong"><strong>Configure <code class="literal">swappiness</code></strong></span>
 </p><p class="simpara">The second option is to ensure that the sysctl value <code class="literal">vm.swappiness</code> is set
 to <code class="literal">0</code>. This reduces the kernel’s tendency to swap and should not lead to
@@ -621,16 +622,16 @@ cause the OOM killer to kill the process instead of allowing swapping.
 You will need to set <code class="literal">swappiness</code> to <code class="literal">1</code> to still allow swapping in
 emergencies.</p></div></div></li><li class="listitem"><p class="simpara">
 <span class="strong"><strong><code class="literal">mlockall</code></strong></span>
-</p><p class="simpara">The third option on Linux/Unix systems only, is to use
-<a class="ulink" href="http://opengroup.org/onlinepubs/007908799/xsh/mlockall.html" target="_top">mlockall</a> to
+</p><p class="simpara">The third option is to use
+<a class="ulink" href="http://opengroup.org/onlinepubs/007908799/xsh/mlockall.html" target="_top">mlockall</a> on Linux/Unix systems, or <a class="ulink" href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366895%28v=vs.85%29.aspx" target="_top">VirtualLock</a> on Windows, to
 try to lock the process address space into RAM, preventing any Elasticsearch
 memory from being swapped out.  This can be done, by adding this line
 to the <code class="literal">config/elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">bootstrap.mlockall: true</pre></div><p class="simpara">After starting Elasticsearch, you can see whether this setting was applied
 successfully by checking the value of <code class="literal">mlockall</code> in the output from this
 request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl http://localhost:9200/_nodes/process?pretty</pre></div><p class="simpara">If you see that <code class="literal">mlockall</code> is <code class="literal">false</code>, then it means that the the <code class="literal">mlockall</code>
-request has failed.  The most probable reason is that the user running
-Elasticsearch doesn’t have permission to lock memory.  This can be granted
-by running <code class="literal">ulimit -l unlimited</code> as <code class="literal">root</code> before starting Elasticsearch.</p><p class="simpara">Another possible reason why <code class="literal">mlockall</code> can fail is that the temporary directory
+request has failed.  The most probable reason, on Linux/Unix systems, is that
+the user running Elasticsearch doesn’t have permission to lock memory.  This can
+be granted by running <code class="literal">ulimit -l unlimited</code> as <code class="literal">root</code> before starting Elasticsearch.</p><p class="simpara">Another possible reason why <code class="literal">mlockall</code> can fail is that the temporary directory
 (usually <code class="literal">/tmp</code>) is mounted with the <code class="literal">noexec</code> option. This can be solved by
 specifying a new temp directory, by starting Elasticsearch with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">./bin/elasticsearch -Djna.tmpdir=/path/to/new/dir</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p><code class="literal">mlockall</code> might cause the JVM or shell session to exit if it tries
 to allocate more memory than is available!</p></div></div></li></ul></div><h3><a id="settings"></a>Elasticsearch Settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p><span class="strong"><strong>elasticsearch</strong></span> configuration files can be found under <code class="literal">ES_HOME/config</code>
