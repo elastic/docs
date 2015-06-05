@@ -2425,8 +2425,8 @@ Options
 </p>
 </td></tr></tbody></table></div><p><a class="ulink" href="#" target="_top">back to top</a></p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="api-percolate-1-0"></a><code class="literal">percolate</code><a href="https://github.com/elastic/elasticsearch-js/edit/master/docs/api_methods_1_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">client.percolate([params, [callback]])</pre></div><p>Match a document against registered percolator queries.</p><p>The default method is <code class="literal">POST</code> and the usual <a class="link" href="api-conventions.html" title="API Conventions">params and return values</a> apply. See <a class="ulink" href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.x/search-percolate.html" target="_top">the elasticsearch docs</a> for more about this method.</p><p><strong>First, Register queries named “alert-1” and “alert-2” for the “myindex” index. </strong>
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">client.index({
-  index: '_percolator',
-  type: 'myindex',
+  index: 'myindex',
+  type: '.percolator',
   id: 'alert-1',
   body: {
     // This query will be run against documents sent to percolate
@@ -2441,8 +2441,8 @@ Options
 });
 
 client.index({
-  index: '_percolator',
-  type: 'myindex',
+  index: 'myindex',
+  type: '.percolator',
   id: 'alert-2',
   body: {
     // This query will also be run against documents sent to percolate
@@ -2458,6 +2458,7 @@ client.index({
 </p><p><strong>Then you can send documents to learn which query <code class="literal">_percolator</code> queries they match. </strong>
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">client.percolate({
   index: 'myindex',
+  type: 'mytype',
   body: {
     doc: {
       title: "Foo"
@@ -2466,13 +2467,14 @@ client.index({
 }, function (error, response) {
   // response would equal
   // {
-  //   ok:true,
-  //   matches: [ "alert-1" ]
+  //   total: 1,
+  //   matches: [ { _index: 'myindex', _id: 'alert-1' } ]
   // }
 });
 
 client.percolate({
   index: 'myindex',
+  type: 'mytype',
   body: {
     doc: {
       title: "Foo Bar"
@@ -2481,8 +2483,11 @@ client.percolate({
 }, function (error, response) {
   // response would equal
   // {
-  //   ok:true,
-  //   matches: [ "alert-1", "alert-2" ]
+  //   total: 2,
+  //   matches: [
+  //     { _index: 'myindex', _id: 'alert-1' },
+  //     { _index: 'myindex', _id: 'alert-2' }
+  //   ]
   // }
 });</pre></div><p>
 </p><p><span class="strong"><strong>Params</strong></span></p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
