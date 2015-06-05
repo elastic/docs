@@ -152,13 +152,6 @@ sub build_all {
 
     my $links = ES::LinkCheck->new($build_dir);
 
-    for ( @{ $Conf->{extra_links} } ) {
-        my $repo = ES::Repo->get_repo( $_->{repo} );
-        my $file = $repo->dir->file( $_->{file} );
-        say "Checking links in: $file";
-        $links->check_file($file);
-    }
-
     if ( $links->check ) {
         say $links->report;
     }
