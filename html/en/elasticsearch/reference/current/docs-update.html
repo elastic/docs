@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.5]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs-delete.html" title="Delete API" /><link rel="next" href="docs-multi-get.html" title="Multi Get API" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.6]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs-delete.html" title="Delete API" /><link rel="next" href="docs-multi-get.html" title="Multi Get API" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -571,7 +571,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.5]
+      [1.6]
     </a></span> » <span class="breadcrumb-link"><a href="docs.html">Document APIs </a></span> » <span class="breadcrumb-node">Update API</span></div><div class="navheader"><span class="prev"><a href="docs-delete.html">
               « 
               Delete API</a>
@@ -580,7 +580,7 @@
            
           <a href="docs-multi-get.html">Multi Get API
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-update"></a>Update API<a href="https://github.com/elastic/elasticsearch/edit/1.5/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The update API allows to update a document based on a script provided.
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-update"></a>Update API<a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The update API allows to update a document based on a script provided.
 The operation gets the document (collocated with the shard) from the
 index, runs the script (with optional script language and parameters),
 and index back the result (also allows to delete, or ignore the
@@ -635,7 +635,7 @@ there aren’t, turn the update request into a noop. For example:</p><div class=
     },
     "detect_noop": true
 }'</pre></div><p>If <code class="literal">name</code> was <code class="literal">new_name</code> before the request was sent then the entire update
-request is ignored.</p><h3><a id="upserts"></a>Upserts<a href="https://github.com/elastic/elasticsearch/edit/1.5/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>There is also support for <code class="literal">upsert</code>. If the document does
+request is ignored.</p><h3><a id="upserts"></a>Upserts<a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>There is also support for <code class="literal">upsert</code>. If the document does
 not already exists, the content of the <code class="literal">upsert</code> element will be used to
 index the fresh doc:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.counter += count",
@@ -673,15 +673,17 @@ elasticsearch.</p><div class="pre_wrapper"><pre class="programlisting prettyprin
         "name" : "new_name"
     },
     "doc_as_upsert" : true
-}'</pre></div><h3><a id="_parameters_3"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/1.5/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update operation supports similar parameters as the index API,
+}'</pre></div><h3><a id="_parameters_3"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update operation supports similar parameters as the index API,
 including:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">routing</code>
 </p>
 </td><td valign="top">
 <p>
-Sets the routing that will be used to route the
-                document to the relevant shard.
+Routing is used to route the update request to the right shard
+                and sets the routing for the upsert request if the document being
+                updated doesn’t exist. Can’t be used to update the routing of an
+                existing document.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -689,7 +691,10 @@ Sets the routing that will be used to route the
 </p>
 </td><td valign="top">
 <p>
-Simply sets the routing.
+Parent is used to route the update request to the right shard
+                and sets the parent for the upsert request if the document being
+                updated doesn’t exist. Can’t be used to update the <code class="literal">parent</code> of an
+                existing document.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -698,17 +703,6 @@ Simply sets the routing.
 </td><td valign="top">
 <p>
 Timeout waiting for a shard to become available.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">replication</code>
-</p>
-</td><td valign="top">
-<p>
-<span class="deprecated">
-      [<span class="version">1.5.0</span>]
-      <span class="detail">Deprecated in 1.5.0. The ability to specify <code class="literal">async</code> replication is deprecated and will be removed in version 2.0.0.</span></span> The replication type for the delete/index operation
-                (sync or async).
 </p>
 </td></tr><tr><td valign="top">
 <p>
