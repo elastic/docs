@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Filtered Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="compound-queries.html" title="Compound queries" /><link rel="prev" href="query-dsl-or-query.html" title="Or Query" /><link rel="next" href="query-dsl-limit-query.html" title="Limit Query" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Series Arithmetic Aggregation</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-aggregations-pipeline.html" title="Pipeline Aggregations" /><link rel="prev" href="search-aggregations-pipeline-movavg-aggregation.html" title="Moving Average Aggregation" /><link rel="next" href="caching-heavy-aggregations.html" title="Caching heavy aggregations" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -572,146 +572,133 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-link"><a href="compound-queries.html">Compound queries</a></span> » <span class="breadcrumb-node">Filtered Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-or-query.html">
+    </a></span> » <span class="breadcrumb-link"><a href="search-aggregations.html">Aggregations </a></span> » <span class="breadcrumb-link"><a href="search-aggregations-pipeline.html">Pipeline Aggregations</a></span> » <span class="breadcrumb-node">Series Arithmetic Aggregation</span></div><div class="navheader"><span class="prev"><a href="search-aggregations-pipeline-movavg-aggregation.html">
               « 
-              Or Query</a>
+              Moving Average Aggregation</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-limit-query.html">Limit Query
+          <a href="caching-heavy-aggregations.html">Caching heavy aggregations
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-filtered-query"></a>Filtered Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filtered-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><h4>Deprecated in 2.0.0.</h4><p> Use the <code class="literal">bool</code> query instead with a <code class="literal">must</code> clause for the query and a <code class="literal">filter</code> clause for the filter.</p></div></div><p>The <code class="literal">filtered</code> query is used to combine a query which will be used for
-scoring with another query which will only be used for filtering the result
-set.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Exclude as many document as you can with a filter, then query just the
-documents that remain.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "filtered": {
-    "query": {
-      "match": { "tweet": "full text search" }
-    },
-    "filter": {
-      "range": { "created": { "gte": "now - 1d / d" }}
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-pipeline-series-arithmetic-aggregation"></a>Series Arithmetic Aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline/series-arithmetic-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A parent pipeline aggregation which executes a script which can perform per bucket computations on specified metrics
+in the parent multi-bucket aggregation. The specified metric must be numeric and the script must return a numeric value.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_syntax_7"></a>Syntax<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline/series-arithmetic-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A <code class="literal">series_arithmetic</code> aggregation looks like this in isolation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "series_arithmetic": {
+        "buckets_path": {
+            "my_var1": "the_sum", <a id="CO75-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "my_var2": "the_value_count"
+        },
+        script: "my_var1 / my_var2"
     }
-  }
-}</pre></div><p>The <code class="literal">filtered</code> query can be used wherever a <code class="literal">query</code> is expected, for instance,
-to use the above example in search request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET localhost:9200/_search -d '
-{
-  "query": {
-    "filtered": { <a id="CO96-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-      "query": {
-        "match": { "tweet": "full text search" }
-      },
-      "filter": {
-        "range": { "created": { "gte": "now - 1d / d" }}
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO75-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Here, <code class="literal">my_var1</code> is the name of the variable for this buckets path to use in the script, <code class="literal">the_sum</code> is the path to
+the metrics to use for that variable.
+</p></td></tr></table></div><div class="table"><a id="id-1.8.5.34.3.5"></a><p class="title"><strong>Table 7. <code class="literal">series_arithmetic</code> Parameters</strong></p><div class="table-contents"><table summary="series_arithmetic Parameters" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><tbody><tr><td align="left" valign="top"><p>Parameter Name</p></td><td align="left" valign="top"><p>Description</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Default Value</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">script</code></p></td><td align="left" valign="top"><p>The script to run for this aggregation. The script can be inline, file or indexed. (see <a class="xref" href="modules-scripting.html" title="Scripting"><em>Scripting</em></a>
+for more details)</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">buckets_path</code></p></td><td align="left" valign="top"><p>A map of script variables and their associated path to the buckets we wish to use for the variable
+(see <a class="xref" href="search-aggregations-pipeline.html#bucket-path-syntax" title="buckets_path Syntaxedit">the section called “<code class="literal">buckets_path</code> Syntax<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for more details)</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">gap_policy</code></p></td><td align="left" valign="top"><p>The policy to apply when gaps are found in the data (see <a class="xref" href="search-aggregations-pipeline.html#gap-policy" title="Dealing with gaps in the dataedit">the section called “Dealing with gaps in the data<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for more
+ details)</p></td><td align="left" valign="top"><p>Optional, defaults to <code class="literal">skip</code></p></td><td align="left" valign="top"><p></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">format</code></p></td><td align="left" valign="top"><p>format to apply to the output value of this aggregation</p></td><td align="left" valign="top"><p>Optional, defaults to <code class="literal">null</code></p></td><td align="left" valign="top"><p></p></td></tr></tbody></table></div></div><br class="table-break" /><p>The following snippet calculates the ratio percentage of t-shirt sales compared to total sales each month:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "aggs" : {
+        "sales_per_month" : {
+            "date_histogram" : {
+                "field" : "date",
+                "interval" : "month"
+            },
+            "aggs": {
+                "total_sales": {
+                    "sum": {
+                        "field": "price"
+                    }
+                },
+                "t-shirts": {
+                  "filter": {
+                    "term": {
+                      "type": "t-shirt"
+                    }
+                  },
+                  "aggs": {
+                    "sales": {
+                      "sum": {
+                        "field": "price"
+                      }
+                    }
+                  }
+                },
+                "t-shirt-percentage": {
+                    "series_arithmetic": {
+                        "buckets_paths": {
+                          "tShirtSales": "t-shirts&gt;sales",
+                          "totalSales": "total_sales"
+                        },
+                        "script": "tShirtSales / totalSales * 100"
+                    }
+                }
+            }
+        }
+    }
+}</pre></div><p>And the following may be the response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "aggregations": {
+      "sales_per_month": {
+         "buckets": [
+            {
+               "key_as_string": "2015/01/01 00:00:00",
+               "key": 1420070400000,
+               "doc_count": 3,
+               "total_sales": {
+                   "value": 50
+               },
+               "t-shirts": {
+                   "doc_count": 2,
+                   "sales": {
+                       "value": 10
+                   }
+               },
+               "t-shirt-percentage": {
+                   "value": 20
+               }
+            },
+            {
+               "key_as_string": "2015/02/01 00:00:00",
+               "key": 1422748800000,
+               "doc_count": 2
+               "total_sales": {
+                   "value": 60
+               },
+               "t-shirts": {
+                   "doc_count": 1,
+                   "sales": {
+                       "value": 15
+                   }
+               },
+               "t-shirt-percentage": {
+                   "value": 25
+               }
+            },
+            {
+               "key_as_string": "2015/03/01 00:00:00",
+               "key": 1425168000000,
+               "doc_count": 2,
+               "total_sales": {
+                   "value": 40
+               },
+               "t-shirts": {
+                   "doc_count": 1,
+                   "sales": {
+                       "value": 20
+                   }
+               },
+               "t-shirt-percentage": {
+                   "value": 50
+               }
+            }
+         ]
       }
-    }
-  }
-}
-'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO96-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">filtered</code> query is passed as the value of the <code class="literal">query</code>
-    parameter in the search request.
-</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_filtering_without_a_query"></a>Filtering without a query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filtered-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If a <code class="literal">query</code> is not specified, it defaults to the
-<a class="link" href="query-dsl-match-all-query.html" title="Match All Query"><code class="literal">match_all</code> query</a>.  This means that the
-<code class="literal">filtered</code> query can be used to wrap just a filter, so that it can be used
-wherever a query is expected.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET localhost:9200/_search -d '
-{
-  "query": {
-    "filtered": { <a id="CO97-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-      "filter": {
-        "range": { "created": { "gte": "now - 1d / d" }}
-      }
-    }
-  }
-}
-'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO97-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-No <code class="literal">query</code> has been specified, so this request applies just the filter,
-   returning all documents created since yesterday.
-</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_multiple_filters"></a>Multiple filters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filtered-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Multiple filters can be applied by wrapping them in a
-<a class="link" href="query-dsl-bool-query.html" title="Bool Query"><code class="literal">bool</code> query</a>, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "filtered": {
-    "query": { "match": { "tweet": "full text search" }},
-    "filter": {
-      "bool": {
-        "must": { "range": { "created": { "gte": "now - 1d / d" }}},
-        "should": [
-          { "term": { "featured": true }},
-          { "term": { "starred":  true }}
-        ],
-        "must_not": { "term": { "deleted": false }}
-      }
-    }
-  }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_filter_strategy"></a>Filter strategy<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/filtered-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>You can control how the filter and query are executed with the <code class="literal">strategy</code>
-parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "filtered" : {
-        "query" :   { ... },
-        "filter" :  { ... },
-        "strategy": "leap_frog"
-    }
-}</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>This is an <span class="emphasis"><em>expert-level</em></span> setting.  Most users can simply ignore it.</p></div></div><p>The <code class="literal">strategy</code> parameter accepts the following options:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">leap_frog_query_first</code>
-</p>
-</td><td valign="top">
-<p>
-        Look for the first document matching the query, and then alternatively
-        advance the query and the filter to find common matches.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">leap_frog_filter_first</code>
-</p>
-</td><td valign="top">
-<p>
-    Look for the first document matching the filter, and then alternatively
-    advance the query and the filter to find common matches.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">leap_frog</code>
-</p>
-</td><td valign="top">
-<p>
-    Same as <code class="literal">leap_frog_query_first</code>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">query_first</code>
-</p>
-</td><td valign="top">
-<p>
-    If the filter supports random access, then search for documents using the
-    query, and then consult the filter to check whether there is a match.
-    Otherwise fall back to <code class="literal">leap_frog_query_first</code>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">random_access_${threshold}</code>
-</p>
-</td><td valign="top">
-<p>
-    If the filter supports random access and if the number of documents in the
-    then apply the filter first.
-    Otherwise fall back to <code class="literal">leap_frog_query_first</code>. <code class="literal">${threshold}</code> must be
-    greater than or equal to <code class="literal">1</code>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">random_access_always</code>
-</p>
-</td><td valign="top">
-<p>
-    Apply the filter first if it supports random access. Otherwise fall back
-    to <code class="literal">leap_frog_query_first</code>.
-</p>
-</td></tr></tbody></table></div><p>The default strategy is to use <code class="literal">query_first</code> on filters that are not
-advanceable such as geo filters and script filters, and <code class="literal">random_access_100</code> on
-other filters.</p></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-or-query.html">
+   }
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-pipeline-movavg-aggregation.html">
               « 
-              Or Query</a>
+              Moving Average Aggregation</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-limit-query.html">Limit Query
+          <a href="caching-heavy-aggregations.html">Caching heavy aggregations
                »
             </a></span></div>
 <!-- end body -->
