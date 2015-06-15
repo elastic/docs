@@ -582,53 +582,44 @@
           <a href="index-modules-similarity.html">Similarity module
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="fielddata-formats"></a>Field data formats<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The field data format controls how field data should be stored.</p><p>Depending on the field type, there might be several field data types
-available. In particular, string and numeric types support the <code class="literal">doc_values</code>
+available. In particular, string, geo-point and numeric types support the <code class="literal">doc_values</code>
 format which allows for computing the field data data-structures at indexing
 time and storing them on disk. Although it will make the index larger and may
 be slightly slower, this implementation will be more near-realtime-friendly
-and will require much less memory from the JVM than other implementations.</p><p>Here is an example of how to configure the <code class="literal">tag</code> field to use the <code class="literal">fst</code> field
+and will require much less memory from the JVM than other implementations.</p><p>Here is an example of how to configure the <code class="literal">tag</code> field to use the <code class="literal">paged_bytes</code> field
 data format.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "tag": {
         "type":      "string",
         "fielddata": {
-            "format": "fst"
+            "format": "paged_bytes"
         }
     }
 }</pre></div><p>It is possible to change the field data format (and the field data settings
-in general) on a live index by using the update mapping API. When doing so,
-field data which had already been loaded for existing segments will remain
-alive while new segments will use the new field data configuration. Thanks to
-the background merging process, all segments will eventually use the new
-field data format.</p><h4><a id="_string_field_data_types"></a>String field data types<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">paged_bytes</code> (default)
+in general) on a live index by using the update mapping API.</p><h4><a id="_string_field_data_types"></a>String field data types<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">paged_bytes</code> (default on analyzed string fields)
 </span></dt><dd>
     Stores unique terms sequentially in a large buffer and maps documents to
     the indices of the terms they contain in this large buffer.
 </dd><dt><span class="term">
-<code class="literal">fst</code>
-</span></dt><dd>
-    Stores terms in a FST. Slower to build than <code class="literal">paged_bytes</code> but can help lower
-    memory usage if many terms share common prefixes and/or suffixes.
-</dd><dt><span class="term">
-<code class="literal">doc_values</code>
+<code class="literal">doc_values</code> (default when index is set to <code class="literal">not_analyzed</code>)
 </span></dt><dd>
     Computes and stores field data data-structures on disk at indexing time.
     Lowers memory usage but only works on non-analyzed strings (<code class="literal">index</code>: <code class="literal">no</code> or
     <code class="literal">not_analyzed</code>).
 </dd></dl></div><h4><a id="_numeric_field_data_types"></a>Numeric field data types<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">array</code> (default)
+<code class="literal">array</code>
 </span></dt><dd>
     Stores field values in memory using arrays.
 </dd><dt><span class="term">
-<code class="literal">doc_values</code>
+<code class="literal">doc_values</code> (default unless doc values are disabled)
 </span></dt><dd>
     Computes and stores field data data-structures on disk at indexing time.
 </dd></dl></div><h4><a id="_geo_point_field_data_types"></a>Geo point field data types<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">array</code> (default)
+<code class="literal">array</code>
 </span></dt><dd>
     Stores latitudes and longitudes in arrays.
 </dd><dt><span class="term">
-<code class="literal">doc_values</code>
+<code class="literal">doc_values</code> (default unless doc values are disabled)
 </span></dt><dd>
     Computes and stores field data data-structures on disk at indexing time.
 </dd></dl></div><h4><a id="global-ordinals"></a>Global ordinals<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Global ordinals is a data-structure on top of field data, that maintains an
