@@ -601,7 +601,7 @@ Average aggregation (metric)
         AggregationBuilders.terms("by_country").field("country")
         .subAggregation(AggregationBuilders.dateHistogram("by_year")
             .field("dateOfBirth")
-            .interval((DateHistogram.Interval.YEAR)
+            .interval((DateHistogramInterval.YEAR)
             .subAggregation(AggregationBuilders.avg("avg_children").field("children"))
         )
     )
@@ -825,20 +825,20 @@ agg.getDocCount(); // Doc count</pre></div></div></div><div class="section"><div
 <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-filter-aggregation.html" target="_top">Filter Aggregation</a>
 with Java API.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_prepare_aggregation_request_15"></a>Prepare aggregation request<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/aggregations/bucket/filter-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Here is an example on how to create the aggregation request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AggregationBuilders
     .filter("agg")
-    .filter(FilterBuilders.termFilter("gender", "male"));</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_use_aggregation_response_15"></a>Use aggregation response<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/aggregations/bucket/filter-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Import Aggregation definition classes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.search.aggregations.bucket.filter.Filter;</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// sr is here your SearchResponse object
+    .filter(QueryBuilders.termQuery("gender", "male"));</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_use_aggregation_response_15"></a>Use aggregation response<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/aggregations/bucket/filter-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Import Aggregation definition classes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.search.aggregations.bucket.filter.Filter;</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// sr is here your SearchResponse object
 Filter agg = sr.getAggregations().get("agg");
 agg.getDocCount(); // Doc count</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-aggs-bucket-filters"></a>Filters Aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/aggregations/bucket/filters-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Here is how you can use
 <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-filters-aggregation.html" target="_top">Filters Aggregation</a>
 with Java API.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_prepare_aggregation_request_16"></a>Prepare aggregation request<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/aggregations/bucket/filters-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Here is an example on how to create the aggregation request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AggregationBuilder aggregation =
     AggregationBuilders
         .filters("agg")
-            .filter("men", FilterBuilders.termFilter("gender", "male"))
-            .filter("women", FilterBuilders.termFilter("gender", "female"));</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_use_aggregation_response_16"></a>Use aggregation response<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/aggregations/bucket/filters-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Import Aggregation definition classes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.search.aggregations.bucket.filters.Filters;</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// sr is here your SearchResponse object
+            .filter("men", QueryBuilders.termQuery("gender", "male"))
+            .filter("women", QueryBuilders.termQuery("gender", "female"));</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_use_aggregation_response_16"></a>Use aggregation response<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/aggregations/bucket/filters-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Import Aggregation definition classes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.search.aggregations.bucket.filters.Filters;</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// sr is here your SearchResponse object
 Filters agg = sr.getAggregations().get("agg");
 
 // For each entry
 for (Filters.Bucket entry : agg.getBuckets()) {
-    String key = entry.getKey();                    // bucket key
+    String key = entry.getKeyAsString();            // bucket key
     long docCount = entry.getDocCount();            // Doc count
     logger.info("key [{}], doc_count [{}]", key, docCount);
 }</pre></div><p>This will basically produce:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">key [men], doc_count [4982]
@@ -933,10 +933,10 @@ Range agg = sr.getAggregations().get("agg");
 
 // For each entry
 for (Range.Bucket entry : agg.getBuckets()) {
-    String key = entry.getKey();                     // Range as key
+    String key = entry.getKeyAsString();             // Range as key
     Number from = (Number) entry.getFrom();          // Bucket from
     Number to = (Number) entry.getTo();              // Bucket to
-    long docCount = entry.getDocCount();             // Doc count
+    long docCount = entry.getDocCount();    // Doc count
 
     logger.info("key [{}], from [{}], to [{}], doc_count [{}]", key, from, to, docCount);
 }</pre></div><p>This will basically produce for the first example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">key [*-1.0], from [-Infinity], to [1.0], doc_count [9]
@@ -955,10 +955,10 @@ Range agg = sr.getAggregations().get("agg");
 
 // For each entry
 for (Range.Bucket entry : agg.getBuckets()) {
-    String key = entry.getKey();                         // Date range as key
-    DateTime fromAsDate = (DateTime) entry.getFrom();    // Date bucket from as a Date
-    DateTime toAsDate = (DateTime) entry.getTo();        // Date bucket to as a Date
-    long docCount = entry.getDocCount();                 // Doc count
+    String key = entry.getKeyAsString();                // Date range as key
+    DateTime fromAsDate = (DateTime) entry.getFrom();   // Date bucket from as a Date
+    DateTime toAsDate = (DateTime) entry.getTo();       // Date bucket to as a Date
+    long docCount = entry.getDocCount();                // Doc count
 
     logger.info("key [{}], from [{}], to [{}], doc_count [{}]", key, fromAsDate, toAsDate, docCount);
 }</pre></div><p>This will basically produce:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">key [*-1950], from [null], to [1950-01-01T00:00:00.000Z], doc_count [8]
@@ -978,11 +978,11 @@ with Java API.</p><div class="section"><div class="titlepage"><div><div><h4 clas
                 .addMaskRange("192.168.0.0/32")
                 .addMaskRange("192.168.0.0/24")
                 .addMaskRange("192.168.0.0/16");</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_use_aggregation_response_25"></a>Use aggregation response<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/aggregations/bucket/iprange-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Import Aggregation definition classes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.search.aggregations.bucket.range.Range;</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// sr is here your SearchResponse object
-IPv4Range agg = sr.getAggregations().get("agg");
+Range agg = sr.getAggregations().get("agg");
 
 // For each entry
 for (Range.Bucket entry : agg.getBuckets()) {
-    String key = entry.getKey();                    // Ip range as key
+    String key = entry.getKeyAsString();            // Ip range as key
     String fromAsString = entry.getFromAsString();  // Ip bucket from as a String
     String toAsString = entry.getToAsString();      // Ip bucket to as a String
     long docCount = entry.getDocCount();            // Doc count
@@ -1003,9 +1003,10 @@ Histogram agg = sr.getAggregations().get("agg");
 
 // For each entry
 for (Histogram.Bucket entry : agg.getBuckets()) {
-    Number key = (Number) entry.getKey();                    // Key
-    String keyAsString = entry.getKeyAsString();             // Key As String
-    long docCount = entry.getDocCount();                     // Doc count
+    Long key = (Long) entry.getKey();       // Key
+    long docCount = entry.getDocCount();    // Doc count
+
+    logger.info("key [{}], doc_count [{}]", key, docCount);
 }</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-aggs-bucket-datehistogram"></a>Date Histogram Aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Here is how you can use
 <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html" target="_top">Date Histogram Aggregation</a>
 with Java API.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_prepare_aggregation_request_27"></a>Prepare aggregation request<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Here is an example on how to create the aggregation request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AggregationBuilder aggregation =
@@ -1021,11 +1022,11 @@ Histogram agg = sr.getAggregations().get("agg");
 
 // For each entry
 for (Histogram.Bucket entry : agg.getBuckets()) {
-    DateTime keyAsDate = (DateTime) entry.getKey();  // Key
-    String key = entry.getKeyAsString();            // Key as String
-    long docCount = entry.getDocCount();             // Doc count
+    DateTime key = (DateTime) entry.getKey();    // Key
+    String keyAsString = entry.getKeyAsString(); // Key as String
+    long docCount = entry.getDocCount();         // Doc count
 
-    logger.info("key [{}], date [{}], doc_count [{}]", key, keyAsDate.getYear(), docCount);
+    logger.info("key [{}], date [{}], doc_count [{}]", keyAsString, key.getYear(), docCount);
 }</pre></div><p>This will basically produce for the first example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">key [1942-01-01T00:00:00.000Z], date [1942], doc_count [1]
 key [1945-01-01T00:00:00.000Z], date [1945], doc_count [1]
 key [1946-01-01T00:00:00.000Z], date [1946], doc_count [1]
@@ -1047,10 +1048,10 @@ Range agg = sr.getAggregations().get("agg");
 
 // For each entry
 for (Range.Bucket entry : agg.getBuckets()) {
-    String key = entry.getKey();                     // key as String
-    Number from = (Number) entry.getFrom();          // bucket from value
-    Number to = (Number) entry.getTo();              // bucket to value
-    long docCount = entry.getDocCount();             // Doc count
+    String key = entry.getKeyAsString();    // key as String
+    Number from = (Number) entry.getFrom(); // bucket from value
+    Number to = (Number) entry.getTo();     // bucket to value
+    long docCount = entry.getDocCount();    // Doc count
 
     logger.info("key [{}], from [{}], to [{}], doc_count [{}]", key, from, to, docCount);
 }</pre></div><p>This will basically produce:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">key [*-3.0], from [0.0], to [3.0], doc_count [161]
@@ -1066,11 +1067,11 @@ GeoHashGrid agg = sr.getAggregations().get("agg");
 
 // For each entry
 for (GeoHashGrid.Bucket entry : agg.getBuckets()) {
-    String key = entry.getKey();                        // key as String
-    GeoPoint keyAsGeoPoint = entry.getKeyAsGeoPoint();  // key as geo point
-    long docCount = entry.getDocCount();                // Doc count
+    String keyAsString = entry.getKeyAsString(); // key as String
+    GeoPoint key = (GeoPoint) entry.getKey();    // key as geo point
+    long docCount = entry.getDocCount();         // Doc count
 
-    logger.info("key [{}], point {}, doc_count [{}]", key, keyAsGeoPoint, docCount);
+    logger.info("key [{}], point {}, doc_count [{}]", keyAsString, key, docCount);
 }</pre></div><p>This will basically produce:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">key [gbqu], point [47.197265625, -1.58203125], doc_count [1282]
 key [gbvn], point [50.361328125, -4.04296875], doc_count [1248]
 key [u1j0], point [50.712890625, 7.20703125], doc_count [1156]
