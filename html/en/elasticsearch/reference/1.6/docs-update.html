@@ -592,34 +592,31 @@ between the get and the index. The <code class="literal">_source</code> field ne
 for this feature to work.</p><p>For example, lets index a simple doc:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/type1/1 -d '{
     "counter" : 1,
     "tags" : ["red"]
-}'</pre></div><p>Now, we can execute a script that would increment the counter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}'</pre></div><h3><a id="_scripted_updates"></a>Scripted updates<a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Now, we can execute a script that would increment the counter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.counter += count",
     "params" : {
         "count" : 4
     }
-}'</pre></div><p>We can also add a tag to the list of tags (note, if the tag exists, it
+}'</pre></div><p>We can add a tag to the list of tags (note, if the tag exists, it
 will still add it, since its a list):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.tags += tag",
     "params" : {
         "tag" : "blue"
     }
-}'</pre></div><p>We can also add a new field to the document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}'</pre></div><p>In addition to <code class="literal">_source</code>, the following variables are available through
+the <code class="literal">ctx</code> map: <code class="literal">_index</code>, <code class="literal">_type</code>, <code class="literal">_id</code>, <code class="literal">_version</code>, <code class="literal">_routing</code>,
+<code class="literal">_parent</code>, <code class="literal">_timestamp</code>, <code class="literal">_ttl</code>.</p><p>We can also add a new field to the document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.name_of_new_field = \"value_of_new_field\""
-}'</pre></div><p>We can also remove a field from the document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}'</pre></div><p>Or remove a field from the document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.remove(\"name_of_field\")"
-}'</pre></div><p>And, we can delete the doc if the tags contain blue, or ignore (noop):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}'</pre></div><p>And, we can even change the operation that is executed.  This example deletes
+the doc if the <code class="literal">tags</code> field contain <code class="literal">blue</code>, otherwise it does nothing
+(<code class="literal">noop</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.tags.contains(tag) ? ctx.op = \"delete\" : ctx.op = \"none\"",
     "params" : {
         "tag" : "blue"
     }
-}'</pre></div><p><span class="strong"><strong>Note</strong></span>: Be aware of MVEL and handling of ternary operators and
-assignments. Assignment operations have lower precedence than the
-ternary operator. Compare the following statements:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">// Will NOT update the tags array
-ctx._source.tags.contains(tag) ? ctx.op = \"none\" : ctx._source.tags += tag
-// Will update
-ctx._source.tags.contains(tag) ? (ctx.op = \"none\") : ctx._source.tags += tag
-// Also works
-if (ctx._source.tags.contains(tag)) { ctx.op = \"none\" } else { ctx._source.tags += tag }</pre></div><p>The update API also support passing a partial document,
+}'</pre></div><h3><a id="_updates_with_a_partial_document"></a>Updates with a partial document<a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update API also support passing a partial document,
 which will be merged into the existing document (simple recursive merge,
 inner merging of objects, replacing core "keys/values" and arrays). For
 example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
@@ -627,7 +624,7 @@ example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang
         "name" : "new_name"
     }
 }'</pre></div><p>If both <code class="literal">doc</code> and <code class="literal">script</code> is specified, then <code class="literal">doc</code> is ignored. Best is
-to put your field pairs of the partial document in the script itself.</p><p>By default if <code class="literal">doc</code> is specified then the document is always updated even
+to put your field pairs of the partial document in the script itself.</p><h3><a id="_literal_detect_noop_literal"></a><code class="literal">detect_noop</code><a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default if <code class="literal">doc</code> is specified then the document is always updated even
 if the merging process doesn’t cause any changes.  Specifying <code class="literal">detect_noop</code>
 as <code class="literal">true</code> will cause Elasticsearch to check if there are changes and, if
 there aren’t, turn the update request into a noop. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
@@ -636,9 +633,9 @@ there aren’t, turn the update request into a noop. For example:</p><div class=
     },
     "detect_noop": true
 }'</pre></div><p>If <code class="literal">name</code> was <code class="literal">new_name</code> before the request was sent then the entire update
-request is ignored.</p><h3><a id="upserts"></a>Upserts<a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>There is also support for <code class="literal">upsert</code>. If the document does
-not already exists, the content of the <code class="literal">upsert</code> element will be used to
-index the fresh doc:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+request is ignored.</p><h3><a id="upserts"></a>Upserts<a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the document does not already exist, the contents of the <code class="literal">upsert</code> element
+will be inserted as a new document.  If the document does exist, then the
+<code class="literal">script</code> will be executed instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "script" : "ctx._source.counter += count",
     "params" : {
         "count" : 4
@@ -646,10 +643,9 @@ index the fresh doc:</p><div class="pre_wrapper"><pre class="programlisting pret
     "upsert" : {
         "counter" : 1
     }
-}'</pre></div><p>If the document does not exist you may want your update script to
-run anyway in order to initialize the document contents using
-business logic unknown to the client. In this case pass the
-new <code class="literal">scripted_upsert</code> parameter with the value <code class="literal">true</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/sessions/session/dh3sgudg8gsrgl/_update' -d '{
+}'</pre></div><h4><a id="_literal_scripted_upsert_literal"></a><code class="literal">scripted_upsert</code><a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If you would like your script to run regardless of whether the document exists
+or not — i.e. the script handles initializing the document instead of the
+<code class="literal">upsert</code> element — then set <code class="literal">scripted_upsert</code> to <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/sessions/session/dh3sgudg8gsrgl/_update' -d '{
     "script_id" : "my_web_session_summariser",
     "scripted_upsert":true,
     "params" : {
@@ -659,32 +655,35 @@ new <code class="literal">scripted_upsert</code> parameter with the value <code 
                 "time":"2014-01-01 12:32"
         }
     },
-    "upsert" : {
-    }
-}'</pre></div><p>The default <code class="literal">scripted_upsert</code> setting is <code class="literal">false</code> meaning the script is not executed for inserts.
-However, in scenarios like the one above we may be using a non-trivial script stored
-using the new "indexed scripts" feature. The script may be deriving properties
-like the duration of our web session based on observing multiple page view events so the
-client can supply a blank "upsert" document and allow the script to fill in most of the details
-using the events passed in the <code class="literal">params</code> element.</p><p>Last, the upsert facility also supports <code class="literal">doc_as_upsert</code>. So that the
-provided document will be inserted if the document does not already
-exist. This will reduce the amount of data that needs to be sent to
-elasticsearch.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+    "upsert" : {}
+}'</pre></div><h4><a id="_literal_doc_as_upsert_literal"></a><code class="literal">doc_as_upsert</code><a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Instead of sending a partial <code class="literal">doc</code> plus an <code class="literal">upsert</code> doc, setting
+<code class="literal">doc_as_upsert</code> to <code class="literal">true</code> will use the contents of <code class="literal">doc</code> as the <code class="literal">upsert</code>
+value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "doc" : {
         "name" : "new_name"
     },
     "doc_as_upsert" : true
-}'</pre></div><h3><a id="_parameters_3"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update operation supports similar parameters as the index API,
-including:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+}'</pre></div><h3><a id="_parameters_3"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/1.6/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update operation supports the following query-string parameters:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">retry_on_conflict</code>
+</p>
+</td><td valign="top">
+<p>
+In between the get and indexing phases of the update, it is possible that
+another process might have already updated the same document.  By default, the
+update will fail with a version conflict exception.  The <code class="literal">retry_on_conflict</code>
+parameter controls how many times to retry the update before finally throwing
+an exception.
+</p>
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">routing</code>
 </p>
 </td><td valign="top">
 <p>
-Routing is used to route the update request to the right shard
-                and sets the routing for the upsert request if the document being
-                updated doesn’t exist. Can’t be used to update the routing of an
-                existing document.
+Routing is used to route the update request to the right shard and sets the
+routing for the upsert request if the document being updated doesn’t exist.
+Can’t be used to update the routing of an existing document.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -692,10 +691,9 @@ Routing is used to route the update request to the right shard
 </p>
 </td><td valign="top">
 <p>
-Parent is used to route the update request to the right shard
-                and sets the parent for the upsert request if the document being
-                updated doesn’t exist. Can’t be used to update the <code class="literal">parent</code> of an
-                existing document.
+Parent is used to route the update request to the right shard and sets the
+parent for the upsert request if the document being updated doesn’t exist.
+Can’t be used to update the <code class="literal">parent</code> of an existing document.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -719,9 +717,9 @@ The write consistency of the index/delete operation.
 </p>
 </td><td valign="top">
 <p>
-Refresh the relevant primary and replica shards (not the whole
-                index) immediately after the operation occurs, so that the
-                updated document appears in search results  immediately.
+Refresh the relevant primary and replica shards (not the whole index)
+immediately after the operation occurs, so that the updated document appears
+in search results  immediately.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -729,9 +727,8 @@ Refresh the relevant primary and replica shards (not the whole
 </p>
 </td><td valign="top">
 <p>
-return the relevant fields from the updated document.
-                Support <code class="literal">_source</code> to return the full updated
-                source.
+Return the relevant fields from the updated document. Specify <code class="literal">_source</code> to
+return the full updated source.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -739,22 +736,15 @@ return the relevant fields from the updated document.
 </p>
 </td><td valign="top">
 <p>
-the Update API uses the Elasticsearch’s versioning
-                support internally to make sure the document doesn’t change
-                during the update. You can use the <code class="literal">version</code> parameter to specify that the
-                document should only be updated if it’s version matches the one specified.
-                By setting version type to <code class="literal">force</code> you can force the new version of the document
-                after update (use with care! with <code class="literal">force</code> there is no guarantee the document
-                didn’t change).Version types <code class="literal">external</code> &amp; <code class="literal">external_gte</code> are not supported.
+The Update API uses the Elasticsearch’s versioning support internally to make
+sure the document doesn’t change during the update. You can use the <code class="literal">version</code>
+parameter to specify that the document should only be updated if it’s version
+matches the one specified. By setting version type to <code class="literal">force</code> you can force
+the new version of the document after update (use with care! with <code class="literal">force</code>
+there is no guarantee the document didn’t change).Version types <code class="literal">external</code> &amp;
+<code class="literal">external_gte</code> are not supported.
 </p>
-</td></tr></tbody></table></div><p>And also support <code class="literal">retry_on_conflict</code> which controls how many times to
-retry if there is a version conflict between getting the document and
-indexing / deleting it. Defaults to <code class="literal">0</code>.</p><p>It also allows to update the <code class="literal">ttl</code> of a document using <code class="literal">ctx._ttl</code> and
-timestamp using <code class="literal">ctx._timestamp</code>. Note that if the timestamp is not
-updated and not extracted from the <code class="literal">_source</code> it will be set to the
-update date.</p><p>In addition to <code class="literal">_source</code>, the following variables are available through
-the <code class="literal">ctx</code> map: <code class="literal">_index</code>, <code class="literal">_type</code>, <code class="literal">_id</code>, <code class="literal">_version</code>, <code class="literal">_routing</code>,
-<code class="literal">_parent</code>, <code class="literal">_timestamp</code>, <code class="literal">_ttl</code>.</p></div><div class="navfooter"><span class="prev"><a href="docs-delete.html">
+</td></tr></tbody></table></div></div><div class="navfooter"><span class="prev"><a href="docs-delete.html">
               « 
               Delete API</a>
            
