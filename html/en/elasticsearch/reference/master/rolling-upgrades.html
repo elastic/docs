@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Breaking changes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index.html" title="Elasticsearch Reference [master]" /><link rel="prev" href="restart-upgrade.html" title="Full cluster restart upgrade" /><link rel="next" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Rolling upgrades</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="setup-upgrade.html" title="Upgrading" /><link rel="prev" href="backup.html" title="Back Up Your Data!" /><link rel="next" href="restart-upgrade.html" title="Full cluster restart upgrade" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,27 +573,81 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-node">Breaking changes </span></div><div class="navheader"><span class="prev"><a href="restart-upgrade.html">
+    </a></span> » <span class="breadcrumb-link"><a href="setup.html">Setup </a></span> » <span class="breadcrumb-link"><a href="setup-upgrade.html">Upgrading</a></span> » <span class="breadcrumb-node">Rolling upgrades</span></div><div class="navheader"><span class="prev"><a href="backup.html">
               « 
-              Full cluster restart upgrade</a>
+              Back Up Your Data!</a>
            
         </span><span class="next">
            
-          <a href="breaking-changes-2.0.html">Breaking changes in 2.0
+          <a href="restart-upgrade.html">Full cluster restart upgrade
                »
-            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="breaking-changes"></a>Breaking changes <a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><p>This section discusses the changes that you need to be aware of when migrating
-your application from one version of Elasticsearch to another.</p><p>As a general rule:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Migration between major versions — e.g. <code class="literal">1.x</code> to <code class="literal">2.x</code> —   requires a <a class="link" href="restart-upgrade.html" title="Full cluster restart upgrade">full cluster restart</a>.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="rolling-upgrades"></a>Rolling upgrades<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/rolling_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A rolling upgrade allows the Elasticsearch cluster to be upgraded one node at
+a time, with no downtime for end users.  Running multiple versions of
+Elasticsearch in the same cluster for any length of time beyond that required
+for an upgrade is not supported, as shards will not be replicated from the
+more recent version to the older version.</p><p>Consult this <a class="link" href="setup-upgrade.html" title="Upgrading">table</a> to verify that rolling upgrades are
+supported for your version of Elasticsearch.</p><p>To perform a rolling upgrade:</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_1_disable_shard_allocation"></a>Step 1: Disable shard allocation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/rolling_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When you shut down a node, the allocation process will immediately try to
+replicate the shards that were on that node to other nodes in the cluster,
+causing a lot of wasted I/O.  This can be avoided by disabling allocation
+before shutting down a node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /_cluster/settings
+{
+  "transient": {
+    "cluster.routing.allocation.enable": "none"
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/rolling-upgrades/1.json" target="sense">View in Sense</a></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_2_stop_non_essential_indexing_and_perform_a_synced_flush_optional"></a>Step 2: Stop non-essential indexing and perform a synced flush (Optional)<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/rolling_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Added in 1.6.0.</h4><p>Synced flush is only supported in Elasticsearch 1.6.0 and above.</p></div></div><p>You may happily continue indexing during the upgrade.  However, shard recovery
+will be much faster if you temporarily stop non-essential indexing and issue a
+<a class="link" href="indices-synced-flush.html" title="Synced Flush">synced-flush</a> request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">POST /_flush/synced</pre></div><a class="sense_widget" href="sense_widget.html?snippets/rolling-upgrades/2.json" target="sense">View in Sense</a><p>A synced flush request is a “best effort” operation. It will fail if there
+are any pending indexing operations, but it is safe to reissue the request
+multiple times if necessary.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="upgrade-node"></a>Step 3: Stop and upgrade a single node<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/rolling_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Shut down one of the nodes in the cluster <span class="strong"><strong>before</strong></span> starting the upgrade.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>When using the zip or tarball packages, the <code class="literal">config</code>, <code class="literal">data</code>, <code class="literal">logs</code> and
+<code class="literal">plugins</code> directories are placed within the Elasticsearch home directory by
+default.</p><p>It is a good idea to place these directories in a different location so that
+there is no chance of deleting them when upgrading Elasticsearch.  These
+custom paths can be <a class="link" href="setup-configuration.html#paths" title="Pathsedit">configured</a> with the <code class="literal">path.config</code> and
+<code class="literal">path.data</code> settings.</p><p>The Debian and RPM packages place these directories in the
+<a class="link" href="setup-dir-layout.html" title="Directory Layout">appropriate place</a> for each operating system.</p></div></div><p>To upgrade using a <a class="link" href="setup-repositories.html" title="Repositories">Debian or RPM</a> package:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Use <code class="literal">rpm</code> or <code class="literal">dpkg</code> to install the new package.  All files should be
+    placed in their proper locations, and config files should not be
+    overwritten.
+</li></ul></div><p>To upgrade using a zip or compressed tarball:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Extract the zip or tarball to a new directory, to be sure that you don’t
+    overwrite the <code class="literal">config</code> or <code class="literal">data</code> directories.
 </li><li class="listitem">
-Migration between minor versions — e.g. <code class="literal">1.x</code> to <code class="literal">1.y</code> — can be
-  performed by <a class="link" href="rolling-upgrades.html" title="Rolling upgrades">upgrading one node at a time</a>.
-</li></ul></div><p>See <a class="xref" href="setup-upgrade.html" title="Upgrading"><em>Upgrading</em></a> for more info.</p></div></div><div class="navfooter"><span class="prev"><a href="restart-upgrade.html">
+Either copy the files in the <code class="literal">config</code> directory from your old installation
+    to your new installation, or use the <code class="literal">--path.config</code> option on the command
+    line to point to an external config directory.
+</li><li class="listitem">
+Either copy the files in the <code class="literal">data</code> directory from your old installation
+    to your new installation, or configure the location of the data directory
+    in the <code class="literal">config/elasticsearch.yml</code> file, with the <code class="literal">path.data</code> setting.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_4_start_the_upgraded_node"></a>Step 4: Start the upgraded node<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/rolling_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Start the now upgraded node and confirm that it joins the cluster by checking
+the log file or by checking the output of this request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/nodes</pre></div><a class="sense_widget" href="sense_widget.html?snippets/rolling-upgrades/3.json" target="sense">View in Sense</a></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_5_reenable_shard_allocation"></a>Step 5: Reenable shard allocation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/rolling_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Once the node has joined the cluster, reenable shard allocation to start using
+the node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /_cluster/settings
+{
+  "transient": {
+    "cluster.routing.allocation.enable": "all"
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/rolling-upgrades/4.json" target="sense">View in Sense</a></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_6_wait_for_the_node_to_recover"></a>Step 6: Wait for the node to recover<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/rolling_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You should wait for the cluster to finish shard allocation before upgrading
+the next node.  You can check on progress with the <a class="link" href="cat-health.html" title="cat health"><code class="literal">_cat/health</code></a>
+request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/health</pre></div><a class="sense_widget" href="sense_widget.html?snippets/rolling-upgrades/5.json" target="sense">View in Sense</a><p>Wait for the <code class="literal">status</code> column to move from <code class="literal">yellow</code> to <code class="literal">green</code>.  Status <code class="literal">green</code>
+means that all primary and replica shards have been allocated.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>During a rolling upgrade, primary shards assigned to a node with the higher
+version will never have their replicas assigned to a node with the lower
+version, because the newer version may have a different data format which is
+not understood by the older version.</p><p>If it is not possible to assign the replica shards to another node with the
+higher version — e.g. if there is only one node with the higher version in
+the cluster — then the replica shards will remain unassigned and the
+cluster health will remain status <code class="literal">yellow</code>.</p><p>In this case, check that there are no initializing or relocating shards (the
+<code class="literal">init</code> and <code class="literal">relo</code> columns) before proceding.</p><p>As soon as another node is upgraded, the replicas should be assigned and the
+cluster health will reach status <code class="literal">green</code>.</p></div></div><p>Shards that have not been <a class="link" href="indices-synced-flush.html" title="Synced Flush">sync-flushed</a> may take some time to
+recover.  The recovery status of individual shards can be monitored with the
+<a class="link" href="cat-recovery.html" title="cat recovery"><code class="literal">_cat/recovery</code></a> request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/recovery</pre></div><a class="sense_widget" href="sense_widget.html?snippets/rolling-upgrades/6.json" target="sense">View in Sense</a><p>If you stopped indexing, then it is safe to resume indexing as soon as
+recovery has completed.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_7_repeat"></a>Step 7: Repeat<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/rolling_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When the cluster is stable and the node has recovered, repeat the above steps
+for all remaining nodes.</p></div></div><div class="navfooter"><span class="prev"><a href="backup.html">
               « 
-              Full cluster restart upgrade</a>
+              Back Up Your Data!</a>
            
         </span><span class="next">
            
-          <a href="breaking-changes-2.0.html">Breaking changes in 2.0
+          <a href="restart-upgrade.html">Full cluster restart upgrade
                »
             </a></span></div>
 <!-- end body -->

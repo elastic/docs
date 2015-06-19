@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Breaking changes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index.html" title="Elasticsearch Reference [master]" /><link rel="prev" href="restart-upgrade.html" title="Full cluster restart upgrade" /><link rel="next" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Full cluster restart upgrade</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="setup-upgrade.html" title="Upgrading" /><link rel="prev" href="rolling-upgrades.html" title="Rolling upgrades" /><link rel="next" href="breaking-changes.html" title="Breaking changes" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,27 +573,77 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-node">Breaking changes </span></div><div class="navheader"><span class="prev"><a href="restart-upgrade.html">
+    </a></span> » <span class="breadcrumb-link"><a href="setup.html">Setup </a></span> » <span class="breadcrumb-link"><a href="setup-upgrade.html">Upgrading</a></span> » <span class="breadcrumb-node">Full cluster restart upgrade</span></div><div class="navheader"><span class="prev"><a href="rolling-upgrades.html">
               « 
-              Full cluster restart upgrade</a>
+              Rolling upgrades</a>
            
         </span><span class="next">
            
-          <a href="breaking-changes-2.0.html">Breaking changes in 2.0
+          <a href="breaking-changes.html">Breaking changes 
                »
-            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="breaking-changes"></a>Breaking changes <a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><p>This section discusses the changes that you need to be aware of when migrating
-your application from one version of Elasticsearch to another.</p><p>As a general rule:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Migration between major versions — e.g. <code class="literal">1.x</code> to <code class="literal">2.x</code> —   requires a <a class="link" href="restart-upgrade.html" title="Full cluster restart upgrade">full cluster restart</a>.
-</li><li class="listitem">
-Migration between minor versions — e.g. <code class="literal">1.x</code> to <code class="literal">1.y</code> — can be
-  performed by <a class="link" href="rolling-upgrades.html" title="Rolling upgrades">upgrading one node at a time</a>.
-</li></ul></div><p>See <a class="xref" href="setup-upgrade.html" title="Upgrading"><em>Upgrading</em></a> for more info.</p></div></div><div class="navfooter"><span class="prev"><a href="restart-upgrade.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="restart-upgrade"></a>Full cluster restart upgrade<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/cluster_restart.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch requires a full cluster restart when upgrading across major
+versions: from 0.x to 1.x or from 1.x to 2.x.  Rolling upgrades are not
+supported across major versions.</p><p>The process to perform an upgrade with a full cluster restart is as follows:</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_1_disable_shard_allocation_2"></a>Step 1: Disable shard allocation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/cluster_restart.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When you shut down a node, the allocation process will immediately try to
+replicate the shards that were on that node to other nodes in the cluster,
+causing a lot of wasted I/O.  This can be avoided by disabling allocation
+before shutting down a node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.enable": "none"
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/restart-upgrade/1.json" target="sense">View in Sense</a><p>If upgrading from 0.90.x to 1.x, then use these settings instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.disable_allocation": false,
+    "cluster.routing.allocation.enable": "none"
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/restart-upgrade/2.json" target="sense">View in Sense</a></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_2_perform_a_synced_flush"></a>Step 2: Perform a synced flush<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/cluster_restart.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Added in 1.6.0.</h4><p>Synced flush is only supported in Elasticsearch 1.6.0 and above.</p></div></div><p>Shard recovery will be much faster if you stop indexing and issue a
+<a class="link" href="indices-synced-flush.html" title="Synced Flush">synced-flush</a> request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /_flush/synced</pre></div><a class="sense_widget" href="sense_widget.html?snippets/restart-upgrade/3.json" target="sense">View in Sense</a><p>A synced flush request is a “best effort” operation. It will fail if there
+are any pending indexing operations, but it is safe to reissue the request
+multiple times if necessary.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_3_shutdown_and_upgrade_all_nodes"></a>Step 3: Shutdown and upgrade all nodes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/cluster_restart.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Stop all Elasticsearch services on all nodes in the cluster. Each node can be
+upgraded following the same procedure described in <a class="xref" href="rolling-upgrades.html#upgrade-node" title="Step 3: Stop and upgrade a single node">Step 3: Stop and upgrade a single node</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_4_start_the_cluster"></a>Step 4: Start the cluster<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/cluster_restart.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you have dedicated master nodes — nodes with <code class="literal">node.master</code> set to
+<code class="literal">true</code>(the default) and <code class="literal">node.data</code> set to <code class="literal">false</code> —  then it is a good idea
+to start them first.  Wait for them to form a cluster and to elect a master
+before proceding with the data nodes. You can check progress by looking at the
+logs.</p><p>As soon as the <a class="link" href="modules-discovery-zen.html#master-election" title="Master Electionedit">minimum number of master-eligible nodes</a>
+have discovered each other, they will form a cluster and elect a master.  From
+that point on, the <a class="link" href="cat-health.html" title="cat health"><code class="literal">_cat/health</code></a> and <a class="link" href="cat-nodes.html" title="cat nodes"><code class="literal">_cat/nodes</code></a>
+APIs can be used to monitor nodes joining the cluster:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/health
+
+GET _cat/nodes</pre></div><a class="sense_widget" href="sense_widget.html?snippets/restart-upgrade/4.json" target="sense">View in Sense</a><p>Use these APIs to check that all nodes have successfully joined the cluster.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_5_wait_for_yellow"></a>Step 5: Wait for yellow<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/cluster_restart.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>As soon as each node has joined the cluster, it will start to recover any
+primary shards that are stored locally.  Initially, the
+<a class="link" href="cat-health.html" title="cat health"><code class="literal">_cat/health</code></a> request will report a <code class="literal">status</code> of <code class="literal">red</code>, meaning
+that not all primary shards have been allocated.</p><p>Once each node has recovered its local shards, the <code class="literal">status</code> will become
+<code class="literal">yellow</code>, meaning all primary shards have been recovered, but not all replica
+shards are allocated.  This is to be expected because allocation is still
+disabled.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_step_6_reenable_allocation"></a>Step 6: Reenable allocation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/cluster_restart.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Delaying the allocation of replicas until all nodes have joined the cluster
+allows the master to allocate replicas to nodes which already have local shard
+copies.   At this point, with all the nodes in the cluster, it is safe to
+reenable shard allocation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.enable": "all"
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/restart-upgrade/5.json" target="sense">View in Sense</a><p>If upgrading from 0.90.x to 1.x, then use these settings instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.disable_allocation": true,
+    "cluster.routing.allocation.enable": "all"
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/restart-upgrade/6.json" target="sense">View in Sense</a><p>The cluster will now start allocating replica shards to all data nodes. At this
+point it is safe to resume indexing and searching, but your cluster will
+recover more quickly if you can delay indexing and searching until all shards
+have recovered.</p><p>You can monitor progress with the <a class="link" href="cat-health.html" title="cat health"><code class="literal">_cat/health</code></a> and
+<a class="link" href="cat-recovery.html" title="cat recovery"><code class="literal">_cat/recovery</code></a> APIs:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/health
+
+GET _cat/recovery</pre></div><a class="sense_widget" href="sense_widget.html?snippets/restart-upgrade/7.json" target="sense">View in Sense</a><p>Once the <code class="literal">status</code> column in the <code class="literal">_cat/health</code> output has reached <code class="literal">green</code>, all
+primary and replica shards have been successfully allocated.</p></div></div><div class="navfooter"><span class="prev"><a href="rolling-upgrades.html">
               « 
-              Full cluster restart upgrade</a>
+              Rolling upgrades</a>
            
         </span><span class="next">
            
-          <a href="breaking-changes-2.0.html">Breaking changes in 2.0
+          <a href="breaking-changes.html">Breaking changes 
                »
             </a></span></div>
 <!-- end body -->
