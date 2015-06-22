@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Usage</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch for Apache Hadoop [2.1.rc]" /><link rel="up" href="es-yarn.html" title="Elasticsearch on YARN" /><link rel="prev" href="ey-setup.html" title="Understanding the YARN environment" /><link rel="next" href="reference.html" title="Elasticsearch for Apache Hadoop" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Apache Storm support</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch for Apache Hadoop [2.1]" /><link rel="up" href="reference.html" title="Elasticsearch for Apache Hadoop" /><link rel="prev" href="spark.html" title="Apache Spark support" /><link rel="next" href="mapping.html" title="Mapping and Types" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -572,96 +572,143 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch for Apache Hadoop
-      [2.1.rc]
-    </a></span> » <span class="breadcrumb-link"><a href="es-yarn.html">Elasticsearch on YARN </a></span> » <span class="breadcrumb-node">Usage</span></div><div class="navheader"><span class="prev"><a href="ey-setup.html">
+      [2.1]
+    </a></span> » <span class="breadcrumb-link"><a href="reference.html">Elasticsearch for Apache Hadoop </a></span> » <span class="breadcrumb-node">Apache Storm support</span></div><div class="navheader"><span class="prev"><a href="spark.html">
               « 
-              Understanding the YARN environment</a>
+              Apache Spark support</a>
            
         </span><span class="next">
            
-          <a href="reference.html">Elasticsearch for Apache Hadoop 
+          <a href="mapping.html">Mapping and Types
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="ey-usage"></a>Usage<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.rc/docs/src/reference/asciidoc/yarn/usage.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch on YARN allows through the command-line to provision, start, monitor and stop an Elasticsearch cluster inside a YARN environment.</p><p>Simply download elasticsearch-yarn-&lt;version&gt;.jar in a location of choice and make sure to have Hadoop/YARN available and configured in your classpath; double check through the <code class="literal">hadoop version</code> command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop version
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="storm"></a>Apache Storm support<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1/docs/src/reference/asciidoc/core/storm.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Added in 2.1.</p></div></div><div class="blockquote"><table border="0" class="blockquote" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p><a class="ulink" href="http://storm.incubator.apache.org" target="_top">Apache Storm</a> is a free and open source distributed realtime computation system. Storm makes it easy to reliably process unbounded streams of data, doing for realtime processing what Hadoop did for batch processing.</p></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">
+Storm website
+</span></td></tr></table></div><p>With Storm, one can compute, transform and filter data typically in a streaming scenario. As opposed to the rest of the libraries mentioned in this documentation, Apache Storm is a computational framework that is not tied to Map/Reduce itself however it does integrate with Hadoop, mainly through HDFS.</p><h3><a id="storm-installation"></a>Installation<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1/docs/src/reference/asciidoc/core/storm.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In order to use elasticsearch-hadoop, its jar needs to be available in Storm’s classpath. The Storm <a class="ulink" href="https://storm.incubator.apache.org/documentation/Documentation.html" target="_top">documentation</a> covers this in detail but in short, one can either have the jar available on all Storm nodes or have elasticsearch-hadoop part of the jar being deploy (which we recommend). The latter approach allows isolation between the jobs and since the jar is self-contained, can be easily be moved across environments without additional setup making it much more robust.</p><h3><a id="storm-configuration"></a>Configuration<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1/docs/src/reference/asciidoc/core/storm.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Storm integration supports the configuration options described in the <a class="xref" href="configuration.html" title="Configuration"><em>Configuration</em></a> chapter plus a few more that are specific to Storm, namely:</p><h4><a id="storm-cfg-spout"></a>Spout specific<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1/docs/src/reference/asciidoc/core/storm.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.storm.spout.reliable</code> (default false)
+</span></dt><dd>
+Indicates whether the dedicated <code class="literal">EsSpout</code> is <span class="emphasis"><em>reliable</em></span>, that is replays the documents in case of failure or not. By default it is set to <code class="literal">false</code> since replaying requires the documents to be kept in memory until are being acknowledged.
+</dd><dt><span class="term">
+<code class="literal">es.storm.spout.fields</code> (default "")
+</span></dt><dd>
+Specify what fields <code class="literal">EsSpout</code> will declare in its topology and extract from the returned documents. By default is unset meaning the documents are returned as <code class="literal">Map</code>s under the default field <code class="literal">doc</code>.
+</dd><dt><span class="term">
+<code class="literal">es.storm.spout.reliable.queue.size</code> (default 0)
+</span></dt><dd>
+Applicable only if <code class="literal">es.storm.spout.reliable</code> is <code class="literal">true</code>. Sets the size of the queue which holds documents in memory to be replayed until they are acknowledged. By default, the queue is <span class="emphasis"><em>unbounded</em></span> (<code class="literal">0</code>) however in a production environment
+it is indicated to limit the queue to limit the consumption of memory. If the queue is full, the <code class="literal">Bolt</code> drops any incoming <code class="literal">Tuple</code>s and throws an exception.
+</dd><dt><span class="term">
+<code class="literal">es.storm.spout.reliable.retries.per.tuple</code> (default 5)
+</span></dt><dd>
+Applicable only if <code class="literal">es.storm.spout.reliable</code> is <code class="literal">true</code>. Set the number of retries (replays) of a failed tuple before giving up. Setting it to a negative value will cause the tuple to be replayed until acknowledged.
+</dd><dt><span class="term">
+<code class="literal">es.storm.spout.reliable.handle.tuple.failure</code> (default abort)
+</span></dt><dd><p class="simpara">
+Applicable only if <code class="literal">es.storm.spout.reliable</code> is <code class="literal">true</code>. Indicates how to handle failing tuples after the number of retries is depleted. Possible values are :
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">ignore</code>
+</span></dt><dd>
+the tuple is discarded
+</dd><dt><span class="term">
+<code class="literal">warn</code>
+</span></dt><dd>
+a warning message is logged and the tuple is discarded
+</dd><dt><span class="term">
+<code class="literal">strict</code>
+</span></dt><dd>
+an exception is thrown, aborting the current job
+</dd></dl></div></dd></dl></div><h4><a id="storm-cfg-bolt"></a>Bolt specific<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1/docs/src/reference/asciidoc/core/storm.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.storm.bolt.write.ack</code> (default false)
+</span></dt><dd>
+Indicates whether the dedicated <code class="literal">EsBolt</code> is <span class="emphasis"><em>reliable</em></span>, that is acknowledges the <code class="literal">Tuple</code> <span class="emphasis"><em>after</em></span> it was written to Elasticsearch or the instance it receives it. By default it is <code class="literal">false</code>. Note that turning this on increases the memory requirements of the <code class="literal">Bolt</code> since it has to keep the data in memory until it is fully written.
+</dd><dt><span class="term">
+<code class="literal">es.storm.bolt.flush.entries.size</code> (default 1000)
+</span></dt><dd>
+The number of entries that trigger a <span class="emphasis"><em>micro-batch</em></span> write to Elasticsearch. By default, it uses the same value as <code class="literal">es.batch.size.entries</code> which, by default is <code class="literal">1000</code>.
+</dd><dt><span class="term">
+<code class="literal">es.storm.bolt.tick.tuple.flush</code> (default true)
+</span></dt><dd>
+Whether or not to flush the existing data if the <code class="literal">Bolt</code> receives a <a class="ulink" href="https://storm.incubator.apache.org/apidocs/" target="_top">Tick</a> tuple. This <span class="emphasis"><em>heart-beat</em></span>-like mechanism goes hand in hand with the flush limit above to create both a time and size trigger.
+When using Storm’s internal ticks, remember to set the tick interval:
+</dd></dl></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// tick every 2 seconds
+builder.setBolt(...).addConfiguration(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 2)</pre></div><h4><a id="storm-cfg-set"></a>Setting the configuration<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1/docs/src/reference/asciidoc/core/storm.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The configuration can be set through Storm’s <a class="ulink" href="https://storm.incubator.apache.org/apidocs/index.html?backtype/storm/Config.html" target="_top">Config</a> class, in which case they are available <span class="emphasis"><em>globally</em></span> or, individually for each <code class="literal">EsSpout</code> and <code class="literal">EsBolt</code> instance. In general, it is recommended to set globally <span class="emphasis"><em>only</em></span> the properties that apply to all the components and are unlikely to change:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Config conf = new Config();
+conf.put("es.index.auto.create", "true");
+StormSubmitter.submitTopology("myTopology", conf, topology);</pre></div><p>For this reason, typically, one should use the <span class="emphasis"><em>per-component</em></span> configuration model since it allows different configurations to be used within the same Storm topology:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map conf = new HashMap();
+conf.put("es.index.auto.create", "true");
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("esSpout", new EsSpout("index/type", conf));</pre></div><h3><a id="storm-write"></a>Writing data to Elasticsearch<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1/docs/src/reference/asciidoc/core/storm.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Through elasticsearch-hadoop, Elasticsearch is exposed to Storm through a native <code class="literal">Bolt</code>, namely <code class="literal">org.elasticsearch.storm.EsBolt</code> that writes the Storm <code class="literal">Tuple</code>s to Elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.storm.EsBolt; <a id="CO86-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
-Hadoop 2.4.1
-Subversion http://svn.apache.org/repos/asf/hadoop/common -r 1604318
-Compiled by jenkins on 2014-06-21T05:43Z
-Compiled with protoc 2.5.0
-From source with checksum bb7ac0a3c73dc131f4844b873c74b630
-This command was run using /opt/share/hadoop/common/hadoop-common-2.4.1.jar</pre></div><p>Once you have confirmed Hadoop is properly configured, do a basic sanity check for Elasticsearch on YARN by invoking <code class="literal">hadoop jar</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop jar elasticsearch-yarn-&lt;version&gt;.jar
-No command specified
-Usage:
-     -download-es  : Downloads Elasticsearch.zip
-     -install      : Installs/Provisions Elasticsearch-YARN into HDFS
-     -install-es   : Installs/Provisions Elasticsearch into HDFS
-     -start        : Starts provisioned Elasticsearch in YARN
-     -status       : Reports status of Elasticsearch in YARN
-     -stop         : Stops Elasticsearch in YARN
-     -help         : Prints this help
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("spout", new RandomSentenceSpout(), 10);
+builder.setBolt("es-bolt", new EsBolt<a id="CO86-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>("storm/docs"<a id="CO86-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>), 5<a id="CO86-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>)
+                                    .shuffleGrouping("spout");</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+elasticsearch-hadoop <code class="literal">EsBolt</code> package import
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">EsBolt</code> declaration
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Various constructors are available for <code class="literal">EsBolt</code> - at least the Elasticsearch resource under which the data is indexed, is required
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The number of <code class="literal">EsBolt</code> instances for this topology
+</p></td></tr></table></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The number of bolt instances depends highly on your topology and environment. In general a good rule of thumb is to take into account the number of the target index shards as well as the number of spouts sending data to it - a good formula is to take the minimum between the source spouts and the index shards; in this example 5. A high number of <code class="literal">Bolt</code>s does not translate to a bigger through-put - make sure the <code class="literal">Bolt</code>s are the bottleneck since increasing the number simply translates otherwise to wasted cycles.</p></div></div><p>For cases where the id (or other metadata fields like <code class="literal">ttl</code> or <code class="literal">timestamp</code>) of the document needs to be specified, one can do so by setting the appropriate <a class="link" href="configuration.html#cfg-mapping" title="Mappingedit">mapping</a> namely <code class="literal">es.mapping.id</code>. Thus assuming the documents contain a field called <code class="literal">sentenceId</code> which is unique and is suitable for an identifier, one can update the job configuration as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map conf = new HashMap();
+conf.put("es.mapping.id", "sentenceId");
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("esSpout", new EsSpout("index/type", conf));</pre></div><h4><a id="storm-write-json"></a>Writing existing JSON to Elasticsearch<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1/docs/src/reference/asciidoc/core/storm.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If the data passed to Storm is already in JSON format, <code class="literal">EsBolt</code> can pass it directly to Elasticsearch <span class="emphasis"><em>without</em></span> any transformation; the data is taken as is and sent over the wire. In such cases, one needs to indicate the JSON input by setting the <code class="literal">es.input.json</code> parameter to <code class="literal">true</code>. Further more,  the <code class="literal">Bolt</code> expects the receiving <code class="literal">Tuple</code> to contain only <span class="emphasis"><em>one</em></span> value/field representing the JSON document. By default, common <span class="emphasis"><em>textual</em></span> types are recognized, such as <code class="literal">chararray</code> or <code class="literal">bytearray</code>; otherwise it falls back to calling <code class="literal">toString</code> to get a hold of the JSON content.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";  <a id="CO87-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+String json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}";
 
-Configuration options can be specified _after_ each command; see the documentation for more information.</pre></div><p>Each command should be self-explanatory. The typical usage scenario is:</p><h3><a id="yarn-es-download"></a>Download the Elasticsearch version needed<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.rc/docs/src/reference/asciidoc/yarn/usage.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This is a <span class="emphasis"><em>one-time</em></span> action; if you already have Elasticsearch at hand, deploy it under <code class="literal">downloads</code> sub-folder. To wit:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop jar elasticsearch-yarn-&lt;version&gt; -download-es
-Downloading Elasticsearch 1.6.0
-Downloading ...........................................................................DONE</pre></div><p>If you want to use a different version of Elasticsearch, you can specify so through the <code class="literal">es.version</code> parameter (see the <a class="xref" href="ey-usage.html#yarn-options" title="Configurationedit">the section called “Configuration<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.rc/docs/src/reference/asciidoc/yarn/usage.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> section.</p><h3><a id="yarn-cfg-es"></a>(Optional) Configuring Elasticsearch<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.rc/docs/src/reference/asciidoc/yarn/usage.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the default Elasticsearch is not suitable, for example certain plugins need to be installed or the storage path needs to be defined as mentioned <a class="link" href="ey-setup.html#ev-setup-storage" title="Storage">here</a>, one should do so by modifying the Elasticsearch archive as it will serve as the blueprint of <span class="emphasis"><em>all</em></span> nodes installed within YARN.</p><h3><a id="yarn-provision-es"></a>Provision Elasticsearch into HDFS<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.rc/docs/src/reference/asciidoc/yarn/usage.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Now that we have downloaded Elasticsearch, let us upload it into HDFS so it becomes available to the Hadoop nodes.
-This is another <span class="emphasis"><em>one-time</em></span> action (as long as your HDFS cluster and the target location remain in place):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop jar elasticsearch-yarn-&lt;version&gt;.jar -install-es
+Map conf = new HashMap();
+conf.put("es.input.json", "true"); <a id="CO87-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
 
-Uploaded /opt/es-yarn/downloads/elasticsearch-&lt;version&gt;.zip to HDFS at hdfs://127.0.0.1:50463/apps/elasticsearch/elasticsearch-&lt;version&gt;.zip</pre></div><p>This command uploads the <code class="literal">elasticsearch-&lt;version&gt;.zip</code>  (that we just downloaded) to HDFS (based on the Hadoop configuration detected in the classpath) under <code class="literal">/apps/elasticsearch</code> folder. Again the location can be <a class="link" href="ey-usage.html#yarn-options" title="Configurationedit">changed</a> if needed.</p><p>Note that the uploaded ZIP can be configured accordingly to your setup - for example, one can include her own configuration (such as using a certain storage location) to override the defaults or for example certain plugins.
-The zip acts as a template so be sure to include everything that need in it.</p><h3><a id="yarn-provision"></a>Provision Elasticsearch-YARN into HDFS<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.rc/docs/src/reference/asciidoc/yarn/usage.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Let us do the same <span class="emphasis"><em>one-time</em></span> command with the Elasticsearch-YARN jar:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop jar elasticsearch-yarn-&lt;version&gt;.jar -install
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("json-spout", new StringSpout<a id="CO87-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>(Arrays.asList(json1, json2));
+builder.setBolt("es-bolt", new EsBolt("storm/json-trips", conf<a id="CO87-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>))
+                                    .shuffleGrouping("json-spout");</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO87-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+JSON document represented as a <code class="literal">String</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO87-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Option indicating the input is in JSON format
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO87-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Basic <code class="literal">Spout</code> which replays the given <code class="literal">String</code>s as <code class="literal">Tuples</code> with only one value
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO87-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Configure <code class="literal">EsBolt</code> to process JSON - the same setting can be passed through the global <code class="literal">Conf</code> object however it is typically convenient to define it <span class="emphasis"><em>locally</em></span>
+</p></td></tr></table></div><h4><a id="storm-write-dyn"></a>Writing to dynamic/multi-resources<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1/docs/src/reference/asciidoc/core/storm.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In cases where the data needs to be indexed based on its content, one can choose the target index based on a <code class="literal">Tuple</code> field.  Reusing the aforementioned <a class="link" href="configuration.html#cfg-multi-writes" title="Dynamic/multi resource writesedit">media example</a>, one can <span class="emphasis"><em>partition</em></span> the documents based on their type. Assuming the document tuple contains fields <code class="literal">media_type</code>, <code class="literal">title</code> and <code class="literal">year</code> one can index them as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">builder.setBolt("es-bolt",
+    new EsBolt("my-collection/{media_type}"<a id="CO88-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)).shuffleGrouping("spout");</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO88-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Resource pattern using field <code class="literal">type</code>
+</p></td></tr></table></div><p>For each tuple about to be written, elasticsearch-hadoop will extract the <code class="literal">type</code> field and use its value to determine the target resource. The functionality is also available when dealing with raw JSON - in this case, the value will be extracted from the JSON document itself.</p><p>The functionality is also available when dealing with raw JSON - in this case, the value will be extracted from the JSON document itself. Assuming the JSON source contains documents with the following structure:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "media_type":"game",<a id="CO89-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "title":"Final Fantasy VI",
+    "year":"1994"
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO89-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+field within the JSON document that will be used by the pattern
+</p></td></tr></table></div><p>the <code class="literal">EsBolt</code> with the configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map conf = new HashMap();
+conf.put("es.input.json", "true"); <a id="CO90-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
-Uploaded opt/es-yarn/elasticsearch-yarn-&lt;version&gt;.jar to HDFS at hdfs://127.0.0.1:50463/apps/elasticsearch/elasticsearch-yarn-&lt;version&gt;.jar</pre></div><p>You can verify the provisioning by interrogating HDFS either through the web console or <code class="literal">hadoop</code> CLI:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop fs -ls /apps/elasticsearch
-Found 2 items
--rw-r--r--   1 hdfs hdfs   30901787 2014-11-13 10:17 /apps/elasticsearch/elasticsearch-&lt;version&gt;.zip
--rw-r--r--   1 hdfs hdfs      52754 2014-11-13 16:16 /apps/elasticsearch/elasticsearch-yarn-&lt;version&gt;.jar</pre></div><h3><a id="yarn-start"></a>Start Elasticsearch on YARN<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.rc/docs/src/reference/asciidoc/yarn/usage.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Once the necessary artifacts are in HDFS, one can start Elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop jar elasticsearch-yarn-&lt;version&gt;.jar -start
-Launched a 1 node Elasticsearch-YARN cluster [application_1415813090693_0001@http://hadoop:8088/proxy/application_1415921358606_0001/] at Wed Nov 14 19:24:53 EET 2014</pre></div><p>By default only a single node is created; to start multiple nodes use the <code class="literal">containers</code> parameter (see <a class="xref" href="ey-usage.html#yarn-options" title="Configurationedit">the section called “Configuration<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.rc/docs/src/reference/asciidoc/yarn/usage.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for more information):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop jar elasticsearch-yarn-&lt;version&gt;.jar -start containers=2
-Launched a 2 nodes Elasticsearch-YARN cluster [application_1415921358606_0006@http://hadoop:8088/proxy/application_1415921358606_0006/] at Wed Nov 14 19:28:46 EET 2014</pre></div><p>That’s it!</p><h3><a id="yarn-status"></a>Get status of Elasticsearch clusters in YARN<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.rc/docs/src/reference/asciidoc/yarn/usage.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>There are plenty of tools in Hadoop to check running YARN applications; with Elasticsearch YARN try the <code class="literal">-status</code> command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop jar elasticsearch-yarn-&lt;version&gt;.jar -status
-Id                              State       Status     Start Time         Finish Time        Tracking URL
-application_1415921358606_0007  RUNNING     UNDEFINED  11/14/14 19:34 PM  N/A                http://hadoop:8088/proxy/application_1415921358606_0007/A</pre></div><p>If you prefer the web ui, point your browser to the cluster console (typically on port 8088 - <code class="literal">http://hadoop:8088/cluster</code>) and the newly created Elasticsearch cluster, or rather
-its <code class="literal">ApplicationMaster</code> will show up:</p><div class="informalfigure"><div class="mediaobject" align="center"><img src="yarn/img/yarn-app-list.png" align="middle" alt="AppManager List" /></div></div><p>One can inspect the containers manually by checking the container list (typically by accessing the <code class="literal">ApplicationManager</code> UI):</p><div class="informalfigure"><div class="mediaobject" align="center"><img src="yarn/img/yarn-container-list.png" align="middle" alt="Container List" /></div></div><p>You should be able to see the application and the associated containers marked as <code class="literal">RUNNING</code> ; if that is not the case, check out the logs to see what is wrong.</p><h3><a id="yarn-stop"></a>Stop Elasticsearch clusters in YARN<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.rc/docs/src/reference/asciidoc/yarn/usage.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To shutdown your cluster, use the <code class="literal">-stop</code> command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop jar elasticsearch-yarn-&lt;version&gt;.jar -stop
-Stopped Elasticsearch-YARN cluster with id application_1415921358606_0007</pre></div><h3><a id="yarn-options"></a>Configuration<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1.rc/docs/src/reference/asciidoc/yarn/usage.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elasticsearch on YARN offers various knobs for tweaking its behavior - all can be passed as options after each command, overriding the default configuration. Multiple options can be specified (if you specify the same parameter multiple times, the last one wins):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop jar elasticsearch-yarn-&lt;version&gt;.jar [-command] [option.name]=[option.value] [option.name]=[option.value]</pre></div><p>The following parameter are available:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">download.local.dir</code> (default ./downloads/)
-</span></dt><dd>
-Local folder where Elasticsearch on YARN downloads remote artifacts (like <code class="literal">Elasticsearch.zip</code>)
-</dd><dt><span class="term">
-<code class="literal">hdfs.upload.dir</code> (default /apps/elasticsearch/)
-</span></dt><dd>
-HDFS folder used for provisioning
-</dd><dt><span class="term">
-<code class="literal">es.version</code> (default 1.6.0)
-</span></dt><dd>
-Elasticsearch version used for downloading, provisioning HDFS and running on the YARN cluster
-</dd><dt><span class="term">
-<code class="literal">containers</code> (default 1)
-</span></dt><dd>
-The number of containers or Elasticsearch nodes for starting the cluster
-</dd><dt><span class="term">
-<code class="literal">container.mem</code> (default 2048)
-</span></dt><dd>
-Memory requested for <span class="emphasis"><em>each</em></span> YARN container
-</dd><dt><span class="term">
-<code class="literal">container.vcores</code> (default 1)
-</span></dt><dd>
-CPU cores requested for <span class="emphasis"><em>each</em></span> YARN container
-</dd><dt><span class="term">
-<code class="literal">container.priority</code> (default -1)
-</span></dt><dd>
-YARN queue priority for each container
-</dd><dt><span class="term">
-<code class="literal">env.&lt;NAME&gt;</code>
-</span></dt><dd>
-Pattern for setting up environment variables on each container - each property starting with <code class="literal">env.</code> prefix will be set remotely on <span class="emphasis"><em>each</em></span> container:
-</dd></dl></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop jar elasticsearch-yarn-&lt;version&gt;.jar [-command] env.ES_USE_GC_LOGGING=true env.PROP=someValue</pre></div><p>Sets up on each container two variables <code class="literal">ES_USE_GC_LOGGING</code> and <code class="literal">PROP</code>.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">loadConfig</code>
-</span></dt><dd>
-Property file to be loaded as configuration. That is, instead of specifying the options in each command, save them to a file and use that instead.
-For example the above example, the two options (for setting the container environment variables) can be moved into a properties file
-</dd></dl></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-init"># extra-cfg.properties
-env.ES_USE_GC_LOGGING=true
-env.PROP=someValue</pre></div><p>and tell Elasticsearch on YARN to load it:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ hadoop jar elasticsearch-yarn-&lt;version&gt;.jar [-command] loadConfig=extra-cfg.properties</pre></div></div><div class="navfooter"><span class="prev"><a href="ey-setup.html">
+builder.setBolt("es-bolt",
+    new EsBolt("my-collection-{media_type}/{year}"<a id="CO90-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>, conf<a id="CO90-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>)).shuffleGrouping("spout");</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO90-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Option indicating the input is in JSON format
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO90-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Resource pattern - notice how the pattern is used both in the index and the type
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO90-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Pass configuration to <code class="literal">EsBolt</code> to indicate the JSON input
+</p></td></tr></table></div><h4><a id="storm-read"></a>Reading data from Elasticsearch<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1/docs/src/reference/asciidoc/core/storm.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>As you can expect, for reading data (typically executing queries) elasticsearch-hadoop offers a dedicated <code class="literal">Spout</code> through <code class="literal">org.elasticsearch.storm.EsSpout</code> which executes the query in Elasticsearch and <span class="emphasis"><em>streams</em></span> the results back to Apache Storm:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.storm.EsSpout; <a id="CO91-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("es-spout", new EsSpout<a id="CO91-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>("storm/docs"<a id="CO91-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>, "?q=me*<a id="CO91-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>), 5<a id="CO91-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>);
+builder.setBolt("bolt", new PrinterBolt()).shuffleGrouping("es-spout");</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO91-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+elasticsearch-hadoop <code class="literal">EsSpout</code> package import
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO91-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">EsSpout</code> declaration
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO91-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The source Elasticsearch resource (index and type) for the data
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO91-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The query to execute (optional) - if no query is specified, the entire indexed data is streamed
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO91-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The number of <code class="literal">EsSpout</code> instances for this topology. The number should <span class="strong"><strong>not</strong></span> be greater than the number of shards available for an index; if it does, it just wastes CPU cycles without improving performance.
+</p></td></tr></table></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The number of <code class="literal">Spout</code> instances depends highly on your topology and environment. Typically you should use the number of shards of your target data as an indicator - if you index has 5 shards, create 5 <code class="literal">EsSpout</code>s; however sometimes the shards number might be considerably bigger than the number of <code class="literal">Spout</code>s you can add to your Apache Storm cluster; in that case, it is better to limit the number of <code class="literal">EsSpout</code> instances. Last but not least, adding more <code class="literal">EsSpout</code> instances than the number of shards of the source index does <span class="strong"><strong>not</strong></span> improve performance; in fact the extra instances will just waste resources without processing anything.</p></div></div><h5><a id="_customizing_literal_esspout_literal_fields"></a>Customizing <code class="literal">EsSpout</code> fields<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.1/docs/src/reference/asciidoc/core/storm.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Since Storm requires each <code class="literal">Spout</code> to declare its fields when creating a topology, by default <code class="literal">EsSpout</code> declares for its tuples a generic <code class="literal">doc</code> field containing the documents returned (one per tuple) from Elasticsearch. When dealing with structured data (documents sharing the same fields), one can configure the <code class="literal">EsSpout</code> to <span class="emphasis"><em>declare</em></span> as fields the document properties effectively <span class="emphasis"><em>unwrapping</em></span> the document as a <code class="literal">Tuple</code>. By setting up <code class="literal">es.storm.spout.fields</code>, <code class="literal">EsSpout</code> will use them indicate to the Storm topology the tuple content and extract them from the returned document.</p><p>For example if the Elasticsearch documents contain 3 fields: <code class="literal">name</code>, <code class="literal">age</code> and <code class="literal">gender</code> by setting <code class="literal">es.storm.spout.fields</code> to <code class="literal">name, age, gender</code>, instead of returning a tuple with one field (<code class="literal">doc</code>, containing the document), a tuple containing
+the three named fields (<code class="literal">name</code>, <code class="literal">age</code> and <code class="literal">gender</code>) will be returned instead.</p></div><div class="navfooter"><span class="prev"><a href="spark.html">
               « 
-              Understanding the YARN environment</a>
+              Apache Spark support</a>
            
         </span><span class="next">
            
-          <a href="reference.html">Elasticsearch for Apache Hadoop 
+          <a href="mapping.html">Mapping and Types
                »
             </a></span></div>
 <!-- end body -->
