@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update Indices Settings</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-aliases.html" title="Index Aliases" /><link rel="next" href="indices-get-settings.html" title="Get Settings" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shard Allocation Filtering</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-cluster.html" title="Cluster" /><link rel="prev" href="allocation-awareness.html" title="Shard Allocation Awareness" /><link rel="next" href="misc-cluster.html" title="Miscellaneous cluster settings" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,61 +573,79 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-node">Update Indices Settings</span></div><div class="navheader"><span class="prev"><a href="indices-aliases.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-cluster.html">Cluster</a></span> » <span class="breadcrumb-node">Shard Allocation Filtering</span></div><div class="navheader"><span class="prev"><a href="allocation-awareness.html">
               « 
-              Index Aliases</a>
+              Shard Allocation Awareness</a>
            
         </span><span class="next">
            
-          <a href="indices-get-settings.html">Get Settings
+          <a href="misc-cluster.html">Miscellaneous cluster settings
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-update-settings"></a>Update Indices Settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Change specific index level settings in real time.</p><p>The REST endpoint is <code class="literal">/_settings</code> (to update all indices) or
-<code class="literal">{index}/_settings</code> to update one (or more) indices settings. The body
-of the request includes the updated settings, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "index" : {
-        "number_of_replicas" : 4
-    }
-}</pre></div><p>The above will change the number of replicas to 4 from the current
-number of replicas. Here is a curl example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'localhost:9200/my_index/_settings' -d '
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="allocation-filtering"></a>Shard Allocation Filtering<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/allocation_filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>While <a class="xref" href="index-modules-allocation.html" title="Index Shard Allocation"><em>Index Shard Allocation</em></a> provides <span class="strong"><strong>per-index</strong></span> settings to control the
+allocation of shards to nodes, cluster-level shard allocation filtering allows
+you to allow or disallow the allocation of shards from <span class="strong"><strong>any</strong></span> index to
+particular nodes.</p><p>The typical use case for cluster-wide shard allocation filtering is when you
+want to decommision a node, and you would like to move the shards from that
+node to other nodes in the cluster before shutting it down.</p><p>For instance, we could decomission a node using its IP address as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /_cluster/settings
 {
-    "index" : {
-        "number_of_replicas" : 4
-    }
-}'</pre></div><p>The list of per-index settings which can be updated dynamically on live
-indices can be found in <a class="xref" href="index-modules.html" title="Index Modules">Index Modules </a>.</p><h3><a id="bulk"></a>Bulk Indexing Usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For example, the update settings API can be used to dynamically change
-the index from being more performant for bulk indexing, and then move it
-to more real time indexing state. Before the bulk indexing is started,
-use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index" : {
-        "refresh_interval" : "-1"
-    } }'</pre></div><p>(Another optimization option is to start the index without any replicas,
-and only later adding them, but that really depends on the use case).</p><p>Then, once bulk indexing is done, the settings can be updated (back to
-the defaults for example):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index" : {
-        "refresh_interval" : "1s"
-    } }'</pre></div><p>And, an optimize should be called:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'http://localhost:9200/test/_optimize?max_num_segments=5'</pre></div><h3><a id="update-settings-analysis"></a>Updating Index Analysis<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>It is also possible to define new <a class="link" href="analysis.html" title="Analysis">analyzers</a> for the index.
-But it is required to <a class="link" href="indices-open-close.html" title="Open / Close Index API">close</a> the index
-first and <a class="link" href="indices-open-close.html" title="Open / Close Index API">open</a> it after the changes are made.</p><p>For example if <code class="literal">content</code> analyzer hasn’t been defined on <code class="literal">myindex</code> yet
-you can use the following commands to add it:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/myindex/_close'
-
-curl -XPUT 'localhost:9200/myindex/_settings' -d '{
-  "analysis" : {
-    "analyzer":{
-      "content":{
-        "type":"custom",
-        "tokenizer":"whitespace"
-      }
-    }
+  "transient" : {
+    "cluster.routing.allocation.exclude._ip" : "10.0.0.1"
   }
-}'
-
-curl -XPOST 'localhost:9200/myindex/_open'</pre></div></div><div class="navfooter"><span class="prev"><a href="indices-aliases.html">
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/allocation-filtering/1.json" target="sense">View in Sense</a><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Shards will only be relocated if it is possible to do so without
+breaking another routing constraint, such as never allocating a primary and
+replica shard to the same node.</p></div></div><p>Cluster-wide shard allocation filtering works in the same way as index-level
+shard allocation filtering (see <a class="xref" href="index-modules-allocation.html" title="Index Shard Allocation"><em>Index Shard Allocation</em></a> for details).</p><p>The available <span class="emphasis"><em>dynamic</em></span> cluster settings are as follows, where <code class="literal">{attribute}</code>
+refers to an arbitrary node attribute.:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">cluster.routing.allocation.include.{attribute}</code>
+</span></dt><dd>
+    Assign the index to a node whose <code class="literal">{attribute}</code> has at least one of the
+    comma-separated values.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.require.{attribute}</code>
+</span></dt><dd>
+    Assign the index to a node whose <code class="literal">{attribute}</code> has <span class="emphasis"><em>all</em></span> of the
+    comma-separated values.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.exclude.{attribute}</code>
+</span></dt><dd>
+    Assign the index to a node whose <code class="literal">{attribute}</code> has <span class="emphasis"><em>none</em></span> of the
+    comma-separated values.
+</dd></dl></div><p>These special attributes are also supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">_name</code>
+</p>
+</td><td valign="top">
+<p>
+Match nodes by node name
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">_ip</code>
+</p>
+</td><td valign="top">
+<p>
+Match nodes by IP address (the IP address associated with the hostname)
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">_host</code>
+</p>
+</td><td valign="top">
+<p>
+Match nodes by hostname
+</p>
+</td></tr></tbody></table></div><p>All attribute values can be specified with wildcards, eg:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT _cluster/settings
+{
+  "transient": {
+    "cluster.routing.allocation.include._ip": "192.168.2.*"
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/allocation-filtering/2.json" target="sense">View in Sense</a></div><div class="navfooter"><span class="prev"><a href="allocation-awareness.html">
               « 
-              Index Aliases</a>
+              Shard Allocation Awareness</a>
            
         </span><span class="next">
            
-          <a href="indices-get-settings.html">Get Settings
+          <a href="misc-cluster.html">Miscellaneous cluster settings
                »
             </a></span></div>
 <!-- end body -->

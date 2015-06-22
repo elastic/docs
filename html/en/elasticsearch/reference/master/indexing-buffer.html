@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update Indices Settings</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-aliases.html" title="Index Aliases" /><link rel="next" href="indices-get-settings.html" title="Get Settings" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Indexing Buffer</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-indices.html" title="Indices" /><link rel="prev" href="filter-cache.html" title="Node Filter Cache" /><link rel="next" href="shard-query-cache.html" title="Shard query cache" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,61 +573,45 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-node">Update Indices Settings</span></div><div class="navheader"><span class="prev"><a href="indices-aliases.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-indices.html">Indices</a></span> » <span class="breadcrumb-node">Indexing Buffer</span></div><div class="navheader"><span class="prev"><a href="filter-cache.html">
               « 
-              Index Aliases</a>
+              Node Filter Cache</a>
            
         </span><span class="next">
            
-          <a href="indices-get-settings.html">Get Settings
+          <a href="shard-query-cache.html">Shard query cache
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-update-settings"></a>Update Indices Settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Change specific index level settings in real time.</p><p>The REST endpoint is <code class="literal">/_settings</code> (to update all indices) or
-<code class="literal">{index}/_settings</code> to update one (or more) indices settings. The body
-of the request includes the updated settings, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "index" : {
-        "number_of_replicas" : 4
-    }
-}</pre></div><p>The above will change the number of replicas to 4 from the current
-number of replicas. Here is a curl example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'localhost:9200/my_index/_settings' -d '
-{
-    "index" : {
-        "number_of_replicas" : 4
-    }
-}'</pre></div><p>The list of per-index settings which can be updated dynamically on live
-indices can be found in <a class="xref" href="index-modules.html" title="Index Modules">Index Modules </a>.</p><h3><a id="bulk"></a>Bulk Indexing Usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For example, the update settings API can be used to dynamically change
-the index from being more performant for bulk indexing, and then move it
-to more real time indexing state. Before the bulk indexing is started,
-use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index" : {
-        "refresh_interval" : "-1"
-    } }'</pre></div><p>(Another optimization option is to start the index without any replicas,
-and only later adding them, but that really depends on the use case).</p><p>Then, once bulk indexing is done, the settings can be updated (back to
-the defaults for example):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index" : {
-        "refresh_interval" : "1s"
-    } }'</pre></div><p>And, an optimize should be called:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'http://localhost:9200/test/_optimize?max_num_segments=5'</pre></div><h3><a id="update-settings-analysis"></a>Updating Index Analysis<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>It is also possible to define new <a class="link" href="analysis.html" title="Analysis">analyzers</a> for the index.
-But it is required to <a class="link" href="indices-open-close.html" title="Open / Close Index API">close</a> the index
-first and <a class="link" href="indices-open-close.html" title="Open / Close Index API">open</a> it after the changes are made.</p><p>For example if <code class="literal">content</code> analyzer hasn’t been defined on <code class="literal">myindex</code> yet
-you can use the following commands to add it:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/myindex/_close'
-
-curl -XPUT 'localhost:9200/myindex/_settings' -d '{
-  "analysis" : {
-    "analyzer":{
-      "content":{
-        "type":"custom",
-        "tokenizer":"whitespace"
-      }
-    }
-  }
-}'
-
-curl -XPOST 'localhost:9200/myindex/_open'</pre></div></div><div class="navfooter"><span class="prev"><a href="indices-aliases.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="indexing-buffer"></a>Indexing Buffer<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/indexing_buffer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The indexing buffer is used to store newly indexed documents.  When it fills
+up, the documents in the buffer are written to a segment on disk. It is divided
+between all shards on the node.</p><p>The following settings are <span class="emphasis"><em>static</em></span> and must be configured on every data node
+in the cluster:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">indices.memory.index_buffer_size</code>
+</span></dt><dd>
+    Accepts either a percentage or a byte size value. It defaults to <code class="literal">10%</code>,
+    meaning that <code class="literal">10%</code> of the total heap allocated to a node will be used as the
+    indexing buffer size.
+</dd><dt><span class="term">
+<code class="literal">indices.memory.min_index_buffer_size</code>
+</span></dt><dd>
+    If the <code class="literal">index_buffer_size</code> is specified as a percentage, then this
+    setting can be used to specify an absolute minimum.  Defaults to <code class="literal">48mb</code>.
+</dd><dt><span class="term">
+<code class="literal">indices.memory.max_index_buffer_size</code>
+</span></dt><dd>
+    If the <code class="literal">index_buffer_size</code> is specified as a percentage, then this
+    setting can be used to specify an absolute maximum.  Defaults to unbounded.
+</dd><dt><span class="term">
+<code class="literal">indices.memory.min_shard_index_buffer_size</code>
+</span></dt><dd>
+    Sets a hard lower limit for the memory allocated per shard for its own
+    indexing buffer. Defaults to <code class="literal">4mb</code>.
+</dd></dl></div></div><div class="navfooter"><span class="prev"><a href="filter-cache.html">
               « 
-              Index Aliases</a>
+              Node Filter Cache</a>
            
         </span><span class="next">
            
-          <a href="indices-get-settings.html">Get Settings
+          <a href="shard-query-cache.html">Shard query cache
                »
             </a></span></div>
 <!-- end body -->

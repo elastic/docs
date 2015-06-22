@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Local Gateway</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-gateway.html" title="Gateway" /><link rel="prev" href="modules-gateway.html" title="Gateway" /><link rel="next" href="modules-http.html" title="HTTP" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Fielddata</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-indices.html" title="Indices" /><link rel="prev" href="circuit-breaker.html" title="Circuit Breaker" /><link rel="next" href="filter-cache.html" title="Node Filter Cache" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,68 +573,45 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-gateway.html">Gateway</a></span> » <span class="breadcrumb-node">Local Gateway</span></div><div class="navheader"><span class="prev"><a href="modules-gateway.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-indices.html">Indices</a></span> » <span class="breadcrumb-node">Fielddata</span></div><div class="navheader"><span class="prev"><a href="circuit-breaker.html">
               « 
-              Gateway</a>
+              Circuit Breaker</a>
            
         </span><span class="next">
            
-          <a href="modules-http.html">HTTP
+          <a href="filter-cache.html">Node Filter Cache
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-gateway-local"></a>Local Gateway<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/gateway/local.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The local gateway allows for recovery of the full cluster state and
-indices from the local storage of each node, and does not require a
-common node level shared storage.</p><p>Note, different from shared gateway types, the persistency to the local
-gateway is <span class="strong"><strong>not</strong></span> done in an async manner. Once an operation is
-performed, the data is there for the local gateway to recover it in case
-of full cluster failure.</p><p>It is important to configure the <code class="literal">gateway.recover_after_nodes</code> setting
-to include most of the expected nodes to be started after a full cluster
-restart. This will insure that the latest cluster state is recovered.
-For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">gateway:
-    recover_after_nodes: 3
-    expected_nodes: 5</pre></div><h4><a id="_dangling_indices"></a>Dangling indices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/gateway/local.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When a node joins the cluster, any shards/indices stored in its  local <code class="literal">data/</code>
-directory which do not already exist in the cluster will be imported into the
-cluster by default.  This functionality has two purposes:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-If a new master node is started which is unaware of the other indices in
-   the cluster, adding the old nodes will cause the old indices to be
-   imported, instead of being deleted.
-</li><li class="listitem">
-An old index can be added to an existing cluster by copying it to the
-   <code class="literal">data/</code> directory of a new node, starting the node and letting it join
-   the cluster. Once the index has been replicated to other nodes in the
-   cluster, the new node can be shut down and removed.
-</li></ol></div><p>The import of dangling indices can be controlled with the
-<code class="literal">gateway.auto_import_dangled</code> which accepts:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">yes</code>
-</p>
-</td><td valign="top">
-<p>
-    Import dangling indices into the cluster (default).
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">close</code>
-</p>
-</td><td valign="top">
-<p>
-    Import dangling indices into the cluster state, but leave them closed.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">no</code>
-</p>
-</td><td valign="top">
-<p>
-    Delete dangling indices after <code class="literal">gateway.dangling_timeout</code>, which
-    defaults to 2 hours.
-</p>
-</td></tr></tbody></table></div></div><div class="navfooter"><span class="prev"><a href="modules-gateway.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-fielddata"></a>Fielddata<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The field data cache is used mainly when sorting on or computing aggregations
+on a field. It loads all the field values to memory in order to provide fast
+document based access to those values. The field data cache can be
+expensive to build for a field, so its recommended to have enough memory
+to allocate it, and to keep it loaded.</p><p>The amount of memory used for the field
+data cache can be controlled using <code class="literal">indices.fielddata.cache.size</code>. Note:
+reloading  the field data which does not fit into your cache will be expensive
+and  perform poorly.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">indices.fielddata.cache.size</code>
+</span></dt><dd>
+    The max size of the field data cache, eg <code class="literal">30%</code> of node heap space, or an
+    absolute value, eg <code class="literal">12GB</code>. Defaults to unbounded.  Also see
+    <a class="xref" href="circuit-breaker.html#fielddata-circuit-breaker" title="Field data circuit breakeredit">the section called “Field data circuit breaker<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/circuit_breaker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a>.
+</dd><dt><span class="term">
+<code class="literal">indices.fielddata.cache.expire</code>
+</span></dt><dd>
+    <span class="experimental">
+      [<span class="exp_title">experimental</span>]
+      <span class="detail">This functionality is experimental and may be changed or removed completely in a future release.</span></span> A time based setting that expires field data after a
+    certain time of inactivity. Defaults to <code class="literal">-1</code>. For example, can be set to
+    <code class="literal">5m</code> for a 5 minute expiry.
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>These are static settings which must be configured on every data node in
+the cluster.</p></div></div><h4><a id="fielddata-monitoring"></a>Monitoring field data<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>You can monitor memory usage for field data as well as the field data circuit
+breaker using
+<a class="link" href="cluster-nodes-stats.html" title="Nodes Stats">Nodes Stats API</a></p></div><div class="navfooter"><span class="prev"><a href="circuit-breaker.html">
               « 
-              Gateway</a>
+              Circuit Breaker</a>
            
         </span><span class="next">
            
-          <a href="modules-http.html">HTTP
+          <a href="filter-cache.html">Node Filter Cache
                »
             </a></span></div>
 <!-- end body -->

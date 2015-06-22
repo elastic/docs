@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update Indices Settings</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-aliases.html" title="Index Aliases" /><link rel="next" href="indices-get-settings.html" title="Get Settings" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shard query cache</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-indices.html" title="Indices" /><link rel="prev" href="indexing-buffer.html" title="Indexing Buffer" /><link rel="next" href="recovery.html" title="Indices Recovery" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,61 +573,69 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-node">Update Indices Settings</span></div><div class="navheader"><span class="prev"><a href="indices-aliases.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-indices.html">Indices</a></span> » <span class="breadcrumb-node">Shard query cache</span></div><div class="navheader"><span class="prev"><a href="indexing-buffer.html">
               « 
-              Index Aliases</a>
+              Indexing Buffer</a>
            
         </span><span class="next">
            
-          <a href="indices-get-settings.html">Get Settings
+          <a href="recovery.html">Indices Recovery
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-update-settings"></a>Update Indices Settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Change specific index level settings in real time.</p><p>The REST endpoint is <code class="literal">/_settings</code> (to update all indices) or
-<code class="literal">{index}/_settings</code> to update one (or more) indices settings. The body
-of the request includes the updated settings, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "index" : {
-        "number_of_replicas" : 4
-    }
-}</pre></div><p>The above will change the number of replicas to 4 from the current
-number of replicas. Here is a curl example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'localhost:9200/my_index/_settings' -d '
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="shard-query-cache"></a>Shard query cache<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/query-cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When a search request is run against an index or against many indices, each
+involved shard executes the search locally and returns its local results to
+the <span class="emphasis"><em>coordinating node</em></span>, which combines these shard-level results into a
+“global” result set.</p><p>The shard-level query cache module caches the local results on each shard.
+This allows frequently used (and potentially heavy) search requests to return
+results almost instantly. The query cache is a very good fit for the logging
+use case, where only the most recent index is being actively updated — results from older indices will be served directly from the cache.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>For now, the query cache will only cache the results of search requests
+where <code class="literal">size=0</code>, so it will not cache <code class="literal">hits</code>,
+but it will cache <code class="literal">hits.total</code>,  <a class="link" href="search-aggregations.html" title="Aggregations">aggregations</a>, and
+<a class="link" href="search-suggesters.html" title="Suggesters">suggestions</a>.</p><p>Queries that use <code class="literal">now</code> (see <a class="xref" href="mapping-date-format.html#date-math" title="Date Mathedit">the section called “Date Math<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/date-format.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a>) cannot be cached.</p></div></div><h4><a id="_cache_invalidation"></a>Cache invalidation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/query-cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The cache is smart — it keeps the same <span class="emphasis"><em>near real-time</em></span> promise as uncached
+search.</p><p>Cached results are invalidated automatically whenever the shard refreshes, but
+only if the data in the shard has actually changed.  In other words, you will
+always get the same results from the cache as you would for an uncached search
+request.</p><p>The longer the refresh interval, the longer that cached entries will remain
+valid. If the cache is full, the least recently used cache keys will be
+evicted.</p><p>The cache can be expired manually with the <a class="link" href="indices-clearcache.html" title="Clear Cache"><code class="literal">clear-cache</code> API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl -XPOST 'localhost:9200/kimchy,elasticsearch/_cache/clear?query_cache=true'</pre></div><h4><a id="_enabling_caching_by_default"></a>Enabling caching by default<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/query-cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The cache is not enabled by default, but can be enabled when creating a new
+index as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl -XPUT localhost:9200/my_index -d'
 {
-    "index" : {
-        "number_of_replicas" : 4
-    }
-}'</pre></div><p>The list of per-index settings which can be updated dynamically on live
-indices can be found in <a class="xref" href="index-modules.html" title="Index Modules">Index Modules </a>.</p><h3><a id="bulk"></a>Bulk Indexing Usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For example, the update settings API can be used to dynamically change
-the index from being more performant for bulk indexing, and then move it
-to more real time indexing state. Before the bulk indexing is started,
-use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index" : {
-        "refresh_interval" : "-1"
-    } }'</pre></div><p>(Another optimization option is to start the index without any replicas,
-and only later adding them, but that really depends on the use case).</p><p>Then, once bulk indexing is done, the settings can be updated (back to
-the defaults for example):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index" : {
-        "refresh_interval" : "1s"
-    } }'</pre></div><p>And, an optimize should be called:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'http://localhost:9200/test/_optimize?max_num_segments=5'</pre></div><h3><a id="update-settings-analysis"></a>Updating Index Analysis<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>It is also possible to define new <a class="link" href="analysis.html" title="Analysis">analyzers</a> for the index.
-But it is required to <a class="link" href="indices-open-close.html" title="Open / Close Index API">close</a> the index
-first and <a class="link" href="indices-open-close.html" title="Open / Close Index API">open</a> it after the changes are made.</p><p>For example if <code class="literal">content</code> analyzer hasn’t been defined on <code class="literal">myindex</code> yet
-you can use the following commands to add it:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/myindex/_close'
-
-curl -XPUT 'localhost:9200/myindex/_settings' -d '{
-  "analysis" : {
-    "analyzer":{
-      "content":{
-        "type":"custom",
-        "tokenizer":"whitespace"
+  "settings": {
+    "index.cache.query.enable": true
+  }
+}
+'</pre></div><p>It can also be enabled or disabled dynamically on an existing index with the
+<a class="link" href="indices-update-settings.html" title="Update Indices Settings"><code class="literal">update-settings</code></a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl -XPUT localhost:9200/my_index/_settings -d'
+{ "index.cache.query.enable": true }
+'</pre></div><h4><a id="_enabling_caching_per_request"></a>Enabling caching per request<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/query-cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">query_cache</code> query-string parameter can be used to enable or disable
+caching on a <span class="strong"><strong>per-query</strong></span> basis.  If set, it overrides the index-level setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl 'localhost:9200/my_index/_search?query_cache=true' -d'
+{
+  "size": 0,
+  "aggs": {
+    "popular_colors": {
+      "terms": {
+        "field": "colors"
       }
     }
   }
-}'
-
-curl -XPOST 'localhost:9200/myindex/_open'</pre></div></div><div class="navfooter"><span class="prev"><a href="indices-aliases.html">
+}
+'</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If your query uses a script whose result is not deterministic (e.g.
+it uses a random function or references the current time) you should set the
+<code class="literal">query_cache</code> flag to <code class="literal">false</code> to disable caching for that request.</p></div></div><h4><a id="_cache_key"></a>Cache key<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/query-cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The whole JSON body is used as the cache key.  This means that if the JSON
+changes — for instance if keys are output in a different order — then the
+cache key will not be recognised.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Most JSON libraries support a <span class="emphasis"><em>canonical</em></span> mode which ensures that JSON
+keys are always emitted in the same order. This canonical mode can be used in
+the application to ensure that a request is always serialized in the same way.</p></div></div><h4><a id="_cache_settings"></a>Cache settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/query-cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The cache is managed at the node level, and has a default maximum size of <code class="literal">1%</code>
+of the heap.  This can be changed in the <code class="literal">config/elasticsearch.yml</code> file with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">indices.cache.query.size: 2%</pre></div><p>Also, you can use the <code class="literal">indices.cache.query.expire</code> setting to specify a TTL
+for cached results, but there should be no reason to do so.  Remember that
+stale results are automatically invalidated when the index is refreshed. This
+setting is provided for completeness' sake only.</p><h4><a id="_monitoring_cache_usage"></a>Monitoring cache usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/query-cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The size of the cache (in bytes) and the number of evictions can be viewed
+by index, with the <a class="link" href="indices-stats.html" title="Indices Stats"><code class="literal">indices-stats</code></a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl 'localhost:9200/_stats/query_cache?pretty&amp;human'</pre></div><p>or by node with the <a class="link" href="cluster-nodes-stats.html" title="Nodes Stats"><code class="literal">nodes-stats</code></a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl 'localhost:9200/_nodes/stats/indices/query_cache?pretty&amp;human'</pre></div></div><div class="navfooter"><span class="prev"><a href="indexing-buffer.html">
               « 
-              Index Aliases</a>
+              Indexing Buffer</a>
            
         </span><span class="next">
            
-          <a href="indices-get-settings.html">Get Settings
+          <a href="recovery.html">Indices Recovery
                »
             </a></span></div>
 <!-- end body -->

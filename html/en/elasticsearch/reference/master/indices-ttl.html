@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update Indices Settings</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-aliases.html" title="Index Aliases" /><link rel="next" href="indices-get-settings.html" title="Get Settings" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>TTL interval</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-indices.html" title="Indices" /><link rel="prev" href="recovery.html" title="Indices Recovery" /><link rel="next" href="modules-network.html" title="Network Settings" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,61 +573,33 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-node">Update Indices Settings</span></div><div class="navheader"><span class="prev"><a href="indices-aliases.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-indices.html">Indices</a></span> » <span class="breadcrumb-node">TTL interval</span></div><div class="navheader"><span class="prev"><a href="recovery.html">
               « 
-              Index Aliases</a>
+              Indices Recovery</a>
            
         </span><span class="next">
            
-          <a href="indices-get-settings.html">Get Settings
+          <a href="modules-network.html">Network Settings
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-update-settings"></a>Update Indices Settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Change specific index level settings in real time.</p><p>The REST endpoint is <code class="literal">/_settings</code> (to update all indices) or
-<code class="literal">{index}/_settings</code> to update one (or more) indices settings. The body
-of the request includes the updated settings, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "index" : {
-        "number_of_replicas" : 4
-    }
-}</pre></div><p>The above will change the number of replicas to 4 from the current
-number of replicas. Here is a curl example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'localhost:9200/my_index/_settings' -d '
-{
-    "index" : {
-        "number_of_replicas" : 4
-    }
-}'</pre></div><p>The list of per-index settings which can be updated dynamically on live
-indices can be found in <a class="xref" href="index-modules.html" title="Index Modules">Index Modules </a>.</p><h3><a id="bulk"></a>Bulk Indexing Usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For example, the update settings API can be used to dynamically change
-the index from being more performant for bulk indexing, and then move it
-to more real time indexing state. Before the bulk indexing is started,
-use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index" : {
-        "refresh_interval" : "-1"
-    } }'</pre></div><p>(Another optimization option is to start the index without any replicas,
-and only later adding them, but that really depends on the use case).</p><p>Then, once bulk indexing is done, the settings can be updated (back to
-the defaults for example):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index" : {
-        "refresh_interval" : "1s"
-    } }'</pre></div><p>And, an optimize should be called:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'http://localhost:9200/test/_optimize?max_num_segments=5'</pre></div><h3><a id="update-settings-analysis"></a>Updating Index Analysis<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>It is also possible to define new <a class="link" href="analysis.html" title="Analysis">analyzers</a> for the index.
-But it is required to <a class="link" href="indices-open-close.html" title="Open / Close Index API">close</a> the index
-first and <a class="link" href="indices-open-close.html" title="Open / Close Index API">open</a> it after the changes are made.</p><p>For example if <code class="literal">content</code> analyzer hasn’t been defined on <code class="literal">myindex</code> yet
-you can use the following commands to add it:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/myindex/_close'
-
-curl -XPUT 'localhost:9200/myindex/_settings' -d '{
-  "analysis" : {
-    "analyzer":{
-      "content":{
-        "type":"custom",
-        "tokenizer":"whitespace"
-      }
-    }
-  }
-}'
-
-curl -XPOST 'localhost:9200/myindex/_open'</pre></div></div><div class="navfooter"><span class="prev"><a href="indices-aliases.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="indices-ttl"></a>TTL interval<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/ttl_interval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Documents that have a <a class="link" href="mapping-ttl-field.html" title="_ttl"><code class="literal">ttl</code></a> value set need to be deleted
+once they have expired.  How and how often they are deleted is controlled by
+the following dynamic cluster settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">indices.ttl.interval</code>
+</span></dt><dd>
+    How often the deletion process runs.  Defaults to <code class="literal">60s</code>.
+</dd><dt><span class="term">
+<code class="literal">indices.ttl.bulk_size</code>
+</span></dt><dd>
+    The deletions are processed with a <a class="link" href="docs-bulk.html" title="Bulk API">bulk request</a>.
+    The number of deletions processed can be configured with
+    this settings. Defaults to <code class="literal">10000</code>.
+</dd></dl></div></div><div class="navfooter"><span class="prev"><a href="recovery.html">
               « 
-              Index Aliases</a>
+              Indices Recovery</a>
            
         </span><span class="next">
            
-          <a href="indices-get-settings.html">Get Settings
+          <a href="modules-network.html">Network Settings
                »
             </a></span></div>
 <!-- end body -->

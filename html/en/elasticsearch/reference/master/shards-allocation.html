@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update Indices Settings</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-aliases.html" title="Index Aliases" /><link rel="next" href="indices-get-settings.html" title="Get Settings" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Cluster Level Shard Allocation</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-cluster.html" title="Cluster" /><link rel="prev" href="modules-cluster.html" title="Cluster" /><link rel="next" href="disk-allocator.html" title="Disk-based Shard Allocation" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,61 +573,112 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-node">Update Indices Settings</span></div><div class="navheader"><span class="prev"><a href="indices-aliases.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-cluster.html">Cluster</a></span> » <span class="breadcrumb-node">Cluster Level Shard Allocation</span></div><div class="navheader"><span class="prev"><a href="modules-cluster.html">
               « 
-              Index Aliases</a>
+              Cluster</a>
            
         </span><span class="next">
            
-          <a href="indices-get-settings.html">Get Settings
+          <a href="disk-allocator.html">Disk-based Shard Allocation
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-update-settings"></a>Update Indices Settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Change specific index level settings in real time.</p><p>The REST endpoint is <code class="literal">/_settings</code> (to update all indices) or
-<code class="literal">{index}/_settings</code> to update one (or more) indices settings. The body
-of the request includes the updated settings, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "index" : {
-        "number_of_replicas" : 4
-    }
-}</pre></div><p>The above will change the number of replicas to 4 from the current
-number of replicas. Here is a curl example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'localhost:9200/my_index/_settings' -d '
-{
-    "index" : {
-        "number_of_replicas" : 4
-    }
-}'</pre></div><p>The list of per-index settings which can be updated dynamically on live
-indices can be found in <a class="xref" href="index-modules.html" title="Index Modules">Index Modules </a>.</p><h3><a id="bulk"></a>Bulk Indexing Usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For example, the update settings API can be used to dynamically change
-the index from being more performant for bulk indexing, and then move it
-to more real time indexing state. Before the bulk indexing is started,
-use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index" : {
-        "refresh_interval" : "-1"
-    } }'</pre></div><p>(Another optimization option is to start the index without any replicas,
-and only later adding them, but that really depends on the use case).</p><p>Then, once bulk indexing is done, the settings can be updated (back to
-the defaults for example):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index" : {
-        "refresh_interval" : "1s"
-    } }'</pre></div><p>And, an optimize should be called:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'http://localhost:9200/test/_optimize?max_num_segments=5'</pre></div><h3><a id="update-settings-analysis"></a>Updating Index Analysis<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>It is also possible to define new <a class="link" href="analysis.html" title="Analysis">analyzers</a> for the index.
-But it is required to <a class="link" href="indices-open-close.html" title="Open / Close Index API">close</a> the index
-first and <a class="link" href="indices-open-close.html" title="Open / Close Index API">open</a> it after the changes are made.</p><p>For example if <code class="literal">content</code> analyzer hasn’t been defined on <code class="literal">myindex</code> yet
-you can use the following commands to add it:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/myindex/_close'
-
-curl -XPUT 'localhost:9200/myindex/_settings' -d '{
-  "analysis" : {
-    "analyzer":{
-      "content":{
-        "type":"custom",
-        "tokenizer":"whitespace"
-      }
-    }
-  }
-}'
-
-curl -XPOST 'localhost:9200/myindex/_open'</pre></div></div><div class="navfooter"><span class="prev"><a href="indices-aliases.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="shards-allocation"></a>Cluster Level Shard Allocation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/shards_allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Shard allocation is the process of allocating shards to nodes. This can
+happen during initial recovery, replica allocation, rebalancing, or
+when nodes are added or removed.</p><h3><a id="_shard_allocation_settings"></a>Shard Allocation Settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/shards_allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following <span class="emphasis"><em>dynamic</em></span> settings may be used to control shard allocation and recovery:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">cluster.routing.allocation.enable</code>
+</span></dt><dd><p class="simpara">Enable or disable allocation for specific kinds of shards:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">all</code> -             (default) Allows shard allocation for all kinds of shards.
+</li><li class="listitem">
+<code class="literal">primaries</code> -       Allows shard allocation only for primary shards.
+</li><li class="listitem">
+<code class="literal">new_primaries</code> -   Allows shard allocation only for primary shards for new indices.
+</li><li class="listitem">
+<code class="literal">none</code> -            No shard allocations of any kind are allowed for any indices.
+</li></ul></div><p class="simpara">This setting does not affect the recovery of local primary shards when
+restarting a node.  A restarted node that has a copy of an unassigned primary
+shard will recover that primary immediately, assuming that the
+<a class="link" href="index-modules.html#index.recovery.initial_shards"><code class="literal">index.recovery.initial_shards</code></a> setting is
+satisfied.</p></dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.node_concurrent_recoveries</code>
+</span></dt><dd>
+     How many concurrent shard recoveries are allowed to happen on a node.
+     Defaults to <code class="literal">2</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.node_initial_primaries_recoveries</code>
+</span></dt><dd>
+    While the recovery of replicas happens over the network, the recovery of
+    an unassigned primary after node restart uses data from the local disk.
+    These should be fast so more initial primary recoveries can happen in
+    parallel on the same node.  Defaults to <code class="literal">4</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.same_shard.host</code>
+</span></dt><dd>
+      Allows to perform a check to prevent allocation of multiple instances of
+      the same shard on a single host, based on host name and host address.
+      Defaults to <code class="literal">false</code>, meaning that no check is performed by default. This
+      setting only applies if multiple nodes are started on the same machine.
+</dd><dt><span class="term">
+<code class="literal">indices.recovery.concurrent_streams</code>
+</span></dt><dd>
+       The number of network streams to open per node to recover a shard from
+       a peer shard. Defaults to <code class="literal">3</code>.
+</dd><dt><span class="term">
+<code class="literal">indices.recovery.concurrent_small_file_streams</code>
+</span></dt><dd>
+       The number of streams to open per node for small files (under 5mb) to
+       recover a shard from a peer shard. Defaults to <code class="literal">2</code>.
+</dd></dl></div><h3><a id="_shard_rebalancing_settings"></a>Shard Rebalancing Settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/shards_allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following <span class="emphasis"><em>dynamic</em></span> settings may be used to control the rebalancing of
+shards across the cluster:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">cluster.routing.rebalance.enable</code>
+</span></dt><dd><p class="simpara">Enable or disable rebalancing for specific kinds of shards:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">all</code> -         (default) Allows shard balancing for all kinds of shards.
+</li><li class="listitem">
+<code class="literal">primaries</code> -   Allows shard balancing only for primary shards.
+</li><li class="listitem">
+<code class="literal">replicas</code> -    Allows shard balancing only for replica shards.
+</li><li class="listitem">
+<code class="literal">none</code> -        No shard balancing of any kind are allowed for any indices.
+</li></ul></div></dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.allow_rebalance</code>
+</span></dt><dd><p class="simpara">Specify when shard rebalancing is allowed:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">always</code> -                    (default) Always allow rebalancing.
+</li><li class="listitem">
+<code class="literal">indices_primaries_active</code> -  Only when all primaries in the cluster are allocated.
+</li><li class="listitem">
+<code class="literal">indices_all_active</code> -        Only when all shards (primaries and replicas) in the cluster are allocated.
+</li></ul></div></dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.cluster_concurrent_rebalance</code>
+</span></dt><dd>
+      Allow to control how many concurrent shard rebalances are
+      allowed cluster wide. Defaults to <code class="literal">2</code>.
+</dd></dl></div><h3><a id="_shard_balancing_heuristics"></a>Shard Balancing Heuristics<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/shards_allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following settings are used together to determine where to place each
+shard.  The cluster is balanced when no allowed action can bring the weights
+of each node closer together by more then the <code class="literal">balance.threshold</code>.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">cluster.routing.allocation.balance.shard</code>
+</span></dt><dd>
+     Defines the weight factor for shards allocated on a node
+     (float). Defaults to <code class="literal">0.45f</code>.  Raising this raises the tendency to
+     equalize the number of shards across all nodes in the cluster.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.balance.index</code>
+</span></dt><dd>
+     Defines a factor to the number of shards per index allocated
+      on a specific node (float). Defaults to <code class="literal">0.55f</code>.  Raising this raises the
+      tendency to equalize the number of shards per index across all nodes in
+      the cluster.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.balance.threshold</code>
+</span></dt><dd>
+     Minimal optimization value of operations that should be performed (non
+      negative float). Defaults to <code class="literal">1.0f</code>.  Raising this will cause the cluster
+      to be less aggressive about optimizing the shard balance.
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Regardless of the result of the balancing algorithm, rebalancing might
+not be allowed due to forced awareness or allocation filtering.</p></div></div></div><div class="navfooter"><span class="prev"><a href="modules-cluster.html">
               « 
-              Index Aliases</a>
+              Cluster</a>
            
         </span><span class="next">
            
-          <a href="indices-get-settings.html">Get Settings
+          <a href="disk-allocator.html">Disk-based Shard Allocation
                »
             </a></span></div>
 <!-- end body -->

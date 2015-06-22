@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Merge</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-modules.html" title="Index Modules" /><link rel="prev" href="index-modules-slowlog.html" title="Index Slow Log" /><link rel="next" href="index-modules-store.html" title="Store" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Merge</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-modules.html" title="Index Modules" /><link rel="prev" href="index-modules-mapper.html" title="Mapper" /><link rel="next" href="index-modules-similarity.html" title="Similarity module" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,13 +573,13 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-node">Merge</span></div><div class="navheader"><span class="prev"><a href="index-modules-slowlog.html">
+    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-node">Merge</span></div><div class="navheader"><span class="prev"><a href="index-modules-mapper.html">
               « 
-              Index Slow Log</a>
+              Mapper</a>
            
         </span><span class="next">
            
-          <a href="index-modules-store.html">Store
+          <a href="index-modules-similarity.html">Similarity module
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-merge"></a>Merge<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/merge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>All of the settings exposed in the <code class="literal">merge</code> module are expert only and may be removed in the future.</p></div></div><p>A shard in elasticsearch is a Lucene index, and a Lucene index is broken
 down into segments. Segments are internal storage elements in the index
@@ -588,7 +588,8 @@ Segments are, periodically, merged into larger segments to keep the
 index size at bay and expunge deletes.</p><p>Merges segments of approximately equal size, subject to an allowed
 number of segments per tier. The merge policy is able to merge
 non-adjacent segments, and separates how many segments are merged at once from how many
-segments are allowed per tier. It also does not over-merge (i.e., cascade merges).</p><p>The merge policy has the following settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+segments are allowed per tier. It also does not over-merge (i.e., cascade merges).</p><h3><a id="merge-settings"></a>Merge policy settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/merge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>All merge policy settings are <span class="emphasis"><em>dynamic</em></span> and can be updated on a live index.
+The merge policy has the following settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">index.merge.policy.expunge_deletes_allowed</code>
 </span></dt><dd>
         When expungeDeletes is called, we only merge away a segment if its delete
@@ -645,34 +646,32 @@ data, the default of <code class="literal">max_merged_segment</code> (<code clas
 segments to be in an index, and causing searches to be slower. Use the
 indices segments API to see the segments that an index has, and
 possibly either increase the <code class="literal">max_merged_segment</code> or issue an optimize
-call for the index (try and aim to issue it on a low traffic time).</p><h3><a id="scheduling"></a>Scheduling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/merge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The merge scheduler (ConcurrentMergeScheduler) controls the execution of
+call for the index (try and aim to issue it on a low traffic time).</p><h3><a id="merge-scheduling"></a>Merge scheduling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/merge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The merge scheduler (ConcurrentMergeScheduler) controls the execution of
 merge operations once they are needed (according to the merge policy).  Merges
 run in separate threads, and when the maximum number of threads is reached,
-further merges will wait until a merge thread becomes available.  The merge
-scheduler supports this setting:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+further merges will wait until a merge thread becomes available.</p><p>The merge scheduler supports the following <span class="emphasis"><em>dynamic</em></span> settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">index.merge.scheduler.max_thread_count</code>
 </span></dt><dd>
-The maximum number of threads that may be merging at once. Defaults to
-<code class="literal">Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() / 2))</code>
-which works well for a good solid-state-disk (SSD).  If your index is on
-spinning platter drives instead, decrease this to 1.
+    The maximum number of threads that may be merging at once. Defaults to
+    <code class="literal">Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() / 2))</code>
+    which works well for a good solid-state-disk (SSD).  If your index is on
+    spinning platter drives instead, decrease this to 1.
 </dd><dt><span class="term">
 <code class="literal">index.merge.scheduler.auto_throttle</code>
 </span></dt><dd>
-If this is true (the default), then the merge scheduler will
-rate-limit IO (writes) for merges to an adaptive value depending on
-how many merges are requested over time.  An application with a low
-indexing rate that unluckily suddenly requires a large merge will see
-that merge aggressively throttled, while an application doing heavy
-indexing will see the throttle move higher to allow merges to keep up
-with ongoing indexing.  This is a dynamic setting (you can <a class="link" href="indices-update-settings.html" title="Update Indices Settings">change it at any time on a running index</a>).
-</dd></dl></div></div><div class="navfooter"><span class="prev"><a href="index-modules-slowlog.html">
+    If this is true (the default), then the merge scheduler will rate-limit IO
+    (writes) for merges to an adaptive value depending on how many merges are
+    requested over time.  An application with a low indexing rate that
+    unluckily suddenly requires a large merge will see that merge aggressively
+    throttled, while an application doing heavy indexing will see the throttle
+    move higher to allow merges to keep up with ongoing indexing.
+</dd></dl></div></div><div class="navfooter"><span class="prev"><a href="index-modules-mapper.html">
               « 
-              Index Slow Log</a>
+              Mapper</a>
            
         </span><span class="next">
            
-          <a href="index-modules-store.html">Store
+          <a href="index-modules-similarity.html">Similarity module
                »
             </a></span></div>
 <!-- end body -->

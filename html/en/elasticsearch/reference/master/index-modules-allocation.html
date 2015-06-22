@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Index Shard Allocation</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-modules.html" title="Index Modules" /><link rel="prev" href="index-modules-analysis.html" title="Analysis" /><link rel="next" href="index-modules-slowlog.html" title="Index Slow Log" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Index Shard Allocation</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-modules.html" title="Index Modules" /><link rel="prev" href="index-modules-analysis.html" title="Analysis" /><link rel="next" href="index-modules-mapper.html" title="Mapper" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -579,95 +579,92 @@
            
         </span><span class="next">
            
-          <a href="index-modules-slowlog.html">Index Slow Log
+          <a href="index-modules-mapper.html">Mapper
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-allocation"></a>Index Shard Allocation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><h3><a id="shard-allocation-filtering"></a>Shard Allocation Filtering<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Allows to control the allocation of indices on nodes based on include/exclude
-filters. The filters can be set both on the index level and on the
-cluster level. Lets start with an example of setting it on the cluster
-level:</p><p>Lets say we have 4 nodes, each has specific attribute called <code class="literal">tag</code>
-associated with it (the name of the attribute can be any name). Each
-node has a specific value associated with <code class="literal">tag</code>. Node 1 has a setting
-<code class="literal">node.tag: value1</code>, Node 2 a setting of <code class="literal">node.tag: value2</code>, and so on.</p><p>We can create an index that will only deploy on nodes that have <code class="literal">tag</code>
-set to <code class="literal">value1</code> and <code class="literal">value2</code> by setting
-<code class="literal">index.routing.allocation.include.tag</code> to <code class="literal">value1,value2</code>. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index.routing.allocation.include.tag" : "value1,value2"
-}'</pre></div><p>On the other hand, we can create an index that will be deployed on all
-nodes except for nodes with a <code class="literal">tag</code> of value <code class="literal">value3</code> by setting
-<code class="literal">index.routing.allocation.exclude.tag</code> to <code class="literal">value3</code>. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index.routing.allocation.exclude.tag" : "value3"
-}'</pre></div><p><code class="literal">index.routing.allocation.require.*</code> can be used to
-specify a number of rules, all of which MUST match in order for a shard
-to be allocated to a node. This is in contrast to <code class="literal">include</code> which will
-include a node if ANY rule matches.</p><p>The <code class="literal">include</code>, <code class="literal">exclude</code> and <code class="literal">require</code> values can have generic simple
-matching wildcards, for example, <code class="literal">value1*</code>. Additionally, special attribute
-names called <code class="literal">_ip</code>, <code class="literal">_name</code>, <code class="literal">_id</code> and <code class="literal">_host</code> can be used to match by node
-ip address, name, id or host name, respectively.</p><p>Obviously a node can have several attributes associated with it, and
-both the attribute name and value are controlled in the setting. For
-example, here is a sample of several node configurations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">node.group1: group1_value1
-node.group2: group2_value4</pre></div><p>In the same manner, <code class="literal">include</code>, <code class="literal">exclude</code> and <code class="literal">require</code> can work against
-several attributes, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/_settings -d '{
-    "index.routing.allocation.include.group1" : "xxx"
-    "index.routing.allocation.include.group2" : "yyy",
-    "index.routing.allocation.exclude.group3" : "zzz",
-    "index.routing.allocation.require.group4" : "aaa",
-}'</pre></div><p>The provided settings can also be updated in real time using the update
-settings API, allowing to "move" indices (shards) around in realtime.</p><p>Cluster wide filtering can also be defined, and be updated in real time
-using the cluster update settings API. This setting can come in handy
-for things like decommissioning nodes (even if the replica count is set
-to 0). Here is a sample of how to decommission a node based on <code class="literal">_ip</code>
-address:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/_cluster/settings -d '{
-    "transient" : {
-        "cluster.routing.allocation.exclude._ip" : "10.0.0.1"
-    }
-}'</pre></div><h3><a id="_total_shards_per_node"></a>Total Shards Per Node<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">index.routing.allocation.total_shards_per_node</code> setting allows to
-control how many total shards (replicas and primaries) for an index will be allocated per node.
-It can be dynamically set on a live index using the update index
-settings API.</p><h3><a id="disk"></a>Disk-based Shard Allocation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>disk based shard allocation is enabled from version 1.3.0 onward</p><p>Elasticsearch can be configured to prevent shard
-allocation on nodes depending on disk usage for the node. This
-functionality is enabled by default, and can be changed either in the
-configuration file, or dynamically using:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/_cluster/settings -d '{
-    "transient" : {
-        "cluster.routing.allocation.disk.threshold_enabled" : false
-    }
-}'</pre></div><p>Once enabled, Elasticsearch uses two watermarks to decide whether
-shards should be allocated or can remain on the node.</p><p><code class="literal">cluster.routing.allocation.disk.watermark.low</code> controls the low
-watermark for disk usage. It defaults to 85%, meaning ES will not
-allocate new shards to nodes once they have more than 85% disk
-used. It can also be set to an absolute byte value (like 500mb) to
-prevent ES from allocating shards if less than the configured amount
-of space is available.</p><p><code class="literal">cluster.routing.allocation.disk.watermark.high</code> controls the high
-watermark. It defaults to 90%, meaning ES will attempt to relocate
-shards to another node if the node disk usage rises above 90%. It can
-also be set to an absolute byte value (similar to the low watermark)
-to relocate shards once less than the configured amount of space is
-available on the node.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Percentage values refer to used disk space, while byte values refer to
-free disk space. This can be confusing, since it flips the meaning of
-high and low. For example, it makes sense to set the low watermark to 10gb
-and the high watermark to 5gb, but not the other way around.</p></div></div><p>Both watermark settings can be changed dynamically using the cluster
-settings API. By default, Elasticsearch will retrieve information
-about the disk usage of the nodes every 30 seconds. This can also be
-changed by setting the <code class="literal">cluster.info.update.interval</code> setting.</p><p>An example of updating the low watermark to no more than 80% of the disk size, a
-high watermark of at least 50 gigabytes free, and updating the information about
-the cluster every minute:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/_cluster/settings -d '{
-    "transient" : {
-        "cluster.routing.allocation.disk.watermark.low" : "80%",
-        "cluster.routing.allocation.disk.watermark.high" : "50gb",
-        "cluster.info.update.interval" : "1m"
-    }
-}'</pre></div><p>By default, Elasticsearch will take into account shards that are currently being
-relocated to the target node when computing a node’s disk usage. This can be
-changed by setting the ‘cluster.routing.allocation.disk.include_relocations`
-setting to <code class="literal">false</code> (defaults to <code class="literal">true</code>). Taking relocating shards’ sizes into
-account may, however, mean that the disk usage for a node is incorrectly
-estimated on the high side, since the relocation could be 90% complete and a
-recently retrieved disk usage would include the total size of the relocating
-shard as well as the space already used by the running relocation.</p></div><div class="navfooter"><span class="prev"><a href="index-modules-analysis.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-allocation"></a>Index Shard Allocation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This module provides per-index settings to control the allocation of shards to
+nodes.</p><h3><a id="shard-allocation-filtering"></a>Shard Allocation Filtering<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Shard allocation filtering allows you to specify which nodes are allowed
+to host the shards of a particular index.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The per-index shard allocation filters explained below work in
+conjunction with the cluster-wide allocation filters explained in
+<a class="xref" href="shards-allocation.html" title="Cluster Level Shard Allocation">Cluster Level Shard Allocation</a>.</p></div></div><p>It is possible to assign arbitrary metadata attributes to each node at
+startup.  For instance, nodes could be assigned a <code class="literal">rack</code> and a <code class="literal">group</code>
+attribute as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/elasticsearch --node.rack rack1 --node.size big  <a id="CO139-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO139-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+These attribute settings can also be specfied in the <code class="literal">elasticsearch.yml</code> config file.
+</p></td></tr></table></div><p>These metadata attributes can be used with the
+<code class="literal">index.routing.allocation.*</code> settings to allocate an index to a particular
+group of nodes.  For instance, we can move the index <code class="literal">test</code> to either <code class="literal">big</code> or
+<code class="literal">medium</code> nodes as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT test/_settings
+{
+  "index.routing.allocation.include.size": "big,medium"
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/index-modules-allocation/1.json" target="sense">View in Sense</a><p>Alternatively, we can move the index <code class="literal">test</code> away from the <code class="literal">small</code> nodes with
+an <code class="literal">exclude</code> rule:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT test/_settings
+{
+  "index.routing.allocation.exclude.size": "small"
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/index-modules-allocation/2.json" target="sense">View in Sense</a><p>Multiple rules can be specified, in which case all conditions must be
+satisfied.  For instance, we could move the index <code class="literal">test</code> to <code class="literal">big</code> nodes in
+<code class="literal">rack1</code> with the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT test/_settings
+{
+  "index.routing.allocation.include.size": "big",
+  "index.routing.allocation.include.rack": "rack1"
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/index-modules-allocation/3.json" target="sense">View in Sense</a><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If some conditions cannot be satisfied then shards will not be moved.</p></div></div><p>The following settings are <span class="emphasis"><em>dynamic</em></span>, allowing live indices to be moved from
+one set of nodes to another:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">index.routing.allocation.include.{attribute}</code>
+</span></dt><dd>
+    Assign the index to a node whose <code class="literal">{attribute}</code> has at least one of the
+    comma-separated values.
+</dd><dt><span class="term">
+<code class="literal">index.routing.allocation.require.{attribute}</code>
+</span></dt><dd>
+    Assign the index to a node whose <code class="literal">{attribute}</code> has <span class="emphasis"><em>all</em></span> of the
+    comma-separated values.
+</dd><dt><span class="term">
+<code class="literal">index.routing.allocation.exclude.{attribute}</code>
+</span></dt><dd>
+    Assign the index to a node whose <code class="literal">{attribute}</code> has <span class="emphasis"><em>none</em></span> of the
+    comma-separated values.
+</dd></dl></div><p>These special attributes are also supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">_name</code>
+</p>
+</td><td valign="top">
+<p>
+Match nodes by node name
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">_ip</code>
+</p>
+</td><td valign="top">
+<p>
+Match nodes by IP address (the IP address associated with the hostname)
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">_host</code>
+</p>
+</td><td valign="top">
+<p>
+Match nodes by hostname
+</p>
+</td></tr></tbody></table></div><p>All attribute values can be specified with wildcards, eg:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT test/_settings
+{
+  "index.routing.allocation.include._ip": "192.168.2.*"
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/index-modules-allocation/4.json" target="sense">View in Sense</a><h3><a id="_total_shards_per_node"></a>Total Shards Per Node<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The cluster-level shard allocator tries to spread the shards of a single index
+across as many nodes as possible.  However, depending on how many shards and
+indices you have, and how big they are, it may not always be possible to spread
+shards evenly.</p><p>The following <span class="emphasis"><em>dynamic</em></span> setting allows you to specify a hard limit on the total
+number of shards from a single index allowed per node:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">index.routing.allocation.total_shards_per_node</code>
+</span></dt><dd>
+    The maximum number of shards (replicas and primaries) that will be
+    allocated to a single node.  Defaults to unbounded.
+</dd></dl></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This setting imposes a hard limit which can result in some shards not
+being allocated.</p><p>Use with caution.</p></div></div></div><div class="navfooter"><span class="prev"><a href="index-modules-analysis.html">
               « 
               Analysis</a>
            
         </span><span class="next">
            
-          <a href="index-modules-slowlog.html">Index Slow Log
+          <a href="index-modules-mapper.html">Mapper
                »
             </a></span></div>
 <!-- end body -->
