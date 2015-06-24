@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configure the keystores and enable SSL</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield - Elasticsearch Security Plugin [1.3]" /><link rel="up" href="securing-nodes.html" title="Securing Nodes" /><link rel="prev" href="_install_the_newly_signed_certificate.html" title="Install the newly signed certificate" /><link rel="next" href="ciphers.html" title="Enabling Cipher Suites for Stronger Encryption" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>PKI Authentication</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield - Elasticsearch Security Plugin [1.3]" /><link rel="up" href="authentication.html" title="Authentication" /><link rel="prev" href="active_directory.html" title="Active Directory Authentication" /><link rel="next" href="securing-nodes.html" title="Securing Nodes" />
 	<script type="text/javascript">	
 		/*--------- Detect browser language and redirect page -----------*/
 		function arrayObjectIndexOf(myArray, searchTerm) {
@@ -595,57 +595,69 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield - Elasticsearch Security Plugin
       [1.3]
-    </a></span> » <span class="breadcrumb-link"><a href="securing-nodes.html">Securing Nodes</a></span> » <span class="breadcrumb-node">Configure the keystores and enable SSL</span></div><div class="navheader"><span class="prev"><a href="_install_the_newly_signed_certificate.html">
+    </a></span> » <span class="breadcrumb-link"><a href="authentication.html">Authentication</a></span> » <span class="breadcrumb-node">PKI Authentication</span></div><div class="navheader"><span class="prev"><a href="active_directory.html">
               « 
-              Install the newly signed certificate</a>
+              Active Directory Authentication</a>
            
         </span><span class="next">
            
-          <a href="ciphers.html">Enabling Cipher Suites for Stronger Encryption
+          <a href="securing-nodes.html">Securing Nodes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_configure_the_keystores_and_enable_ssl"></a>Configure the keystores and enable SSL</h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>All ssl related node settings that are considered to be highly sensitive and therefore are not exposed via the
-        <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes info API</a>.</p></div></div><p>The next step is to configure the node to enable SSL, to identify itself using
-its signed certificate, and to verify the identify of incoming connections.
-The settings below should be added to the main <code class="literal">elasticsearch.yml</code> config file.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_node_identity"></a>Node identity</h3></div></div></div><p>The <code class="literal">node01.jks</code> contains the certificate that <code class="literal">node01</code> will use to identify
-itself to other nodes in the cluster, to transport clients, and to HTTPS
-clients. Add the following to <code class="literal">elasticsearch.yml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.ssl.keystore.path:          /home/es/config/node01.jks <a id="CO13-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-shield.ssl.keystore.password:      myPass <a id="CO13-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The full path to the node keystore file.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The password used to decrypt the <code class="literal">node01.jks</code> keystore.
-</p></td></tr></table></div><p>If you specified a different password than the keystore password when executing the <code class="literal">keytool -genkey</code> command, you will
-need to specify that password in the <code class="literal">elasticsearch.yml</code> configuration file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.ssl.keystore.key_password:  myKeyPass <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The password entered at the end of the <code class="literal">keytool -genkey</code> command
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="create-truststore"></a>Optional truststore configuration</h3></div></div></div><p>The truststore holds the trusted CA certificates.  Shield will use the keystore as the truststore
-by default.  You can optionally provide a separate path for the truststore.  In this case, Shield
-will use the keystore for the node’s private key and the configured truststore for trusted certificates.</p><p>First obtain the CA certificates that will be trusted. Each of these certificates need to be imported into a truststore
-by running the following command for each CA certificate:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">keytool -importcert                              \
-        -keystore /home/es/config/truststore.jks \ <a id="CO15-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        -file     /Users/Download/cacert.pem  <a id="CO15-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The full path to the truststore file. If the file does not exist it will be created.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-A trusted CA certificate.
-</p></td></tr></table></div><p>The keytool command will prompt you for a password, which will be used to protect the integrity of the truststore. You
-will need to remember this password as it will be needed for all further interactions with the truststore.</p><p>Add the following to <code class="literal">elasticsearch.yml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.ssl.truststore.path:          /home/es/config/truststore.jks <a id="CO16-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-shield.ssl.truststore.password:      myPass <a id="CO16-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The full path to the truststore file.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The password used to decrypt the <code class="literal">truststore.jks</code> keystore.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ssl-transport"></a>Enable SSL on the transport layer</h3></div></div></div><p>Enable SSL on the transport networking layer to ensure that communication between nodes is encrypted. Add the following
-value to the <code class="literal">elasticsearch.yml</code> configuration file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.transport.ssl: true</pre></div><p>Regardless of this setting, transport clients can only connect to the cluster with a valid username and password.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="disable-multicast"></a>Disable multicast</h3></div></div></div><p>Multicast <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery.html" target="_top">discovery</a> is
-not supported with shield. To properly secure node communications, disable multicast by setting the following values
-in the <code class="literal">elasticsearch.yml</code> configuration file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">discovery.zen.ping.multicast.enabled: false
-discovery.zen.ping.unicast.hosts: ["node01:9300", "node02:9301"]</pre></div><p>You can learn more about unicast configuration in the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery.html" target="_top">Zen Discovery</a> documentation.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ssl-http"></a>Enable SSL on the HTTP layer</h3></div></div></div><p>SSL should be enabled on the HTTP networking layer to ensure that communication between HTTP clients and the cluster is
-encrypted:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.http.ssl: true</pre></div><p>Regardless of this setting, HTTP clients can only connect to the cluster with a valid username and password.</p><p>Congratulations! At this point, you have a node with encryption enabled for both HTTPS and the transport layers.
-Your node will correctly present its certificate to other nodes or clients when connecting. There are optional,
-more advanced features you may use to further configure or protect your node.  They are described in the following
-paragraphs.</p></div></div><div class="navfooter"><span class="prev"><a href="_install_the_newly_signed_certificate.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="pki"></a>PKI Authentication</h2></div></div></div><p><span class="added">
+      [<span class="version">1.3.0</span>]
+      <span class="detail">Added in 1.3.0.</span></span> Shield allows for authentication through the use of Public Key Infrastructure (PKI). This works by requiring
+clients to present X.509 certificates that are used for authentication and authorization will be performed by mapping the
+distinguished name (DN) from the certificate to roles.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_ssl_tls_setup"></a>SSL/TLS setup</h3></div></div></div><p>The PKI realm requires that SSL/TLS be enabled and client authentication also be enabled on the desired network layers
+(http and/or transport). It is possible to enable SSL/TLS and client authentication on only one network layer and use PKI
+authentication for that layer; for example, enabling SSL/TLS and client authentication on the transport layer with a PKI
+realm defined would allow for transport clients to authenticate with X.509 certificates while HTTP traffic would still
+authenticate using username and password authentication. The PKI realm supports a client authentication setting of either
+<code class="literal">required</code> or <code class="literal">optional</code>; <code class="literal">required</code> forces all clients to present a certificate, while <code class="literal">optional</code> enables clients
+without certificates to authenticate with other credentials. For SSL/TLS configuration details, please see
+<a class="link" href="reference.html#ref-ssl-tls-settings" title="TLS/SSL Settings">SSL/TLS settings</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_pki_realm_configuration"></a>PKI Realm Configuration</h3></div></div></div><p>Like all realms, the <code class="literal">pki</code> realm is configured under the <code class="literal">shield.authc.realms</code> settings namespace in the
+<code class="literal">elasticsearch.yml</code> file. The following snippet shows an example of the most basic configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield:
+  authc:
+    realms:
+      pki1:
+        type: pki</pre></div><p>In the above configuration, any certificate trusted by the SSL/TLS layer will be accepted for authentication. The username
+will be the common name (CN) extracted from the DN of the certificate. If the username that should be used is something
+other than the CN of the DN, a regex can be provided to extract the value desired for the username. The following example
+will extract the email address from the DN:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield:
+  authc:
+    realms:
+      pki1:
+        type: pki
+        username_pattern: "EMAILADDRESS=(.*?)(?:,|$)"</pre></div><p>The PKI realm also provides configuration options to specify a specific truststore for authentication, which is useful
+when the SSL/TLS layer trusts clients with certificates that are signed by a different CA than the one that signs the
+certificates for client authentication. The following example shows such a configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield:
+  authc:
+    realms:
+      pki1:
+        type: pki
+        truststore:
+          path: "/path/to/pki_truststore.jks"
+          password: "changeme"</pre></div><div class="table"><a id="pki-settings"></a><p class="title"><strong>Table 9. PKI Realm Settings</strong></p><div class="table-contents"><table summary="PKI Realm Settings" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Setting</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">type</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>Indicates the realm type and must be set to <code class="literal">pki</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">order</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Indicates the priority of this realm within the realm chain. Realms with lower order will be consulted first. Although not required, it is highly recommended to explicitly set this value when multiple realms are configured. Defaults to <code class="literal">Integer.MAX_VALUE</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">enabled</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Indicates whether this realm is enabled/disabled. Provides an easy way to disable realms in the chain without removing their configuration. Defaults to <code class="literal">true</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">username_pattern</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The regular expression pattern used to extract the username from the certificate DN. The first match group is used as the username. Default is <code class="literal">CN=(.*?)(?:,|$)</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">truststore.path</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The path of a truststore to use. The default truststore is the one defined by <a class="link" href="reference.html#ref-ssl-tls-settings" title="TLS/SSL Settings">SSL/TLS settings</a></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">truststore.password</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The password to the truststore. Must be provided if <code class="literal">truststore.path</code> is set.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">truststore.algorithm</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Algorithm for the trustsore. Default is <code class="literal">SunX509</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">files.role_mapping</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the path and file name for the <a class="link" href="pki.html#pki-role-mapping" title="Mapping Users and Groups to Roles">YAML role  mapping configuration file</a>. The default file name is <code class="literal">role_mapping.yml</code> in the <a class="link" href="getting-started.html#shield-config">Shield config directory</a>.</p></td></tr></tbody></table></div></div><br class="table-break" /></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="pki-role-mapping"></a>Mapping Users and Groups to Roles</h3></div></div></div><p>By default, the file that maps users to roles is <code class="literal">config/shield/role_mapping.yml</code>. You can configure
+the path and name of the mapping file by setting the appropriate value for the <code class="literal">.files.role_mapping</code> configuration
+parameter for a specific realm.</p><p>The <code class="literal">role_mapping.yml</code> file uses the YAML format. Within a mapping file, Elasticsearch roles are keys and distinguished
+names (DNs) are values. The mapping can have a many-to-many relationship.</p><p><strong>Example Role Mapping File. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml"># Example group mapping configuration:
+# roleA: <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+#  - user1-DN <a id="CO7-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+monitoring:
+  - "cn=Admin,ou=example,o=com"
+user:
+  - "cn=John Doe,ou=example,o=com"</pre></div><p>
+</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The name of the elasticsearch role found in the <a class="link" href="authorization.html#roles-file" title="The Role Definition File roles.yml">roles file</a>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Example specifying the distinguished name of a PKI user
+</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>For the PKI realm, only the DN of a user can be mapped as there is no concept of a group in PKI</p></div></div><p>After setting up role mappings, copy this file to each node. Tools like Puppet or Chef can help with this.</p></div></div><div class="navfooter"><span class="prev"><a href="active_directory.html">
               « 
-              Install the newly signed certificate</a>
+              Active Directory Authentication</a>
            
         </span><span class="next">
            
-          <a href="ciphers.html">Enabling Cipher Suites for Stronger Encryption
+          <a href="securing-nodes.html">Securing Nodes
                »
             </a></span></div>
 <!-- end body -->
