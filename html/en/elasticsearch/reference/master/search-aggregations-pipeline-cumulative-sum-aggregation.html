@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Nested Type</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="mapping-types.html" title="Types" /><link rel="prev" href="mapping-root-object-type.html" title="Root Object Type" /><link rel="next" href="mapping-ip-type.html" title="IP Type" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Cumulative Sum Aggregation</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-aggregations-pipeline.html" title="Pipeline Aggregations" /><link rel="prev" href="search-aggregations-pipeline-movavg-aggregation.html" title="Moving Average Aggregation" /><link rel="next" href="search-aggregations-pipeline-bucket-script-aggregation.html" title="Bucket Script Aggregation" />
 	<script type="text/javascript">	
 		/*--------- Detect browser language and redirect page -----------*/
 		function arrayObjectIndexOf(myArray, searchTerm) {
@@ -595,118 +595,91 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-types.html">Types</a></span> » <span class="breadcrumb-node">Nested Type</span></div><div class="navheader"><span class="prev"><a href="mapping-root-object-type.html">
+    </a></span> » <span class="breadcrumb-link"><a href="search-aggregations.html">Aggregations </a></span> » <span class="breadcrumb-link"><a href="search-aggregations-pipeline.html">Pipeline Aggregations</a></span> » <span class="breadcrumb-node">Cumulative Sum Aggregation</span></div><div class="navheader"><span class="prev"><a href="search-aggregations-pipeline-movavg-aggregation.html">
               « 
-              Root Object Type</a>
+              Moving Average Aggregation</a>
            
         </span><span class="next">
            
-          <a href="mapping-ip-type.html">IP Type
+          <a href="search-aggregations-pipeline-bucket-script-aggregation.html">Bucket Script Aggregation
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-nested-type"></a>Nested Type<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/nested-type.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">nested</code> type works like the <a class="link" href="mapping-object-type.html" title="Object Type"><code class="literal">object</code> type</a> except
-that an array of <code class="literal">objects</code> is flattened, while an array of <code class="literal">nested</code>  objects
-allows each object to be queried independently.  To explain, consider this
-document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "group" : "fans",
-    "user" : [
-        {
-            "first" : "John",
-            "last" :  "Smith"
-        },
-        {
-            "first" : "Alice",
-            "last" :  "White"
-        },
-    ]
-}</pre></div><p>If the <code class="literal">user</code> field is of type <code class="literal">object</code>, this document would be indexed
-internally something like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "group" :        "fans",
-    "user.first" : [ "alice", "john" ],
-    "user.last" :  [ "smith", "white" ]
-}</pre></div><p>The <code class="literal">first</code> and <code class="literal">last</code> fields are flattened, and the association between
-<code class="literal">alice</code> and <code class="literal">white</code> is lost.  This document would incorrectly match a query
-for <code class="literal">alice AND smith</code>.</p><p>If the <code class="literal">user</code> field is of type <code class="literal">nested</code>, each object is indexed as a separate
-document, something like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{ <a id="CO103-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    "user.first" : "alice",
-    "user.last" :  "white"
-}
-{ <a id="CO103-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    "user.first" : "john",
-    "user.last" :  "smith"
-}
-{ <a id="CO103-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-    "group" :       "fans"
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO103-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO103-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Hidden nested documents.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO103-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Visible “parent” document.
-</p></td></tr></table></div><p>By keeping each nested object separate, the association between the
-<code class="literal">user.first</code> and <code class="literal">user.last</code> fields is maintained. The query for <code class="literal">alice AND
-smith</code> would <span class="strong"><strong>not</strong></span> match this document.</p><p>Searching on nested docs can be done using either the
-<a class="link" href="query-dsl-nested-query.html" title="Nested Query">nested query</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_mapping"></a>Mapping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/nested-type.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The mapping for <code class="literal">nested</code> fields is the same as <code class="literal">object</code> fields, except that it
-uses type <code class="literal">nested</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "type1" : {
-        "properties" : {
-            "users" : {
-                "type" : "nested",
-                "properties": {
-                    "first" : {"type": "string" },
-                    "last"  : {"type": "string" }
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-pipeline-cumulative-sum-aggregation"></a>Cumulative Sum Aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline/cumulative-sum-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A parent pipeline aggregation which calculates the cumulative sum of a specified metric in a parent histogram (or date_histogram)
+aggregation. The specified metric must be numeric and the enclosing histogram must have <code class="literal">min_doc_count</code> set to <code class="literal">0</code> (default
+for <code class="literal">histogram</code> aggregations).</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_syntax_7"></a>Syntax<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline/cumulative-sum-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A <code class="literal">cumulative_sum</code> aggregation looks like this in isolation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "cumulative_sum": {
+        "buckets_path": "the_sum"
+    }
+}</pre></div><div class="table"><a id="id-1.8.5.34.3.4"></a><p class="title"><strong>Table 7. <code class="literal">cumulative_sum</code> Parameters</strong></p><div class="table-contents"><table summary="cumulative_sum Parameters" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><tbody><tr><td align="left" valign="top"><p>Parameter Name</p></td><td align="left" valign="top"><p>Description</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Default Value</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">buckets_path</code></p></td><td align="left" valign="top"><p>The path to the buckets we wish to find the cumulative sum for (see <a class="xref" href="search-aggregations-pipeline.html#bucket-path-syntax" title="buckets_path Syntaxedit">the section called “<code class="literal">buckets_path</code> Syntax<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for more
+ details)</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">format</code></p></td><td align="left" valign="top"><p>format to apply to the output value of this aggregation</p></td><td align="left" valign="top"><p>Optional, defaults to <code class="literal">null</code></p></td><td align="left" valign="top"><p></p></td></tr></tbody></table></div></div><br class="table-break" /><p>The following snippet calculates the cumulative sum of the total monthly <code class="literal">sales</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "aggs" : {
+        "sales_per_month" : {
+            "date_histogram" : {
+                "field" : "date",
+                "interval" : "month"
+            },
+            "aggs": {
+                "sales": {
+                    "sum": {
+                        "field": "price"
+                    }
+                },
+                "cumulative_sales": {
+                    "cumulative_sum": {
+                        "buckets_paths": "sales" <a id="CO75-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    }
                 }
             }
         }
     }
-}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>changing an <code class="literal">object</code> type to <code class="literal">nested</code> type requires reindexing.</p></div></div><p>You may want to index inner objects both as <code class="literal">nested</code> fields <span class="strong"><strong>and</strong></span>  as flattened
-<code class="literal">object</code> fields, eg for highlighting.  This can be achieved by setting
-<code class="literal">include_in_parent</code> to <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "type1" : {
-        "properties" : {
-            "users" : {
-                "type" : "nested",
-                "include_in_parent": true,
-                "properties": {
-                    "first" : {"type": "string" },
-                    "last"  : {"type": "string" }
-                }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO75-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">bucket_paths</code> instructs this cumulative sum aggregation to use the output of the <code class="literal">sales</code> aggregation for the cumulative sum
+</p></td></tr></table></div><p>And the following may be the response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "aggregations": {
+      "sales_per_month": {
+         "buckets": [
+            {
+               "key_as_string": "2015/01/01 00:00:00",
+               "key": 1420070400000,
+               "doc_count": 3,
+               "sales": {
+                  "value": 550
+               },
+               "cumulative_sales": {
+                  "value": 550
+               }
+            },
+            {
+               "key_as_string": "2015/02/01 00:00:00",
+               "key": 1422748800000,
+               "doc_count": 2,
+               "sales": {
+                  "value": 60
+               },
+               "cumulative_sales": {
+                  "value": 610
+               }
+            },
+            {
+               "key_as_string": "2015/03/01 00:00:00",
+               "key": 1425168000000,
+               "doc_count": 2,
+               "sales": {
+                  "value": 375
+               },
+               "cumulative_sales": {
+                  "value": 985
+               }
             }
-        }
-    }
-}</pre></div><p>The result of indexing our example document would be something like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{ <a id="CO104-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    "user.first" : "alice",
-    "user.last" :  "white"
-}
-{ <a id="CO104-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    "user.first" : "john",
-    "user.last" :  "smith"
-}
-{ <a id="CO104-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-    "group" :        "fans",
-    "user.first" : [ "alice", "john" ],
-    "user.last" :  [ "smith", "white" ]
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO104-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO104-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Hidden nested documents.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO104-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Visible “parent” document.
-</p></td></tr></table></div><p>Nested fields may contain other nested fields.  The <code class="literal">include_in_parent</code> object
-refers to the direct parent of the field, while the <code class="literal">include_in_root</code>
-parameter refers only to the topmost “root” object or document.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">include_in_parent</code> and <code class="literal">include_in_root</code> options do not apply
-to <a class="link" href="mapping-geo-shape-type.html" title="Geo Shape Type"><code class="literal">geo_shape</code> fields</a>, which are only ever
-indexed inside the nested document.</p></div></div><p>Nested docs will automatically use the root doc <code class="literal">_all</code> field only.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Internal Implementation</strong></p></div></div></div><p>Internally, nested objects are indexed as additional documents, but,
-since they can be guaranteed to be indexed within the same "block", it
-allows for extremely fast joining with parent docs.</p><p>Those internal nested documents are automatically masked away when doing
-operations against the index (like searching with a match_all query),
-and they bubble out when using the nested query.</p><p>Because nested docs are always masked to the parent doc, the nested docs
-can never be accessed outside the scope of the <code class="literal">nested</code> query. For example
-stored fields can be enabled on fields inside nested objects, but there is
-no way of retrieving them, since stored fields are fetched outside of
-the <code class="literal">nested</code> query scope.</p><p>The <code class="literal">_source</code> field is always associated with the parent document and
-because of that field values via the source can be fetched for nested object.</p></div></div></div><div class="navfooter"><span class="prev"><a href="mapping-root-object-type.html">
+         ]
+      }
+   }
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-pipeline-movavg-aggregation.html">
               « 
-              Root Object Type</a>
+              Moving Average Aggregation</a>
            
         </span><span class="next">
            
-          <a href="mapping-ip-type.html">IP Type
+          <a href="search-aggregations-pipeline-bucket-script-aggregation.html">Bucket Script Aggregation
                »
             </a></span></div>
 <!-- end body -->
