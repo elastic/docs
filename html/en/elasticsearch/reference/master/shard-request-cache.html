@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Fielddata</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-indices.html" title="Indices" /><link rel="prev" href="circuit-breaker.html" title="Circuit Breaker" /><link rel="next" href="query-cache.html" title="Node Query Cache" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shard request cache</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-indices.html" title="Indices" /><link rel="prev" href="indexing-buffer.html" title="Indexing Buffer" /><link rel="next" href="recovery.html" title="Indices Recovery" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,45 +573,69 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-indices.html">Indices</a></span> » <span class="breadcrumb-node">Fielddata</span></div><div class="navheader"><span class="prev"><a href="circuit-breaker.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-indices.html">Indices</a></span> » <span class="breadcrumb-node">Shard request cache</span></div><div class="navheader"><span class="prev"><a href="indexing-buffer.html">
               « 
-              Circuit Breaker</a>
+              Indexing Buffer</a>
            
         </span><span class="next">
            
-          <a href="query-cache.html">Node Query Cache
+          <a href="recovery.html">Indices Recovery
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-fielddata"></a>Fielddata<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The field data cache is used mainly when sorting on or computing aggregations
-on a field. It loads all the field values to memory in order to provide fast
-document based access to those values. The field data cache can be
-expensive to build for a field, so its recommended to have enough memory
-to allocate it, and to keep it loaded.</p><p>The amount of memory used for the field
-data cache can be controlled using <code class="literal">indices.fielddata.cache.size</code>. Note:
-reloading  the field data which does not fit into your cache will be expensive
-and  perform poorly.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">indices.fielddata.cache.size</code>
-</span></dt><dd>
-    The max size of the field data cache, eg <code class="literal">30%</code> of node heap space, or an
-    absolute value, eg <code class="literal">12GB</code>. Defaults to unbounded.  Also see
-    <a class="xref" href="circuit-breaker.html#fielddata-circuit-breaker" title="Field data circuit breakeredit">the section called “Field data circuit breaker<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/circuit_breaker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a>.
-</dd><dt><span class="term">
-<code class="literal">indices.fielddata.cache.expire</code>
-</span></dt><dd>
-    <span class="experimental">
-      [<span class="exp_title">experimental</span>]
-      <span class="detail">This functionality is experimental and may be changed or removed completely in a future release.</span></span> A time based setting that expires field data after a
-    certain time of inactivity. Defaults to <code class="literal">-1</code>. For example, can be set to
-    <code class="literal">5m</code> for a 5 minute expiry.
-</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>These are static settings which must be configured on every data node in
-the cluster.</p></div></div><h4><a id="fielddata-monitoring"></a>Monitoring field data<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>You can monitor memory usage for field data as well as the field data circuit
-breaker using
-<a class="link" href="cluster-nodes-stats.html" title="Nodes Stats">Nodes Stats API</a></p></div><div class="navfooter"><span class="prev"><a href="circuit-breaker.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="shard-request-cache"></a>Shard request cache<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/request_cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When a search request is run against an index or against many indices, each
+involved shard executes the search locally and returns its local results to
+the <span class="emphasis"><em>coordinating node</em></span>, which combines these shard-level results into a
+“global” result set.</p><p>The shard-level request cache module caches the local results on each shard.
+This allows frequently used (and potentially heavy) search requests to return
+results almost instantly. The requests cache is a very good fit for the logging
+use case, where only the most recent index is being actively updated — results from older indices will be served directly from the cache.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>For now, the requests cache will only cache the results of search requests
+where <code class="literal">size=0</code>, so it will not cache <code class="literal">hits</code>,
+but it will cache <code class="literal">hits.total</code>,  <a class="link" href="search-aggregations.html" title="Aggregations">aggregations</a>, and
+<a class="link" href="search-suggesters.html" title="Suggesters">suggestions</a>.</p><p>Queries that use <code class="literal">now</code> (see <a class="xref" href="mapping-date-format.html#date-math" title="Date Mathedit">the section called “Date Math<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/date-format.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a>) cannot be cached.</p></div></div><h4><a id="_cache_invalidation"></a>Cache invalidation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/request_cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The cache is smart — it keeps the same <span class="emphasis"><em>near real-time</em></span> promise as uncached
+search.</p><p>Cached results are invalidated automatically whenever the shard refreshes, but
+only if the data in the shard has actually changed.  In other words, you will
+always get the same results from the cache as you would for an uncached search
+request.</p><p>The longer the refresh interval, the longer that cached entries will remain
+valid. If the cache is full, the least recently used cache keys will be
+evicted.</p><p>The cache can be expired manually with the <a class="link" href="indices-clearcache.html" title="Clear Cache"><code class="literal">clear-cache</code> API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl -XPOST 'localhost:9200/kimchy,elasticsearch/_cache/clear?request_cache=true'</pre></div><h4><a id="_enabling_caching_by_default"></a>Enabling caching by default<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/request_cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The cache is not enabled by default, but can be enabled when creating a new
+index as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl -XPUT localhost:9200/my_index -d'
+{
+  "settings": {
+    "index.requests.cache.enable": true
+  }
+}
+'</pre></div><p>It can also be enabled or disabled dynamically on an existing index with the
+<a class="link" href="indices-update-settings.html" title="Update Indices Settings"><code class="literal">update-settings</code></a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl -XPUT localhost:9200/my_index/_settings -d'
+{ "index.requests.cache.enable": true }
+'</pre></div><h4><a id="_enabling_caching_per_request"></a>Enabling caching per request<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/request_cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">query_cache</code> query-string parameter can be used to enable or disable
+caching on a <span class="strong"><strong>per-request</strong></span> basis.  If set, it overrides the index-level setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl 'localhost:9200/my_index/_search?request_cache=true' -d'
+{
+  "size": 0,
+  "aggs": {
+    "popular_colors": {
+      "terms": {
+        "field": "colors"
+      }
+    }
+  }
+}
+'</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If your query uses a script whose result is not deterministic (e.g.
+it uses a random function or references the current time) you should set the
+<code class="literal">request_cache</code> flag to <code class="literal">false</code> to disable caching for that request.</p></div></div><h4><a id="_cache_key"></a>Cache key<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/request_cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The whole JSON body is used as the cache key.  This means that if the JSON
+changes — for instance if keys are output in a different order — then the
+cache key will not be recognised.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Most JSON libraries support a <span class="emphasis"><em>canonical</em></span> mode which ensures that JSON
+keys are always emitted in the same order. This canonical mode can be used in
+the application to ensure that a request is always serialized in the same way.</p></div></div><h4><a id="_cache_settings"></a>Cache settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/request_cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The cache is managed at the node level, and has a default maximum size of <code class="literal">1%</code>
+of the heap.  This can be changed in the <code class="literal">config/elasticsearch.yml</code> file with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">indices.requests.cache.size: 2%</pre></div><p>Also, you can use the <code class="literal">indices.requests.cache.expire</code> setting to specify a TTL
+for cached results, but there should be no reason to do so.  Remember that
+stale results are automatically invalidated when the index is refreshed. This
+setting is provided for completeness' sake only.</p><h4><a id="_monitoring_cache_usage"></a>Monitoring cache usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/indices/request_cache.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The size of the cache (in bytes) and the number of evictions can be viewed
+by index, with the <a class="link" href="indices-stats.html" title="Indices Stats"><code class="literal">indices-stats</code></a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl 'localhost:9200/_stats/request_cache?pretty&amp;human'</pre></div><p>or by node with the <a class="link" href="cluster-nodes-stats.html" title="Nodes Stats"><code class="literal">nodes-stats</code></a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl 'localhost:9200/_nodes/stats/indices/request_cache?pretty&amp;human'</pre></div></div><div class="navfooter"><span class="prev"><a href="indexing-buffer.html">
               « 
-              Circuit Breaker</a>
+              Indexing Buffer</a>
            
         </span><span class="next">
            
-          <a href="query-cache.html">Node Query Cache
+          <a href="recovery.html">Indices Recovery
                »
             </a></span></div>
 <!-- end body -->
