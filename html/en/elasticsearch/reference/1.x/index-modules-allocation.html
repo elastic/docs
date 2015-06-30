@@ -619,7 +619,66 @@ address:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang
     "transient" : {
         "cluster.routing.allocation.exclude._ip" : "10.0.0.1"
     }
-}'</pre></div><h3><a id="_total_shards_per_node"></a>Total Shards Per Node<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">index.routing.allocation.total_shards_per_node</code> setting allows to
+}'</pre></div><h3><a id="delayed-allocation"></a>Delaying allocation when a node leaves<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When a node leaves the cluster for whatever reason, intentional or otherwise,
+the master reacts by:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Promoting a replica shard to primary to replace any primaries that were on the node.
+</li><li class="listitem">
+Allocating replica shards to replace the missing replicas (assuming there are enough nodes).
+</li><li class="listitem">
+Rebalancing shards evenly across the remaining nodes.
+</li></ul></div><p>These actions are intended to protect the cluster against data loss by
+ensuring that every shard is fully replicated as soon as possible.</p><p>Even though we throttle concurrent recoveries both at the
+<a class="link" href="modules-indices.html#recovery" title="Recoveryedit">node level</a> and at the <a class="link" href="modules-cluster.html#shards-allocation" title="Shards Allocationedit">cluster level</a>, this
+“shard-shuffle” can still put a lot of extra load on the cluster which
+may not be necessary if the missing node is likely to return soon. Imagine
+this scenario:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Node 5 loses network connectivity.
+</li><li class="listitem">
+The master promotes a replica shard to primary for each primary that was on Node 5.
+</li><li class="listitem">
+The master allocates new replicas to other nodes in the cluster.
+</li><li class="listitem">
+Each new replica makes an entire copy of the primary shard across the network.
+</li><li class="listitem">
+More shards are moved to different nodes to rebalance the cluster.
+</li><li class="listitem">
+Node 5 returns after a few minutes.
+</li><li class="listitem">
+The master rebalances the cluster by allocating shards to Node 5.
+</li></ul></div><p>If the master had just waited for a few minutes, then the missing shards could
+have been re-allocated to Node 5 with the minimum of network traffic.  This
+process would be even quicker for idle shards (shards not receiving indexing
+requests) which have been automatically <a class="link" href="indices-synced-flush.html" title="Synced Flush">sync-flushed</a>.</p><p>The allocation of replica shards which become unassigned because a node has
+left can be delayed with the <code class="literal">index.unassigned.node_left.delayed_timeout</code>
+dynamic setting, which defaults to <code class="literal">0</code> (reassign shards immediately).</p><p>This setting can be updated on a live index (or on all indices):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_all/_settings
+{
+  "settings": {
+    "index.unassigned.node_left.delayed_timeout": "5m"
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/index-modules-allocation/1.json" target="sense">View in Sense</a><p>With delayed allocation enabled, the above scenario changes to look like this:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Node 5 loses network connectivity.
+</li><li class="listitem">
+The master promotes a replica shard to primary for each primary that was on Node 5.
+</li><li class="listitem">
+The master logs a message that allocation of unassigned shards has been delayed, and for how long.
+</li><li class="listitem">
+The cluster remains yellow because there are unassigned replica shards.
+</li><li class="listitem">
+Node 5 returns after a few minutes, before the <code class="literal">timeout</code> expires.
+</li><li class="listitem">
+The missing replicas are re-allocated to Node 5 (and sync-flushed shards recover almost immediately).
+</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This setting will not affect the promotion of replicas to primaries, nor
+will it affect the assignment of replicas that have not been assigned
+previously.</p></div></div><h4><a id="_monitoring_delayed_unassigned_shards"></a>Monitoring delayed unassigned shards<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The number of shards whose allocation has been delayed by this timeout setting
+can be viewed with the <a class="link" href="cluster-health.html" title="Cluster Health">cluster health API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/health <a id="CO116-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO116-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This request will return a <code class="literal">delayed_unassigned_shards</code> value.
+</p></td></tr></table></div><h4><a id="_removing_a_node_permanently"></a>Removing a node permanently<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If a node is not going to return and you would like Elasticsearch to allocate
+the missing shards immediately, just update the timeout to zero:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_all/_settings
+{
+  "settings": {
+    "index.unassigned.node_left.delayed_timeout": "0"
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/index-modules-allocation/2.json" target="sense">View in Sense</a><p>You can reset the timeout as soon as the missing shards have started to recover.</p><h3><a id="_total_shards_per_node"></a>Total Shards Per Node<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">index.routing.allocation.total_shards_per_node</code> setting allows to
 control how many total shards (replicas and primaries) for an index will be allocated per node.
 It can be dynamically set on a live index using the update index
 settings API.</p><h3><a id="disk"></a>Disk-based Shard Allocation<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elasticsearch can be configured to prevent shard
