@@ -673,6 +673,69 @@ request.  The response for this example would be:</p><div class="pre_wrapper"><p
       ]
     }
   }
+...</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_other_literal_bucket"></a><code class="literal">Other</code> Bucket<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/filters-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">other_bucket</code> parameter can be set to add a bucket to the response which will contain all documents that do
+not match any of the given filters. The value of this parameter can be as follows:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">false</code>
+</span></dt><dd>
+Does not compute the <code class="literal">other</code> bucket
+</dd><dt><span class="term">
+<code class="literal">true</code>
+</span></dt><dd>
+Returns the <code class="literal">other</code> bucket bucket either in a bucket (named <code class="literal">_other_</code> by default) if named filters are being used,
+                  or as the last bucket if anonymous filters are being used
+</dd></dl></div><p>The <code class="literal">other_bucket_key</code> parameter can be used to set the key for the <code class="literal">other</code> bucket to a value other than the default <code class="literal">_other_</code>. Seting
+this parameter will implicitly set the <code class="literal">other_bucket</code> parameter to <code class="literal">true</code>.</p><p>The following snippet shows a response where the <code class="literal">other</code> bucket is requested to be named <code class="literal">other_messages</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "aggs" : {
+    "messages" : {
+      "filters" : {
+        "other_bucket": "other_messages",
+        "filters" : {
+          "errors" :   { "term" : { "body" : "error"   }},
+          "warnings" : { "term" : { "body" : "warning" }}
+        }
+      },
+      "aggs" : {
+        "monthly" : {
+          "histogram" : {
+            "field" : "timestamp",
+            "interval" : "1M"
+          }
+        }
+      }
+    }
+  }
+}</pre></div><p>The response would be something like the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">...
+  "aggs" : {
+    "messages" : {
+      "buckets" : {
+        "errors" : {
+          "doc_count" : 34,
+            "monthly" : {
+              "buckets" : [
+                ... // the histogram monthly breakdown
+              ]
+            }
+          },
+          "warnings" : {
+            "doc_count" : 439,
+            "monthly" : {
+              "buckets" : [
+                 ... // the histogram monthly breakdown
+              ]
+            }
+          },
+          "other_messages" : {
+            "doc_count" : 237,
+            "monthly" : {
+              "buckets" : [
+                 ... // the histogram monthly breakdown
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
 ...</pre></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-filter-aggregation.html">
               « 
               Filter Aggregation</a>
