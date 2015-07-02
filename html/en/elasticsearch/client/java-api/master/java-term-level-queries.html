@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Get API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [master]" /><link rel="up" href="index.html" title="Java API [master]" /><link rel="prev" href="index_.html" title="Index API" /><link rel="next" href="delete.html" title="Delete API" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Term level queries</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [master]" /><link rel="up" href="java-query-dsl.html" title="Query DSL" /><link rel="prev" href="java-full-text-queries.html" title="Full text queries" /><link rel="next" href="java-compound-queries.html" title="Compound queries" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,36 +573,153 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Java API
       [master]
-    </a></span> » <span class="breadcrumb-node">Get API</span></div><div class="navheader"><span class="prev"><a href="index_.html">
+    </a></span> » <span class="breadcrumb-link"><a href="java-query-dsl.html">Query DSL</a></span> » <span class="breadcrumb-node">Term level queries</span></div><div class="navheader"><span class="prev"><a href="java-full-text-queries.html">
               « 
-              Index API</a>
+              Full text queries</a>
            
         </span><span class="next">
            
-          <a href="delete.html">Delete API
+          <a href="java-compound-queries.html">Compound queries
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="get"></a>Get API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/get.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>The get API allows to get a typed JSON document from the index based on
-its id. The following example gets a JSON document from an index called
-twitter, under a type called tweet, with id valued 1:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">GetResponse response = client.prepareGet("twitter", "tweet", "1")
-        .execute()
-        .actionGet();</pre></div><p>For more information on the get operation, check out the REST
-<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/docs-get.html" target="_top">get</a> docs.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_operation_threading_2"></a>Operation Threading<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/get.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The get API allows to set the threading model the operation will be
-performed when the actual execution of the API is performed on the same
-node (the API is executed on a shard that is allocated on the same
-server).</p><p>The options are to execute the operation on a different thread, or to
-execute it on the calling thread (note that the API is still async). By
-default, <code class="literal">operationThreaded</code> is set to <code class="literal">true</code> which means the operation
-is executed on a different thread. Here is an example that sets it to
-<code class="literal">false</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">GetResponse response = client.prepareGet("twitter", "tweet", "1")
-        .setOperationThreaded(false)
-        .execute()
-        .actionGet();</pre></div></div></div><div class="navfooter"><span class="prev"><a href="index_.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-term-level-queries"></a>Term level queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/term-level-queries.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>While the <a class="link" href="java-full-text-queries.html" title="Full text queries">full text queries</a> will analyze the query
+string before executing, the <span class="emphasis"><em>term-level queries</em></span> operate on the exact terms
+that are stored in the inverted index.</p><p>These queries are usually used for structured data like numbers, dates, and
+enums, rather than full text fields.  Alternatively, they allow you to craft
+low-level queries, foregoing the analysis process.</p><p>The queries in this group are:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<a class="link" href="java-term-level-queries.html#java-query-dsl-term-query" title="Term Query"><code class="literal">term</code> query</a>
+</span></dt><dd>
+    Find documents which contain the exact term specified in the field
+    specified.
+</dd><dt><span class="term">
+<a class="link" href="java-term-level-queries.html#java-query-dsl-terms-query" title="Terms Query"><code class="literal">terms</code> query</a>
+</span></dt><dd>
+    Find documents which contain any of the exact terms specified in the field
+    specified.
+</dd><dt><span class="term">
+<a class="link" href="java-term-level-queries.html#java-query-dsl-range-query" title="Range Query"><code class="literal">range</code> query</a>
+</span></dt><dd>
+    Find documents where the field specified contains values (dates, numbers,
+    or strings) in the range specified.
+</dd><dt><span class="term">
+<a class="link" href="java-term-level-queries.html#java-query-dsl-exists-query" title="Exists Query"><code class="literal">exists</code> query</a>
+</span></dt><dd>
+    Find documents where the field specified contains any non-null value.
+</dd><dt><span class="term">
+<a class="link" href="java-term-level-queries.html#java-query-dsl-missing-query" title="Missing Query"><code class="literal">missing</code> query</a>
+</span></dt><dd>
+    Find documents where the field specified does is missing or contains only
+    <code class="literal">null</code> values.
+</dd><dt><span class="term">
+<a class="link" href="java-term-level-queries.html#java-query-dsl-prefix-query" title="Prefix Query"><code class="literal">prefix</code> query</a>
+</span></dt><dd>
+    Find documents where the field specified contains terms which being with
+    the exact prefix specified.
+</dd><dt><span class="term">
+<a class="link" href="java-term-level-queries.html#java-query-dsl-wildcard-query" title="Wildcard Query"><code class="literal">wildcard</code> query</a>
+</span></dt><dd>
+    Find documents where the field specified contains terms which match the
+    pattern specified, where the pattern supports single character wildcards
+    (<code class="literal">?</code>) and multi-character wildcards (<code class="literal">*</code>)
+</dd><dt><span class="term">
+<a class="link" href="java-term-level-queries.html#java-query-dsl-regexp-query" title="Regexp Query"><code class="literal">regexp</code> query</a>
+</span></dt><dd>
+    Find documents where the field specified contains terms which match the
+    regular expression specified.
+</dd><dt><span class="term">
+<a class="link" href="java-term-level-queries.html#java-query-dsl-fuzzy-query" title="Fuzzy Query"><code class="literal">fuzzy</code> query</a>
+</span></dt><dd>
+    Find documents where the field specified contains terms which are fuzzily
+    similar to the specified term.  Fuzziness is measured as a
+    <a class="ulink" href="http://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance" target="_top">Levenshtein edit distance</a>
+    of 1 or 2.
+</dd><dt><span class="term">
+<a class="link" href="java-term-level-queries.html#java-query-dsl-type-query" title="Type Query"><code class="literal">type</code> query</a>
+</span></dt><dd>
+    Find documents of the specified type.
+</dd><dt><span class="term">
+<a class="link" href="java-term-level-queries.html#java-query-dsl-ids-query" title="Ids Query"><code class="literal">ids</code> query</a>
+</span></dt><dd>
+    Find documents with the specified type and IDs.
+</dd></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-dsl-term-query"></a>Term Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/term-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-term-query.html" target="_top">Term Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">QueryBuilder qb = term(
+    "name",    <a id="CO13-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "kimchy"   <a id="CO13-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+text
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-dsl-terms-query"></a>Terms Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/terms-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-terms-query.html" target="_top">Terms Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">QueryBuilder qb = termsQuery("tags",    <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "blue", "pill");                    <a id="CO14-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+values
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-dsl-range-query"></a>Range Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/range-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-range-query.html" target="_top">Range Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">QueryBuilder qb = rangeQuery("price")   <a id="CO15-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    .from(5)                            <a id="CO15-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    .to(10)                             <a id="CO15-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    .includeLower(true)                 <a id="CO15-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    .includeUpper(false);               <a id="CO15-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+from
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+to
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+include lower value means that <code class="literal">from</code> is <code class="literal">gt</code> when <code class="literal">false</code> or <code class="literal">gte</code> when <code class="literal">true</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+include upper value means that <code class="literal">to</code> is <code class="literal">lt</code> when <code class="literal">false</code> or <code class="literal">lte</code> when <code class="literal">true</code>
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// A simplified form using gte, gt, lt or lte
+QueryBuilder qb = rangeQuery("age")   <a id="CO16-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    .gte("10")                        <a id="CO16-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    .lt("20");                        <a id="CO16-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+set <code class="literal">from</code> to 10 and <code class="literal">includeLower</code> to <code class="literal">true</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+set <code class="literal">to</code> to 20 and <code class="literal">includeUpper</code> to <code class="literal">false</code>
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-dsl-exists-query"></a>Exists Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/exists-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-exists-query.html" target="_top">Exists Query</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">QueryBuilder qb = existsQuery("name");       <a id="CO17-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+field
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-dsl-missing-query"></a>Missing Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/missing-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-missing-query.html" target="_top">Missing Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">QueryBuilder qb = missingQuery("user");         <a id="CO18-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    .existence(true)                            <a id="CO18-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    .nullValue(true);                           <a id="CO18-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+find missing field that doesn’t exist
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+find missing field with an explicit <code class="literal">null</code> value
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-dsl-prefix-query"></a>Prefix Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/prefix-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-prefix-query.html" target="_top">Prefix Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">QueryBuilder qb = prefixQuery(
+    "brand",    <a id="CO19-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "heine"     <a id="CO19-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+prefix
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-dsl-wildcard-query"></a>Wildcard Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/wildcard-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-wildcard-query.html" target="_top">Wildcard Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">QueryBuilder qb = wildcardQuery("user", "k?mc*");</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-dsl-regexp-query"></a>Regexp Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/regexp-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-regexp-query.html" target="_top">Regexp Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">QueryBuilder qb = regexpQuery(
+    "name.first",        <a id="CO20-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "s.*y");             <a id="CO20-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO20-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO20-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+regexp
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-dsl-fuzzy-query"></a>Fuzzy Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/fuzzy-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-fuzzy-query.html" target="_top">Fuzzy Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">QueryBuilder qb = fuzzyQuery(
+    "name",     <a id="CO21-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "kimzhy"    <a id="CO21-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO21-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO21-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+text
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-dsl-type-query"></a>Type Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/type-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-type-query.html" target="_top">Type Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">QueryBuilder qb = typeQuery("my_type"); <a id="CO22-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO22-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+type
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-dsl-ids-query"></a>Ids Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/ids-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-ids-query.html" target="_top">Ids Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">QueryBuilder qb = idsQuery("my_type", "type2")
+    .addIds("1", "4", "100");
+
+QueryBuilder qb = idsQuery() <a id="CO23-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    .addIds("1", "4", "100");</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO23-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+type is optional
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="java-full-text-queries.html">
               « 
-              Index API</a>
+              Full text queries</a>
            
         </span><span class="next">
            
-          <a href="delete.html">Delete API
+          <a href="java-compound-queries.html">Compound queries
                »
             </a></span></div>
 <!-- end body -->

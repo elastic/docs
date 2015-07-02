@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Bulk API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [master]" /><link rel="up" href="index.html" title="Java API [master]" /><link rel="prev" href="java-update-api.html" title="Update API" /><link rel="next" href="search.html" title="Search API" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Multi Get API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [master]" /><link rel="up" href="java-docs.html" title="Document APIs" /><link rel="prev" href="java-docs-update.html" title="Update API" /><link rel="next" href="java-docs-bulk.html" title="Bulk API" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,107 +573,45 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Java API
       [master]
-    </a></span> » <span class="breadcrumb-node">Bulk API</span></div><div class="navheader"><span class="prev"><a href="java-update-api.html">
+    </a></span> » <span class="breadcrumb-link"><a href="java-docs.html">Document APIs</a></span> » <span class="breadcrumb-node">Multi Get API</span></div><div class="navheader"><span class="prev"><a href="java-docs-update.html">
               « 
               Update API</a>
            
         </span><span class="next">
            
-          <a href="search.html">Search API
+          <a href="java-docs-bulk.html">Bulk API
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="bulk"></a>Bulk API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>The bulk API allows one to index and delete several documents in a
-single request. Here is a sample usage:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import static org.elasticsearch.common.xcontent.XContentFactory.*;
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-docs-multi-get"></a>Multi Get API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/docs/multi-get.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The multi get API allows to get a list of documents based on their <code class="literal">index</code>, <code class="literal">type</code> and <code class="literal">id</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">MultiGetResponse multiGetItemResponses = client.prepareMultiGet()
+    .add("twitter", "tweet", "1")           <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    .add("twitter", "tweet", "2", "3", "4") <a id="CO4-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    .add("another", "type", "foo")          <a id="CO4-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    .get();
 
-BulkRequestBuilder bulkRequest = client.prepareBulk();
-
-// either use client#prepare, or use Requests# to directly build index/delete requests
-bulkRequest.add(client.prepareIndex("twitter", "tweet", "1")
-        .setSource(jsonBuilder()
-                    .startObject()
-                        .field("user", "kimchy")
-                        .field("postDate", new Date())
-                        .field("message", "trying out Elasticsearch")
-                    .endObject()
-                  )
-        );
-
-bulkRequest.add(client.prepareIndex("twitter", "tweet", "2")
-        .setSource(jsonBuilder()
-                    .startObject()
-                        .field("user", "kimchy")
-                        .field("postDate", new Date())
-                        .field("message", "another post")
-                    .endObject()
-                  )
-        );
-
-BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-if (bulkResponse.hasFailures()) {
-    // process failures by iterating through each bulk response item
-}</pre></div><h2><a id="_using_bulk_processor"></a>Using Bulk Processor<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>The <code class="literal">BulkProcessor</code> class offers a simple interface to flush bulk operations automatically based on the number or size
-of requests, or after a given period.</p><p>To use it, first create a <code class="literal">BulkProcessor</code> instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.action.bulk.BulkProcessor;
-import org.elasticsearch.common.unit.ByteSizeUnit;
-import org.elasticsearch.common.unit.ByteSizeValue;
-
-BulkProcessor bulkProcessor = BulkProcessor.builder(
-        client,  <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        new BulkProcessor.Listener() {
-            @Override
-            public void beforeBulk(long executionId,
-                                   BulkRequest request) { ... } <a id="CO4-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-
-            @Override
-            public void afterBulk(long executionId,
-                                  BulkRequest request,
-                                  BulkResponse response) { ... } <a id="CO4-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-
-            @Override
-            public void afterBulk(long executionId,
-                                  BulkRequest request,
-                                  Throwable failure) { ... } <a id="CO4-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-        })
-        .setBulkActions(10000) <a id="CO4-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
-        .setBulkSize(new ByteSizeValue(1, ByteSizeUnit.GB)) <a id="CO4-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
-        .setFlushInterval(TimeValue.timeValueSeconds(5)) <a id="CO4-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
-        .setConcurrentRequests(1) <a id="CO4-8"></a><span><img src="images/icons/callouts/8.png" alt="" /></span>
-        .build();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Add your elasticsearch client
+for (MultiGetItemResponse itemResponse : multiGetItemResponses) { <a id="CO4-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    GetResponse response = itemResponse.getResponse();
+    if (response.isExists()) {                      <a id="CO4-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+        String json = response.getSourceAsString(); <a id="CO4-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+get by a single id
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This method is called just before bulk is executed. You can for example see the numberOfActions with
-    <code class="literal">request.numberOfActions()</code>
+or by a list of ids for the same index / type
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This method is called after bulk execution. You can for example check if there was some failing requests
-    with <code class="literal">response.hasFailures()</code>
+you can also get from another index
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This method is called when the bulk failed and raised a <code class="literal">Throwable</code>
+iterate over the result set
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-We want to execute the bulk every 10 000 requests
+you can check if the document exists
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-We want to flush the bulk every 1gb
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-We want to flush the bulk every 5 seconds whatever the number of requests
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-8"><span><img src="images/icons/callouts/8.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Set the number of concurrent requests. A value of 0 means that only a single request will  be allowed to be
-    executed. A value of 1 means 1 concurrent request is allowed to be executed while accumulating new bulk requests.
-</p></td></tr></table></div><p>Then you can simply add your requests to the <code class="literal">BulkProcessor</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">bulkProcessor.add(new IndexRequest("twitter", "tweet", "1").source(/* your doc here */));
-bulkProcessor.add(new DeleteRequest("twitter", "tweet", "2"));</pre></div><p>By default, <code class="literal">BulkProcessor</code>:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-sets bulkActions to <code class="literal">1000</code>
-</li><li class="listitem">
-sets bulkSize to <code class="literal">5mb</code>
-</li><li class="listitem">
-does not set flushInterval
-</li><li class="listitem">
-sets concurrentRequests to 1
-</li></ul></div><p>When all documents are loaded to the <code class="literal">BulkProcessor</code> it can be closed by using <code class="literal">awaitClose</code> or <code class="literal">close</code> methods:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">bulkProcessor.awaitClose(10, TimeUnit.MINUTES);</pre></div><p>or</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">bulkProcessor.close();</pre></div><p>Both methods flush any remaining documents and disable all other scheduled flushes if they were scheduled by setting
-<code class="literal">flushInterval</code>. If concurrent requests were enabled the <code class="literal">awaitClose</code> method waits for up to the specified timeout for
-all bulk requests to complete then returns <code class="literal">true</code>, if the specified waiting time elapses before all bulk requests complete,
-<code class="literal">false</code> is returned. The <code class="literal">close</code> method doesn’t wait for any remaining bulk requests to complete and exists immediately.</p></div><div class="navfooter"><span class="prev"><a href="java-update-api.html">
+access to the <code class="literal">_source</code> field
+</p></td></tr></table></div><p>For more information on the multi get operation, check out the REST
+<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/docs-multi-get.html" target="_top">multi get</a> docs.</p></div><div class="navfooter"><span class="prev"><a href="java-docs-update.html">
               « 
               Update API</a>
            
         </span><span class="next">
            
-          <a href="search.html">Search API
+          <a href="java-docs-bulk.html">Bulk API
                »
             </a></span></div>
 <!-- end body -->

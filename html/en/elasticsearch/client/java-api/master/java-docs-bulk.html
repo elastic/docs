@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Delete By Query API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [master]" /><link rel="up" href="index.html" title="Java API [master]" /><link rel="prev" href="count.html" title="Count API" /><link rel="next" href="java-facets.html" title="Facets" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Bulk API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [master]" /><link rel="up" href="java-docs.html" title="Document APIs" /><link rel="prev" href="java-docs-multi-get.html" title="Multi Get API" /><link rel="next" href="java-docs-bulk-processor.html" title="Using Bulk Processor" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,31 +573,50 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Java API
       [master]
-    </a></span> » <span class="breadcrumb-node">Delete By Query API</span></div><div class="navheader"><span class="prev"><a href="count.html">
+    </a></span> » <span class="breadcrumb-link"><a href="java-docs.html">Document APIs</a></span> » <span class="breadcrumb-node">Bulk API</span></div><div class="navheader"><span class="prev"><a href="java-docs-multi-get.html">
               « 
-              Count API</a>
+              Multi Get API</a>
            
         </span><span class="next">
            
-          <a href="java-facets.html">Facets
+          <a href="java-docs-bulk-processor.html">Using Bulk Processor
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="delete-by-query"></a>Delete By Query API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/delete-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>The delete by query API allows one to delete documents from one or more
-indices and one or more types based on a <a class="link" href="query-dsl-queries.html" title="Query DSL - Queries">query</a>. Here
-is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import static org.elasticsearch.index.query.FilterBuilders.*;
-import static org.elasticsearch.index.query.QueryBuilders.*;
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-docs-bulk"></a>Bulk API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/docs/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The bulk API allows one to index and delete several documents in a
+single request. Here is a sample usage:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import static org.elasticsearch.common.xcontent.XContentFactory.*;
 
-DeleteByQueryResponse response = client.prepareDeleteByQuery("test")
-        .setQuery(termQuery("_type", "type1"))
-        .execute()
-        .actionGet();</pre></div><p>For more information on the delete by query operation, check out the
-<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/docs-delete-by-query.html" target="_top">delete_by_query API</a>
-docs.</p></div><div class="navfooter"><span class="prev"><a href="count.html">
+BulkRequestBuilder bulkRequest = client.prepareBulk();
+
+// either use client#prepare, or use Requests# to directly build index/delete requests
+bulkRequest.add(client.prepareIndex("twitter", "tweet", "1")
+        .setSource(jsonBuilder()
+                    .startObject()
+                        .field("user", "kimchy")
+                        .field("postDate", new Date())
+                        .field("message", "trying out Elasticsearch")
+                    .endObject()
+                  )
+        );
+
+bulkRequest.add(client.prepareIndex("twitter", "tweet", "2")
+        .setSource(jsonBuilder()
+                    .startObject()
+                        .field("user", "kimchy")
+                        .field("postDate", new Date())
+                        .field("message", "another post")
+                    .endObject()
+                  )
+        );
+
+BulkResponse bulkResponse = bulkRequest.get();
+if (bulkResponse.hasFailures()) {
+    // process failures by iterating through each bulk response item
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="java-docs-multi-get.html">
               « 
-              Count API</a>
+              Multi Get API</a>
            
         </span><span class="next">
            
-          <a href="java-facets.html">Facets
+          <a href="java-docs-bulk-processor.html">Using Bulk Processor
                »
             </a></span></div>
 <!-- end body -->

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [master]" /><link rel="up" href="index.html" title="Java API [master]" /><link rel="prev" href="delete.html" title="Delete API" /><link rel="next" href="bulk.html" title="Bulk API" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Indexed Scripts API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [master]" /><link rel="up" href="index.html" title="Java API [master]" /><link rel="prev" href="java-span-queries.html" title="Span queries" /><link rel="next" href="_script_language.html" title="Script Language" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,74 +573,40 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Java API
       [master]
-    </a></span> » <span class="breadcrumb-node">Update API</span></div><div class="navheader"><span class="prev"><a href="delete.html">
+    </a></span> » <span class="breadcrumb-node">Indexed Scripts API</span></div><div class="navheader"><span class="prev"><a href="java-span-queries.html">
               « 
-              Delete API</a>
+              Span queries</a>
            
         </span><span class="next">
            
-          <a href="bulk.html">Bulk API
+          <a href="_script_language.html">Script Language
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="java-update-api"></a>Update API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>You can either create an <code class="literal">UpdateRequest</code> and send it to the client:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">UpdateRequest updateRequest = new UpdateRequest();
-updateRequest.index("index");
-updateRequest.type("type");
-updateRequest.id("1");
-updateRequest.doc(jsonBuilder()
-        .startObject()
-            .field("gender", "male")
-        .endObject());
-client.update(updateRequest).get();</pre></div><p>Or you can use <code class="literal">prepareUpdate()</code> method:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">client.prepareUpdate("ttl", "doc", "1")
-        .setScript(new Script("ctx._source.gender = \"male\"" <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> , ScriptService.ScriptType.INLINE, null, null))
-        .get();
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="indexed-scripts"></a>Indexed Scripts API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/indexed-scripts.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>The indexed script API allows one to interact with scripts and templates
+stored in an elasticsearch index. It can be used to create, update, get,
+and delete indexed scripts and templates.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">PutIndexedScriptResponse = client.preparePutIndexedScript()
+                         .setScriptLang("groovy")
+                         .setId("script1")
+                         .setSource("_score * doc['my_numeric_field'].value")
+                         .execute()
+                         .actionGet();
 
-client.prepareUpdate("ttl", "doc", "1")
-        .setDoc(jsonBuilder()               <a id="CO1-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-            .startObject()
-                .field("gender", "male")
-            .endObject())
-        .get();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Your script. It could also be a locally stored script name.
-In that case, you’ll need to use <code class="literal">ScriptService.ScriptType.FILE</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Document which will be merged to the existing one.
-</p></td></tr></table></div><p>Note that you can’t provide both <code class="literal">script</code> and <code class="literal">doc</code>.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-update-api-script"></a>Update by script<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The update API allows to update a document based on a script provided:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">UpdateRequest updateRequest = new UpdateRequest("ttl", "doc", "1")
-        .script(new Script("ctx._source.gender = \"male\""));
-client.update(updateRequest).get();</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-update-api-merge-docs"></a>Update by merging documents<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The update API also support passing a partial document, which will be merged into the existing document (simple
-recursive merge, inner merging of objects, replacing core "keys/values" and arrays). For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">UpdateRequest updateRequest = new UpdateRequest("index", "type", "1")
-        .doc(jsonBuilder()
-            .startObject()
-                .field("gender", "male")
-            .endObject());
-client.update(updateRequest).get();</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-update-api-upsert"></a>Upsert<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>There is also support for <code class="literal">upsert</code>. If the document already exists, the content of the <code class="literal">upsert</code>
-element will be used to index the fresh doc:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">IndexRequest indexRequest = new IndexRequest("index", "type", "1")
-        .source(jsonBuilder()
-            .startObject()
-                .field("name", "Joe Smith")
-                .field("gender", "male")
-            .endObject());
-UpdateRequest updateRequest = new UpdateRequest("index", "type", "1")
-        .doc(jsonBuilder()
-            .startObject()
-                .field("gender", "male")
-            .endObject())
-        .upsert(indexRequest);              <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-client.update(updateRequest).get();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-If the document does not exist, the one in <code class="literal">indexRequest</code> will be added
-</p></td></tr></table></div><p>If the document <code class="literal">index/type/1</code> already exists, we will have after this operation a document like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "name"  : "Joe Dalton",
-    "gender": "male"        <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This field is added by the update request
-</p></td></tr></table></div><p>If it does not exist, we will have a new document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "name" : "Joe Smith",
-    "gender": "male"
-}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="delete.html">
+GetIndexedScriptResponse = client.prepareGetIndexedScript()
+                            .setScriptLang("groovy")
+                            .setId("script1")
+                            .execute()
+                            .actionGet();
+
+DeleteIndexedScriptResponse = client.prepareDeleteIndexedScript()
+                            .setScriptLang("groovy")
+                            .setId("script1")
+                            .execute()
+                            .actionGet();</pre></div><p>To store templates simply use "mustache" for the scriptLang.</p></div><div class="navfooter"><span class="prev"><a href="java-span-queries.html">
               « 
-              Delete API</a>
+              Span queries</a>
            
         </span><span class="next">
            
-          <a href="bulk.html">Bulk API
+          <a href="_script_language.html">Script Language
                »
             </a></span></div>
 <!-- end body -->
