@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [1.x]" /><link rel="up" href="index.html" title="Java API [1.x]" /><link rel="prev" href="delete.html" title="Delete API" /><link rel="next" href="bulk.html" title="Bulk API" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [1.x]" /><link rel="up" href="index.html" title="Java API [1.x]" /><link rel="prev" href="operation-threading.html" title="Operation Threading" /><link rel="next" href="java-update-api-script.html" title="Update by script" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -25,8 +25,8 @@
 <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
 <meta name="theme-color" content="#ffffff">
 
+
 	<meta name="description" content="" />
-	<meta name="keywords" content="" />
 
 
 
@@ -49,10 +49,10 @@
 	<!-- <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'> -->
 	
 	<link type="text/css" rel="stylesheet" href="/static/css/skel.css" />	
-	<link type="text/css" rel="stylesheet" href="/static/css/style.css?clr=121" />	
+	<link type="text/css" rel="stylesheet" href="/static/css/style.css?clr=122" />	
 	<script src="/static/js/skel.min.js"></script>
 	<script type="text/javascript">form_name = "guide_template"</script>
-	<script src="/static/js/init.js?clr=121"></script>
+	<script src="/static/js/init.js?clr=122"></script>
 	<script src="/static/js/classie.js"></script>
 	<!--<script type="text/javascript">
 	    (function() {
@@ -573,13 +573,13 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Java API
       [1.x]
-    </a></span> » <span class="breadcrumb-node">Update API</span></div><div class="navheader"><span class="prev"><a href="delete.html">
+    </a></span> » <span class="breadcrumb-node">Update API</span></div><div class="navheader"><span class="prev"><a href="operation-threading.html">
               « 
-              Delete API</a>
+              Operation Threading</a>
            
         </span><span class="next">
            
-          <a href="bulk.html">Bulk API
+          <a href="java-update-api-script.html">Update by script
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="java-update-api"></a>Update API<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/java-api/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>You can either create an <code class="literal">UpdateRequest</code> and send it to the client:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">UpdateRequest updateRequest = new UpdateRequest();
 updateRequest.index("index");
@@ -603,44 +603,13 @@ Your script. It could also be a locally stored script name.
 In that case, you’ll need to use <code class="literal">ScriptService.ScriptType.FILE</code>
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Document which will be merged to the existing one.
-</p></td></tr></table></div><p>Note that you can’t provide both <code class="literal">script</code> and <code class="literal">doc</code>.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-update-api-script"></a>Update by script<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/java-api/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The update API allows to update a document based on a script provided:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">UpdateRequest updateRequest = new UpdateRequest("ttl", "doc", "1")
-        .script("ctx._source.gender = \"male\"");
-client.update(updateRequest).get();</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-update-api-merge-docs"></a>Update by merging documents<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/java-api/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The update API also support passing a partial document, which will be merged into the existing document (simple
-recursive merge, inner merging of objects, replacing core "keys/values" and arrays). For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">UpdateRequest updateRequest = new UpdateRequest("index", "type", "1")
-        .doc(jsonBuilder()
-            .startObject()
-                .field("gender", "male")
-            .endObject());
-client.update(updateRequest).get();</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-update-api-upsert"></a>Upsert<a href="https://github.com/elastic/elasticsearch/edit/1.x/docs/java-api/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>There is also support for <code class="literal">upsert</code>. If the document already exists, the content of the <code class="literal">upsert</code>
-element will be used to index the fresh doc:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">IndexRequest indexRequest = new IndexRequest("index", "type", "1")
-        .source(jsonBuilder()
-            .startObject()
-                .field("name", "Joe Smith")
-                .field("gender", "male")
-            .endObject());
-UpdateRequest updateRequest = new UpdateRequest("index", "type", "1")
-        .doc(jsonBuilder()
-            .startObject()
-                .field("gender", "male")
-            .endObject())
-        .upsert(indexRequest);              <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-client.update(updateRequest).get();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-If the document does not exist, the one in <code class="literal">indexRequest</code> will be added
-</p></td></tr></table></div><p>If the document <code class="literal">index/type/1</code> already exists, we will have after this operation a document like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "name"  : "Joe Dalton",
-    "gender": "male"        <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This field is added by the update request
-</p></td></tr></table></div><p>If it does not exist, we will have a new document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "name" : "Joe Smith",
-    "gender": "male"
-}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="delete.html">
+</p></td></tr></table></div><p>Note that you can’t provide both <code class="literal">script</code> and <code class="literal">doc</code>.</p></div><div class="navfooter"><span class="prev"><a href="operation-threading.html">
               « 
-              Delete API</a>
+              Operation Threading</a>
            
         </span><span class="next">
            
-          <a href="bulk.html">Bulk API
+          <a href="java-update-api-script.html">Update by script
                »
             </a></span></div>
 <!-- end body -->
