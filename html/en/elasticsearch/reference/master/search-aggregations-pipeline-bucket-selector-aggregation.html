@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Has Child Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="joining-queries.html" title="Joining queries" /><link rel="prev" href="query-dsl-nested-query.html" title="Nested Query" /><link rel="next" href="query-dsl-has-parent-query.html" title="Has Parent Query" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Bucket Selector Aggregation</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-aggregations-pipeline.html" title="Pipeline Aggregations" /><link rel="prev" href="search-aggregations-pipeline-bucket-script-aggregation.html" title="Bucket Script Aggregation" /><link rel="next" href="caching-heavy-aggregations.html" title="Caching heavy aggregations" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,65 +573,88 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-link"><a href="joining-queries.html">Joining queries</a></span> » <span class="breadcrumb-node">Has Child Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-nested-query.html">
+    </a></span> » <span class="breadcrumb-link"><a href="search-aggregations.html">Aggregations </a></span> » <span class="breadcrumb-link"><a href="search-aggregations-pipeline.html">Pipeline Aggregations</a></span> » <span class="breadcrumb-node">Bucket Selector Aggregation</span></div><div class="navheader"><span class="prev"><a href="search-aggregations-pipeline-bucket-script-aggregation.html">
               « 
-              Nested Query</a>
+              Bucket Script Aggregation</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-has-parent-query.html">Has Parent Query
+          <a href="caching-heavy-aggregations.html">Caching heavy aggregations
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-has-child-query"></a>Has Child Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/has-child-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">has_child</code> filter accepts a query and the child type to run against, and
-results in parent documents that have child docs matching the query. Here is
-an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "has_child" : {
-        "type" : "blog_tag",
-        "query" : {
-            "term" : {
-                "tag" : "something"
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-pipeline-bucket-selector-aggregation"></a>Bucket Selector Aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline/bucket-selector-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Coming in 2.0.0.</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release.</p></div></div><p>A parent pipeline aggregation which executes a script which determines whether the current bucket will be retained
+in the parent multi-bucket aggregation. The specified metric must be numeric and the script must return a boolean value.
+If the script language is <code class="literal">expression</code> then a numeric return value is permitted. In this case 0.0 will be evaluated as <code class="literal">false</code>
+and all other values will evaluate to true.</p><p>Note: The bucket_selector aggregation, like all pipeline aggregations, executions after all other sibling aggregations. This means that
+using the bucket_selector aggregation to filter the returned buckets in the response does not save on execution time running the aggregations.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_syntax_9"></a>Syntax<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline/bucket-selector-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A <code class="literal">bucket_selector</code> aggregation looks like this in isolation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "bucket_selector": {
+        "buckets_path": {
+            "my_var1": "the_sum", <a id="CO79-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "my_var2": "the_value_count"
+        },
+        script: "my_var1 &gt; my_var2"
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO79-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Here, <code class="literal">my_var1</code> is the name of the variable for this buckets path to use in the script, <code class="literal">the_sum</code> is the path to
+the metrics to use for that variable.
+</p></td></tr></table></div><div class="table"><a id="id-1.8.5.36.6.5"></a><p class="title"><strong>Table 9. <code class="literal">bucket_selector</code> Parameters</strong></p><div class="table-contents"><table summary="bucket_selector Parameters" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><tbody><tr><td align="left" valign="top"><p>Parameter Name</p></td><td align="left" valign="top"><p>Description</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Default Value</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">script</code></p></td><td align="left" valign="top"><p>The script to run for this aggregation. The script can be inline, file or indexed. (see <a class="xref" href="modules-scripting.html" title="Scripting"><em>Scripting</em></a>
+for more details)</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">buckets_path</code></p></td><td align="left" valign="top"><p>A map of script variables and their associated path to the buckets we wish to use for the variable
+(see <a class="xref" href="search-aggregations-pipeline.html#bucket-path-syntax" title="buckets_path Syntaxedit">the section called “<code class="literal">buckets_path</code> Syntax<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for more details)</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">gap_policy</code></p></td><td align="left" valign="top"><p>The policy to apply when gaps are found in the data (see <a class="xref" href="search-aggregations-pipeline.html#gap-policy" title="Dealing with gaps in the dataedit">the section called “Dealing with gaps in the data<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for more
+ details)</p></td><td align="left" valign="top"><p>Optional, defaults to <code class="literal">skip</code></p></td><td align="left" valign="top"><p></p></td></tr></tbody></table></div></div><br class="table-break" /><p>The following snippet only retains buckets where the total sales for the month is less than or equal to 50:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "aggs" : {
+        "sales_per_month" : {
+            "date_histogram" : {
+                "field" : "date",
+                "interval" : "month"
+            },
+            "aggs": {
+                "total_sales": {
+                    "sum": {
+                        "field": "price"
+                    }
+                }
+                "sales_bucket_filter": {
+                    "bucket_selector": {
+                        "buckets_paths": {
+                          "totalSales": "total_sales"
+                        },
+                        "script": "totalSales &lt;= 50"
+                    }
+                }
             }
         }
     }
-}</pre></div><h4><a id="_scoring_capabilities"></a>Scoring capabilities<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/has-child-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">has_child</code> also has scoring support. The
-supported score types are <code class="literal">min</code>, <code class="literal">max</code>, <code class="literal">sum</code>, <code class="literal">avg</code> or <code class="literal">none</code>. The default is
-<code class="literal">none</code> and yields the same behaviour as in previous versions. If the
-score type is set to another value than <code class="literal">none</code>, the scores of all the
-matching child documents are aggregated into the associated parent
-documents. The score type can be specified with the <code class="literal">score_mode</code> field
-inside the <code class="literal">has_child</code> query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "has_child" : {
-        "type" : "blog_tag",
-        "score_mode" : "sum",
-        "query" : {
-            "term" : {
-                "tag" : "something"
+}</pre></div><p>And the following may be the response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "aggregations": {
+      "sales_per_month": {
+         "buckets": [
+            {
+               "key_as_string": "2015/01/01 00:00:00",
+               "key": 1420070400000,
+               "doc_count": 3,
+               "total_sales": {
+                   "value": 50
+               }
+            },<a id="CO80-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            {
+               "key_as_string": "2015/03/01 00:00:00",
+               "key": 1425168000000,
+               "doc_count": 2,
+               "total_sales": {
+                   "value": 40
+               },
             }
-        }
-    }
-}</pre></div><h4><a id="_min_max_children"></a>Min/Max Children<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/has-child-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">has_child</code> query allows you to specify that a minimum and/or maximum
-number of children are required to match for the parent doc to be considered
-a match:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "has_child" : {
-        "type" : "blog_tag",
-        "score_mode" : "sum",
-        "min_children": 2, <a id="CO109-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        "max_children": 10, <a id="CO109-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-        "query" : {
-            "term" : {
-                "tag" : "something"
-            }
-        }
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO109-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO109-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Both <code class="literal">min_children</code> and <code class="literal">max_children</code> are optional.
-</p></td></tr></table></div><p>The  <code class="literal">min_children</code> and <code class="literal">max_children</code> parameters can be combined with
-the <code class="literal">score_mode</code> parameter.</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-nested-query.html">
+         ]
+      }
+   }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO80-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Bucket for <code class="literal">2015/02/01 00:00:00</code> has been removed as its total sales exceeded 50
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-pipeline-bucket-script-aggregation.html">
               « 
-              Nested Query</a>
+              Bucket Script Aggregation</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-has-parent-query.html">Has Parent Query
+          <a href="caching-heavy-aggregations.html">Caching heavy aggregations
                »
             </a></span></div>
 <!-- end body -->
