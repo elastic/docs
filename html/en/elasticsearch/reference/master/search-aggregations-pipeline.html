@@ -667,22 +667,27 @@ count of each bucket, instead of a specific metric:</p><div class="pre_wrapper">
     }
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO63-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 By using <code class="literal">_count</code> instead of a metric name, we can calculate the moving average of document counts in the histogram
-</p></td></tr></table></div><h3><a id="gap-policy"></a>Dealing with gaps in the data<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>There are a couple of reasons why the data output by the enclosing histogram may have gaps:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-There are no documents matching the query for some buckets
+</p></td></tr></table></div><h3><a id="gap-policy"></a>Dealing with gaps in the data<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Data in the real world is often noisy and sometimes contains <span class="strong"><strong>gaps</strong></span> — places where data simply doesn’t exist.  This can
+occur for a variety of reasons, the most common being:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Documents falling into a bucket do not contain a required field
 </li><li class="listitem">
-The data for a metric is missing in all of the documents falling into a bucket (this is most likely with either a small interval
-on the enclosing histogram or with a query matching only a small number of documents)
-</li></ul></div><p>Where there is no data available in a bucket for a given metric it presents a problem for calculating the derivative value for both
-the current bucket and the next bucket. In the derivative pipeline aggregation has a <code class="literal">gap policy</code> parameter to define what the behavior
-should be when a gap in the data is found. There are currently two options for controlling the gap policy:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+There are no documents matching the query for one or more buckets
+</li><li class="listitem">
+The metric being calculated is unable to generate a value, likely because another dependent bucket is missing a value.
+Some pipeline aggregations have specific requirements that must be met (e.g. a derivative cannot calculate a metric for the
+first value because there is no previous value, HoltWinters moving average need "warmup" data to begin calculating, etc)
+</li></ul></div><p>Gap policies are a mechanism to inform the pipeline aggregation about the desired behavior when "gappy" or missing
+data is encountered.  All pipeline aggregations accept the <code class="literal">gap_policy</code> parameter.  There are currently two gap policies
+to choose from:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <span class="emphasis"><em>skip</em></span>
 </span></dt><dd>
-                This option will not produce a derivative value for any buckets where the value in the current or previous bucket is
-                missing
+                This option treats missing data as if the bucket does not exist.  It will skip the bucket and continue
+                calculating using the next available value.
 </dd><dt><span class="term">
 <span class="emphasis"><em>insert_zeros</em></span>
 </span></dt><dd>
-                This option will assume the missing value is <code class="literal">0</code> and calculate the derivative with the value <code class="literal">0</code>.
+                This option will replace missing values with a zero (<code class="literal">0</code>) and pipeline aggregation computation will
+                proceed as normal.
 </dd></dl></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-terms-aggregation.html">
               « 
               Terms Aggregation</a>
