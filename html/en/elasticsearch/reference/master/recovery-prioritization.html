@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Delaying allocation when a node leaves</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-modules-allocation.html" title="Index Shard Allocation" /><link rel="prev" href="shard-allocation-filtering.html" title="Shard Allocation Filtering" /><link rel="next" href="recovery-prioritization.html" title="Index recovery prioritization" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Index recovery prioritization</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-modules-allocation.html" title="Index Shard Allocation" /><link rel="prev" href="delayed-allocation.html" title="Delaying allocation when a node leaves" /><link rel="next" href="allocation-total-shards.html" title="Total Shards Per Node" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -573,80 +573,57 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-link"><a href="index-modules-allocation.html">Index Shard Allocation</a></span> » <span class="breadcrumb-node">Delaying allocation when a node leaves</span></div><div class="navheader"><span class="prev"><a href="shard-allocation-filtering.html">
+    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-link"><a href="index-modules-allocation.html">Index Shard Allocation</a></span> » <span class="breadcrumb-node">Index recovery prioritization</span></div><div class="navheader"><span class="prev"><a href="delayed-allocation.html">
               « 
-              Shard Allocation Filtering</a>
+              Delaying allocation when a node leaves</a>
            
         </span><span class="next">
            
-          <a href="recovery-prioritization.html">Index recovery prioritization
+          <a href="allocation-total-shards.html">Total Shards Per Node
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="delayed-allocation"></a>Delaying allocation when a node leaves<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When a node leaves the cluster for whatever reason, intentional or otherwise,
-the master reacts by:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Promoting a replica shard to primary to replace any primaries that were on the node.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="recovery-prioritization"></a>Index recovery prioritization<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/prioritization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Unallocated shards are recovered in order of priority, whenever possible.
+Indices are sorted into priority order as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+the optional <code class="literal">index.priority</code> setting (higher before lower)
 </li><li class="listitem">
-Allocating replica shards to replace the missing replicas (assuming there are enough nodes).
+the index creation date (higher before lower)
 </li><li class="listitem">
-Rebalancing shards evenly across the remaining nodes.
-</li></ul></div><p>These actions are intended to protect the cluster against data loss by
-ensuring that every shard is fully replicated as soon as possible.</p><p>Even though we throttle concurrent recoveries both at the
-<a class="link" href="recovery.html" title="Indices Recovery">node level</a> and at the <a class="link" href="shards-allocation.html" title="Cluster Level Shard Allocation">cluster level</a>, this
-“shard-shuffle” can still put a lot of extra load on the cluster which
-may not be necessary if the missing node is likely to return soon. Imagine
-this scenario:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Node 5 loses network connectivity.
-</li><li class="listitem">
-The master promotes a replica shard to primary for each primary that was on Node 5.
-</li><li class="listitem">
-The master allocates new replicas to other nodes in the cluster.
-</li><li class="listitem">
-Each new replica makes an entire copy of the primary shard across the network.
-</li><li class="listitem">
-More shards are moved to different nodes to rebalance the cluster.
-</li><li class="listitem">
-Node 5 returns after a few minutes.
-</li><li class="listitem">
-The master rebalances the cluster by allocating shards to Node 5.
-</li></ul></div><p>If the master had just waited for a few minutes, then the missing shards could
-have been re-allocated to Node 5 with the minimum of network traffic.  This
-process would be even quicker for idle shards (shards not receiving indexing
-requests) which have been automatically <a class="link" href="indices-synced-flush.html" title="Synced Flush">sync-flushed</a>.</p><p>The allocation of replica shards which become unassigned because a node has
-left can be delayed with the <code class="literal">index.unassigned.node_left.delayed_timeout</code>
-dynamic setting, which defaults to <code class="literal">1m</code>.</p><p>This setting can be updated on a live index (or on all indices):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_all/_settings
+the index name (higher before lower)
+</li></ul></div><p>This means that, by default, newer indices will be recovered before older indices.</p><p>Use the per-index dynamically updateable <code class="literal">index.priority</code> setting to customise
+the index prioritization order.  For instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT index_1
+
+PUT index_2
+
+PUT index_3
 {
   "settings": {
-    "index.unassigned.node_left.delayed_timeout": "5m"
+    "index.priority": 10
   }
-}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/delayed-allocation/1.json" target="sense">View in Sense</a><p>With delayed allocation enabled, the above scenario changes to look like this:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Node 5 loses network connectivity.
-</li><li class="listitem">
-The master promotes a replica shard to primary for each primary that was on Node 5.
-</li><li class="listitem">
-The master logs a message that allocation of unassigned shards has been delayed, and for how long.
-</li><li class="listitem">
-The cluster remains yellow because there are unassigned replica shards.
-</li><li class="listitem">
-Node 5 returns after a few minutes, before the <code class="literal">timeout</code> expires.
-</li><li class="listitem">
-The missing replicas are re-allocated to Node 5 (and sync-flushed shards recover almost immediately).
-</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This setting will not affect the promotion of replicas to primaries, nor
-will it affect the assignment of replicas that have not been assigned
-previously.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_monitoring_delayed_unassigned_shards"></a>Monitoring delayed unassigned shards<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The number of shards whose allocation has been delayed by this timeout setting
-can be viewed with the <a class="link" href="cluster-health.html" title="Cluster Health">cluster health API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/health <a id="CO154-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO154-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This request will return a <code class="literal">delayed_unassigned_shards</code> value.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_removing_a_node_permanently"></a>Removing a node permanently<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If a node is not going to return and you would like Elasticsearch to allocate
-the missing shards immediately, just update the timeout to zero:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_all/_settings
+}
+
+PUT index_4
 {
   "settings": {
-    "index.unassigned.node_left.delayed_timeout": "0"
+    "index.priority": 5
   }
-}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/delayed-allocation/2.json" target="sense">View in Sense</a><p>You can reset the timeout as soon as the missing shards have started to recover.</p></div></div><div class="navfooter"><span class="prev"><a href="shard-allocation-filtering.html">
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/recovery-prioritization/1.json" target="sense">View in Sense</a><p>In the above example:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">index_3</code> will be recovered first because it has the highest <code class="literal">index.priority</code>.
+</li><li class="listitem">
+<code class="literal">index_4</code> will be recovered next because it has the next highest priority.
+</li><li class="listitem">
+<code class="literal">index_2</code> will be recovered next because it was created more recently.
+</li><li class="listitem">
+<code class="literal">index_1</code> will be recovered last.
+</li></ul></div><p>This setting accepts an integer, and can be updated on a live index with the
+<a class="link" href="indices-update-settings.html" title="Update Indices Settings">update index settings API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT index_4/_settings
+{
+  "index.priority": 1
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/recovery-prioritization/2.json" target="sense">View in Sense</a></div><div class="navfooter"><span class="prev"><a href="delayed-allocation.html">
               « 
-              Shard Allocation Filtering</a>
+              Delaying allocation when a node leaves</a>
            
         </span><span class="next">
            
-          <a href="recovery-prioritization.html">Index recovery prioritization
+          <a href="allocation-total-shards.html">Total Shards Per Node
                »
             </a></span></div>
 <!-- end body -->
