@@ -617,7 +617,14 @@ Versioned index requests could return a conflict exception, even
   though they were applied correctly.
 </li><li class="listitem">
 Update requests could be applied twice.
-</li></ul></div><p>See <a class="ulink" href="https://github.com/elasticsearch/elasticsearch/issues/9967" target="_top">#9967</a>. (STATUS: ONGOING)</p><h3><a id="_write_index_metadata_on_data_nodes_where_shards_allocated_status_ongoing"></a>Write index metadata on data nodes where shards allocated (STATUS: ONGOING)<a href="https://github.com/elastic/elasticsearch/edit/master/docs/resiliency/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Today, index metadata is written only on nodes that are master-eligible, not on
+</li></ul></div><p>See <a class="ulink" href="https://github.com/elasticsearch/elasticsearch/issues/9967" target="_top">#9967</a>. (STATUS: ONGOING)</p><h3><a id="_wait_on_incoming_joins_before_electing_local_node_as_master_status_ongoing"></a>Wait on incoming joins before electing local node as master (STATUS: ONGOING)<a href="https://github.com/elastic/elasticsearch/edit/master/docs/resiliency/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>During master election each node pings in order to discover other nodes and validate the liveness of existing
+nodes. Based on this information the node either discovers an existing master or, if enough nodes are found
+(see <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery-zen.html#master-election" target="_top"><code class="literal">discovery.zen.minimum_master_nodes</code></a>) a new master will be elected. Currently, the node that is
+elected as master will update the cluster state to indicate the result of the election. Other nodes will submit
+a join request to the newly elected master node. Instead of immediately processing the election result, the elected master
+node should wait for the incoming joins from other nodes, thus validating that the result of the election is properly applied. As soon as enough
+nodes have sent their joins request (based on the <code class="literal">minimum_master_nodes</code> settings) the cluster state is updated.
+<a class="ulink" href="https://github.com/elasticsearch/elasticsearch/issues/12161" target="_top">#12161</a></p><h3><a id="_write_index_metadata_on_data_nodes_where_shards_allocated_status_ongoing"></a>Write index metadata on data nodes where shards allocated (STATUS: ONGOING)<a href="https://github.com/elastic/elasticsearch/edit/master/docs/resiliency/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Today, index metadata is written only on nodes that are master-eligible, not on
 data-only nodes.  This is not a problem when running with multiple master nodes,
 as recommended, as the loss of all but one master node is still recoverable.
 However, users running with a single master node are at risk of losing

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Kibana</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield - Elasticsearch Security Plugin [1.3]" /><link rel="up" href="clients.html" title="Integrating Shield with clients" /><link rel="prev" href="marvel.html" title="Shield with Marvel" /><link rel="next" href="_shield_with_kibana_3.html" title="Shield with Kibana 3" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using Kibana with Shield</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [1.3]" /><link rel="up" href="configuring-clients-integrations.html" title="Configuring Clients and Integrations" /><link rel="prev" href="marvel.html" title="Using Marvel with Shield" /><link rel="next" href="license-management.html" title="Managing Shield Licenses" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -571,24 +571,114 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield - Elasticsearch Security Plugin
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
       [1.3]
-    </a></span> » <span class="breadcrumb-link"><a href="clients.html">Integrating Shield with clients</a></span> » <span class="breadcrumb-node">Kibana</span></div><div class="navheader"><span class="prev"><a href="marvel.html">
+    </a></span> » <span class="breadcrumb-link"><a href="configuring-clients-integrations.html">Configuring Clients and Integrations</a></span> » <span class="breadcrumb-node">Using Kibana with Shield</span></div><div class="navheader"><span class="prev"><a href="marvel.html">
               « 
-              Shield with Marvel</a>
+              Using Marvel with Shield</a>
            
         </span><span class="next">
            
-          <a href="_shield_with_kibana_3.html">Shield with Kibana 3
+          <a href="license-management.html">Managing Shield Licenses
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="kibana"></a>Kibana</h2></div></div></div><p>Shield supports both Kibana 3 and Kibana 4.0+ releases. The configuration required differs
-between Kibana 3 and 4. Please follow the instructions below for the version of Kibana you are working with.</p></div><div class="navfooter"><span class="prev"><a href="marvel.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="kibana"></a>Using Kibana with Shield</h2></div></div></div><p>Shield supports both Kibana 3 and Kibana 4.0+ releases. The configuration required differs
+between Kibana 3 and 4. Please follow the instructions below for the version of Kibana you are working with.</p><h4><a id="_using_kibana_3_with_shield"></a>Using Kibana 3 with Shield</h4><p>Shield and Kibana 3 have been tested together for recent versions of Chrome, Safari, and IE. This section describes
+configuration changes and general information to ensure that the two products work together successfully for you.</p><p>Kibana 3 uses the <code class="literal">kibana-int</code> index to store saved dashboards. All users store dashboards in this index. Enable all
+users to save and load dashboards from this index. When the Shield plugin is installed, users may be able to load
+dashboards that access data in indices that they are not authorized to view. A user that loads such a dashboard
+will receive a Kibana error stating that the disallowed index does not exist.</p><p>At the moment, there is no way to control which users can load which dashboards. We expect to address this
+limitation with future versions of Shield and Kibana.</p><h5><a id="_configuring_kibana_3"></a>Configuring Kibana 3</h5><p>Kibana will need to be informed that you wish use credentials. In Kibana’s <code class="literal">config.js</code> set the <code class="literal">elasticsearch</code> property:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">elasticsearch: {server: "http://YOUR_ELASTICSEARCH_SERVER:9200", withCredentials: true}</pre></div><h5><a id="cors"></a>Enabling CORS in Elasticsearch</h5><p>HTTP authentication interacts with cross-origin resource sharing (CORS). Clusters that use CORS must send authentication
+headers to the browser.</p><p>In the <code class="literal">elasticsearch.yml</code> file on all nodes, add the following configuration entries:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">http.cors.enabled: true
+http.cors.allow-origin: "https://MYHOST:MYPORT"
+http.cors.allow-credentials: true</pre></div><p>Note that in <code class="literal">http.cors.allow-origin</code>, <code class="literal">*</code> is disallowed for credentialed requests. You must enter the correct
+protocol, hostname and port that would normally be entered into your browser.</p><p>Restart the nodes after modifying the configuration file. This change enables Elasticsearch to send the required
+<code class="literal">Access-Control-Allow-Credentials</code> header.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To learn more about enabling CORS, see <a class="ulink" href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-http.html" target="_top">Elasticsearch Reference</a>.</p></div></div><h5><a id="_configuring_shield_for_kibana_3"></a>Configuring Shield for Kibana 3</h5><p>Shield includes a default <a class="link" href="configuring-rbac.html#roles" title="Roles, Permissions and Privileges">role</a> for use with Kibana 3:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">kibana3:
+  cluster: cluster:monitor/nodes/info
+  indices:
+    '*': indices:data/read/search, indices:data/read/get, indices:admin/get <a id="CO21-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    'kibana-int': indices:data/read/get, indices:data/read/search, indices:data/write/delete, indices:data/write/index,
+                  create_index</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO21-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This line gives the Kibana 3 user read access to indices in order to search and display the data in them. To
+constrain this role’s access to specific indices, alter the wildcard.
+</p></td></tr></table></div><p>Kibana 3 uses the <code class="literal">kibana-int</code> index to save and load dashboards. This role definition allows the user to manage and
+use the dashboards in the <code class="literal">kibana-int</code> index.</p><p>Kibana 3 uses the cluster permission to access the <code class="literal">/_nodes</code> endpoint in order to check the node version.</p><p>Elasticsearch recommends that you create one or more roles derived from this role. These new roles will include access to
+indices specified by your organization’s goals and policies.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_ssl_tls_and_browsers"></a>SSL/TLS and browsers</h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_trusting_certificates"></a>Trusting certificates</h4></div></div></div><p>As discussed in <a class="link" href="securing-communications.html" title="Securing Communications with Encryption and IP Filtering">Securing Communications</a>, Shield supports adding SSL to the Elasticsearch HTTP interface.
+When using Kibana, your browser verifies that the certificate received from the Elasticsearch node is trusted
+before sending a request to the node. Establishing this trust requires that either your browser or operating
+system trust the Certificate Authority (CA) that signed the node’s certificate. To use SSL with Shield and
+Kibana 3, ensure that the browser or operating system has been configured to trust this CA.</p><h5><a id="_configuring_your_browser_to_use_ssl"></a>Configuring Your Browser to Use SSL</h5><p>As discussed in <a class="link" href="securing-communications.html" title="Securing Communications with Encryption and IP Filtering">Securing Communications with Encryption and IP Filtering</a>, Shield supports adding SSL to the Elasticsearch HTTP interface.
+When using Kibana, your browser verifies that the certificate received from the Elasticsearch node is trusted
+before sending a request to the node. Establishing this trust requires that either your browser or operating
+system trust the Certificate Authority (CA) that signed the node’s certificate. To use SSL with Shield and
+Kibana 3, ensure that the browser or operating system has been configured to trust this CA.</p><p>The process to ensure this trust varies per organization. Some organizations will have pre-installed these CA
+certificates into the operating system or the browser’s local certificate store. If this is the case, you will
+not need to take any further action.</p><p>Other organizations will not have pre-installed the CA certificate. Or you may have created your own CA as discussed
+in <a class="link" href="certificate-authority.html" title="Setting Up a Certificate Authority">Setting Up a Certificate Authority</a>. In these cases, we recommend that you consult your local IT professional to
+determine the recommended procedure for adding trusted CAs in your organization.</p><h5><a id="_working_with_source_builds_of_kibana_3"></a>Working with source builds of Kibana 3</h5><p>Some developers use Kibana 3 by pulling the software from our GitHub repository, and not using a built package
+from our download site. If you do this, be sure to clear your browser’s cache after deploying Shield and
+configuring the <code class="literal">http.cors.allow-credentials</code> parameter to avoid authentication errors with most browsers.</p><h4><a id="_using_kibana_4_with_shield"></a>Using Kibana 4 with Shield</h4><p>Kibana 4 adds a server-side component that changes the integration with Shield and the steps required to configure Shield, Elasticsearch, and Kibana to work together. With Kibana 4, the browser makes requests to the Kibana 4 server, and not to Elasticsearch directly. The Kibana 4 server then makes requests to Elasticsearch on behalf of the browser. We recommend using separate roles for your users who log into Kibana and for the Kibana 4 server itself.</p><h5><a id="kibana4-roles"></a>Configuring Roles for Kibana 4 Users</h5><p>Kibana users need access to the indices that they will be working with and the <code class="literal">.kibana</code> index where their
+saved searches, visualizations, and dashboards are stored.  Shield includes a default <code class="literal">kibana4</code> role that grants
+read access to all indices and full access to the <code class="literal">.kibana</code> index.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The default Kibana 4 user role grants read access to all indices. We strongly recommend deriving
+custom roles for your Kibana users that limit access to specific indices according to your organization’s goals and policies.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">kibana4:
+  cluster:
+      - cluster:monitor/nodes/info
+      - cluster:monitor/health
+  indices:
+    '*':
+      - indices:admin/mappings/fields/get
+      - indices:admin/validate/query
+      - indices:data/read/search
+      - indices:data/read/msearch
+    '.kibana':
+      - indices:admin/create
+      - indices:admin/exists
+      - indices:admin/mapping/put
+      - indices:admin/mappings/fields/get
+      - indices:admin/refresh
+      - indices:admin/validate/query
+      - indices:data/read/get
+      - indices:data/read/mget
+      - indices:data/read/search
+      - indices:data/write/delete
+      - indices:data/write/index
+      - indices:data/write/update
+      - indices:admin/create</pre></div><p>To constrain Kibana’s access to specific indices, explicitly specify the index names in your role. When configuring a role for a Kibana user and granting access to a specific index, at a minimum the user needs the following privileges on the index:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">indices:admin/mappings/fields/get</code>
+</li><li class="listitem">
+<code class="literal">indices:admin/validate/query</code>
+</li><li class="listitem">
+<code class="literal">indices:data/read/search</code>
+</li><li class="listitem">
+<code class="literal">indices:data/read/msearch</code>
+</li><li class="listitem">
+<code class="literal">indices:admin/get</code>
+</li></ul></div><h5><a id="kibana4-server-role"></a>Configuring a Role for the Kibana 4 Server</h5><p>The Kibana 4 server needs access to the cluster monitoring APIs and the <code class="literal">.kibana</code> index. However, the server
+does not need access to user indexes. The following <code class="literal">kibana4_server</code> role shows the privileges required
+by the Kibana 4 server.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This role is included in roles.yml by default as of Shield 1.1. If you are running an older version of Shield,
+you need to add it yourself.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">kibana4_server:
+  cluster:
+      - cluster:monitor/nodes/info
+      - cluster:monitor/health
+  indices:
+    '.kibana':
+      - indices:admin/exists
+      - indices:admin/mapping/put
+      - indices:admin/mappings/fields/get
+      - indices:admin/refresh
+      - indices:admin/validate/query
+      - indices:data/read/get
+      - indices:data/read/mget
+      - indices:data/read/search
+      - indices:data/write/delete
+      - indices:data/write/index
+      - indices:data/write/update</pre></div><p>To configure the Kibana 4 server, you must assign this role to a user and add the user credentials to <code class="literal">kibana.yml</code>.
+For more information, see <a class="ulink" href="http://www.elastic.co/guide/en/kibana/current/production.html#configuring-kibana-shield" target="_top">Configuring Kibana to Work with Shield</a> in the Kibana 4 User Guide.</p><h5><a id="_configuring_kibana_4_to_use_ssl"></a>Configuring Kibana 4 to Use SSL</h5><p>You should also configure Kibana 4 to use SSL encryption for both client requests and the requests the Kibana server sends to Elasticsearch. For more information, see <a class="ulink" href="http://www.elastic.co/guide/en/kibana/current/production.html#enabling-ssl" target="_top">Enabling SSL</a> in the Kibana 4 User Guide.</p></div></div></div><div class="navfooter"><span class="prev"><a href="marvel.html">
               « 
-              Shield with Marvel</a>
+              Using Marvel with Shield</a>
            
         </span><span class="next">
            
-          <a href="_shield_with_kibana_3.html">Shield with Kibana 3
+          <a href="license-management.html">Managing Shield Licenses
                »
             </a></span></div>
 <!-- end body -->
