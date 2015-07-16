@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Deploying and Scaling Logstash</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference" /><link rel="up" href="index.html" title="Reference" /><link rel="prev" href="config-examples.html" title="Logstash Configuration Examples" /><link rel="next" href="working-with-plugins.html" title="Working with plugins" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Working with plugins</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference" /><link rel="up" href="index.html" title="Reference" /><link rel="prev" href="deploying-and-scaling.html" title="Deploying and Scaling Logstash" /><link rel="next" href="pipeline.html" title="Logstash Processing Pipeline" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -571,90 +571,39 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference</a></span> » <span class="breadcrumb-node">Deploying and Scaling Logstash</span></div><div class="navheader"><span class="prev"><a href="config-examples.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference</a></span> » <span class="breadcrumb-node">Working with plugins</span></div><div class="navheader"><span class="prev"><a href="deploying-and-scaling.html">
               « 
-              Logstash Configuration Examples</a>
+              Deploying and Scaling Logstash</a>
            
         </span><span class="next">
            
-          <a href="working-with-plugins.html">Working with plugins
+          <a href="pipeline.html">Logstash Processing Pipeline
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="deploying-and-scaling"></a>Deploying and Scaling Logstash<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/deploying.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>As your use case for Logstash evolves, the preferred architecture at a given scale will change. This section discusses
-a range of Logstash architectures in increasing order of complexity, starting from a minimal installation and adding
-elements to the system. The example deployments in this section write to an Elasticsearch cluster, but Logstash can
-write to a large variety of <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/output-plugins.html" target="_top">endpoints</a>.</p><h3><a id="deploying-minimal-install"></a>The Minimal Installation<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/deploying.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The minimal Logstash installation has one Logstash instance and one Elasticsearch instance. These instances are
-directly connected. Logstash uses an <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/input-plugins.html" target="_top"><span class="emphasis"><em>input plugin</em></span></a> to ingest data and an
-Elasticsearch <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/output-plugins.html" target="_top"><span class="emphasis"><em>output plugin</em></span></a> to index the data in Elasticsearch, following the Logstash
-<a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/pipeline.html" target="_top"><span class="emphasis"><em>processing pipeline</em></span></a>. A Logstash instance has a fixed pipeline constructed at startup,
-based on the instance’s configuration file. You must specify an input plugin. Output defaults to <code class="literal">stdout</code>, and the
-filtering section of the pipeline, which is discussed in the next section, is optional.</p><div class="informalfigure"><div class="mediaobject"><img src="static/images/deploy_1.png" alt="static/images/deploy_1.png" /></div></div><h3><a id="deploying-filter-threads"></a>Using Filters<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/deploying.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Log data is typically unstructured, often contains extraneous information that isn’t relevant to your use case, and
-sometimes is missing relevant information that can be derived from the log contents. You can use a
-<a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/filter-plugins.html" target="_top">filter plugin</a> to parse the log into fields, remove unnecessary information, and derive
-additional information from the existing fields. For example, filters can derive geolocation information from an IP
-address and add that information to the logs, or parse and structure arbitrary text with the
-<a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-filters-grok.html" target="_top">grok</a> filter.</p><p>Adding a filter plugin can significantly affect performance, depending on the amount of computation the filter plugin
-performs, as well as on the volume of the logs being processed. The <code class="literal">grok</code> filter’s regular expression computation is
-particularly resource-intensive. One way to address this increased demand for computing resources is to use
-parallel processing on multicore machines. Use the <code class="literal">-w</code> switch to set the number of execution threads for Logstash
-filtering tasks. For example the <code class="literal">bin/logstash -w 8</code> command uses eight different threads for filter processing.</p><div class="informalfigure"><div class="mediaobject"><img src="static/images/deploy_2.png" alt="static/images/deploy_2.png" /></div></div><h3><a id="deploying-logstash-forwarder"></a>Using Logstash Forwarder<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/deploying.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <a class="ulink" href="https://github.com/elastic/logstash-forwarder" target="_top">Logstash Forwarder</a> is a lightweight, resource-friendly tool written
-in Go that collects logs from files on the server and forwards these logs to other machines for processing. The
-Logstash Forwarder uses a secure protocol called Lumberjack to communicate with a centralized Logstash instance.
-Configure the Logstash instances that receive Lumberjack data to use the
-<a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-lumberjack.html" target="_top">Lumberjack input plugin</a>.</p><p>The Logstash Forwarder uses the computing resources of the machine hosting the source data, and the Lumberjack input
-plugin minimizes the resource demands on the Logstash instance, making this architecture attractive for use cases with
-resource constraints.</p><div class="informalfigure"><div class="mediaobject"><img src="static/images/deploy_3.png" alt="static/images/deploy_3.png" /></div></div><h3><a id="deploying-larger-cluster"></a>Scaling to a Larger Elasticsearch Cluster<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/deploying.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Typically, Logstash does not communicate with a single Elasticsearch node, but with a cluster that comprises several
-nodes. Logstash can use any of the protocols that Elasticsearch supports to move data into the cluster:
-<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/current/_transport_client_versus_node_client.html" target="_top">HTTP, transport, or node</a>. You can configure Logstash for each of
-these communication modes by changing the value of the
-<a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-outputs-elasticsearch.html#plugins-outputs-elasticsearch-protocol" target="_top"><code class="literal">protocol</code></a> setting.</p><p>You can use the Elasticsearch HTTP REST APIs to index data into the Elasticsearch cluster. These APIs represent the
-indexed data in JSON. Using the REST APIs does not require the Java client classes or any additional JAR
-files and has no performance disadvantages compared to the transport or node protocols. You can secure communications
-that use the HTTP REST APIs with the <a class="ulink" href="https://www.elastic.co/guide/en/shield/current" target="_top">Shield</a> plugin, which supports SSL and HTTP basic authentication.</p><p>When you use the HTTP protocol, you can configure the Logstash Elasticsearch output plugin to automatically
-load-balance indexing requests across a
-<a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-outputs-elasticsearch.html#plugins-outputs-elasticsearch-host" target="_top">specified set of hosts</a> in the
-Elasticsearch cluster. Specifying multiple Elasticsearch nodes also provides high availability for the Elasticsearch
-cluster by routing traffic to active Elasticsearch nodes.</p><p>You can also use the Elasticsearch Java APIs to serialize the data into a binary representation, using
-the transport protocol. The transport protocol can sniff the endpoint of the request and select an
-arbitrary client or data node in the Elasticsearch cluster.</p><p>Using the HTTP or transport protocols keep your Logstash instances separate from the Elasticsearch cluster. The node
-protocol, by contrast, has the machine running the Logstash instance join the Elasticsearch cluster, running an
-Elasticsearch instance. The data that needs indexing propagates from this node to the rest of the cluster. Since the
-machine is part of the cluster, the cluster topology is available, making the node protocol a good fit for use cases
-that use a relatively small number of persistent connections.</p><p>You can also use a third-party hardware or software load balancer to handle connections between Logstash and
-external applications.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Make sure that your Logstash configuration does not connect directly to Elasticsearch dedicated
-<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-node.html" target="_top">master nodes</a>, which perform dedicated cluster management. Connect Logstash to client or data
-nodes to protect the stability of your Elasticsearch cluster.</p></div></div><div class="informalfigure"><div class="mediaobject"><img src="static/images/deploy_4.png" alt="static/images/deploy_4.png" /></div></div><h3><a id="deploying-message-queueing"></a>Managing Throughput Spikes with Message Queueing<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/deploying.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When the data coming into a Logstash pipeline exceeds the Elasticsearch cluster’s ability to ingest the data, you can
-use a message queue as a buffer. By default, Logstash throttles incoming events when
-indexer consumption rates fall below incoming data rates. Since this throttling can lead to events being buffered at
-the data source, preventing backpressure with message queues becomes an important part of managing your deployment.</p><p>Adding a message queue to your Logstash deployment also provides a level of protection from data loss. When a Logstash
-instance that has consumed data from the message queue fails, the data can be replayed from the message queue to an
-active Logstash instance.</p><p>Several third-party message queues exist, such as Redis, Kafka, or RabbitMQ. Logstash provides input and output plugins
-to integrate with several of these third-party message queues. When your Logstash deployment has a message queue
-configured, Logstash functionally exists in two phases: shipping instances, which handles data ingestion and storage in
-the message queue, and indexing instances, which retrieve the data from the message queue, apply any configured
-filtering, and write the filtered data to an Elasticsearch index.</p><div class="informalfigure"><div class="mediaobject"><img src="static/images/deploy_5.png" alt="static/images/deploy_5.png" /></div></div><h3><a id="deploying-logstash-ha"></a>Multiple Connections for Logstash High Availability<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/deploying.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To make your Logstash deployment more resilient to individual instance failures, you can set up a load balancer between
-your data source machines and the Logstash cluster. The load balancer handles the individual connections to the
-Logstash instances to ensure continuity of data ingestion and processing even when an individual instance is unavailable.</p><div class="informalfigure"><div class="mediaobject"><img src="static/images/deploy_6.png" alt="static/images/deploy_6.png" /></div></div><p>The architecture in the previous diagram is unable to process input from a specific type, such as an RSS feed or a
-file, if the Logstash instance dedicated to that input type becomes unavailable. For more robust input processing,
-configure each Logstash instance for multiple inputs, as in the following diagram:</p><div class="informalfigure"><div class="mediaobject"><img src="static/images/deploy_7.png" alt="static/images/deploy_7.png" /></div></div><p>This architecture parallelizes the Logstash workload based on the inputs you configure. With more inputs, you can add
-more Logstash instances to scale horizontally. Separate parallel pipelines also increases the reliability of your stack
-by eliminating single points of failure.</p><h3><a id="deploying-scaling"></a>Scaling Logstash<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/deploying.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A mature Logstash deployment typically has the following pipeline:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-The <span class="emphasis"><em>input</em></span> tier consumes data from the source, and consists of Logstash instances with the proper input plugins.
-</li><li class="listitem">
-The <span class="emphasis"><em>message queue</em></span> serves as a buffer to hold ingested data and serve as failover protection.
-</li><li class="listitem">
-The <span class="emphasis"><em>filter</em></span> tier applies parsing and other processing to the data consumed from the message queue.
-</li><li class="listitem">
-The <span class="emphasis"><em>indexing</em></span> tier moves the processed data into Elasticsearch.
-</li></ul></div><p>Any of these layers can be scaled by adding computing resources. Examine the performance of these components regularly
-as your use case evolves and add resources as needed. When Logstash routinely throttles incoming events, consider
-adding storage for your message queue. Alternately, increase the Elasticsearch cluster’s rate of data consumption by
-adding more Logstash indexing instances.</p></div><div class="navfooter"><span class="prev"><a href="config-examples.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="working-with-plugins"></a>Working with plugins<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Logstash has a rich collection of input, filter, codec and output plugins. Plugins are available as self-contained packages called gems and hosted on RubyGems.org. The plugin manager accesed via <code class="literal">bin/plugin</code> script is used to manage the lifecycle of plugins in your Logstash deployment. You can install, uninstall and upgrade plugins using these Command Line Interface (CLI) described below.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Some sections here are for advanced users</p></div></div><h3><a id="listing-plugins"></a>Listing plugins<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Logstash release packages bundle common plugins so you can use them out of the box. To list the plugins currently available in your deployment:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin list <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+bin/plugin list --verbose <a id="CO1-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+bin/plugin list *namefragment* <a id="CO1-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+bin/plugin list --group output <a id="CO1-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Will list all installed plugins
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Will list installed plugins with version information
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Will list all installed plugins containing a namefragment
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Will list all installed plugins for a particular group (input, filter, codec, output)
+</p></td></tr></table></div><h3><a id="installing-plugins"></a>Adding plugins to your deployment<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The most common situation when dealing with plugin installation is when you have access to internet. Using this method, you will be able to retrieve plugins hosted on the public repository (RubyGems.org) and install on top of your Logstash installation.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin install logstash-output-kafka</pre></div><p>Once the plugin is successfully installed, you can start using it in your configuration file.</p><h4><a id="installing-local-plugins"></a>Advanced: Adding a locally built plugin<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In some cases, you want to install plugins which have not yet been released and not hosted on RubyGems.org. Logstash provides you the option to install a locally built plugin which is packaged as a ruby gem. Using a file location:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin install /path/to/logstash-output-kafka-1.0.0.gem</pre></div><h4><a id="installing-local-plugins-path"></a>Advanced: Using <code class="literal">--pluginpath</code><a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Using the <code class="literal">--pluginpath</code> flag, you can load a plugin source code located on your file system. Typically this is used by developers who are iterating on a custom plugin and want to test it before creating a ruby gem.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash --pluginpath /opt/shared/lib/logstash/input/my-custom-plugin-code.rb</pre></div><h3><a id="updating-plugins"></a>Updating plugins<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Plugins have their own release cycle and are often released independent of Logstash’s core release cycle. Using the update sub-command you can get the latest or update to a particular version of the plugin.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin update <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+bin/plugin update logstash-output-kafka <a id="CO2-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+will update all installed plugins
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+will update only this plugin
+</p></td></tr></table></div><h3><a id="removing-plugins"></a>Removing plugins<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you need to remove plugins from your Logstash installation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin uninstall logstash-output-kafka</pre></div><h3><a id="proxy-plugins"></a>Proxy Support<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The previous sections relied on Logstash being able to communicate with RubyGems.org. In certain environments, Forwarding Proxy is used to handle HTTP requests. Logstash Plugins can be installed and updated through a Proxy by setting the <code class="literal">HTTP_PROXY</code> environment variable:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">export HTTP_PROXY=http://127.0.0.1:3128
+
+bin/plugin install logstash-output-kafka</pre></div><p>Once set, plugin commands install, update can be used through this proxy.</p></div><div class="navfooter"><span class="prev"><a href="deploying-and-scaling.html">
               « 
-              Logstash Configuration Examples</a>
+              Deploying and Scaling Logstash</a>
            
         </span><span class="next">
            
-          <a href="working-with-plugins.html">Working with plugins
+          <a href="pipeline.html">Logstash Processing Pipeline
                »
             </a></span></div>
 <!-- end body -->
