@@ -56,8 +56,7 @@ sub render {
         else {
             push @adoc, $prefix . "link:$entry->{url}" . "[$entry->{title}]";
             if ( $entry->{versions} ) {
-                $adoc[-1]
-                    .= " -- link:$entry->{versions}" . "[other versions]";
+                $adoc[-1] .= " -- link:$entry->{versions}" . "[other versions]";
             }
             push @adoc, '' unless $indent;
         }

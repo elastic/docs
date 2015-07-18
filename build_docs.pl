@@ -173,9 +173,20 @@ sub build_entries {
             or die "Missing title for entry: " . Dumper($entry);
 
         if ( my $sections = $entry->{sections} ) {
-            my $section_toc = ES::Toc->new($title);
-            $toc->add_entry($section_toc);
-            build_entries( $build, $section_toc, @$sections );
+            my $base_dir = $entry->{base_dir} || '';
+            my $section_toc = build_entries( $build->subdir($base_dir),
+                ES::Toc->new($title), @$sections );
+            if ($base_dir) {
+                $section_toc->write( $build->subdir($base_dir) );
+                $toc->add_entry(
+                    {   title => $title,
+                        url   => $base_dir . '/index.html'
+                    }
+                );
+            }
+            else {
+                $toc->add_entry($section_toc);
+            }
             next;
         }
         my $book = ES::Book->new(
@@ -327,8 +338,7 @@ sub init_env {
 #===================================
 sub checkout_staging_or_master {
 #===================================
-    my $current
-        = eval { run qw(git symbolic-ref --short HEAD) } || 'DETACHED';
+    my $current = eval { run qw(git symbolic-ref --short HEAD) } || 'DETACHED';
     chomp $current;
 
     my $build_dir = $Conf->{paths}{build}
