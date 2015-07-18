@@ -48,7 +48,7 @@ sub main {
 
     my @docs;
     eval {
-        for my $book ( books( @{ $Conf->{contents} } ) ) {
+        for my $book ( books( '', @{ $Conf->{contents} } ) ) {
             say "Indexing book: $book->{title}";
             my $b = $es->bulk_helper(
                 index     => $index,
@@ -149,8 +149,7 @@ sub _load_file {
         $page_text .= "\n\n" . $section->{title} . "\n\n" . $section->{text};
         $section->{title} .= " » $page_title" unless $single;
     }
-    return (
-        { title => $page_title, text => $page_text, id => '', main => 1 },
+    return ( { title => $page_title, text => $page_text, id => '', main => 1 },
         @$sections );
 }
 
@@ -158,12 +157,20 @@ sub _load_file {
 sub books {
 #===================================
     my @books;
+    my $base_dir = shift();
     while ( my $next = shift @_ ) {
         if ( $next->{sections} ) {
-            push @books, books( @{ $next->{sections} } );
+            if ( $next->{base_dir} ) {
+                $base_dir .= '/' . $next->{base_dir};
+            }
+            push @books, books( $base_dir, @{ $next->{sections} } );
         }
         else {
-            push @books, $next;
+            my %details = %$next;
+            if ($base_dir) {
+                $details{prefix} = $base_dir . "/" . $details{prefix};
+            }
+            push @books, \%details;
         }
     }
     return @books;
