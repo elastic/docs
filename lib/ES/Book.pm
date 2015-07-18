@@ -33,31 +33,39 @@ sub new {
     my $chunk = $args{chunk} || 0;
     my $toc   = $args{toc}   || 0;
 
-    my $branches = $args{branches} || $repo->branches;
-    my $current  = $args{current}  || $repo->current;
+    my $branch_list = $args{branches} || $repo->branches;
+    my $current     = $args{current}  || $repo->current;
 
     die "<branches> must be an array in book <$title>"
-        unless ref $branches eq 'ARRAY';
+        unless ref $branch_list eq 'ARRAY';
+
+    my ( @branches, %branch_titles );
+    for (@$branch_list) {
+        my ( $branch, $title ) = ref $_ eq 'HASH' ? (%$_) : ( $_, $_ );
+        push @branches, $branch;
+        $branch_titles{$branch} = $title;
+    }
 
     die "Current branch <$current> is not in <branches> in book <$title>"
-        unless grep { $current eq $_ } @$branches;
+        unless $branch_titles{$current};
 
     my $template = $args{template}
         or die "No <template> specified for book <$title>";
 
     bless {
-        title    => $title,
-        dir      => $dir->subdir($prefix),
-        template => $template,
-        repo     => $repo,
-        prefix   => $prefix,
-        chunk    => $chunk,
-        toc      => $toc,
-        single   => $args{single},
-        index    => $index,
-        src_path => $index->parent,
-        branches => $branches,
-        current  => $current
+        title         => $title,
+        dir           => $dir->subdir($prefix),
+        template      => $template,
+        repo          => $repo,
+        prefix        => $prefix,
+        chunk         => $chunk,
+        toc           => $toc,
+        single        => $args{single},
+        index         => $index,
+        src_path      => $index->parent,
+        branches      => \@branches,
+        branch_titles => \%branch_titles,
+        current       => $current
     }, $class;
 }
 
@@ -77,10 +85,11 @@ sub build {
         say " - Branch: $branch";
         $self->_build_book($branch);
 
+        my $title = $self->branch_title($branch);
         if ( $branch eq $self->current ) {
             $self->_copy_branch_to_current($branch);
             $toc->add_entry(
-                {   title => "Version: $branch (current)",
+                {   title => "Version: $title (current)",
                     url   => "current/index.html"
                 }
             );
@@ -88,7 +97,7 @@ sub build {
         }
         else {
             $toc->add_entry(
-                {   title => "Version: $branch",
+                {   title => "Version: $title",
                     url   => "$branch/index.html"
                 }
             );
@@ -102,7 +111,8 @@ sub build {
         say " - Writing versions TOC";
         $toc->write($dir);
         return {
-            title    => $self->title . " [" . $self->current . "\\]",
+            title => $self->title . " ["
+                . $self->branch_title( $self->current ) . "\\]",
             url      => $self->prefix . '/current/index.html',
             versions => $self->prefix . '/index.html',
         };
@@ -185,7 +195,7 @@ sub _add_title_to_toc {
         for ( @{ $self->branches } ) {
             my $option = '<option value="' . $_ . '"';
             $option .= ' selected'  if $branch eq $_;
-            $option .= '>' . $_;
+            $option .= '>' . $self->branch_title($_);
             $option .= ' (current)' if $self->current eq $_;
             $option .= '</option>';
             $title  .= $option;
@@ -250,6 +260,7 @@ sub toc              { shift->{toc} }
 sub single           { shift->{single} }
 sub index            { shift->{index} }
 sub branches         { shift->{branches} }
+sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
 sub is_multi_version { @{ shift->branches } > 1 }
 #===================================
