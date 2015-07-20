@@ -228,10 +228,11 @@ sub dump_recent_commits {
     my $rev_range
         = $self->tracker_branch( $src_path, $branch ) . "...origin/$branch";
 
-    my $commits
-        = decode_utf8 run( 'git', 'log', $rev_range,
-        '--pretty=format:%h -%d %s (%cr) <%an>',
-        '-n', 10, '--abbrev-commit', '--date=relative', '--', $src_path );
+    my $commits = eval {
+        decode_utf8 run( 'git', 'log', $rev_range,
+            '--pretty=format:%h -%d %s (%cr) <%an>',
+            '-n', 10, '--abbrev-commit', '--date=relative', '--', $src_path );
+    } || '';
 
     unless ( $commits =~ /\S/ ) {
         $commits = run(
