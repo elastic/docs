@@ -281,10 +281,11 @@ sub init_repos {
         $repo->update_from_remote();
     }
 
-    for my $dir ( $repos_dir->next ) {
+    for my $dir ( $repos_dir->children ) {
         next unless $dir->is_dir;
-        next unless $conf->{ $dir->basename };
-        say "Removing old repo <" . $dir->basename . ">";
+        my $basename = $dir->basename;
+        next if $conf->{$basename};
+        say "Removing old repo <$basename>";
         $dir->rmtree;
     }
 }
