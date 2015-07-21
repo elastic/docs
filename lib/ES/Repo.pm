@@ -119,7 +119,7 @@ sub _local_branches {
 #===================================
     my $self = shift;
     local $ENV{GIT_DIR} = $self->git_dir;
-    my @branches = grep { !m/detached from HEAD/ } split "\n",
+    my @branches = grep { !m/detached (from|at) HEAD/ } split "\n",
         run qw(git branch);
     for (@branches) {
         s/^[ *]+//;
