@@ -80,16 +80,18 @@ sub build {
     my $dir = $self->dir;
     $dir->mkpath;
 
+    my $title = $self->title;
+
     for my $branch ( @{ $self->branches } ) {
 
         say " - Branch: $branch";
         $self->_build_book($branch);
 
-        my $title = $self->branch_title($branch);
+        my $branch_title = $self->branch_title($branch);
         if ( $branch eq $self->current ) {
             $self->_copy_branch_to_current($branch);
             $toc->add_entry(
-                {   title => "Version: $title (current)",
+                {   title => "$title: $branch_title (current)",
                     url   => "current/index.html"
                 }
             );
@@ -97,7 +99,7 @@ sub build {
         }
         else {
             $toc->add_entry(
-                {   title => "Version: $title",
+                {   title => "$title: $branch_title",
                     url   => "$branch/index.html"
                 }
             );
@@ -111,9 +113,8 @@ sub build {
         say " - Writing versions TOC";
         $toc->write($dir);
         return {
-            title => $self->title . " ["
-                . $self->branch_title( $self->current ) . "\\]",
-            url      => $self->prefix . '/current/index.html',
+            title => "$title [" . $self->branch_title( $self->current ) . "\\]",
+            url   => $self->prefix . '/current/index.html',
             versions => $self->prefix . '/index.html',
         };
     }
@@ -122,7 +123,7 @@ sub build {
     write_html_redirect( $dir, "current/index.html" );
 
     return {
-        title => $self->title,
+        title => $title,
         url   => $self->prefix . '/current/index.html'
     };
 }
