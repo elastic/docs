@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>API Conventions</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index.html" title="Elasticsearch Reference [master]" /><link rel="prev" href="_percolator_2.html" title="Percolator" /><link rel="next" href="multi-index.html" title="Multiple Indices" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Date math support in index names</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="api-conventions.html" title="API Conventions" /><link rel="prev" href="multi-index.html" title="Multiple Indices" /><link rel="next" href="common-options.html" title="Common options" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -577,28 +577,73 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-node">API Conventions </span></div><div class="navheader"><span class="prev"><a href="_percolator_2.html">
+    </a></span> » <span class="breadcrumb-link"><a href="api-conventions.html">API Conventions </a></span> » <span class="breadcrumb-node">Date math support in index names</span></div><div class="navheader"><span class="prev"><a href="multi-index.html">
               « 
-              Percolator</a>
+              Multiple Indices</a>
            
         </span><span class="next">
            
-          <a href="multi-index.html">Multiple Indices
+          <a href="common-options.html">Common options
                »
-            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="api-conventions"></a>API Conventions <a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><p>The <span class="strong"><strong>elasticsearch</strong></span> REST APIs are exposed using <a class="link" href="modules-http.html" title="HTTP">JSON over HTTP</a>.</p><p>The conventions listed in this chapter can be applied throughout the REST
-API, unless otherwise specified.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="xref" href="multi-index.html" title="Multiple Indices"><em>Multiple Indices</em></a>
-</li><li class="listitem">
-<a class="xref" href="date-math-index-names.html" title="Date math support in index names"><em>Date math support in index names</em></a>
-</li><li class="listitem">
-<a class="xref" href="common-options.html" title="Common options"><em>Common options</em></a>
-</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="_percolator_2.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="date-math-index-names"></a>Date math support in index names<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Date math index name resolution enables you to search a range of time-series indices, rather
+than searching all of your time-series indices and filtering the results or maintaining aliases.
+Limiting the number of indices that are searched reduces the load on the cluster and improves
+execution performance. For example, if you are searching for errors in your
+daily logs, you can use a date math name template to restrict the search to the past
+two days.</p><p>Almost all APIs that have an <code class="literal">index</code> parameter, support date math in the <code class="literal">index</code> parameter
+value.</p><p>A date math index name takes the following form:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">&lt;static_name{date_math_expr{date_format|time_zone}}&gt;</pre></div><p>Where:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">static_name</code>
+</p>
+</td><td valign="top">
+<p>
+is the static text part of the name
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">date_math_expr</code>
+</p>
+</td><td valign="top">
+<p>
+is a dynamic date math expression that computes the date dynamically
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">date_format</code>
+</p>
+</td><td valign="top">
+<p>
+is the optional format in which the computed date should be rendered. Defaults to <code class="literal">YYYY.MM.dd</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">time_zone</code>
+</p>
+</td><td valign="top">
+<p>
+is the optional time zone . Defaults to <code class="literal">utc</code>.
+</p>
+</td></tr></tbody></table></div><p>You must enclose date math index name expressions within angle brackets. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/&lt;logstash-{now/d-2d}&gt;/_search' {
+  "query" : {
+    ...
+  }
+}</pre></div><p>The following example shows different forms of date math index names and the final index names
+they resolve to given the current time is 22rd March 2024 noon utc.</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top"> Expression                                  </th><th align="left" valign="top">Resolves to</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">&lt;logstash-{now/d}&gt;</code></p></td><td align="left" valign="top"><p><code class="literal">logstash-2024.03.22</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">&lt;logstash-{now/M}&gt;</code></p></td><td align="left" valign="top"><p><code class="literal">logstash-2024.03.01</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">&lt;logstash-{now/M{YYYY.MM}}&gt;</code></p></td><td align="left" valign="top"><p><code class="literal">logstash-2024.03</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">&lt;logstash-{now/M-1M{YYYY.MM}}&gt;</code></p></td><td align="left" valign="top"><p><code class="literal">logstash-2024.02</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">&lt;logstash-{now/d{YYYY.MM.dd|+12:00}}</code></p></td><td align="left" valign="top"><p><code class="literal">logstash-2024.03.23</code></p></td></tr></tbody></table></div><p>To use the characters <code class="literal">{</code> and <code class="literal">}</code> in the static part of an index name template, escape them
+with a backslash <code class="literal">\</code>, for example:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">&lt;elastic\\{ON\\}-{now/M}&gt;</code> resolves to <code class="literal">elastic{ON}-2024.03.01</code>
+</li></ul></div><p>The following example shows a search request that searches the Logstash indices for the past
+three days, assuming the indices use the default Logstash index name format,
+<code class="literal">logstash-YYYY.MM.dd</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/&lt;logstash-{now/d-2d}&gt;,&lt;logstash-{now/d-1d}&gt;,&lt;logstash-{now/d}&gt;/_search' {
+  "query" : {
+    ...
+  }
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="multi-index.html">
               « 
-              Percolator</a>
+              Multiple Indices</a>
            
         </span><span class="next">
            
-          <a href="multi-index.html">Multiple Indices
+          <a href="common-options.html">Common options
                »
             </a></span></div>
 <!-- end body -->
