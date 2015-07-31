@@ -612,9 +612,18 @@ configure by setting either <code class="literal">node.data</code> setting to <c
 <code class="literal">node.client</code> to <code class="literal">true</code> (the <code class="literal">NodeBuilder</code> respective helper methods on
 it):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import static org.elasticsearch.node.NodeBuilder.*;
 
+Client client = node.client();
+
 // on startup
 
-Node node = nodeBuilder().client(true).node();
+// Embedded node clients behave just like standalone nodes,
+// which means that they will leave the HTTP port open!
+Node node =
+    nodeBuilder()
+        .settings(ImmutableSettings.settingsBuilder().put("http.enabled", false))
+        .client(true)
+    .node();
+
 Client client = node.client();
 
 // on shutdown
@@ -634,7 +643,15 @@ Client client = node.client();
 
 // on shutdown
 
-node.close();</pre></div></div><div class="navfooter"><span class="prev"><a href="client.html">
+node.close();</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="node-client-downsides"></a>Node Client Downsides<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/java-api/client.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Embedding a node client into your application is the easiest way to connect
+to an Elasticsearch cluster, but it carries some downsides.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Frequently starting and stopping one or more node clients creates unnecessary
+noise across the cluster.
+</li><li class="listitem"><p class="simpara">
+Embedded node client will respond to outside requests, just like any other client.
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+You almost always want to disable HTTP for an <span class="emphasis"><em>embedded</em></span> node client.
+</li></ul></div></li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="client.html">
               « 
               Client</a>
            
