@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Working with plugins</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference" /><link rel="up" href="index.html" title="Reference" /><link rel="prev" href="deploying-and-scaling.html" title="Deploying and Scaling Logstash" /><link rel="next" href="pipeline.html" title="Logstash Processing Pipeline" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Parsing Apache Logs into Elasticsearch</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference" /><link rel="up" href="advanced-pipeline.html" title="Setting Up an Advanced Logstash Pipeline" /><link rel="prev" href="advanced-pipeline.html" title="Setting Up an Advanced Logstash Pipeline" /><link rel="next" href="multiple-input-output-plugins.html" title="Multiple Input and Output Plugins" />
   
  
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -575,39 +575,263 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference</a></span> » <span class="breadcrumb-node">Working with plugins</span></div><div class="navheader"><span class="prev"><a href="deploying-and-scaling.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference</a></span> » <span class="breadcrumb-link"><a href="advanced-pipeline.html">Setting Up an Advanced Logstash Pipeline</a></span> » <span class="breadcrumb-node">Parsing Apache Logs into Elasticsearch</span></div><div class="navheader"><span class="prev"><a href="advanced-pipeline.html">
               « 
-              Deploying and Scaling Logstash</a>
+              Setting Up an Advanced Logstash Pipeline</a>
            
         </span><span class="next">
            
-          <a href="pipeline.html">Logstash Processing Pipeline
+          <a href="multiple-input-output-plugins.html">Multiple Input and Output Plugins
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="working-with-plugins"></a>Working with plugins<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Logstash has a rich collection of input, filter, codec and output plugins. Plugins are available as self-contained packages called gems and hosted on RubyGems.org. The plugin manager accesed via <code class="literal">bin/plugin</code> script is used to manage the lifecycle of plugins in your Logstash deployment. You can install, uninstall and upgrade plugins using these Command Line Interface (CLI) described below.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Some sections here are for advanced users</p></div></div><h3><a id="listing-plugins"></a>Listing plugins<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Logstash release packages bundle common plugins so you can use them out of the box. To list the plugins currently available in your deployment:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin list <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-bin/plugin list --verbose <a id="CO4-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-bin/plugin list *namefragment* <a id="CO4-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-bin/plugin list --group output <a id="CO4-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Will list all installed plugins
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Will list installed plugins with version information
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Will list all installed plugins containing a namefragment
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Will list all installed plugins for a particular group (input, filter, codec, output)
-</p></td></tr></table></div><h3><a id="installing-plugins"></a>Adding plugins to your deployment<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The most common situation when dealing with plugin installation is when you have access to internet. Using this method, you will be able to retrieve plugins hosted on the public repository (RubyGems.org) and install on top of your Logstash installation.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin install logstash-output-kafka</pre></div><p>Once the plugin is successfully installed, you can start using it in your configuration file.</p><h4><a id="installing-local-plugins"></a>Advanced: Adding a locally built plugin<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In some cases, you want to install plugins which have not yet been released and not hosted on RubyGems.org. Logstash provides you the option to install a locally built plugin which is packaged as a ruby gem. Using a file location:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin install /path/to/logstash-output-kafka-1.0.0.gem</pre></div><h4><a id="installing-local-plugins-path"></a>Advanced: Using <code class="literal">--pluginpath</code><a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Using the <code class="literal">--pluginpath</code> flag, you can load a plugin source code located on your file system. Typically this is used by developers who are iterating on a custom plugin and want to test it before creating a ruby gem.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash --pluginpath /opt/shared/lib/logstash/input/my-custom-plugin-code.rb</pre></div><h3><a id="updating-plugins"></a>Updating plugins<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Plugins have their own release cycle and are often released independent of Logstash’s core release cycle. Using the update sub-command you can get the latest or update to a particular version of the plugin.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin update <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-bin/plugin update logstash-output-kafka <a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-will update all installed plugins
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-will update only this plugin
-</p></td></tr></table></div><h3><a id="removing-plugins"></a>Removing plugins<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you need to remove plugins from your Logstash installation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin uninstall logstash-output-kafka</pre></div><h3><a id="proxy-plugins"></a>Proxy Support<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/plugin-manager.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The previous sections relied on Logstash being able to communicate with RubyGems.org. In certain environments, Forwarding Proxy is used to handle HTTP requests. Logstash Plugins can be installed and updated through a Proxy by setting the <code class="literal">HTTP_PROXY</code> environment variable:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">export HTTP_PROXY=http://127.0.0.1:3128
-
-bin/plugin install logstash-output-kafka</pre></div><p>Once set, plugin commands install, update can be used through this proxy.</p></div><div class="navfooter"><span class="prev"><a href="deploying-and-scaling.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="parsing-into-es"></a>Parsing Apache Logs into Elasticsearch<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This example creates a Logstash pipeline that takes Apache web logs as input, parses those logs to create specific,
+named fields from the logs, and writes the parsed data to an Elasticsearch cluster.</p><p>You can download the sample data set used in this example <a class="ulink" href="http://tbd.co/groksample.log" target="_top">here</a>. Unpack this file.</p><h4><a id="configuring-file-input"></a>Configuring Logstash for File Input<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To start your Logstash pipeline, configure the Logstash instance to read from a file using the
+<a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-file.html" target="_top">file</a> input plugin.</p><p>Edit the <code class="literal">first-pipeline.conf</code> file to add the following text:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">input {
+       file {
+             path =&gt; "/path/to/groksample.log"
+             start_position =&gt; beginning <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+       }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The default behavior of the file input plugin is to monitor a file for new information, in a manner similar to the
+UNIX <code class="literal">tail -f</code> command. To change this default behavior and process the entire file, we need to specify the position
+where Logstash starts processing the file.
+</p></td></tr></table></div><p>Replace <code class="literal">/path/to/</code> with the actual path to the location of <code class="literal">groksample.log</code> in your file system.</p><h4><a id="configuring-grok-filter"></a>Parsing Web Logs with the Grok Filter Plugin<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-filters-grok.html" target="_top"><code class="literal">grok</code></a> filter plugin is one of several plugins that are available by default in
+Logstash. For details on how to manage Logstash plugins, see the <a class="link" href="working-with-plugins.html" title="Working with plugins">reference documentation</a> for
+the plugin manager.</p><p>Because the <code class="literal">grok</code> filter plugin looks for patterns in the incoming log data, configuration requires you to make
+decisions about how to identify the patterns that are of interest to your use case. A representative line from the web
+server log sample looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">83.149.9.216 - - [04/Jan/2015:05:13:42 +0000] "GET /presentations/logstash-monitorama-2013/images/kibana-search.png
+HTTP/1.1" 200 203023 "http://semicomplete.com/presentations/logstash-monitorama-2013/" "Mozilla/5.0 (Macintosh; Intel
+Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36"</pre></div><p>The IP address at the beginning of the line is easy to identify, as is the timestamp in brackets. In this tutorial, use
+the <code class="literal">%{COMBINEDAPACHELOG}</code> grok pattern, which structures lines from the Apache log using the following schema:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<span class="strong"><strong>Information</strong></span>
+</p>
+</td><td valign="top">
+<p>
+<span class="strong"><strong>Field Name</strong></span>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+IP Address
+</p>
+</td><td valign="top">
+<p>
+<code class="literal">clientip</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+User ID
+</p>
+</td><td valign="top">
+<p>
+<code class="literal">ident</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+User Authentication
+</p>
+</td><td valign="top">
+<p>
+<code class="literal">auth</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+timestamp
+</p>
+</td><td valign="top">
+<p>
+<code class="literal">timestamp</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+HTTP Verb
+</p>
+</td><td valign="top">
+<p>
+<code class="literal">verb</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+Request body
+</p>
+</td><td valign="top">
+<p>
+<code class="literal">request</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+HTTP Version
+</p>
+</td><td valign="top">
+<p>
+<code class="literal">httpversion</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+HTTP Status Code
+</p>
+</td><td valign="top">
+<p>
+<code class="literal">response</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+Bytes served
+</p>
+</td><td valign="top">
+<p>
+<code class="literal">bytes</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+Referrer URL
+</p>
+</td><td valign="top">
+<p>
+<code class="literal">referrer</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+User agent
+</p>
+</td><td valign="top">
+<p>
+<code class="literal">agent</code>
+</p>
+</td></tr></tbody></table></div><p>Edit the <code class="literal">first-pipeline.conf</code> file to add the following text:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">filter {
+       grok {
+             match =&gt; { "message" =&gt; "%{COMBINEDAPACHELOG}"}
+        }
+}</pre></div><p>After processing, the sample line has the following JSON representation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+"clientip" : "83.149.9.216",
+"ident" : ,
+"auth" : ,
+"timestamp" : "04/Jan/2015:05:13:42 +0000",
+"verb" : "GET",
+"request" : "/presentations/logstash-monitorama-2013/images/kibana-search.png",
+"httpversion" : "HTTP/1.1",
+"response" : "200",
+"bytes" : "203023",
+"referrer" : "http://semicomplete.com/presentations/logstash-monitorama-2013/",
+"agent" : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36"
+}</pre></div><h4><a id="indexing-parsed-data-into-elasticsearch"></a>Indexing Parsed Data into Elasticsearch<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Now that the web logs are broken down into specific fields, the Logstash pipeline can index the data into an
+Elasticsearch cluster. Edit the <code class="literal">first-pipeline.conf</code> file to add the following text after the <code class="literal">input</code> section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">output {
+        elasticsearch {
+         protocol =&gt; "http"
+        }
+}</pre></div><p>With this configuration, Logstash uses multicast discovery to connect to Elasticsearch.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Multicast discovery is acceptable for development work, but unsuited for production environments. For the
+purposes of this example, however, the default behavior is sufficient.</p></div></div><h4><a id="configuring-geoip-plugin"></a>Enhancing Your Data with the Geoip Filter Plugin<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In addition to parsing log data for better searches, filter plugins can derive supplementary information from existing
+data. As an example, the <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-filters-geoip.html" target="_top"><code class="literal">geoip</code></a> plugin looks up IP addresses, derives geographic
+location information from the addresses, and adds that location information to the logs.</p><p>Configure your Logstash instance to use the <code class="literal">geoip</code> filter plugin by adding the following lines to the <code class="literal">filter</code> section
+of the <code class="literal">first-pipeline.conf</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">geoip {
+    source =&gt; "clientip"
+}</pre></div><p>The <code class="literal">geoip</code> plugin configuration requires data that is already defined as separate fields. Make sure that the <code class="literal">geoip</code>
+section is after the <code class="literal">grok</code> section of the configuration file.</p><p>Specify the name of the field that contains the IP address to look up. In this tutorial, the field name is <code class="literal">clientip</code>.</p><h4><a id="testing-initial-pipeline"></a>Testing Your Initial Pipeline<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>At this point, your <code class="literal">first-pipeline.conf</code> file has input, filter, and output sections properly configured, and looks
+like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">input {
+       file {
+             path =&gt; "/Users/palecur/logstash-1.5.2/logstash-tutorial-dataset"
+             start_position =&gt; beginning
+       }
+}
+filter {
+       grok {
+             match =&gt; { "message" =&gt; "%{COMBINEDAPACHELOG}"}
+        }
+       geoip {
+              source =&gt; "clientip"
+       }
+}
+output {
+        elasticsearch {
+              protocol =&gt; "http"
+        }
+        stdout {}
+}</pre></div><p>To verify your configuration, run the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f first-pipeline.conf --configtest</pre></div><p>The <code class="literal">--configtest</code> option parses your configuration file and reports any errors. When the configuration file passes
+the configuration test, start Logstash with the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f first-pipeline.conf</pre></div><p>Try a test query to Elasticsearch based on the fields created by the <code class="literal">grok</code> filter plugin:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/logstash-$DATE/_search?q=response=401'</pre></div><p>Replace $DATE with the current date, in YYYY.MM.DD format.</p><p>Since our sample has just one 401 HTTP response, we get one hit back:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">{"took":2,
+"timed_out":false,
+"_shards":{"total":5,
+  "successful":5,
+  "failed":0},
+"hits":{"total":1,
+  "max_score":1.5351382,
+  "hits":[{"_index":"logstash-2015.07.30",
+    "_type":"logs",
+    "_id":"AU7gqOky1um3U6ZomFaF",
+    "_score":1.5351382,
+    "_source":{"message":"83.149.9.216 - - [04/Jan/2015:05:13:45 +0000] \"GET /presentations/logstash-monitorama-2013/images/frontend-response-codes.png HTTP/1.1\" 200 52878 \"http://semicomplete.com/presentations/logstash-monitorama-2013/\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36\"",
+      "@version":"1",
+      "@timestamp":"2015-07-30T20:30:41.265Z",
+      "host":"localhost",
+      "path":"/path/to/logstash-tutorial-dataset",
+      "clientip":"83.149.9.216",
+      "ident":"-",
+      "auth":"-",
+      "timestamp":"04/Jan/2015:05:13:45 +0000",
+      "verb":"GET",
+      "request":"/presentations/logstash-monitorama-2013/images/frontend-response-codes.png",
+      "httpversion":"1.1",
+      "response":"200",
+      "bytes":"52878",
+      "referrer":"\"http://semicomplete.com/presentations/logstash-monitorama-2013/\"",
+      "agent":"\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36\""
+      }
+    }]
+  }
+}</pre></div><p>Try another search for the geographic information derived from the IP address:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/logstash-$DATE/_search?q=geoip.city_name=Buffalo'</pre></div><p>Replace $DATE with the current date, in YYYY.MM.DD format.</p><p>Only one of the log entries comes from Buffalo, so the query produces a single response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">{"took":3,
+"timed_out":false,
+"_shards":{
+  "total":5,
+  "successful":5,
+  "failed":0},
+"hits":{"total":1,
+  "max_score":1.03399,
+  "hits":[{"_index":"logstash-2015.07.31",
+    "_type":"logs",
+    "_id":"AU7mK3CVSiMeBsJ0b_EP",
+    "_score":1.03399,
+    "_source":{
+      "message":"108.174.55.234 - - [04/Jan/2015:05:27:45 +0000] \"GET /?flav=rss20 HTTP/1.1\" 200 29941 \"-\" \"-\"",
+      "@version":"1",
+      "@timestamp":"2015-07-31T22:11:22.347Z",
+      "host":"localhost",
+      "path":"/path/to/logstash-tutorial-dataset",
+      "clientip":"108.174.55.234",
+      "ident":"-",
+      "auth":"-",
+      "timestamp":"04/Jan/2015:05:27:45 +0000",
+      "verb":"GET",
+      "request":"/?flav=rss20",
+      "httpversion":"1.1",
+      "response":"200",
+      "bytes":"29941",
+      "referrer":"\"-\"",
+      "agent":"\"-\"",
+      "geoip":{
+        "ip":"108.174.55.234",
+        "country_code2":"US",
+        "country_code3":"USA",
+        "country_name":"United States",
+        "continent_code":"NA",
+        "region_name":"NY",
+        "city_name":"Buffalo",
+        "postal_code":"14221",
+        "latitude":42.9864,
+        "longitude":-78.7279,
+        "dma_code":514,
+        "area_code":716,
+        "timezone":"America/New_York",
+        "real_region_name":"New York",
+        "location":[-78.7279,42.9864]
+      }
+    }
+  }]
+ }
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="advanced-pipeline.html">
               « 
-              Deploying and Scaling Logstash</a>
+              Setting Up an Advanced Logstash Pipeline</a>
            
         </span><span class="next">
            
-          <a href="pipeline.html">Logstash Processing Pipeline
+          <a href="multiple-input-output-plugins.html">Multiple Input and Output Plugins
                »
             </a></span></div>
 <!-- end body -->
