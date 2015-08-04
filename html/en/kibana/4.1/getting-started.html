@@ -651,7 +651,25 @@ there are multiple words in the field.
 The same applies to the <span class="emphasis"><em>play_name</em></span> field.
 </li><li class="listitem">
 The line_id and speech_number fields are integers.
-</li></ul></div><p>The accounts and logstash data sets don’t require any mappings, so at this point we’re ready to use the Elasticsearch
+</li></ul></div><p>The logs data set requires a mapping to label the latitude/longitude pairs in the logs as geographic locations by
+applying the <code class="literal">geo_point</code> type to those fields.</p><p>Use the following command to establish <code class="literal">geo_point</code> mapping for the logs:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XPUT http://localhost:9200/logstash-2015.05.18 -d '
+{
+ "mappings" : {
+  "log" : {
+   "properties" : {
+    "geo" : {
+     "properties" : {
+      "coordinates" : {
+       "type" : "geo_point"
+      }
+     }
+    }
+   }
+  }
+ }
+}
+';</pre></div><p>Because the logs data set is in three indices, one for each day in a three-day period, run the mapping again two more
+times, changing the name of the index to logstash-2015.05.19 and logstash-2015.05.20.</p><p>The accounts data set doesn’t require any mappings, so at this point we’re ready to use the Elasticsearch
 <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current//docs-bulk.html" target="_top"><code class="literal">bulk</code></a> API to load the data sets with the following commands:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XPOST 'localhost:9200/accounts/account/_bulk?pretty' --data-binary @accounts.json
 curl -XPOST 'localhost:9200/shakespeare/_bulk?pretty' --data-binary @shakespeare.json
 curl -XPOST 'localhost:9200/_bulk?pretty' --data-binary @logs.jsonl</pre></div><p>These commands may take some time to execute, depending on the computing resources available.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>These commands assume your Elasticsearch cluster is not using the <a class="ulink" href="https://www.elastic.co/guide/en/shield/current" target="_top">Shield</a> security plugin. If your
