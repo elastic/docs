@@ -611,9 +611,51 @@ treated. Examples of meta-fields include the document’s
 </span></dt><dd>
 Each mapping type contains a list of fields or <code class="literal">properties</code> pertinent to that
 type.  A <code class="literal">user</code> type might contain <code class="literal">title</code>, <code class="literal">name</code>, and <code class="literal">age</code> fields, while a
-<code class="literal">blogpost</code> type might contain <code class="literal">title</code>, <code class="literal">body</code>, <code class="literal">user_id</code> and <code class="literal">created</code>
-fields.
-</dd></dl></div><p>The mapping for the above example could look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index <a id="CO119-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+<code class="literal">blogpost</code> type might contain <code class="literal">title</code>, <code class="literal">body</code>, <code class="literal">user_id</code> and <code class="literal">created</code> fields.
+Fields with the same name in different mapping types in the same index
+<a class="link" href="mapping.html#field-conflicts" title="Fields are shared across mapping typesedit">must have the same mapping</a>.
+</dd></dl></div><h2><a id="_field_datatypes"></a>Field datatypes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Each field has a data <code class="literal">type</code> which can be:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+a simple type like <a class="link" href="string.html" title="String datatype"><code class="literal">string</code></a>, <a class="link" href="date.html" title="Date datatype"><code class="literal">date</code></a>, <a class="link" href="number.html" title="Numeric datatypes"><code class="literal">long</code></a>,
+  <a class="link" href="number.html" title="Numeric datatypes"><code class="literal">double</code></a>, <a class="link" href="boolean.html" title="Boolean datatype"><code class="literal">boolean</code></a> or <a class="link" href="ip.html" title="IPv4 datatype"><code class="literal">ip</code></a>.
+</li><li class="listitem">
+a type which supports the hierarchical nature of JSON such as
+  <a class="link" href="object.html" title="Object datatype"><code class="literal">object</code></a> or <a class="link" href="nested.html" title="Nested datatype"><code class="literal">nested</code></a>.
+</li><li class="listitem">
+or a specialised type like <a class="link" href="geo-point.html" title="Geo-point datatype"><code class="literal">geo_point</code></a>,
+  <a class="link" href="geo-shape.html" title="Geo-Shape datatype"><code class="literal">geo_shape</code></a>, or <a class="link" href="search-suggesters-completion.html" title="Completion Suggester"><code class="literal">completion</code></a>.
+</li></ul></div><h2><a id="_dynamic_mapping"></a>Dynamic mapping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Fields and mapping types do not need to be defined before being used. Thanks
+to <span class="emphasis"><em>dynamic mapping</em></span>, new mapping types and new field names will be added
+automatically, just by indexing a document. New fields can be added both to
+the top-level mapping type, and to inner <a class="link" href="object.html" title="Object datatype"><code class="literal">object</code></a>  and
+<a class="link" href="nested.html" title="Nested datatype"><code class="literal">nested</code></a> fields.</p><p>The
+<a class="link" href="dynamic-mapping.html" title="Dynamic Mapping">dynamic mapping</a> rules can be configured to
+customise the mapping that is used for new types and new fields.</p><h2><a id="_explicit_mappings"></a>Explicit mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>You know more about your data than Elasticsearch can guess, so while dynamic
+mapping can be useful to get started, at some point you will want to specify
+your own explicit mappings.</p><p>You can create mapping types and field mappings when you
+<a class="link" href="indices-create-index.html" title="Create Index">create an index</a>, and you can add mapping types and
+fields to an existing index with the <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a>.</p><h2><a id="_updating_existing_mappings"></a>Updating existing mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Other than where documented, <span class="strong"><strong>existing type and field mappings cannot be
+updated</strong></span>. Changing the mapping would mean invalidating already indexed
+documents.  Instead, you should create a new index with the correct mappings
+and reindex your data into that index.</p><h2><a id="field-conflicts"></a>Fields are shared across mapping types<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Mapping types are used to group fields, but the fields in each mapping type
+are not independent of each other. Fields with:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+the <span class="emphasis"><em>same name</em></span>
+</li><li class="listitem">
+in the <span class="emphasis"><em>same index</em></span>
+</li><li class="listitem">
+in <span class="emphasis"><em>different mapping types</em></span>
+</li><li class="listitem">
+map to the <span class="emphasis"><em>same field</em></span> internally,
+</li><li class="listitem">
+and <span class="strong"><strong>must have the same mapping</strong></span>.
+</li></ul></div><p>If a <code class="literal">title</code> field exists in both the <code class="literal">user</code> and <code class="literal">blogpost</code> mapping types, the
+<code class="literal">title</code> fields must have exactly the same mapping in each type.  The only
+exceptions to this rule are the <a class="xref" href="copy-to.html" title="copy_to"><code class="literal">copy_to</code></a>, <a class="xref" href="dynamic.html" title="dynamic"><code class="literal">dynamic</code></a>, <a class="xref" href="enabled.html" title="enabled"><code class="literal">enabled</code></a>,
+<a class="xref" href="ignore-above.html" title="ignore_above"><code class="literal">ignore_above</code></a>, <a class="xref" href="include-in-all.html" title="include_in_all"><code class="literal">include_in_all</code></a>, and <a class="xref" href="properties.html" title="properties"><code class="literal">properties</code></a> parameters, which may
+have different settings per field.</p><p>Usually, fields with the same name also contain the same type of data, so
+having the same mapping is not a problem.  When conflicts do arise, these can
+be solved by choosing more descriptive names, such as <code class="literal">user_title</code> and
+<code class="literal">blog_title</code>.</p><h2><a id="_example_mapping"></a>Example mapping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>A mapping for the example described above could be specified when creating the
+index, as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index <a id="CO119-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 {
   "mappings": {
     "user": { <a id="CO119-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
@@ -649,47 +691,7 @@ Disable the <code class="literal">_all</code> <a class="link" href="mapping-fiel
 Specify fields or <span class="emphasis"><em>properties</em></span> in each mapping type.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO119-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> <a href="#CO119-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> <a href="#CO119-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> <a href="#CO119-10"><span><img src="images/icons/callouts/10.png" alt="" /></span></a> <a href="#CO119-11"><span><img src="images/icons/callouts/11.png" alt="" /></span></a> <a href="#CO119-12"><span><img src="images/icons/callouts/12.png" alt="" /></span></a> <a href="#CO119-13"><span><img src="images/icons/callouts/13.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Specify the data <code class="literal">type</code> and mapping for each field.
-</p></td></tr></table></div><h2><a id="_field_datatypes"></a>Field datatypes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Each field has a data <code class="literal">type</code> which can be:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-a simple type like <a class="link" href="string.html" title="String datatype"><code class="literal">string</code></a>, <a class="link" href="date.html" title="Date datatype"><code class="literal">date</code></a>, <a class="link" href="number.html" title="Numeric datatypes"><code class="literal">long</code></a>,
-  <a class="link" href="number.html" title="Numeric datatypes"><code class="literal">double</code></a>, <a class="link" href="boolean.html" title="Boolean datatype"><code class="literal">boolean</code></a> or <a class="link" href="ip.html" title="IPv4 datatype"><code class="literal">ip</code></a>.
-</li><li class="listitem">
-a type which supports the hierarchical nature of JSON such as
-  <a class="link" href="object.html" title="Object datatype"><code class="literal">object</code></a> or <a class="link" href="nested.html" title="Nested datatype"><code class="literal">nested</code></a>.
-</li><li class="listitem">
-or a specialised type like <a class="link" href="geo-point.html" title="Geo-point datatype"><code class="literal">geo_point</code></a>,
-  <a class="link" href="geo-shape.html" title="Geo-Shape datatype"><code class="literal">geo_shape</code></a>, or <a class="link" href="search-suggesters-completion.html" title="Completion Suggester"><code class="literal">completion</code></a>.
-</li></ul></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h4>Fields are shared across mapping types</h4><p>Mapping types are used to group fields, but the fields in each mapping type
-are not independent of each other. Fields with:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-the <span class="emphasis"><em>same name</em></span>
-</li><li class="listitem">
-in the <span class="emphasis"><em>same index</em></span>
-</li><li class="listitem">
-in <span class="emphasis"><em>different mapping types</em></span>
-</li><li class="listitem">
-map to the <span class="emphasis"><em>same field</em></span> internally,
-</li><li class="listitem">
-and <span class="strong"><strong>must have the same mapping</strong></span>.
-</li></ul></div><p>The <code class="literal">title</code> field exists in both the <code class="literal">user</code> and <code class="literal">blogpost</code> mapping types and
-so must have exactly the same mapping in each type.  The only exceptions to
-this rule are the <a class="xref" href="copy-to.html" title="copy_to"><code class="literal">copy_to</code></a>, <a class="xref" href="dynamic.html" title="dynamic"><code class="literal">dynamic</code></a>, <a class="xref" href="enabled.html" title="enabled"><code class="literal">enabled</code></a>, <a class="xref" href="ignore-above.html" title="ignore_above"><code class="literal">ignore_above</code></a>,
-<a class="xref" href="include-in-all.html" title="include_in_all"><code class="literal">include_in_all</code></a>, and <a class="xref" href="properties.html" title="properties"><code class="literal">properties</code></a> parameters, which may have different
-settings per field.</p><p>Usually, fields with the same name also contain the same type of data, so
-having the same mapping is not a problem.  When conflicts do arise, these can
-be solved by choosing more descriptive names, such as <code class="literal">user_title</code> and
-<code class="literal">blog_title</code>.</p></div></div><h2><a id="_dynamic_mapping"></a>Dynamic mapping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Fields and mapping types do not need to be defined before being used. Thanks
-to <span class="emphasis"><em>dynamic mapping</em></span>, new mapping types and new field names will be added
-automatically, just by indexing a document. New fields can be added both to
-the top-level mapping type, and to inner <a class="link" href="object.html" title="Object datatype"><code class="literal">object</code></a>  and
-<a class="link" href="nested.html" title="Nested datatype"><code class="literal">nested</code></a> fields.</p><p>The
-<a class="link" href="dynamic-mapping.html" title="Dynamic Mapping">dynamic mapping</a> rules can be configured to
-customise the mapping that is used for new types and new fields.</p><h2><a id="_explicit_mappings"></a>Explicit mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>You know more about your data than Elasticsearch can guess, so while dynamic
-mapping can be useful to get started, at some point you will want to specify
-your own explicit mappings.</p><p>You can create mapping types and field mappings when you
-<a class="link" href="indices-create-index.html" title="Create Index">create an index</a>, and you can add mapping types and
-fields to an existing index with the <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a>.</p><h2><a id="_updating_existing_mappings"></a>Updating existing mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Other than where documented, <span class="strong"><strong>existing type and field mappings cannot be
-updated</strong></span>. Changing the mapping would mean invalidating already indexed
-documents.  Instead, you should create a new index with the correct mappings
-and reindex your data into that index.</p></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-multi-term-rewrite.html">
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-multi-term-rewrite.html">
               « 
               Multi Term Query Rewrite</a>
            
