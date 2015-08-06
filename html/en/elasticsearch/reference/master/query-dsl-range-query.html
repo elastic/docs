@@ -636,19 +636,56 @@ Less-than
 <p>
 Sets the boost value of the query, defaults to <code class="literal">1.0</code>
 </p>
-</td></tr></tbody></table></div><h4><a id="_date_options"></a>Date options<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/range-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When applied on <code class="literal">date</code> fields the <code class="literal">range</code> filter accepts also a <code class="literal">time_zone</code> parameter.
-The <code class="literal">time_zone</code> parameter will be applied to your input lower and upper bounds and will
-move them to UTC time based date:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+</td></tr></tbody></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ranges-on-dates"></a>Ranges on date fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/range-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When running <code class="literal">range</code> queries on fields of type <a class="link" href="date.html" title="Date datatype"><code class="literal">date</code></a>, ranges can be
+specified using <a class="xref" href="common-options.html#date-math" title="Date Mathedit">the section called “Date Math<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a>::</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "range" : {
-        "born" : {
-            "gte": "2012-01-01",
-            "lte": "now",
-            "time_zone": "+01:00"
+        "date" : {
+            "gte" : "now-1d/d",
+            "lt" :  "now/d"
         }
     }
-}</pre></div><p>In the above example, <code class="literal">gte</code> will be actually moved to <code class="literal">2011-12-31T23:00:00</code> UTC date.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>if you give a date with a timezone explicitly defined and use the <code class="literal">time_zone</code> parameter, <code class="literal">time_zone</code> will be
-ignored. For example, setting <code class="literal">gte</code> to <code class="literal">2012-01-01T00:00:00+01:00</code> with <code class="literal">"time_zone":"+10:00"</code> will still use <code class="literal">+01:00</code> time zone.</p></div></div><p>When applied on <code class="literal">date</code> fields the <code class="literal">range</code> query accepts also a <code class="literal">format</code> parameter.
-The <code class="literal">format</code> parameter will help support another date format than the one defined in mapping:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_date_math_and_rounding"></a>Date math and rounding<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/range-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>When using <a class="link" href="common-options.html#date-math" title="Date Mathedit">date math</a> to round dates to the nearest day, month,
+hour, etc, the rounded dates depend on whether the ends of the ranges are
+inclusive or exclusive.</p><p>Rounding up moves to the last millisecond of the rounding scope, and rounding
+down to the first millisecond of the rounding scope. For example:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">gt</code>
+</p>
+</td><td valign="top">
+<p>
+    Greater than the date rounded up: <code class="literal">2014-11-18||/M</code> becomes
+    <code class="literal">2014-11-30T23:59:59.999</code>, ie excluding the entire month.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">gte</code>
+</p>
+</td><td valign="top">
+<p>
+    Greater than or equal to the date rounded down: <code class="literal">2014-11-18||/M</code> becomes
+    <code class="literal">2014-11-01</code>, ie including the entire month.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">lt</code>
+</p>
+</td><td valign="top">
+<p>
+    Less than the date rounded down: <code class="literal">2014-11-18||/M</code> becomes <code class="literal">2014-11-01</code>, ie
+    excluding the entire month.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">lte</code>
+</p>
+</td><td valign="top">
+<p>
+    Less than or equal to the date rounded up: <code class="literal">2014-11-18||/M</code> becomes
+    <code class="literal">2014-11-30T23:59:59.999</code>, ie including the entire month.
+</p>
+</td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_date_format_in_range_queries"></a>Date format in range queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/range-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Formatted dates will be parsed using the <a class="link" href="mapping-date-format.html" title="format"><code class="literal">format</code></a>
+specified on the <a class="link" href="date.html" title="Date datatype"><code class="literal">date</code></a> field by default, but it can be overridden by
+passing the <code class="literal">format</code> parameter to the <code class="literal">range</code> query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "range" : {
         "born" : {
             "gte": "01/01/2012",
@@ -656,7 +693,19 @@ The <code class="literal">format</code> parameter will help support another date
             "format": "dd/MM/yyyy||yyyy"
         }
     }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-terms-query.html">
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_time_zone_in_range_queries"></a>Time zone in range queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/range-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Dates can be converted from another timezone to UTC either by specifying the
+time zone in the date value itself (if the <a class="link" href="mapping-date-format.html" title="format"><code class="literal">format</code></a>
+accepts it), or it can be specified as the <code class="literal">time_zone</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "range" : {
+        "timestamp" : {
+            "gte": "2015-01-01 00:00:00", <a id="CO101-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "lte": "now",
+            "time_zone": "+01:00"
+        }
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO101-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This date will be converted to <code class="literal">2014-12-31T23:00:00 UTC</code>.
+</p></td></tr></table></div></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-terms-query.html">
               « 
               Terms Query</a>
            
