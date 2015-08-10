@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Docs</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Tunneling SSL</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Found Documentation" /><link rel="up" href="security-checklist.html" title="Securing your Cluster" /><link rel="prev" href="security-checklist.html" title="Securing your Cluster" /><link rel="next" href="access-control.html" title="Access Control" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -574,39 +574,61 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Docs</h2></div></div><hr /></div><h3><a id="_elasticsearch_store_search_and_analyze"></a>Elasticsearch: Store, Search, and Analyze</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="en/elasticsearch/reference/current/index.html" target="_top">Elasticsearch Reference [1.7]</a> — <a class="ulink" href="en/elasticsearch/reference/index.html" target="_top">other versions</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Found Documentation</a></span> » <span class="breadcrumb-link"><a href="security-checklist.html">Securing your Cluster </a></span> » <span class="breadcrumb-node">Tunneling SSL</span></div><div class="navheader"><span class="prev"><a href="security-checklist.html">
+              « 
+              Securing your Cluster </a>
+           
+        </span><span class="next">
+           
+          <a href="access-control.html">Access Control
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="tunneling-ssl"></a>Tunneling SSL</h2></div></div></div><p><span class="strong"><strong>When Your Client Just Supports HTTP</strong></span></p><p>While Found recommends always using SSL/HTTPS, not all clients support HTTPS (a notable example being <a class="ulink" href="https://github.com/elasticsearch/logstash/pull/1393" target="_top">Logstash</a>). Also, some clients have poor support, for example, because they do not actually verify the certificate.</p><p>To work around this, you can use a proxy or a tunnel. The application without HTTPS-support can connect to a local endpoint using HTTP, which in turn connects to a Found cluster using HTTPS.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_tunneling_with_stunnel"></a>Tunneling With "stunnel"</h2></div></div></div><p><a class="ulink" href="https://www.stunnel.org/index.html" target="_top">stunnel</a> is tool that can be used to provide secure encrypted connections for clients or servers that do not speak TLS or SSL natively.</p><p>We can use stunnel to bind to a port on localhost, e.g. 19200, which in turn will connect to Found.</p><p>Here is a sample configuration to achieve this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ini">; Actually verify the certificate
+verify = 2
+; Works for Ubuntu. Adapt to your system.
+CApath = /etc/ssl/certs
+
+pid = /var/run/stunnel4/found-us-east-1.pid
+
+; Log level. WARN=4, DEBUG=7
+debug = 4
+
+[foundcluster]
+; Service that tunnels traffic to a single region's endpoint. This configuration is not cluster specific.
+accept = 19200
+client = yes
+; Don't cache DNS. IPs of Found's load balancers may change.
+delay = yes
+; Replace us-east-1 with your region. Valid hosts:
+; - proxy-v1-us-east-1.foundcluster.com
+; - proxy-v1-us-west-1.foundcluster.com
+; - proxy-v1-eu-west-1.foundcluster.com
+; - proxy-v1-sa-east-1.foundcluster.com
+; - proxy-v1-ap-northeast-1.foundcluster.com
+; - proxy-v1-ap-southeast-1.foundcluster.com
+
+connect = proxy-v1-us-east-1.foundcluster.com:9243</pre></div><p>To use this with Ubuntu:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Install the <code class="literal">stunnel4</code>-package, e.g. <code class="literal">apt-get install stunnel4</code>.
 </li><li class="listitem">
-<a class="ulink" href="en/elasticsearch/guide/current/index.html" target="_top">Elasticsearch - The Definitive Guide</a>
+Put the above file in <code class="literal">/etc/stunnel/found-us-east-1.conf</code>
 </li><li class="listitem">
-<a class="ulink" href="en/elasticsearch/resiliency/current/index.html" target="_top">Resiliency status</a>
+Make sure <code class="literal">/etc/default/stunnel4</code> contains <code class="literal">ENABLED=1</code>
 </li><li class="listitem">
-<a class="ulink" href="en/elasticsearch/client/index.html" target="_top">Elasticsearch Clients</a>
-</li></ul></div><h3><a id="_shield_security_for_elasticsearch"></a>Shield: Security for Elasticsearch</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="en/shield/current/index.html" target="_top">Shield Reference [1.3]</a> — <a class="ulink" href="en/shield/index.html" target="_top">other versions</a>
-</li></ul></div><h3><a id="_watcher_alerts_for_elasticsearch"></a>Watcher: Alerts for Elasticsearch</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="en/watcher/current/index.html" target="_top">Watcher Reference</a>
-</li></ul></div><h3><a id="_marvel_manage_monitor_and_optimize_elasticsearch"></a>Marvel: Manage, Monitor, and Optimize Elasticsearch</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="en/marvel/current/index.html" target="_top">Marvel Reference</a>
-</li></ul></div><h3><a id="_found_elasticsearch_as_a_service"></a>Found: Elasticsearch as a Service</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="en/found/current/index.html" target="_top">Found Reference</a>
-</li></ul></div><h3><a id="_kibana_explore_visualize_and_share"></a>Kibana: Explore, Visualize, and Share</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="en/kibana/current/index.html" target="_top">Kibana Reference [4.1]</a> — <a class="ulink" href="en/kibana/index.html" target="_top">other versions</a>
-</li></ul></div><h3><a id="_logstash_collect_enrich_and_transport"></a>Logstash: Collect, Enrich, and Transport</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="en/logstash/current/index.html" target="_top">Logstash Reference</a>
-</li><li class="listitem">
-<a class="ulink" href="en/logstash-roadmap/current/index.html" target="_top">Logstash Roadmap</a>
-</li></ul></div><h3><a id="_beats_collect_parse_and_ship"></a>Beats: Collect, Parse, and Ship</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="en/beats/packetbeat/current/index.html" target="_top">Packetbeat Reference [1.0.0-beta2]</a> — <a class="ulink" href="en/beats/packetbeat/index.html" target="_top">other versions</a>
-</li></ul></div><h3><a id="_elasticsearch_for_apache_hadoop"></a>Elasticsearch for Apache Hadoop</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="en/elasticsearch/hadoop/current/index.html" target="_top">es-hadoop reference [2.1]</a> — <a class="ulink" href="en/elasticsearch/hadoop/index.html" target="_top">other versions</a>
-</li></ul></div><h3><a id="_integrations"></a>Integrations</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="en/elasticsearch/client/curator/current/index.html" target="_top">Curator Index Management</a>
-</li><li class="listitem">
-<a class="ulink" href="en/elasticsearch/client/community/current/index.html" target="_top">Community Contributions</a>
-</li><li class="listitem">
-<a class="ulink" href="en/elasticsearch/rivers/current/index.html" target="_top">Rivers [1.7]</a> — <a class="ulink" href="en/elasticsearch/rivers/index.html" target="_top">other versions</a>
-</li></ul></div></div>
+Run <code class="literal">service stunnel4 start</code>
+</li></ul></div><p>Then you will have a service that listens to port 19200 and forwards traffic to <code class="literal">proxy-v1-us-east-1.foundcluster.com:9243</code>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_connecting"></a>Connecting</h2></div></div></div><p>Now we have a service that listens to port 19200 and tunnels traffic to Found, while making sure the traffic is encrypted and that the certificate is valid.</p><p>However, if you try to send HTTP requests to <code class="literal">http://localhost:19200</code>, no information is forwarded about what cluster requests must be routed to.</p><p>Typically, endpoints are on the form <code class="literal">[cluster id]-[region].foundcluster.com</code>. The hostname is what specifies what cluster requests will be routed to.</p><p>A compatible hostname must be sent to Found, but we still want to connect to <code class="literal">127.0.0.1</code>.</p><p>To do this, we can use <a class="ulink" href="http://xip.io" target="_top">xip.io</a>. By connecting to <code class="literal">http://[your-cluster-id]-[region].127.0.0.1.xip.io:19200</code>, e.g. <code class="literal">http://7893883873a705aec69e2942901f20d7b1e28dec-us-east-1.127.0.0.1.xip.io</code>, the hostname will resolve to <code class="literal">127.0.0.1</code> and the hostname with the cluster id will be sent to Found.</p><p>Found then has sufficient information to route requests to your cluster.</p><p>While this hostname is not matching that of the SSL certificate (which matches *.foundcluster.com), it is stunnel that is terminating the SSL-connection. stunnel knows nothing about HTTP, and the client connecting to 19200 is completely unaware that traffic is being tunneled through SSL.</p><p>Note that stunnel will establish a new SSL-connection for every client that connects to it. It is important to use persistent connections, even though you are connecting to localhost. If not, you will be spending a lot of time establishing SSL-connections!</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_configuring_logstash"></a>Configuring Logstash</h2></div></div></div><p>A common use case for this is when running Logstash outside AWS infrastructure, while wanting to use a cluster managed by Found.</p><p>Assuming you have configured stunnel appropriately, you can then use the <code class="literal">elasticsearch_http</code>-output of Logstash, and point it to localhost. (While you can specify <code class="literal">protocol =&gt; http</code> with the <code class="literal">elasticsearch</code>-output, the latter does not support basic auth at the moment. We recommend configuring ACLs that require basic auth as well.)</p><p>Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">elasticsearch_http {
+        host =&gt; "7893883873a705aec69e2942901f20d7b1e28dec-us-east-1.127.0.0.1.xip.io"
+        user =&gt; "readwrite"
+        password =&gt; "yourpassword"
+        manage_template =&gt; false
+        port =&gt; 19200
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="security-checklist.html">
+              « 
+              Securing your Cluster </a>
+           
+        </span><span class="next">
+           
+          <a href="access-control.html">Access Control
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>
