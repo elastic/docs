@@ -717,7 +717,22 @@ usage, but consumes more memory. This setting is only available for the
 <code class="literal">af_packet</code> sniffer type. The default is 30 MB.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">interfaces:
   device: eth0
   type: af_packet
-  buffer_size_mb: 100</pre></div></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-protocols"></a>Protocols<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A section for each supported protocol is defined to configure options like
+  buffer_size_mb: 100</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_with_vlans"></a>with_vlans<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Packetbeat automatically generates a
+<a class="ulink" href="https://en.wikipedia.org/wiki/Berkeley_Packet_Filter" target="_top">BPF</a> for capturing only
+the traffic on the ports on which the known protocols are expected to be found.
+For example, if you have configured port 80 for HTTP and port 3306 for MySQL,
+Packetbeat will generate the following BPF filter: <code class="literal">"port 80 or port 3306"</code>.</p><p>However, if the traffic contains <a class="ulink" href="https://en.wikipedia.org/wiki/IEEE_802.1Q" target="_top">VLAN</a>
+tags, the above filter is ineffective because the offset used are moved with
+four bytes. To fix this, you can enabled the <code class="literal">with_vlans</code> option, which will
+generate a BPF filter looking like this: <code class="literal">"port 80 or port 3306 and (vlan or (port 80 or port 3306))"</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_bpf_filter"></a>bpf_filter<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Packetbeat automatically generates a
+<a class="ulink" href="https://en.wikipedia.org/wiki/Berkeley_Packet_Filter" target="_top">BPF</a> for capturing only
+the traffic on the ports on which the known protocols are expected to be found.
+For example, if you have configured port 80 for HTTP and port 3306 for MySQL,
+Packetbeat will generate the following BPF filter: <code class="literal">"port 80 or port 3306"</code>.</p><p>With this setting, you can overwrite the generated BPF filter. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">interfaces:
+  device: eth0
+  bpf_filter: "net 192.168.238.0/0 and port 80 and port 3306"</pre></div><p>Note that this setting disables the automatic generation of the BPF filter so if
+you use it, it is your responsibility to keep the BPF filters in sync with the
+ports defined in the protocols sections.</p></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-protocols"></a>Protocols<a href="https://github.com/elastic/packetbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A section for each supported protocol is defined to configure options like
 <code class="literal">ports</code>, <code class="literal">send_request</code>, <code class="literal">send_response</code> or options that are protocol specific.</p><p>Currently, Packetbeat supports the following protocols:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 HTTP
 </li><li class="listitem">
