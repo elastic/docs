@@ -599,14 +599,11 @@
 settings to choose where on disk the data for an index should be kept, as well
 as how Elasticsearch should replay operations on all the replica shards of an
 index.</p><p>In order to fully utilize the <code class="literal">index.data_path</code> and <code class="literal">index.shadow_replicas</code>
-settings, you need to enable using it in elasticsearch.yml:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.enable_custom_paths: true</pre></div><p>You will also need to disable the default security manager that Elasticsearch
-runs with. You can do this by either passing
-<code class="literal">-Des.security.manager.enabled=false</code> with the parameters while starting
-Elasticsearch, or you can disable it in elasticsearch.yml:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">security.manager.enabled: false</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Disabling the security manager means that the Elasticsearch process is not
-limited to the directories and files that it can read and write. However,
-because the <code class="literal">index.data_path</code> setting is set when creating the index, the
-security manager would prevent writing or reading from the index’s location, so
-it must be disabled.</p></div></div><p>You can then create an index with a custom data path, where each node will use
+settings, you need to enable using it in elasticsearch.yml:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.enable_custom_paths: true
+node.add_id_to_custom_path: false</pre></div><p>You will also need to indicate to the security manager where the custom indices
+will be, so that the correct permissions can be applied. You can do this by
+setting the <code class="literal">path.shared_data</code> setting in elasticsearch.yml:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">path.shared_data: /opt/data</pre></div><p>This means that Elasticsearch can read and write to files in any subdirectory of
+the <code class="literal">path.shared_data</code> setting.</p><p>You can then create an index with a custom data path, where each node will use
 this path for the data:</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Because shadow replicas do not index the document on replica shards, it’s
 possible for the replica’s known mapping to be behind the index’s known mapping
 if the latest cluster state has not yet been processed on the node containing
@@ -616,10 +613,10 @@ mappings when using shadow replicas.</p></div></div><div class="pre_wrapper"><pr
     "index" : {
         "number_of_shards" : 1,
         "number_of_replicas" : 4,
-        "data_path": "/var/data/my_index",
+        "data_path": "/opt/data/my_index",
         "shadow_replicas": true
     }
-}'</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>In the above example, the "/var/data/my_index" path is a shared filesystem that
+}'</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>In the above example, the "/opt/data/my_index" path is a shared filesystem that
 must be available on every node in the Elasticsearch cluster. You must also
 ensure that the Elasticsearch process has the correct permissions to read from
 and write to the directory used in the <code class="literal">index.data_path</code> setting.</p></div></div><p>An index that has been created with the <code class="literal">index.shadow_replicas</code> setting set to
