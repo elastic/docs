@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Logstash Configuration Examples</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference" /><link rel="up" href="configuration.html" title="Configuring Logstash" /><link rel="prev" href="configuration.html" title="Configuring Logstash" /><link rel="next" href="deploying-and-scaling.html" title="Deploying and Scaling Logstash" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Logstash Configuration Examples</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference" /><link rel="up" href="configuration.html" title="Configuring Logstash" /><link rel="prev" href="event-dependent-configuration.html" title="Event Dependent Configuration" /><link rel="next" href="command-line-flags.html" title="Command-line flags" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -585,13 +585,13 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference</a></span> » <span class="breadcrumb-link"><a href="configuration.html">Configuring Logstash</a></span> » <span class="breadcrumb-node">Logstash Configuration Examples</span></div><div class="navheader"><span class="prev"><a href="configuration.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference</a></span> » <span class="breadcrumb-link"><a href="configuration.html">Configuring Logstash</a></span> » <span class="breadcrumb-node">Logstash Configuration Examples</span></div><div class="navheader"><span class="prev"><a href="event-dependent-configuration.html">
               « 
-              Configuring Logstash</a>
+              Event Dependent Configuration</a>
            
         </span><span class="next">
            
-          <a href="deploying-and-scaling.html">Deploying and Scaling Logstash
+          <a href="command-line-flags.html">Command-line flags
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="config-examples"></a>Logstash Configuration Examples<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The following examples illustrate how you can configure Logstash to filter events, process Apache logs and syslog messages, and use conditionals to control what events are processed by a filter or output.</p><h4><a id="filter-example"></a>Configuring Filters<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Filters are an in-line processing mechanism that provide the flexibility to slice and dice your data to fit your needs. Let’s take a look at some filters in action. The following configuration file sets up the <code class="literal">grok</code> and <code class="literal">date</code> filters.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">input { stdin { } }
 
@@ -623,7 +623,7 @@ output {
           "bytes" =&gt; "3891",
        "referrer" =&gt; "\"http://cadenza/xampp/navi.php\"",
           "agent" =&gt; "\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:25.0) Gecko/20100101 Firefox/25.0\""
-}</pre></div><p>As you can see, Logstash (with help from the <code class="literal">grok</code> filter) was able to parse the log line (which happens to be in Apache "combined log" format) and break it up into many different discrete bits of information. This is extremely useful once you start querying and analyzing our log data. For example, you’ll be able to easily run reports on HTTP response codes, IP addresses, referrers, and so on. There are quite a few grok patterns included with Logstash out-of-the-box, so it’s quite likely if you need to parse a common log format, someone has already done the work for you. For more information, see the list of <a class="ulink" href="https://github.com/logstash-plugins/logstash-patterns-core/tree/master/patterns" target="_top">Logstash grok patterns</a> on GitHub.</p><p>The other filter used in this example is the <code class="literal">date</code> filter. This filter parses out a timestamp and uses it as the timestamp for the event (regardless of when you’re ingesting the log data). You’ll notice that the <code class="literal">@timestamp</code> field in this example is set to December 11, 2013, even though Logstash is ingesting the event at some point afterwards. This is handy when backfilling logs. It gives you the ability to tell Logstash "use this value as the timestamp for this event".</p><h4><a id="_processing_apache_logs"></a>Processing Apache Logs<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Let’s do something that’s actually <span class="strong"><strong>useful</strong></span>: process apache2 access log files! We are going to read the input from a file on the localhost, and use a <a class="link" href="configuration.html#conditionals" title="Conditionalsedit">conditional</a> to process the event according to our needs. First, create a file called something like <span class="emphasis"><em>logstash-apache.conf</em></span> with the following contents (you can change the log’s file path to suit your needs):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">input {
+}</pre></div><p>As you can see, Logstash (with help from the <code class="literal">grok</code> filter) was able to parse the log line (which happens to be in Apache "combined log" format) and break it up into many different discrete bits of information. This is extremely useful once you start querying and analyzing our log data. For example, you’ll be able to easily run reports on HTTP response codes, IP addresses, referrers, and so on. There are quite a few grok patterns included with Logstash out-of-the-box, so it’s quite likely if you need to parse a common log format, someone has already done the work for you. For more information, see the list of <a class="ulink" href="https://github.com/logstash-plugins/logstash-patterns-core/tree/master/patterns" target="_top">Logstash grok patterns</a> on GitHub.</p><p>The other filter used in this example is the <code class="literal">date</code> filter. This filter parses out a timestamp and uses it as the timestamp for the event (regardless of when you’re ingesting the log data). You’ll notice that the <code class="literal">@timestamp</code> field in this example is set to December 11, 2013, even though Logstash is ingesting the event at some point afterwards. This is handy when backfilling logs. It gives you the ability to tell Logstash "use this value as the timestamp for this event".</p><h4><a id="_processing_apache_logs"></a>Processing Apache Logs<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Let’s do something that’s actually <span class="strong"><strong>useful</strong></span>: process apache2 access log files! We are going to read the input from a file on the localhost, and use a <a class="link" href="event-dependent-configuration.html#conditionals" title="Conditionalsedit">conditional</a> to process the event according to our needs. First, create a file called something like <span class="emphasis"><em>logstash-apache.conf</em></span> with the following contents (you can change the log’s file path to suit your needs):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">input {
   file {
     path =&gt; "/tmp/access_log"
     start_position =&gt; "beginning"
@@ -744,13 +744,13 @@ Dec 22 18:28:06 louis rsyslogd: [origin software="rsyslogd" swVersion="4.2.0" x-
     "syslog_facility_code" =&gt; 1,
          "syslog_facility" =&gt; "user-level",
          "syslog_severity" =&gt; "notice"
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="configuration.html">
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="event-dependent-configuration.html">
               « 
-              Configuring Logstash</a>
+              Event Dependent Configuration</a>
            
         </span><span class="next">
            
-          <a href="deploying-and-scaling.html">Deploying and Scaling Logstash
+          <a href="command-line-flags.html">Command-line flags
                »
             </a></span></div>
 <!-- end body -->
