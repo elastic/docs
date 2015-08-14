@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Mappings</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="_delete_api_with_missing_routing_when_required.html" title="Delete api with missing routing when required" /><link rel="next" href="_codecs.html" title="Codecs" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Mapping</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="next" href="_type_name_prefix_removed.html" title="Type name prefix removed" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -587,151 +587,77 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.0.html">Breaking changes in 2.0</a></span> » <span class="breadcrumb-node">Mappings</span></div><div class="navheader"><span class="prev"><a href="_delete_api_with_missing_routing_when_required.html">
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.0.html">Breaking changes in 2.0</a></span> » <span class="breadcrumb-node">Mapping</span></div><div class="navheader"><span class="prev"><a href="breaking-changes-2.0.html">
               « 
-              Delete api with missing routing when required</a>
+              Breaking changes in 2.0</a>
            
         </span><span class="next">
            
-          <a href="_codecs.html">Codecs
+          <a href="_type_name_prefix_removed.html">Type name prefix removed
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_mappings"></a>Mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-The setting <code class="literal">index.mapping.allow_type_wrapper</code> has been removed.  Documents should always be sent without the type as the root element.
-</li><li class="listitem">
-The delete mappings API has been removed. Mapping types can no longer be deleted.
-</li><li class="listitem">
-Mapping type names can no longer start with dots.
-</li><li class="listitem">
-The <code class="literal">ignore_conflicts</code> option of the put mappings API has been removed. Conflicts can’t be ignored anymore.
-</li><li class="listitem">
-The <code class="literal">binary</code> field does not support the <code class="literal">compress</code> and <code class="literal">compress_threshold</code> options anymore.
-</li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_removed_type_prefix_on_field_names_in_queries"></a>Removed type prefix on field names in queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Types can no longer be specified on fields within queries.  Instead, specify type restrictions in the search request.</p><p>The following is an example query in 1.x over types <code class="literal">t1</code> and <code class="literal">t2</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/index/_search'
-{
-  "query": {
-    "bool": {
-      "should": [
-        {"match": { "t1.field_only_in_t1": "foo" }},
-        {"match": { "t2.field_only_in_t2": "bar" }}
-      ]
-    }
-  }
-}</pre></div><p>In 2.0, the query should look like the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/index/t1,t2/_search'
-{
-  "query": {
-    "bool": {
-      "should": [
-        {"match": { "field_only_in_t1": "foo" }},
-        {"match": { "field_only_in_t2": "bar" }}
-      ]
-    }
-  }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_removed_short_name_field_access"></a>Removed short name field access<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Field names in queries, aggregations, etc. must now use the complete name.  Use of the short name
-caused ambiguities in field lookups when the same name existed within multiple object mappings.</p><p>The following example illustrates the difference between 1.x and 2.0.</p><p>Given these mappings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'localhost:9200/index'
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_mapping"></a>Mapping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Remove file based default mappings #10870 (issue: #10620)
+Validate dynamic mappings updates on the master node. #10634 (issues: #8650, #8688)
+Remove the ability to have custom per-field postings and doc values formats. #9741 (issue: #8746)
+Remove support for new indexes using path setting in object/nested fields or index_name in any field #9570 (issue: #6677)
+Remove index_analyzer setting to simplify analyzer logic #9451 (issue: #9371)
+Remove type level default analyzers #9430 (issues: #8874, #9365)
+Add doc values support to boolean fields. #7961 (issues: #4678, #7851)</p><p>A number of changes have been made to mappings to remove ambiguity and to
+ensure that conflicting mappings cannot be created.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_conflicting_field_mappings"></a>Conflicting field mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Fields with the same name, in the same index, in different types, must have
+the same mapping, with the exception of the <a class="xref" href="copy-to.html" title="copy_to"><code class="literal">copy_to</code></a>, <a class="xref" href="dynamic.html" title="dynamic"><code class="literal">dynamic</code></a>,
+<a class="xref" href="enabled.html" title="enabled"><code class="literal">enabled</code></a>, <a class="xref" href="ignore-above.html" title="ignore_above"><code class="literal">ignore_above</code></a>, <a class="xref" href="include-in-all.html" title="include_in_all"><code class="literal">include_in_all</code></a>, and <a class="xref" href="properties.html" title="properties"><code class="literal">properties</code></a>
+parameters, which may have different settings per field.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
   "mappings": {
-    "type": {
+    "type_one": {
       "properties": {
+        "name": { <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "type": "string"
+        }
+      }
+    },
+    "type_two": {
+      "properties": {
+        "name": { <a id="CO2-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          "type":     "string",
+          "analyzer": "english"
+        }
+      }
+    }
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO2-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The two <code class="literal">name</code> fields have conflicting mappings and will prevent Elasticsearch
+    from starting.
+</p></td></tr></table></div><p>Elasticsearch will not start in the presence of conflicting field mappings.
+These indices must be deleted or reindexed using a new mapping.</p><p>The <code class="literal">ignore_conflicts</code> option of the put mappings API has been removed.
+Conflicts can’t be ignored anymore.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fields_cannot_be_referenced_by_short_name"></a>Fields cannot be referenced by short name<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A field can no longer be referenced using its short name.  Instead, the full
+path to the field is required.  For instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "title":     { "type": "string" }, <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         "name": {
-          "type": "object",
           "properties": {
-            "first": {"type": "string"},
-            "last": {"type": "string"}
+            "title": { "type": "string" }, <a id="CO3-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+            "first": { "type": "string" },
+            "last":  { "type": "string" }
           }
         }
       }
     }
   }
-}</pre></div><p>The following query was possible in 1.x:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/index/type/_search'
-{
-  "query": {
-    "match": { "first": "foo" }
-  }
-}</pre></div><p>In 2.0, the same query should now be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/index/type/_search'
-{
-  "query": {
-    "match": { "name.first": "foo" }
-  }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_removed_support_for_literal_literal_in_field_name_mappings"></a>Removed support for <code class="literal">.</code> in field name mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Prior to Elasticsearch 2.0, a field could be defined to have a <code class="literal">.</code> in its name.
-Mappings like the one below have been deprecated for some time and they will be
-blocked in Elasticsearch 2.0.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'localhost:9200/index'
-{
-  "mappings": {
-    "type": {
-      "properties": {
-        "name.first": {
-          "type": "string"
-        }
-      }
-    }
-  }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_meta_fields_have_limited_configuration"></a>Meta fields have limited configuration<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Meta fields (those beginning with underscore) are fields used by elasticsearch
-to provide special features.  They now have limited configuration options.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">_id</code> configuration can no longer be changed.  If you need to sort, use <code class="literal">_uid</code> instead.
-</li><li class="listitem">
-<code class="literal">_type</code> configuration can no longer be changed.
-</li><li class="listitem">
-<code class="literal">_index</code> configuration can no longer be changed.
-</li><li class="listitem">
-<code class="literal">_routing</code> configuration is limited to requiring the field.
-</li><li class="listitem">
-<code class="literal">_boost</code> has been removed.
-</li><li class="listitem">
-<code class="literal">_field_names</code> configuration is limited to disabling the field.
-</li><li class="listitem">
-<code class="literal">_size</code> configuration is limited to enabling the field.
-</li><li class="listitem">
-<code class="literal">_timestamp</code> configuration is limited to enabling the field, setting format and default value
-</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_meta_fields_in_documents"></a>Meta fields in documents<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Meta fields can no longer be specified within a document. They should be specified
-via the API.  For example, instead of adding a field <code class="literal">_parent</code> within a document,
-use the <code class="literal">parent</code> url parameter when indexing that document.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_default_date_format_now_is_literal_strictdateoptionaltime_literal"></a>Default date format now is <code class="literal">strictDateOptionalTime</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Instead of <code class="literal">dateOptionalTime</code> the new default date format now is <code class="literal">strictDateOptionalTime</code>,
-which is more strict in parsing dates. This means, that dates now need to have a four digit year,
-a two-digit month, day, hour, minute and second. This means, you may need to preprend a part of the date
-with a zero to make it conform or switch back to the old <code class="literal">dateOptionalTime</code> format.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_date_format_does_not_support_unix_timestamps_by_default"></a>Date format does not support unix timestamps by default<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In earlier versions of elasticsearch, every timestamp was always tried to be parsed as
-as unix timestamp first. This means, even when specifying a date format like
-<code class="literal">dateOptionalTime</code>, one could supply unix timestamps instead of a ISO8601 formatted
-date.</p><p>This is not supported anymore. If you want to store unix timestamps, you need to specify
-the appropriate formats in the mapping, namely <code class="literal">epoch_second</code> or <code class="literal">epoch_millis</code>.</p><p>In addition the <code class="literal">numeric_resolution</code> mapping parameter is ignored. Use the
-<code class="literal">epoch_second</code> and <code class="literal">epoch_millis</code> date formats instead.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_source_field_limitations"></a>Source field limitations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">_source</code> field could previously be disabled dynamically. Since this field
-is a critical piece of many features like the Update API, it is no longer
-possible to disable.</p><p>The options for <code class="literal">compress</code> and <code class="literal">compress_threshold</code> have also been removed.
-The source field is already compressed. To minimize the storage cost,
-set <code class="literal">index.codec: best_compression</code> in index settings.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_boolean_fields"></a>Boolean fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Boolean fields used to have a string fielddata with <code class="literal">F</code> meaning <code class="literal">false</code> and <code class="literal">T</code>
-meaning <code class="literal">true</code>. They have been refactored to use numeric fielddata, with <code class="literal">0</code>
-for <code class="literal">false</code> and <code class="literal">1</code> for <code class="literal">true</code>. As a consequence, the format of the responses of
-the following APIs changed when applied to boolean fields: <code class="literal">0</code>/<code class="literal">1</code> is returned
-instead of <code class="literal">F</code>/<code class="literal">T</code>:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="link" href="search-request-fielddata-fields.html" title="Field Data Fields">fielddata fields</a>
-</li><li class="listitem">
-<a class="link" href="search-request-sort.html" title="Sort">sort values</a>
-</li><li class="listitem">
-<a class="link" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation">terms aggregations</a>
-</li></ul></div><p>In addition, terms aggregations use a custom formatter for boolean (like for
-dates and ip addresses, which are also backed by numbers) in order to return
-the user-friendly representation of boolean fields: <code class="literal">false</code>/<code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"buckets": [
-  {
-     "key": 0,
-     "key_as_string": "false",
-     "doc_count": 42
-  },
-  {
-     "key": 1,
-     "key_as_string": "true",
-     "doc_count": 12
-  }
-]</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_murmur3_fields"></a>Murmur3 Fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Fields of type <code class="literal">murmur3</code> can no longer change <code class="literal">doc_values</code> or <code class="literal">index</code> setting.
-They are always stored with doc values, and not indexed.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_source_field_configuration"></a>Source field configuration<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">_source</code> field no longer supports <code class="literal">includes</code> and <code class="literal">excludes</code> parameters. When
-<code class="literal">_source</code> is enabled, the entire original source will be stored.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_config_based_mappings"></a>Config based mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The ability to specify mappings in configuration files has been removed. To specify
-default mappings that apply to multiple indexes, use index templates.</p><p>The following settings are no longer valid:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">index.mapper.default_mapping_location</code>
-</li><li class="listitem">
-<code class="literal">index.mapper.default_percolator_mapping_location</code>
-</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="_delete_api_with_missing_routing_when_required.html">
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This field is referred to as <code class="literal">title</code>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This field is referred to as <code class="literal">name.title</code>.
+</p></td></tr></table></div><p>Previously, the two <code class="literal">title</code> fields in the example above could have been
+confused with each other when using the short name <code class="literal">title</code>.</p></div></div><div class="navfooter"><span class="prev"><a href="breaking-changes-2.0.html">
               « 
-              Delete api with missing routing when required</a>
+              Breaking changes in 2.0</a>
            
         </span><span class="next">
            
-          <a href="_codecs.html">Codecs
+          <a href="_type_name_prefix_removed.html">Type name prefix removed
                »
             </a></span></div>
 <!-- end body -->

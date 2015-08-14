@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Delete api with missing routing when required</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="_delete_by_query.html" title="Delete by query" /><link rel="next" href="_mappings.html" title="Mappings" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Delete api with missing routing when required</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="_delete_by_query.html" title="Delete by query" /><link rel="next" href="_codecs.html" title="Codecs" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -593,17 +593,58 @@
            
         </span><span class="next">
            
-          <a href="_mappings.html">Mappings
+          <a href="_codecs.html">Codecs
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_delete_api_with_missing_routing_when_required"></a>Delete api with missing routing when required<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Delete api requires a routing value when deleting a document belonging to a type that has routing set to required in its
 mapping, whereas previous elasticsearch versions would trigger a broadcast delete on all shards belonging to the index.
-A <code class="literal">RoutingMissingException</code> is now thrown instead.</p></div><div class="navfooter"><span class="prev"><a href="_delete_by_query.html">
+A <code class="literal">RoutingMissingException</code> is now thrown instead.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_default_date_format_now_is_literal_strictdateoptionaltime_literal"></a>Default date format now is <code class="literal">strictDateOptionalTime</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Instead of <code class="literal">dateOptionalTime</code> the new default date format now is <code class="literal">strictDateOptionalTime</code>,
+which is more strict in parsing dates. This means, that dates now need to have a four digit year,
+a two-digit month, day, hour, minute and second. This means, you may need to preprend a part of the date
+with a zero to make it conform or switch back to the old <code class="literal">dateOptionalTime</code> format.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_date_format_does_not_support_unix_timestamps_by_default"></a>Date format does not support unix timestamps by default<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In earlier versions of elasticsearch, every timestamp was always tried to be parsed as
+as unix timestamp first. This means, even when specifying a date format like
+<code class="literal">dateOptionalTime</code>, one could supply unix timestamps instead of a ISO8601 formatted
+date.</p><p>This is not supported anymore. If you want to store unix timestamps, you need to specify
+the appropriate formats in the mapping, namely <code class="literal">epoch_second</code> or <code class="literal">epoch_millis</code>.</p><p>In addition the <code class="literal">numeric_resolution</code> mapping parameter is ignored. Use the
+<code class="literal">epoch_second</code> and <code class="literal">epoch_millis</code> date formats instead.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_source_field_limitations"></a>Source field limitations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">_source</code> field could previously be disabled dynamically. Since this field
+is a critical piece of many features like the Update API, it is no longer
+possible to disable.</p><p>The options for <code class="literal">compress</code> and <code class="literal">compress_threshold</code> have also been removed.
+The source field is already compressed. To minimize the storage cost,
+set <code class="literal">index.codec: best_compression</code> in index settings.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_boolean_fields"></a>Boolean fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Boolean fields used to have a string fielddata with <code class="literal">F</code> meaning <code class="literal">false</code> and <code class="literal">T</code>
+meaning <code class="literal">true</code>. They have been refactored to use numeric fielddata, with <code class="literal">0</code>
+for <code class="literal">false</code> and <code class="literal">1</code> for <code class="literal">true</code>. As a consequence, the format of the responses of
+the following APIs changed when applied to boolean fields: <code class="literal">0</code>/<code class="literal">1</code> is returned
+instead of <code class="literal">F</code>/<code class="literal">T</code>:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="search-request-fielddata-fields.html" title="Field Data Fields">fielddata fields</a>
+</li><li class="listitem">
+<a class="link" href="search-request-sort.html" title="Sort">sort values</a>
+</li><li class="listitem">
+<a class="link" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation">terms aggregations</a>
+</li></ul></div><p>In addition, terms aggregations use a custom formatter for boolean (like for
+dates and ip addresses, which are also backed by numbers) in order to return
+the user-friendly representation of boolean fields: <code class="literal">false</code>/<code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"buckets": [
+  {
+     "key": 0,
+     "key_as_string": "false",
+     "doc_count": 42
+  },
+  {
+     "key": 1,
+     "key_as_string": "true",
+     "doc_count": 12
+  }
+]</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_murmur3_fields"></a>Murmur3 Fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Fields of type <code class="literal">murmur3</code> can no longer change <code class="literal">doc_values</code> or <code class="literal">index</code> setting.
+They are always stored with doc values, and not indexed.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_config_based_mappings"></a>Config based mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The ability to specify mappings in configuration files has been removed. To specify
+default mappings that apply to multiple indexes, use index templates.</p><p>The following settings are no longer valid:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">index.mapper.default_mapping_location</code>
+</li><li class="listitem">
+<code class="literal">index.mapper.default_percolator_mapping_location</code>
+</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="_delete_by_query.html">
               « 
               Delete by query</a>
            
         </span><span class="next">
            
-          <a href="_mappings.html">Mappings
+          <a href="_codecs.html">Codecs
                »
             </a></span></div>
 <!-- end body -->

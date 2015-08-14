@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Synced Flush</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="indices-flush.html" title="Flush" /><link rel="prev" href="indices-flush.html" title="Flush" /><link rel="next" href="indices-refresh.html" title="Refresh" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Type name prefix removed</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="_mapping.html" title="Mapping" /><link rel="next" href="_networking.html" title="Networking" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -587,134 +587,144 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-link"><a href="indices-flush.html">Flush</a></span> » <span class="breadcrumb-node">Synced Flush</span></div><div class="navheader"><span class="prev"><a href="indices-flush.html">
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.0.html">Breaking changes in 2.0</a></span> » <span class="breadcrumb-node">Type name prefix removed</span></div><div class="navheader"><span class="prev"><a href="_mapping.html">
               « 
-              Flush</a>
+              Mapping</a>
            
         </span><span class="next">
            
-          <a href="indices-refresh.html">Refresh
+          <a href="_networking.html">Networking
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="indices-synced-flush"></a>Synced Flush<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/flush.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch tracks the indexing activity of each shard. Shards that have not
-received any indexing operations for 5 minutes are automatically marked as inactive. This presents
-an opportunity for Elasticsearch to reduce shard resources and also perform
-a special kind of flush, called <code class="literal">synced flush</code>. A synced flush performs a normal flush, then adds
-a generated unique marker (sync_id) to all shards.</p><p>Since the sync id marker was added when there were no ongoing indexing operations, it can
-be used as a quick way to check if the two shards' lucene indices are identical. This quick sync id
-comparison (if present) is used during recovery or restarts to skip the first and
-most costly phase of the process. In that case, no segment files need to be copied and
-the transaction log replay phase of the recovery can start immediately. Note that since the sync id
-marker was applied together with a flush, it is very likely that the transaction log will be empty,
-speeding up recoveries even more.</p><p>This is particularly useful for use cases having lots of indices which are
-never or very rarely updated, such as time based data. This use case typically generates lots of indices whose
-recovery without the synced flush marker would take a long time.</p><p>To check whether a shard has a marker or not, look for the <code class="literal">commit</code> section of shard stats returned by
-the <a class="link" href="indices-stats.html" title="Indices Stats">indices stats</a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /twitter/_stats/commit?level=shards</pre></div><a class="sense_widget" href="sense_widget.html?snippets/indices-synced-flush/1.json" target="sense">View in Sense</a><p>which returns something similar to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   ...
-   "indices": {
-      "twitter": {
-         "primaries": {},
-         "total": {},
-         "shards": {
-            "0": [
-               {
-                  "routing": {
-                     ...
-                  },
-                  "commit": {
-                     "id": "te7zF7C4UsirqvL6jp/vUg==",
-                     "generation": 2,
-                     "user_data": {
-                        "sync_id": "AU2VU0meX-VX2aNbEUsD" <a id="CO98-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>,
-                        ...
-                     },
-                     "num_docs": 0
-                  }
-               }
-               ...
-            ],
-            ...
-         }
-      }
-   }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO98-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the <code class="literal">sync id</code> marker
-</p></td></tr></table></div><h3><a id="_synced_flush_api"></a>Synced Flush API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/flush.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Synced Flush API allows an administrator to initiate a synced flush manually. This can be particularly useful for
-a planned (rolling) cluster restart where you can stop indexing and don’t want to wait the default 5 minutes for
-idle indices to be sync-flushed automatically.</p><p>While handy, there are a couple of caveats for this API:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-Synced flush is a best effort operation. Any ongoing indexing operations will cause
-the synced flush to fail on that shard. This means that some shards may be synced flushed while others aren’t. See below for more.
-</li><li class="listitem">
-The <code class="literal">sync_id</code> marker is removed as soon as the shard is flushed again. That is because a flush replaces the low level
-lucene commit point where the marker is stored. Uncommitted operations in the transaction log do not remove the marker.
-In practice, one should consider any indexing operation on an index as removing the marker as a flush can be triggered by Elasticsearch
-at any time.
-</li></ol></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>It is harmless to request a synced flush while there is ongoing indexing. Shards that are idle will succeed and shards
- that are not will fail. Any shards that succeeded will have faster recovery times.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /twitter/_flush/synced</pre></div><a class="sense_widget" href="sense_widget.html?snippets/indices-synced-flush/2.json" target="sense">View in Sense</a><p>The response contains details about how many shards were successfully sync-flushed and information about any failure.</p><p>Here is what it looks like when all shards of a two shards and one replica index successfully
-sync-flushed:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "_shards": {
-      "total": 4,
-      "successful": 4,
-      "failed": 0
-   },
-   "twitter": {
-      "total": 4,
-      "successful": 4,
-      "failed": 0
-   }
-}</pre></div><p>Here is what it looks like when one shard group failed due to pending operations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "_shards": {
-      "total": 4,
-      "successful": 2,
-      "failed": 2
-   },
-   "twitter": {
-      "total": 4,
-      "successful": 2,
-      "failed": 2,
-      "failures": [
-         {
-            "shard": 1,
-            "reason": "[2] ongoing operations on primary"
-         }
-      ]
-   }
-}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The above error is shown when the synced flush failes due to concurrent indexing operations. The HTTP
-status code in that case will be <code class="literal">409 CONFLICT</code>.</p></div></div><p>Sometimes the failures are specific to a shard copy. The copies that failed will not be eligible for
-fast recovery but those that succeeded still will be. This case is reported as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "_shards": {
-      "total": 4,
-      "successful": 1,
-      "failed": 1
-   },
-   "twitter": {
-      "total": 4,
-      "successful": 3,
-      "failed": 1,
-      "failures": [
-         {
-            "shard": 1,
-            "reason": "unexpected error",
-            "routing": {
-               "state": "STARTED",
-               "primary": false,
-               "node": "SZNr2J_ORxKTLUCydGX4zA",
-               "relocating_node": null,
-               "shard": 1,
-               "index": "twitter"
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_type_name_prefix_removed"></a>Type name prefix removed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Previously, two fields with the same name in two different types could
+sometimes be disambiguated by prepending the type name.  As a side effect, it
+would add a filter on the type name to the relevant query.  This feature was
+ambiguous — a type name could be confused with a field name — and didn’t
+work everywhere e.g. aggregations.</p><p>Instead, fields should be specified with the full path, but without a type
+name prefix.  If you wish to filter by the <code class="literal">_type</code> field, either specify the
+type in the URL or add an explicit filter.</p><p>The following example query in 1.x:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET my_index/_search
+{
+  "query": {
+    "match": {
+      "my_type.some_field": "quick brown fox"
+    }
+  }
+}</pre></div><p>would be rewritten in 2.0 as:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET my_index/my_type/_search <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+{
+  "query": {
+    "match": {
+      "some_field": "quick brown fox" <a id="CO4-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    }
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The type name can be specified in the URL to act as a filter.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The field name should be specified without the type prefix.
+</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_field_names_may_not_contain_dots"></a>Field names may not contain dots<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In 1.x, it was possible to create fields with dots in their name, for
+instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "foo.bar": { <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "type": "string"
+        },
+        "foo": {
+          "properties": {
+            "bar": { <a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+              "type": "string"
             }
-         }
-      ]
-   }
-}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When a shard copy fails to sync-flush, the HTTP status code returned will be <code class="literal">409 CONFLICT</code>.</p></div></div><p>The synced flush API can be applied to more than one index with a single call,
-or even on <code class="literal">_all</code> the indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /kimchy,elasticsearch/_flush/synced
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+These two fields cannot be distinguised as both are referred to as <code class="literal">foo.bar</code>.
+</p></td></tr></table></div><p>You can no longer create fields with dots in the name.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_type_names_may_not_start_with_a_dot"></a>Type names may not start with a dot<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In 1.x, Elasticsearch would issue a warning if a type name included a dot,
+e.g. <code class="literal">my.type</code>.  Now that type names are no longer used to distinguish between
+fields in differnt types, this warning has been relaxed: type names may now
+contain dots, but they may not <span class="strong"><strong>begin</strong></span> with a dot.  The only exception to this
+is the special <code class="literal">.percolator</code> type.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_types_may_no_longer_be_deleted"></a>Types may no longer be deleted<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In 1.x it was possible to delete a type mapping, along with all of the
+documents of that type, using the delete mapping API.  This is no longer
+supported, because remnants of the fields in the type could remain in the
+index, causing corruption later on.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_type_meta_fields"></a>Type meta-fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <a class="link" href="mapping-fields.html" title="Meta-Fields">meta-fields</a> associated with had configuration options
+removed, to make them more reliable:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">_id</code> configuration can no longer be changed.  If you need to sort, use the <a class="link" href="mapping-uid-field.html" title="_uid field"><code class="literal">_uid</code></a> field instead.
+</li><li class="listitem">
+<code class="literal">_type</code> configuration can no longer be changed.
+</li><li class="listitem">
+<code class="literal">_index</code> configuration can no longer be changed.
+</li><li class="listitem">
+<code class="literal">_routing</code> configuration is limited to marking routing as required.
+</li><li class="listitem">
+<code class="literal">_field_names</code> configuration is limited to disabling the field.
+</li><li class="listitem">
+<code class="literal">_size</code> configuration is limited to enabling the field.
+</li><li class="listitem">
+<code class="literal">_timestamp</code> configuration is limited to enabling the field, setting format and default value.
+</li><li class="listitem">
+<code class="literal">_boost</code> has been removed.
+</li><li class="listitem">
+<code class="literal">_analyzer</code> has been removed.
+</li></ul></div><p>Importantly, <span class="strong"><strong>meta-fields can no longer be specified as part of the document
+body.</strong></span>  Instead, they must be specified in the query string parameters.  For
+instance, in 1.x, the <code class="literal">routing</code> could be specified as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "_routing": {
+        "path": "group" <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      },
+      "properties": {
+        "group": { <a id="CO6-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          "type": "string"
+        }
+      }
+    }
+  }
+}
 
-POST /_flush/synced</pre></div><a class="sense_widget" href="sense_widget.html?snippets/indices-synced-flush/3.json" target="sense">View in Sense</a></div><div class="navfooter"><span class="prev"><a href="indices-flush.html">
+PUT my_index/my_type/1 <a id="CO6-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+{
+  "group": "foo"
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO6-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This 1.x mapping tells Elasticsearch to extract the <code class="literal">routing</code> value from the <code class="literal">group</code> field in the document body.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This indexing request uses a <code class="literal">routing</code> value of <code class="literal">foo</code>.
+</p></td></tr></table></div><p>In 2.0, the routing must be specified explicitly:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "_routing": {
+        "required": true <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      },
+      "properties": {
+        "group": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+
+PUT my_index/my_type/1?routing=bar <a id="CO7-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+{
+  "group": "foo"
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Routing can be marked as required to ensure it is not forgotten during indexing.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This indexing request uses a <code class="literal">routing</code> value of <code class="literal">bar</code>.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_other_mapping_changes"></a>Other mapping changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The setting <code class="literal">index.mapping.allow_type_wrapper</code> has been removed.  Documents should always be sent without the type as the root element.
+</li><li class="listitem">
+The <code class="literal">binary</code> field does not support the <code class="literal">compress</code> and <code class="literal">compress_threshold</code> options anymore.
+</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="_mapping.html">
               « 
-              Flush</a>
+              Mapping</a>
            
         </span><span class="next">
            
-          <a href="indices-refresh.html">Refresh
+          <a href="_networking.html">Networking
                »
             </a></span></div>
 <!-- end body -->
