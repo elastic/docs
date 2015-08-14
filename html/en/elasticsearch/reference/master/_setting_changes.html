@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>/bin/elasticsearch dynamic parameters must come after static ones</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="_literal_bin_elasticsearch_literal_version_needs_literal_v_literal_parameter.html" title="/bin/elasticsearch version needs -V parameter" /><link rel="next" href="_aliases.html" title="Aliases" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting changes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="_plugin_and_packaging_changes.html" title="Plugin and packaging changes" /><link rel="next" href="_stats_info_and_literal_cat_literal_changes.html" title="Stats, info, and cat changes" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -587,24 +587,62 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.0.html">Breaking changes in 2.0</a></span> » <span class="breadcrumb-node"><code class="literal">/bin/elasticsearch</code> dynamic parameters must come after static ones</span></div><div class="navheader"><span class="prev"><a href="_literal_bin_elasticsearch_literal_version_needs_literal_v_literal_parameter.html">
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.0.html">Breaking changes in 2.0</a></span> » <span class="breadcrumb-node">Setting changes</span></div><div class="navheader"><span class="prev"><a href="_plugin_and_packaging_changes.html">
               « 
-              <code class="literal">/bin/elasticsearch</code> version needs <code class="literal">-V</code> parameter</a>
+              Plugin and packaging changes</a>
            
         </span><span class="next">
            
-          <a href="_aliases.html">Aliases
+          <a href="_stats_info_and_literal_cat_literal_changes.html">Stats, info, and <code class="literal">cat</code> changes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_literal_bin_elasticsearch_literal_dynamic_parameters_must_come_after_static_ones"></a><code class="literal">/bin/elasticsearch</code> dynamic parameters must come after static ones<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you are setting configuration options like cluster name or node name via
-the commandline, you have to ensure, that the static options like pid file
-path or daemonizing always come first, like this</p><p>```
-/bin/elasticsearch -d -p /tmp/foo.pid --http.cors.enabled=true --http.cors.allow-origin=<span class="emphasis"><em>*</em></span></p><p>```</p><p>For a list of those static parameters, run <code class="literal">/bin/elasticsearch -h</code></p></div><div class="navfooter"><span class="prev"><a href="_literal_bin_elasticsearch_literal_version_needs_literal_v_literal_parameter.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_setting_changes"></a>Setting changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="migration-script-settings"></a>Scripting settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">script.disable_dynamic</code> node setting has been replaced by fine-grained
+script settings described in the <a class="link" href="modules-scripting.html#enable-dynamic-scripting" title="Enabling dynamic scriptingedit">scripting docs</a>.
+The following setting previously used to enable dynamic or inline scripts:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">script.disable_dynamic: false</pre></div><p>It should be replaced with the following two settings in <code class="literal">elasticsearch.yml</code> that
+achieve the same result:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">script.inline: on
+script.indexed: on</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_units_required_for_time_and_byte_sized_settings"></a>Units required for time and byte-sized settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Any settings which accept time or byte values must now be specified with
+units.  For instance, it is too easy to set the <code class="literal">refresh_interval</code> to 1
+<span class="strong"><strong>millisecond</strong></span> instead of 1 second:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _settings
+{
+  "index.refresh_interval": 1
+}</pre></div><p>In 2.0, the above request will throw an exception. Instead the refresh
+interval should be set to <code class="literal">"1s"</code> for one second.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_shadow_replica_settings"></a>Shadow replica settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">node.enable_custom_paths</code> setting has been removed and replaced by the
+<code class="literal">path.shared_data</code> setting to allow shadow replicas with custom paths to work
+with the security manager. For example, if your previous configuration had:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.enable_custom_paths: true</pre></div><p>And you created an index using shadow replicas with <code class="literal">index.data_path</code> set to
+<code class="literal">/opt/data/my_index</code> with the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_index
+{
+  "index": {
+    "number_of_shards": 1,
+    "number_of_replicas": 4,
+    "data_path": "/opt/data/my_index",
+    "shadow_replicas": true
+  }
+}</pre></div><p>For 2.0, you will need to set <code class="literal">path.shared_data</code> to a parent directory of the
+index’s data_path, so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">path.shared_data: /opt/data</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_resource_watcher_settings_renamed"></a>Resource watcher settings renamed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The setting names for configuring the resource watcher have been renamed
+to prevent clashes with the watcher plugin</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">watcher.enabled</code> is now <code class="literal">resource.reload.enabled</code>
+</li><li class="listitem">
+<code class="literal">watcher.interval</code> is now <code class="literal">resource.reload.interval</code>
+</li><li class="listitem">
+<code class="literal">watcher.interval.low</code> is now <code class="literal">resource.reload.interval.low</code>
+</li><li class="listitem">
+<code class="literal">watcher.interval.medium</code> is now <code class="literal">resource.reload.interval.medium</code>
+</li><li class="listitem">
+<code class="literal">watcher.interval.high</code> is now <code class="literal">resource.reload.interval.high</code>
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_hunspell_dictionary_configuration"></a>Hunspell dictionary configuration<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The parameter <code class="literal">indices.analysis.hunspell.dictionary.location</code> has been
+removed, and <code class="literal">&lt;path.conf&gt;/hunspell</code> is always used.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_cors_allowed_origins"></a>CORS allowed origins<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The CORS allowed origins setting, <code class="literal">http.cors.allow-origin</code>, no longer has a default value. Previously, the default value
+was <code class="literal">*</code>, which would allow CORS requests from any origin and is considered insecure. The <code class="literal">http.cors.allow-origin</code> setting
+should be specified with only the origins that should be allowed, like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">http.cors.allow-origin: /https?:\/\/localhost(:[0-9]+)?/</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_jsonp_support"></a>JSONP support<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>JSONP callback support has now been removed. CORS should be used to access Elasticsearch
+over AJAX instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">http.cors.enabled: true
+http.cors.allow-origin: /https?:\/\/localhost(:[0-9]+)?/</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_in_memory_indices"></a>In memory indices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">memory</code> / <code class="literal">ram</code> store (<code class="literal">index.store.type</code>) option was removed in
+Elasticsearch.  In-memory indices are no longer supported.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_log_messages_truncated"></a>Log messages truncated<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Log messages are now truncated at 10,000 characters. This can be changed in
+the <code class="literal">logging.yml</code> configuration file with the <code class="literal">file.layout.conversionPattern</code>
+setting.</p><p>Remove mapping.date.round_ceil setting for date math parsing #8889 (issues: #8556, #8598)</p></div></div><div class="navfooter"><span class="prev"><a href="_plugin_and_packaging_changes.html">
               « 
-              <code class="literal">/bin/elasticsearch</code> version needs <code class="literal">-V</code> parameter</a>
+              Plugin and packaging changes</a>
            
         </span><span class="next">
            
-          <a href="_aliases.html">Aliases
+          <a href="_stats_info_and_literal_cat_literal_changes.html">Stats, info, and <code class="literal">cat</code> changes
                »
             </a></span></div>
 <!-- end body -->

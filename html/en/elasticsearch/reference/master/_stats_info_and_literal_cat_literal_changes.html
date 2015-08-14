@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Mapping</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="next" href="_type_name_prefix_removed.html" title="Type name prefix removed" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Stats, info, and cat changes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="_setting_changes.html" title="Setting changes" /><link rel="next" href="_java_api_changes.html" title="Java API changes" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -587,77 +587,44 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.0.html">Breaking changes in 2.0</a></span> » <span class="breadcrumb-node">Mapping</span></div><div class="navheader"><span class="prev"><a href="breaking-changes-2.0.html">
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.0.html">Breaking changes in 2.0</a></span> » <span class="breadcrumb-node">Stats, info, and <code class="literal">cat</code> changes</span></div><div class="navheader"><span class="prev"><a href="_setting_changes.html">
               « 
-              Breaking changes in 2.0</a>
+              Setting changes</a>
            
         </span><span class="next">
            
-          <a href="_type_name_prefix_removed.html">Type name prefix removed
+          <a href="_java_api_changes.html">Java API changes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_mapping"></a>Mapping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Remove file based default mappings #10870 (issue: #10620)
-Validate dynamic mappings updates on the master node. #10634 (issues: #8650, #8688)
-Remove the ability to have custom per-field postings and doc values formats. #9741 (issue: #8746)
-Remove support for new indexes using path setting in object/nested fields or index_name in any field #9570 (issue: #6677)
-Remove index_analyzer setting to simplify analyzer logic #9451 (issue: #9371)
-Remove type level default analyzers #9430 (issues: #8874, #9365)
-Add doc values support to boolean fields. #7961 (issues: #4678, #7851)</p><p>A number of changes have been made to mappings to remove ambiguity and to
-ensure that conflicting mappings cannot be created.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_conflicting_field_mappings"></a>Conflicting field mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Fields with the same name, in the same index, in different types, must have
-the same mapping, with the exception of the <a class="xref" href="copy-to.html" title="copy_to"><code class="literal">copy_to</code></a>, <a class="xref" href="dynamic.html" title="dynamic"><code class="literal">dynamic</code></a>,
-<a class="xref" href="enabled.html" title="enabled"><code class="literal">enabled</code></a>, <a class="xref" href="ignore-above.html" title="ignore_above"><code class="literal">ignore_above</code></a>, <a class="xref" href="include-in-all.html" title="include_in_all"><code class="literal">include_in_all</code></a>, and <a class="xref" href="properties.html" title="properties"><code class="literal">properties</code></a>
-parameters, which may have different settings per field.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
-{
-  "mappings": {
-    "type_one": {
-      "properties": {
-        "name": { <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-          "type": "string"
-        }
-      }
-    },
-    "type_two": {
-      "properties": {
-        "name": { <a id="CO2-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-          "type":     "string",
-          "analyzer": "english"
-        }
-      }
-    }
-  }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO2-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The two <code class="literal">name</code> fields have conflicting mappings and will prevent Elasticsearch
-    from starting.
-</p></td></tr></table></div><p>Elasticsearch will not start in the presence of conflicting field mappings.
-These indices must be deleted or reindexed using a new mapping.</p><p>The <code class="literal">ignore_conflicts</code> option of the put mappings API has been removed.
-Conflicts can’t be ignored anymore.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fields_cannot_be_referenced_by_short_name"></a>Fields cannot be referenced by short name<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A field can no longer be referenced using its short name.  Instead, the full
-path to the field is required.  For instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
-{
-  "mappings": {
-    "my_type": {
-      "properties": {
-        "title":     { "type": "string" }, <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        "name": {
-          "properties": {
-            "title": { "type": "string" }, <a id="CO3-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-            "first": { "type": "string" },
-            "last":  { "type": "string" }
-          }
-        }
-      }
-    }
-  }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This field is referred to as <code class="literal">title</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This field is referred to as <code class="literal">name.title</code>.
-</p></td></tr></table></div><p>Previously, the two <code class="literal">title</code> fields in the example above could have been
-confused with each other when using the short name <code class="literal">title</code>.</p></div></div><div class="navfooter"><span class="prev"><a href="breaking-changes-2.0.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_stats_info_and_literal_cat_literal_changes"></a>Stats, info, and <code class="literal">cat</code> changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/stats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sigar_removed"></a>Sigar removed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/stats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>We no longer ship the Sigar library for operating system dependent statistics,
+as it no longer seems to be maintained.  Instead, we rely on the statistics
+provided by the JVM.  This has resulted in a number of changes to the node
+info, and node stats responses:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">network.*</code> has been removed from nodes info and nodes stats.
+</li><li class="listitem">
+<code class="literal">fs.*.dev</code> and <code class="literal">fs.*.disk*</code> have been removed from nodes stats.
+</li><li class="listitem">
+<code class="literal">os.*</code> has been removed from nodes stats, except for <code class="literal">os.timestamp</code>,
+  <code class="literal">os.load_average</code>, <code class="literal">os.mem.*</code>, and <code class="literal">os.swap.*</code>.
+</li><li class="listitem">
+<code class="literal">os.mem.total</code> and <code class="literal">os.swap.total</code> have been removed from nodes info.
+</li><li class="listitem">
+<code class="literal">process.mem.resident</code> and <code class="literal">process.mem.share</code> have been removed from node stats.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_removed_literal_id_cache_literal_from_stats_apis"></a>Removed <code class="literal">id_cache</code> from stats apis<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/stats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Removed <code class="literal">id_cache</code> metric from nodes stats, indices stats and cluster stats
+apis. This metric has also been removed from the shards cat, indices cat and
+nodes cat apis. Parent/child memory is now reported under fielddata, because
+it has internally be using fielddata for a while now.</p><p>To just see how much parent/child related field data is taking, the
+<code class="literal">fielddata_fields</code> option can be used on the stats apis. Indices stats
+example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_stats/fielddata?fielddata_fields=_parent</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_percolator_stats"></a>Percolator stats<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/stats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The total time spent running percolator queries is now called <code class="literal">percolate.time</code>
+instead of <code class="literal">percolate.get_time</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_cluster_state_rest_api"></a>Cluster state REST API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/stats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The cluster state API doesn’t return the <code class="literal">routing_nodes</code> section anymore when
+<code class="literal">routing_table</code> is requested. The newly introduced <code class="literal">routing_nodes</code> flag can be
+used separately to control whether <code class="literal">routing_nodes</code> should be returned.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_index_status_api"></a>Index status API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/stats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The deprecated index status API has been removed.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_cat_literal_apis_verbose_by_default"></a><code class="literal">cat</code> APIs verbose by default<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/stats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">cat</code> APIs now default to being verbose, which means they output column
+headers by default. Verbosity can be turned off with the <code class="literal">v</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/shards?v=0</pre></div></div></div><div class="navfooter"><span class="prev"><a href="_setting_changes.html">
               « 
-              Breaking changes in 2.0</a>
+              Setting changes</a>
            
         </span><span class="next">
            
-          <a href="_type_name_prefix_removed.html">Type name prefix removed
+          <a href="_java_api_changes.html">Java API changes
                »
             </a></span></div>
 <!-- end body -->

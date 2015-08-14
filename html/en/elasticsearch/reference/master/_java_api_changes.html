@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CORS allowed origins</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="_jsonp_support.html" title="JSONP support" /><link rel="next" href="_cluster_state_rest_api.html" title="Cluster state REST api" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Java API changes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="_stats_info_and_literal_cat_literal_changes.html" title="Stats, info, and cat changes" /><link rel="next" href="breaking-changes-1.6.html" title="Breaking changes in 1.6" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -587,23 +587,62 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.0.html">Breaking changes in 2.0</a></span> » <span class="breadcrumb-node">CORS allowed origins</span></div><div class="navheader"><span class="prev"><a href="_jsonp_support.html">
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.0.html">Breaking changes in 2.0</a></span> » <span class="breadcrumb-node">Java API changes</span></div><div class="navheader"><span class="prev"><a href="_stats_info_and_literal_cat_literal_changes.html">
               « 
-              JSONP support</a>
+              Stats, info, and <code class="literal">cat</code> changes</a>
            
         </span><span class="next">
            
-          <a href="_cluster_state_rest_api.html">Cluster state REST api
+          <a href="breaking-changes-1.6.html">Breaking changes in 1.6
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_cors_allowed_origins"></a>CORS allowed origins<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The CORS allowed origins setting, <code class="literal">http.cors.allow-origin</code>, no longer has a default value. Previously, the default value
-was <code class="literal">*</code>, which would allow CORS requests from any origin and is considered insecure. The <code class="literal">http.cors.allow-origin</code> setting
-should be specified with only the origins that should be allowed, like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">http.cors.allow-origin: /https?:\/\/localhost(:[0-9]+)?/</pre></div></div><div class="navfooter"><span class="prev"><a href="_jsonp_support.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_java_api_changes"></a>Java API changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/java.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_transport_api_construction"></a>Transport API construction<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/java.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">TransportClient</code> construction code has changed, it now uses the builder
+pattern. Instead of:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings settings = Settings.settingsBuilder()
+        .put("cluster.name", "myClusterName").build();
+Client client = new TransportClient(settings);</pre></div><p>Use the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings settings = Settings.settingsBuilder()
+        .put("cluster.name", "myClusterName").build();
+Client client = TransportClient.builder().settings(settings).build();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_automatically_thread_client_listeners"></a>Automatically thread client listeners<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/java.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Previously, the user had to set request listener threads to <code class="literal">true</code> when on the
+client side in order not to block IO threads on heavy operations. This proved
+to be very trappy for users, and ended up creating problems that are very hard
+to debug.</p><p>In 2.0, Elasticsearch automatically threads listeners that are used from the
+client when the client is a node client or a transport client. Threading can
+no longer be manually set.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_query_filter_refactoring"></a>Query/filter refactoring<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/java.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><code class="literal">org.elasticsearch.index.queries.FilterBuilders</code> has been removed as part of the merge of
+queries and filters. These filters are now available in <code class="literal">QueryBuilders</code> with the same name.
+All methods that used to accept a <code class="literal">FilterBuilder</code> now accept a <code class="literal">QueryBuilder</code> instead.</p><p>In addition some query builders have been removed or renamed:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">commonTerms(...)</code> renamed with <code class="literal">commonTermsQuery(...)</code>
+</li><li class="listitem">
+<code class="literal">queryString(...)</code> renamed with <code class="literal">queryStringQuery(...)</code>
+</li><li class="listitem">
+<code class="literal">simpleQueryString(...)</code> renamed with <code class="literal">simpleQueryStringQuery(...)</code>
+</li><li class="listitem">
+<code class="literal">textPhrase(...)</code> removed
+</li><li class="listitem">
+<code class="literal">textPhrasePrefix(...)</code> removed
+</li><li class="listitem">
+<code class="literal">textPhrasePrefixQuery(...)</code> removed
+</li><li class="listitem">
+<code class="literal">filtered(...)</code> removed. Use <code class="literal">filteredQuery(...)</code> instead.
+</li><li class="listitem">
+<code class="literal">inQuery(...)</code> removed.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_getindexrequest"></a>GetIndexRequest<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/java.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><code class="literal">GetIndexRequest.features()</code> now returns an array of Feature Enums instead of an array of String values.</p><p>The following deprecated methods have been removed:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">GetIndexRequest.addFeatures(String[])</code> - Use
+  <code class="literal">GetIndexRequest.addFeatures(Feature[])</code> instead
+</li><li class="listitem">
+<code class="literal">GetIndexRequest.features(String[])</code> - Use
+  <code class="literal">GetIndexRequest.features(Feature[])</code> instead.
+</li><li class="listitem">
+<code class="literal">GetIndexRequestBuilder.addFeatures(String[])</code> - Use
+  <code class="literal">GetIndexRequestBuilder.addFeatures(Feature[])</code> instead.
+</li><li class="listitem">
+<code class="literal">GetIndexRequestBuilder.setFeatures(String[])</code> - Use
+  <code class="literal">GetIndexRequestBuilder.setFeatures(Feature[])</code> instead.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_bytesquerybuilder_removed"></a>BytesQueryBuilder removed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/java.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The redundant BytesQueryBuilder has been removed in favour of the
+WrapperQueryBuilder internally.</p></div></div><div class="navfooter"><span class="prev"><a href="_stats_info_and_literal_cat_literal_changes.html">
               « 
-              JSONP support</a>
+              Stats, info, and <code class="literal">cat</code> changes</a>
            
         </span><span class="next">
            
-          <a href="_cluster_state_rest_api.html">Cluster state REST api
+          <a href="breaking-changes-1.6.html">Breaking changes in 1.6
                »
             </a></span></div>
 <!-- end body -->

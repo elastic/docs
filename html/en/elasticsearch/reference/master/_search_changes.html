@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>The count api internally uses the search api</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="_literal_search_type_count_literal_deprecation.html" title="search_type=count deprecation" /><link rel="next" href="_jsonp_support.html" title="JSONP support" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Search changes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-2.0.html" title="Breaking changes in 2.0" /><link rel="prev" href="_query_dsl_changes.html" title="Query DSL changes" /><link rel="next" href="_aggregation_changes.html" title="Aggregation changes" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -587,23 +587,76 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.0.html">Breaking changes in 2.0</a></span> » <span class="breadcrumb-node">The count api internally uses the search api</span></div><div class="navheader"><span class="prev"><a href="_literal_search_type_count_literal_deprecation.html">
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.0.html">Breaking changes in 2.0</a></span> » <span class="breadcrumb-node">Search changes</span></div><div class="navheader"><span class="prev"><a href="_query_dsl_changes.html">
               « 
-              <code class="literal">search_type=count</code> deprecation</a>
+              Query DSL changes</a>
            
         </span><span class="next">
            
-          <a href="_jsonp_support.html">JSONP support
+          <a href="_aggregation_changes.html">Aggregation changes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_the_count_api_internally_uses_the_search_api"></a>The count api internally uses the search api<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The count api is now a shortcut to the search api with <code class="literal">size</code> set to 0. As a
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_search_changes"></a>Search changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_partial_fields"></a>Partial fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Partial fields have been removed in favor of <a class="link" href="search-request-source-filtering.html" title="Source filtering">source filtering</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_search_type_count_literal_deprecated"></a><code class="literal">search_type=count</code> deprecated<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">count</code> search type has been deprecated. All benefits from this search
+type can now be achieved by using the (default) <code class="literal">query_then_fetch</code> search type
+and setting <code class="literal">size</code> to <code class="literal">0</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_the_count_api_internally_uses_the_search_api"></a>The count api internally uses the search api<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The count api is now a shortcut to the search api with <code class="literal">size</code> set to 0. As a
 result, a total failure will result in an exception being returned rather
-than a normal response with <code class="literal">count</code> set to <code class="literal">0</code> and shard failures.</p></div><div class="navfooter"><span class="prev"><a href="_literal_search_type_count_literal_deprecation.html">
+than a normal response with <code class="literal">count</code> set to <code class="literal">0</code> and shard failures.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_all_stored_meta_fields_returned_by_default_2"></a>All stored meta-fields returned by default<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Previously, meta-fields like <code class="literal">_routing</code>, <code class="literal">_timestamp</code>, etc would only be
+included in the search results if specifically requested with the <code class="literal">fields</code>
+parameter.  Now, all meta-fields which have stored values will be returned by
+default.  Additionally, they are now returned at the top level (along with
+<code class="literal">_index</code>, <code class="literal">_type</code>, and <code class="literal">_id</code>) instead of in the <code class="literal">fields</code> element.</p><p>For instance, the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /my_index/_search?fields=foo</pre></div><p>might return:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   [...]
+   "hits": {
+      "total": 1,
+      "max_score": 1,
+      "hits": [
+         {
+            "_index":     "my_index",
+            "_type":      "my_type",
+            "_id":        "1",
+            "_score":     1,
+            "_timestamp": 10000000, <a id="CO12-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "fields": {
+              "foo" : [ "bar" ]
+            }
+         }
+      ]
+   }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">_timestamp</code> is returned by default, and at the top level.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_script_fields"></a>Script fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Script fields in 1.x were only returned as a single value. Even if the return
+value of a script was a list, it would be returned as an array containing an
+array:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"fields": {
+  "my_field": [
+    [
+      "v1",
+      "v2"
+    ]
+  ]
+}</pre></div><p>In elasticsearch 2.0, scripts that return a list of values are treated as
+multivalued fields. The same example would return the following response, with
+values in a single array.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"fields": {
+  "my_field": [
+    "v1",
+    "v2"
+  ]
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_timezone_for_date_field"></a>Timezone for date field<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Specifying the <code class="literal">time_zone</code> parameter in queries or aggregations on fields of
+type <code class="literal">date</code> must now be either an ISO 8601 UTC offset, or a timezone id. For
+example, the value <code class="literal">+1:00</code> must now be written as <code class="literal">+01:00</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_only_highlight_queried_fields"></a>Only highlight queried fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The default value for the <code class="literal">require_field_match</code> option has changed from
+<code class="literal">false</code> to <code class="literal">true</code>, meaning that the highlighters will, by default, only take
+the fields that were queried into account.</p><p>This means that, when querying the <code class="literal">_all</code> field, trying to highlight on any
+field other than <code class="literal">_all</code>  will produce no highlighted snippets. Querying the
+same fields that need to be highlighted is the cleaner solution to get
+highlighted snippets back. Otherwise <code class="literal">require_field_match</code> option can be set
+to <code class="literal">false</code> to ignore field names completely when highlighting.</p><p>The postings highlighter doesn’t support the <code class="literal">require_field_match</code> option
+anymore, it will only highlight fields that were queried.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_postings_highlighter_doesn_8217_t_support_literal_match_phrase_prefix_literal"></a>Postings highlighter doesn’t support <code class="literal">match_phrase_prefix</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">match</code> query with type set to <code class="literal">phrase_prefix</code> (or the
+<code class="literal">match_phrase_prefix</code> query) is not supported by the postings highlighter. No
+highlighted snippets will be returned.</p></div></div><div class="navfooter"><span class="prev"><a href="_query_dsl_changes.html">
               « 
-              <code class="literal">search_type=count</code> deprecation</a>
+              Query DSL changes</a>
            
         </span><span class="next">
            
-          <a href="_jsonp_support.html">JSONP support
+          <a href="_aggregation_changes.html">Aggregation changes
                »
             </a></span></div>
 <!-- end body -->
