@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using Python in Elasticsearch</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [2.0]" /><link rel="up" href="lang-python.html" title="Python Language Plugin" /><link rel="prev" href="lang-python.html" title="Python Language Plugin" /><link rel="next" href="security.html" title="Security Plugins" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using the murmur3 field</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [2.0]" /><link rel="up" href="mapper-murmur3.html" title="Mapper Murmur3 Plugin" /><link rel="prev" href="mapper-murmur3.html" title="Mapper Murmur3 Plugin" /><link rel="next" href="scripting.html" title="Scripting Plugins" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -587,122 +587,68 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [2.0]
-    </a></span> » <span class="breadcrumb-link"><a href="scripting.html">Scripting Plugins</a></span> » <span class="breadcrumb-link"><a href="lang-python.html">Python Language Plugin</a></span> » <span class="breadcrumb-node">Using Python in Elasticsearch</span></div><div class="navheader"><span class="prev"><a href="lang-python.html">
+    </a></span> » <span class="breadcrumb-link"><a href="mapper.html">Mapper Plugins</a></span> » <span class="breadcrumb-link"><a href="mapper-murmur3.html">Mapper Murmur3 Plugin</a></span> » <span class="breadcrumb-node">Using the <code class="literal">murmur3</code> field</span></div><div class="navheader"><span class="prev"><a href="mapper-murmur3.html">
               « 
-              Python Language Plugin</a>
+              Mapper Murmur3 Plugin</a>
            
         </span><span class="next">
            
-          <a href="security.html">Security Plugins
+          <a href="scripting.html">Scripting Plugins
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="lang-python-usage"></a>Using Python in Elasticsearch<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/lang-python.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Once the plugin has been installed, Python can be used at a scripting
-language by setting the <code class="literal">lang</code> parameter to <code class="literal">python</code>.</p><p>Scripting is available in many APIs, but we will use an example with the
-<code class="literal">function_score</code> for demonstration purposes:</p><h3><a id="lang-python-inline"></a>Inline scripts<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/lang-python.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Enabling inline scripting on an unprotected Elasticsearch cluster is dangerous.
-See <a class="xref" href="lang-python-usage.html#lang-python-file" title="File scriptsedit">the section called “File scripts<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/lang-python.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for a safer option.</p></div></div><p>If you have enabled <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/modules-scripting.html#enable-dynamic-scripting" target="_top">inline scripts</a>,
-you can use Python as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">DELETE test
-
-PUT test/doc/1
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="mapper-murmur3-usage"></a>Using the <code class="literal">murmur3</code> field<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/mapper-murmur3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">murmur3</code> is typically used within a multi-field, so that both the original
+value and its hash are stored in the index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
-  "num": 1.0
-}
-
-PUT test/doc/2
-{
-  "num": 2.0
-}
-
-GET test/_search
-{
-  "query": {
-    "function_score": {
-      "script_score": {
-        "script": {
-          "inline": "doc[\"num\"].value * factor",
-          "lang": "python",
-          "params": {
-            "factor": 2
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "my_field": {
+          "type": "string",
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
           }
         }
       }
     }
   }
-}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/lang-python-usage/1.json" target="sense">View in Sense</a><h3><a id="lang-python-indexed"></a>Indexed scripts<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/lang-python.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Enabling indexed scripting on an unprotected Elasticsearch cluster is dangerous.
-See <a class="xref" href="lang-python-usage.html#lang-python-file" title="File scriptsedit">the section called “File scripts<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/lang-python.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for a safer option.</p></div></div><p>If you have enabled <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/modules-scripting.html#enable-dynamic-scripting" target="_top">indexed scripts</a>,
-you can use Python as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">DELETE test
-
-PUT test/doc/1
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/mapper-murmur3-usage/1.json" target="sense">View in Sense</a><p>Such a mapping would allow to refer to <code class="literal">my_field.hash</code> in order to get hashes
+of the values of the <code class="literal">my_field</code> field. This is only useful in order to run
+<code class="literal">cardinality</code> aggregations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"># Example documents
+PUT my_index/my_type/1
 {
-  "num": 1.0
+  "my_field": "This is a document"
 }
 
-PUT test/doc/2
+PUT my_index/my_type/2
 {
-  "num": 2.0
+  "my_field": "This is another document"
 }
 
-POST _scripts/python/my_script  <a id="CO16-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+GET my_index/_search
 {
-  "script": "doc[\"num\"].value * factor"
-}
-
-GET test/_search
-{
-  "query": {
-    "function_score": {
-      "script_score": {
-        "script": {
-          "id": "my_script", <a id="CO16-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-          "lang": "python",
-          "params": {
-            "factor": 2
-          }
-        }
+  "aggs": {
+    "my_field_cardinality": {
+      "cardinality": {
+        "field": "my_field.hash" <a id="CO13-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
       }
     }
   }
-}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/lang-python-usage/2.json" target="sense">View in Sense</a><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-We index the script under the id <code class="literal">my_script</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The function score query retrieves the script with id <code class="literal">my_script</code>.
-</p></td></tr></table></div><h3><a id="lang-python-file"></a>File scripts<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/lang-python.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can save your scripts to a file in the <code class="literal">config/scripts/</code> directory on
-every node. The <code class="literal">.python</code> file suffix identifies the script as containing
-Python:</p><p>First, save this file as <code class="literal">config/scripts/my_script.python</code> on every node
-in the cluster:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-python">doc["num"].value * factor</pre></div><p>then use the script as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">DELETE test
-
-PUT test/doc/1
-{
-  "num": 1.0
-}
-
-PUT test/doc/2
-{
-  "num": 2.0
-}
-
-GET test/_search
-{
-  "query": {
-    "function_score": {
-      "script_score": {
-        "script": {
-          "file": "my_script", <a id="CO17-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-          "lang": "python",
-          "params": {
-            "factor": 2
-          }
-        }
-      }
-    }
-  }
-}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/lang-python-usage/3.json" target="sense">View in Sense</a><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The function score query retrieves the script with filename <code class="literal">my_script.python</code>.
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="lang-python.html">
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/mapper-murmur3-usage/2.json" target="sense">View in Sense</a><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Counting unique values on the <code class="literal">my_field.hash</code> field
+</p></td></tr></table></div><p>Running a <code class="literal">cardinality</code> aggregation on the <code class="literal">my_field</code> field directly would
+yield the same result, however using <code class="literal">my_field.hash</code> instead might result in
+a speed-up if the field has a high-cardinality. On the other hand, it is
+discouraged to use the <code class="literal">murmur3</code> field on numeric fields and string fields
+that are not almost unique as the use of a <code class="literal">murmur3</code> field is unlikely to
+bring significant speed-ups, while increasing the amount of disk space required
+to store the index.</p></div><div class="navfooter"><span class="prev"><a href="mapper-murmur3.html">
               « 
-              Python Language Plugin</a>
+              Mapper Murmur3 Plugin</a>
            
         </span><span class="next">
            
-          <a href="security.html">Security Plugins
+          <a href="scripting.html">Scripting Plugins
                »
             </a></span></div>
 <!-- end body -->

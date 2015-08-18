@@ -606,13 +606,12 @@ match a query:</p><div class="pre_wrapper"><pre class="programlisting prettyprin
             }
         }
     }
-}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_precision_control"></a>Precision control<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/metrics/cardinality-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This aggregation also supports the <code class="literal">precision_threshold</code> and <code class="literal">rehash</code> options:</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The <code class="literal">precision_threshold</code> and <code class="literal">rehash</code> options are specific to the current internal implementation of the <code class="literal">cardinality</code> agg, which may change in the future.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_precision_control"></a>Precision control<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/metrics/cardinality-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This aggregation also supports the <code class="literal">precision_threshold</code> option:</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The <code class="literal">precision_threshold</code> option is specific to the current internal implementation of the <code class="literal">cardinality</code> agg, which may change in the future.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "aggs" : {
         "author_count" : {
             "cardinality" : {
                 "field" : "author_hash",
-                "precision_threshold": 100, <a id="CO38-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                "rehash": false <a id="CO38-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                "precision_threshold": 100 <a id="CO38-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
             }
         }
     }
@@ -624,12 +623,6 @@ supported value is 40000, thresholds above this number will have the same
 effect as a threshold of 40000.
 Default value depends on the number of parent aggregations that multiple
 create buckets (such as terms or histograms).
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-If you computed a hash on client-side, stored it into your documents and want
-Elasticsearch to use them to compute counts using this hash function without
-rehashing values, it is possible to specify <code class="literal">rehash: false</code>. Default value is
-<code class="literal">true</code>. Please note that the hash must be indexed as a long when <code class="literal">rehash</code> is
-false.
 </p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_counts_are_approximate"></a>Counts are approximate<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/metrics/cardinality-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Computing exact counts requires loading values into a hash set and returning its
 size. This doesn’t scale when working on high-cardinality sets and/or large
 values as the required memory usage and the need to communicate those
@@ -647,33 +640,11 @@ fixed memory usage: no matter if there are tens or billions of unique values,
 about <code class="literal">c * 8</code> bytes.</p><p>The following chart shows how the error varies before and after the threshold:</p><p><span class="inlinemediaobject"><img src="images/cardinality_error.png" alt="images/cardinality_error.png" /></span></p><p>For all 3 thresholds, counts have been accurate up to the configured threshold
 (although not guaranteed, this is likely to be the case). Please also note that
 even with a threshold as low as 100, the error remains under 5%, even when
-counting millions of items.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_pre_computed_hashes"></a>Pre-computed hashes<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/metrics/cardinality-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you don’t want Elasticsearch to re-compute hashes on every run of this
-aggregation, it is possible to use pre-computed hashes, either by computing a
-hash on client-side, indexing it and specifying <code class="literal">rehash: false</code>, or by using
-the special <code class="literal">murmur3</code> field mapper, typically in the context of a <code class="literal">multi-field</code>
-in the mapping:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "author": {
-        "type": "string",
-        "fields": {
-            "hash": {
-                "type": "murmur3"
-            }
-        }
-    }
-}</pre></div><p>With such a mapping, Elasticsearch is going to compute hashes of the <code class="literal">author</code>
-field at indexing time and store them in the <code class="literal">author.hash</code> field. This
-way, unique counts can be computed using the cardinality aggregation by only
-loading the hashes into memory, not the values of the <code class="literal">author</code> field, and
-without computing hashes on the fly:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggs" : {
-        "author_count" : {
-            "cardinality" : {
-                "field" : "author.hash"
-            }
-        }
-    }
-}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p><code class="literal">rehash</code> is automatically set to <code class="literal">false</code> when computing unique counts on
-a <code class="literal">murmur3</code> field.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Pre-computing hashes is usually only useful on very large and/or
+counting millions of items.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_pre_computed_hashes"></a>Pre-computed hashes<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/metrics/cardinality-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>On string fields that have a high cardinality, it might be faster to store the
+hash of your field values in your index and then run the cardinality aggregation
+on this field. This can either be done by providing hash values from client-side
+or by letting elasticsearch compute hash values for you by using the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/mapper-size.html" target="_top"><code class="literal">mapper-murmur3</code></a> plugin.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Pre-computing hashes is usually only useful on very large and/or
 high-cardinality fields as it saves CPU and memory. However, on numeric
 fields, hashing is very fast and storing the original values requires as much
 or less memory than storing the hashes. This is also true on low-cardinality
