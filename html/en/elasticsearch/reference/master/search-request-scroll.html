@@ -645,44 +645,15 @@ are no more results left to return, ie the <code class="literal">hits</code> arr
 And the <code class="literal">scroll_id</code> can be passed in the request body</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/_search/scroll?scroll=1m' -d 'c2Nhbjs2OzM0NDg1ODpzRlBLc0FXNlNyNm5JWUc1'</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The initial search request and each subsequent scroll request
 returns a new <code class="literal">_scroll_id</code> — only the most recent <code class="literal">_scroll_id</code> should be
 used.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If the request specifies aggregations, only the initial search response
-will contain the aggregations results.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="scroll-scan"></a>Efficient scrolling with Scroll-Scan<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/scroll.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Deep pagination with <a class="link" href="search-request-from-size.html" title="From / Size"><code class="literal">from</code> and <code class="literal">size</code></a> — e.g.
-<code class="literal">?size=10&amp;from=10000</code> — is very inefficient as (in this example) 100,000
-sorted results have to be retrieved from each shard and resorted in order to
-return just 10 results.  This process has to be repeated for every page
-requested.</p><p>The <code class="literal">scroll</code> API keeps track of which results have already been returned and
-so is able to return sorted results more efficiently than with deep
-pagination.  However, sorting results (which happens by default) still has a
-cost.</p><p>Normally, you just want to retrieve all results and the order doesn’t matter.
-Scrolling can be combined with the <a class="link" href="search-request-search-type.html#scan" title="Scan"><code class="literal">scan</code></a> search type to disable
-any scoring or sorting and to return results in the most efficient way
-possible.  All that is needed is to add <code class="literal">search_type=scan</code> to the query string
-of the initial search request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl 'localhost:9200/twitter/tweet/_search?scroll=1m&amp;search_type=scan' <a id="CO21-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> -d '
+will contain the aggregations results.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Scroll requests have optimizations that make them faster when the sort
+order is <code class="literal">_doc</code>. If you want to iterate over all documents regardless of the
+order, this is the most efficient option:</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/_search?scroll=1m' -d '
 {
-    "query": {
-        "match" : {
-            "title" : "elasticsearch"
-        }
-    }
+  "sort": [
+    "_doc"
+  }
 }
-'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO21-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Setting <code class="literal">search_type</code> to <code class="literal">scan</code> disables sorting and makes scrolling
-    very efficient.
-</p></td></tr></table></div><p>A scanning scroll request differs from a standard scroll request in four
-ways:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-No score is calculated and sorting is disabled. Results are returned in
-  the order they appear in the index.
-</li><li class="listitem">
-Aggregations are not supported.
-</li><li class="listitem">
-The response of the initial <code class="literal">search</code> request will not contain any results in
-  the <code class="literal">hits</code> array. The first results will be returned by the first <code class="literal">scroll</code>
-  request.
-</li><li class="listitem">
-The <a class="link" href="search-request-from-size.html" title="From / Size"><code class="literal">size</code> parameter</a> controls the number of
-  results <span class="strong"><strong>per shard</strong></span>, not per request, so a <code class="literal">size</code> of <code class="literal">10</code> which hits 5
-  shards will return a maximum of 50 results per <code class="literal">scroll</code> request.
-</li></ul></div><p>If you want the scoring to happen, even without sorting on it, set the
-<code class="literal">track_scores</code> parameter to <code class="literal">true</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="scroll-search-context"></a>Keeping the search context alive<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/scroll.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">scroll</code> parameter (passed to the <code class="literal">search</code> request and to every <code class="literal">scroll</code>
+'</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="scroll-search-context"></a>Keeping the search context alive<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/scroll.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">scroll</code> parameter (passed to the <code class="literal">search</code> request and to every <code class="literal">scroll</code>
 request) tells Elasticsearch how long it should keep the search context alive.
 Its value (e.g. <code class="literal">1m</code>, see <a class="xref" href="common-options.html#time-units" title="Time unitsedit">the section called “Time units<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a>) does not need to be long enough to
 process all data — it just needs to be long enough to process the previous
