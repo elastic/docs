@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Zen Discovery</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="modules-discovery.html" title="Discovery" /><link rel="prev" href="modules-discovery-gce.html" title="Google Compute Engine Discovery" /><link rel="next" href="modules-gateway.html" title="Local Gateway" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Multicast Discovery Plugin</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [2.0]" /><link rel="up" href="discovery.html" title="Discovery Plugins" /><link rel="prev" href="cloud-gce-usage-discovery-testing.html" title="Testing GCE" /><link rel="next" href="discovery-multicast-usage.html" title="Configuring multicast discovery" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -585,95 +585,25 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [2.0]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery</a></span> » <span class="breadcrumb-node">Zen Discovery</span></div><div class="navheader"><span class="prev"><a href="modules-discovery-gce.html">
+    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-node">Multicast Discovery Plugin</span></div><div class="navheader"><span class="prev"><a href="cloud-gce-usage-discovery-testing.html">
               « 
-              Google Compute Engine Discovery</a>
+              Testing GCE</a>
            
         </span><span class="next">
            
-          <a href="modules-gateway.html">Local Gateway
+          <a href="discovery-multicast-usage.html">Configuring multicast discovery
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-discovery-zen"></a>Zen Discovery<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/modules/discovery/zen.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The zen discovery is the built in discovery module for elasticsearch and
-the default. It provides unicast discovery, but can be extended to
-support cloud environments and other forms of discovery.</p><p>The zen discovery is integrated with other modules, for example, all
-communication between nodes is done using the
-<a class="link" href="modules-transport.html" title="Transport">transport</a> module.</p><p>It is separated into several sub modules, which are explained below:</p><h4><a id="ping"></a>Ping<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/modules/discovery/zen.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>This is the process where a node uses the discovery mechanisms to find
-other nodes.</p><h5><a id="unicast"></a>Unicast<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/modules/discovery/zen.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The unicast discovery requires a list of hosts to use that will act
-as gossip routers. It provides the following settings with the
-<code class="literal">discovery.zen.ping.unicast</code> prefix:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">hosts</code></p></td><td align="left" valign="top"><p>Either an array setting or a comma delimited setting. Each
-value is either in the form of <code class="literal">host:port</code>, or in the form of
-<code class="literal">host:port1-port2</code>. Note that IPv6 hosts must be bracketed. Defaults to
-<code class="literal">127.0.0.1, [::1]</code></p></td></tr></tbody></table></div><p>The unicast discovery uses the
-<a class="link" href="modules-transport.html" title="Transport">transport</a> module to
-perform the discovery.</p><h4><a id="master-election"></a>Master Election<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/modules/discovery/zen.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>As part of the ping process a master of the cluster is either
-elected or joined to. This is done automatically. The
-<code class="literal">discovery.zen.ping_timeout</code> (which defaults to <code class="literal">3s</code>) allows for the
-tweaking of election time to handle cases of slow or congested networks
-(higher values assure less chance of failure). Once a node joins, it
-will send a join request to the master (<code class="literal">discovery.zen.join_timeout</code>)
-with a timeout defaulting at 20 times the ping timeout.</p><p>When the master node stops or has encountered a problem, the cluster nodes
-start pinging again and will elect a new master. This pinging round also
-serves as a protection against (partial) network failures where node may unjustly
-think that the master has failed. In this case the node will simply hear from
-other nodes about the currently active master.</p><p>If <code class="literal">discovery.zen.master_election.filter_client</code> is <code class="literal">true</code>, pings from client nodes (nodes where <code class="literal">node.client</code> is
-<code class="literal">true</code>, or both <code class="literal">node.data</code> and <code class="literal">node.master</code> are <code class="literal">false</code>) are ignored during master election; the default value is
-<code class="literal">true</code>. If <code class="literal">discovery.zen.master_election.filter_data</code> is <code class="literal">true</code>, pings from non-master-eligible data nodes (nodes
-where <code class="literal">node.data</code> is <code class="literal">true</code> and <code class="literal">node.master</code> is <code class="literal">false</code>) are ignored during master election; the default value is
-<code class="literal">false</code>. Pings from master-eligible nodes are always observed during master election.</p><p>Nodes can be excluded from becoming a master by setting <code class="literal">node.master</code> to
-<code class="literal">false</code>. Note, once a node is a client node (<code class="literal">node.client</code> set to
-<code class="literal">true</code>), it will not be allowed to become a master (<code class="literal">node.master</code> is
-automatically set to <code class="literal">false</code>).</p><p>The <code class="literal">discovery.zen.minimum_master_nodes</code> sets the minimum
-number of master eligible nodes that need to join a newly elected master in order for an election to
-complete and for the elected node to accept it’s mastership. The same setting controls the minimum number of
-active master eligible nodes that should be a part of any active cluster. If this requirement is not met the
-active master node will step down and a new mastser election will be begin.</p><p>This setting must be set to a quorum of your master eligible nodes. It is recommended to avoid
-having only two master eligible nodes, since a quorum of two is two. Therefore, a loss
-of either master node will result in an inoperable cluster.</p><h4><a id="fault-detection"></a>Fault Detection<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/modules/discovery/zen.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>There are two fault detection processes running. The first is by the
-master, to ping all the other nodes in the cluster and verify that they
-are alive. And on the other end, each node pings to master to verify if
-its still alive or an election process needs to be initiated.</p><p>The following settings control the fault detection process using the
-<code class="literal">discovery.zen.fd</code> prefix:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">ping_interval</code></p></td><td align="left" valign="top"><p>How often a node gets pinged. Defaults to <code class="literal">1s</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">ping_timeout</code></p></td><td align="left" valign="top"><p>How long to wait for a ping response, defaults to
-<code class="literal">30s</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">ping_retries</code></p></td><td align="left" valign="top"><p>How many ping failures / timeouts cause a node to be
-considered failed. Defaults to <code class="literal">3</code>.</p></td></tr></tbody></table></div><h4><a id="_cluster_state_updates"></a>Cluster state updates<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/modules/discovery/zen.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The master node is the only node in a cluster that can make changes to the
-cluster state. The master node processes one cluster state update at a time,
-applies the required changes and publishes the updated cluster state to all
-the other nodes in the cluster. Each node receives the publish message,
-updates its own cluster state and replies to the master node, which waits for
-all nodes to respond, up to a timeout, before going ahead processing the next
-updates in the queue. The <code class="literal">discovery.zen.publish_timeout</code> is set by default
-to 30 seconds and can be changed dynamically through the
-<a class="link" href="cluster-update-settings.html" title="Cluster Update Settings">cluster update settings api</a></p><h4><a id="no-master-block"></a>No master block<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/modules/discovery/zen.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>For the cluster to be fully operational, it must have an active master and the
-number of running master eligible nodes must satisfy the
-<code class="literal">discovery.zen.minimum_master_nodes</code> setting if set. The
-<code class="literal">discovery.zen.no_master_block</code> settings controls what operations should be
-rejected when there is no active master.</p><p>The <code class="literal">discovery.zen.no_master_block</code> setting has two valid options:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">all</code>
-</p>
-</td><td valign="top">
-<p>
-All operations on the node—i.e. both read &amp; writes—will be rejected. This also applies for api cluster state
-read or write operations, like the get index settings, put mapping and cluster state api.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">write</code>
-</p>
-</td><td valign="top">
-<p>
-(default) Write operations will be rejected. Read operations will succeed, based on the last known cluster configuration.
-This may result in partial reads of stale data as this node may be isolated from the rest of the cluster.
-</p>
-</td></tr></tbody></table></div><p>The <code class="literal">discovery.zen.no_master_block</code> setting doesn’t apply to nodes based apis (for example cluster stats, node info and
-node stats apis) which will not be blocked and try to execute on any node possible.</p></div><div class="navfooter"><span class="prev"><a href="modules-discovery-gce.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="discovery-multicast"></a>Multicast Discovery Plugin<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/discovery-multicast.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Multicast Discovery plugin provides the ability to form a cluster using
+TCP/IP multicast messages.</p><h4><a id="discovery-multicast-install"></a>Installation<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/discovery-multicast.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>This plugin can be installed using the plugin manager:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo bin/plugin install discovery-multicast</pre></div><p>The plugin must be installed on every node in the cluster, and each node must
+be restarted after installation.</p><h4><a id="discovery-multicast-remove"></a>Removal<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/discovery-multicast.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The plugin can be removed with the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo bin/plugin remove discovery-multicast</pre></div><p>The node must be stopped before removing the plugin.</p></div><div class="navfooter"><span class="prev"><a href="cloud-gce-usage-discovery-testing.html">
               « 
-              Google Compute Engine Discovery</a>
+              Testing GCE</a>
            
         </span><span class="next">
            
-          <a href="modules-gateway.html">Local Gateway
+          <a href="discovery-multicast-usage.html">Configuring multicast discovery
                »
             </a></span></div>
 <!-- end body -->
