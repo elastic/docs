@@ -46,8 +46,8 @@ jQuery(function() {
       function(e) {
         var url = location.href;
         var version = title.find('option:selected').val();
-        var url = location.href.replace(/[^\/]+(\/[^\/]+\.html)/, version
-          + "$1");
+        var url = location.href.replace(/[^\/]+\/+([^\/]+\.html)/, version
+          + "/$1");
 
         // If page exists in new version then redirect, otherwise alert
         jQuery.get(url).done(function() {
