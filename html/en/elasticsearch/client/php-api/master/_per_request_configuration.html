@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Elasticsearch-PHP [master]</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [master]" /><link rel="next" href="_overview.html" title="Overview" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Per-request configuration</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [master]" /><link rel="up" href="index.html" title="Elasticsearch-PHP [master]" /><link rel="prev" href="_configuration.html" title="Configuration" /><link rel="next" href="_future_mode.html" title="Future Mode" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -585,17 +585,206 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="navheader"><span class="prev">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch-PHP
+      [master]
+    </a></span> » <span class="breadcrumb-node">Per-request configuration</span></div><div class="navheader"><span class="prev"><a href="_configuration.html">
+              « 
+              Configuration</a>
            
         </span><span class="next">
            
-          <a href="_overview.html">Overview
+          <a href="_future_mode.html">Future Mode
                »
-            </a></span></div><div class="book" lang="en"><div class="titlepage"><div><div><h1 class="title"><a id="id-1"></a>Elasticsearch-PHP</h1></div></div><hr /></div><!--START_TOC--><div class="toc"><ul class="toc"><li id="book_title"><span>PHP API: <select><option value="master" selected>master</option><option value="2.0">2.0</option><option value="1.0">1.0 (current)</option><option value="0.4">0.4</option></select></span></li><li><span class="chapter"><a href="_overview.html">Overview</a></span></li><li><span class="chapter"><a href="_quickstart.html">Quickstart</a></span></li><li><span class="chapter"><a href="_installation_2.html">Installation</a></span></li><li><span class="chapter"><a href="_configuration.html">Configuration</a></span></li><li><span class="chapter"><a href="_per_request_configuration.html">Per-request configuration</a></span></li><li><span class="chapter"><a href="_future_mode.html">Future Mode</a></span></li><li><span class="chapter"><a href="_dealing_with_json_arrays_and_objects_in_php.html">Dealing with JSON Arrays and Objects in PHP</a></span></li><li><span class="chapter"><a href="_index_management_operations.html">Index Management Operations</a></span></li><li><span class="chapter"><a href="_indexing_documents.html">Indexing Documents</a></span></li><li><span class="chapter"><a href="_getting_documents.html">Getting Documents</a></span></li><li><span class="chapter"><a href="_updating_documents.html">Updating Documents</a></span></li><li><span class="chapter"><a href="_deleting_documents.html">Deleting documents</a></span></li><li><span class="chapter"><a href="_search_operations.html">Search Operations</a></span></li><li><span class="chapter"><a href="_namespaces.html">Namespaces</a></span></li><li><span class="chapter"><a href="_security.html">Security</a></span></li><li><span class="chapter"><a href="_connection_pool.html">Connection Pool</a></span></li><li><span class="chapter"><a href="_selectors.html">Selectors</a></span></li><li><span class="chapter"><a href="_serializers.html">Serializers</a></span></li><li><span class="chapter"><a href="_php_version_requirement.html">PHP Version Requirement</a></span></li><li><span class="chapter"><a href="_breaking_changes_from_1_x.html">Breaking changes from 1.x</a></span></li></ul></div><!--END_TOC--></div><div class="navfooter"><span class="prev">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_per_request_configuration"></a>Per-request configuration<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/per-request-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>There are several configurations that can be set on a per-request basis, rather than at a connection- or client-level.
+These are specified as part of the request associative array.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_ignoring_exceptions"></a>Ignoring exceptions<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/per-request-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The library attempts to throw exceptions for common problems.  These exceptions match the HTTP response code provided
+by Elasticsearch.  For example, attempting to GET a nonexistent document will throw a <code class="literal">MissingDocument404Exception</code>.</p><p>Exceptions are a useful and consistent way to deal with problems like missing documents, syntax errors, version
+conflicts, etc.  But sometimes you want to deal with the response body rather than catch exceptions (often useful
+in test suites).</p><p>If you need that behavior, you can configure an <code class="literal">ignore</code> parameter.  This should be configured in the <code class="literal">client</code> parameter
+of the reuqest array.  For example, this example will ignore the <code class="literal">MissingDocument404Exception</code>
+exception and instead return the JSON provided by Elasticsearch.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()-&gt;build();
+
+$params = [
+    'index'  =&gt; 'test_missing',
+    'type'   =&gt; 'test',
+    'id'     =&gt; 1,
+    'client' =&gt; [ 'ignore' =&gt; 404 ] <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+];
+echo $client-&gt;get($params);
+
+&gt; {"_index":"test_missing","_type":"test","_id":"1","found":false}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This will ignore just the 404 missing exception
+</p></td></tr></table></div><p>You can specify multiple HTTP status codes to ignore, by providing an array of values:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()-&gt;build();
+
+$params = [
+    'index'  =&gt; 'test_missing',
+    'type'   =&gt; 'test',
+    'client' =&gt; [ 'ignore' =&gt; [400, 404] ] <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+];
+echo $client-&gt;get($params);
+
+&gt; No handler found for uri [/test_missing/test/] and method [GET]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">ignore</code> also accepts an array of exceptions to ignore. In this example,
+the <code class="literal">BadRequest400Exception</code> is being ignored
+</p></td></tr></table></div><p>It should be noted that the response is simply a string, which may or may not be encoded as JSON.  In the first example,
+the response body was a complete JSON object which could be decoded.  In the second example, it was simply a string.</p><p>Since the client has no way of knowing what the exception response will contain, no attempts to decode it are taken.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_providing_custom_query_parameters"></a>Providing custom query parameters<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/per-request-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Sometimes you need to provide custom query params, such as authentication tokens for a third-party plugin or proxy.
+All query parameters are white-listed in Elasticsearch-php, which is to protect you from specifying a param which is
+not accepted by Elasticsearch.</p><p>If you need custom parameters, you need to bypass this whitelisting mechanism.  To do so, add them to the <code class="literal">custom</code>
+parameter as an array of values:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()-&gt;build();
+
+$params = [
+    'index' =&gt; 'test',
+    'type' =&gt; 'test',
+    'id' =&gt; 1,
+    'parent' =&gt; 'abc',              // white-listed Elasticsearch parameter
+    'client' =&gt; [
+        'custom' =&gt; [
+            'customToken' =&gt; 'abc', // user-defined, not white listed, not checked
+            'otherToken' =&gt; 123
+        ]
+    ]
+];
+$exists = $client-&gt;exists($params);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_increasing_the_verbosity_of_responses"></a>Increasing the Verbosity of responses<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/per-request-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>By default, the client will only return the response body.  If you require more information (e.g. stats about the transfer,
+headers, status codes, etc), you can tell the client to return a more verbose response.  This is enabled via the
+<code class="literal">verbose</code> parameter in the client options.</p><p>Without verbosity, all you see is the response body:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()-&gt;build();
+
+$params = [
+    'index' =&gt; 'test',
+    'type' =&gt; 'test',
+    'id' =&gt; 1
+];
+$response = $client-&gt;get($params);
+print_r($response);
+
+
+Array
+(
+    [_index] =&gt; test
+    [_type] =&gt; test
+    [_id] =&gt; 1
+    [_version] =&gt; 1
+    [found] =&gt; 1
+    [_source] =&gt; Array
+        (
+            [field] =&gt; value
+        )
+
+)</pre></div><p>With verbosity turned on, you will see all of the transfer stats:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()-&gt;build();
+
+$params = [
+    'index' =&gt; 'test',
+    'type' =&gt; 'test',
+    'id' =&gt; 1,
+    'client' =&gt; [
+        'verbose' =&gt; true
+    ]
+];
+$response = $client-&gt;get($params);
+print_r($response);
+
+
+Array
+(
+    [transfer_stats] =&gt; Array
+        (
+            [url] =&gt; http://127.0.0.1:9200/test/test/1
+            [content_type] =&gt; application/json; charset=UTF-8
+            [http_code] =&gt; 200
+            [header_size] =&gt; 86
+            [request_size] =&gt; 51
+            [filetime] =&gt; -1
+            [ssl_verify_result] =&gt; 0
+            [redirect_count] =&gt; 0
+            [total_time] =&gt; 0.00289
+            [namelookup_time] =&gt; 9.7E-5
+            [connect_time] =&gt; 0.000265
+            [pretransfer_time] =&gt; 0.000322
+            [size_upload] =&gt; 0
+            [size_download] =&gt; 96
+            [speed_download] =&gt; 33217
+            [speed_upload] =&gt; 0
+            [download_content_length] =&gt; 96
+            [upload_content_length] =&gt; -1
+            [starttransfer_time] =&gt; 0.002796
+            [redirect_time] =&gt; 0
+            [redirect_url] =&gt;
+            [primary_ip] =&gt; 127.0.0.1
+            [certinfo] =&gt; Array
+                (
+                )
+
+            [primary_port] =&gt; 9200
+            [local_ip] =&gt; 127.0.0.1
+            [local_port] =&gt; 62971
+        )
+
+    [curl] =&gt; Array
+        (
+            [error] =&gt;
+            [errno] =&gt; 0
+        )
+
+    [effective_url] =&gt; http://127.0.0.1:9200/test/test/1
+    [headers] =&gt; Array
+        (
+            [Content-Type] =&gt; Array
+                (
+                    [0] =&gt; application/json; charset=UTF-8
+                )
+
+            [Content-Length] =&gt; Array
+                (
+                    [0] =&gt; 96
+                )
+
+        )
+
+    [status] =&gt; 200
+    [reason] =&gt; OK
+    [body] =&gt; Array
+        (
+            [_index] =&gt; test
+            [_type] =&gt; test
+            [_id] =&gt; 1
+            [_version] =&gt; 1
+            [found] =&gt; 1
+            [_source] =&gt; Array
+                (
+                    [field] =&gt; value
+                )
+        )
+)</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_enabling_future_mode"></a>Enabling Future Mode<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/per-request-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The client supports asynchronous, batch processing of requests.  This is enabled (if your HTTP handler supports it) on
+a per-request basis via the <code class="literal">future</code> parameter in the client options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()-&gt;build();
+
+$params = [
+    'index' =&gt; 'test',
+    'type' =&gt; 'test',
+    'id' =&gt; 1,
+    'client' =&gt; [
+        'future' =&gt; 'lazy'
+    ]
+];
+$future = $client-&gt;get($params);
+$results = $future-&gt;wait();       // resolve the future</pre></div><p>Future mode supports two options: <code class="literal">true</code> or <code class="literal">'lazy'</code>.  For more details about how asynchronous execution functions, and
+how to work with the results, see the dedicated page on <a class="xref" href="_future_mode.html" title="Future Mode"><em>Future Mode</em></a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_ssl_encryption"></a>SSL Encryption<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/per-request-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Normally, you will specify SSL configurations when you create the client (see <a class="xref" href="_security.html" title="Security"><em>Security</em></a> for more details), since encryption typically
+applies to all requests. However, it is possible to configure on a per-request basis too if you need that functionality.
+For example, if you  need to use a self-signed cert on a specific request, you can specify it via the <code class="literal">verify</code> parameter
+in the client options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()-&gt;build();
+
+$params = [
+    'index' =&gt; 'test',
+    'type' =&gt; 'test',
+    'id' =&gt; 1,
+    'client' =&gt; [
+        'verify' =&gt; 'path/to/cacert.pem'      //Use a self-signed certificate
+    ]
+];
+$result = $client-&gt;get($params);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="_configuration.html">
+              « 
+              Configuration</a>
            
         </span><span class="next">
            
-          <a href="_overview.html">Overview
+          <a href="_future_mode.html">Future Mode
                »
             </a></span></div>
 <!-- end body -->
