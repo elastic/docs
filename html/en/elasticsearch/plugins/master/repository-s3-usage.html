@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Transport Plugins</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="prev" href="repository-s3-testing.html" title="Testing AWS" /><link rel="next" href="integrations.html" title="Integrations" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Getting started with AWS</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="repository-s3.html" title="S3 Repository Plugin" /><link rel="prev" href="repository-s3.html" title="S3 Repository Plugin" /><link rel="next" href="repository-s3-repository.html" title="S3 Repository" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -587,29 +587,76 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [master]
-    </a></span> » <span class="breadcrumb-node">Transport Plugins</span></div><div class="navheader"><span class="prev"><a href="repository-s3-testing.html">
+    </a></span> » <span class="breadcrumb-link"><a href="repository.html">Snapshot/Restore Repository Plugins</a></span> » <span class="breadcrumb-link"><a href="repository-s3.html">S3 Repository Plugin</a></span> » <span class="breadcrumb-node">Getting started with AWS</span></div><div class="navheader"><span class="prev"><a href="repository-s3.html">
               « 
-              Testing AWS</a>
+              S3 Repository Plugin</a>
            
         </span><span class="next">
            
-          <a href="integrations.html">Integrations
+          <a href="repository-s3-repository.html">S3 Repository
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="transport"></a>Transport Plugins<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/transport.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Transport plugins offer alternatives to HTTP.</p><h3><a id="_core_transport_plugins"></a>Core transport plugins<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/transport.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The core transport plugins are:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<a class="ulink" href="https://github.com/elasticsearch/elasticsearch-transport-wares::" target="_top">Servlet transport</a>
-</span></dt><dd>
-Use the REST interface over servlets.
-</dd></dl></div><h3><a id="_community_contributed_transport_plugins"></a>Community contributed transport plugins<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/transport.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following community plugins appear to have been abandoned:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="https://github.com/kzwang/elasticsearch-transport-redis" target="_top">Redis transport plugin</a> (by Kevin Wang)
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="repository-s3-usage"></a>Getting started with AWS<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-s3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The plugin will default to using
+<a class="ulink" href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html" target="_top">IAM Role</a>
+credentials for authentication. These can be overridden by, in increasing
+order of precedence, system properties <code class="literal">aws.accessKeyId</code> and <code class="literal">aws.secretKey</code>,
+environment variables <code class="literal">AWS_ACCESS_KEY_ID</code> and <code class="literal">AWS_SECRET_KEY</code>, or the
+elasticsearch config using <code class="literal">cloud.aws.access_key</code> and <code class="literal">cloud.aws.secret_key</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+    aws:
+        access_key: AKVAIQBF2RECL7FJWGJQ
+        secret_key: vExyMThREXeRMm/b/LRzEB8jWwvzQeXgjqMX+6br</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-s3-usage-security"></a>Transport security<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-s3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>By default this plugin uses HTTPS for all API calls to AWS endpoints. If you wish to configure HTTP you can set
+<code class="literal">cloud.aws.protocol</code> in the elasticsearch config. You can optionally override this setting per individual service
+via: <code class="literal">cloud.aws.ec2.protocol</code> or <code class="literal">cloud.aws.s3.protocol</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+    aws:
+        protocol: https
+        s3:
+            protocol: http
+        ec2:
+            protocol: https</pre></div><p>In addition, a proxy can be configured with the <code class="literal">proxy_host</code> and <code class="literal">proxy_port</code> settings (note that protocol can be
+<code class="literal">http</code> or <code class="literal">https</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+    aws:
+        protocol: https
+        proxy_host: proxy1.company.com
+        proxy_port: 8083</pre></div><p>You can also set different proxies for <code class="literal">ec2</code> and <code class="literal">s3</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+    aws:
+        s3:
+            proxy_host: proxy1.company.com
+            proxy_port: 8083
+        ec2:
+            proxy_host: proxy2.company.com
+            proxy_port: 8083</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-s3-usage-region"></a>Region<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-s3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">cloud.aws.region</code> can be set to a region and will automatically use the relevant settings for both <code class="literal">ec2</code> and <code class="literal">s3</code>.
+The available values are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">us-east</code> (<code class="literal">us-east-1</code>)
 </li><li class="listitem">
-<a class="ulink" href="https://github.com/tlrx/transport-zeromq" target="_top">ØMQ transport plugin</a> (by Tanguy Leroux)
-</li></ul></div></div><div class="navfooter"><span class="prev"><a href="repository-s3-testing.html">
+<code class="literal">us-west</code> (<code class="literal">us-west-1</code>)
+</li><li class="listitem">
+<code class="literal">us-west-1</code>
+</li><li class="listitem">
+<code class="literal">us-west-2</code>
+</li><li class="listitem">
+<code class="literal">ap-southeast</code> (<code class="literal">ap-southeast-1</code>)
+</li><li class="listitem">
+<code class="literal">ap-southeast-1</code>
+</li><li class="listitem">
+<code class="literal">ap-southeast-2</code>
+</li><li class="listitem">
+<code class="literal">ap-northeast</code> (<code class="literal">ap-northeast-1</code>)
+</li><li class="listitem">
+<code class="literal">eu-west</code> (<code class="literal">eu-west-1</code>)
+</li><li class="listitem">
+<code class="literal">eu-central</code> (<code class="literal">eu-central-1</code>)
+</li><li class="listitem">
+<code class="literal">sa-east</code> (<code class="literal">sa-east-1</code>)
+</li><li class="listitem">
+<code class="literal">cn-north</code> (<code class="literal">cn-north-1</code>)
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-s3-usage-signer"></a>EC2/S3 Signer API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-s3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you are using a compatible EC2 or S3 service, they might be using an older API to sign the requests.
+You can set your compatible signer API using <code class="literal">cloud.aws.signer</code> (or <code class="literal">cloud.aws.ec2.signer</code> and <code class="literal">cloud.aws.s3.signer</code>)
+with the right signer to use. Defaults to <code class="literal">AWS4SignerType</code>.</p></div></div><div class="navfooter"><span class="prev"><a href="repository-s3.html">
               « 
-              Testing AWS</a>
+              S3 Repository Plugin</a>
            
         </span><span class="next">
            
-          <a href="integrations.html">Integrations
+          <a href="repository-s3-repository.html">S3 Repository
                »
             </a></span></div>
 <!-- end body -->

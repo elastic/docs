@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Getting started with AWS</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="cloud-aws.html" title="AWS Cloud Plugin" /><link rel="prev" href="cloud-aws.html" title="AWS Cloud Plugin" /><link rel="next" href="cloud-aws-discovery.html" title="EC2 Discovery" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>S3 Repository</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="repository-s3.html" title="S3 Repository Plugin" /><link rel="prev" href="repository-s3-usage.html" title="Getting started with AWS" /><link rel="next" href="repository-s3-testing.html" title="Testing AWS" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -587,76 +587,180 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="cloud-aws.html">AWS Cloud Plugin</a></span> » <span class="breadcrumb-node">Getting started with AWS</span></div><div class="navheader"><span class="prev"><a href="cloud-aws.html">
+    </a></span> » <span class="breadcrumb-link"><a href="repository.html">Snapshot/Restore Repository Plugins</a></span> » <span class="breadcrumb-link"><a href="repository-s3.html">S3 Repository Plugin</a></span> » <span class="breadcrumb-node">S3 Repository</span></div><div class="navheader"><span class="prev"><a href="repository-s3-usage.html">
               « 
-              AWS Cloud Plugin</a>
+              Getting started with AWS</a>
            
         </span><span class="next">
            
-          <a href="cloud-aws-discovery.html">EC2 Discovery
+          <a href="repository-s3-testing.html">Testing AWS
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cloud-aws-usage"></a>Getting started with AWS<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-aws.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The plugin will default to using
-<a class="ulink" href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html" target="_top">IAM Role</a>
-credentials for authentication. These can be overridden by, in increasing
-order of precedence, system properties <code class="literal">aws.accessKeyId</code> and <code class="literal">aws.secretKey</code>,
-environment variables <code class="literal">AWS_ACCESS_KEY_ID</code> and <code class="literal">AWS_SECRET_KEY</code>, or the
-elasticsearch config using <code class="literal">cloud.aws.access_key</code> and <code class="literal">cloud.aws.secret_key</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
-    aws:
-        access_key: AKVAIQBF2RECL7FJWGJQ
-        secret_key: vExyMThREXeRMm/b/LRzEB8jWwvzQeXgjqMX+6br</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="cloud-aws-usage-security"></a>Transport security<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-aws.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>By default this plugin uses HTTPS for all API calls to AWS endpoints. If you wish to configure HTTP you can set
-<code class="literal">cloud.aws.protocol</code> in the elasticsearch config. You can optionally override this setting per individual service
-via: <code class="literal">cloud.aws.ec2.protocol</code> or <code class="literal">cloud.aws.s3.protocol</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
-    aws:
-        protocol: https
-        s3:
-            protocol: http
-        ec2:
-            protocol: https</pre></div><p>In addition, a proxy can be configured with the <code class="literal">proxy_host</code> and <code class="literal">proxy_port</code> settings (note that protocol can be
-<code class="literal">http</code> or <code class="literal">https</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
-    aws:
-        protocol: https
-        proxy_host: proxy1.company.com
-        proxy_port: 8083</pre></div><p>You can also set different proxies for <code class="literal">ec2</code> and <code class="literal">s3</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
-    aws:
-        s3:
-            proxy_host: proxy1.company.com
-            proxy_port: 8083
-        ec2:
-            proxy_host: proxy2.company.com
-            proxy_port: 8083</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="cloud-aws-usage-region"></a>Region<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-aws.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">cloud.aws.region</code> can be set to a region and will automatically use the relevant settings for both <code class="literal">ec2</code> and <code class="literal">s3</code>.
-The available values are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">us-east</code> (<code class="literal">us-east-1</code>)
-</li><li class="listitem">
-<code class="literal">us-west</code> (<code class="literal">us-west-1</code>)
-</li><li class="listitem">
-<code class="literal">us-west-1</code>
-</li><li class="listitem">
-<code class="literal">us-west-2</code>
-</li><li class="listitem">
-<code class="literal">ap-southeast</code> (<code class="literal">ap-southeast-1</code>)
-</li><li class="listitem">
-<code class="literal">ap-southeast-1</code>
-</li><li class="listitem">
-<code class="literal">ap-southeast-2</code>
-</li><li class="listitem">
-<code class="literal">ap-northeast</code> (<code class="literal">ap-northeast-1</code>)
-</li><li class="listitem">
-<code class="literal">eu-west</code> (<code class="literal">eu-west-1</code>)
-</li><li class="listitem">
-<code class="literal">eu-central</code> (<code class="literal">eu-central-1</code>)
-</li><li class="listitem">
-<code class="literal">sa-east</code> (<code class="literal">sa-east-1</code>)
-</li><li class="listitem">
-<code class="literal">cn-north</code> (<code class="literal">cn-north-1</code>)
-</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="cloud-aws-usage-signer"></a>EC2/S3 Signer API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-aws.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you are using a compatible EC2 or S3 service, they might be using an older API to sign the requests.
-You can set your compatible signer API using <code class="literal">cloud.aws.signer</code> (or <code class="literal">cloud.aws.ec2.signer</code> and <code class="literal">cloud.aws.s3.signer</code>)
-with the right signer to use. Defaults to <code class="literal">AWS4SignerType</code>.</p></div></div><div class="navfooter"><span class="prev"><a href="cloud-aws.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="repository-s3-repository"></a>S3 Repository<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-s3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The S3 repository is using S3 to store snapshots. The S3 repository can be created using the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT _snapshot/my_s3_repository
+{
+  "type": "s3",
+  "settings": {
+    "bucket": "my_bucket_name",
+    "region": "us-west"
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/repository-s3-repository/1.json" target="sense">View in Sense</a><p>The following settings are supported:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">bucket</code>
+</span></dt><dd>
+    The name of the bucket to be used for snapshots. (Mandatory)
+</dd><dt><span class="term">
+<code class="literal">region</code>
+</span></dt><dd>
+    The region where bucket is located. Defaults to US Standard
+</dd><dt><span class="term">
+<code class="literal">endpoint</code>
+</span></dt><dd>
+    The endpoint to the S3 API. Defaults to AWS’s default S3 endpoint. Note
+    that setting a region overrides the endpoint setting.
+</dd><dt><span class="term">
+<code class="literal">protocol</code>
+</span></dt><dd>
+    The protocol to use (<code class="literal">http</code> or <code class="literal">https</code>). Defaults to value of
+    <code class="literal">cloud.aws.protocol</code> or <code class="literal">cloud.aws.s3.protocol</code>.
+</dd><dt><span class="term">
+<code class="literal">base_path</code>
+</span></dt><dd>
+    Specifies the path within bucket to repository data. Defaults to
+    value of <code class="literal">repositories.s3.base_path</code> or to root directory if not set.
+</dd><dt><span class="term">
+<code class="literal">access_key</code>
+</span></dt><dd>
+    The access key to use for authentication. Defaults to value of
+    <code class="literal">cloud.aws.access_key</code>.
+</dd><dt><span class="term">
+<code class="literal">secret_key</code>
+</span></dt><dd>
+    The secret key to use for authentication. Defaults to value of
+    <code class="literal">cloud.aws.secret_key</code>.
+</dd><dt><span class="term">
+<code class="literal">chunk_size</code>
+</span></dt><dd>
+    Big files can be broken down into chunks during snapshotting if needed.
+    The chunk size can be specified in bytes or by using size value notation,
+    i.e. <code class="literal">1g</code>, <code class="literal">10m</code>, <code class="literal">5k</code>. Defaults to <code class="literal">100m</code>.
+</dd><dt><span class="term">
+<code class="literal">compress</code>
+</span></dt><dd>
+    When set to <code class="literal">true</code> metadata files are stored in compressed format. This
+    setting doesn’t affect index files that are already compressed by default.
+    Defaults to <code class="literal">false</code>.
+</dd><dt><span class="term">
+<code class="literal">server_side_encryption</code>
+</span></dt><dd>
+    When set to <code class="literal">true</code> files are encrypted on server side using AES256
+    algorithm. Defaults to <code class="literal">false</code>.
+</dd><dt><span class="term">
+<code class="literal">buffer_size</code>
+</span></dt><dd>
+    Minimum threshold below which the chunk is uploaded using a single
+    request. Beyond this threshold, the S3 repository will use the
+    <a class="ulink" href="http://docs.aws.amazon.com/AmazonS3/latest/dev/uploadobjusingmpu.html" target="_top">AWS Multipart Upload API</a>
+    to split the chunk into several parts, each of <code class="literal">buffer_size</code> length, and
+    to upload each part in its own request. Note that positioning a buffer
+    size lower than <code class="literal">5mb</code> is not allowed since it will prevents the use of the
+    Multipart API and may result in upload errors. Defaults to <code class="literal">5mb</code>.
+</dd><dt><span class="term">
+<code class="literal">max_retries</code>
+</span></dt><dd>
+    Number of retries in case of S3 errors. Defaults to <code class="literal">3</code>.
+</dd><dt><span class="term">
+<code class="literal">read_only</code>
+</span></dt><dd>
+    Makes repository read-only. <span class="coming">
+      [<span class="version">coming in 2.1.0</span>]
+      <span class="detail">Coming in 2.1.0.</span></span>  Defaults to <code class="literal">false</code>.
+</dd></dl></div><p>The S3 repositories use the same credentials as the rest of the AWS services
+provided by this plugin (<code class="literal">discovery</code>). See <a class="xref" href="repository-s3-usage.html" title="Getting started with AWS">Getting started with AWS</a> for details.</p><p>Multiple S3 repositories can be created. If the buckets require different
+credentials, then define them as part of the repository settings.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-s3-permissions"></a>Recommended S3 Permissions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-s3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>In order to restrict the Elasticsearch snapshot process to the minimum required resources, we recommend using Amazon
+IAM in conjunction with pre-existing S3 buckets. Here is an example policy which will allow the snapshot access to an
+ S3 bucket named "snaps.example.com". This may be configured through the AWS IAM console, by creating a Custom Policy,
+ and using a Policy Document similar to this (changing snaps.example.com to your bucket name).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "Statement": [
+    {
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation",
+        "s3:ListBucketMultipartUploads",
+        "s3:ListBucketVersions"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:s3:::snaps.example.com"
+      ]
+    },
+    {
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:AbortMultipartUpload",
+        "s3:ListMultipartUploadParts"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:s3:::snaps.example.com/*"
+      ]
+    }
+  ],
+  "Version": "2012-10-17"
+}</pre></div><p>You may further restrict the permissions by specifying a prefix within the bucket, in this example, named "foo".</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "Statement": [
+    {
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation",
+        "s3:ListBucketMultipartUploads",
+        "s3:ListBucketVersions"
+      ],
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "foo/*"
+          ]
+        }
+      },
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:s3:::snaps.example.com"
+      ]
+    },
+    {
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:AbortMultipartUpload",
+        "s3:ListMultipartUploadParts"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:s3:::snaps.example.com/foo/*"
+      ]
+    }
+  ],
+  "Version": "2012-10-17"
+}</pre></div><p>The bucket needs to exist to register a repository for snapshots. If you did not create the bucket then the repository
+registration will fail. If you want elasticsearch to create the bucket instead, you can add the permission to create a
+specific bucket like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "Action": [
+      "s3:CreateBucket"
+   ],
+   "Effect": "Allow",
+   "Resource": [
+      "arn:aws:s3:::snaps.example.com"
+   ]
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-s3-endpoint"></a>Using other S3 endpoint<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-s3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you are using any S3 api compatible service, you can set a global endpoint by setting <code class="literal">cloud.aws.s3.endpoint</code>
+to your URL provider. Note that this setting will be used for all S3 repositories.</p><p>Different <code class="literal">endpoint</code>, <code class="literal">region</code> and <code class="literal">protocol</code> settings can be set on a per-repository basis
+See <a class="xref" href="repository-s3-repository.html" title="S3 Repository">S3 Repository</a> for details.</p></div></div><div class="navfooter"><span class="prev"><a href="repository-s3-usage.html">
               « 
-              AWS Cloud Plugin</a>
+              Getting started with AWS</a>
            
         </span><span class="next">
            
-          <a href="cloud-aws-discovery.html">EC2 Discovery
+          <a href="repository-s3-testing.html">Testing AWS
                »
             </a></span></div>
 <!-- end body -->

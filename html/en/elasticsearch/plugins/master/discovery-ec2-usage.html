@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Testing AWS</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="cloud-aws.html" title="AWS Cloud Plugin" /><link rel="prev" href="cloud-aws-repository.html" title="S3 Repository" /><link rel="next" href="cloud-azure.html" title="Azure Cloud Plugin" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Getting started with AWS</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="discovery-ec2.html" title="EC2 Discovery Plugin" /><link rel="prev" href="discovery-ec2.html" title="EC2 Discovery Plugin" /><link rel="next" href="discovery-ec2-discovery.html" title="EC2 Discovery" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="/static/css/en-us.css" />
@@ -587,46 +587,74 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="cloud-aws.html">AWS Cloud Plugin</a></span> » <span class="breadcrumb-node">Testing AWS</span></div><div class="navheader"><span class="prev"><a href="cloud-aws-repository.html">
+    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="discovery-ec2.html">EC2 Discovery Plugin</a></span> » <span class="breadcrumb-node">Getting started with AWS</span></div><div class="navheader"><span class="prev"><a href="discovery-ec2.html">
               « 
-              S3 Repository</a>
+              EC2 Discovery Plugin</a>
            
         </span><span class="next">
            
-          <a href="cloud-azure.html">Azure Cloud Plugin
+          <a href="discovery-ec2-discovery.html">EC2 Discovery
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cloud-aws-testing"></a>Testing AWS<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-aws.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Integrations tests in this plugin require working AWS configuration and therefore disabled by default. Three buckets
-and two iam users have to be created. The first iam user needs access to two buckets in different regions and the final
-bucket is exclusive for the other iam user. To enable tests prepare a config file elasticsearch.yml with the following
-content:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="discovery-ec2-usage"></a>Getting started with AWS<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The plugin will default to using
+<a class="ulink" href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html" target="_top">IAM Role</a>
+credentials for authentication. These can be overridden by, in increasing
+order of precedence, system properties <code class="literal">aws.accessKeyId</code> and <code class="literal">aws.secretKey</code>,
+environment variables <code class="literal">AWS_ACCESS_KEY_ID</code> and <code class="literal">AWS_SECRET_KEY</code>, or the
+elasticsearch config using <code class="literal">cloud.aws.access_key</code> and <code class="literal">cloud.aws.secret_key</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
     aws:
         access_key: AKVAIQBF2RECL7FJWGJQ
-        secret_key: vExyMThREXeRMm/b/LRzEB8jWwvzQeXgjqMX+6br
-
-repositories:
-    s3:
-        bucket: "bucket_name"
-        region: "us-west-2"
-        private-bucket:
-            bucket: &lt;bucket not accessible by default key&gt;
-            access_key: &lt;access key&gt;
-            secret_key: &lt;secret key&gt;
-        remote-bucket:
-            bucket: &lt;bucket in other region&gt;
-            region: &lt;region&gt;
-        external-bucket:
-            bucket: &lt;bucket&gt;
-            access_key: &lt;access key&gt;
-            secret_key: &lt;secret key&gt;
-            endpoint: &lt;endpoint&gt;
-            protocol: &lt;protocol&gt;</pre></div><p>Replace all occurrences of <code class="literal">access_key</code>, <code class="literal">secret_key</code>, <code class="literal">endpoint</code>, <code class="literal">protocol</code>, <code class="literal">bucket</code> and <code class="literal">region</code> with your settings.
-Please, note that the test will delete all snapshot/restore related files in the specified buckets.</p><p>To run test:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">mvn -Dtests.aws=true -Dtests.config=/path/to/config/file/elasticsearch.yml clean test</pre></div></div><div class="navfooter"><span class="prev"><a href="cloud-aws-repository.html">
+        secret_key: vExyMThREXeRMm/b/LRzEB8jWwvzQeXgjqMX+6br</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-ec2-usage-security"></a>Transport security<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>By default this plugin uses HTTPS for all API calls to AWS endpoints. If you wish to configure HTTP you can set
+<code class="literal">cloud.aws.protocol</code> in the elasticsearch config. You can optionally override this setting per individual service
+via: <code class="literal">cloud.aws.ec2.protocol</code> or <code class="literal">cloud.aws.s3.protocol</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+    aws:
+        protocol: https
+        ec2:
+            protocol: https</pre></div><p>In addition, a proxy can be configured with the <code class="literal">proxy_host</code> and <code class="literal">proxy_port</code> settings (note that protocol can be
+<code class="literal">http</code> or <code class="literal">https</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+    aws:
+        protocol: https
+        proxy_host: proxy1.company.com
+        proxy_port: 8083</pre></div><p>You can also set different proxies for <code class="literal">ec2</code> and <code class="literal">s3</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+    aws:
+        s3:
+            proxy_host: proxy1.company.com
+            proxy_port: 8083
+        ec2:
+            proxy_host: proxy2.company.com
+            proxy_port: 8083</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-ec2-usage-region"></a>Region<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">cloud.aws.region</code> can be set to a region and will automatically use the relevant settings for both <code class="literal">ec2</code> and <code class="literal">s3</code>.
+The available values are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">us-east</code> (<code class="literal">us-east-1</code>)
+</li><li class="listitem">
+<code class="literal">us-west</code> (<code class="literal">us-west-1</code>)
+</li><li class="listitem">
+<code class="literal">us-west-1</code>
+</li><li class="listitem">
+<code class="literal">us-west-2</code>
+</li><li class="listitem">
+<code class="literal">ap-southeast</code> (<code class="literal">ap-southeast-1</code>)
+</li><li class="listitem">
+<code class="literal">ap-southeast-1</code>
+</li><li class="listitem">
+<code class="literal">ap-southeast-2</code>
+</li><li class="listitem">
+<code class="literal">ap-northeast</code> (<code class="literal">ap-northeast-1</code>)
+</li><li class="listitem">
+<code class="literal">eu-west</code> (<code class="literal">eu-west-1</code>)
+</li><li class="listitem">
+<code class="literal">eu-central</code> (<code class="literal">eu-central-1</code>)
+</li><li class="listitem">
+<code class="literal">sa-east</code> (<code class="literal">sa-east-1</code>)
+</li><li class="listitem">
+<code class="literal">cn-north</code> (<code class="literal">cn-north-1</code>)
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-ec2-usage-signer"></a>EC2/S3 Signer API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you are using a compatible EC2 or S3 service, they might be using an older API to sign the requests.
+You can set your compatible signer API using <code class="literal">cloud.aws.signer</code> (or <code class="literal">cloud.aws.ec2.signer</code> and <code class="literal">cloud.aws.s3.signer</code>)
+with the right signer to use. Defaults to <code class="literal">AWS4SignerType</code>.</p></div></div><div class="navfooter"><span class="prev"><a href="discovery-ec2.html">
               « 
-              S3 Repository</a>
+              EC2 Discovery Plugin</a>
            
         </span><span class="next">
            
-          <a href="cloud-azure.html">Azure Cloud Plugin
+          <a href="discovery-ec2-discovery.html">EC2 Discovery
                »
             </a></span></div>
 <!-- end body -->
