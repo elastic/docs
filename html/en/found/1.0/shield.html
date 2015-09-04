@@ -655,7 +655,22 @@ kibana4:
       - indices:data/write/delete
       - indices:data/write/index
       - indices:data/write/update
-      - indices:admin/create</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_limitations"></a>Limitations</h2></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+      - indices:admin/create</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="shield-transport"></a>Shield and the Java Transport Client</h2></div></div></div><p>You can connect to a Shield protected cluster using the transport client. This is fully documented in <a class="ulink" href="https://www.elastic.co/guide/en/shield/current/_using_elasticsearch_java_clients_with_shield.html" target="_top">Shield’s documentation</a>.</p><p>The only addition you need when using Found is to add a header indicating which cluster to route the connections to.</p><p>Here is an example of how to create a transport client to connect to Found:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// Build the settings for our client.
+String clusterId = "ac01aa2425e4a5bafdebf5100af3e9b37401055b"; // Your cluster ID here
+String region = "us-east-1"; // Your region here
+Settings settings = ImmutableSettings.settingsBuilder()
+    .put("transport.ping_schedule", "5s")
+    //.put("transport.sniff", false) // Disabled by default and *must* be disabled.
+    .put("cluster.name", clusterId)
+    .put("shield.transport.ssl", true)
+    .put("request.headers.X-Found-Cluster", clusterId)
+    .put("shield.user", "username:password")
+    .build();
+
+// Instantiate a TransportClient and add the cluster to the list of addresses to connect to.
+// Only port 9343 (SSL-encrypted) is currently supported.
+String hostname = clusterId + "." + region + ".aws.found.io";
+Client client = new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress(hostname, 9343));</pre></div><p>You need to add the Shield JAR to your classpath. Examples of how to do this with various build systems are available in the <a class="ulink" href="https://www.elastic.co/guide/en/shield/current/_using_elasticsearch_java_clients_with_shield.html#transport-client" target="_top">Shield documentation</a>.</p><p>We’ve made a <a class="ulink" href="https://github.com/elastic/found-shield-example" target="_top">complete example of how to use it available on GitHub</a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_limitations"></a>Limitations</h2></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 IP filtering with Shield is not currently available.
 </li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="tunneling-ssl.html">
               « 
