@@ -618,22 +618,11 @@ as the normal <a class="link" href="search-aggregations-bucket-histogram-aggrega
             }
         }
     }
-}</pre></div><p>See <a class="xref" href="common-options.html#time-units" title="Time unitsedit">the section called “Time units<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for accepted abbreviations.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_time_zone"></a>Time Zone<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default, times are stored as UTC milliseconds since the epoch. Thus, all computation and "bucketing" / "rounding" is
-done on UTC. It is possible to provide a time zone value, which will cause all bucket
-computations to take place in the specified zone. The time returned for each bucket/entry is milliseconds since the
-epoch in UTC. The parameters is called <code class="literal">time_zone</code>. It accepts either a ISO 8601 UTC offset, or a timezone id.
-A UTC offset has the form of a <code class="literal">+</code> or <code class="literal">-</code>, followed by two digit hour, followed by <code class="literal">:</code>, followed by two digit minutes.
-For example, <code class="literal">+01:00</code> represents 1 hour ahead of UTC. A timezone id is the identifier for a TZ database. For example,
-Pacific time is represented as <code class="literal">America\Los_Angeles</code>.</p><p>Lets take an example. For <code class="literal">2012-04-01T04:15:30Z</code> (UTC), with a <code class="literal">time_zone</code> of <code class="literal">"-08:00"</code>. For day interval, the actual time by
-applying the time zone and rounding falls under <code class="literal">2012-03-31</code>, so the returned value will be (in millis) of
-<code class="literal">2012-03-31T08:00:00Z</code> (UTC). For hour interval, internally applying the time zone results in <code class="literal">2012-03-31T20:15:30</code>, so rounding it
-in the time zone results in <code class="literal">2012-03-31T20:00:00</code>, but we return that rounded value converted back in UTC so be consistent as
-<code class="literal">2012-04-01T04:00:00Z</code> (UTC).</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_offset"></a>Offset<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">offset</code> option can be provided for shifting the date bucket intervals boundaries after any other shifts because of
-time zones are applies. This for example makes it possible that daily buckets go from 6AM to 6AM the next day instead of starting at 12AM
-or that monthly buckets go from the 10th of the month to the 10th of the next month instead of the 1st.</p><p>The <code class="literal">offset</code> option accepts positive or negative time durations like "1h" for an hour or "1M" for a Month. See <a class="xref" href="common-options.html#time-units" title="Time unitsedit">the section called “Time units<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for more
-possible time duration options.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_keys"></a>Keys<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Since internally, dates are represented as 64bit numbers, these numbers are returned as the bucket keys (each key
-representing a date - milliseconds since the epoch). It is also possible to define a date format, which will result in
-returning the dates as formatted strings next to the numeric key values:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><p>See <a class="xref" href="common-options.html#time-units" title="Time unitsedit">the section called “Time units<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for accepted abbreviations.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_keys"></a>Keys<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Internally, a date is represented as a 64 bit number representing a timestamp
+in milliseconds-since-the-epoch. These timestamps are returned as the bucket
+<code class="literal">key</code>s. The <code class="literal">key_as_string</code> is the same timestamp converted to a formatted
+date string using the format specified with the <code class="literal">format</code> parameter:</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>If no <code class="literal">format</code> is specified, then it will use the first date
+<a class="link" href="mapping-date-format.html" title="format">format</a> specified in the field mapping.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "aggs" : {
         "articles_over_time" : {
             "date_histogram" : {
@@ -663,7 +652,118 @@ Supports expressive date <a class="link" href="search-aggregations-bucket-datera
             ]
         }
     }
-}</pre></div><p>Like with the normal <a class="link" href="search-aggregations-bucket-histogram-aggregation.html" title="Histogram Aggregation">histogram</a>, both document level scripts and
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_time_zone"></a>Time Zone<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Date-times are stored in Elasticsearch in UTC.  By default, all bucketing and
+rounding is also done in UTC. The <code class="literal">time_zone</code> parameter can be used to indicate
+that bucketing should use a different time zone.</p><p>Time zones may either be specified as an ISO 8601 UTC offset (e.g. <code class="literal">+01:00</code> or
+<code class="literal">-08:00</code>)  or as a timezone id, an identifier used in the TZ database like
+<code class="literal">America\Los_Angeles</code> (which would need to be escaped in JSON as
+<code class="literal">"America\\Los_Angeles"</code>).</p><p>Consider the following example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/log/1
+{
+  "date": "2015-10-01T00:30:00Z"
+}
+
+PUT my_index/log/2
+{
+  "date": "2015-10-01T01:30:00Z"
+}
+
+GET my_index/_search?size=0
+{
+  "aggs": {
+    "by_day": {
+      "date_histogram": {
+        "field":     "date",
+        "interval":  "day"
+      }
+    }
+  }
+}</pre></div><p>UTC is used if no time zone is specified, which would result in both of these
+documents being placed into the same day bucket, which starts at midnight UTC
+on 1 October 2015:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggregations": {
+  "by_day": {
+    "buckets": [
+      {
+        "key_as_string": "2015-10-01T00:00:00.000Z",
+        "key":           1443657600000,
+        "doc_count":     2
+      }
+    ]
+  }
+}</pre></div><p>If a <code class="literal">time_zone</code> of <code class="literal">-01:00</code> is specified, then midnight starts at one hour before
+midnight UTC:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET my_index/_search?size=0
+{
+  "aggs": {
+    "by_day": {
+      "date_histogram": {
+        "field":     "date",
+        "interval":  "day",
+        "time_zone": "-01:00"
+      }
+    }
+  }
+}</pre></div><p>Now the first document falls into the bucket for 30 September 2015, while the
+second document falls into the bucket for 1 October 2015:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggregations": {
+  "by_day": {
+    "buckets": [
+      {
+        "key_as_string": "2015-09-30T00:00:00.000-01:00", <a id="CO62-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "key": 1443571200000,
+        "doc_count": 1
+      },
+      {
+        "key_as_string": "2015-10-01T00:00:00.000-01:00", <a id="CO62-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        "key": 1443657600000,
+        "doc_count": 1
+      }
+    ]
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO62-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO62-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">key_as_string</code> value represents midnight on each day
+    in the specified time zone.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_offset"></a>Offset<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">offset</code> parameter is used to change the start value of each bucket by the
+specified positive (<code class="literal">+</code>) or negative offset (<code class="literal">-</code>) duration, such as <code class="literal">1h</code> for
+an hour, or <code class="literal">1M</code> for a month. See <a class="xref" href="common-options.html#time-units" title="Time unitsedit">the section called “Time units<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for more possible time
+duration options.</p><p>For instance, when using an interval of <code class="literal">day</code>, each bucket runs from midnight
+to midnight.  Setting the <code class="literal">offset</code> parameter to <code class="literal">+6h</code> would change each bucket
+to run from 6am to 6am:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/log/1
+{
+  "date": "2015-10-01T05:30:00Z"
+}
+
+PUT my_index/log/2
+{
+  "date": "2015-10-01T06:30:00Z"
+}
+
+GET my_index/_search?size=0
+{
+  "aggs": {
+    "by_day": {
+      "date_histogram": {
+        "field":     "date",
+        "interval":  "day",
+        "offset":    "+6h"
+      }
+    }
+  }
+}</pre></div><p>Instead of a single bucket starting at midnight, the above request groups the
+documents into buckets starting at 6am:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggregations": {
+  "by_day": {
+    "buckets": [
+      {
+        "key_as_string": "2015-09-30T06:00:00.000Z",
+        "key": 1443592800000,
+        "doc_count": 1
+      },
+      {
+        "key_as_string": "2015-10-01T06:00:00.000Z",
+        "key": 1443679200000,
+        "doc_count": 1
+      }
+    ]
+  }
+}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The start <code class="literal">offset</code> of each bucket is calculated after the <code class="literal">time_zone</code>
+adjustments have been made.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_scripts"></a>Scripts<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Like with the normal <a class="link" href="search-aggregations-bucket-histogram-aggregation.html" title="Histogram Aggregation">histogram</a>, both document level scripts and
 value level scripts are supported. It is also possible to control the order of the returned buckets using the <code class="literal">order</code>
 settings and filter the returned buckets based on a <code class="literal">min_doc_count</code> setting (by default all buckets between the first
 bucket that matches documents and the last one are returned). This histogram also supports the <code class="literal">extended_bounds</code>
@@ -676,11 +776,11 @@ had a value.</p><div class="pre_wrapper"><pre class="programlisting prettyprint 
              "datehistogram" : {
                  "field" : "publish_date",
                  "interval": "year",
-                 "missing": "2000-01-01" <a id="CO62-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                 "missing": "2000-01-01" <a id="CO63-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
              }
          }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO62-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO63-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Documents without a value in the <code class="literal">publish_date</code> field will fall into the same bucket as documents that have the value <code class="literal">2000-01-01</code>.
 </p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-children-aggregation.html">
               « 
