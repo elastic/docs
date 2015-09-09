@@ -622,11 +622,10 @@ OS will happily keep hot segments resident in memory for faster access.</p><p>Lu
 available memory to Elasticsearch’s heap, there won’t be any left over for Lucene.
 This can seriously impact the performance of full-text search.</p><p>The standard recommendation is to give 50% of the available memory to Elasticsearch
 heap, while leaving the other 50% free.  It won’t go unused; Lucene will happily
-gobble up whatever is left over.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="compressed_oops"></a>Don’t Cross 32 GB!<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There is another reason to not allocate enormous heaps to Elasticsearch. As it turns<a id="id-1.10.4.11.10.2.1" class="indexterm"></a>
+gobble up whatever is left over.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="compressed_oops"></a>Don’t Cross 30.5 GB!<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There is another reason to not allocate enormous heaps to Elasticsearch. As it turns<a id="id-1.10.4.11.10.2.1" class="indexterm"></a>
 <a id="id-1.10.4.11.10.2.2" class="indexterm"></a>
 <a id="id-1.10.4.11.10.2.3" class="indexterm"></a><a id="id-1.10.4.11.10.2.4" class="indexterm"></a>
-out, the JVM uses a trick to compress object pointers when heaps are less than
-~32 GB.</p><p>In Java, all objects are allocated on the heap and referenced by a pointer.
+out, the JVM uses a trick to compress object pointers when heaps are 30.5 GB or less.</p><p>In Java, all objects are allocated on the heap and referenced by a pointer.
 Ordinary object pointers (OOP) point at these objects, and are traditionally
 the size of the CPU’s native <span class="emphasis"><em>word</em></span>: either 32 bits or 64 bits, depending on the
 processor.  The pointer references the exact byte location of the value.</p><p>For 32-bit systems, this means the maximum heap size is 4 GB.  For 64-bit systems,
@@ -638,24 +637,24 @@ to get around this problem.  Instead of pointing at exact byte locations in
 memory, the pointers reference <span class="emphasis"><em>object offsets</em></span>.<a id="id-1.10.4.11.10.5.4" class="indexterm"></a>  This means a 32-bit pointer can
 reference four billion <span class="emphasis"><em>objects</em></span>, rather than four billion bytes.  Ultimately, this
 means the heap can grow to around 32 GB of physical size while still using a 32-bit
-pointer.</p><p>Once you cross that magical ~30–32 GB boundary, the pointers switch back to
+pointer.</p><p>Once you cross that magical 30.5 GB boundary, the pointers switch back to
 ordinary object pointers.  The size of each pointer grows, more CPU-memory
 bandwidth is used, and you effectively lose memory.  In fact, it takes until around
-40–50 GB of allocated heap before you have the same <span class="emphasis"><em>effective</em></span> memory of a 32 GB
+40–50 GB of allocated heap before you have the same <span class="emphasis"><em>effective</em></span> memory of a 30.5 GB
 heap using compressed oops.</p><p>The moral of the story is this: even when you have memory to spare, try to avoid
-crossing the 32 GB heap boundary.  It wastes memory, reduces CPU performance, and
-makes the GC struggle with large heaps.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>I Have a Machine with 1 TB RAM!</strong></p></div></div></div><p>The 32 GB line is fairly important.  So what do you do when your machine has a lot
-of memory?  It is becoming increasingly common to see super-servers with 300–500 GB
+crossing the 30.5 GB heap boundary.  It wastes memory, reduces CPU performance, and
+makes the GC struggle with large heaps.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>I Have a Machine with 1 TB RAM!</strong></p></div></div></div><p>The 30.5 GB line is fairly important.  So what do you do when your machine has a lot
+of memory?  It is becoming increasingly common to see super-servers with 512–768 GB
 of RAM.</p><p>First, we would recommend avoiding such large machines (see <a class="xref" href="hardware.html" title="Hardware">Hardware</a>).</p><p>But if you already have the machines, you have two practical options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Are you doing mostly full-text search?  Consider giving 32 GB to Elasticsearch
+Are you doing mostly full-text search?  Consider giving 30.5 GB to Elasticsearch
 and letting Lucene use the rest of memory via the OS filesystem cache.  All that
 memory will cache segments and lead to blisteringly fast full-text search.
 </li><li class="listitem"><p class="simpara">
 Are you doing a lot of sorting/aggregations?  You’ll likely want that memory
-in the heap then.  Instead of one node with 32 GB+ of RAM, consider running two or
+in the heap then.  Instead of one node with more than 31.5 GB of RAM, consider running two or
 more nodes on a single machine.  Still adhere to the 50% rule, though.  So if your
-machine has 128 GB of RAM, run two nodes, each with 32 GB.  This means 64 GB will be
-used for heaps, and 64 will be left over for Lucene.
+machine has 128 GB of RAM, run two nodes, each with 30.5 GB.  This means 61 GB will be
+used for heaps, and 67 will be left over for Lucene.
 </p><p class="simpara">If you choose this option, set <code class="literal">cluster.routing.allocation.same_shard.host: true</code>
 in your config.  This will prevent a primary and a replica shard from colocating
 to the same physical machine (since this would remove the benefits of replica high availability).</p></li></ul></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_swapping_is_the_death_of_performance"></a>Swapping Is the Death of Performance<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It should be obvious,<a id="id-1.10.4.11.11.2.1" class="indexterm"></a>
