@@ -641,12 +641,16 @@ its still alive or an election process needs to be initiated.</p><p>The followin
 considered failed. Defaults to <code class="literal">3</code>.</p></td></tr></tbody></table></div><h4><a id="_cluster_state_updates"></a>Cluster state updates<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/zen.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The master node is the only node in a cluster that can make changes to the
 cluster state. The master node processes one cluster state update at a time,
 applies the required changes and publishes the updated cluster state to all
-the other nodes in the cluster. Each node receives the publish message,
-updates its own cluster state and replies to the master node, which waits for
-all nodes to respond, up to a timeout, before going ahead processing the next
-updates in the queue. The <code class="literal">discovery.zen.publish_timeout</code> is set by default
-to 30 seconds and can be changed dynamically through the
-<a class="link" href="cluster-update-settings.html" title="Cluster Update Settings">cluster update settings api</a></p><h4><a id="no-master-block"></a>No master block<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/zen.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>For the cluster to be fully operational, it must have an active master and the
+the other nodes in the cluster. Each node receives the publish message, acknowledges
+it, but does <span class="strong"><strong>not</strong></span> yet apply it. If the master does not receive acknowledgement from
+at least <code class="literal">discovery.zen.minimum_master_nodes</code> nodes within a certain time (controlled by
+the <code class="literal">discovery.zen.commit_timeout</code> setting and defaults to 30 seconds) the cluster state
+change is rejected.</p><p>Once enough nodes have responded, the cluster state is committed and a message will
+be sent to all the nodes. The nodes then proceed to apply the new cluster state to their
+internal state. The master node waits for all nodes to respond, up to a timeout, before
+going ahead processing the next updates in the queue. The <code class="literal">discovery.zen.publish_timeout</code> is
+set by default to 30 seconds and is measured from the moment the publishing started. Both
+timeout settings can be changed dynamically through the <a class="link" href="cluster-update-settings.html" title="Cluster Update Settings">cluster update settings api</a></p><h4><a id="no-master-block"></a>No master block<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/zen.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>For the cluster to be fully operational, it must have an active master and the
 number of running master eligible nodes must satisfy the
 <code class="literal">discovery.zen.minimum_master_nodes</code> setting if set. The
 <code class="literal">discovery.zen.no_master_block</code> settings controls what operations should be
