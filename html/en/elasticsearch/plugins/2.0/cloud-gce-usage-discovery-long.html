@@ -606,33 +606,16 @@
 Your project ID, e.g. <code class="literal">es-cloud</code>. Get it from <a class="ulink" href="https://code.google.com/apis/console/" target="_top">Google API Console</a>.
 </li><li class="listitem">
 To install <a class="ulink" href="https://developers.google.com/cloud/sdk/" target="_top">Google Cloud SDK</a>
-</li></ul></div><p>If you did not set it yet, you can define your default project you will work on:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud config set project es-cloud</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="cloud-gce-usage-discovery-long-first-instance"></a>Creating your first instance<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/cloud-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcutil addinstance myesnode1 \
-       --service_account_scope=compute-rw,storage-full \
-       --persistent_boot_disk</pre></div><p>Then follow these steps:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-You will be asked to open a link in your browser. Login and allow access to listed services.
-</li><li class="listitem">
-You will get back a verification code. Copy and paste it in your terminal.
-</li><li class="listitem">
-You should see an <code class="literal">Authentication successful.</code> message.
-</li><li class="listitem">
-Choose your zone, e.g. <code class="literal">europe-west1-a</code>.
-</li><li class="listitem">
-Choose your compute instance size, e.g. <code class="literal">f1-micro</code>.
-</li><li class="listitem">
-Choose your OS, e.g. <code class="literal">projects/debian-cloud/global/images/debian-7-wheezy-v20140606</code>.
-</li><li class="listitem">
-You may be asked to create a ssh key. Follow the instructions to create one.
-</li></ul></div><p>When done, a report like this one should appears:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">Table of resources:
-
-+-----------+--------------+-------+---------+--------------+----------------+----------------+----------------+---------+----------------+
-|   name    | machine-type | image | network |  network-ip  |  external-ip   |     disks      |      zone      | status  | status-message |
-+-----------+--------------+-------+---------+--------------+----------------+----------------+----------------+---------+----------------+
-| myesnode1 | f1-micro     |       | default | 10.240.20.57 | 192.158.29.199 | boot-myesnode1 | europe-west1-a | RUNNING |                |
-+-----------+--------------+-------+---------+--------------+----------------+----------------+----------------+---------+----------------+</pre></div><p>You can now connect to your instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh"># Connect using google cloud SDK
+</li></ul></div><p>If you did not set it yet, you can define your default project you will work on:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud config set project es-cloud</pre></div><p><a id="cloud-gce-usage-discovery-long-login"></a>If you haven’t already, login to Google Cloud</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud auth login</pre></div><p>This will open your browser. You will be asked to sign-in to a Google account and
+authorize access to the Google Cloud SDK.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="cloud-gce-usage-discovery-long-first-instance"></a>Creating your first instance<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/plugins/cloud-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud compute instances create myesnode1 \
+       --zone &lt;your-zone&gt; \
+       --scopes compute-rw</pre></div><p>When done, a report like this one should appears:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">Created [https://www.googleapis.com/compute/v1/projects/es-cloud-1070/zones/us-central1-f/instances/myesnode1].
+NAME      ZONE          MACHINE_TYPE  PREEMPTIBLE INTERNAL_IP   EXTERNAL_IP   STATUS
+myesnode1 us-central1-f n1-standard-1             10.240.133.54 104.197.94.25 RUNNING</pre></div><p>You can now connect to your instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh"># Connect using google cloud SDK
 gcloud compute ssh myesnode1 --zone europe-west1-a
 
 # Or using SSH with external IP address
-ssh -i ~/.ssh/google_compute_engine 192.158.29.199</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h4>Service Account Permissions</h4><p>It’s important when creating an instance that the correct permissions are set. At a minimum, you must ensure you have:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">service_account_scope=compute-rw</pre></div><p>Failing to set this will result in unauthorized messages when starting Elasticsearch.
+ssh -i ~/.ssh/google_compute_engine 192.158.29.199</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h4>Service Account Permissions</h4><p>It’s important when creating an instance that the correct permissions are set. At a minimum, you must ensure you have:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">scopes=compute-rw</pre></div><p>Failing to set this will result in unauthorized messages when starting Elasticsearch.
 See [Machine Permissions](#machine-permissions).</p></div></div><p>Once connected, install Elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo apt-get update
 
 # Download Elasticsearch
