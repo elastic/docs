@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Watch Log Data for Errors</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0.0-beta2]" /><link rel="up" href="getting-started.html" title="Getting Started" /><link rel="prev" href="getting-started.html" title="Getting Started" /><link rel="next" href="watch-cluster-status.html" title="Watch Your Cluster Health" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,141 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started</a></span> » <span class="breadcrumb-node">Watch Log Data for Errors</span></div><div class="navheader"><span class="prev"><a href="getting-started.html">
+              « 
+              Getting Started</a>
+           
+        </span><span class="next">
+           
+          <a href="watch-cluster-status.html">Watch Your Cluster Health
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="watch-log-data"></a>Watch Log Data for Errors</h2></div></div></div><p>You can easily configure a watch that periodically checks your log data for error conditions:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="watch-log-data.html#log-add-input" title="Schedule the Watch and Add an Input">Schedule the watch and define an input</a> to search your log data for error events.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+<a class="link" href="watch-log-data.html#log-add-condition" title="Add a Condition">Add a condition</a> that checks to see if any errors were found.
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<a class="link" href="watch-log-data.html#log-take-action" title="Take Action">Take action</a> if there are any errors.
+</li></ul></div><h4><a id="log-add-input"></a>Schedule the Watch and Add an Input</h4><p>A watch <a class="link" href="trigger.html#trigger-schedule" title="Schedule Trigger">schedule</a> controls how often a watch is triggered. The watch
+<a class="link" href="input.html" title="Input">input</a> gets the data that you want to evaluate.</p><p>To periodically search your log data and load the results into the watch, you use an
+<a class="link" href="trigger.html#schedule-interval" title="Interval Schedule">interval</a> schedule and a <a class="link" href="input.html#input-search" title="Search Input">search</a> input. For example, the
+following Watch searches the <code class="literal">logs</code> index for errors every 10 seconds:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'http://localhost:9200/_watcher/watch/log_error_watch' -d '{
+  "trigger" : {
+    "schedule" : { "interval" : "10s" } <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  },
+  "input" : {
+    "search" : {
+      "request" : {
+        "indices" : [ "logs" ],
+        "body" : {
+          "query" : {
+            "match" : { "message": "error" }
+          }
+        }
+      }
+    }
+  }
+}'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Schedules are typically configured to run less frequently. This example sets the interval to
+10 seconds so you can easily see the watches being triggered. Since this watch runs so frequently,
+don’t forget to <a class="link" href="watch-log-data.html#log-delete" title="Delete the Watch">delete the watch</a> when you’re done experimenting.
+</p></td></tr></table></div><p>If you check the watch history you’ll see that the watch is being triggered every 10 seconds.
+However, the search isn’t returning any results so nothing is loaded into the watch payload.</p><p>For example, the following snippet gets the last ten watch executions (a.k.a watch records) from
+the watch history:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/.watch_history*/_search?pretty' -d '{
+  "sort" : [
+    { "result.execution_time" : "desc" }
+  ]
+}'</pre></div><h4><a id="log-add-condition"></a>Add a Condition</h4><p>A <a class="link" href="condition.html" title="Condition">condition</a> evaluates the data you’ve loaded into the watch and determines if any
+action is required. Since you’ve defined an input that loads log errors into the watch, you can
+define a condition that checks to see if any errors were found.</p><p>For example, you could add a condition that simply checks to see if the search input returned
+any hits.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'http://localhost:9200/_watcher/watch/log_error_watch' -d '{
+  "trigger" : { "schedule" : { "interval" : "10s" } },
+  "input" : {
+    "search" : {
+      "request" : {
+        "indices" : [ "logs" ],
+        "body" : {
+          "query" : {
+            "match" : { "message": "error" }
+          }
+        }
+      }
+    }
+  },
+  "condition" : {
+    "compare" : { "ctx.payload.hits.total" : { "gt" : 0 }} <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  }
+}'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <a class="link" href="condition.html#condition-compare" title="Compare Condition">compare</a> condition lets you easily compare against values in the
+execution context without enabling dynamic scripting.
+</p></td></tr></table></div><p>The condition result is recorded as part of the <code class="literal">watch_record</code> each time the watch executes. Since
+there are currently no log events in the <code class="literal">logs</code> index, the watch condition will not be met. If you
+search the history for watch executions where the condition was met during the last 5 seconds,
+there are no hits:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/.watch_history*/_search?pretty' -d '{
+  "query" : {
+    "bool" : {
+      "must" : [
+        { "match" : { "result.condition.met" : true }},
+        { "range" : { "result.execution_time" : { "from" : "now-10s"}}}
+      ]
+    }
+  }
+}'</pre></div><p>For the condition in the example above to evaluate to <code class="literal">true</code>, you need to add an event to the
+<code class="literal">logs</code> index that contains an error.</p><p>For example, the following snippet adds a 404 error to the <code class="literal">logs</code> index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'http://localhost:9200/logs/event' -d '{
+    "timestamp" : "2015-05-17T18:12:07.613Z",
+    "request" : "GET index.html",
+    "status_code" : 404,
+    "message" : "Error: File not found"
+}'</pre></div><p>Once you add this event, the next time the watch executes its condition will evaluate to <code class="literal">true</code>.
+You can verify this by searching the watch history:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/.watch_history*/_search?pretty' -d '{
+  "query" : {
+    "bool" : {
+      "must" : [
+        { "match" : { "result.condition.met" : true }},
+        { "range" : { "result.execution_time" : { "from" : "now-10s"}}}
+      ]
+    }
+  }
+}'</pre></div><h4><a id="log-take-action"></a>Take Action</h4><p>Recording <code class="literal">watch_records</code> in the watch history is nice, but the real power of Watcher is being able
+to do something when the watch condition is met. The watch’s <a class="link" href="actions.html" title="Actions">actions</a>  define what to
+do when the watch condition evaluates to <code class="literal">true</code>--you can send emails, call third-party webhooks,
+write documents to an Elasticsearch or log messages to the standards Elasticsearch log files.</p><p>For example, you could add an action to write a message to the Elasticsearch log when an error is
+detected.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'http://localhost:9200/_watcher/watch/log_error_watch' -d '{
+  "trigger" : { "schedule" : { "interval" : "10s" } },
+  "input" : {
+    "search" : {
+      "request" : {
+        "indices" : [ "logs" ],
+        "body" : {
+          "query" : {
+            "match" : { "message": "error" }
+          }
+        }
+      }
+    }
+  },
+  "condition" : {
+    "compare" : { "ctx.payload.hits.total" : { "gt" : 0 }}
+  },
+  "actions" : {
+    "log_error" : {
+      "logging" : {
+        "text" : "Found {{ctx.payload.hits.total}} errors in the logs"
+      }
+    }
+  }
+}'</pre></div><h4><a id="log-delete"></a>Delete the Watch</h4><p>Since the <code class="literal">log_error_watch</code> is configured to run every 10 seconds, make sure you delete it when
+you’re done experimenting. Otherwise, the noise from this sample watch will make it hard to see
+what else is going on in your watch history and log file.</p><p>To remove the watch, use the <a class="link" href="api-rest.html#api-rest-delete-watch" title="Delete Watch API">DELETE watch</a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XDELETE 'http://localhost:9200/_watcher/watch/log_error_watch'</pre></div></div><div class="navfooter"><span class="prev"><a href="getting-started.html">
+              « 
+              Getting Started</a>
+           
+        </span><span class="next">
+           
+          <a href="watch-cluster-status.html">Watch Your Cluster Health
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

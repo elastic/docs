@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Troubleshooting</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-beta2]" /><link rel="up" href="index.html" title="Shield Reference [2.0.0-beta2]" /><link rel="prev" href="limitations.html" title="Limitations" /><link rel="next" href="certificate-authority.html" title="Setting Up a Certificate Authority" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,115 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
-</li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-node">Troubleshooting</span></div><div class="navheader"><span class="prev"><a href="limitations.html">
+              « 
+              Limitations</a>
+           
+        </span><span class="next">
+           
+          <a href="certificate-authority.html">Setting Up a Certificate Authority
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="troubleshooting"></a>Troubleshooting</h1></div></div></div><h3><a id="_literal_settings_literal"></a><code class="literal">settings</code></h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Some settings are not returned via the nodes settings API
+</span></dt><dd><p class="simpara">This is intentional. Some of the settings are considered to be highly sensitive (e.g. all <code class="literal">ssl</code> settings, ldap <code class="literal">bind_dn</code>,
+<code class="literal">bind_password</code> and <code class="literal">hostname_verification</code>). For this reason, we filter these settings and not exposing them via the
+nodes info API rest endpoint. It is also possible to define additional sensitive settings that should be hidden using
+the <code class="literal">shield.hide_settings</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.hide_settings: shield.authc.realms.ldap1.url, shield.authc.realms.ad1.*</pre></div><p class="simpara">The snippet above will also hide the <code class="literal">url</code> settings of the <code class="literal">ldap1</code> realm and all settings of the <code class="literal">ad1</code> realm.</p></dd></dl></div><h3><a id="_literal_esusers_literal"></a><code class="literal">esusers</code></h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+I configured the appropriate roles and the users, but I still get an authorization exception
+</span></dt><dd><p class="simpara">Verify that the role names associated with the users match the roles defined in the <code class="literal">roles.yml</code> file. You
+can use the <code class="literal">esusers</code> tool to list all the users. Any unknown roles are marked with <code class="literal">*</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">esusers list
+rdeniro        : admin
+alpacino       : power_user
+jacknich       : marvel,unknown_role* <a id="CO22-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO22-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">unknown_role</code> was not found in <code class="literal">roles.yml</code>
+</p></td></tr></table></div></dd><dt><span class="term">
+ERROR: extra arguments […] were provided
+</span></dt><dd>This error occurs when the esusers tool is parsing the input and finds unexepected arguments. This can happen when there
+are special characters used in some of the arguments. For example, on Windows systems the <code class="literal">,</code> character is considered
+a parameter separator; in other words <code class="literal">-r role1,role2</code> is translated to <code class="literal">-r role1 role2</code> and the <code class="literal">esusers</code> tool only recognizes
+<code class="literal">role1</code> as an expected parameter. The solution here is to quote the parameter: <code class="literal">-r "role1,role2"</code>.</dd></dl></div><h3><a id="trouble-shoot-active-directory"></a>Active Directory</h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Certain users are being frequently locked out of Active Directory
+</span></dt><dd><p class="simpara">Check your realm configuration; realms are checked serially, one after another. If your Active Directory realm is being checked before other realms and there are usernames
+that appear in both Active Directory and another realm, a valid login for one realm may be causing failed login attempts in another realm.</p><p class="simpara">For example, if <code class="literal">UserA</code> exists in both Active Directory and esusers, and the Active Directory realm is checked first and
+esusers is checked second, an attempt to authenticate as <code class="literal">UserA</code> in the esusers realm would first attempt to authenticate
+against Active Directory and fail, before successfully authenticating against the esusers realm. Because authentication is
+verified on each request, the Active Directory realm would be checked - and fail - on each request for <code class="literal">UserA</code> in the esusers
+realm. In this case, while the Shield request completed successfully, the account on Active Directory would have received
+several failed login attempts, and that account may become temporarily locked out. Plan the order of your realms accordingly.</p><p class="simpara">Also note that it is not typically necessary to define multiple Active Directory realms to handle domain controller failures. When using Microsoft DNS, the DNS entry for
+the domain should always point to an available domain controller.</p></dd></dl></div><h3><a id="_ldap"></a>LDAP</h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+I can authenticate to LDAP, but I still get an authorization exception
+</span></dt><dd><p class="simpara">A number of configuration options can cause this error.</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><tbody><tr><td align="left" valign="top"><p><span class="emphasis"><em>group identification</em></span></p></td><td align="left" valign="top"><p>Groups are located by either an LDAP search or by the "memberOf" attribute on
+the user.  Also, If subtree search is turned off, it will search only one
+level deep.  See the <a class="link" href="ldap.html#ldap-settings" title="LDAP Realm Settings">LDAP Settings</a> for all the options.
+There are many options here and sticking to the defaults will not work for all
+scenarios.</p></td></tr><tr><td align="left" valign="top"><p><span class="emphasis"><em>group to role mapping</em></span></p></td><td align="left" valign="top"><p>Either the <code class="literal">role_mapping.yml</code> file or the location for this file could be
+misconfigured. See <a class="link" href="reference.html#ref-shield-files" title="Files used by Shield">Shield Files</a> for more.</p></td></tr><tr><td align="left" valign="top"><p><span class="emphasis"><em>role definition</em></span></p></td><td align="left" valign="top"><p>Either the <code class="literal">roles.yml</code> file or the location for this file could be
+misconfigured. See <a class="link" href="reference.html#ref-shield-files" title="Files used by Shield">Shield Files</a> for more.</p></td></tr></tbody></table></div><p class="simpara">To help track down these possibilities, add <code class="literal">shield.authc: DEBUG</code> to the <code class="literal">logging.yml</code> configuration file in <code class="literal">CONFIG_DIR</code>.
+A successful authentication should produce debug statements that list groups and role mappings.</p></dd></dl></div><h3><a id="_encryption_amp_certificates"></a>Encryption &amp; Certificates</h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">curl</code> on the Mac returns a certificate verification error even when the <code class="literal">--cacert</code> option is used
+</span></dt><dd><p class="simpara">Apple’s integration of <code class="literal">curl</code> with their keychain technology disables the <code class="literal">--cacert</code> option.
+See <a class="ulink" href="http://curl.haxx.se/mail/archive-2013-10/0036.html" target="_top">http://curl.haxx.se/mail/archive-2013-10/0036.html</a> for more information.</p><p class="simpara">You can use another tool, such as <code class="literal">wget</code>, to test certificates. Alternately, you can add the certificate for the
+signing certificate authority MacOS system keychain, using a procedure similar to the one detailed at the
+<a class="ulink" href="http://support.apple.com/kb/PH14003" target="_top">Apple knowledge base</a>. Be sure to add the signing CA’s certificate and not the server’s certificate.</p></dd></dl></div><h4><a id="_sslhandshakeexception_causing_connections_to_fail"></a>SSLHandshakeException causing connections to fail</h4><p>A <code class="literal">SSLHandshakeException</code> will cause a connection to a node to fail and indicates that there is a configuration issue. Some of the
+common exceptions are shown below with tips on how to resolve these issues.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">java.security.cert.CertificateException: No name matching node01.example.com found</code>
+</span></dt><dd><p class="simpara">Indicates that a client connection was made to <code class="literal">node01.example.com</code> but the certificate returned did not contain the name <code class="literal">node01.example.com</code>.
+In most cases, the issue can be resolved by ensuring the name is specified as a <code class="literal">SubjectAlternativeName</code> during <a class="link" href="ssl-tls.html#private-key" title="Creating a Keystore and Generating a Certificate">certificate creation</a>.
+Another scenario is when the environment does not wish to use DNS names in certificates at all. In this scenario, all settings
+in <code class="literal">elasticsearch.yml</code> should only use IP addresses and the following setting needs to be set in <code class="literal">elasticsearch.yml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.ssl.hostname_verification.resolve_name: false</pre></div></dd><dt><span class="term">
+<code class="literal">java.security.cert.CertificateException: No subject alternative names present</code>
+</span></dt><dd>Indicates that a client connection was made to an IP address but the returned certificate did not contain any <code class="literal">SubjectAlternativeName</code> entries.
+IP addresses are only used for hostname verification if they are specified as a <code class="literal">SubjectAlternativeName</code> during
+<a class="link" href="ssl-tls.html#private-key" title="Creating a Keystore and Generating a Certificate">certificate creation</a>. If the intent was to use IP addresses for hostname verification, then the certificate
+will need to be regenerated. Also verify that <code class="literal">shield.ssl.hostname_verification.resolve_name: false</code> is <span class="strong"><strong>not</strong></span> set in
+<code class="literal">elasticsearch.yml</code>.</dd><dt><span class="term">
+<code class="literal">javax.net.ssl.SSLHandshakeException: null cert chain</code> and <code class="literal">javax.net.ssl.SSLException: Received fatal alert: bad_certificate</code>
+</span></dt><dd>The <code class="literal">SSLHandshakeException</code> above indicates that a self-signed certificate was returned by the client that is not trusted
+as it cannot be found in the <code class="literal">truststore</code> or <code class="literal">keystore</code>. The <code class="literal">SSLException</code> above is seen on the client side of the connection.</dd><dt><span class="term">
+<code class="literal">sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target</code> and <code class="literal">javax.net.ssl.SSLException: Received fatal alert: certificate_unknown</code>
+</span></dt><dd>The <code class="literal">SunCertPathBuilderException</code> above indicates that a certificate was returned during the handshake that is not trusted.
+This message is seen on the client side of the connection. The <code class="literal">SSLException</code> above is seen on the server side of the
+connection. The CA certificate that signed the returned certificate was not found in the <code class="literal">keystore</code> or <code class="literal">truststore</code> and
+needs to be added to trust this certificate.</dd></dl></div><h4><a id="_other_ssl_tls_related_exceptions"></a>Other SSL/TLS related exceptions</h4><p>The are other exceptions related to SSL that may be seen in the logs. Below you will find some common exceptions and their
+meaning.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+WARN: received plaintext http traffic on a https channel, closing connection
+</span></dt><dd>Indicates that there was an incoming plaintext http request. This typically occurs when an external applications attempts
+to make an unencrypted call to the REST interface. Please ensure that all applications are using <code class="literal">https</code> when calling the
+REST interface with SSL enabled.</dd><dt><span class="term">
+<code class="literal">org.elasticsearch.common.netty.handler.ssl.NotSslRecordException: not an SSL/TLS record:</code>
+</span></dt><dd>Indicates that there was incoming plaintext traffic on an SSL connection. This typically occurs when a node is not
+configured to use encrypted communication and tries to connect to nodes that are using encrypted communication. Please
+verify that all nodes are using the same setting for <code class="literal">shield.transport.ssl</code>.</dd><dt><span class="term">
+<code class="literal">java.io.StreamCorruptedException: invalid internal transport message format, got</code>
+</span></dt><dd>Indicates an issue with data received on the transport interface in an unknown format. This can happen when a node with
+encrypted communication enabled connects to a node that has encrypted communication disabled. Please verify that all
+nodes are using the same setting for <code class="literal">shield.transport.ssl</code>.</dd><dt><span class="term">
+<code class="literal">java.lang.IllegalArgumentException: empty text</code>
+</span></dt><dd><p class="simpara">The exception is typically seen when a <code class="literal">https</code> request is made to a node that is not using <code class="literal">https</code>. If <code class="literal">https</code> is desired,
+please ensure the following setting is in <code class="literal">elasticsearch.yml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.http.ssl: true</pre></div></dd><dt><span class="term">
+ERROR: unsupported ciphers […] were requested but cannot be used in this JVM
+</span></dt><dd><p class="simpara">This error occurs when a SSL/TLS cipher suite is specified that cannot supported by the JVM that Elasticsearch is running
+in. Shield will try to use the specified cipher suites that are supported by this JVM. This error can occur when using
+the Shield defaults as some distributions of OpenJDK do not enable the PKCS11 provider by default. In this case, we
+recommend consulting your JVM documentation for details on how to enable the PKCS11 provider.</p><p class="simpara">Another common source of this error is requesting cipher suites that use encrypting with a key length greater than 128 bits
+when running on an Oracle JDK. In this case, you will need to install the <a class="link" href="ciphers.html" title="Enabling Cipher Suites for Stronger Encryption">JCE Unlimited Strength Jurisdiction Policy Files</a>.</p></dd></dl></div><h3><a id="_exceptions_when_unlicensed"></a>Exceptions when unlicensed</h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+WARN: Failed to execute IndicesStatsAction for ClusterInfoUpdateJob
+</span></dt><dd><p class="simpara">This warning occurs in the logs every 30 seconds when the Shield license is expired or invalid. It is caused by a periodic
+internal request to gather disk usage information from the nodes and indices, to enable <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/disk.html" target="_top">disk-based shard allocation</a>.
+Disk-based shard allocation is not required, though it is enabled by default.</p><p class="simpara">If you are using Elasticsearch 1.4.3 or higher with disk-based shard allocation enabled, it will be automatically disabled when the Shield
+license is expired or invalid, and will be automatically re-enabled when a valid Shield license is installed.</p><p class="simpara">If you are using Elasticsearch 1.4.2 with disk-based shard allocation enabled, we recommend manually disabling disk-based shard
+allocation while your Shield license is expired, and re-enabling it after installing a valid Shield license. Instructions for
+disabling disk-based shard allocation are <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/disk.html" target="_top">here</a>.</p></dd></dl></div></div><div class="navfooter"><span class="prev"><a href="limitations.html">
+              « 
+              Limitations</a>
+           
+        </span><span class="next">
+           
+          <a href="certificate-authority.html">Setting Up a Certificate Authority
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

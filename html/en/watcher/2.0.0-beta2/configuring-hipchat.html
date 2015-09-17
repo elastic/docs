@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuring Watcher to Send Messages to HipChat</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0.0-beta2]" /><link rel="up" href="administering-watcher.html" title="Administering Watcher" /><link rel="prev" href="email-services.html" title="Configuring Watcher to Send Email" /><link rel="next" href="configuring-slack.html" title="Configuring Watcher to Send Messages to Slack" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,178 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-link"><a href="administering-watcher.html">Administering Watcher</a></span> » <span class="breadcrumb-node">Configuring Watcher to Send Messages to HipChat</span></div><div class="navheader"><span class="prev"><a href="email-services.html">
+              « 
+              Configuring Watcher to Send Email</a>
+           
+        </span><span class="next">
+           
+          <a href="configuring-slack.html">Configuring Watcher to Send Messages to Slack
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-hipchat"></a>Configuring Watcher to Send Messages to HipChat</h2></div></div></div><p>You can configure Watcher to use the HipChat APIs to send messages to HipChat rooms and users.
+Watcher supports both the HipChat v2 and v1 APIs.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="hipchat-account"></a>Configuring HipChat Accounts</h3></div></div></div><p>You configure the accounts Watcher can use to communicate with HipChat in your <code class="literal">elasticsearch.yml</code>
+configuration file. Each account configuration has a unique name and specifies a HipChat API profile
+and the authentication information needed to access the APIs. You can also specify message defaults,
+such the default message text and color.</p><p>Watcher provides three HipChat API profiles:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<a class="link" href="configuring-hipchat.html#hipchat-api-integration" title="Using the HipChat Integration Profile">integration</a> 
+</span></dt><dd>
+Sends messages to a specific room using HipChat’s
+v2 API <a class="ulink" href="https://www.hipchat.com/docs/apiv2/method/send_room_notification" target="_top">Send room notification</a>.
+</dd><dt><span class="term">
+<a class="link" href="configuring-hipchat.html#hipchat-api-user" title="Using the HipChat User Profile">user</a> 
+</span></dt><dd>
+Sends messages as a particular user through the HipChat v2 API.
+Enables you to send messages to arbitrary rooms or users.
+</dd><dt><span class="term">
+<a class="link" href="configuring-hipchat.html#hipchat-api-v1" title="Using the HipChat v1 Profile">v1</a> 
+</span></dt><dd>
+Sends messages to rooms using HipChat’s v1 API
+<a class="ulink" href="https://www.hipchat.com/docs/api/method/rooms/message" target="_top">rooms/message</a>.
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">v1</code> profile is provided because it is simple to set up and the HipChat v1 API is familiar
+to many users. However, HipChat has deprecated the v1 API and is encouraging users to migrate to
+v2. Both the <code class="literal">integration</code> and <code class="literal">user</code> profiles are based on the HipChat v2 API.</p></div></div><p>If you configure multiple HipChat accounts, you either need to configure a default HipChat account
+or specify which account the notification should be sent with in the <a class="link" href="actions.html#actions-hipchat" title="HipChat Action">hipchat</a>
+action. You set <code class="literal">default_account</code> in <code class="literal">watcher.actions.hipchat.service</code> to specify a default account.</p><p>To configure HipChat accounts, set the <code class="literal">watcher.actions.hipchat.service</code> property in
+<code class="literal">elasticsearch.yml</code>. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">watcher.actions.hipchat.service:
+  default_account: hipchat-account1
+  account:
+    hipchat-account1:
+      profile: v1
+      auth_token: 3eLB803Nyp7UBmegJwP1rMdUmzk5HqnzJCgflrhv
+      message_defaults:
+        color: purple
+        format: text
+    hipchat-account2:
+      profile: integration
+      auth_token: 3eLB803Nyp7UBmegJwP1rMdUmzk5HqnzJCgflrhv
+      room: mission-control
+      message_defaults:
+        color: gray
+        format: text</pre></div><p>See the following sections information about using each profile type.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="hipchat-api-integration"></a>Using the HipChat Integration Profile</h4></div></div></div><p>You can use the <code class="literal">integration</code> profile to send messages to specific rooms. When you set an
+account’s profile to <code class="literal">integration</code>, Watcher sends the messages through HipChat’s v2
+<a class="ulink" href="https://www.hipchat.com/docs/apiv2/method/send_room_notification" target="_top">Send room notification</a> API.</p><p>When you use the <code class="literal">integration</code> profile, you need to configure a separate HipChat account in
+Watcher for each room you want to send messages—the account configuration contains a
+room-specific authentication token. Alternatively, you can use the  <a class="link" href="configuring-hipchat.html#hipchat-api-user" title="Using the HipChat User Profile"><code class="literal">user</code></a>
+or <a class="link" href="configuring-hipchat.html#hipchat-api-v1" title="Using the HipChat v1 Profile"><code class="literal">v1</code></a> profile to send messages to multiple rooms.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">integration</code> profile only supports sending messages to rooms, it does not
+support sending private messages. To notify a particular HipChat user, create an account
+that uses the <a class="link" href="configuring-hipchat.html#hipchat-api-user" title="Using the HipChat User Profile"><code class="literal">user</code></a> profile.</p></div></div><p>Before you can configure an account that uses the <code class="literal">integration</code> profile, you need to generate a
+room-specific authentication token through the HipChat admin console:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Log in to <a class="ulink" href="http://hipchat.com" target="_top">hipchat.com</a> or your HipChat server as a group administrator.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+Go to <span class="strong"><strong>Group admin &gt; Rooms</strong></span>.
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
+Click the name of the room you want to send messages to.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
+Click the <span class="strong"><strong>Tokens</strong></span> link.
+</li><li class="listitem"><p class="simpara">
+Enter a name for the token in the <span class="strong"><strong>Label</strong></span> field.
+</p><div class="informalfigure"><div class="mediaobject"><img src="images/hipchat-generate-room-token.jpg" alt="images/hipchat-generate-room-token.jpg" /></div></div></li><li class="listitem">
+Select the <span class="strong"><strong>Send Notification</strong></span> scope.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
+Click <span class="strong"><strong>Create</strong></span>.
+</li><li class="listitem"><p class="simpara">
+Copy the generated token so you can paste it into your HipChat account configuration in
+<code class="literal">elasticsearch.yml</code>.
+</p><div class="informalfigure"><div class="mediaobject"><img src="images/hipchat-copy-room-token.jpg" alt="images/hipchat-copy-room-token.jpg" /></div></div></li></ol></div><p>To configure a HipChat account that uses the <code class="literal">integration</code> profile, you must:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Set the <code class="literal">type</code> to <code class="literal">integration</code>.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+Set <code class="literal">room</code> to the name of the room you want to send messages to.
+</li><li class="listitem">
+Set <code class="literal">auth_token</code> to the room-specific authentication token.
+</li></ol></div><p>For example, the following snippet configures an account called <code class="literal">notify-monitoring</code> that
+sends messages to the <code class="literal">monitoring</code> room.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">watcher.actions.hipchat.service:
+  account:
+    notify-monitoring:
+      profile: integration
+      auth_token: 3eLB803Nyp7UBmegJwP1rMdUmzk5HqnzJCgflrhv
+      room: monitoring</pre></div><p>You can also specify defaults for the notification messages. For the complete list of attributes,
+see <a class="link" href="configuring-hipchat.html#hipchat-account-attributes" title="HipChat Account Attributes">HipChat Account Attributes</a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="hipchat-api-user"></a>Using the HipChat User Profile</h4></div></div></div><p>You can use the <code class="literal">user</code> profile to send messages to rooms as well as individual HipChat users.
+When you set an account’s profile to <code class="literal">user</code>, Watcher sends messages as a particular user
+through the HipChat v2 API.</p><p>Before you can configure an account that uses the <code class="literal">user</code> profile, you need to:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Add a HipChat user for Watcher. Watcher sends messages via this HipChat user account, so
+keep that in mind when setting the user name.
+</li><li class="listitem"><p class="simpara">
+Create an API token for the Watcher user:
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
+Log in to HipChat as the Watcher user.
+</li><li class="listitem">
+Go to <code class="literal">https://&lt;hipchat-server&gt;/account/api</code>. For example, <code class="literal">https://www.hipchat.com/account/api</code>.
+</li><li class="listitem">
+Confirm the user password.
+</li><li class="listitem"><p class="simpara">
+Enter a name for the token in the <span class="strong"><strong>Label</strong></span> field.
+</p><div class="informalfigure"><div class="mediaobject"><img src="images/hipchat-generate-user-token.jpg" alt="images/hipchat-generate-user-token.jpg" /></div></div></li></ol></div></li><li class="listitem">
+Select the <span class="strong"><strong>Send Notification</strong></span> and <span class="strong"><strong>Send Message</strong></span> scopes.
+</li><li class="listitem">
+Click <span class="strong"><strong>Create</strong></span>.
+</li><li class="listitem"><p class="simpara">
+Copy the generated token so you can paste it into your HipChat account configuration in
+<code class="literal">elasticsearch.yml</code>.
+</p><div class="informalfigure"><div class="mediaobject"><img src="images/hipchat-copy-room-token.jpg" alt="images/hipchat-copy-room-token.jpg" /></div></div></li></ol></div><p>To configure a HipChat account that uses the <code class="literal">user</code> profile, you must:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Set the <code class="literal">type</code> to <code class="literal">user</code>.
+</li><li class="listitem">
+Set <code class="literal">user</code> to the email address associated with the Watcher user.
+</li><li class="listitem">
+Set <code class="literal">auth_token</code> to the Watcher user’s authentication token.
+</li></ol></div><p>For example, the following snippet configures an account called <code class="literal">notify-monitoring</code> that
+sends messages to the <code class="literal">monitoring</code> room.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">watcher.actions.hipchat.service:
+  account:
+    notify-monitoring:
+      profile: user
+      user: watcher-user@example.com
+      auth_token: 3eLB803Nyp7UBmegJwP1rMdUmzk5HqnzJCgflrhv</pre></div><p>You can also specify defaults for the notification messages. For the complete list of attributes,
+see <a class="link" href="configuring-hipchat.html#hipchat-account-attributes" title="HipChat Account Attributes">HipChat Account Attributes</a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="hipchat-api-v1"></a>Using the HipChat v1 Profile</h4></div></div></div><p>You can use the <code class="literal">v1</code> profile to send messages to particular rooms.
+When you set an account’s profile to <code class="literal">v1</code>, Watcher sends the messages through HipChat’s v1
+<a class="ulink" href="https://www.hipchat.com/docs/api/method/rooms/message" target="_top">rooms/message</a> API.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The <code class="literal">v1</code> profile uses a deprecated API that is expected to be removed by HipChat in the
+future.</p></div></div><p>The <code class="literal">v1</code> profile only supports sending messages to rooms, it does not
+support sending private messages. To notify a particular HipChat user, create an account
+that uses the <a class="link" href="configuring-hipchat.html#hipchat-api-user" title="Using the HipChat User Profile"><code class="literal">user</code></a> profile.</p><p>Before you can configure an account that uses the <code class="literal">v1</code> profile, you need to generate a <code class="literal">v1</code> API
+token:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Log in to your HipChat server as a group admin.
+</li><li class="listitem">
+Go to <code class="literal">https://&lt;hipchat-server&gt;/admin/api</code>. For example, <code class="literal">https://hipchat.com/admin/api</code>.
+</li><li class="listitem">
+Confirm your admin password.
+</li><li class="listitem"><p class="simpara">
+Select the <span class="strong"><strong>Notification</strong></span> type.
+</p><div class="informalfigure"><div class="mediaobject"><img src="images/hipchat-generate-v1-token.jpg" alt="images/hipchat-generate-v1-token.jpg" /></div></div></li><li class="listitem">
+Enter a name for the token in the <span class="strong"><strong>Label</strong></span> field.
+</li><li class="listitem">
+Click <span class="strong"><strong>Create</strong></span>.
+</li><li class="listitem"><p class="simpara">
+Copy the generated token so you can paste it into your HipChat account configuration in
+<code class="literal">elasticsearch.yml</code>.
+</p><div class="informalfigure"><div class="mediaobject"><img src="images/hipchat-copy-v1-token.jpg" alt="images/hipchat-copy-v1-token.jpg" /></div></div></li></ol></div><p>To configure a HipChat account that uses the <code class="literal">user</code> profile, you simply:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Set the <code class="literal">type</code> to <code class="literal">v1</code>.
+</li><li class="listitem">
+Set <code class="literal">auth_token</code> to the v1 authentication token you generated.
+</li></ol></div><p>For example, the following snippet configures an account called <code class="literal">notify-monitoring</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">watcher.actions.hipchat.service:
+  account:
+    notify-monitoring:
+      profile: v1
+      auth_token: 3eLB803Nyp7UBmegJwP1rMdUmzk5HqnzJCgflrhv</pre></div><p>You can also specify defaults for the notification messages. For the complete list of attributes,
+see <a class="link" href="configuring-hipchat.html#hipchat-account-attributes" title="HipChat Account Attributes">HipChat Account Attributes</a>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="hipchat-account-attributes"></a>HipChat Account Attributes</h3></div></div></div><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><tbody><tr><td align="left" valign="top"><p>Name</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Default</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">profile</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The HipChat account profile to use:
+                                                        <code class="literal">integration</code>, <code class="literal">user</code>, or <code class="literal">v1</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">auth_token</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The authentiation token to use to access
+                                                         the HipChat API.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">host</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>api.hipchat.com</p></td><td align="left" valign="top"><p>The HipChat server hostname.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">port</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>443</p></td><td align="left" valign="top"><p>The HipChat server port number.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">room</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>_</p></td><td align="left" valign="top"><p>The room you want to send messages to.
+                                                         Must be specified if the <code class="literal">profile</code> is set
+                                                         to <code class="literal">integration</code>. Not valid for  the
+                                                         <code class="literal">user</code> or <code class="literal">vi</code> profiles.</p></td></tr><tr><td align="left" valign="top"><p>`user   `</p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The HipChat user account to use to send
+                                                         messages. Specified as an email
+                                                         address. Must be specified if the
+                                                         <code class="literal">profile</code> is set to <code class="literal">user</code>. Not valid for
+                                                         the <code class="literal">integration</code> or <code class="literal">v1</code> profiles.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">message.format</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p><code class="literal">html</code></p></td><td align="left" valign="top"><p>The format of the message: <code class="literal">text</code> or <code class="literal">html</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">message.color</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p><code class="literal">yellow</code></p></td><td align="left" valign="top"><p>The background color of the notification in
+                                                         the room</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">message.notify</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p><code class="literal">false</code></p></td><td align="left" valign="top"><p>Indicates whether people in the room should be
+                                                         actively notified</p></td></tr></tbody></table></div></div></div><div class="navfooter"><span class="prev"><a href="email-services.html">
+              « 
+              Configuring Watcher to Send Email</a>
+           
+        </span><span class="next">
+           
+          <a href="configuring-slack.html">Configuring Watcher to Send Messages to Slack
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

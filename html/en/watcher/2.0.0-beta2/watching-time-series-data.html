@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Watching Time Series Data</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0.0-beta2]" /><link rel="up" href="example-watches.html" title="Example Watches" /><link rel="prev" href="watching-marvel-data.html" title="Watching Marvel Data" /><link rel="next" href="reference.html" title="Reference" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,154 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
-</li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-link"><a href="example-watches.html">Example Watches</a></span> » <span class="breadcrumb-node">Watching Time Series Data</span></div><div class="navheader"><span class="prev"><a href="watching-marvel-data.html">
+              « 
+              Watching Marvel Data</a>
+           
+        </span><span class="next">
+           
+          <a href="reference.html">Reference
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="watching-time-series-data"></a>Watching Time Series Data</h2></div></div></div><p>If you are indexing time-series data such as logs, RSS feeds, or network traffic,
+you can use watcher to send notifications when certain events occur.</p><p>For example, you could index an RSS feed of posts on Stack Overflow that are tagged with Elasticsearch, Logstash, or Kibana, set up a watch to check daily for new posts about a problem or failure, and send an email if any are found.</p><p>The simplest way to index an RSS feed is to use <a class="ulink" href="https://www.elastic.co/products/logstash" target="_top">Logstash</a>.</p><p>To install Logstash and set up the RSS input plugin:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+<a class="ulink" href="https://www.elastic.co/downloads/logstash" target="_top">Download Logstash 1.5.0 RC4+</a> and unpack the  archive file.
+</li><li class="listitem"><p class="simpara">
+Go to the <code class="literal">logstash-&lt;logstash_version&gt;</code> directory and install the
+<a class="ulink" href="http://www.elastic.co/guide/en/logstash/current/plugins-inputs-rss.html" target="_top">RSS input</a>
+plugin:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">cd logstash-&lt;logstash_version&gt;
+bin/plugin install logstash-input-rss</pre></div></li><li class="listitem"><p class="simpara">
+Create a Logstash configuration file that uses the RSS input plugin
+to get data from an RSS/atom feed and outputs the data to Elasticsearch. For example, the following <code class="literal">rss.conf</code> file gets events from the Stack Overflow feed that are tagged with <code class="literal">elasticsearch</code>, <code class="literal">logstash</code>, or <code class="literal">kibana</code>.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">input {
+  rss {
+    url =&gt; "http://stackoverflow.com/feeds/tag/elasticsearch+or+logstash+or+kibana"
+    interval =&gt; 3600 <a id="CO19-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  }
+}
+
+output {
+  elasticsearch {
+    protocol =&gt; "http"
+    host =&gt; "localhost" <a id="CO19-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  }
+  stdout { }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Checks the feed every hour.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The hostname or IP address of the host to use to connect to your Elasticsearch cluster.
+For more information see <a class="ulink" href="http://www.elastic.co/guide/en/logstash/current/plugins-outputs-elasticsearch.html#plugins-outputs-elasticsearch-host" target="_top">Elasticsearch output</a> in the Logstash Reference.
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+Run Logstash with the <code class="literal">rss.conf</code> config file to start indexing the feed:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f rss.conf</pre></div></li></ol></div><p>Once you have Logstash set up to input data from the RSS feed into
+Elasticsearch, you can set up a watch that runs at noon each day to check for new posts that contain the words "error" or "problem".</p><p>To set up the watch, define a trigger, input, condition, and an action:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Define the watch trigger—a daily schedule that runs at 12:00 UTC time every day:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">"trigger" : {
+  "schedule" : {
+    "daily" : { "at" : "12:00" }
+  }
+}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>In Watcher, you specify times in UTC time. Don’t forget to do the conversion from your local time so the schedule triggers at the time you intend.</p></div></div></li><li class="listitem"><p class="simpara">
+Define the watch input—a search that uses a filter to constrain the results to
+the past day.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">"input" : {
+  "search" : {
+    "request" : {
+      "indices" : [ "logstash*" ],
+      "body" : {
+        "query" : {
+          "filtered" : {
+            "query" : {"match" : {"message": "error problem"}},
+            "filter" : {
+              "range" : {"@timestamp" : {"gte" : "now-1d"}}
+            }
+          }
+        }
+      }
+    }
+  }
+}</pre></div></li><li class="listitem"><p class="simpara">
+Define a watch condition to check the payload to see if the input search returned any hits. If it did, the condition resolves to <code class="literal">true</code> and the watch actions will be performed.
+</p><p class="simpara">You define the condition with the following script:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">return ctx.payload.hits.total &gt; threshold</pre></div><p class="simpara">If you store the script in a file at <code class="literal">$ES_HOME/config/scripts/threshold_hits.groovy</code>, you can then reference it by name in the watch condition. Using file-based Groovy scripts enables you to avoid using dynamic scripting. For more information see <a class="ulink" href="https://www.elastic.co/blog/running-groovy-scripts-without-dynamic-scripting" target="_top">Running Groovy Scripts without Dynamic Scripting</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">"condition" : {
+    "script" : {
+      "file" : "threshold_hits",
+      "params" : {
+        "threshold" : 0 <a id="CO20-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      }
+    }
+  },</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO20-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The threshold parameter value you want to pass to the script.
+</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>We recommend using file scripts when possible. To use inline or indexed scripts, you must <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html" target="_top">enable dynamic scripting</a> in Elasticsearch.</p></div></div></td></tr></table></div></li><li class="listitem"><p class="simpara">
+Define a watch action to send an email that contains the relevant messages from the past day as an attachment.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">"actions" : {
+  "send_email" : {
+    "email" : {
+      "to" : "&lt;username&gt;@&lt;domainname&gt;",
+      "subject" : "Somebody needs help with ELK",
+      "body" : "The attached Stack Overflow posts were tagged with Elasticsearch, Logstash, or Kibana and mentioned an error or problem.",
+      "attach_data" : true
+    }
+  }
+}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To use the email action, you must configure at least one email account in
+<code class="literal">elasticsearch.yml</code>. If you configure multiple email accounts, you need to specify which one you want to use in the email action. For more information, see <a class="link" href="email-services.html" title="Configuring Watcher to Send Email">Working with Various Email Services</a>.</p></div></div></li></ol></div><p>The complete watch looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT _watcher/watch/rss_watch
+{
+  "trigger" : {
+      "schedule" : {
+        "daily" : { "at" : "12:00" }
+    }
+  },
+  "input" : {
+    "search" : {
+      "request" : {
+        "indices" : [ "logstash*" ],
+        "body" : {
+          "query" : {
+            "filtered" : {
+              "query" : {"match" : {"message": "error problem"}},
+              "filter" : {"range" : {"@timestamp" : {"gte" : "now-1d"}}}
+            }
+          }
+        }
+      }
+    }
+  },
+  "condition" : {
+    "script" : {
+      "file" : "threshold_hits",
+      "params" : {
+        "threshold" : 0
+      }
+    }
+  },
+  "actions" : {
+    "send_email" : {
+      "email" : {
+        "to" : "&lt;username&gt;@&lt;domainname&gt;",  <a id="CO21-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "subject" : "Somebody needs help with ELK",
+        "body" : "The attached Stack Overflow posts were tagged with Elasticsearch, Logstash, or Kibana and mentioned an error or problem.",
+        "attach_data" : true
+      }
+    }
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/watching-time-series-data/1.json" target="sense">View in Sense</a><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO21-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Replace <code class="literal">&lt;username&gt;@&lt;domainname&gt;</code> with your email address to receive notifications.
+</p></td></tr></table></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>To execute a watch immediately (without waiting for the schedule to trigger), use the <a class="link" href="api-rest.html#api-rest-execute-watch" title="Execute Watch API"><code class="literal">_execute</code></a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">POST _watcher/watch/rss_watch/_execute
+{
+  "ignore_condition" : true,
+  "action_modes" : {
+    "_all" : "force_execute"
+  },
+  "record_execution" : true
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/watching-time-series-data/2.json" target="sense">View in Sense</a></div></div></div><div class="navfooter"><span class="prev"><a href="watching-marvel-data.html">
+              « 
+              Watching Marvel Data</a>
+           
+        </span><span class="next">
+           
+          <a href="reference.html">Reference
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

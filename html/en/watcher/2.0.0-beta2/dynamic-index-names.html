@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Dynamic Index Names</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0.0-beta2]" /><link rel="up" href="how-watcher-works.html" title="How Watcher Works" /><link rel="prev" href="scripts-templates.html" title="Scripts and Templates" /><link rel="next" href="installing-watcher.html" title="Installing Watcher" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,66 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-link"><a href="how-watcher-works.html">How Watcher Works</a></span> » <span class="breadcrumb-node">Dynamic Index Names</span></div><div class="navheader"><span class="prev"><a href="scripts-templates.html">
+              « 
+              Scripts and Templates</a>
+           
+        </span><span class="next">
+           
+          <a href="installing-watcher.html">Installing Watcher
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="dynamic-index-names"></a>Dynamic Index Names</h2></div></div></div><p>Several watch constructs deal with indices, including <a class="link" href="actions.html#actions-index" title="Index Action"><code class="literal">index</code> action</a>,
+the <a class="link" href="transform.html#transform-search" title="Search Transform"><code class="literal">search</code> transform</a> and the <a class="link" href="input.html#input-search" title="Search Input"><code class="literal">search</code> input</a>.
+When configuring these constructs you can set the index names to static values. In addition
+to specifying static index names, Watcher enables you to specify indexes using dynamic
+time-aware templates. These templates resolve to specific index names during the watch
+execution according to the execution time.</p><p>Dynamic index name resolution enables you to search a range of time-series indices, rather
+than searching all of your time-series indices and filtering the the results. Limiting the
+number of indices that are searched reduces the load on the cluster and improves watch
+execution performance. For example, if you are using a watch to monitor errors in your
+daily logs, you can use a dynamic index name template to restrict the search to the past
+two days.</p><p>A dynamic index name takes the following form:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">&lt;static_name{date_math_expr{date_format}}&gt;</pre></div><p>Where:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">static_name</code> is the static text part of the name
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+<code class="literal">date_math_expr</code> is a dynamic date math expression that computes the date dynamically
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<code class="literal">date_format</code> is the format in which the computed date should be rendered
+</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You must enclose dynamic index name templates within angle brackets. For example,
+      <code class="literal">&lt;logstash-{now/d-2d}&gt;</code></p></div></div><p>The following example shows different forms of dynamic index names and the final index names
+they resolve to given the execution date is 22rd March 2024.</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top"> Expression                            </th><th align="left" valign="top">Resolves to</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">&lt;logstash-{now/d}&gt;</code></p></td><td align="left" valign="top"><p><code class="literal">logstash-2024.03.22</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">&lt;logstash-{now/M}&gt;</code></p></td><td align="left" valign="top"><p><code class="literal">logstash-2024.03.01</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">&lt;logstash-{now/M{YYYY.MM}}&gt;</code></p></td><td align="left" valign="top"><p><code class="literal">logstash-2024.03</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">&lt;logstash-{now/M-1M{YYYY.MM}}&gt;</code></p></td><td align="left" valign="top"><p><code class="literal">logstash-2024.02</code></p></td></tr></tbody></table></div><p>To use the characters <code class="literal">{</code> and <code class="literal">}</code> in the static part of an index name template, escape them
+with a backslash, <code class="literal">\</code>:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">&lt;elastic\\{ON\\}-{now/M}&gt;</code> resolves to <code class="literal">elastic{ON}-2024.03.01</code>
+</li></ul></div><p>The following example shows a search input that searches the Logstash indices for the past
+three days, assuming the indices use the default Logstash index name format,
+<code class="literal">logstash-YYYY.MM.dd</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  ...
+  "input" : {
+    "search" : {
+      "request" : {
+        "indices" : [
+          "&lt;logstash-{now/d-2d}&gt;",
+          "&lt;logstash-{now/d-1d}&gt;",
+          "&lt;logstash-{now/d}&gt;"
+        ],
+        ...
+      }
+    }
+  }
+  ...
+}</pre></div><p><a id="dynamic-index-name-timezone"></a>By default, the index names are resolved base on <code class="literal">UTC</code> time zone. You can change this default at
+multiple levels:</p><p>Configuring the following setting set the default dynamic index name time zone in watcher:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">watcher.dynamic_indices.time_zone: '+01:00'</pre></div><p>You can also configure the default time zone separately on each of the construct that make
+use of it (<code class="literal">search</code> input/transform and <code class="literal">index</code> action):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">watcher.input.search.dynamic_indices.time_zone: '+01:00'</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">watcher.transform.search.dynamic_indices.time_zone: '+01:00'</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">watcher.actions.index.dynamic_indices.time_zone: '+01:00'</pre></div><p>Alternatively, each of these construct can define their own time zone within the watch
+definition.</p></div><div class="navfooter"><span class="prev"><a href="scripts-templates.html">
+              « 
+              Scripts and Templates</a>
+           
+        </span><span class="next">
+           
+          <a href="installing-watcher.html">Installing Watcher
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

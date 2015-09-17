@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting Up a Certificate Authority</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-beta2]" /><link rel="up" href="index.html" title="Shield Reference [2.0.0-beta2]" /><link rel="prev" href="troubleshooting.html" title="Troubleshooting" /><link rel="next" href="release-notes.html" title="Release Notes" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,154 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
-</li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-node">Setting Up a Certificate Authority</span></div><div class="navheader"><span class="prev"><a href="troubleshooting.html">
+              « 
+              Troubleshooting</a>
+           
+        </span><span class="next">
+           
+          <a href="release-notes.html">Release Notes
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="certificate-authority"></a>Setting Up a Certificate Authority</h1></div></div></div><p>You can set up your own Certificate Authority (CA) to sign node certificates. Using a CA
+makes it easier to manage trust within your cluster than using self-signed certificates. Each node
+only needs to trust the CA, rather that trusting all of the other nodes' certificates individually. When nodes are added to the cluster, as long as their certificates are signed by a trusted CA, the new nodes are trusted automatically. In contrast, if you use self-signed certificates, you would have to manually configure each node to trust the new node and restart Elasticsearch.</p><p>This topic shows how you can use <a class="ulink" href="https://www.openssl.org/" target="_top">OpenSSL</a> to create a self-signed CA
+certificate and sign CSRs. While it demonstrates how you can set up a CA, it does not necessarily
+address your organization’s particular security requirements. Before moving to production, you
+should consult your organization’s security  experts to discuss the security requirements for your
+use case.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Because a Certificate Authority is a central point of trust, the private keys to the
+                   CA must be protected from compromise.</p></div></div><p>To set up a CA:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Create the directory structure where the CA configuration and certificates will be stored. You
+need to create a <code class="literal">ca</code> directory and three subdirectories: <code class="literal">private</code>, <code class="literal">certs</code>, and <code class="literal">conf</code>.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">mkdir -p ca/private ca/certs ca/conf</pre></div></li><li class="listitem"><p class="simpara">
+Populate two required files, <code class="literal">serial</code> and <code class="literal">index.txt</code>.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">cd ca
+echo '01' &gt; serial
+touch index.txt</pre></div></li><li class="listitem"><p class="simpara">
+Create a CA configuration template and store it in <code class="literal">conf/caconfig.cnf</code>. You use the
+configuration template to set options for the CA that cannot be passed in from the
+command line. The following template defines a basic CA configuration you
+can use as a starting point.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">#..................................
+[ ca ]
+default_ca = CA_default
+[ CA_default ]
+copy_extensions = copy <a id="CO23-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+dir = /PATH/TO/YOUR/DIR/ca <a id="CO23-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+serial = $dir/serial
+database = $dir/index.txt
+new_certs_dir = $dir/certs
+certificate = $dir/certs/cacert.pem
+private_key = $dir/private/cakey.pem
+default_days = 712 <a id="CO23-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+default_md = sha256
+preserve = no
+email_in_dn = no
+x509_extensions = v3_ca
+name_opt = ca_default
+cert_opt = ca_default
+policy = policy_anything
+[ policy_anything ]
+countryName             = optional
+stateOrProvinceName     = optional
+localityName            = optional
+organizationName        = optional
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
+[ req ]
+default_bits = 2048 # Size of keys
+default_keyfile = key.pem # name of generated keys
+default_md = sha256 # message digest algorithm
+string_mask = nombstr # permitted characters
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+[ req_distinguished_name ]
+# Variable name Prompt string
+#------------------------- ----------------------------------
+0.organizationName = Organization Name (company)
+organizationalUnitName = Organizational Unit Name (department, division)
+emailAddress = Email Address
+emailAddress_max = 40
+localityName = Locality Name (city, district)
+stateOrProvinceName = State or Province Name (full name)
+countryName = Country Name (2 letter code)
+countryName_min = 2
+countryName_max = 2
+commonName = Common Name (hostname, IP, or your name)
+commonName_max = 64
+# Default values for the above, for consistency and less typing.
+# Variable name Value
+#------------------------ ------------------------------
+0.organizationName_default = Elasticsearch Test Org <a id="CO23-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+localityName_default = Amsterdam
+stateOrProvinceName_default = Amsterdam
+countryName_default = NL
+emailAddress_default = cacerttest@YOUR.COMPANY.TLD
+[ v3_ca ]
+basicConstraints = CA:TRUE
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer:always
+[ v3_req ]
+basicConstraints = CA:FALSE
+subjectKeyIdentifier = hash</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO23-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Copy extensions: Copies all X509 V3 extensions from a Certificate Signing Request into the
+signed certificate. With the value set to <code class="literal">copy</code>, you need to ensure the extensions and their
+values are valid for the certificate being requested prior to signing the certificate.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO23-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+CA directory: Add the full path to this newly created CA.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO23-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Certificate validity period:  The default number of days that a certificate signed by this
+CA is valid for. Note that certificates signed by a CA must expire before the CA certificate
+expires.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO23-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Certificate defaults: The <code class="literal">OrganizationName</code>, <code class="literal">localityName</code>, <code class="literal">stateOrProvinceName</code>,
+<code class="literal">countryName</code>, and <code class="literal">emailAddress</code> fields specify the default Distinguished Name information.
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+Generate a self-signed CA certificate to establish your CA as an authority. For example, the following command generates a key and certificate using the <code class="literal">caconfig.cnf</code> template. You specify
+where you want to store the CA’s private key and certificate with the <code class="literal">-keyout</code> and <code class="literal">-out</code> options, and specify how long the certificate is valid with the <code class="literal">-days</code> option.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">openssl req -new -x509 -extensions v3_ca -keyout private/cakey.pem -out certs/cacert.pem -days 1460  -config conf/caconfig.cnf</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When the CA certificate expires, trust in the CA is revoked and you need to generate a new CA certificate and re-sign your node certificates.</p></div></div><p class="simpara">When you run <code class="literal">openssl</code> to generate a CA certificate, you are prompted to enter a PEM passphrase to encrypt the CA’s private key and can override the default Distinguished Name information.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>You cannot recover the CA without the PEM passphrase.</p></div></div><p class="simpara">The following example shows what the interaction looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">openssl req -new -x509 -extensions v3_ca -keyout private/cakey.pem -out certs/cacert.pem -days 1460 -config conf/caconfig.cnf
+Generating a 2048 bit RSA private key
+.....................++++++
+.......++++++
+writing new private key to 'private/cakey.pem'
+Enter PEM pass phrase:
+Verifying - Enter PEM pass phrase:
+#-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+#-----
+Organization Name (company) [Elasticsearch Test Org]:
+Organizational Unit Name (department, division) []:.
+Email Address [cacerttest@YOUR.COMPANY.TLD]:.
+Locality Name (city, district) [Amsterdam]:.
+State or Province Name (full name) [Amsterdam]:.
+Country Name (2 letter code) [NL]:.
+Common Name (hostname, IP, or your name) []:Elasticsearch Test CA</pre></div></li></ol></div><p>Once you’ve generated a certificate for your CA, you can use it to enable trust between your nodes.
+You sign each node’s certificate using your CA, and install the CA certificate and signed node
+certificate in each node’s keystore or truststore. For more information, see
+<a class="link" href="certificate-authority.html#sign-csr" title="Signing CSRs">Signing CSRs</a> and <a class="link" href="ssl-tls.html#installing-node-certificates" title="Installing Node Certificates">Installing Node Certificates</a>.</p><h3><a id="sign-csr"></a>Signing CSRs</h3><p>You sign a node’s certificate to vouch for that node’s identity. If a node trusts your CA
+certificate, it automatically trusts any certificates you sign.</p><p>To sign a node’s certificate:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+<a class="link" href="ssl-tls.html#generate-csr" title="Creating a Certificate Signing Request">Generate a certificate signing request (CSR)</a> from the node.
+</li><li class="listitem"><p class="simpara">
+Use your CA to sign the CSR using <code class="literal">openssl</code>. For example, the following command signs
+the <code class="literal">node01.csr</code> and saves the signed certificate in <code class="literal">node01-signed.crt</code>. You must specify
+your CA’s configuration file with the <code class="literal">-config</code> option.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">openssl ca -in node01.csr -notext -out node01-signed.crt -config conf/caconfig.cnf -extensions v3_req</pre></div><p class="simpara">The signed certificate contains the node’s original unsigned certificate, your CA certificate, and
+a signature.</p></li></ol></div><p>Once you’ve signed the CSR, you need to <a class="link" href="ssl-tls.html#install-signed-cert" title="Install the Signed Certificate">install the signed certificate</a> in the node’s keystore.</p></div><div class="navfooter"><span class="prev"><a href="troubleshooting.html">
+              « 
+              Troubleshooting</a>
+           
+        </span><span class="next">
+           
+          <a href="release-notes.html">Release Notes
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Watch Definition</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0.0-beta2]" /><link rel="up" href="how-watcher-works.html" title="How Watcher Works" /><link rel="prev" href="how-watcher-works.html" title="How Watcher Works" /><link rel="next" href="watch-execution.html" title="Watch Execution" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,127 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
-</li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-link"><a href="how-watcher-works.html">How Watcher Works</a></span> » <span class="breadcrumb-node">Watch Definition</span></div><div class="navheader"><span class="prev"><a href="how-watcher-works.html">
+              « 
+              How Watcher Works</a>
+           
+        </span><span class="next">
+           
+          <a href="watch-execution.html">Watch Execution
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="watch-definition"></a>Watch Definition</h2></div></div></div><p>A watch consists of a trigger, input, condition, and the actions you want to perform when the
+watch condition is met. In addition, you can define transforms to process the watch payload
+before executing the actions.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<a class="link" href="trigger.html" title="Trigger">Trigger</a>     
+</span></dt><dd>
+Determines when the watch is checked.
+                            A watch must have a trigger.
+</dd><dt><span class="term">
+<a class="link" href="input.html" title="Input">Input</a>         
+</span></dt><dd>
+Loads data into the watch payload.
+                            If no input is specified, an empty payload is loaded.
+</dd><dt><span class="term">
+<a class="link" href="condition.html" title="Condition">Condition</a> 
+</span></dt><dd>
+Controls whether the watch actions are executed.
+                            If no condition is specified, the condition defaults to <code class="literal">always</code>.
+</dd><dt><span class="term">
+<a class="link" href="transform.html" title="Transform">Transform</a> 
+</span></dt><dd>
+Processes the watch payload to prepare it for the watch actions.
+                            You can define transforms at the watch level or define action-specific
+                            transforms. Optional.
+</dd><dt><span class="term">
+<a class="link" href="actions.html" title="Actions">Actions</a>     
+</span></dt><dd>
+Specify what happens when the watch
+                            condition is met.
+</dd></dl></div><p><a id="watch-definition-example"></a>For example, the following snippet shows a <a class="link" href="api-rest.html#api-rest-put-watch" title="PUT Watch API">Put Watch</a> request that defines
+a watch that looks for log error events:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT _watcher/watch/log_event_watch
+{
+  "metadata" : { <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "color" : "red"
+  },
+  "trigger" : { <a id="CO6-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    "schedule" : {
+      "interval" : "5m"
+    }
+  },
+  "input" : { <a id="CO6-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    "search" : {
+      "request" : {
+        "search_type" : "count",
+        "indices" : "log-events",
+        "body" : {
+          "query" : { "match" : { "status" : "error" } }
+        }
+      }
+    }
+  },
+  "condition" : { <a id="CO6-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    "script" : "return ctx.payload.hits.total &gt; 5"
+  },
+  "transform" : { <a id="CO6-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+    "search" : {
+        "request" : {
+          "indices" : "log-events",
+          "body" : {
+            "query" : { "match" : { "status" : "error" } }
+          }
+        }
+    }
+  },
+  "actions" : { <a id="CO6-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+    "my_webhook" : {
+      "webhook" : {
+        "method" : "POST",
+        "host" : "mylisteninghost",
+        "port" : 9200,
+        "path" : "/{{watch_id}}",
+        "body" : "Encountered {{ctx.payload.hits.total}} errors"
+      }
+    },
+    "email_administrator" : {
+      "email" : {
+        "to" : "sys.admino@host.domain",
+        "subject" : "Encountered {{ctx.payload.hits.total}} errors",
+        "body" : "Too many error in the system, see attached data",
+        "attach_data" : true,
+        "priority" : "high"
+      }
+    }
+  }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/watch-definition/1.json" target="sense">View in Sense</a><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Metadata  - You can attach optional static metadata to a watch.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Trigger   - This schedule trigger executes the watch every 5 minutes
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Input     - This input searches for errors in the <code class="literal">log-events</code> index and loads the response
+                into the watch payload.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Condition - This condition checks to see if there are more than 5 error events (hits in the
+                search response). If there are, execution continues.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Transform - If the watch condition is met, this transform loads all of the errors into
+                the watch payload by searching for the errors using the default search type,
+                <code class="literal">query_then_fetch</code>. All of the watch actions have access to this payload.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Actions   - This watch has two actions. The <code class="literal">my_webhook</code> action notifies a 3rd party system
+                about the problem. The <code class="literal">email_administrator</code> action sends a high priority
+                email to the system administrator. The watch payload
+                that contains the errors is attached to the email.
+</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="how-watcher-works.html">
+              « 
+              How Watcher Works</a>
+           
+        </span><span class="next">
+           
+          <a href="watch-execution.html">Watch Execution
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

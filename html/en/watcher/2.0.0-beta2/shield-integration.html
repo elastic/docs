@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Integrating Watcher with Shield</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0.0-beta2]" /><link rel="up" href="administering-watcher.html" title="Administering Watcher" /><link rel="prev" href="configuring-slack.html" title="Configuring Watcher to Send Messages to Slack" /><link rel="next" href="logstash-integration.html" title="Integrating Watcher with Logstash" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,66 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-link"><a href="administering-watcher.html">Administering Watcher</a></span> » <span class="breadcrumb-node">Integrating Watcher with Shield</span></div><div class="navheader"><span class="prev"><a href="configuring-slack.html">
+              « 
+              Configuring Watcher to Send Messages to Slack</a>
+           
+        </span><span class="next">
+           
+          <a href="logstash-integration.html">Integrating Watcher with Logstash
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="shield-integration"></a>Integrating Watcher with Shield</h2></div></div></div><p>Watcher can work alongside <a class="ulink" href="https://www.elastic.co/products/shield" target="_top">Shield</a> and integrates with it.
+This integation is expected to be extended in future releases.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Watcher 1.0.x requires Shield 1.2.2 or above</p></div></div><p>When the Watcher plugin is installed along side Shield, it will automatically register an internal
+user - <code class="literal">__watcher_user</code>. All actions taken as part of a watch execution will be executed on behalf
+of this user.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">__watcher_user</code> is internal to watcher. Sending executing API on behalf of that users
+                outside of watcher will fail (unless you specifically add such a user to any of the
+                supported realms).</p></div></div><p>In addition to that, Watcher also registers with Shield two additional cluster level privileges:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">monitor_watcher</code> - grants access to watcher <a class="link" href="api-rest.html#api-rest-stats" title="Stats API">stats</a> and
+                                          <a class="link" href="api-rest.html#api-rest-get-watch" title="Get Watch API">get</a> APIs
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+<code class="literal">manage_watcher</code> - grants access to all watcher APIs
+</li></ul></div><p>You can use the privileges above in Shield’s <a class="ulink" href="http://www.elastic.co/guide/en/shield/current/defining-roles.html" target="_top"><code class="literal">roles.yml</code></a>
+file to grant roles access to the watcher APIs. The following snippet shows an example of such role
+definition:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">watcher_admin:
+    cluster: manage_watcher</pre></div><p>Once the relevant role was defined, adding the watcher administrator user requires the exact same
+process as adding any other user to to Shield. For example, if you are using the
+<a class="ulink" href="http://www.elastic.co/guide/en/shield/current/esusers.html" target="_top"><code class="literal">esusers</code></a> realm, use the <code class="literal">esusers</code>
+<a class="ulink" href="http://www.elastic.co/guide/en/shield/current/_managing_users_in_an_esusers_realm.html" target="_top">command-line tool</a> to add
+the user:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">bin/shield/esusers useradd john -r watcher_admin</pre></div><p>Once added, this user will be able to call all the watcher APIs and by that manage all watches.</p><h3><a id="_privileges_on_watcher_internal_indices"></a>Privileges On Watcher Internal Indices</h3><p>Watcher stores its data (watches and watch history records) in its own internal indices:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">.watches</code> - an index that stores all the added watches
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<code class="literal">.watch_history-&lt;timestamp&gt;</code> - time based indices that store all the watch records
+</li></ul></div><p>All write operations on these indices are performed internally by Watcher itself and external users
+should not write directly to them. It should be considered a best practice to not grant any write
+privileges on these indices to any of the Shield users.</p><h3><a id="_handling_sensitive_information"></a>Handling Sensitive Information</h3><p>Sometimes a watch may hold sensitive information. For example, the user password that is configured
+as part of the basic authentication in the <a class="link" href="input.html#input-http-auth-basic-example" title="Http Input"><code class="literal">http</code> input</a>. In
+addition, some of watcher configuration may also hold sensitive data. When Shield is installed,
+Watcher can utilize some of the security services it provides to better secure this type of
+sensitive information.</p><h4><a id="shield-watch-data-encryption"></a>Watch Data Encryption</h4><p>By default, Watcher simply stores this sensitive data as part of the watch document in the
+<code class="literal">.watches</code> index. This means that the password can be retrieved in plain text by executing a
+document GET or any search of the available operations in elasticsearch over that index.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <a class="link" href="api-rest.html#api-rest-get-watch" title="Get Watch API">Get Watch API</a> will automatically filter out this sensitive data
+                from its response.</p></div></div><p>When Shield is installed, it is possible configure watcher to use shield and encrypt this sensitive
+data prior to indexing the watch. This can be done by:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Ensuring Shield’s <a class="ulink" href="http://www.elastic.co/guide/en/shield/current/enable-message-authentication.html" target="_top">System Key</a> is set up
+  and used
+</li><li class="listitem"><p class="simpara">
+Add the following settings in the <code class="literal">elasticsearch.yml</code> file:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">watcher.shield.encrypt_sensitive_data: true</pre></div><p class="simpara">By default (when not set), the sensitive data will be index in plain text (same behaviour as when
+shield is not installed)</p></li></ul></div><h4><a id="shield-sensitive-data-in-conf"></a>Sensitive Data in Configuration Files</h4><p>The <code class="literal">elasticsearch.yml</code> file may also hold sensitive data. For example, the SMTP credentials that
+are configured as part of the <a class="link" href="email-services.html#email-account" title="Configuring Email Accounts">email accounts</a>.</p><p>As for now, neither Watcher nor Shield provide a mechanism to encrypt settings in this file. It is
+a best practice to ensure that access to this file is limited to the user under which the
+elasticsearch instance is running.</p><p>In addition to that, When Shield is installed, these settings will be filtered out from the REST
+<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-info.html" target="_top">Nodes Info API</a>.</p></div><div class="navfooter"><span class="prev"><a href="configuring-slack.html">
+              « 
+              Configuring Watcher to Send Messages to Slack</a>
+           
+        </span><span class="next">
+           
+          <a href="logstash-integration.html">Integrating Watcher with Logstash
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

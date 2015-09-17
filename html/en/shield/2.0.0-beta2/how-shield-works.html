@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>How Shield Works</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-beta2]" /><link rel="up" href="index.html" title="Shield Reference [2.0.0-beta2]" /><link rel="prev" href="moving-on.html" title="Moving On" /><link rel="next" href="installing-shield.html" title="Installing Shield" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,61 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-node">How Shield Works</span></div><div class="navheader"><span class="prev"><a href="moving-on.html">
+              « 
+              Moving On</a>
+           
+        </span><span class="next">
+           
+          <a href="installing-shield.html">Installing Shield
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="how-shield-works"></a>How Shield Works</h1></div></div></div><p>Shield installs as a plugin into Elasticsearch. Once installed, the plugin intercepts inbound API calls in order to
+enforce authentication and authorization. The plugin can also provide encryption using Secure Sockets Layer/Transport
+Layer Security (SSL/TLS) for the network traffic to and from the Elasticsearch node. The plugin also uses the API
+interception layer that enables authentication and authorization to provide audit logging capability.</p><h3><a id="_user_authentication"></a>User Authentication</h3><p>Shield defines a known set of users in order to authenticate users that make requests. These sets of users are defined
+with an abstraction called a <span class="emphasis"><em>realm</em></span>. A realm is a user database configured for the use of the Shield plugin. The
+supported realms are <span class="emphasis"><em>esusers</em></span> and <span class="emphasis"><em>LDAP</em></span>.</p><p>In the  <span class="emphasis"><em>esusers</em></span> realm, users exist exclusively within the Elasticsearch cluster. With the <span class="emphasis"><em>esusers</em></span> realm, the
+administrator manages users with <a class="link" href="esusers.html" title="Using esusers to Authenticate Users">tools provided by Elasticsearch</a>, and all the user operations occur within
+the Elasticsearch cluster. Users authenticate with a username and password pair.</p><p>In the <span class="emphasis"><em>LDAP</em></span> realm, the administrator manages users with the tools provided by the LDAP vendor. Elasticsearch
+authenticates users by accessing the configured LDAP server. Users authenticate with a username and password pair. Shield
+also enables mapping LDAP groups to roles in Shield (more on roles below).</p><p>Your application can be a user in a Shield realm. Elasticsearch Clients authenticate to the cluster by providing a
+username and password pair (a.k.a <span class="emphasis"><em>Authentication Token</em></span>) with each request. To learn more on how different clients
+can authenticate, see <a class="link" href="configuring-clients-integrations.html" title="Configuring Clients and Integrations">Configuring Clients and Integrations</a>.</p><h3><a id="_authorization"></a>Authorization</h3><p>Shield’s data model for action authorization consists of these elements:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="emphasis"><em>Secured Resource</em></span>,   a resource against which security permissions are defined, including the cluster, an index/alias,
+                        or a set of indices/aliases in the cluster
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+<span class="emphasis"><em>Privilege</em></span>,          one or more actions that a user may execute against a secured resource. This includes named groups of
+                        actions (e.g. <span class="emphasis"><em>read</em></span>), or a set specific actions (e.g. indices:/data/read/percolate)
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
+<span class="emphasis"><em>Permissions</em></span>,        one or more privileges against a secured resource (e.g. <span class="emphasis"><em>read on the "products" index</em></span>)
 </li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
+<span class="emphasis"><em>Role</em></span>,               named sets of permissions
 </li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<span class="emphasis"><em>Users</em></span>,              entities which may be assigned zero or more roles, authorizing them to perform the actions on the secure
+                        resources described in the union of their roles
+</li></ul></div><p>A secure Elasticsearch cluster manages the privileges of users through <a class="link" href="configuring-rbac.html#roles" title="Roles, Permissions and Privileges"><span class="emphasis"><em>roles</em></span></a>. A role has a unique name and identifies
+a set of permissions that translate to privileges on resources. A user can have an arbitrary number of roles. There are
+two types of permissions: <span class="emphasis"><em>cluster</em></span> and <span class="emphasis"><em>index</em></span>. The total set of permissions that a user has is defined by union of the
+permissions in all its roles.</p><p>Depending on the realm used, Shield provides the appropriate means to assign roles to users.</p><h3><a id="_node_authentication_and_channel_encryption"></a>Node Authentication and Channel Encryption</h3><p>Nodes communicate to other nodes over port 9300. With Shield, you can use SSL/TLS to wrap this communication. When
+SSL/TLS is enabled, the nodes validate each other’s certificates, establishing trust between the nodes. This validation
+prevents unauthenticated nodes from joining the cluster. Communications between nodes in the cluster are also encrypted
+when SSL/TLS is in use.</p><p>Users are responsible for generating and installing their own certificates.</p><p>You can choose a variety of ciphers for encryption. See the <a class="link" href="ciphers.html" title="Enabling Cipher Suites for Stronger Encryption"><span class="emphasis"><em>Adding Ciphers to Java for Stronger Encryption</em></span></a>
+section for details.</p><p>For more information on how to secure nodes see <a class="link" href="securing-communications.html" title="Securing Communications with Encryption and IP Filtering">Securing Communications with Encryption and IP Filtering</a>.</p><h3><a id="_ip_filtering"></a>IP Filtering</h3><p>Shield provides IP-based access control for Elasticsearch nodes. This access control allows you to restrict which
+other servers, via their IP address, can connect to your Elasticsearch nodes and make requests. For example, you can
+configure Shield to allow access to the cluster only from your application servers. The configuration provides for
+whitelisting and blacklisting of subnets, specific IP addresses, and DNS domains. To read more about IP filtering see
+<a class="link" href="ip-filtering.html" title="Using IP Filtering">IP filtering</a>.</p><h3><a id="_auditing"></a>Auditing</h3><p>The <a class="link" href="configuring-auditing.html" title="Configuring Auditing">audit functionality</a> in a secure Elasticsearch cluster logs particular events and activity on that
+cluster. The events logged include authentication attempts, including granted and denied access.</p></div><div class="navfooter"><span class="prev"><a href="moving-on.html">
+              « 
+              Moving On</a>
+           
+        </span><span class="next">
+           
+          <a href="installing-shield.html">Installing Shield
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

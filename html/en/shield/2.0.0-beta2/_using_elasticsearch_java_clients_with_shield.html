@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using Elasticsearch Java Clients with Shield</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-beta2]" /><link rel="up" href="configuring-clients-integrations.html" title="Configuring Clients and Integrations" /><link rel="prev" href="configuring-clients-integrations.html" title="Configuring Clients and Integrations" /><link rel="next" href="_using_elasticsearch_http_rest_clients_with_shield.html" title="Using Elasticsearch HTTP/REST Clients with Shield" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,166 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
-</li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-link"><a href="configuring-clients-integrations.html">Configuring Clients and Integrations</a></span> » <span class="breadcrumb-node">Using Elasticsearch Java Clients with Shield</span></div><div class="navheader"><span class="prev"><a href="configuring-clients-integrations.html">
+              « 
+              Configuring Clients and Integrations</a>
+           
+        </span><span class="next">
+           
+          <a href="_using_elasticsearch_http_rest_clients_with_shield.html">Using Elasticsearch HTTP/REST Clients with Shield
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_using_elasticsearch_java_clients_with_shield"></a>Using Elasticsearch Java Clients with Shield</h2></div></div></div><p>Shield supports the Java <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/client/java-api/current/transport-client.html" target="_top">transport client</a> for Elasticsearch. The transport client uses the same transport protocol that the cluster nodes use for inter-node communication. It is very efficient as it does not have to marshall and unmarshall JSON requests like a typical REST client.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Using the Java Node Client with Shield is not recommended or supported.</p></div></div><h4><a id="transport-client"></a>Configuring the Transport Client to work with Shield</h4><p>To use the transport client with Shield, you need to:</p><div class="orderedlist"><a id="java-transport-client-role"></a><ol class="orderedlist" type="1"><li class="listitem">
+Configure a user with the privileges required to start the transport client. A default
+<code class="literal">transport_client</code> role is defined in <code class="literal">roles.yml</code> that grants the <code class="literal">cluster:monitor/nodes/info</code> cluster permission. The transport client uses the node info API to fetch information about the nodes in the cluster. If the client is configured to use sniffing, you need to add the
+<code class="literal">cluster:monitor/state</code> cluster permission to the <code class="literal">transport_client</code> role.
+</li><li class="listitem"><p class="simpara">
+Add the Shield JAR file (<code class="literal">shield-2.0.0-beta2-SNAPSHOT.jar</code>) to your CLASSPATH. You can download the Shield distribution and extract the JAR file manually or you can get it from the <a class="ulink" href="https://maven.elasticsearch.org/releases/org/elasticsearch/plugin/shield/2.0.0-beta2-SNAPSHOT/shield-2.0.0-beta2-SNAPSHOT.jar" target="_top">Elasticsearch Maven repository</a>.
+</p><p class="simpara">If you are using Maven, you need to add the Shield JAR file as a dependency in your project’s <code class="literal">pom.xml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-xml">&lt;project ...&gt;
+
+   &lt;repositories&gt;
+      &lt;!-- add the elasticsearch repo --&gt;
+      &lt;repository&gt;
+         &lt;id&gt;elasticsearch-releases&lt;/id&gt;
+         &lt;url&gt;https://maven.elasticsearch.org/releases&lt;/url&gt;
+         &lt;releases&gt;
+            &lt;enabled&gt;true&lt;/enabled&gt;
+         &lt;/releases&gt;
+         &lt;snapshots&gt;
+            &lt;enabled&gt;false&lt;/enabled&gt;
+         &lt;/snapshots&gt;
+      &lt;/repository&gt;
+      ...
+   &lt;/repositories&gt;
+   ...
+
+   &lt;dependencies&gt;
+      &lt;!-- add the shield jar as a dependency --&gt;
+      &lt;dependency&gt;
+         &lt;groupId&gt;org.elasticsearch.plugin&lt;/groupId&gt;
+         &lt;artifactId&gt;shield&lt;/artifactId&gt;
+         &lt;version&gt;2.0.0-beta2-SNAPSHOT&lt;/version&gt;
+      &lt;/dependency&gt;
+      ...
+   &lt;/dependencies&gt;
+   ...
+
+ &lt;/project&gt;</pre></div><p class="simpara">If you are using Gradle, you need to add the Shield JAR file as a dependency in your <code class="literal">build.gradle</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-groovy">repositories {
+  /* ... Any other repositories ... */
+
+  // Add the Elasticsearch Maven Repository
+  maven {
+    url "https://maven.elasticsearch.org/releases"
+  }
+}
+
+dependencies {
+  // Provide the Shield jar on the classpath for compilation and at runtime
+  // Note: Many projects can use the Shield jar as a runtime dependency
+  compile "org.elasticsearch.plugin:shield:2.0.0-beta2-SNAPSHOT"
+
+  /* ... */
+}</pre></div></li><li class="listitem"><p class="simpara">
+Set up the transport client. At a minimum, you must configure <code class="literal">shield.user</code> to include the name and password of your transport client user in your requests. The following snippet configures the user credentials globally—every request submitted with this client includes the <code class="literal">transport_client_user</code> credentials in its headers.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.client.transport.TransportClient;
+...
+
+TransportClient client = TransportClient.builder()
+    .settings(Settings.builder()
+        .put("cluster.name", "myClusterName")
+        .put("shield.user", "transport_client_user:changeme")
+        .put("plugin.types", "org.elasticsearch.shield.ShieldPlugin")
+        ...
+        .build())
+    .addTransportAddress(new InetSocketTransportAddress("localhost", 9300))
+    .addTransportAddress(new InetSocketTransportAddress("localhost", 9301));</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>If you configure a transport client without SSL, passwords are sent in plaintext.</p></div></div><p class="simpara">You can also add an <code class="literal">Authorization</code> header to each request. If you’ve configured global authorization credentials, the <code class="literal">Authorization</code> header overrides the global authentication credentials. This is useful when an application has multiple users who access Elasticsearch using the same client. You can set the global token to a user that only has the <code class="literal">transport_client</code> role, and add the <code class="literal">transport_client</code> role to the individual users.</p><p class="simpara">For example, the following snippet adds the <code class="literal">Authorization</code> header to a search request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.shield.authc.support.SecuredString;
+
+import static org.elasticsearch.shield.authc.support.UsernamePasswordToken.basicAuthHeaderValue;
+...
+
+TransportClient client = TransportClient.builder()
+    .settings(Settings.builder()
+        .put("cluster.name", "myClusterName")
+        .put("shield.user", "transport_client_user:changeme")
+        .put("plugin.types", "org.elasticsearch.shield.ShieldPlugin")
+        ...
+        .build())
+    .build()
+    .addTransportAddress(new InetSocketTransportAddress("localhost", 9300))
+    .addTransportAddress(new InetSocketTransportAddress("localhost", 9301));
+
+String token = basicAuthHeaderValue("test_user", new SecuredString("changeme".toCharArray()));
+
+client.prepareSearch().putHeader("Authorization", token).get();</pre></div></li><li class="listitem"><p class="simpara">
+Enable SSL to authenticate clients and encrypt communications. To enable SSL, you need to:
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+Configure the client’s keystore path and password. Client authentication requires every
+client to have a certification signed by a trusted CA.
+</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Client authentication is enabled by default. For information about disabling client authentication, see <a class="link" href="_using_elasticsearch_java_clients_with_shield.html#disabling-client-auth" title="Disabling Client Authentication">Disabling Client Authentication</a>.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.client.transport.TransportClient;
+...
+
+TransportClient client = TransportClient.builder()
+    .settings(Settings.builder()
+        .put("cluster.name", "myClusterName")
+        .put("plugin.types", "org.elasticsearch.shield.ShieldPlugin")
+        .put("shield.user", "transport_client_user:changeme")
+        .put("shield.ssl.keystore.path", "/path/to/client.jks") (1)
+        .put("shield.ssl.keystore.password", "password")
+        ...
+        .build());</pre></div><p class="simpara">(1) The <code class="literal">client.jks</code> keystore must contain the client’s signed certificate and the CA certificate.</p></li><li class="listitem"><p class="simpara">
+Enable the SSL transport by setting <code class="literal">shield.transport.ssl</code> to <code class="literal">true</code> in the client configuration.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.client.transport.TransportClient;
+...
+
+TransportClient client = TransportClient.builder()
+    .settings(Settings.builder()
+        .put("cluster.name", "myClusterName")
+        .put("shield.user", "transport_client_user:changeme")
+        .put("shield.ssl.keystore.path", "/path/to/client.jks") (1)
+        .put("shield.ssl.keystore.password", "password")
+        .put("shield.transport.ssl", "true")
+        .put("plugin.types", "org.elasticsearch.shield.ShieldPlugin")
+        ...
+        .build())
+    .addTransportAddress(new InetSocketTransportAddress("localhost", 9300))
+    .addTransportAddress(new InetSocketTransportAddress("localhost", 9301));</pre></div></li></ol></div></li></ol></div><h5><a id="disabling-client-auth"></a>Disabling Client Authentication</h5><p>If you want to disable client authentication, you can use a client-specific transport protocol. For more information, <a class="link" href="separating-node-client-traffic.html" title="Separating node to node and client traffic">Separating Node to Node and Client Traffic</a>.</p><p>If you are not using client authentication and sign the Elasticsearch node certificates with your own CA, you need to set the truststore path and password in the client configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.client.transport.TransportClient;
+...
+
+TransportClient client = TransportClient.builder()
+    .settings(Settings.builder()
+        .put("cluster.name", "myClusterName")
+        .put("shield.user", "test_user:changeme")
+        .put("shield.ssl.truststore.path", "/path/to/truststore.jks") (1)
+        .put("shield.ssl.truststore.password", "password")
+        .put("shield.transport.ssl", "true")
+        .put("plugin.types", "org.elasticsearch.shield.ShieldPlugin")
+        ...
+        .build())
+    .addTransportAddress(new InetSocketTransportAddress("localhost", 9300))
+    .addTransportAddress(new InetSocketTransportAddress("localhost", 9301));</pre></div><p>(1) The <code class="literal">truststore.jks</code> truststore must contain the certificate of the CA that signed the Elasticsearch node certificates.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you are using a public CA that is already trusted by the Java runtime, you to not need to set the <code class="literal">shield.ssl.truststore.path</code> and <code class="literal">shield.ssl.truststore.password</code>.</p></div></div><h5><a id="connecting-anonymously"></a>Connecting Anonymously <span class="added">
+      [<span class="version">1.1.0</span>]
+      <span class="detail">Added in 1.1.0.</span></span></h5><p>To enable the transport client to connect anonymously, you must assign the anonymous user the privileges defined in the  <a class="link" href="_using_elasticsearch_java_clients_with_shield.html#java-transport-client-role">transport_client</a> role. Anonymous access must also be enabled, of course. For more information, see  <a class="link" href="anonymous-access.html" title="Enabling Anonymous Access">Enabling Anonymous Access</a>.</p><h4><a id="shield-client"></a>Shield Client</h4><p>Shield exposes its own API through the <code class="literal">ShieldClient</code> class. At the moment, this API only exposes one operation, for clearing the realm caches. <code class="literal">ShieldClient</code> is a wrapper around the existing clients (any client class implementing <code class="literal">org.elasticsearch.client.Client</code>).</p><p>The following example shows how you can clear Shield’s realm caches using <code class="literal">ShieldClient</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import static org.elasticsearch.node.NodeBuilder.*;
+...
+
+Client client = ... // create the transport client
+
+ShieldClient shieldClient = new ShieldClient(client);
+ClearRealmCacheResponse response = shieldClient.authc().prepareClearRealmCache()
+    .realms("ldap1", "ad1") (1)
+    .usernames("rdeniro")
+    .get();</pre></div><p>(1) Clears the <code class="literal">ldap1</code> and <code class="literal">ad1</code> realm caches for the <code class="literal">rdeniro</code> user.</p></div><div class="navfooter"><span class="prev"><a href="configuring-clients-integrations.html">
+              « 
+              Configuring Clients and Integrations</a>
+           
+        </span><span class="next">
+           
+          <a href="_using_elasticsearch_http_rest_clients_with_shield.html">Using Elasticsearch HTTP/REST Clients with Shield
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

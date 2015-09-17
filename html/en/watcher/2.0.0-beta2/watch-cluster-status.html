@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Watch Your Cluster Health</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0.0-beta2]" /><link rel="up" href="getting-started.html" title="Getting Started" /><link rel="prev" href="watch-log-data.html" title="Watch Log Data for Errors" /><link rel="next" href="customizing-watches.html" title="Customizing Watches" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,146 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started</a></span> » <span class="breadcrumb-node">Watch Your Cluster Health</span></div><div class="navheader"><span class="prev"><a href="watch-log-data.html">
+              « 
+              Watch Log Data for Errors</a>
+           
+        </span><span class="next">
+           
+          <a href="customizing-watches.html">Customizing Watches
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="watch-cluster-status"></a>Watch Your Cluster Health</h2></div></div></div><p>You can easily configure a basic watch to monitor the health of your Elasticsearch cluster:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="watch-cluster-status.html#health-add-input" title="Schedule the Watch and Add an Input">Schedule the watch and define an input</a> that gets the cluster health status.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+<a class="link" href="watch-cluster-status.html#health-add-condition" title="Add a Condition">Add a condition</a> that evaluates the health status to determine if action
+  is required.
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<a class="link" href="watch-cluster-status.html#health-take-action" title="Take Action">Take action</a> if the cluster is RED.
+</li></ul></div><h4><a id="health-add-input"></a>Schedule the Watch and Add an Input</h4><p>A watch <a class="link" href="trigger.html#trigger-schedule" title="Schedule Trigger">schedule</a> controls how often a watch is triggered. The watch
+<a class="link" href="input.html" title="Input">input</a> gets the data that you want to evaluate.</p><p>The simplest way to define a schedule is to specify an interval. For example, the following
+schedule runs every 10 seconds:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'http://localhost:9200/_watcher/watch/cluster_health_watch' -d '{
+  "trigger" : {
+    "schedule" : { "interval" : "10s" } <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  }
+}'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Schedules are typically configured to run less frequently. This example sets the interval to
+10 seconds to you can easily see the watches being triggered. Since this watch runs so frequently,
+don’t forget to <a class="link" href="watch-cluster-status.html#health-delete" title="Delete the Watch">delete the watch</a> when you’re done experimenting.
+</p></td></tr></table></div><p>To get the status of your cluster, you can call the Elasticsearch
+<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current//cluster-health.html" target="_top">cluster health</a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/_cluster/health?pretty'</pre></div><p>To load the health status into your watch, you simply add an <a class="link" href="input.html#input-http" title="HTTP Input">HTTP input</a> that calls
+the cluster health API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'http://localhost:9200/_watcher/watch/cluster_health_watch' -d '{
+  "trigger" : {
+    "schedule" : { "interval" : "10s" }
+  },
+  "input" : {
+    "http" : {
+      "request" : {
+        "host" : "localhost",
+        "port" : 9200,
+        "path" : "/_cluster/health"
+      }
+    }
+  }
+}'</pre></div><p>If you check the watch history, you’ll see that the cluster status is recorded as part of the
+<code class="literal">watch_record</code> each time the watch executes.</p><p>For example, the following snippet gets the last ten watch records from the watch history:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/.watch_history*/_search' -d '{
+  "sort" : [
+    { "result.execution_time" : "desc" }
+  ]
+}'</pre></div><h4><a id="health-add-condition"></a>Add a Condition</h4><p>A <a class="link" href="condition.html" title="Condition">condition</a> evaluates the data you’ve loaded into the watch and determines if any
+action is required. Since you’ve defined an input that loads the cluster status into the watch,
+you can define a condition that checks that status.</p><p>For example, you could add a condition to check to see if the status is RED.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'http://localhost:9200/_watcher/watch/cluster_health_watch' -d '{
+  "trigger" : {
+    "schedule" : { "interval" : "10s" } <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  },
+  "input" : {
+    "http" : {
+      "request" : {
+       "host" : "localhost",
+       "port" : 9200,
+       "path" : "/_cluster/health"
+      }
+    }
+  },
+  "condition" : {
+    "compare" : {
+      "ctx.payload.status" : { "eq" : "red" }
+    }
+  }
+}'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Schedules are typically configured to run less frequently. This example sets the interval to
+    10 seconds to you can easily see the watches being triggered.
+</p></td></tr></table></div><p>If you check the watch history, you’ll see that the condition result is recorded as part of the
+<code class="literal">watch_record</code> each time the watch executes.</p><p>To check to see if the condition was met, you can run the following query.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/.watch_history*/_search?pretty' -d '{
+  "query" : {
+    "match" : { "result.condition.met" : true }
+  }
+}'</pre></div><h4><a id="health-take-action"></a>Take Action</h4><p>Recording <code class="literal">watch_records</code> in the watch history is nice, but the real power of Watcher is being able
+to do something in response to an alert. A watch’s <a class="link" href="actions.html" title="Actions">actions</a>  define what to do when the
+watch condition is true—you can send emails, call third-party webhooks, or write documents to an
+Elasticsearch index or log when the watch condition is met.</p><p>For example, you could add an action to index the cluster status information when the status is RED.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'http://localhost:9200/_watcher/watch/cluster_health_watch' -d '{
+  "trigger" : {
+    "schedule" : { "interval" : "10s" }
+  },
+  "input" : {
+    "http" : {
+      "request" : {
+       "host" : "localhost",
+       "port" : 9200,
+       "path" : "/_cluster/health"
+      }
+    }
+  },
+  "condition" : {
+    "compare" : {
+      "ctx.payload.status" : { "eq" : "red" }
+    }
+  },
+  "actions" : {
+    "send_email" : {
+      "email" : {
+        "to" : "&lt;username&gt;@&lt;domainname&gt;",
+        "subject" : "Cluster Status Warning",
+        "body" : "Cluster status is RED"
+      }
+    }
+  }
+}'</pre></div><p>For Watcher to send email, you must configure an email account in your <code class="literal">elasticsearch.yml</code>
+configuration file and restart Elasticsearch. To add an email account, set the
+<code class="literal">watcher.actions.email.service.account</code> property.</p><p>For example, the following snippet configures a single Gmail account named <code class="literal">work</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">watcher.actions.email.service.account:
+  work:
+    profile: gmail
+    email_defaults:
+      from: &lt;email&gt; <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    smtp:
+      auth: true
+      starttls.enable: true
+      host: smtp.gmail.com
+      port: 587
+      user: &lt;username&gt; <a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+      password: &lt;password&gt; <a id="CO5-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Replace <code class="literal">&lt;email&gt;</code> with the email address from which you want to send notifications.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Replace <code class="literal">&lt;username&gt;</code> with your Gmail user name (typically your Gmail address).
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Replace <code class="literal">&lt;password&gt;</code> with your Gmail password.
+</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you have advanced security options enabled for your email account, you need to take
+        additional steps to send email from Watcher. For more information, see
+        <a class="link" href="email-services.html" title="Configuring Watcher to Send Email">Working with Various Email Services</a>.</p></div></div><p>You can check the watch history or the <code class="literal">status_index</code> to see that the action was performed.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/.watch_history*/_search?pretty' -d '{
+  "query" : {
+    "match" : { "result.condition.met" : true }
+  }
+}'</pre></div><h4><a id="health-delete"></a>Delete the Watch</h4><p>Since the <code class="literal">cluster_health_watch</code> is configured to run every 10 seconds, make sure you delete it
+when you’re done experimenting. Otherwise, you’ll spam yourself indefinitely.</p><p>To remove the watch, use the <a class="link" href="api-rest.html#api-rest-delete-watch" title="Delete Watch API">DELETE watch</a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XDELETE 'http://localhost:9200/_watcher/watch/cluster_health_watch'</pre></div></div><div class="navfooter"><span class="prev"><a href="watch-log-data.html">
+              « 
+              Watch Log Data for Errors</a>
+           
+        </span><span class="next">
+           
+          <a href="customizing-watches.html">Customizing Watches
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

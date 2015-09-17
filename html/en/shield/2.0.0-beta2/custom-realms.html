@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Integrating with Other Authentication Systems</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-beta2]" /><link rel="up" href="setting-up-authentication.html" title="Setting Up User Authentication" /><link rel="prev" href="pki.html" title="Using PKI to Authenticate Users" /><link rel="next" href="controlling-user-cache.html" title="Controlling the User Cache" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,19 +592,63 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-beta2]
+    </a></span> » <span class="breadcrumb-link"><a href="setting-up-authentication.html">Setting Up User Authentication</a></span> » <span class="breadcrumb-node">Integrating with Other Authentication Systems</span></div><div class="navheader"><span class="prev"><a href="pki.html">
+              « 
+              Using PKI to Authenticate Users </a>
+           
+        </span><span class="next">
+           
+          <a href="controlling-user-cache.html">Controlling the User Cache
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="custom-realms"></a>Integrating with Other Authentication Systems</h2></div></div></div><p>If you are using an authentication system other than LDAP, Active Directory, or PKI, you can
+create a custom realm to interact with the system to authenticate users. You implement a custom
+realm as an Elasticsearch plugin.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="implementing-custom-realm"></a>Implementing a Custom Realm</h3></div></div></div><p>Sample code that illustrates the structure and implementation of a custom realm is provided in the
+<a class="ulink" href="https://github.com/elastic/shield-custom-realm-example" target="_top">shield-custom-realm-example</a> repository on
+GitHub. You can use this code as a starting point for creating your own realm.</p><p>To create a custom realm, you need to:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Extend <code class="literal">org.elasticsearch.shield.authc.Realm</code> to communicate with your authentication system
+to authenticate users.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+Extend <code class="literal">org.elasticsearch.shield.authc.Realm.Factory</code> to construct your new realm type.
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
+Extend <code class="literal">org.elasticsearch.shield.authc.DefaultAuthenticationFailureHandler</code> to handle authentication
+failures when using your custom realm.
+</li></ol></div><p>To package your custom realm as an Elasticsearch plugin:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Implement a plugin class for your realm that extends <code class="literal">org.elasticsearch.plugins.Plugin</code>.
+You need to:
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
+Import your realm implementation files, <code class="literal">org.elasticsearch.plugins.Plugin</code>, and
+<code class="literal">org.elasticsearch.shield.authc.AuthenticationModule</code>.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
+Implement the <code class="literal">name</code> and <code class="literal">description</code> methods.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
+Implement the <code class="literal">onModule</code> method to register the custom realm with the Shield <code class="literal">AuthenticationModule</code>
+and specify your authentication failure handler.
+</li></ol></div></li><li class="listitem">
+Create a Maven configuration file (<code class="literal">pom.xml</code>) for the plugin.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+Create a <a class="ulink" href="https://github.com/elastic/elasticsearch/blob/master/dev-tools/src/main/resources/plugin-metadata/plugin-descriptor.properties" target="_top">plugin-descriptor.properties</a> file for the plugin.
+</li></ol></div><p>For more information about Elasticsearch plugins, see <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/2.0/index.html" target="_top">Elasticsearch Plugins and Integrations</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="using-custom-realm"></a>Using a Custom Realm to Authenticate Users</h3></div></div></div><p>To use a custom realm:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Install the realm plugin on each node in the cluster. You run <code class="literal">bin/plugin</code> with the <code class="literal">--url</code>
+option and specify the location of the zip file that contains the plugin. For example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin --url file:///&lt;path&gt;/example-realm-plugin-1.0.zip --install example-realm-plugin</pre></div></li><li class="listitem">
+Add a realm configuration of the appropriate realm type to <code class="literal">elasticsearch.yml</code> in the
+<code class="literal">shield.authc.realms</code> namespace. The options you can set depend on the settings exposed by your
+custom realm. At a minimum, you must set the realm <code class="literal">type</code> to the type defined in the plugin
+implementation. If you are configuring multiple realms, you should also explicitly set the
+<code class="literal">order</code> attribute to control the order in which the realms are consulted during authentication.
+</li><li class="listitem">
+Restart Elasticsearch.
+</li></ol></div></div></div><div class="navfooter"><span class="prev"><a href="pki.html">
+              « 
+              Using PKI to Authenticate Users </a>
+           
+        </span><span class="next">
+           
+          <a href="controlling-user-cache.html">Controlling the User Cache
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>
