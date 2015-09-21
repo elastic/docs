@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Working around a bug in Windows SMB and Java on windows</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="cloud-azure.html" title="Azure Cloud Plugin" /><link rel="prev" href="cloud-azure-testing.html" title="Testing Azure" /><link rel="next" href="cloud-gce.html" title="GCE Cloud Plugin" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Azure Repository</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="repository-azure.html" title="Azure Repository Plugin" /><link rel="prev" href="repository-azure.html" title="Azure Repository Plugin" /><link rel="next" href="repository-azure-testing.html" title="Testing Azure" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -594,44 +594,85 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="cloud-azure.html">Azure Cloud Plugin</a></span> » <span class="breadcrumb-node">Working around a bug in Windows SMB and Java on windows</span></div><div class="navheader"><span class="prev"><a href="cloud-azure-testing.html">
+    </a></span> » <span class="breadcrumb-link"><a href="repository.html">Snapshot/Restore Repository Plugins</a></span> » <span class="breadcrumb-link"><a href="repository-azure.html">Azure Repository Plugin</a></span> » <span class="breadcrumb-node">Azure Repository</span></div><div class="navheader"><span class="prev"><a href="repository-azure.html">
               « 
-              Testing Azure</a>
+              Azure Repository Plugin</a>
            
         </span><span class="next">
            
-          <a href="cloud-gce.html">GCE Cloud Plugin
+          <a href="repository-azure-testing.html">Testing Azure
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cloud-azure-smb-workaround"></a>Working around a bug in Windows SMB and Java on windows<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-azure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When using a shared file system based on the SMB protocol (like Azure File Service) to store indices, the way Lucene
-open index segment files is with a write only flag. This is the <span class="emphasis"><em>correct</em></span> way to open the files, as they will only be
-used for writes and allows different FS implementations to optimize for it. Sadly, in windows with SMB, this disables
-the cache manager, causing writes to be slow. This has been described in
-<a class="ulink" href="https://issues.apache.org/jira/browse/LUCENE-6176" target="_top">LUCENE-6176</a>, but it affects each and every Java program out there!.
-This need and must be fixed outside of ES and/or Lucene, either in windows or OpenJDK. For now, we are providing an
-experimental support to open the files with read flag, but this should be considered experimental and the correct way
-to fix it is in OpenJDK or Windows.</p><p>The Azure Cloud plugin provides two storage types optimized for SMB:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">smb_mmap_fs</code>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="repository-azure-usage"></a>Azure Repository<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-azure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To enable Azure repositories, you have first to set your azure storage settings in <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+    azure:
+        storage:
+            account: your_azure_storage_account
+            key: your_azure_storage_key</pre></div><p>For information, in previous version of the azure plugin, settings were:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+    azure:
+        storage_account: your_azure_storage_account
+        storage_key: your_azure_storage_key</pre></div><p>The Azure repository supports following settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">container</code>
 </span></dt><dd>
-    a SMB specific implementation of the default
-    <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/index-modules-store.html#mmapfs" target="_top">mmap fs</a>
+    Container name. Defaults to <code class="literal">elasticsearch-snapshots</code>
 </dd><dt><span class="term">
-<code class="literal">smb_simple_fs</code>
+<code class="literal">base_path</code>
 </span></dt><dd>
-    a SMB specific implementation of the default
-    <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/index-modules-store.html#simplefs" target="_top">simple fs</a>
-</dd></dl></div><p>To use one of these specific storage types, you need to install the Azure Cloud plugin and restart the node.
-Then configure Elasticsearch to set the storage type you want.</p><p>This can be configured for all indices by adding this to the <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">index.store.type: smb_simple_fs</pre></div><p>Note that setting will be applied for newly created indices.</p><p>It can also be set on a per-index basis at index creation time:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT my_index
+    Specifies the path within container to repository data. Defaults to empty
+    (root directory).
+</dd><dt><span class="term">
+<code class="literal">chunk_size</code>
+</span></dt><dd>
+    Big files can be broken down into chunks during snapshotting if needed.
+    The chunk size can be specified in bytes or by using size value notation,
+    i.e. <code class="literal">1g</code>, <code class="literal">10m</code>, <code class="literal">5k</code>. Defaults to <code class="literal">64m</code> (64m max)
+</dd><dt><span class="term">
+<code class="literal">compress</code>
+</span></dt><dd>
+    When set to <code class="literal">true</code> metadata files are stored in compressed format. This
+    setting doesn’t affect index files that are already compressed by default.
+    Defaults to <code class="literal">false</code>.
+</dd><dt><span class="term">
+<code class="literal">read_only</code>
+</span></dt><dd>
+    Makes repository read-only. <span class="coming">
+      [<span class="version">coming in 2.1.0</span>]
+      <span class="detail">Coming in 2.1.0.</span></span>  Defaults to <code class="literal">false</code>.
+</dd></dl></div><p>Some examples, using scripts:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json"># The simpliest one
+PUT _snapshot/my_backup1
 {
-   "settings": {
-       "index.store.type": "smb_mmap_fs"
-   }
-}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/cloud-azure-smb-workaround/1.json" target="sense">View in Sense</a></div><div class="navfooter"><span class="prev"><a href="cloud-azure-testing.html">
+    "type": "azure"
+}
+
+# With some settings
+PUT _snapshot/my_backup2
+{
+    "type": "azure",
+    "settings": {
+        "container": "backup_container",
+        "base_path": "backups",
+        "chunk_size": "32m",
+        "compress": true
+    }
+}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/repository-azure-usage/1.json" target="sense">View in Sense</a><p>Example using Java:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">client.admin().cluster().preparePutRepository("my_backup3")
+    .setType("azure").setSettings(Settings.settingsBuilder()
+        .put(Storage.CONTAINER, "backup_container")
+        .put(Storage.CHUNK_SIZE, new ByteSizeValue(32, ByteSizeUnit.MB))
+    ).get();</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-azure-validation"></a>Repository validation rules<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-azure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>According to the <a class="ulink" href="http://msdn.microsoft.com/en-us/library/dd135715.aspx" target="_top">containers naming guide</a>, a container name must
+be a valid DNS name, conforming to the following naming rules:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Container names must start with a letter or number, and can contain only letters, numbers, and the dash (-) character.
+</li><li class="listitem">
+Every dash (-) character must be immediately preceded and followed by a letter or number; consecutive dashes are not
+permitted in container names.
+</li><li class="listitem">
+All letters in a container name must be lowercase.
+</li><li class="listitem">
+Container names must be from 3 through 63 characters long.
+</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="repository-azure.html">
               « 
-              Testing Azure</a>
+              Azure Repository Plugin</a>
            
         </span><span class="next">
            
-          <a href="cloud-gce.html">GCE Cloud Plugin
+          <a href="repository-azure-testing.html">Testing Azure
                »
             </a></span></div>
 <!-- end body -->

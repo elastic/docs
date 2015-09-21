@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Testing AWS</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="repository-s3.html" title="S3 Repository Plugin" /><link rel="prev" href="repository-s3-repository.html" title="S3 Repository" /><link rel="next" href="store.html" title="Store Plugins" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Scaling Out!</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="discovery-azure.html" title="Azure Discovery Plugin" /><link rel="prev" href="discovery-azure-long.html" title="Setup process for Azure Discovery" /><link rel="next" href="cloud-gce.html" title="GCE Cloud Plugin" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -594,46 +594,52 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="repository.html">Snapshot/Restore Repository Plugins</a></span> » <span class="breadcrumb-link"><a href="repository-s3.html">S3 Repository Plugin</a></span> » <span class="breadcrumb-node">Testing AWS</span></div><div class="navheader"><span class="prev"><a href="repository-s3-repository.html">
+    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="discovery-azure.html">Azure Discovery Plugin</a></span> » <span class="breadcrumb-node">Scaling Out!</span></div><div class="navheader"><span class="prev"><a href="discovery-azure-long.html">
               « 
-              S3 Repository</a>
+              Setup process for Azure Discovery</a>
            
         </span><span class="next">
            
-          <a href="store.html">Store Plugins
+          <a href="cloud-gce.html">GCE Cloud Plugin
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="repository-s3-testing"></a>Testing AWS<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-s3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Integrations tests in this plugin require working AWS configuration and therefore disabled by default. Three buckets
-and two iam users have to be created. The first iam user needs access to two buckets in different regions and the final
-bucket is exclusive for the other iam user. To enable tests prepare a config file elasticsearch.yml with the following
-content:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
-    aws:
-        access_key: AKVAIQBF2RECL7FJWGJQ
-        secret_key: vExyMThREXeRMm/b/LRzEB8jWwvzQeXgjqMX+6br
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="discovery-azure-scale"></a>Scaling Out!<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-azure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You need first to create an image of your previous machine.
+Disconnect from your machine and run locally the following commands:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh"># Shutdown the instance
+azure vm shutdown myesnode1
 
-repositories:
-    s3:
-        bucket: "bucket_name"
-        region: "us-west-2"
-        private-bucket:
-            bucket: &lt;bucket not accessible by default key&gt;
-            access_key: &lt;access key&gt;
-            secret_key: &lt;secret key&gt;
-        remote-bucket:
-            bucket: &lt;bucket in other region&gt;
-            region: &lt;region&gt;
-        external-bucket:
-            bucket: &lt;bucket&gt;
-            access_key: &lt;access key&gt;
-            secret_key: &lt;secret key&gt;
-            endpoint: &lt;endpoint&gt;
-            protocol: &lt;protocol&gt;</pre></div><p>Replace all occurrences of <code class="literal">access_key</code>, <code class="literal">secret_key</code>, <code class="literal">endpoint</code>, <code class="literal">protocol</code>, <code class="literal">bucket</code> and <code class="literal">region</code> with your settings.
-Please, note that the test will delete all snapshot/restore related files in the specified buckets.</p><p>To run test:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">mvn -Dtests.aws=true -Dtests.config=/path/to/config/file/elasticsearch.yml clean test</pre></div></div><div class="navfooter"><span class="prev"><a href="repository-s3-repository.html">
+# Create an image from this instance (it could take some minutes)
+azure vm capture myesnode1 esnode-image --delete
+
+# Note that the previous instance has been deleted (mandatory)
+# So you need to create it again and BTW create other instances.
+
+azure vm create azure-elasticsearch-cluster \
+                esnode-image \
+                --vm-name myesnode1 \
+                --location "West Europe" \
+                --vm-size extrasmall \
+                --ssh 22 \
+                --ssh-cert /tmp/azure-certificate.pem \
+                elasticsearch password1234\!\!</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>It could happen that azure changes the endpoint public IP address.
+DNS propagation could take some minutes before you can connect again using
+name. You can get from azure the IP address if needed, using:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh"># Look at Network `Endpoints 0 Vip`
+azure vm show myesnode1</pre></div></div></div><p>Let’s start more instances!</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">for x in $(seq  2 10)
+        do
+                echo "Launching azure instance #$x..."
+                azure vm create azure-elasticsearch-cluster \
+                                esnode-image \
+                                --vm-name myesnode$x \
+                                --vm-size extrasmall \
+                                --ssh $((21 + $x)) \
+                                --ssh-cert /tmp/azure-certificate.pem \
+                                --connect \
+                                elasticsearch password1234\!\!
+        done</pre></div><p>If you want to remove your running instances:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">azure vm delete myesnode1</pre></div></div><div class="navfooter"><span class="prev"><a href="discovery-azure-long.html">
               « 
-              S3 Repository</a>
+              Setup process for Azure Discovery</a>
            
         </span><span class="next">
            
-          <a href="store.html">Store Plugins
+          <a href="cloud-gce.html">GCE Cloud Plugin
                »
             </a></span></div>
 <!-- end body -->
