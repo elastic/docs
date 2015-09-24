@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using Packetbeat with Logstash</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Packetbeat reference [master]" /><link rel="up" href="index.html" title="Packetbeat reference [master]" /><link rel="prev" href="exported-fields.html" title="Exported fields" /><link rel="next" href="sample-dashboards.html" title="Sample dashboards" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Developer guide: creating a new Beat</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Beats Platform Reference [master]" /><link rel="up" href="index.html" title="Beats Platform Reference [master]" /><link rel="prev" href="_using_https_and_basic_authentication.html" title="Using HTTPS and basic authentication" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -590,74 +590,197 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Packetbeat reference
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Beats Platform Reference
       [master]
-    </a></span> » <span class="breadcrumb-node">Using Packetbeat with Logstash</span></div><div class="navheader"><span class="prev"><a href="exported-fields.html">
+    </a></span> » <span class="breadcrumb-node">Developer guide: creating a new Beat</span></div><div class="navheader"><span class="prev"><a href="_using_https_and_basic_authentication.html">
               « 
-              Exported fields</a>
+              Using HTTPS and basic authentication</a>
            
         </span><span class="next">
            
-          <a href="sample-dashboards.html">Sample dashboards
-               »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="packetbeat-logstash"></a>Using Packetbeat with Logstash<a href="https://github.com/elastic/packetbeat/edit/master/docs/logstash.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Our <a class="xref" href="packetbeat-getting-started.html" title="Getting started"><em>Getting started</em></a> guide walks you through installing the
-simplest architecture for the Packetbeat system. This is nice and easy to get
-started with and enough for networks with small traffic. It also uses the
-minimum amount of servers: a single machine running Elasticsearch + Kibana. The
-Packetbeat shippers insert the transactions directly into the Elasticsearch
-instance.</p><p>This article explains how to use Packetbeat together with Redis and Logstash to
-provide buffering and efficient indexing.  Another important advantage is that
-you have the opportunity in Logstash to modify the data captured by Packetbeat
-any way you like. You can also use Logstash’s many output plugins to integrate
-with other systems.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The Redis output is meant to be used only temporarily until the direct
-integration between Packetbeat and Logstash is implemented. We plan to use the
-same protocol as it is used between the
-<a class="ulink" href="https://github.com/elastic/logstash-forwarder" target="_top">Logstash Forwarder</a> and Logstash.</p></div></div><p><span class="inlinemediaobject"><img src="./images/packetbeat_logstash.png" alt="Integration with Logstash" /></span></p><p>In this setup, the Packetbeat shippers use the <code class="literal">RPUSH</code> Redis command to insert
-into a list stored in memory by Redis. Logstash reads from this key using the
-<a class="ulink" href="http://www.elastic.co/guide/en/logstash/current/plugins-inputs-redis.html" target="_top">Redis
-input plugin</a> and then sends the transactions to Elasticsearch using the
-<a class="ulink" href="http://www.elastic.co/guide/en/logstash/current/plugins-outputs-elasticsearch.html" target="_top">Elasticsearch
-output plugin</a>. The Elasticsearch plugin of Logstash uses the bulk API, making
-indexing very efficient.</p><p>To use this setup, disable the Elasticsearch output and use instead the
-<a class="link" href="configuration.html#redis-output" title="Redis Output">Redis output</a> in the Packetbeat configuration file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
-  redis:
-    # Uncomment out this option if you want to output to Redis.
-    # The default is false.
-    enabled: true
+          </span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_developer_guide_creating_a_new_beat"></a>Developer guide: creating a new Beat<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>This guide walks you through the steps for creating a new Elastic Beat.  The
+Beats are a collection of lightweight daemons that collect operational data from
+your servers and ship it to Logstash or Elasticsearch.  The common parts from
+all Beats are placed in the libbeat library, which contains packages for sending
+data to Elasticsearch and Logstash, for configuration file handling, for signal
+handling, for logging and so on. By using this common framework, we can ensure
+that all Beats are behaving the same and they are easy to package and run with
+common tools.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_getting_ready"></a>Getting ready<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Libbeat and all Beats are written in <a class="ulink" href="http://golang.org/" target="_top">Go</a>, so having it
+installed and knowing its basics is a prerequisite for understanding this guide.
+However, don’t worry if you are not yet a Go expert, it is a sufficiently new
+language that very few people can consider themselves experts.  In fact, several
+people learned Go by contributing to Packetbeat &amp; libbeat, including the
+original Packetbeat authors.</p><p>To exemplify this guide with a working example, we will follow the
+<a class="ulink" href="https://github.com/elastic/topbeat" target="_top">Topbeat</a> source code. Topbeat is similar to
+the <code class="literal">top</code> command line tool but instead of printing the statistics to the screen
+it periodically ships them to Elasticsearch for storage.</p><p>After having <a class="ulink" href="https://golang.org/doc/install" target="_top">installed Go</a> and having setup the
+<a class="ulink" href="https://golang.org/doc/code.html#GOPATH" target="_top">GOPATH</a> environment variable to point to
+your preferred workspace location, a simple way of getting the source code for
+Topbeat and libeat and compiling them at the same time is to do:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">go get github.com/elastic/topbeat</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_overview"></a>Overview<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>At the high level, a simple Beat like Topbeat has two main components: one that
+collects the actual data and the Publisher. They communicate via a Go channel,
+over which <span class="emphasis"><em>events</em></span> are sent. The Publisher is implemented in libbeat, so you
+typically only have to worry about the logic specific to your Beat. Besides the
+Publisher, libbeat offers common services like configuration management,
+logging, daemonizing/Windows service handling and in the future it will offer
+data processing modules like filtering or sampling.</p><p><span class="inlinemediaobject"><img src="./images/beat_overview.png" alt="Beat overview architecture" /></span></p><p>An event is a JSON like object (Golang type <code class="literal">map[string]interface{}</code>) that
+contains the collected data and which is indexed into Elasticsearch. The only
+rules are that it must contain a <code class="literal">timestamp</code> field and a <code class="literal">type</code> field. Beyond
+that, these events can contain anything and they can be created as often as
+needed.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  count":1,
+  "proc.cpu":{
+    "user":20,
+    "percent":0.983284169124877,
+    "system":0,
+    "total":20,
+    "start_time":"20:20"
+  },
+  "proc.mem":{
+    "size":333772,
+    "rss":6316,
+    "share":2996
+  },
+  "proc.name":"topbeat",
+  "proc.pid":13954,
+  "proc.ppid":10027,
+  "proc.state":"sleeping",
+  "shipper":"vagrant-ubuntu-trusty-64",
+  "timestamp":"2015-08-06T20:20:34.089Z",
+  "type":"proc"
+}</pre></div><p>Now that you have the big picture, let’s dig into the code.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_beat_specific_code"></a>Beat specific code<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Beat specific code should implement the <code class="literal">Beater</code> interface which is found in
+libbeat. This means your Beat should implement 5 methods:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">type Beater interface {
+        Config(*Beat) error
+        Setup(*Beat) error
+        Run(*Beat) error
+        Cleanup(*Beat) error
+        Stop()
+}</pre></div><p>The <code class="literal">Beat</code> parameter received by most of these methods contains data about the
+Beat, things like the name, version and common configuration options.</p><p>Let’s go through each of these methods and look at a sample implementation.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_configuration"></a>Configuration<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">Config</code> method deals with the configuration file and optionally with
+custom CLI flags.</p><p>The recommended way of handling the configuration is to create a
+<code class="literal">ConfigSettings</code> type that matches the structure of the expected configuration
+file. Here is an example configuration section for Topbeat:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">input:
+  period: 1
 
-    # Set the host and port where to find Redis.
-    host: "127.0.0.1"
-    port: 6379
-    save_topology: true</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you want Packetbeat to monitor Redis traffic, it’s better to change
-the port for the Redis instance that you use for collecting the traffic.
-Otherwise, you create a loop where the shipper captures the traffic it sends.</p></div></div><p>Then, configure Logstash to read from Redis and index into Elasticsearch. Here
-is a sample configuration that you can save under <code class="literal">/etc/logstash/conf.d/</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">input {
-    redis {
-        codec =&gt; "json"
-        host =&gt; "127.0.0.1"
-        port =&gt; 6379
-        data_type =&gt; "list"
-        key =&gt; "packetbeat"
-    }
+  procs: [".*"]</pre></div><p>And here are the corresponding Go structures, found in <code class="literal">config.go</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">type TopConfig struct {
+        Period *int64
+        Procs  *[]string
 }
 
-output {
-    elasticsearch {
-        protocol =&gt; "http"
-        host =&gt; "127.0.0.1"
-        sniffing =&gt; true
-        manage_template =&gt; false
-        index =&gt; "packetbeat-%{+YYYY.MM.dd}"
-    }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="exported-fields.html">
+type ConfigSettings struct {
+        Input TopConfig
+}</pre></div><p>Pointers are used to separate between the case when the setting is completely
+missing from the configuration file and when it has a values that matches the
+type default.</p><p>With these structures defined, the <code class="literal">Config</code> function looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (tb *Topbeat) Config(b *beat.Beat) error {
+
+        err := cfgfile.Read(&amp;tb.TbConfig, "") <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        if err != nil {
+                logp.Err("Error reading configuration file: %v", err)
+                return err
+        }
+
+        if tb.TbConfig.Input.Period != nil { <a id="CO2-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                tb.period = time.Duration(*tb.TbConfig.Input.Period) * time.Second
+        } else {
+                tb.period = 1 * time.Second
+        }
+
+        [...]
+
+        return nil
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Read the configuration.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set default values for options that are not present in the configuration
+    file.
+</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_setup"></a>Setup<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">Setup</code> method gives you the opportunity to execute things before the main
+loop, usually for initialization. In the case of Topbeat, it only assigns the Beat
+object to the Topbeat object, so it doesn’t have to be passed to all sub functions.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (tb *Topbeat) Setup(b *beat.Beat) error {
+
+        tb.Beat = b
+        return nil
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_run"></a>Run<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">Run</code> method should contain your main application loop. For Topbeat it looks
+like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (t *Topbeat) Run(b *beat.Beat) error {
+
+        t.isAlive = true
+
+        t.initProcStats()
+
+        var err error
+
+        for t.isAlive {
+                time.Sleep(t.period)
+
+                err = t.exportSystemStats()
+                if err != nil {
+                        logp.Err("Error reading system stats: %v", err)
+                }
+                [...]
+        }
+
+        return err
+}</pre></div><p>Inside the loop, Topbeat sleeps for a configured period of time and then
+captures the required data and sends it to the publisher via the <code class="literal">events</code>
+channel. The events channel is available as part of the Beat object
+through the <code class="literal">Beat.Events</code> variable.</p><p>The actual sending is done inside the <code class="literal">exportSystemStats()</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (t *Topbeat) exportSystemStats() error {
+
+        load_stat, err := GetSystemLoad()
+        if err != nil {
+                logp.Warn("Getting load statistics: %v", err)
+                return err
+        }
+
+        [...]
+
+        event := common.MapStr{ <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                "timestamp": common.Time(time.Now()), <a id="CO3-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                "type":      "system",
+                "load":      load_stat,
+                "cpu":       cpu_stat,
+                "mem":       mem_stat,
+                "swap":      swap_stat,
+        }
+
+        t.Beat.Events &lt;- event <a id="CO3-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+
+        return nil
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Creating the event object.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">timestamp</code> fields needs to be of time <code class="literal">common.Time</code>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Sending the event.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_cleanup"></a>Cleanup<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">Cleanup</code> method is executed after the main loop finishes or is interrupted
+and gives you the opportunity to release any resources you might use. For
+Topbeat, it’s completely empty:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (tb *Topbeat) Cleanup(b *beat.Beat) error {
+        return nil
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_stop"></a>Stop<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Finally, the <code class="literal">Stop</code> method is called when the Beat is signalled to stop, for
+example via the SIGTERM signal on Unix systems or via the service control
+interface on Windows. In the case of Topbeat, it simply sets <code class="literal">isAlive</code> to
+<code class="literal">false</code> which breaks the main loop.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (t *Topbeat) Stop() {
+        t.isAlive = false
+}</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_the_main_function"></a>The main function<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you follow the Topbeat model and put your Beat specific code in it’s own type
+that implements the <code class="literal">Beater</code> interface, the code from your main package becomes
+very simple:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func main() {
+
+        tb := &amp;Topbeat{}
+
+        b := beat.NewBeat(Name, Version, tb)
+
+        b.CommandLineSetup()
+
+        b.LoadConfig()
+
+        tb.Config(b)
+
+        b.Run()
+
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="_using_https_and_basic_authentication.html">
               « 
-              Exported fields</a>
+              Using HTTPS and basic authentication</a>
            
         </span><span class="next">
            
-          <a href="sample-dashboards.html">Sample dashboards
-               »
-            </a></span></div>
+          </span></div>
 <!-- end body -->
 
             </section>
