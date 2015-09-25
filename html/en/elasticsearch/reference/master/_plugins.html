@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Breaking changes in 2.1</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes.html" title="Breaking changes" /><link rel="prev" href="_java_api.html" title="Java-API" /><link rel="next" href="_search_changes_2.html" title="Search changes" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Plugins</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-3.0.html" title="Breaking changes in 3.0" /><link rel="prev" href="_settings_changes.html" title="Settings changes" /><link rel="next" href="_java_api.html" title="Java-API" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -592,22 +592,38 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-node">Breaking changes in 2.1</span></div><div class="navheader"><span class="prev"><a href="_java_api.html">
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-3.0.html">Breaking changes in 3.0</a></span> » <span class="breadcrumb-node">Plugins</span></div><div class="navheader"><span class="prev"><a href="_settings_changes.html">
               « 
-              Java-API</a>
+              Settings changes</a>
            
         </span><span class="next">
            
-          <a href="_search_changes_2.html">Search changes
+          <a href="_java_api.html">Java-API
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="breaking-changes-2.1"></a>Breaking changes in 2.1<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_2_1.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This section discusses the changes that you need to be aware of when migrating
-your application to Elasticsearch 2.1.</p></div><div class="navfooter"><span class="prev"><a href="_java_api.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_plugins"></a>Plugins<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_3_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Plugins implementing custom queries need to implement the <code class="literal">fromXContent(QueryParseContext)</code> method in their
+<code class="literal">QueryParser</code> subclass rather than <code class="literal">parse</code>. This method will take care of parsing the query from <code class="literal">XContent</code> format
+into an intermediate query representation that can be streamed between the nodes in binary format, effectively the
+query object used in the java api. Also, the query parser needs to implement the <code class="literal">getBuilderPrototype</code> method that
+returns a prototype of the <code class="literal">NamedWriteable</code> query, which allows to deserialize an incoming query by calling
+<code class="literal">readFrom(StreamInput)</code> against it, which will create a new object, see usages of <code class="literal">Writeable</code>. The <code class="literal">QueryParser</code>
+also needs to declare the generic type of the query that it supports and it’s able to parse.
+The query object can then transform itself into a lucene query through the new <code class="literal">toQuery(QueryShardContext)</code> method,
+which returns a lucene query to be executed on the data node.</p><p>Similarly, plugins implementing custom score functions need to implement the <code class="literal">fromXContent(QueryParseContext)</code>
+method in their <code class="literal">ScoreFunctionParser</code> subclass rather than <code class="literal">parse</code>. This method will take care of parsing
+the function from <code class="literal">XContent</code> format into an intermediate function representation that can be streamed between
+the nodes in binary format, effectively the function object used in the java api. Also, the query parser needs
+to implement the <code class="literal">getBuilderPrototype</code> method that returns a prototype of the <code class="literal">NamedWriteable</code> function, which
+allows to deserialize an incoming function by calling <code class="literal">readFrom(StreamInput)</code> against it, which will create a
+new object, see usages of <code class="literal">Writeable</code>. The <code class="literal">ScoreFunctionParser</code> also needs to declare the generic type of the
+function that it supports and it’s able to parse. The function object can then transform itself into a lucene
+function through the new <code class="literal">toFunction(QueryShardContext)</code> method, which returns a lucene function to be executed
+on the data node.</p></div><div class="navfooter"><span class="prev"><a href="_settings_changes.html">
               « 
-              Java-API</a>
+              Settings changes</a>
            
         </span><span class="next">
            
-          <a href="_search_changes_2.html">Search changes
+          <a href="_java_api.html">Java-API
                »
             </a></span></div>
 <!-- end body -->
