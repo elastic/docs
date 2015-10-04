@@ -86,16 +86,16 @@ jQuery(function() {
     });
 
     // Make book title in toc collapsible
-    if (jQuery('.collapsible').length > 0 ) {
-        title.addClass('collapsible').click(function() {
-          if (title.hasClass('show')) {
-            title.removeClass('show');
-            title.parent().find('.show').removeClass('show');
-          } else {
-            title.addClass('show');
-            title.parent().find('.collapsible').addClass('show');
-          }
-        });
+    if (jQuery('.collapsible').length > 0) {
+      title.addClass('collapsible').click(function() {
+        if (title.hasClass('show')) {
+          title.removeClass('show');
+          title.parent().find('.show').removeClass('show');
+        } else {
+          title.addClass('show');
+          title.parent().find('.collapsible').addClass('show');
+        }
+      });
     }
 
     // Clicking links or the version selector shouldn't fold/expand
@@ -141,7 +141,8 @@ jQuery(function() {
         if (title_container.length > 0) {
           // Exclude page title
           if (0 < items++) {
-            title_container.find('a,.added,.coming,.deprecated,.experimental').remove();
+            title_container.find('a,.added,.coming,.deprecated,.experimental')
+              .remove();
             var text = title_container.html();
             ul.append('<li><a href="#' + this.id + '">' + text + '</a></li>');
           }
@@ -161,7 +162,8 @@ jQuery(function() {
 
   var div = jQuery('div.toc');
   // Fetch toc.html unless there is already a .toc on the page
-  if (div.length == 0  && jQuery('#guide').children('.article,.book').length == 0) {
+  if (div.length == 0
+    && jQuery('#guide').children('.article,.book').length == 0) {
     var url = location.href.replace(/[^\/]+$/, 'toc.html');
     var toc = jQuery.get(url, {}, function(data) {
       jQuery('.titlepage').first().after(data);
