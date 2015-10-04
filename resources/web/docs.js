@@ -2,6 +2,69 @@ jQuery(function() {
   // Move rtp container to top right and make visible
   jQuery('#rtpcontainer').prependTo('#guide').show();
 
+  var default_sense_url = 'http://localhost:9200/_plugin/marvel/sense/';
+  var sense_url = jQuery.cookie('sense_url') || default_sense_url;
+
+  // Enable Sense widget
+  init_sense_widgets(sense_url);
+
+  function init_sense_widgets(sense_url) {
+    var base_url = window.location.href.replace(/\/[^/?]+(?:\?.*)?$/, '/');
+    jQuery('div.sense_widget')
+      .each(
+        function() {
+          var div = jQuery(this);
+          var snippet = div.attr('data-snippet');
+          div
+            .html('<a class="sense_widget" target="sense" '
+              + 'title="Open snippet in Sense" '
+              + 'href="'
+              + sense_url
+              + '?load_from='
+              + base_url
+              + snippet
+              + '">View in Sense</a>'
+              + '<a class="sense_settings" title="Configure Sense URL">&nbsp;</a>');
+          div.find('a.sense_settings').click(sense_settings);
+        });
+  }
+
+  function sense_settings(e) {
+    e.stopPropagation();
+    if (jQuery('#sense_settings').length > 0) {
+      return;
+    }
+
+    var div = jQuery('<div id="sense_settings">'
+      + '<form>'
+      + '<label for="sense_url">Enter URL of the Sense editor:</label>'
+      + '<input id="sense_url" type="text" value="'
+      + sense_url
+      + '" />'
+      + '<button id="save_url" type="button">Save</button>'
+      + '<button id="reset_url" type="button">Default URL</button>'
+      + '<p>Or <a href="https://www.elastic.co/guide/en/marvel/current/_installation.html">'
+      + 'install Marvel with the Sense editor' + '</a>.</p>' + '</form></div>');
+    jQuery('body').prepend(div);
+
+    div.find('#save_url').click(function(e) {
+      var new_url = jQuery('#sense_url').val() || default_sense_url;
+      if (new_url === default_sense_url) {
+        jQuery.cookie('sense_url', '');
+      } else {
+        jQuery.cookie('sense_url', new_url);
+      }
+      sense_url = new_url;
+      init_sense_widgets(sense_url);
+      div.remove();
+      e.stopPropagation();
+    })
+    div.find('#reset_url').click(function(e) {
+      jQuery('#sense_url').val(default_sense_url);
+      e.stopPropagation();
+    })
+  }
+
   function init_toc() {
 
     var title = jQuery('#book_title');

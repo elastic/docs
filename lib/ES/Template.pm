@@ -89,7 +89,7 @@ my $Autosense_RE = qr{
          ((?:(?!</pre>).)+?)
          </pre>
          </div>
-         <a \s class="sense_widget" \s href="sense_widget.html\?snippets/
+         <div \s class="sense_widget" \s data-snippet="
         )
         :AUTOSENSE:
     }xs;
@@ -103,7 +103,7 @@ sub _autosense_snippets {
     $filename =~ s/\.html$//;
 
     my $snippet_dir = $file->parent->subdir('snippets')->subdir($filename);
-    while ( $contents =~ s|$Autosense_RE|$1$filename/${counter}.json| ) {
+    while ( $contents =~ s|$Autosense_RE|${1}snippets/${filename}/${counter}.json| ) {
         $snippet_dir->mkpath if $counter == 1;
 
         # Remove callouts from snippet

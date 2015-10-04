@@ -156,12 +156,6 @@ sub finish_build {
         rcopy( $snippets_src, $snippets_dest )
             or die "Couldn't copy <$snippets_src> to <$snippets_dest>: $!";
     }
-
-    # Copy sense widget if custom or auto sense snippets
-    if ( -e $snippets_dest ) {
-        fcopy( 'resources/web/sense_widget.html', $dest )
-            or die "Couldn't copy <sense_widget.html> to <$dest>: $!";
-    }
 }
 
 #===================================
