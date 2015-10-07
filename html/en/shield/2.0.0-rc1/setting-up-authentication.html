@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting Up User Authentication</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-rc1]" /><link rel="up" href="index.html" title="Shield Reference [2.0.0-rc1]" /><link rel="prev" href="installing-shield.html" title="Installing Shield" /><link rel="next" href="anonymous-access.html" title="Enabling Anonymous Access" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -603,21 +603,121 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-rc1/index.html" target="_top">Shield Reference: 2.0-rc1</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-rc1]
+    </a></span> » <span class="breadcrumb-node">Setting Up User Authentication</span></div><div class="navheader"><span class="prev"><a href="installing-shield.html">
+              « 
+              Installing Shield</a>
+           
+        </span><span class="next">
+           
+          <a href="anonymous-access.html">Enabling Anonymous Access 
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="setting-up-authentication"></a>Setting Up User Authentication</h1></div></div></div><p>Authentication identifies an individual. To gain access to restricted resources, a user must prove their identity, via
+passwords, credentials, or some other means (typically referred to as authentication tokens).</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>In Shield, an authenticated user can submit requests on behalf of other another user if they
+have the appropriate <code class="literal">run_as</code> permission. For more information, see
+<a class="link" href="submitting-requests-for-other-users.html" title="Submitting Requests on Behalf of Other Users">Submitting Requests on Behalf of Other Users</a>.</p></div></div><p>A <span class="emphasis"><em>realm</em></span> is an authentication mechanism, which Shield uses to resolve and authenticate users and their roles. Shield
+currently provides four realm types:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<span class="emphasis"><em>esusers</em></span>
+</p>
+</td><td valign="top">
+<p>
+A native authentication system built into Shield and available by default. See <a class="xref" href="esusers.html" title="Using esusers to Authenticate Users">Using esusers to Authenticate Users</a>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<span class="emphasis"><em>LDAP</em></span>
+</p>
+</td><td valign="top">
+<p>
+Authentication via an external Lightweight Directory Protocol. See <a class="xref" href="ldap.html" title="Using LDAP to Authenticate Users">Using LDAP to Authenticate Users</a>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<span class="emphasis"><em>Active Directory</em></span>
+</p>
+</td><td valign="top">
+<p>
+Authentication via an external Active Directory service. See <a class="xref" href="active-directory.html" title="Using Active Directory to Authenticate Users">Using Active Directory to Authenticate Users</a>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<span class="emphasis"><em>PKI</em></span>
+</p>
+</td><td valign="top">
+<p>
+Authentication through the use of trusted X.509 certificates. See <a class="xref" href="pki.html" title="Using PKI to Authenticate Users">Using PKI to Authenticate Users </a>.
+</p>
+</td></tr></tbody></table></div><p>The <span class="emphasis"><em>esusers</em></span>, <span class="emphasis"><em>LDAP</em></span>, and <span class="emphasis"><em>Active Directory</em></span> realms authenticate using the username and password authentication tokens.</p><p>Shield also supports custom realms. If you need to integrate with another authentication system, you
+can build a custom realm plugin. For more information, see <a class="link" href="custom-realms.html" title="Integrating with Other Authentication Systems">Integrating with Other Authentication Systems</a>.</p><p>Realms live within a <span class="emphasis"><em>realm chain</em></span>. It is essentially a prioritized list of configured realms (typically of various types).
+The order of the list determines the order in which the realms will be consulted. During the authentication process,
+Shield will consult and try to authenticate the request one realm at a time. Once one of the realms successfully
+authenticates the request, the authentication is considered to be successful and the authenticated user will be associated
+with the request (which will then proceed to the authorization phase). If a realm cannot authenticate the request, the
+next in line realm in the chain will be consulted. If all realms in the chain could not authenticate the request, the
+authentication is then considered to be unsuccessful and an authentication error will be returned (as HTTP status code <code class="literal">401</code>).</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Shield attempts to authenticate to each configured realm sequentially. Some systems (e.g. Active Directory) have a
+temporary lock-out period after several successive failed login attempts. If the same username exists in multiple realms,
+unintentional account lockouts are possible. For more information, please see <a class="link" href="troubleshooting.html#trouble-shoot-active-directory" title="Active Directory">here</a>.</p></div></div><p>For example, if <code class="literal">UserA</code> exists in both Active Directory and esusers, and the Active Directory realm is checked first and
+esusers is checked second, an attempt to authenticate as <code class="literal">UserA</code> in the esusers realm would first attempt to authenticate
+against Active Directory and fail, before successfully authenticating against the esusers realm. Because authentication is
+verified on each request, the Active Directory realm would be checked - and fail - on each request for <code class="literal">UserA</code> in the esusers
+realm. In this case, while the Shield request completed successfully, the account on Active Directory would have received
+several failed login attempts, and that account may become temporarily locked out. Plan the order of your realms accordingly.</p><p>The realm chain can be configured in the <code class="literal">elasticsearch.yml</code> file. When not explicitly configured, a default chain will be
+created that only holds the <code class="literal">esusers</code> realm in it. When explicitly configured, the created chain will be the exact reflection
+of the configuration (e.g. the only realms in the chain will be those configured realms that are enabled)</p><p>The following snippet shows an example of realms configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.authc:
+
+        realms:
+
+                esusers:
+                        type: esusers
+                        order: 0
+
+                ldap1:
+                        type: ldap
+                        order: 1
+                        enabled: false
+                        url: 'url_to_ldap1'
+                        ...
+
+                ldap2:
+                        type: ldap
+                        order: 2
+                        url: 'url_to_ldap2'
+                        ...
+
+                ad1:
+                        type: active_directory
+                        order: 3
+                        url: 'url_to_ad'</pre></div><p>As can be seen above, each realm has a unique name that identifies it. There are three settings that are common to all
+realms:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">type</code> (required) - Identifies the type of the ream (currently can be <code class="literal">esusers</code>, <code class="literal">ldap</code> or <code class="literal">active_directory</code>). The realm
+                      type determines what other settings the realms should be configured with.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+<code class="literal">order</code> (optional) - Defines the priority/index of the realm within the realm chain. This will determine when the realm
+                       will be consulted during authentication.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+<code class="literal">enabled</code> (optional) - When set to <code class="literal">false</code> the realm will be disabled and will not be added to the realm chain. This is
+                         useful for debugging purposes, where one can remove a realm from the chain without deleting and
+                         losing its configuration.
+</li></ul></div><p>The realm types can roughly be categorized to two categories:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">internal</code> - Internal realm types are realms that are internal to Elasticsearch and don’t require any communication with
+               external parties - they are fully managed by shield. There can only be a maximum of one configured realm
+               per internal realm type. (Currently, only one internal realm type exists - <code class="literal">esusers</code>).
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<code class="literal">external</code> - External realm types are realms that require interaction with parties/components external to Elasticsearch,
+               typically, with enterprise level identity management systems. Unlike the <code class="literal">internal</code> realms, there can be
+               as many <code class="literal">external</code> realms as one would like - each with a unique name and different settings. (Currently
+               the only <code class="literal">external</code> realm types that exist are <code class="literal">ldap</code>, <code class="literal">active_directory</code>, and <code class="literal">pki</code>).
+</li></ul></div></div><div class="navfooter"><span class="prev"><a href="installing-shield.html">
+              « 
+              Installing Shield</a>
+           
+        </span><span class="next">
+           
+          <a href="anonymous-access.html">Enabling Anonymous Access 
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

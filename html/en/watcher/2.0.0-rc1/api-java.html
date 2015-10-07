@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Java API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0.0-rc1]" /><link rel="up" href="reference.html" title="Reference" /><link rel="prev" href="transform.html" title="Transform" /><link rel="next" href="api-rest.html" title="REST API" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -603,21 +603,207 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-rc1/index.html" target="_top">Shield Reference: 2.0-rc1</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
+      [2.0.0-rc1]
+    </a></span> » <span class="breadcrumb-link"><a href="reference.html">Reference</a></span> » <span class="breadcrumb-node">Java API</span></div><div class="navheader"><span class="prev"><a href="transform.html">
+              « 
+              Transform</a>
+           
+        </span><span class="next">
+           
+          <a href="api-rest.html">REST API
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="api-java"></a>Java API</h2></div></div></div><p>Watcher provides a Java client called WatcherClient that adds support for the Watcher APIs to the standard Java clients
+that ship with Elasticsearch (<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/client/java-api/current/transport-client.html" target="_top">Transport Client</a> or
+the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/client/java-api/current/node-client.html" target="_top">Node Client</a>).</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_installing_watcherclient"></a>Installing WatcherClient</h3></div></div></div><p>To use the <code class="literal">WatcherClient</code> you will need to make sure the <code class="literal">elasticsearch-watcher</code> JAR file is in the classpath. You can
+extract the jar from the downloaded watcher plugin itself.</p><p>If you use Maven to manage dependencies, add the following to the <code class="literal">pom.xml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-xml">&lt;project ...&gt;
+
+   &lt;repositories&gt;
+      &lt;!-- add the elasticsearch repo --&gt;
+      &lt;repository&gt;
+         &lt;id&gt;elasticsearch-releases&lt;/id&gt;
+         &lt;url&gt;http://maven.elasticsearch.org/releases&lt;/url&gt;
+         &lt;releases&gt;
+            &lt;enabled&gt;true&lt;/enabled&gt;
+         &lt;/releases&gt;
+         &lt;snapshots&gt;
+            &lt;enabled&gt;false&lt;/enabled&gt;
+         &lt;/snapshots&gt;
+      &lt;/repository&gt;
+      ...
+   &lt;/repositories&gt;
+   ...
+
+   &lt;dependencies&gt;
+      &lt;!-- add the Watcher jar as a dependency --&gt;
+      &lt;dependency&gt;
+         &lt;groupId&gt;org.elasticsearch.plugin&lt;/groupId&gt;
+         &lt;artifactId&gt;elasticsearch-watcher&lt;/artifactId&gt;
+         &lt;version&gt;2.0.0-rc1&lt;/version&gt;
+      &lt;/dependency&gt;
+      ...
+   &lt;/dependencies&gt;
+   ...
+
+ &lt;/project&gt;</pre></div><p>If you use Gradle, add the dependencies to <code class="literal">build.gradle</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-groovy">repositories {
+  /* ... Any other repositories ... */
+
+  // Add the Elasticsearch Maven Repository
+  maven {
+    url "http://maven.elasticsearch.org/releases"
+  }
+}
+
+dependencies {
+  // Provide the Watcher jar on the classpath for compilation and at runtime
+  compile "org.elasticsearch.plugin:elasticsearch-watcher:2.0.0-rc1"
+  /* ... */
+}</pre></div><p>You can manually download the <a class="ulink" href="http://maven.elasticsearch.org/releases/org/elasticsearch/plugin/elasticsearch-watcher/2.0.0-rc1/elasticsearch-2.0.0-rc1.jar" target="_top">Watcher JAR</a>
+directly from our Maven repository.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_creating_the_watcherclient"></a>Creating the WatcherClient</h3></div></div></div><p>Creating the <code class="literal">WatcherClient</code> can simply be done as the following snippet shows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.watcher.client.WatcherClient;
+...
+
+Client client = ... // create and initialize either the transport or the node client
+
+WatcherClient watcherClient = new WatcherClient(client);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-put-watch"></a>PUT Watch API</h3></div></div></div><p>The PUT watch API either registers a new watch in Watcher or update an existing one. Once registered, a new document
+will be added to the <code class="literal">.watches</code> index, representing the watch, and the watch’s trigger will immediately be registered
+with the relevant trigger engine (typically the scheduler, for the <code class="literal">schedule</code> trigger).</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Putting a watch must be done via this API only. Do not put a watch directly to the <code class="literal">.watches</code> index
+            using Elasticsearch’s Index API. When integrating with Shield, a best practice is to make sure
+            no <code class="literal">write</code> privileges are granted to anyone over the <code class="literal">.watches</code> API.</p></div></div><p>The following example adds an watch with the <code class="literal">my-watch</code> id that has the following qualities:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The watch schedule triggers every minute.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+The watch search input finds any 404 HTTP responses that occurred in the past five minutes.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+The watch condition checks the search results for 404s.
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
+The watch action sends an email if there are any 404s.
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">WatchSourceBuilder watchSourceBuilder = WatchSourceBuilders.watchBuilder();
+
+// Set the trigger
+watchSourceBuilder.trigger(TriggerBuilders.schedule(Schedules.cron("0 0/1 * * * ?")));
+
+// Create the search request to use for the input
+SearchRequest request = Requests.searchRequest("idx").source(searchSource()
+    .query(filteredQuery(matchQuery("response", 404), boolFilter()
+        .must(rangeFilter("date").gt("{{ctx.trigger.scheduled_time}}"))
+        .must(rangeFilter("date").lt("{{ctx.execution_time}}")))));
+
+// Set the input
+watchSourceBuilder.input(new SearchInput(request, null));
+
+// Set the condition
+watchSourceBuilder.condition(new ScriptCondition(Script.inline("ctx.payload.hits.total &gt; 1").build()));
+
+// Create the email template to use for the action
+EmailTemplate.Builder emailBuilder = EmailTemplate.builder();
+emailBuilder.to("someone@domain.host.com");
+emailBuilder.subject("404 recently encountered");
+EmailAction.Builder emailActionBuilder = EmailAction.builder(emailBuilder.build());
+
+// Add the action
+watchSourceBuilder.addAction("email_someone", emailActionBuilder.build());
+
+PutWatchResponse putWatchResponse = watcherClient.preparePutWatch("my-watch")
+    .setSource(watchSourceBuilder)
+    .get();</pre></div><p>While the above snippet flashes out all the concrete classes that make our watch, using the
+available builder classes along with static imports can significantly simplify and compact
+your code:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">PutWatchResponse putWatchResponse = watcherClient.preparePutWatch("my-watch")
+    .setSource(watchBuilder()
+        .trigger(schedule(cron("0 0/1 * * * ?")))
+        .input(searchInput(searchRequest("idx").source(searchSource()
+            .query(filteredQuery(matchQuery("response", 404), boolFilter()
+                .must(rangeFilter("date").gt("{{ctx.trigger.scheduled_time}}"))
+                .must(rangeFilter("date").lt("{{ctx.execution_time}}")))))))
+        .condition(scriptCondition("ctx.payload.hits.total &gt; 1"))
+        .addAction("email_someone", emailAction(EmailTemplate.builder()
+            .to("someone@domain.host.com")
+            .subject("404 recently encountered"))))
+    .get();</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Use <code class="literal">TriggerBuilders</code> and <code class="literal">Schedules</code> classes to define the trigger
 </li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
+Use <code class="literal">InputBuilders</code> class to define the input
 </li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
+Use <code class="literal">ConditionBuilders</code> class to define the condition
 </li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+Use <code class="literal">ActionBuilders</code> to define the actions
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-get-watch"></a>Get Watch API</h3></div></div></div><p>This API retrieves a watch by its id.</p><p>The following example gets a watch with <code class="literal">my-watch</code> id:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">GetWatchResponse getWatchResponse = watcherClient.prepareGetWatch("my-watch").get();</pre></div><p>You can access the watch definition by accessing the source of the response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">XContentSource source = getWatchResponse.getSource();</pre></div><p>The <code class="literal">XContentSource</code> provides you methods to explore the source:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map&lt;String, Object&gt; map = source.getAsMap();</pre></div><p>Or get a specific value associated with a known key:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">String host = source.getValue("input.http.request.host");</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-delete-watch"></a>Delete Watch API</h3></div></div></div><p>The DELETE watch API removes a specific watch (identified by its <code class="literal">id</code>) from Watcher. Once removed, the document
+representing the watchin the <code class="literal">.watches</code> index will be gone and it will never be executed again.</p><p>Please not that deleting a watch <span class="strong"><strong>does not</strong></span> delete any watch execution records related to this watch from
+the <a class="link" href="watch-history.html" title="Monitoring Watch Execution">Watch History</a>.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Deleting a watch must be done via this API only. Do not delete the watch directly from the <code class="literal">.watches</code> index
+            using Elasticsearch’s DELETE Document API. When integrating with Shield, a best practice is to make sure
+            no <code class="literal">write</code> privileges are granted to anyone over the <code class="literal">.watches</code> API.</p></div></div><p>The following example deletes a watch with the <code class="literal">my-watch</code> id:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">DeleteWatchResponse deleteWatchResponse = watcherClient.prepareDeleteWatch("my-watch").get();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-execute-watch"></a>Execute Watch API</h3></div></div></div><p>This API forces the execution of a watch stored in the <code class="literal">.watches</code> index.
+It can be used to test a watch without executing all the actions or by ignoring the condition.
+The response contains a <code class="literal">BytesReference</code> that represents the record that would be written to the <code class="literal">.watch_history</code> index.</p><p>The following example executes a watch with the name <code class="literal">my-watch</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ExecuteWatchResponse executeWatchResponse = watcherClient.prepareExecuteWatch("my-watch")
+
+    // Will execute the actions no matter what the condition returns
+    .setIgnoreCondition(true)
+
+    // A map containing alternative input to use instead of the input result from the watch's input
+    .setAlternativeInput(new HashMap&lt;String, Object&gt;())
+
+    // Trigger data to use (Note that "scheduled_time" is not provided to the ctx.trigger by this
+    // execution method so you may want to include it here)
+    .setTriggerData(new HashMap&lt;String, Object&gt;())
+
+    // Simulating the "email_admin" action while ignoring its throttle state. Use
+    // "_all" to set the action execution mode to all actions
+    .setActionMode("_all", ActionExecutionMode.FORCE_SIMULATE)
+
+    // If the execution of this watch should be written to the `.watch_history` index and reflected
+    // in the persisted Watch
+    .setRecordExecution(false)
+
+    .get()</pre></div><p>Once the response is returned, you can explore it by getting execution record source:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">XContentSource source = executeWatchResponse.getRecordSource();</pre></div><p>The <code class="literal">XContentSource</code> provides you methods to explore the source:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map&lt;String, Object&gt; map = source.getAsMap();</pre></div><p>Or get a specific value associated with a known key:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">String actionId = source.getValue("result.actions.0.id");</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-ack-watch"></a>Ack Watch API</h3></div></div></div><p><a class="link" href="actions.html#actions-ack-throttle" title="Acknowledgement and Throttling">Acknowledging</a> a watch enables you to manually throttle
+execution of the watch’s actions. An action’s <span class="emphasis"><em>acknowledgement state</em></span> is stored in the
+<code class="literal">_status.actions.&lt;id&gt;.ack.state</code> structure.</p><p>The current status of a watch and the state of its actions is returned with the watch
+definition when you call the <a class="link" href="api-java.html#api-java-get-watch" title="Get Watch API">Get Watch API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">GetWatchResponse getWatchResponse = watcherClient.prepareGetWatch("my-watch").get();
+String state = getWatchResponse.getStatus().actionStatus("my-action").ackStatus().state();</pre></div><p>The action state of a newly-created watch is <code class="literal">awaits_successful_execution</code>. When the watch
+runs and its condition is met, the value changes to <code class="literal">ackable</code>. Acknowledging the action
+(using the ACK API) sets this value to <code class="literal">acked</code>.</p><p>When an action state is set to <code class="literal">acked</code>, further executions of that action are throttled
+until its state is reset to <code class="literal">awaits_successful_execution</code>. This happens when the watch’s
+condition is checked and is not met (the condition evaluates to <code class="literal">false</code>).</p><p>The following snippet shows how to acknowledge a particular action. You specify the IDs of
+the watch and the action you want to acknowledge—in this example <code class="literal">my-watch</code> and <code class="literal">my-action</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AckWatchResponse ackResponse = watcherClient.prepareAckWatch("my-watch", "my-action").get();</pre></div><p>As a response to this request, the status of the watch and the state of the action will be
+returned in the <code class="literal">AckWatchResponse</code> object</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Watch.Status status = ackResponse.getStatus();
+ActionStatus actionStatus = status.actionStatus("my-action");
+ActionStatus.AckStatus ackStatus = actionStatus.ackStatus();
+ActionStatus.AckStatus.State ackState = ackStatus.state();</pre></div><p>You can acknowledge multiple actions:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AckWatchResponse ackResponse = watcherClient.prepareAckWatch("my-watch")
+  .setActionIds("action1", "action2")
+  .get();</pre></div><p>To acknowledge all of a watch’s actions, specify <code class="literal">_all</code> as the action ID or simply omit the
+actions altogether.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AckWatchResponse ackResponse = watcherClient.prepareAckWatch("my-watch").get();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AckWatchResponse ackResponse = watcherClient.prepareAckWatch("my-watch", "_all").get();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-activate-watch"></a>Activate Watch API</h3></div></div></div><p>A watch can be either <a class="link" href="watch-active-state.html" title="Watch Active State">active or inactive</a>. This API enables
+you to activate a currently inactive watch.</p><p>The status of an inactive watch is returned with the watch definition
+when you call the <a class="link" href="api-java.html#api-java-get-watch" title="Get Watch API">Get Watch API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">GetWatchResponse getWatchResponse = watcherClient.prepareGetWatch("my-watch").get();
+boolean active = getWatchResponse.getStatus().state().isActive();
+assert !active;</pre></div><p>You can activate the watch by executing the following API call:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ActivateWatchResponse activateResponse = watcherClient.prepareActivateWatch("my-watch", true).get();
+boolean active = activateResponse.getStatus().state().isActive();
+assert active;</pre></div><p>The new state of the watch is returned as part of its overall status.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-deactivate-watch"></a>Deactivate Watch API</h3></div></div></div><p>A watch can be either <a class="link" href="watch-active-state.html" title="Watch Active State">active or inactive</a>. This API enables
+you to deactivate a currently active watch.</p><p>The status of an active watch is returned with the watch definition
+when you call the <a class="link" href="api-java.html#api-java-get-watch" title="Get Watch API">Get Watch API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">GetWatchResponse getWatchResponse = watcherClient.prepareGetWatch("my-watch").get();
+boolean active = getWatchResponse.getStatus().state().isActive();
+assert active;</pre></div><p>You can deactivate the watch by executing the following API call:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ActivateWatchResponse activateResponse = watcherClient.prepareActivateWatch("my-watch", false).get();
+boolean active = activateResponse.getStatus().state().isActive();
+assert !active;</pre></div><p>The new state of the watch is returned as part of its overall status.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-stats"></a>Stats API</h3></div></div></div><p>The Watcher <code class="literal">stats</code> API returns information on the aspects of Watcher on your cluster.</p><p>The following example queries the <code class="literal">stats</code> API :</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">WatcherStatsResponse watcherStatsResponse = watcherClient.prepareWatcherStats().get();</pre></div><p>A successful call returns a response structure that can be accessed as shown:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">WatcherBuild build = watcherStatsResponse.getBuild();
+
+// The Version of watcher currently running
+WatcherVersion version = watcherStatsResponse.getVersion();
+
+// The current size of the watcher execution queue
+long executionQueueSize = watcherStatsResponse.getExecutionQueueSize();
+
+// The maximum size the watch execution queue has grown to
+long executionQueueMaxSize = watcherStatsResponse.getWatchExecutionQueueMaxSize();
+
+// The total number of watches registered in the system
+long totalNumberOfWatches = watcherStatsResponse.getWatchesCount();
+
+// Watcher state (STARTING,STOPPED or STARTED)
+WatcherState watcherState = watcherStatsResponse.getWatcherState();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-service"></a>Service API</h3></div></div></div><p>The <code class="literal">service</code> watcher API allows the control of stopping and starting the watcher service.
+The following example starts the watcher service:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">WatcherServiceResponse watcherServiceResponse = watcherClient.prepareWatchService().start().get();</pre></div><p>The following example stops the watcher service:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">WatcherServiceResponse watcherServiceResponse = watcherClient.prepareWatchService().stop().get();</pre></div><p>The following example restarts the watcher service:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">WatcherServiceResponse watcherServiceResponse = watcherClient.prepareWatchService().restart().get();</pre></div></div></div><div class="navfooter"><span class="prev"><a href="transform.html">
+              « 
+              Transform</a>
+           
+        </span><span class="next">
+           
+          <a href="api-rest.html">REST API
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

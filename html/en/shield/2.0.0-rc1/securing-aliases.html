@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Granting Privileges for Indices &amp; Aliases</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-rc1]" /><link rel="up" href="configuring-rbac.html" title="Configuring Role-based Access Control" /><link rel="prev" href="_granting_privileges_for_specific_actions.html" title="Granting Privileges for Specific Actions" /><link rel="next" href="mapping-roles.html" title="Mapping Users and Groups to Roles" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -603,21 +603,58 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-rc1/index.html" target="_top">Shield Reference: 2.0-rc1</a>
-</li><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
-</li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-rc1]
+    </a></span> » <span class="breadcrumb-link"><a href="configuring-rbac.html">Configuring Role-based Access Control</a></span> » <span class="breadcrumb-node">Granting Privileges for Indices &amp; Aliases</span></div><div class="navheader"><span class="prev"><a href="_granting_privileges_for_specific_actions.html">
+              « 
+              Granting Privileges for Specific Actions</a>
+           
+        </span><span class="next">
+           
+          <a href="mapping-roles.html">Mapping Users and Groups to Roles
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="securing-aliases"></a>Granting Privileges for Indices &amp; Aliases</h2></div></div></div><p>Elasticsearch allows to execute operations against <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/indices-aliases.html" target="_top">index aliases</a>,
+which are effectively virtual indices. An alias points to one or more indices, holds metadata and potentially a filter.
+Shield treats aliases and indices the same. Privileges for indices actions are granted on specific indices or aliases.
+In order for an indices action to be authorized by Shield, the user that executes it needs to have permissions for that
+action on all the specific indices or aliases that the request relates to.</p><p>Let’s look at an example. Assuming we have an index called <code class="literal">2015</code>, an alias that points to it called <code class="literal">current_year</code>,
+and a user with the following role:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">current_year_read:
+  indices:
+    '2015': read</pre></div><p>The user attempts to retrieve a document from <code class="literal">current_year</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/current_year/logs/1'</pre></div><p>The above request gets rejected, although the user has read permissions on the concrete index that the <code class="literal">current_year</code>
+alias points to. The correct permission would be as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">current_year_read:
+  indices:
+    'current_year': read</pre></div><h4><a id="_managing_aliases"></a>Managing aliases</h4><p>Unlike creating indices, which requires <code class="literal">create_index</code> privilege, adding/removing/retrieving aliases requires
+<code class="literal">manage_aliases</code> permission. Aliases can be added to an index directly as part of the index creation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XPUT localhost:9200/2015 -d '{
+    "aliases" : {
+        "current_year" : {}
+    }
+}'</pre></div><p>or via the dedicated aliases api if the index already exists:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XPOST 'http://localhost:9200/_aliases' -d '
+{
+    "actions" : [
+        { "add" : { "index" : "2015", "alias" : "current_year" } }
+    ]
+}'</pre></div><p>The above requests both require <code class="literal">manage_aliases</code> privilege on the alias name as well as the targeted index, as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">admin:
+  indices:
+    '20*,current_year': create_index,manage_aliases</pre></div><p>Note also that the <code class="literal">manage</code> privilege includes both <code class="literal">create_index</code> and <code class="literal">manage_aliases</code> in addition to all of the other
+management related privileges:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">admin:
+  indices:
+    '20*,current_year': manage</pre></div><p>The index aliases api allows also to delete aliases from existing indices, as follows. The privileges required for such
+a request are the same as above. Both index and alias need the <code class="literal">manage_aliases</code> permission.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XPOST 'http://localhost:9200/_aliases' -d '
+{
+    "actions" : [
+        { "delete" : { "index" : "2015", "alias" : "current_year" } }
+    ]
+}'</pre></div><h4><a id="_filtered_aliases"></a>Filtered aliases</h4><p>Aliases can hold a filter, which allows to select a subset of documents that can be accessed out of all the documents that
+the physical index contains. Filtered aliases allow to mimic document level security, but have limitations. Please read
+the <a class="link" href="limitations.html#limitations-filtered-aliases" title="Filtered Index Aliases">limitations</a> section to know more.</p></div><div class="navfooter"><span class="prev"><a href="_granting_privileges_for_specific_actions.html">
+              « 
+              Granting Privileges for Specific Actions</a>
+           
+        </span><span class="next">
+           
+          <a href="mapping-roles.html">Mapping Users and Groups to Roles
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

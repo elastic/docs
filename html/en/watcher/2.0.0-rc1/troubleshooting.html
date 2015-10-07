@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Troubleshooting</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0.0-rc1]" /><link rel="up" href="index.html" title="Elasticsearch Watcher [2.0.0-rc1]" /><link rel="prev" href="api-rest.html" title="REST API" /><link rel="next" href="release-notes.html" title="Release Notes" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -603,21 +603,68 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-rc1/index.html" target="_top">Shield Reference: 2.0-rc1</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
+      [2.0.0-rc1]
+    </a></span> » <span class="breadcrumb-node">Troubleshooting</span></div><div class="navheader"><span class="prev"><a href="api-rest.html">
+              « 
+              REST API</a>
+           
+        </span><span class="next">
+           
+          <a href="release-notes.html">Release Notes
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="troubleshooting"></a>Troubleshooting</h1></div></div></div><p>Here are some common issues you might encounter while using Watcher. If you don’t see a solution
+to your problem here, post a question to the <a class="ulink" href="https://discuss.elastic.co/c/watcher" target="_top">Watcher Discussion Forum</a>.</p><h3><a id="_troubleshooting_a_new_watcher_installation"></a>Troubleshooting a New Watcher Installation</h3><p>If Watcher or Elasticsearch fail to start up properly after installation:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Make sure you are running Elasticsearch 1.5 or later.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+Make sure the License plugin is installed on every node in the cluster.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+If you are using Shield, make sure you are running Shield 1.2.2 or later.
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
+Make sure Watcher is installed on every node in the cluster.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
+Make sure all plugin versions are compatible with the Elasticsearch version.
+</li></ul></div><h3><a id="_logstash_can_8217_t_connect_to_elasticsearch_after_installing_watcher"></a>Logstash Can’t Connect to Elasticsearch after Installing Watcher</h3><p>By default, Logstash uses the <code class="literal">node</code> protocol. When you use the node protocol, the Logstash
+instance joins the Elasticsearch cluster. Because Watcher requires all instances in the cluster
+to have the License plugin, Logstash cannot join the cluster unless it has the License plugin.
+You can <a class="link" href="logstash-integration.html" title="Integrating Watcher with Logstash">install the Logstash License plugin</a> or use the <code class="literal">transport</code> or
+<code class="literal">http</code> protocol to ship data to Elasticsearch.</p><h3><a id="_dynamic_mapping_error_when_trying_to_add_a_watch"></a>Dynamic Mapping Error When Trying to Add a Watch</h3><p>If you get the error <span class="emphasis"><em>Dynamic Mapping is Disabled</em></span> when you try to add a watch, verify that the
+index mappings for the .watches index are available. You can do that by submitting the following
+request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET .watches/_mapping</pre></div><a class="sense_widget" href="sense_widget.html?snippets/troubleshooting/1.json" target="sense">View in Sense</a><p>If the index mappings are missing, follow these steps to restore the correct mappings:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Stop the node.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
+Add the configuration setting <code class="literal">watcher.index.rest.direct_access : true</code> to <code class="literal">elasticsearch.yml</code>.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+Restart the node.
+</li><li class="listitem"><p class="simpara">
+Delete the <code class="literal">.watches</code> index:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE .watches</pre></div></li><li class="listitem"><p class="simpara">
+Disable direct access to the <code class="literal">.watches</code> index:
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
+Stop the node.
+</li><li class="listitem">
+Remove <code class="literal">watcher.index.rest.direct_access : true</code> from <code class="literal">elasticsearch.yml</code>.
+</li><li class="listitem">
+Restart the node.
+</li></ol></div></li></ol></div><h3><a id="_unable_to_send_email"></a>Unable to Send Email</h3><p>If you get an authentication error that indicates that you need to continue the sign-in process
+from a web browser when Watcher attempts to send email, you need to configure Gmail to
+<a class="ulink" href="https://support.google.com/accounts/answer/6010255?hl=en" target="_top">Allow Less Secure Apps to access your account</a>.</p><p>If you have two-step verification enabled for your email account, you must generate and use an App
+Specific password to send email from Watcher. For more information, see:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Gmail: <a class="ulink" href="https://support.google.com/accounts/answer/185833?hl=en" target="_top">Sign in using App Passwords</a>
+</li><li class="listitem">
+Outlook.com: <a class="ulink" href="http://windows.microsoft.com/en-us/windows/app-passwords-two-step-verification" target="_top">App passwords and two-step verification</a>
+</li></ul></div><h3><a id="_watcher_not_responsive"></a>Watcher Not Responsive</h3><p>Keep in mind that there’s no built-in validation of scripts that you add to a watch. Buggy or
+deliberately malicious scripts can negatively impact Watcher performance. For example, if you
+add multiple watches with buggy script conditions in a short period of time, Watcher might be
+temporarily unable to process watches until the bad watches time out.</p></div><div class="navfooter"><span class="prev"><a href="api-rest.html">
+              « 
+              REST API</a>
+           
+        </span><span class="next">
+           
+          <a href="release-notes.html">Release Notes
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

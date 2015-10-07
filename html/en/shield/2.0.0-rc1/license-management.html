@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Managing Shield Licenses</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-rc1]" /><link rel="up" href="index.html" title="Shield Reference [2.0.0-rc1]" /><link rel="prev" href="kibana.html" title="Using Kibana with Shield" /><link rel="next" href="example-deployments.html" title="Example Shield Deployments" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -603,21 +603,71 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-rc1/index.html" target="_top">Shield Reference: 2.0-rc1</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-rc1]
+    </a></span> » <span class="breadcrumb-node">Managing Shield Licenses</span></div><div class="navheader"><span class="prev"><a href="kibana.html">
+              « 
+              Using Kibana with Shield</a>
+           
+        </span><span class="next">
+           
+          <a href="example-deployments.html">Example Shield Deployments
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="license-management"></a>Managing Shield Licenses</h1></div></div></div><p>When installing Shield for the first time, having the license plugin installed is the minimum required for Shield to work.
+You can just start up the node and everything will just work as expected. The first time you start up the node, a 30 days
+trial license will automatically be created which will enable Shield to be fully operational. Within these 30 days, you
+will be able to replace the trial license with another one that will be provided to you up on purchase.</p><h3><a id="installing-license"></a>Updating Your Shield License</h3><p>Updating the
+license can be done at runtime (no need to shutdown the nodes) using a dedicated API.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>With a valid license, Shield will be fully operational. Upon license expiry, Shield will operate in a
+            degraded mode, where cluster health, cluster stats, and index stats APIs will be blocked. All other operations will
+            continue operating normally. Find out more about <a class="link" href="license-management.html#license-expiration" title="License Expiration">Shield license expiration</a>.</p></div></div><p>The license itself is a <span class="emphasis"><em>JSON</em></span> file containing all information about the license (e.g. feature name, expiry date, etc…).
+To install or update the license use the following REST API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XPUT -u admin 'http://&lt;host&gt;:&lt;port&gt;/_licenses' -d @license.json</pre></div><p>Where:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">&lt;host&gt;</code> is the hostname of the Elasticsearch node (<code class="literal">localhost</code> if executing locally)
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+<code class="literal">&lt;port&gt;</code> is the http port (defaults to <code class="literal">9200</code>)
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<code class="literal">license.json</code> is the license json file
+</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The put license API is protected under the cluster admin privilege, therefore it has to be executed
+      by a user with the appropriate permissions.</p></div></div><h3><a id="listing-licenses"></a>Listing Installed Licenses</h3><p>You can list all currently installed licenses by executing the following REST API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET -u admin:password 'http://&lt;host&gt;:&lt;port&gt;/_licenses'</pre></div><p>The response of this command will be a JSON listing all available licenses. In the case of Shield, the following
+entry will be shown:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  licenses: [
+    ...
+    {
+      status: "active",
+      uid: "sample_uid",
+      type: "sample_type",
+      subscription_type: "sample_subscription_type",
+      "issue_date" : "2015-01-26T00:00:00.000Z",
+      "issue_date_in_millis" : 1422230400000,
+      feature: "shield",
+      "expiry_date" : "2015-04-26T23:59:59.999Z",
+      "expiry_date_in_millis" : 1430092799999,
+      max_nodes: 1,
+      issued_to: "sample customer",
+      issuer: "elasticsearch"
+    }
+    ...
+  ]
+}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The get license API is protected under the cluster admin privilege, therefore it has to be executed
+      by a user with the appropriate permissions.</p></div></div><h3><a id="license-expiration"></a>License Expiration</h3><p>License expiration should never be a surprise. Beginning 30 days from license expiration, Shield will begin logging daily messages
+containing the license expiration date and a brief description of unlicensed behavior. Beginning 7 days from license expiration,
+Shield will begin logging error messages every 10 minutes with the same information. After expiration, Shield will continue to
+log error messages informing you that the license has expired. These messages will also be generated at node startup, to ensure
+that there are no surprises. Here is an example message:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">[ERROR][shield.license] Shield license will expire on 1/1/1970. Cluster health, cluster stats and indices stats operations are
+blocked on Shield license expiration. All data operations (read and write) continue to work. If you have a new license, please
+update it. Otherwise, please reach out to your support contact.</pre></div><p>When the license for Shield is expired, Shield will block requests to the cluster health, cluster stats, and index stats APIs.
+Calls to these APIs will fail with a LicenseExpiredException, and will return HTTP status code 401. By disabling only these APIs,
+any automated cluster monitoring should detect the license failure, while users of the cluster should not be immediately impacted.
+It is not recommended to run for any length of time with a disabled Shield license; cluster health and stats APIs are critical
+for monitoring and management of an Elasticsearch cluster.</p><p>Example error response the clients will receive when license is expired and cluster health, cluster stats or index stats APIs are called:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{"error":"LicenseExpiredException[license expired for feature [shield]]","status":401}</pre></div><p>If you receive a new license file and <a class="link" href="license-management.html#installing-license" title="Updating Your Shield License">install it</a>, it will take effect immediately and the health and
+stats APIs will be available.</p></div><div class="navfooter"><span class="prev"><a href="kibana.html">
+              « 
+              Using Kibana with Shield</a>
+           
+        </span><span class="next">
+           
+          <a href="example-deployments.html">Example Shield Deployments
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

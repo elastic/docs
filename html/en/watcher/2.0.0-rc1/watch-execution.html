@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Watch Execution</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0.0-rc1]" /><link rel="up" href="how-watcher-works.html" title="How Watcher Works" /><link rel="prev" href="watch-definition.html" title="Watch Definition" /><link rel="next" href="watch-acknowledgment-throttling.html" title="Watch Acknowledgment and Throttling" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -603,21 +603,49 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-rc1/index.html" target="_top">Shield Reference: 2.0-rc1</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
+      [2.0.0-rc1]
+    </a></span> » <span class="breadcrumb-link"><a href="how-watcher-works.html">How Watcher Works</a></span> » <span class="breadcrumb-node">Watch Execution</span></div><div class="navheader"><span class="prev"><a href="watch-definition.html">
+              « 
+              Watch Definition</a>
+           
+        </span><span class="next">
+           
+          <a href="watch-acknowledgment-throttling.html">Watch Acknowledgment and Throttling
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="watch-execution"></a>Watch Execution</h2></div></div></div><p>When you add a watch, Watcher immediately registers its trigger with the appropriate trigger
+engine. Watches that have a <code class="literal">schedule</code> trigger are registered with the <code class="literal">scheduler</code> trigger engine.
+The trigger engine is responsible for triggering execution of the watch. Trigger engines run on
+the master node and use a separate thread pool from the one used to execute watches.</p><p>When a watch is triggered, Watcher queues it up for execution. A <code class="literal">watch_record</code> document is
+created and added to the <a class="link" href="watch-history.html" title="Monitoring Watch Execution">watch history</a> index and the initial status is set to
+<code class="literal">awaits_execution</code>.</p><p>When execution starts, Watcher creates a watch execution context for the watch. The execution
+context provides scripts and templates access to the watch metadata, payload, watch ID, execution
+time, and trigger information. For more information, see
+<a class="link" href="scripts-templates.html#watch-execution-context" title="Watch Execution Context">Watch Execution Context</a>.</p><p>During the execution process, Watcher:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Loads the input data into the payload in the watch execution context. This makes the data
+  available to all subsequent steps in the execution process. This step is controlled by the
+  input configured for the watch.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+Evaluates the watch condition to determine whether or not to continue processing the watch.
+  If the condition is met (evaluates to <code class="literal">true</code>), processing advances to the next step. If it
+  is not met (evaluates to <code class="literal">false</code>), execution of the watch stops.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+Applies transforms to the watch payload (if defined).
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+Executes the watch actions if the condition is met and the watch is not being
+  <a class="link" href="watch-acknowledgment-throttling.html" title="Watch Acknowledgment and Throttling">throttled</a>.
+</li></ol></div><p>When watch execution finishes, Watcher updates the watch record with the execution results.
+The watch record includes the execution time and duration, whether the watch condition was met,
+and the status of each action that was performed. For more information, see
+<a class="link" href="watch-history.html" title="Monitoring Watch Execution">Watch History</a>.</p><p>The following diagram shows the watch execution process:</p><div class="informalfigure"><div class="mediaobject" align="center"><img src="images/watch-execution.jpg" align="middle" alt="images/watch-execution.jpg" /></div></div></div><div class="navfooter"><span class="prev"><a href="watch-definition.html">
+              « 
+              Watch Definition</a>
+           
+        </span><span class="next">
+           
+          <a href="watch-acknowledgment-throttling.html">Watch Acknowledgment and Throttling
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

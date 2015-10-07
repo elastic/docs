@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Scripts and Templates</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0.0-rc1]" /><link rel="up" href="how-watcher-works.html" title="How Watcher Works" /><link rel="prev" href="watch-active-state.html" title="Watch Active State" /><link rel="next" href="installing-watcher.html" title="Installing Watcher" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -603,21 +603,156 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-rc1/index.html" target="_top">Shield Reference: 2.0-rc1</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
+      [2.0.0-rc1]
+    </a></span> » <span class="breadcrumb-link"><a href="how-watcher-works.html">How Watcher Works</a></span> » <span class="breadcrumb-node">Scripts and Templates</span></div><div class="navheader"><span class="prev"><a href="watch-active-state.html">
+              « 
+              Watch Active State</a>
+           
+        </span><span class="next">
+           
+          <a href="installing-watcher.html">Installing Watcher
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="scripts-templates"></a>Scripts and Templates</h2></div></div></div><p>You can use scripts and templates when defining a watch. Scripts and templates can reference
+elements in the watch execution context, including the watch payload. The execution context defines
+variables you can use in a script and parameter placeholders you can use in a template. Transforms
+also update the contents of the watch payload.</p><p>Watcher uses the Elasticsearch script infrastructure, which supports <a class="link" href="scripts-templates.html#inline-templates-scripts" title="Inline Templates and Scripts">inline</a>,
+<a class="link" href="scripts-templates.html#indexed-templates-scripts" title="Indexed Templates and Scripts">indexed</a>, and <a class="link" href="scripts-templates.html#file-templates-scripts" title="File-based Templates and Scripts">file-based scripts</a>. Scripts
+and templates are compiled and cached by Elasticsearch to optimize recurring execution.
+<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html#_automatic_script_reloading" target="_top">Autoloading</a> is also supported. For more
+information, see <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html" target="_top">Scripting</a> in the Elasticsearch Reference.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="watch-execution-context"></a>Watch Execution Context</h3></div></div></div><p>The following snippet shows the basic elements in a watch’s execution context:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "ctx" : {
+    "metadata" : { ... }, <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "payload" : { ... }, <a id="CO7-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    "watch_id" : "&lt;id&gt;", <a id="CO7-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    "execution_time" : "20150220T00:00:10Z", <a id="CO7-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    "trigger" : { <a id="CO7-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+      "triggered_time" : "20150220T00:00:10Z",
+      "scheduled_time" : "20150220T00:00:00Z"
+    },
+    "vars" : { ... } <a id="CO7-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Any static metadata specified in the watch definition.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The current watch payload.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The id of the executing watch.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+A timestamp that shows when the watch execution started.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Information about the trigger event. For a <code class="literal">schedule</code> trigger, this
+    consists of the <code class="literal">triggered_time</code> (when the watch was triggered)
+    and the <code class="literal">scheduled_time</code> (when the watch was scheduled to be triggered).
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Dynamic variables that can be set and accessed by different constructs
+    during the execution. These variables are scoped to a single execution
+    (i.e they’re not persisted and can’t be used between different executions
+    of the same watch)
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="scripts"></a>Using Scripts</h3></div></div></div><p>You can use scripts to define <a class="link" href="condition.html#condition-script" title="Script Condition">conditions</a> and <a class="link" href="transform.html#transform-script" title="Script Transform">transforms</a>.
+The default scripting language is groovy.</p><p>Scripts can reference any of the values in the watch execution context or values explicitly passed
+through script parameters.</p><p>For example, if the context metadata contains a <code class="literal">color</code> field, <code class="literal">"metadata" : {"color": "red"}</code>, you
+can access its value with the variable <code class="literal">ctx.metadata.color</code>. If you pass in a <code class="literal">color</code>  parameter as
+part of the condition or transform definition, <code class="literal">"params" : {"color": "red"}</code>, you access its value
+with the variable <code class="literal">color</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="templates"></a>Using Templates</h3></div></div></div><p>You use templates to define dynamic content for a watch. At execution time, templates pull in data
+from the watch’s execution context. For example, you could use a template to populate the <code class="literal">subject</code>
+field for an <code class="literal">email</code> action with data stored in the watch payload. Templates can also access values
+explicitly passed through template parameters.</p><p>Watcher supports templates in a variety of places:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The <a class="link" href="input.html#input-http" title="HTTP Input"><code class="literal">http</code></a> input supports templates in the <code class="literal">path</code>, <code class="literal">params</code>, <code class="literal">headers</code> and
+  <code class="literal">body</code> fields.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+The <a class="link" href="actions.html#actions-email" title="Email Action"><code class="literal">email</code></a> action supports templates in the <code class="literal">from</code>, <code class="literal">reply_to</code>, <code class="literal">priority</code>,
+  <code class="literal">to</code>, <code class="literal">cc</code>, <code class="literal">bcc</code>, <code class="literal">subject</code>, <code class="literal">body.text</code> and <code class="literal">body.html</code> fields.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+The <a class="link" href="actions.html#actions-webhook" title="Webhook Action"><code class="literal">webhook</code></a> action supports templates in the <code class="literal">path</code>, <code class="literal">params</code>, <code class="literal">headers</code>
+  and <code class="literal">body</code> fields.
+</li></ul></div><p>You specify templates using the <a class="ulink" href="https://mustache.github.io" target="_top">Mustache</a> scripting language.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>While Elasticsearch supports Mustache out of the box, Watcher ships with its own version registered
+under <code class="literal">xmustache</code>. This is because the default Mustache implementation in Elasticsearch 1.5 lacks
+array/list access support. <code class="literal">xmustache</code> adds this support to enable easy array access. For example,
+to refer to the source of the third search hit in the payload use
+<code class="literal">{{ctx.payload.hits.hits.2._source}}</code>.</p><p>When this feature is available in Elasticsearch, we expect to remove <code class="literal">xmustache</code> from Watcher and
+use the version that ships with Elasticsearch.</p></div></div><p>For example, if the context metadata contains a <code class="literal">color</code> field, you can access its value with the
+expression <code class="literal">{{ctx.metadata.color}}</code>. If the context payload contains the results of a search, you
+could access the source of the 3rd search hit in the payload with the following expression
+<code class="literal">{{ctx.payload.hits.hits.2._source}}</code>.</p><p>If you pass in a parameter as part of the input or action definition, you can reference the
+parameter by name. For example, the following snippet defines and references the <code class="literal">color</code> parameter.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "actions" : {
+    "email_notification" : {
+      "email" : {
+        "subject" : {
+          "inline" : "{{color}} alert",
+          "params" : {
+            "color" : "red"
+          }
+        }
+      }
+    }
+  }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="inline-templates-scripts"></a>Inline Templates and Scripts</h3></div></div></div><p>To define an inline template or script, you simply specify it directly in the value of a field.
+For example, the following snippet configures the subject of the <code class="literal">email</code> action using an inline
+template that references the <code class="literal">color</code> value in the context metadata.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"actions" : {
+  "email_notification" : {
+     "email" : {
+       "subject" : "{{ctx.metadata.color}} alert"
+     }
+   }
+  }
+}</pre></div><p>For a script, you simply specify the inline script as the value of the <code class="literal">script</code> field.
+For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"condition" : {
+  "script" : "return true"
+}</pre></div><p>You can also explicitly specify the inline type by using a formal object definition as the field
+value. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"actions" : {
+  "email_notification" : {
+    "email" : {
+      "subject" : {
+         "inline" : "{{ctx.metadata.color}} alert"
+      }
+    }
+  }
+}</pre></div><p>The formal object definition for a script would be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"condition" : {
+  "script" : {
+    "inline": "return true"
+  }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="indexed-templates-scripts"></a>Indexed Templates and Scripts</h3></div></div></div><p>If you <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html#_indexed_scripts" target="_top">index</a> your templates and scripts, you can
+reference them by id.</p><p>To reference an indexed script or template, you use the formal object definition and specify its
+id in the <code class="literal">id</code> field. For example, the following snippet references the <code class="literal">email_notification_subject</code>
+template.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  ...
+  "actions" : {
+    "email_notification" : {
+      "email" : {
+        "subject" : {
+          "id" : "email_notification_subject",
+          "params" : {
+            "color" : "red"
+          }
+        }
+      }
+    }
+  }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="file-templates-scripts"></a>File-based Templates and Scripts</h3></div></div></div><p>If you store templates or scripts in the <code class="literal">$ES_HOME/config/scripts</code> directory, you can reference
+them by name. Template files must be saved with the extension <code class="literal">.mustache</code>. Script files must be
+saved with the appropriate file extension, such as <code class="literal">.groovy</code>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">config/scripts</code> directory is scanned periodically for changes. New and changed
+        templates and scripts are reloaded and deleted templates and scripts are removed from
+        the preloaded scripts cache. For more information, see
+        <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html#_automatic_script_reloading" target="_top">Automatic Script Reloading</a>
+        in the Elasticsearch Reference.</p></div></div><p>To reference a file-based index or script, you use the formal object definition and specify its
+name in the <code class="literal">file</code> field. For example, the following snippet references the script file
+<code class="literal">threshold_hits.groovy</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"condition" : {
+    "script" : {
+      "file" : "threshold_hits",
+      "params" : {
+        "threshold" : 0
+      }
+    }
+  }</pre></div></div></div><div class="navfooter"><span class="prev"><a href="watch-active-state.html">
+              « 
+              Watch Active State</a>
+           
+        </span><span class="next">
+           
+          <a href="installing-watcher.html">Installing Watcher
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

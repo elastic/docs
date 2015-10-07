@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting Up SSL/TLS on a Cluster</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-rc1]" /><link rel="up" href="securing-communications.html" title="Securing Communications with Encryption and IP Filtering" /><link rel="prev" href="securing-communications.html" title="Securing Communications with Encryption and IP Filtering" /><link rel="next" href="ciphers.html" title="Enabling Cipher Suites for Stronger Encryption" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -603,21 +603,141 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-rc1/index.html" target="_top">Shield Reference: 2.0-rc1</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-rc1]
+    </a></span> » <span class="breadcrumb-link"><a href="securing-communications.html">Securing Communications with Encryption and IP Filtering</a></span> » <span class="breadcrumb-node">Setting Up SSL/TLS on a Cluster</span></div><div class="navheader"><span class="prev"><a href="securing-communications.html">
+              « 
+              Securing Communications with Encryption and IP Filtering</a>
+           
+        </span><span class="next">
+           
+          <a href="ciphers.html">Enabling Cipher Suites for Stronger Encryption
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ssl-tls"></a>Setting Up SSL/TLS on a Cluster</h2></div></div></div><p>Shield enables you to encrypt traffic to and from nodes in your Elasticsearch cluster. Connections
+are secured using Transport Layer Security (TLS).</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Nodes that do not have encryption enabled send passwords in plain text.</p></div></div><p>To enable encryption, you need to perform the following steps on each node in the cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+<a class="link" href="ssl-tls.html#installing-node-certificates" title="Installing Node Certificates">Install an X.509 certificate</a>.
+</li><li class="listitem"><p class="simpara">
+<a class="link" href="ssl-tls.html#configure-ssl">Configure the node</a> to:
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
+Identify itself using its signed certificate.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+Enable SSL on the transport and HTTP layers.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+Disable multicast.
+</li></ol></div></li><li class="listitem">
+Restart Elasticsearch.
+</li></ol></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="installing-node-certificates"></a>Installing Node Certificates</h3></div></div></div><p>Node certificates should be signed by a certificate authority (CA) that is trusted by every node
+in the cluster. You can use a third-party CA, your organization’s existing CA, or
+<a class="link" href="certificate-authority.html" title="Setting Up a Certificate Authority">set up a certificate authority</a> specifically for signing node certificates.</p><p>When a client connects to a node using SSL/TLS, the node presents its certificate to the
+client and proves that it owns the private key linked with the certificate. The client then
+determines if the node’s certificate is valid, trusted, and matches the hostname or IP address
+it is trying to connect to. A node acts as a client when connecting to other nodes in the cluster,
+so every node must trust all of the other nodes in the cluster.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>While it is technically possible to use self-signed certificates, we strongly recommend using certificates signed by a CA to establish trust between nodes. Self-signed certificates must be trusted individually, which means that each node must have every other node’s certificate installed. If you add a node to the cluster, you have to install the new node’s self-signed certificate on all of the existing nodes and restart them. When you use CA-signed certificates, the existing nodes just need to trust the CA used to sign the new node’s certificate. (You should use the same CA to sign all of your node certificates.)</p></div></div><p>To install a signed certificate, you need to:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+<a class="link" href="ssl-tls.html#private-key" title="Creating a Keystore and Generating a Certificate">Create a keystore and generate a certificate for the node</a>.
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
+<a class="link" href="ssl-tls.html#generate-csr" title="Creating a Certificate Signing Request">Create a certificate signing request (CSR)</a>.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
+<a class="link" href="ssl-tls.html#send-csr" title="Send the Signing Request">Send the certificate to your CA for signing</a>.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<a class="link" href="ssl-tls.html#install-signed-cert" title="Install the Signed Certificate">Add the signed certificate to the node’s keystore</a>.
+</li></ol></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="private-key"></a>Creating a Keystore and Generating a Certificate</h4></div></div></div><p>To create a keystore and generate a node certificate:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Create a node keystore and import your CA’s certificate with <a class="ulink" href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html" target="_top">Java Keytool</a>. This configures the node to trust certificates signed by the CA. For Elasticsearch
+to access the keystore, it must be located under the Elasticsearch configuration directory. For example, the following command creates a keystore for <code class="literal">node01</code> and and imports the CA certificate <code class="literal">cacert.pem</code>.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">cd CONFIG_DIR/shield
+keytool -importcert -keystore node01.jks -file cacert.pem -alias my_ca</pre></div><p class="simpara">The Java keystore file (.jks) securely stores certificates for the node. The CA cert must be a
+PEM encoded certificate.</p><p class="simpara">When you create a keystore, you are prompted to set a password. This password protects the
+integrity of the keystore. You need to provide it whenever you interact with the keystore.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>When the CA certificate expires, you must update the node’s keystore with the new CA
+certificate.</p></div></div><p class="simpara">You can also store the CA certificate in a separate truststore. For more
+information, see <a class="link" href="ssl-tls.html#create-truststore" title="Configuring a Separate Truststore">Configuring a Truststore</a>.</p></li><li class="listitem"><p class="simpara">
+Generate a private key and certificate for the node with Java Keytool. For example, the following
+command creates a key and certificate for <code class="literal">node01</code>:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">keytool -genkey -alias node01 -keystore node01.jks -keyalg RSA -keysize 2048 -validity 712 -ext san=dns:node01.example.com,ip:192.168.1.1</pre></div><p class="simpara">This command creates an RSA private key with a key size of 2048 bits and a public certificate that
+is valid for 712 days. The key and certificate are stored in the <code class="literal">node01.jks</code> keystore.</p><p class="simpara">The <code class="literal">san</code> value specifies all alternative names for the node. The generated certificate is valid for the DNS names and IP addresses specified as alternative names. You can specify multiple DNS or IP address entries as a comma-separated list.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h4>Specifying the Node Identity</h4><p>With SSL/TLS is enabled, when node A connects to node B, node A normally verifies the identity of
+node B by checking the identity information specified in node B’s certificate. This means that you
+must include node identity information when you create a node’s certificate.</p><p>The recommended way to specify the node identity when creating a certificate is to specify the
+<code class="literal">-ext</code> option and list all of the node’s names and IP addresses in the <code class="literal">san</code>
+(Subject Alternative Name) attribute.</p><p>If you use a commercial CA, the DNS names and IP addresses used to identify a node must be publicly resolvable. Internal DNS names and private IP addresses are not accepted due to
+<a class="ulink" href="https://cabforum.org/internal-names/" target="_top">security concerns</a>.</p><p>If you need to use private DNS names and IP addresses, using an internal CA is the most secure
+option. It enables you to specify node identities and ensure node identities are verified when
+nodes connect. If you must use a commercial CA and private DNS names or IP addresses, you cannot
+include the node identity in the certificate, so the only option is to disable
+<a class="link" href="reference.html#ref-ssl-tls-settings" title="TLS/SSL Settings">hostname verification</a>.</p></div></div><p class="simpara">When you run <code class="literal">keytool -genkey</code>, Keytool prompts you for the information needed to populate the
+node’s distinguished name that’s stored the certificate. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">What is your first and last name?
+  [Unknown]:  Elasticsearch node01 <a id="CO10-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+What is the name of your organizational unit?
+  [Unknown]:  test
+What is the name of your organization?
+  [Unknown]:  Elasticsearch
+What is the name of your City or Locality?
+  [Unknown]:  Amsterdam
+What is the name of your State or Province?
+  [Unknown]:  Amsterdam
+What is the two-letter country code for this unit?
+  [Unknown]:  NL
+Is CN=Elasticsearch node01, OU=test, O=elasticsearch, L=Amsterdam, ST=Amsterdam, C=NL correct?
+  [no]:  yes
+
+Enter key password for &lt;node01&gt; <a id="CO10-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    (RETURN if same as keystore password):</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Provides information about the node that this certificate is intended for. In the past, this field specified the node’s identity using a DNS name, but that behavior has been deprecated.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+If you don’t specify a password for the certificate, the keystore password is used.
+</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h4>Extended Key Usage</h4><p>The Extended Key Usage attribute in a certificate is used to indicate the purpose of the key. By default <code class="literal">keytool</code> does not set this attribute in the certificate. If you are generating your certificates with another tool, please ensure the certificates support both <code class="literal">serverAuth</code> and <code class="literal">clientAuth</code> if the Extended Key Usage attribute is set.</p></div></div></td></tr></table></div></li></ol></div><h5><a id="generate-csr"></a>Creating a Certificate Signing Request</h5><p>A node’s certificate needs to be signed by a trusted CA for the certificate to be trusted. To get a certificate signed, you need to create a certificate signing request (CSR) and send it to your CA.</p><p>To create a CSR with Java Keytool, use the <code class="literal">keytool t-certreq</code> command. You specify the same alias, keystore, key algorithm, and DNS names and IP addresses that you used when you created the node certificate. Specify where you want to store the CSR with the <code class="literal">-file</code> option.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">keytool -certreq -alias node01 -keystore node01.jks -file node01.csr -keyalg rsa -ext san=dns:node01.example.com,ip:192.168.1.1</pre></div><h5><a id="send-csr"></a>Send the Signing Request</h5><p>To get a signed certificate, send the generated CSR file to your CA. The CA will sign it and send
+you the signed version of the certificate.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you are running your own CA, see <a class="link" href="certificate-authority.html#sign-csr" title="Signing CSRs">Signing CSRs</a> for signing instructions.</p></div></div><h5><a id="install-signed-cert"></a>Install the Signed Certificate</h5><p>To install the signed certificate, use <code class="literal">keytool -importcert</code> to add it to the node’s keystore. You
+specify the same alias and keystore that you used when you created the node certificate.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">cd CONFIG_DIR/shield
+keytool -importcert -keystore node01.jks -file node01-signed.crt -alias node01</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you attempt to import a PEM-encoded certificate that contains extra text headers, you might get
+the error: <code class="literal">java.security.cert.CertificateParsingException: invalid DER-encoded certificate data</code>.
+Use the following <code class="literal">openssl</code> command to remove the extra headers and then use <code class="literal">keytool</code> to import
+the certificate.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">openssl x509 -in node01-signed.crt -out node01-signed-noheaders.crt</pre></div></div></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="enable-ssl"></a>Enabling SSL in the Node Configuration</h3></div></div></div><p>Once you have added the signed certificate to the node’s keystore, you need to modify the node
+configuration to enable SSL.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>All SSL/TLS related node settings that are considered to be highly sensitive and therefore
+are not exposed via the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes info API</a>.</p></div></div><p><a id="configure-ssl"></a>To enable SSL, make the following changes in <code class="literal">elasticsearch.yml</code>:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Specify the location of the node’s keystore and the password(s) needed to access the node’s
+certificate. For example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.ssl.keystore.path:          /home/es/config/shield/node01.jks <a id="CO11-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+shield.ssl.keystore.password:      myPass <a id="CO11-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+shield.ssl.keystore.key_password:  myKeyPass <a id="CO11-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO11-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The full path to the node keystore file. This must be a location within the Elasticsearch
+configuration directory.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO11-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The password used to access the keystore.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO11-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The password used to access the certificate. This is only required if you specified a separate
+certificate password when generating the certificate.
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+Enable SSL on the transport networking layer to ensure that communication between nodes is
+encrypted:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.transport.ssl: true</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Transport clients can only connect to the cluster with a valid username and password even if
+this setting is disabled.</p></div></div></li><li class="listitem"><p class="simpara">
+Enable SSL on the HTTP layer to ensure that communication between HTTP clients and the cluster is encrypted:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.http.ssl: true</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>HTTP clients can only connect to the cluster with a valid username and password even if this
+setting is disabled.</p></div></div></li><li class="listitem"><p class="simpara">
+Disable <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery.html" target="_top">multicast discovery</a>:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">discovery.zen.ping.multicast.enabled: false
+discovery.zen.ping.unicast.hosts: ["node01:9300", "node02:9301"]</pre></div></li><li class="listitem">
+Restart Elasticsearch so these configuration changes take effect.
+</li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="create-truststore"></a>Configuring a Separate Truststore</h3></div></div></div><p>You can store trusted CA certificates in a node’s keystore, or create a separate truststore for CA
+certificates.</p><p>To use a separate truststore:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Create a node truststore and import the CA certificate(s) you want to trust with Java Keytool. For example, the following command imports the CA certificate <code class="literal">cacert.pem</code> into <code class="literal">truststore.jks</code>. If the specified truststore doesn’t exist, it is created.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">cd CONFIG_DIR/shield
+keytool -importcert -keystore truststore.jks -file cacert.pem</pre></div><p class="simpara">When you create a truststore, you are prompted to set a password. This password protects the
+integrity of the truststore. You need to provide it whenever you interact with the truststore.</p></li><li class="listitem"><p class="simpara">
+In <code class="literal">elasticsearch.yml</code>, specify the location of the node’s truststore and the password needed to
+access it. For example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.ssl.truststore.path:          /home/es/config/shield/truststore.jks <a id="CO12-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+shield.ssl.truststore.password:      myPass <a id="CO12-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The full path to the truststore file. This must be a location within the
+Elasticsearch configuration directory.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The password needed to access the truststore.
+</p></td></tr></table></div></li></ol></div></div></div><div class="navfooter"><span class="prev"><a href="securing-communications.html">
+              « 
+              Securing Communications with Encryption and IP Filtering</a>
+           
+        </span><span class="next">
+           
+          <a href="ciphers.html">Enabling Cipher Suites for Stronger Encryption
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

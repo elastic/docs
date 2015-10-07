@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using esusers to Authenticate Users</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-rc1]" /><link rel="up" href="setting-up-authentication.html" title="Setting Up User Authentication" /><link rel="prev" href="anonymous-access.html" title="Enabling Anonymous Access" /><link rel="next" href="ldap.html" title="Using LDAP to Authenticate Users" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -603,21 +603,64 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-rc1/index.html" target="_top">Shield Reference: 2.0-rc1</a>
-</li><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
-</li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-rc1]
+    </a></span> » <span class="breadcrumb-link"><a href="setting-up-authentication.html">Setting Up User Authentication</a></span> » <span class="breadcrumb-node">Using esusers to Authenticate Users</span></div><div class="navheader"><span class="prev"><a href="anonymous-access.html">
+              « 
+              Enabling Anonymous Access </a>
+           
+        </span><span class="next">
+           
+          <a href="ldap.html">Using LDAP to Authenticate Users
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="esusers"></a>Using esusers to Authenticate Users</h2></div></div></div><p>You can manage and authenticate users with Shield’s built-in system, <code class="literal">esusers</code>.
+An <span class="emphasis"><em>esusers</em></span> realm is created by default when you install Shield. You use the
+<a class="link" href="managing-users.html" title="Managing Users in an esusers Realm">esusers command line tool</a> to add and remove users, assign user roles,
+and manage user passwords.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_configuring_an_esusers_realm"></a>Configuring an esusers Realm</h3></div></div></div><p>Like other realms, you can configure options for an <code class="literal">esusers</code> realm in the
+<code class="literal">shield.authc.realms</code> namespace in <code class="literal">elasticsearch.yml</code>.</p><p>To configure an esusers realm:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Add a realm configuration of type <code class="literal">esusers</code> to <code class="literal">elasticsearch.yml</code> in the
+<code class="literal">shield.authc.realms</code> namespace. At a minimum, you must set the realm
+<code class="literal">type</code> to <code class="literal">esusers</code>. If you are configuring multiple realms, you
+should also explicitly set the <code class="literal">order</code> attribute. See <a class="link" href="esusers.html#esusers-settings" title="esusers Realm Settings">esusers Realm Settings</a>
+for all of the options you can set for an <code class="literal">esusers</code> realm.
+</p><p class="simpara">For example, the following snippet shows an <code class="literal">esusers</code> realm  configuration that sets the <code class="literal">order</code> to
+zero so the realm is checked first:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield:
+  authc:
+    realms:
+      esusers1:
+        type: esusers
+        order: 0</pre></div></li><li class="listitem">
+Restart Elasticsearch.
+</li></ol></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="esusers-settings"></a>esusers Realm Settings</h4></div></div></div><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Setting</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">type</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>Indicates the realm type. Must be set to <code class="literal">esusers</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">order</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Indicates the priority of this realm within the realm
+                                                   chain. Realms with a lower order are consulted first.
+                                               Although not required, we recommend explicitly
+                                                   setting this value when you configure multiple realms.
+                                                   Defaults to <code class="literal">Integer.MAX_VALUE</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">enabled</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Indicates whether this realm is enabled or disabled.
+                                                   Enables you to disable a realm without removing its
+                                                   configuration. Defaults to <code class="literal">true</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">files.users</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Points to the <a class="link" href="reference.html#ref-shield-files-location" title="Important">location</a>
+                                                                                           of the <code class="literal">users</code> file where the users and their passwords
+                                                                                           are stored. By default, it is <code class="literal">CONFIG_DIR/shield/users</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">files.users_roles</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Points to the <a class="link" href="reference.html#ref-shield-files-location" title="Important">location</a>
+                                                                                           of the <code class="literal">users_roles</code> file where the users and their
+                                                                                           roles are stored. Defaults to
+                                                                                           <code class="literal">CONFIG_DIR/shield/users_roles</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">cache.ttl</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the time-to-live for cached user entries. A
+                                                   user’s credentials are cached for this period of time.
+                                                   Specify the time period using the standard Elasticsearch
+                                                   <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units" target="_top">time units</a>.
+                                                   Defaults to <code class="literal">20m</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">cache.max_users</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the maximum number of user entries that can be
+                                                   stored in the cache at one time. Defaults to 100,000.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">cache.hash_algo</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the hashing algorithm that is used for the
+                                                   cached user credentials. See <a class="link" href="controlling-user-cache.html#cache-hash-algo" title="Table 4. Cache hash algorithms">Cache hash algorithms</a> for the possible values.
+                                                   (Expert Setting)</p></td></tr></tbody></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When no realms are explicitly configured in <code class="literal">elasticsearch.yml</code>, a default realm chain is
+          created that holds a single <code class="literal">esusers</code> realm. If you wish to only work with <code class="literal">esusers</code> realm
+          and you’re satisfied with the default files paths, there is no real need to add the above
+          configuration.</p></div></div></div></div></div><div class="navfooter"><span class="prev"><a href="anonymous-access.html">
+              « 
+              Enabling Anonymous Access </a>
+           
+        </span><span class="next">
+           
+          <a href="ldap.html">Using LDAP to Authenticate Users
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

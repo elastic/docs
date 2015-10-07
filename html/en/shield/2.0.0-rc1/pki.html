@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using PKI to Authenticate Users</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-rc1]" /><link rel="up" href="setting-up-authentication.html" title="Setting Up User Authentication" /><link rel="prev" href="active-directory.html" title="Using Active Directory to Authenticate Users" /><link rel="next" href="custom-realms.html" title="Integrating with Other Authentication Systems" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -603,21 +603,87 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-rc1/index.html" target="_top">Shield Reference: 2.0-rc1</a>
-</li><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
-</li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-rc1]
+    </a></span> » <span class="breadcrumb-link"><a href="setting-up-authentication.html">Setting Up User Authentication</a></span> » <span class="breadcrumb-node">Using PKI to Authenticate Users </span></div><div class="navheader"><span class="prev"><a href="active-directory.html">
+              « 
+              Using Active Directory to Authenticate Users</a>
+           
+        </span><span class="next">
+           
+          <a href="custom-realms.html">Integrating with Other Authentication Systems
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="pki"></a>Using PKI to Authenticate Users <span class="added">
+      [<span class="version">1.3.0</span>]
+      <span class="detail">Added in 1.3.0.</span></span></h2></div></div></div><p>You can configure Shield to use Public Key Infrastructure (PKI) certificates to authenticate users.
+This requires clients to present X.509 certificates. To use PKI, you configure a PKI realm,
+enable client authentication on the desired network layers (transport or http),
+and map the DNs from the user certificates to Shield roles in the <a class="link" href="mapping-roles.html" title="Mapping Users and Groups to Roles">role mapping file</a>.</p><p>You can use a combination of PKI encryption and username and password authentication. For example,
+you can enable SSL/TLS on the transport layer and define a PKI realm to require transport clients to
+authenticate with X.509 certificates, while still authenticating HTTP traffic using usernames and
+passwords. You can also set <code class="literal">shield.transport.ssl.client.auth</code> to <code class="literal">optional</code>
+to allow clients without certificates to authenticate with other credentials.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>You must enable SSL/TLS to use PKI. For more information, see
+<a class="link" href="ssl-tls.html" title="Setting Up SSL/TLS on a Cluster">Setting Up SSL/TLS on a Cluster</a>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_pki_realm_configuration"></a>PKI Realm Configuration</h3></div></div></div><p>Like realms, you configure options for a <code class="literal">pki</code> realm in the <code class="literal">shield.authc.realms</code> namespace in
+<code class="literal">elasticsearch.yml</code>.</p><p>To configure PKI realm:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Add a realm configuration of type <code class="literal">pki</code> to <code class="literal">elasticsearch.yml</code> in the
+<code class="literal">shield.authc.realms</code> namespace. At a minimum, you must set the realm
+<code class="literal">type</code> to <code class="literal">pki</code>. If you are configuring multiple realms, you
+should also explicitly set the <code class="literal">order</code> attribute. See <a class="link" href="pki.html#pki-settings" title="PKI Realm Settings">PKI Realm Settings</a>
+for all of the options you can set for an <code class="literal">pki</code> realm.
+</p><p class="simpara">For example, the following snippet shows the most basic PKI realm configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield:
+  authc:
+    realms:
+      pki1:
+        type: pki</pre></div><p class="simpara">With this configuration, any certificate trusted by the SSL/TLS layer is accepted for
+authentication. The username is the common name (CN) extracted from the DN of the certificate.</p><p class="simpara">If you want to use something other than the CN of the DN as the username, you can specify
+a regex to extract the desired username. For example, the regex in the following configuration
+extracts the email address from the DN:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield:
+  authc:
+    realms:
+      pki1:
+        type: pki
+        username_pattern: "EMAILADDRESS=(.*?)(?:,|$)"</pre></div><p class="simpara">You can also specify which truststore to use for authentication. This is useful
+when the SSL/TLS layer trusts clients with certificates that are signed by a different
+CA than the one that signs your users' certificates. To specify the location of the truststore,
+specify the <code class="literal">truststore.path</code> option:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield:
+  authc:
+    realms:
+      pki1:
+        type: pki
+        truststore:
+          path: "/path/to/pki_truststore.jks"
+          password: "changeme"</pre></div></li><li class="listitem">
+Restart Elasticsearch.
+</li></ol></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="pki-settings"></a>PKI Realm Settings</h4></div></div></div><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Setting</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">type</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>Indicates the realm type. Must be set to <code class="literal">pki</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">order</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Indicates the priority of this realm within the realm
+                                           chain. Realms with a lower order are consulted first.
+                                           Although not required, we recommend explicitly
+                                           setting this value when you configure multiple realms.
+                                           Defaults to <code class="literal">Integer.MAX_VALUE</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">enabled</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Indicates whether this realm is enabled or disabled.
+                                           Enables you to disable a realm without removing its
+                                           configuration. Defaults to <code class="literal">true</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">username_pattern</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the regular expression pattern used to extract
+                                           the username from the certificate DN. The first match
+                                           group is used as the username. Defaults to
+                                           <code class="literal">CN=(.*?)(?:,|$)</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">truststore.path</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The path to the truststore. Defaults to the path
+                                           defined by <a class="link" href="reference.html#ref-ssl-tls-settings" title="TLS/SSL Settings">SSL/TLS settings</a>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">truststore.password</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the password for the truststore. Must be
+                                           provided if <code class="literal">truststore.path</code> is set.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">truststore.algorithm</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the algorithm used for the trustsore. Defaults to
+                                           <code class="literal">SunX509</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">files.role_mapping</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the <a class="link" href="reference.html#ref-shield-files-location" title="Important">location</a>
+                                           for the <a class="link" href="mapping-roles.html#pki-role-mapping">YAML role  mapping                                            configuration file</a>. Defaults to
+                                           <code class="literal">CONFIG_DIR/shield/role_mapping.yml</code>.</p></td></tr></tbody></table></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="assigning-roles-pki"></a>Assigning Roles for PKI Users</h3></div></div></div><p>You assign roles for PKI users in the role mapping file stored on each node. You identify a user
+by the distinguished name in their certificate. For example, the following mapping
+configuration assigns <code class="literal">John Doe</code> the <code class="literal">user</code> role:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">user: <a id="CO8-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  - "cn=John Doe,ou=example,o=com" <a id="CO8-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The name of a Shield role defined in the <a class="link" href="defining-roles.html" title="Defining Roles">roles file</a>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The distinguished name of a PKI user.
+</p></td></tr></table></div><p>For more information, see <a class="link" href="mapping-roles.html" title="Mapping Users and Groups to Roles">Mapping Users and Groups to Roles</a>.</p></div></div><div class="navfooter"><span class="prev"><a href="active-directory.html">
+              « 
+              Using Active Directory to Authenticate Users</a>
+           
+        </span><span class="next">
+           
+          <a href="custom-realms.html">Integrating with Other Authentication Systems
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

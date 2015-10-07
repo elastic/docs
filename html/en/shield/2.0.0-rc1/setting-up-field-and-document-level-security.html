@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shield Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting Up Field and Document Level Security.</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0.0-rc1]" /><link rel="up" href="configuring-rbac.html" title="Configuring Role-based Access Control" /><link rel="prev" href="mapping-roles.html" title="Mapping Users and Groups to Roles" /><link rel="next" href="submitting-requests-for-other-users.html" title="Submitting Requests on Behalf of Other Users" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -603,21 +603,109 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Shield Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="2.0.0-rc1/index.html" target="_top">Shield Reference: 2.0-rc1</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
+      [2.0.0-rc1]
+    </a></span> » <span class="breadcrumb-link"><a href="configuring-rbac.html">Configuring Role-based Access Control</a></span> » <span class="breadcrumb-node">Setting Up Field and Document Level Security.</span></div><div class="navheader"><span class="prev"><a href="mapping-roles.html">
+              « 
+              Mapping Users and Groups to Roles</a>
+           
+        </span><span class="next">
+           
+          <a href="submitting-requests-for-other-users.html">Submitting Requests on Behalf of Other Users
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="setting-up-field-and-document-level-security"></a>Setting Up Field and Document Level Security.</h2></div></div></div><p>You can control access to data within an index by adding field and document level security permissions to a role.
+Field level security permissions restrict access to particular fields within a document.
+Document level security permissions restrict access to particular documents within an index.</p><p>Field and document level permissions are specified separately, but a role can define both field and document level permissions.
+Field and document level security permissions can be configured on a per-index basis.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_field_level_security"></a>Field Level Security</h3></div></div></div><p>To enable field level security, you specify the fields that each role can access in the <code class="literal">roles.yml</code> file.
+You list the allowed fields with the <code class="literal">fields</code> option. Fields are associated with a particular index or index pattern and
+operate in conjunction with the privileges specified for the indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">&lt;role_name&gt;:
+  indices:
+    &lt;index_permission_expression&gt;:
+      privileges: &lt;privileges&gt;
+      fields:
+        - &lt;allowed_field_1&gt;
+        - &lt;allowed_field_2&gt;
+        - &lt;allowed_field_N&gt;</pre></div><p>To allow access to the <code class="literal">_all</code> meta field, you must explicitly list it as an allowed field. Access to the following meta fields
+is always allowed: _id, _type, _parent, _routing, _timestamp, _ttl, _size and _index. If you specify an empty list of fields,
+only these meta fields are accessible.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Omitting the fields entry entirely disables field-level security.</p></div></div><p>For example, the following <code class="literal">customer_care</code> role grants read access to six fields in any index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">customer_care:
+  indices:
+    '*':
+      privileges: read
+      fields:
+        - issue_id
+        - description
+        - customer_handle
+        - customer_email
+        - customer_address
+        - customer_phone</pre></div><p>Also wildcard field expressions can be added to the <code class="literal">fields</code> options in the <code class="literal">roles.yml</code> file. For example the following
+example has the same effect as the previous example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">customer_care:
+  indices:
+    '*':
+      privileges: read
+      fields:
+        - issue_id
+        - description
+        - 'customer_*'</pre></div><p>If documents are more complex and contain json objects then the fields with dot notion should be used.</p><p>Assume the following document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  "customer": {
+    "handle": "Jim",
+    "email": "jim@mycompany.com",
+    "phone": "555-555-5555"
+  }
+}</pre></div><p>If only access to the <code class="literal">handle</code> field is allowed then the following role should be setup:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">my_role:
+  indices:
+    '*':
+      privileges: read
+      fields:
+        - customer.handle</pre></div><p>If access to the entire <code class="literal">customer</code> object is allowed then the wildcard dot notation can be used to make this easier:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">my_role:
+  indices:
+    '*':
+      privileges: read
+      fields:
+        - customer.*</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_limitations"></a>Limitations</h4></div></div></div><p>When field level security is enabled for an index:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The get, multi get, termsvector and multi termsvector APIs aren’t executed in real time. The realtime option for these APIs is forcefully set to false.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta2/index.html" target="_top">Shield Reference: 2.0-beta2</a>
+The query cache and the request cache are disabled for search requests.
 </li><li class="listitem">
-<a class="ulink" href="2.0.0-beta1/index.html" target="_top">Shield Reference: 2.0-beta1</a>
+The update API is blocked. An update request needs to be executed via a role that doesn’t have field level security enabled.
+</li></ul></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_document_level_security"></a>Document Level Security</h3></div></div></div><p>Enabling document level security restricts which documents can be accessed from any document based API.
+To enable document level security, you use a query to specify the documents that each role can access in the <code class="literal">roles.yml</code> file.
+You specify the document query with the <code class="literal">query</code> option. The document query is associated with a particular index or index pattern and
+operates in conjunction with the privileges specified for the indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">&lt;role_name&gt;:
+  indices:
+    &lt;index_permission_expression&gt;:
+      privileges: &lt;privileges&gt;
+      query:
+        &lt;query&gt;</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Omitting the <code class="literal">query</code> entry entirely disables document-level security.</p></div></div><p>The <code class="literal">query</code> should follow the same format as if a query was defined in the request body of a search request,
+but here the format is YAML. Any query from the query-dsl can be defined in the <code class="literal">query</code> entry.</p><p>For example, the following <code class="literal">customer_care</code> role grants read access to all indices, but restricts access to documents whose <code class="literal">department_id</code> equals <code class="literal">12</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">customer_care:
+  indices:
+    '*':
+      privileges: read
+      query:
+        term:
+         department_id: 12</pre></div><p>Alternatively the query can also be defined in JSON as a string. This makes it easier to define queries that already have
+been defined in the JSON body of search request body elsewhere.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">customer_care:
+  indices:
+    '*':
+      privileges: read
+      query: '{"term" : {"department_id" : "12"}}''</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_limitations_2"></a>Limitations</h4></div></div></div><p>When document level security is enabled for an index:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The get, multi get, termsvector and multi termsvector APIs aren’t executed in real time. The realtime option for these APIs is forcefully set to false.
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Shield Reference: 1.3 (current)</a>
+Document level security isn’t applied for APIs that aren’t document based oriented. For example this is the case for the field stats API.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.2/index.html" target="_top">Shield Reference: 1.2</a>
+Document level security doesn’t affect global index statistics that relevancy scoring uses. So this means that scores are computed without taking the role query into account.
+  Note that, documents not matching with the role query are never returned.
 </li><li class="listitem">
-<a class="ulink" href="shield-1.1/index.html" target="_top">Shield Reference: 1.1</a>
-</li><li class="listitem">
-<a class="ulink" href="shield-1.0/index.html" target="_top">Shield Reference: 1.0</a>
-</li></ul></div></div>
+The <code class="literal">has_child</code> and <code class="literal">has_parent</code> queries aren’t supported as role query in the <code class="literal">roles.yml</code> file.
+  The <code class="literal">has_child</code> and <code class="literal">has_parent</code> queries can be used in the search API with document level security enabled.
+</li></ul></div></div></div></div><div class="navfooter"><span class="prev"><a href="mapping-roles.html">
+              « 
+              Mapping Users and Groups to Roles</a>
+           
+        </span><span class="next">
+           
+          <a href="submitting-requests-for-other-users.html">Submitting Requests on Behalf of Other Users
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>
