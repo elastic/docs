@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>GCE Tips</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="cloud-gce.html" title="GCE Cloud Plugin" /><link rel="prev" href="cloud-gce-usage-discovery-port.html" title="Changing default transport port" /><link rel="next" href="cloud-gce-usage-discovery-testing.html" title="Testing GCE" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting up GCE Discovery</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="discovery-gce.html" title="GCE Discovery Plugin" /><link rel="prev" href="discovery-gce-network-host.html" title="GCE Network Host" /><link rel="next" href="discovery-gce-usage-cloning.html" title="Cloning your existing machine" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -605,34 +605,58 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="cloud-gce.html">GCE Cloud Plugin</a></span> » <span class="breadcrumb-node">GCE Tips</span></div><div class="navheader"><span class="prev"><a href="cloud-gce-usage-discovery-port.html">
+    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="discovery-gce.html">GCE Discovery Plugin</a></span> » <span class="breadcrumb-node">Setting up GCE Discovery</span></div><div class="navheader"><span class="prev"><a href="discovery-gce-network-host.html">
               « 
-              Changing default transport port</a>
+              GCE Network Host</a>
            
         </span><span class="next">
            
-          <a href="cloud-gce-usage-discovery-testing.html">Testing GCE
+          <a href="discovery-gce-usage-cloning.html">Cloning your existing machine
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cloud-gce-usage-discovery-tips"></a>GCE Tips<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="cloud-gce-usage-discovery-tips-projectid"></a>Store project id locally<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you don’t want to repeat the project id each time, you can save it in the local gcloud config</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud config set project es-cloud</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="cloud-gce-usage-discovery-tips-permissions"></a>Machine Permissions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you have created a machine without the correct permissions, you will see <code class="literal">403 unauthorized</code> error messages. The only
-way to alter these permissions is to delete the instance (NOT THE DISK). Then create another with the correct permissions.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Creating machines with gcloud
-</span></dt><dd><p class="simpara">Ensure the following flags are set:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">--scopes=compute-rw</pre></div></dd><dt><span class="term">
-Creating with console (web)
-</span></dt><dd><p class="simpara">When creating an instance using the web portal, click <span class="emphasis"><em>Show advanced options</em></span>.</p><p class="simpara">At the bottom of the page, under <code class="literal">PROJECT ACCESS</code>, choose <code class="literal">&gt;&gt; Compute &gt;&gt; Read Write</code>.</p></dd><dt><span class="term">
-Creating with knife google
-</span></dt><dd><p class="simpara">Set the service account scopes when creating the machine:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">knife google server create www1 \
-    -m n1-standard-1 \
-    -I debian-8 \
-    -Z us-central1-a \
-    -i ~/.ssh/id_rsa \
-    -x jdoe \
-    --gce-service-account-scopes https://www.googleapis.com/auth/compute.full_control</pre></div><p class="simpara">Or, you may use the alias:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">    --gce-service-account-scopes compute-rw</pre></div></dd></dl></div></div></div><div class="navfooter"><span class="prev"><a href="cloud-gce-usage-discovery-port.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="discovery-gce-usage-long"></a>Setting up GCE Discovery<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-gce-usage-long-prerequisites"></a>Prerequisites<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Before starting, you need:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Your project ID, e.g. <code class="literal">es-cloud</code>. Get it from <a class="ulink" href="https://code.google.com/apis/console/" target="_top">Google API Console</a>.
+</li><li class="listitem">
+To install <a class="ulink" href="https://developers.google.com/cloud/sdk/" target="_top">Google Cloud SDK</a>
+</li></ul></div><p>If you did not set it yet, you can define your default project you will work on:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud config set project es-cloud</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-gce-usage-long-login"></a>Login to Google Cloud<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you haven’t already, login to Google Cloud</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud auth login</pre></div><p>This will open your browser. You will be asked to sign-in to a Google account and
+authorize access to the Google Cloud SDK.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-gce-usage-long-first-instance"></a>Creating your first instance<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud compute instances create myesnode1 \
+       --zone &lt;your-zone&gt; \
+       --scopes compute-rw</pre></div><p>When done, a report like this one should appears:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">Created [https://www.googleapis.com/compute/v1/projects/es-cloud-1070/zones/us-central1-f/instances/myesnode1].
+NAME      ZONE          MACHINE_TYPE  PREEMPTIBLE INTERNAL_IP   EXTERNAL_IP   STATUS
+myesnode1 us-central1-f n1-standard-1             10.240.133.54 104.197.94.25 RUNNING</pre></div><p>You can now connect to your instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh"># Connect using google cloud SDK
+gcloud compute ssh myesnode1 --zone europe-west1-a
+
+# Or using SSH with external IP address
+ssh -i ~/.ssh/google_compute_engine 192.158.29.199</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h4>Service Account Permissions</h4><p>It’s important when creating an instance that the correct permissions are set. At a minimum, you must ensure you have:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">scopes=compute-rw</pre></div><p>Failing to set this will result in unauthorized messages when starting Elasticsearch.
+See <a class="xref" href="discovery-gce-usage-tips.html#discovery-gce-usage-tips-permissions" title="Machine Permissions">Machine Permissions</a>.</p></div></div><p>Once connected, install Elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo apt-get update
+
+# Download Elasticsearch
+wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-2.0.0.deb
+
+# Prepare Java installation (Oracle)
+sudo echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | sudo tee /etc/apt/sources.list.d/webupd8team-java.list
+sudo echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | sudo tee -a /etc/apt/sources.list.d/webupd8team-java.list
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
+
+# Prepare Java installation (or OpenJDK)
+# sudo apt-get install java8-runtime-headless
+
+# Prepare Elasticsearch installation
+sudo dpkg -i elasticsearch-2.0.0.deb</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-gce-usage-long-install-plugin"></a>Install elasticsearch discovery gce plugin<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Install the plugin:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh"># Use Plugin Manager to install it
+sudo bin/plugin install discovery-gce</pre></div><p>Open the <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo vi /etc/elasticsearch/elasticsearch.yml</pre></div><p>And add the following lines:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+  gce:
+      project_id: es-cloud
+      zone: europe-west1-a
+discovery:
+      type: gce</pre></div><p>Start elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo /etc/init.d/elasticsearch start</pre></div><p>If anything goes wrong, you should check logs:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">tail -f /var/log/elasticsearch/elasticsearch.log</pre></div><p>If needed, you can change log level to <code class="literal">TRACE</code> by opening <code class="literal">logging.yml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo vi /etc/elasticsearch/logging.yml</pre></div><p>and adding the following line:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml"># discovery
+discovery.gce: TRACE</pre></div></div></div><div class="navfooter"><span class="prev"><a href="discovery-gce-network-host.html">
               « 
-              Changing default transport port</a>
+              GCE Network Host</a>
            
         </span><span class="next">
            
-          <a href="cloud-gce-usage-discovery-testing.html">Testing GCE
+          <a href="discovery-gce-usage-cloning.html">Cloning your existing machine
                »
             </a></span></div>
 <!-- end body -->

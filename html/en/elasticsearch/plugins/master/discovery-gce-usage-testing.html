@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting up GCE Discovery</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="cloud-gce.html" title="GCE Cloud Plugin" /><link rel="prev" href="discovery-gce-network-host.html" title="GCE Network Host" /><link rel="next" href="cloud-gce-usage-discovery-cloning.html" title="Cloning your existing machine" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Testing GCE</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="discovery-gce.html" title="GCE Discovery Plugin" /><link rel="prev" href="discovery-gce-usage-tips.html" title="GCE Tips" /><link rel="next" href="discovery-multicast.html" title="Multicast Discovery Plugin" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -605,58 +605,28 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="cloud-gce.html">GCE Cloud Plugin</a></span> » <span class="breadcrumb-node">Setting up GCE Discovery</span></div><div class="navheader"><span class="prev"><a href="discovery-gce-network-host.html">
+    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="discovery-gce.html">GCE Discovery Plugin</a></span> » <span class="breadcrumb-node">Testing GCE</span></div><div class="navheader"><span class="prev"><a href="discovery-gce-usage-tips.html">
               « 
-              GCE Network Host</a>
+              GCE Tips</a>
            
         </span><span class="next">
            
-          <a href="cloud-gce-usage-discovery-cloning.html">Cloning your existing machine
+          <a href="discovery-multicast.html">Multicast Discovery Plugin
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cloud-gce-usage-discovery-long"></a>Setting up GCE Discovery<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="cloud-gce-usage-discovery-long-prerequisites"></a>Prerequisites<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Before starting, you need:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Your project ID, e.g. <code class="literal">es-cloud</code>. Get it from <a class="ulink" href="https://code.google.com/apis/console/" target="_top">Google API Console</a>.
-</li><li class="listitem">
-To install <a class="ulink" href="https://developers.google.com/cloud/sdk/" target="_top">Google Cloud SDK</a>
-</li></ul></div><p>If you did not set it yet, you can define your default project you will work on:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud config set project es-cloud</pre></div><p><a id="cloud-gce-usage-discovery-long-login"></a>If you haven’t already, login to Google Cloud</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud auth login</pre></div><p>This will open your browser. You will be asked to sign-in to a Google account and
-authorize access to the Google Cloud SDK.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="cloud-gce-usage-discovery-long-first-instance"></a>Creating your first instance<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud compute instances create myesnode1 \
-       --zone &lt;your-zone&gt; \
-       --scopes compute-rw</pre></div><p>When done, a report like this one should appears:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">Created [https://www.googleapis.com/compute/v1/projects/es-cloud-1070/zones/us-central1-f/instances/myesnode1].
-NAME      ZONE          MACHINE_TYPE  PREEMPTIBLE INTERNAL_IP   EXTERNAL_IP   STATUS
-myesnode1 us-central1-f n1-standard-1             10.240.133.54 104.197.94.25 RUNNING</pre></div><p>You can now connect to your instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh"># Connect using google cloud SDK
-gcloud compute ssh myesnode1 --zone europe-west1-a
-
-# Or using SSH with external IP address
-ssh -i ~/.ssh/google_compute_engine 192.158.29.199</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h4>Service Account Permissions</h4><p>It’s important when creating an instance that the correct permissions are set. At a minimum, you must ensure you have:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">scopes=compute-rw</pre></div><p>Failing to set this will result in unauthorized messages when starting Elasticsearch.
-See <a class="xref" href="cloud-gce-usage-discovery-tips.html#cloud-gce-usage-discovery-tips-permissions" title="Machine Permissions">Machine Permissions</a>.</p></div></div><p>Once connected, install Elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo apt-get update
-
-# Download Elasticsearch
-wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-2.0.0.deb
-
-# Prepare Java installation (Oracle)
-sudo echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | sudo tee /etc/apt/sources.list.d/webupd8team-java.list
-sudo echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | sudo tee -a /etc/apt/sources.list.d/webupd8team-java.list
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
-sudo apt-get update
-sudo apt-get install oracle-java8-installer
-
-# Prepare Java installation (or OpenJDK)
-# sudo apt-get install java8-runtime-headless
-
-# Prepare Elasticsearch installation
-sudo dpkg -i elasticsearch-2.0.0.deb</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="cloud-gce-usage-discovery-long-install-plugin"></a>Install elasticsearch cloud gce plugin<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Install the plugin:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh"># Use Plugin Manager to install it
-sudo bin/plugin install cloud-gce</pre></div><p>Open the <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo vi /etc/elasticsearch/elasticsearch.yml</pre></div><p>And add the following lines:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="discovery-gce-usage-testing"></a>Testing GCE<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Integrations tests in this plugin require working GCE configuration and
+therefore disabled by default. To enable tests prepare a config file
+elasticsearch.yml with the following content:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
   gce:
       project_id: es-cloud
       zone: europe-west1-a
 discovery:
-      type: gce</pre></div><p>Start elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo /etc/init.d/elasticsearch start</pre></div><p>If anything goes wrong, you should check logs:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">tail -f /var/log/elasticsearch/elasticsearch.log</pre></div><p>If needed, you can change log level to <code class="literal">TRACE</code> by opening <code class="literal">logging.yml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo vi /etc/elasticsearch/logging.yml</pre></div><p>and adding the following line:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml"># discovery
-discovery.gce: TRACE</pre></div></div></div><div class="navfooter"><span class="prev"><a href="discovery-gce-network-host.html">
+      type: gce</pre></div><p>Replaces <code class="literal">project_id</code> and <code class="literal">zone</code> with your settings.</p><p>To run test:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">mvn -Dtests.gce=true -Dtests.config=/path/to/config/file/elasticsearch.yml clean test</pre></div></div><div class="navfooter"><span class="prev"><a href="discovery-gce-usage-tips.html">
               « 
-              GCE Network Host</a>
+              GCE Tips</a>
            
         </span><span class="next">
            
-          <a href="cloud-gce-usage-discovery-cloning.html">Cloning your existing machine
+          <a href="discovery-multicast.html">Multicast Discovery Plugin
                »
             </a></span></div>
 <!-- end body -->

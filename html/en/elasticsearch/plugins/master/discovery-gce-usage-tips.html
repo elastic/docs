@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>GCE Virtual Machine Discovery</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="cloud-gce.html" title="GCE Cloud Plugin" /><link rel="prev" href="cloud-gce.html" title="GCE Cloud Plugin" /><link rel="next" href="discovery-gce-network-host.html" title="GCE Network Host" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>GCE Tips</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="discovery-gce.html" title="GCE Discovery Plugin" /><link rel="prev" href="discovery-gce-usage-port.html" title="Changing default transport port" /><link rel="next" href="discovery-gce-usage-testing.html" title="Testing GCE" />
   
   	
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -605,28 +605,34 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="cloud-gce.html">GCE Cloud Plugin</a></span> » <span class="breadcrumb-node">GCE Virtual Machine Discovery</span></div><div class="navheader"><span class="prev"><a href="cloud-gce.html">
+    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="discovery-gce.html">GCE Discovery Plugin</a></span> » <span class="breadcrumb-node">GCE Tips</span></div><div class="navheader"><span class="prev"><a href="discovery-gce-usage-port.html">
               « 
-              GCE Cloud Plugin</a>
+              Changing default transport port</a>
            
         </span><span class="next">
            
-          <a href="discovery-gce-network-host.html">GCE Network Host
+          <a href="discovery-gce-usage-testing.html">Testing GCE
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cloud-gce-usage-discovery"></a>GCE Virtual Machine Discovery<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/cloud-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Google Compute Engine VM discovery allows to use the google APIs to perform automatic discovery (similar to multicast
-in non hostile multicast environments). Here is a simple sample configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
-  gce:
-      project_id: &lt;your-google-project-id&gt;
-      zone: &lt;your-zone&gt;
-discovery:
-      type: gce</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h4>Binding the network host</h4><p>It’s important to define <code class="literal">network.host</code> as by default it’s bound to <code class="literal">localhost</code>.</p><p>You can use <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/modules-network.html" target="_top">core network host settings</a> or
-<a class="link" href="discovery-gce-network-host.html" title="GCE Network Host">gce specific host settings</a>:</p></div></div></div><div class="navfooter"><span class="prev"><a href="cloud-gce.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="discovery-gce-usage-tips"></a>GCE Tips<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-gce-usage-tips-projectid"></a>Store project id locally<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you don’t want to repeat the project id each time, you can save it in the local gcloud config</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gcloud config set project es-cloud</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-gce-usage-tips-permissions"></a>Machine Permissions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you have created a machine without the correct permissions, you will see <code class="literal">403 unauthorized</code> error messages. The only
+way to alter these permissions is to delete the instance (NOT THE DISK). Then create another with the correct permissions.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Creating machines with gcloud
+</span></dt><dd><p class="simpara">Ensure the following flags are set:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">--scopes=compute-rw</pre></div></dd><dt><span class="term">
+Creating with console (web)
+</span></dt><dd><p class="simpara">When creating an instance using the web portal, click <span class="emphasis"><em>Show advanced options</em></span>.</p><p class="simpara">At the bottom of the page, under <code class="literal">PROJECT ACCESS</code>, choose <code class="literal">&gt;&gt; Compute &gt;&gt; Read Write</code>.</p></dd><dt><span class="term">
+Creating with knife google
+</span></dt><dd><p class="simpara">Set the service account scopes when creating the machine:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">knife google server create www1 \
+    -m n1-standard-1 \
+    -I debian-8 \
+    -Z us-central1-a \
+    -i ~/.ssh/id_rsa \
+    -x jdoe \
+    --gce-service-account-scopes https://www.googleapis.com/auth/compute.full_control</pre></div><p class="simpara">Or, you may use the alias:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">    --gce-service-account-scopes compute-rw</pre></div></dd></dl></div></div></div><div class="navfooter"><span class="prev"><a href="discovery-gce-usage-port.html">
               « 
-              GCE Cloud Plugin</a>
+              Changing default transport port</a>
            
         </span><span class="next">
            
-          <a href="discovery-gce-network-host.html">GCE Network Host
+          <a href="discovery-gce-usage-testing.html">Testing GCE
                »
             </a></span></div>
 <!-- end body -->
