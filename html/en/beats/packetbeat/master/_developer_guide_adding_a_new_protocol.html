@@ -650,7 +650,8 @@ When you are ready to submit your PR, simply do so from the GitHub web
   provide feedback and perhaps help you with it.
 </li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_a_note_about_dependencies"></a>A note about dependencies<a href="https://github.com/elastic/packetbeat/edit/master/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Packetbeat uses <a class="ulink" href="https://github.com/tools/godep" target="_top">Godep</a> for vendoring its
 dependencies. The way Godep works is that it copies the source code of all
-dependencies in the <code class="literal">Godep/_workspace</code> folder.</p><p>If you add a new dependency, you can use <code class="literal">godep get</code> to add it to the vendored
+dependencies in the <code class="literal">Godep/_workspace</code> folder.</p><p>Use <code class="literal">godep restore</code> to install vendored dependencies into your GOPATH. This
+helps with validating code as you type.</p><p>If you add a new dependency, you can use <code class="literal">godep get</code> to add it to the vendored
 folder.</p></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_protocol_modules"></a>Protocol modules<a href="https://github.com/elastic/packetbeat/edit/master/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Packetbeat’s source code is split up in Go packages or modules. The protocol
 modules can be found in individual folders the
 <a class="ulink" href="https://github.com/elastic/packetbeat/tree/master/protos" target="_top"><code class="literal">protos</code></a> directory
@@ -714,7 +715,54 @@ when a TCP stream is closed and the <code class="literal">GapInStream()</code> f
 is detected in a TCP stream. The protocol module can use these callbacks to take
 decisions about what to do with partial data received. For example, for the
 HTTP/1.0 protocol, the end of connection is used to know when the message is
-finished.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_the_tcp_parse_function"></a>The TCP Parse function<a href="https://github.com/elastic/packetbeat/edit/master/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For TCP protocols, the <code class="literal">Parse()</code> function is the heart of the module. As
+finished.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_registering_your_plugin"></a>Registering your plugin<a href="https://github.com/elastic/packetbeat/edit/master/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To Configure your plugin you have to add a configuration struct to
+<code class="literal">config/config.go</code> Protocols struct. This struct will be filled by
+<a class="ulink" href="https://gopkg.in/yaml.v2" target="_top">goyaml</a> on startup.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">type Protocols struct {
+        Dns      Dns
+        Http     Http
+        Memcache Memcache
+        Mysql    Mysql
+        Mongodb  Mongodb
+        Pgsql    Pgsql
+        Redis    Redis
+        Thrift   Thrift
+}</pre></div><p>Next create an ID for the new plugin in <code class="literal">protos/protos.go</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">// Protocol constants.
+const (
+        UnknownProtocol Protocol = iota
+        HttpProtocol
+        MysqlProtocol
+        RedisProtocol
+        PgsqlProtocol
+        ThriftProtocol
+        MongodbProtocol
+        DnsProtocol
+        MemcacheProtocol
+)
+
+// Protocol names
+var ProtocolNames = []string{
+        "unknown",
+        "http",
+        "mysql",
+        "redis",
+        "pgsql",
+        "thrift",
+        "mongodb",
+        "dns",
+        "memcache",
+}</pre></div><p>Protocol names order must match the protocol IDs. Additionally the protocol name must match the configuration name.</p><p>Finally register your new protocol plugin in <code class="literal">packetbeat.go</code> EnabledProtocolPlugins:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">var EnabledProtocolPlugins map[protos.Protocol]protos.ProtocolPlugin = map[protos.Protocol]protos.ProtocolPlugin{
+        protos.HttpProtocol:     new(http.Http),
+        protos.MemcacheProtocol: new(memcache.Memcache),
+        protos.MysqlProtocol:    new(mysql.Mysql),
+        protos.PgsqlProtocol:    new(pgsql.Pgsql),
+        protos.RedisProtocol:    new(redis.Redis),
+        protos.ThriftProtocol:   new(thrift.Thrift),
+        protos.MongodbProtocol:  new(mongodb.Mongodb),
+        protos.DnsProtocol:      new(dns.Dns),
+}</pre></div><p>Once the module is registered it can be configured and packets will be processed.</p><p>Before implementing all the logic for your new protocol module, it can be
+helpful to first register it and implement the minimal plugin interface printing
+a debug message on received packets. This way you can test plugin registration
+working correctly.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_the_tcp_parse_function"></a>The TCP Parse function<a href="https://github.com/elastic/packetbeat/edit/master/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For TCP protocols, the <code class="literal">Parse()</code> function is the heart of the module. As
 mentioned before, it is called for every TCP packet containing data on the
 configured ports.</p><p>It is important to understand that because TCP is a stream
 based protocol, the packets boundaries don’t necessarily match the application
@@ -786,11 +834,12 @@ responses. One thing you should be careful about is to expire and remove from
 this map incomplete transactions. For example, we might see the request that has
 created an entry in the map, but if we never see the reply, we need to remove
 the request from memory on a timer, otherwise we risk leaking memory.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_send_the_result"></a>Send the result<a href="https://github.com/elastic/packetbeat/edit/master/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>After the correlation step, you should have an JSON like object that can be sent
-to Elasticsearch for indexing. The way you do that is by putting it through the
-<code class="literal">results</code> channel, which is received by the <code class="literal">Init</code> function. The channel accepts
-structures of type <code class="literal">common.MapStr</code>, which is essentially  a <code class="literal">map[string][interface{}</code>
-with a few more convenience
-<a class="ulink" href="https://github.com/elastic/libbeat/blob/fae9cf861b58f09cf578245e45415899f4151d32/common/mapstr.go" target="_top">methods</a> added.</p><p>As an example, here is the relevant code from the REDIS module:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">        event := common.MapStr{}
+to Elasticsearch for indexing. The way you do that is by publishing it
+through the <code class="literal">results</code> publisher client, which is received by the <code class="literal">Init</code>
+function. The publisher client accepts structures of type <code class="literal">common.MapStr</code>, which
+is essentially a <code class="literal">map[string][interface{}</code> with a few more convenience
+<a class="ulink" href="https://github.com/elastic/libbeat/blob/fae9cf861b58f09cf578245e45415899f4151d32/common/mapstr.go" target="_top">methods</a>
+added.</p><p>As an example, here is the relevant code from the REDIS module:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">        event := common.MapStr{}
         event["type"] = "redis"
         if !t.IsError {
                 event["status"] = common.OK_STATUS
@@ -815,7 +864,7 @@ with a few more convenience
         event["src"] = &amp;t.Src
         event["dst"] = &amp;t.Dst
 
-        redis.results &lt;- event</pre></div><p>The following fields are required and their presence will be checked by
+        redis.results.PublishEvent(event)</pre></div><p>The following fields are required and their presence will be checked by
 system tests:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">timestamp</code>. Set this to the timestamp of the first packet from the message
    and cast it to <code class="literal">common.Time</code> like in the example above.
