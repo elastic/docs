@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuration</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Beats Platform Reference [master]" /><link rel="up" href="index.html" title="Beats Platform Reference [master]" /><link rel="prev" href="getting-started.html" title="Getting started" /><link rel="next" href="_using_https_and_basic_authentication.html" title="Using HTTPS and basic authentication" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuration</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Beats Platform Reference [master]" /><link rel="up" href="index.html" title="Beats Platform Reference [master]" /><link rel="prev" href="getting-started.html" title="Getting started" /><link rel="next" href="command-line-options.html" title="Command Line Options" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -611,7 +611,7 @@
            
         </span><span class="next">
            
-          <a href="_using_https_and_basic_authentication.html">Using HTTPS and basic authentication
+          <a href="command-line-options.html">Command Line Options
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="configuration"></a>Configuration<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>The Beat configuration file uses
 <a class="ulink" href="http://yaml.org/" target="_top">YAML</a> for its syntax. It consists of the following sections:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
@@ -702,17 +702,12 @@ the pipeline. In addition, they are also responsible for maintaining the
 network topology.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_elasticsearch_output"></a>Elasticsearch Output<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Sends the transactions directly to Elasticsearch by using the Elasticsearch
 HTTP API.</p><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
   elasticsearch:
-    # Uncomment out this option if you want to output to Elasticsearch. The
-    # default is false.
+
+    # Enable Elasticsearch as output
     enabled: true
 
-    # Set the host and port where to find Elasticsearch.
-    hosts: ["localhost:9200"]
-
-    # Optional protocol and basic auth credentials
-    # protocol: "https"
-    # username: "admin"
-    # password: "s3cr3t"
+    # The Elasticsearch cluster
+    hosts: ["http://10.45.3.2", "http://10.45.3.1/elasticsearch"]
 
     # Comment this option if you don't want to store the topology in
     # Elasticsearch. The default is false.
@@ -723,9 +718,6 @@ HTTP API.</p><p>Example configuration:</p><div class="pre_wrapper"><pre class="p
     # [packetbeat-]YYYY.MM.DD keys.
     index: "packetbeat"
 
-    # Optional HTTP Path
-    path: "/elasticsearch"
-
     # List of root certificates for HTTPS server verifications
     cas: ["/etc/pki/root/ca.pem"]
 
@@ -735,21 +727,75 @@ HTTP API.</p><p>Example configuration:</p><div class="pre_wrapper"><pre class="p
       certificate: "/etc/pki/client/cert.pem"
 
       # Client Certificate Key
-      certificatekey: "/etc/pki/client/cert.key"</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled"></a>enabled<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean option that enables Elasticsearch as output. The default is true.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_hosts"></a>hosts<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The list of Elasticsearch nodes to which to connect. The events are distributed to
+      certificatekey: "/etc/pki/client/cert.key"</pre></div><p>To enable SSL, just add <code class="literal">https</code> to all URLs defined under <span class="emphasis"><em>hosts</em></span>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
+  elasticsearch:
+
+    # Enable Elasticsearch as output
+    enabled: true
+
+    # The Elasticsearch cluster
+    hosts: ["https://10.45.3.2", "https://10.45.3.1"]
+
+    # Comment this option if you don't want to store the topology in
+    # Elasticsearch. The default is false.
+    # This option makes sense only for Packetbeat
+    save_topology: true
+
+    # HTTP basic auth
+    username: "admin"
+    password: "s3cr3t"</pre></div><p>If the Elasticsearch nodes are defined by <code class="literal">IP:PORT</code> then add <code class="literal">protocol: https</code> to your yaml file.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
+  elasticsearch:
+
+    # Enable Elasticsearch as output
+    enabled: true
+
+    # The Elasticsearch cluster
+    hosts: ["10.45.3.2", "10.45.3.1"]
+
+    # Optional http or https. Default is http
+    protocol: "https"
+
+    # Comment this option if you don't want to store the topology in
+    # Elasticsearch. The default is false.
+    # This option makes sense only for Packetbeat
+    save_topology: true
+
+    # HTTP basic auth
+    username: "admin"
+    password: "s3cr3t"</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled"></a>enabled<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean option that enables Elasticsearch as output. The default is true.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="hosts-option"></a>hosts<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The list of Elasticsearch nodes to which to connect. The events are distributed to
 these nodes in round robin order. If one node becomes unreachable, the event is
-automatically sent to another node.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_host"></a>host<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The host of the Elasticsearch server. This option is deprecated and only used if
-the <code class="literal">hosts</code> option is not present.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_port"></a>port<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The port of the Elasticsearch server. This option is deprecated and only used if
-the <code class="literal">hosts</code> option is not present.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_protocol"></a>protocol<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The name of the protocol Elasticsearch is reachable on. The options are:
-<code class="literal">http</code> or <code class="literal">https</code>. The default is <code class="literal">http</code>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_username"></a>username<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Basic authentication username for connecting to Elasticsearch.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_password"></a>password<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Basic authentication password for connecting to Elasticsearch.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_index"></a>index<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The index root name where to write events to. The default is <code class="literal">packetbeat</code> and
+automatically sent to another node. Each Elasticsearch node can be defined as an <code class="literal">URL</code> or <code class="literal">IP:PORT</code>.
+Examples: <code class="literal">http://192.15.3.2</code>, <code class="literal">https://es.found.io:9230</code> or <code class="literal">192.24.3.2:9300</code>.
+If no port is specified, <code class="literal">9200</code> is used.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Note
+</span></dt><dd>
+In case of <code class="literal">IP:PORT</code>, the <span class="emphasis"><em>scheme</em></span> and <span class="emphasis"><em>path</em></span> are taken from the <a class="xref" href="configuration.html#protocol-option" title="protocol">protocol</a> and <a class="xref" href="configuration.html#path-option" title="path">path</a> config
+options.
+</dd></dl></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
+  elasticsearch:
+
+    # Enable Elasticsearch as output
+    enabled: true
+
+    # The Elasticsearch cluster
+    hosts: ["10.45.3.2:9220", "10.45.3.1:9230"]
+
+    # Optional http or https. Default is http
+    protocol: https
+
+    # HTTP Path at which each Elasticsearch server lives
+    path: /elasticsearch</pre></div><p>In the previous example, the Elasticsearch nodes are available at <a class="ulink" href="https://10.45.3.2:9220/elasticsearch" target="_top">https://10.45.3.2:9220/elasticsearch</a> and
+<a class="ulink" href="https://10.45.3.1:9230/elasticsearch" target="_top">https://10.45.3.1:9230/elasticsearch</a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_host_deprecated"></a>host (DEPRECATED)<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The host of the Elasticsearch server. This option is deprecated as it is replaced by <a class="xref" href="configuration.html#hosts-option" title="hosts">hosts</a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_port_deprecated"></a>port (DEPRECATED)<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The port of the Elasticsearch server. This option is deprecated as it is replaced by <a class="xref" href="configuration.html#hosts-option" title="hosts">hosts</a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_username"></a>username<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Basic authentication username for connecting to Elasticsearch.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_password"></a>password<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Basic authentication password for connecting to Elasticsearch.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="protocol-option"></a>protocol<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The name of the protocol Elasticsearch is reachable on. The options are:
+<code class="literal">http</code> or <code class="literal">https</code>. The default is <code class="literal">http</code>. Its value is overwritten by the scheme available in the URL.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="path-option"></a>path<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>An HTTP path prefix that is prepended to the HTTP API calls. This is useful for
+the cases where Elasticsearch listens behind an HTTP reverse proxy that exports
+the API under a custom prefix.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_index"></a>index<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The index root name where to write events to. The default is <code class="literal">packetbeat</code> and
 generates <code class="literal">[packetbeat-]YYYY.MM.DD</code> indexes (e.g. <code class="literal">packetbeat-2015.04.26</code>).</p><p>The index root name where to write events to. The default is the beat its name.
 For example <code class="literal">packetbeat</code> generates <code class="literal">[packetbeat-]YYYY.MM.DD</code> indexes (e.g. <code class="literal">packetbeat-2015.04.26</code>).</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_max_retries"></a>max_retries<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The number of times a particular Elasticsearch index operation is attempted. If
 the indexing operation doesn’t succeed after this many retries, the events are
 dropped. The default is 3.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_bulk_max_size"></a>bulk_max_size<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The maximum number of events to bulk in a single Elasticsearch bulk API index request.
 The default is 10000.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_flush_interval"></a>flush_interval<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The number of seconds to wait for new events between two bulk API index requests.
 If <code class="literal">bulk_max_size</code> is reached before this interval expires, addition bulk index
-requests are made.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_path"></a>path<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>An HTTP path prefix that is prepended to the HTTP API calls. This is useful for
-the cases where Elasticsearch listens behind an HTTP reverse proxy that exports
-the API under a custom prefix.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_save_topology"></a>save_topology<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean that sets if the topology is kept in Elasticsearch. The default is
+requests are made.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_save_topology"></a>save_topology<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean that sets if the topology is kept in Elasticsearch. The default is
 false. This option makes sense only for Packetbeat.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_topology_expire_2"></a>topology_expire<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The time to live in seconds for the topology information that is stored in
 Elasticsearch. The default is 15 seconds.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_tls"></a>tls<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Configure TLS parameters like certificate authority for HTTPS based connections.
 If tls section is missing, the host CAs will be used for HTTPS connections to
@@ -792,13 +838,13 @@ output {
 
     tls:
       # disable tls for testing (TLS must be disabled in logstash too)
-      disabled: true</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled_2"></a>enabled<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean option that enables lumberjack output. The default is true.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_hosts_2"></a>hosts<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>List of known logstash servers to connect to. All entries in this list can
+      disabled: true</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled_2"></a>enabled<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean option that enables lumberjack output. The default is true.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_hosts"></a>hosts<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>List of known logstash servers to connect to. All entries in this list can
 contain a port number. If no port number is given, the port options value is
 used as default port number.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_loadbalance"></a>loadbalance<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If set to true and multiple logstash hosts are configured, The output plugin will
 load balance published events onto all logstash hosts. If set to false,
 the output plugin will send all events to only one host (determined by random)
 switching to another host if selected one becomes unresponsive.
-The default value is false.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_port_2"></a>port<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Default port to use if port number not given in hosts. The default port number
+The default value is false.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_port"></a>port<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Default port to use if port number not given in hosts. The default port number
 is 10200.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_index_2"></a>index<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The index root name where to write events to. The default is the beat its name.
 For example <code class="literal">packetbeat</code> generates <code class="literal">[packetbeat-]YYYY.MM.DD</code> indexes (e.g. <code class="literal">packetbeat-2015.04.26</code>).</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_tls_2"></a>tls<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>TLS configuration like root CA for the lumberjack connections. See
 <a class="xref" href="configuration.html#configuration-output-tls" title="TLS options">TLS options</a> for TLS options. If missing or tls.disabled is set to
@@ -844,7 +890,7 @@ so Redis can be used as queue between the Beat shippers and Logstash.</p><p>Exam
 
     # Optional interval for reconnecting to failed Redis connections.
     # The default is 1 second.
-    reconnect_interval: 1</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled_3"></a>enabled<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean option that enables Redis as output. The default is false.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_host_2"></a>host<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Host of the Redis server.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_port_3"></a>port<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Port of the Redis server.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_db"></a>db<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Redis database number where the events are published. The default is 0.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_db_topology"></a>db_topology<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Redis database number where the topology information is stored. The default is 1.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_index_3"></a>index<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Name of the Redis list where the events are published. The default is
+    reconnect_interval: 1</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled_3"></a>enabled<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean option that enables Redis as output. The default is false.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_host"></a>host<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Host of the Redis server.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_port_2"></a>port<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Port of the Redis server.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_db"></a>db<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Redis database number where the events are published. The default is 0.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_db_topology"></a>db_topology<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Redis database number where the topology information is stored. The default is 1.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_index_3"></a>index<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Name of the Redis list where the events are published. The default is
 <code class="literal">packetbeat</code>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_password_2"></a>password<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Password to authenticate with. The default is no authentication.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_timeout_2"></a>timeout<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Redis initial connection timeout in seconds. The default is 5 seconds.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_reconnect_interval"></a>reconnect_interval<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Interval for reconnecting failed Redis connections. The default is 1 second.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_file_output"></a>File Output<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
 
   # File as output
@@ -860,7 +906,7 @@ so Redis can be used as queue between the Beat shippers and Logstash.</p><p>Exam
     rotate_every_kb: 1000
     number_of_files: 7</pre></div><p>Dumps the transactions in a file where each transaction is in a JSON format.
 Currently, this output is used for testing, but it can be used as input for
-Logstash.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled_4"></a>enabled<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean option that enables File as output. The default is false.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_path_2"></a>path<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Path to the directory where to save the generated files. The option is
+Logstash.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled_4"></a>enabled<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Boolean option that enables File as output. The default is false.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_path"></a>path<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Path to the directory where to save the generated files. The option is
 mandatory.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_filename"></a>filename<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Name of the generated files. The default is <code class="literal">packetbeat</code> and it generates files: <code class="literal">packetbeat</code>, <code class="literal">packetbeat.1</code>, <code class="literal">packetbeat.2</code>, etc.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_rotate_every_kb"></a>rotate_every_kb<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Maximum size in kilobytes of each file. When this size is reached, the files are
 rotated. The default value is 10 MB.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_number_of_files"></a>number_of_files<a href="https://github.com/elastic/libbeat/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Maximum number of files under path. When this number of files is reached, the
 oldest file is deleted and the rest are shifted from last to first. The default
@@ -945,7 +991,7 @@ Id under which the shipper will run.</p><div class="warning admon"><div class="i
            
         </span><span class="next">
            
-          <a href="_using_https_and_basic_authentication.html">Using HTTPS and basic authentication
+          <a href="command-line-options.html">Command Line Options
                »
             </a></span></div>
 <!-- end body -->
