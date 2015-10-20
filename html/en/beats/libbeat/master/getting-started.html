@@ -660,57 +660,50 @@ request on port 9200:</p><div class="pre_wrapper"><pre class="programlisting pre
     "lucene_version" : "4.10.3"
   },
   "tagline" : "You Know, for Search"
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="logstash-installation"></a>Insert data to Elasticsearch via Logstash<a href="https://github.com/elastic/libbeat/edit/master/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The simplest architecture for the Beat platform setup consists of the Beats shippers, Elasticsearch and Kibana.
-This is nice and easy to get started with and enough for networks with small traffic. It also uses the
-minimum amount of servers: a single machine running Elasticsearch + Kibana. The
-Beat shippers insert the transactions directly into the Elasticsearch
-instance.</p><p>This article explains how to use the Beat together with Redis and Logstash to
-provide buffering and efficient indexing.  Another important advantage is that
-you have the opportunity in Logstash to modify the data captured by Beat
-any way you like. You can also use Logstash’s many output plugins to integrate
-with other systems.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The Redis output is meant to be used only temporarily until the direct
-integration between the Beat and Logstash is implemented. We plan to use the
-same protocol as it is used between the
-<a class="ulink" href="https://github.com/elastic/logstash-forwarder" target="_top">Logstash Forwarder</a> and Logstash.</p></div></div><p><span class="inlinemediaobject"><img src="./images/beats-logstash.png" alt="Integration with Logstash" /></span></p><p>In this setup, the Beat shippers use the <code class="literal">RPUSH</code> Redis command to insert
-into a list stored in memory by Redis. Logstash reads from this key using the
-<a class="ulink" href="http://www.elastic.co/guide/en/logstash/current/plugins-inputs-redis.html" target="_top">Redis
-input plugin</a> and then sends the transactions to Elasticsearch using the
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="logstash-installation"></a>Insert data to Elasticsearch via Logstash<a href="https://github.com/elastic/libbeat/edit/master/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The simplest architecture for the Beat platform setup consists of the Beats
+shippers, Elasticsearch and Kibana. This is nice and easy to get started with
+and enough for networks with small traffic. It also uses the minimum amount of
+servers: a single machine running Elasticsearch + Kibana. The Beat shippers
+insert the transactions directly into the Elasticsearch instance.</p><p>This article explains how to use the Beat together with Logstash to provide
+additional buffering. Another important advantage is that you have
+the opportunity in Logstash to modify the data captured by Beat any way you
+like. You can also use Logstash’s many output plugins to integrate with other
+systems.</p><p><span class="inlinemediaobject"><img src="./images/beats-logstash.png" alt="Integration with Logstash" /></span></p><p>In this setup, the Beat shippers send events to Logstash. Logstash receives
+these events using the
+<a class="ulink" href="https://github.com/logstash-plugins/logstash-input-beats" target="_top">Beats
+input plugin</a> and then sends the transaction to Elasticsearch using the
 <a class="ulink" href="http://www.elastic.co/guide/en/logstash/current/plugins-outputs-elasticsearch.html" target="_top">Elasticsearch
-output plugin</a>. The Elasticsearch plugin of Logstash uses the bulk API, making
-indexing very efficient.</p><p>To use this setup, disable the Elasticsearch output and use instead the
-<a class="link" href="configuration.html#redis-output" title="Redis Output">Redis output</a> in the Beat configuration file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
-  redis:
-    # Uncomment out this option if you want to output to Redis.
-    # The default is false.
+output plugin</a>. The Elasticsearch plugin of Logstash uses the bulk API, making indexing very efficient.</p><p>To use this setup, disable the Elasticsearch output and use instead the
+<a class="link" href="configuration.html#logstash-output" title="Logstash Output">Logstash output</a> in the Beat configuration file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
+  logstash:
     enabled: true
 
-    # Set the host and port where to find Redis.
-    host: "127.0.0.1"
-    port: 6379
+    hosts: ["127.0.0.1:5044"]
 
-    # This option makes sense only for Packetbeat
-    save_topology: true</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you want the Beat to monitor Redis traffic, it’s better to change
-the port for the Redis instance that you use for collecting the traffic.
-Otherwise, you create a loop where the shipper captures the traffic it sends.</p></div></div><p>Then, configure Logstash to read from Redis and index into Elasticsearch. Here
-is a sample configuration that you can save under <code class="literal">/etc/logstash/conf.d/</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">input {
-    redis {
-        codec =&gt; "json"
-        host =&gt; "127.0.0.1"
-        port =&gt; 6379
-        data_type =&gt; "list"
-        key =&gt; "packetbeat"
-    }
+    # configure logstash plugin to loadbalance events between
+    # configured logstash hosts
+    #loadbalance: false</pre></div><p>Next configure Logstash to listen on Port 5044 for incoming beats connections
+and index into Elasticsearch. The Beats platform sends the index and document
+type that the Beat would use for indexing into Elasticsearch as additional meta data.
+Here is an example configuration that you can save under <code class="literal">/etc/logstash/conf.d/</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">input {
+  beats {
+    port =&gt; 5044
+  }
 }
 
 output {
-    elasticsearch {
-        protocol =&gt; "http"
-        host =&gt; "127.0.0.1"
-        sniffing =&gt; true
-        manage_template =&gt; false
-        index =&gt; "packetbeat-%{+YYYY.MM.dd}"
-    }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="kibana-installation"></a>Kibana installation<a href="https://github.com/elastic/libbeat/edit/master/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><a class="ulink" href="https://www.elastic.co/products/kibana" target="_top">Kibana</a> is a visualization application
+  elasticsearch {
+    protocol =&gt; "http"
+    host =&gt; "localhost"
+    port =&gt; "9200"
+    sniffing =&gt; true
+    manage_template =&gt; false
+    index =&gt; "%{[@metadata][index]}"
+    document_type =&gt; "%{[@metadata][type]}"
+  }
+}</pre></div><p>Using this configuration Logstash will index events in Elasticsearch the same
+way the Beat would do.</p><p>Note: Default configuration in Beat and Logstash uses plain TCP. For encryption
+TLS must be explicitly enabled in Beat and Logstash configuration.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="kibana-installation"></a>Kibana installation<a href="https://github.com/elastic/libbeat/edit/master/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><a class="ulink" href="https://www.elastic.co/products/kibana" target="_top">Kibana</a> is a visualization application
 that gets its data from Elasticsearch. It provides a customizable and
 user-friendly UI in which you can combine various widget types to create your
 own dashboards. The dashboards can be easily saved, shared and linked.</p><p>For this tutorial, we recommend to install Kibana on the same server as
