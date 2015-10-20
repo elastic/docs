@@ -630,12 +630,11 @@ it periodically ships them to Elasticsearch for storage.</p><p>After having <a c
 <a class="ulink" href="https://golang.org/doc/code.html#GOPATH" target="_top">GOPATH</a> environment variable to point to
 your preferred workspace location, a simple way of getting the source code for
 Topbeat and libeat and compiling them at the same time is to do:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">go get github.com/elastic/topbeat</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_overview"></a>Overview<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>At the high level, a simple Beat like Topbeat has two main components: one that
-collects the actual data and the Publisher. They communicate via a Go channel,
-over which <span class="emphasis"><em>events</em></span> are sent. The Publisher is implemented in libbeat, so you
-typically only have to worry about the logic specific to your Beat. Besides the
-Publisher, libbeat offers common services like configuration management,
-logging, daemonizing/Windows service handling and in the future it will offer
-data processing modules like filtering or sampling.</p><p><span class="inlinemediaobject"><img src="./images/beat_overview.png" alt="Beat overview architecture" /></span></p><p>An event is a JSON like object (Golang type <code class="literal">map[string]interface{}</code>) that
+collects the actual data and the publisher. The publisher is implemented in
+libbeat, so you typically only have to worry about the logic specific to your
+Beat. Besides the publisher, libbeat offers common services like configuration
+management, logging, daemonizing/Windows service handling and in the future it
+will offer data processing modules like filtering or sampling.</p><p><span class="inlinemediaobject"><img src="./images/beat_overview.png" alt="Beat overview architecture" /></span></p><p>An event is a JSON like object (Golang type <code class="literal">map[string]interface{}</code>) that
 contains the collected data and which is indexed into Elasticsearch. The only
 rules are that it must contain a <code class="literal">timestamp</code> field and a <code class="literal">type</code> field. Beyond
 that, these events can contain anything and they can be created as often as
@@ -682,7 +681,7 @@ file. Here is an example configuration section for Topbeat:</p><div class="pre_w
 type ConfigSettings struct {
         Input TopConfig
 }</pre></div><p>Pointers are used to separate between the case when the setting is completely
-missing from the configuration file and when it has a values that matches the
+missing from the configuration file and when it has values that matches the
 type default.</p><p>With these structures defined, the <code class="literal">Config</code> function looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (tb *Topbeat) Config(b *beat.Beat) error {
 
         err := cfgfile.Read(&amp;tb.TbConfig, "") <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
@@ -733,7 +732,7 @@ like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint la
         return err
 }</pre></div><p>Inside the loop, Topbeat sleeps for a configured period of time and then
 captures the required data and sends it to the publisher via the <code class="literal">events</code>
-channel. The events channel is available as part of the Beat object
+publisher client. The publisher client is available as part of the Beat object
 through the <code class="literal">Beat.Events</code> variable.</p><p>The actual sending is done inside the <code class="literal">exportSystemStats()</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (t *Topbeat) exportSystemStats() error {
 
         load_stat, err := GetSystemLoad()
@@ -753,7 +752,7 @@ through the <code class="literal">Beat.Events</code> variable.</p><p>The actual 
                 "swap":      swap_stat,
         }
 
-        t.Beat.Events &lt;- event <a id="CO3-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        t.Beat.Events.PublishEvent(event) <a id="CO3-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
 
         return nil
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
