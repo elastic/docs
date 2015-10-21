@@ -620,7 +620,7 @@ Beats shippers to collect the data. You should install these on
 </li><li class="listitem">
 Elasticsearch for storage and indexing. <a class="xref" href="getting-started.html#elasticsearch-installation" title="Elasticsearch installation">Elasticsearch installation</a>
 </li><li class="listitem">
-Optionally Logstash. <a class="xref" href="getting-started.html#logstash-installation" title="Insert data to Elasticsearch via Logstash">Insert data to Elasticsearch via Logstash</a>
+Optionally Logstash. <a class="xref" href="getting-started.html#logstash-installation" title="Logstash Installation">Logstash Installation</a>
 </li><li class="listitem">
 Kibana for the UI. <a class="xref" href="getting-started.html#kibana-installation" title="Kibana installation">Kibana installation</a>
 </li><li class="listitem">
@@ -660,7 +660,7 @@ request on port 9200:</p><div class="pre_wrapper"><pre class="programlisting pre
     "lucene_version" : "4.10.3"
   },
   "tagline" : "You Know, for Search"
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="logstash-installation"></a>Insert data to Elasticsearch via Logstash<a href="https://github.com/elastic/libbeat/edit/master/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The simplest architecture for the Beat platform setup consists of the Beats
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="logstash-installation"></a>Logstash Installation<a href="https://github.com/elastic/libbeat/edit/master/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The simplest architecture for the Beat platform setup consists of the Beats
 shippers, Elasticsearch and Kibana. This is nice and easy to get started with
 and enough for networks with small traffic. It also uses the minimum amount of
 servers: a single machine running Elasticsearch + Kibana. The Beat shippers
@@ -668,14 +668,28 @@ insert the transactions directly into the Elasticsearch instance.</p><p>This art
 additional buffering. Another important advantage is that you have
 the opportunity in Logstash to modify the data captured by Beat any way you
 like. You can also use Logstash’s many output plugins to integrate with other
-systems.</p><p><span class="inlinemediaobject"><img src="./images/beats-logstash.png" alt="Integration with Logstash" /></span></p><p>In this setup, the Beat shippers send events to Logstash. Logstash receives
+systems.</p><p><span class="inlinemediaobject"><img src="./images/beats-logstash.png" alt="Integration with Logstash" /></span></p><p>To download, install and run Logstash pick your platform and follow the steps below:</p><p>deb:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo apt-get install openjdk-7-jre
+curl -L -O https://download.elastic.co/logstash/logstash/packages/debian/logstash_1.5.4-1_all.deb
+sudo dpkg -i logstash-1.5.4-1_all.deb
+sudo /etc/init.d/logstash start</pre></div><p>rpm:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo yum install java-1.7.0-openjdk
+curl -L -O https://download.elastic.co/logstash/logstash/packages/centos/logstash-1.5.4-1.noarch.rpm
+sudo rpm -i lgostash-1.5.4-1.noarch.rpm
+sudo service logstash start</pre></div><p>mac:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh"># install Java, e.g. from: https://www.java.com/en/download/manual.jsp
+curl -L -O https://download.elastic.co/logstash/logstash/logstash-1.5.4.zip
+unzip logstash-1.5.4.zip
+cd logstash-1.5.4
+./bin/logstash</pre></div><p>You can learn more about installing, configuring and running Logstash
+<a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/getting-started-with-logstash.html" target="_top">here</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_logstash_setup"></a>Logstash Setup<a href="https://github.com/elastic/libbeat/edit/master/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In this setup, the Beat shippers send events to Logstash. Logstash receives
 these events using the
 <a class="ulink" href="https://github.com/logstash-plugins/logstash-input-beats" target="_top">Beats
 input plugin</a> and then sends the transaction to Elasticsearch using the
 <a class="ulink" href="http://www.elastic.co/guide/en/logstash/current/plugins-outputs-elasticsearch.html" target="_top">Elasticsearch
-output plugin</a>. The Elasticsearch plugin of Logstash uses the bulk API, making indexing very efficient.</p><p>Note: If Logstash 1.5.4 is installed, the beats input plugin must be installed
-prior to applying this configuration. Run <span class="emphasis"><em>bin/plugin install
-logstash-input-beats</em></span> to install the required plugin.</p><p>To use this setup, disable the Elasticsearch output and use instead the
+output plugin</a>. The Elasticsearch plugin of Logstash uses the bulk API, making indexing very efficient.</p><p>Note: The mininum required Logstash version for this plugin is 1.5.4.
+If Logstash 1.5.4 is installed, the beats input plugin must be installed
+prior to applying this configuration as the plugin is not shipped with 1.5.4.
+To install the required plugin run the following command inside the logstash
+directory. In case you used deb or rpm for installation, run the logstash
+plugin executable instead.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">./bin/plugin install logstash-input-beats</pre></div><p>To use this setup, disable the Elasticsearch output and use instead the
 <a class="link" href="configuration.html#logstash-output" title="Logstash Output">Logstash output</a> in the Beat configuration file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
   logstash:
     enabled: true
@@ -687,7 +701,7 @@ logstash-input-beats</em></span> to install the required plugin.</p><p>To use th
     #loadbalance: false</pre></div><p>Next configure Logstash to listen on Port 5044 for incoming beats connections
 and index into Elasticsearch. The Beats platform sends the index and document
 type that the Beat would use for indexing into Elasticsearch as additional meta data.
-Here is an example configuration that you can save under <code class="literal">/etc/logstash/conf.d/</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">input {
+Here is an example configuration that you can save in your <code class="literal">conf.json</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">input {
   beats {
     port =&gt; 5044
   }
@@ -704,8 +718,9 @@ output {
     document_type =&gt; "%{[@metadata][type]}"
   }
 }</pre></div><p>Using this configuration Logstash will index events in Elasticsearch the same
-way the Beat would do.</p><p>Note: Default configuration in Beat and Logstash uses plain TCP. For encryption
-TLS must be explicitly enabled in Beat and Logstash configuration.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="kibana-installation"></a>Kibana installation<a href="https://github.com/elastic/libbeat/edit/master/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><a class="ulink" href="https://www.elastic.co/products/kibana" target="_top">Kibana</a> is a visualization application
+way the Beat would do.</p><p>Now you can start logstash with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">./bin/logstash -f config.json</pre></div><p>Adjust the path to your configuration file. In case you installed logstash
+as deb or rpm package, place to config file in the expected directory.</p><p>Note: Default configuration in Beat and Logstash uses plain TCP. For encryption
+TLS must be explicitly enabled in Beat and Logstash configuration.</p></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="kibana-installation"></a>Kibana installation<a href="https://github.com/elastic/libbeat/edit/master/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><a class="ulink" href="https://www.elastic.co/products/kibana" target="_top">Kibana</a> is a visualization application
 that gets its data from Elasticsearch. It provides a customizable and
 user-friendly UI in which you can combine various widget types to create your
 own dashboards. The dashboards can be easily saved, shared and linked.</p><p>For this tutorial, we recommend to install Kibana on the same server as
@@ -719,7 +734,7 @@ cd kibana-4.1.2-darwin-x64/
 <a class="ulink" href="https://www.elastic.co/downloads/kibana" target="_top">Kibana downloads page</a>.</p><p>If Kibana cannot reach the Elasticsearch server, you can adjust the settings for
 it from the <code class="literal">config/kibana.yml</code> file.</p><p>Now point your browser to port 5601 and you should see the Kibana web
 interface.</p><p>You can learn more about Kibana in the
-<a class="ulink" href="http://www.elastic.co/guide/en/kibana/current/index.html" target="_top">Kibana User Guide</a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="load-kibana-dashboards"></a>Load Kibana dashboards<a href="https://github.com/elastic/libbeat/edit/master/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Kibana has a large set of visualization types which you can combine to create
+<a class="ulink" href="http://www.elastic.co/guide/en/kibana/current/index.html" target="_top">Kibana User Guide</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="load-kibana-dashboards"></a>Load Kibana dashboards<a href="https://github.com/elastic/libbeat/edit/master/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Kibana has a large set of visualization types which you can combine to create
 the perfect dashboards for your needs. But this flexibility can be a bit
 overwhelming at the beginning, so we have created a couple of
 <a class="ulink" href="https://github.com/elastic/beats-dashboards" target="_top">Sample Dashboards</a> to give you a good start and to
@@ -738,7 +753,7 @@ Additionally, the index patterns for Packetbeat and Topbeat are created:</p><div
 <code class="literal">No default index pattern. You must select or create one to continue.</code> that can be solved
 by setting one index pattern as favorite.</p><p><span class="inlinemediaobject"><img src="./images/kibana-created-indexes.png" alt="Kibana configured indexes" /></span></p><p>To open the loaded dashboards, go to the <code class="literal">Dashboard</code> page and click the "Open"
 icon. Select <code class="literal">Packetbeat Dashboard</code> from the list. You can then switch easier
-between the dashboards by using the <code class="literal">Navigation</code> widget.</p><p><span class="inlinemediaobject"><img src="./images/kibana-navigation-vis.png" alt="Navigation widget in Kibana" /></span></p><p>Enjoy!</p></div></div><div class="navfooter"><span class="prev"><a href="beats-reference.html">
+between the dashboards by using the <code class="literal">Navigation</code> widget.</p><p><span class="inlinemediaobject"><img src="./images/kibana-navigation-vis.png" alt="Navigation widget in Kibana" /></span></p><p>Enjoy!</p></div></div></div><div class="navfooter"><span class="prev"><a href="beats-reference.html">
               « 
               Overview</a>
            
