@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Return values</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-1.0.html" title="Breaking changes in 1.0" /><link rel="prev" href="_parameters.html" title="Parameters" /><link rel="next" href="_deprecations_2.html" title="Deprecations" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Force Merge</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-refresh.html" title="Refresh" /><link rel="next" href="indices-optimize.html" title="Optimize" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -606,55 +606,61 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-1.0.html">Breaking changes in 1.0</a></span> » <span class="breadcrumb-node">Return values</span></div><div class="navheader"><span class="prev"><a href="_parameters.html">
+    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-node">Force Merge</span></div><div class="navheader"><span class="prev"><a href="indices-refresh.html">
               « 
-              Parameters</a>
+              Refresh</a>
            
         </span><span class="next">
            
-          <a href="_deprecations_2.html">Deprecations
+          <a href="indices-optimize.html">Optimize
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_return_values"></a>Return values<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_1_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-The <code class="literal">ok</code> return value has been removed from all response bodies as it added
-  no useful information.
-</li><li class="listitem">
-The <code class="literal">found</code>, <code class="literal">not_found</code> and <code class="literal">exists</code> return values have been unified as
-  <code class="literal">found</code> on all relevant APIs.
-</li><li class="listitem"><p class="simpara">
-Field values, in response to the <a class="link" href="search-request-fields.html" title="Fields"><code class="literal">fields</code></a>
-  parameter, are now always returned as arrays.  A field could have single or
-  multiple values, which meant that sometimes they were returned as scalars
-  and sometimes as arrays.  By always returning arrays, this simplifies user
-  code.  The only exception to this rule is when <code class="literal">fields</code> is used to retrieve
-  metadata like the <code class="literal">routing</code> value, which are always singular.  Metadata
-  fields are always returned as scalars.
-</p><p class="simpara">The <code class="literal">fields</code> parameter is intended to be used for retrieving stored fields,
-rather than for fields extracted from the <code class="literal">_source</code>. That means that it can no
-longer be used to return whole objects and it no longer accepts the
-<code class="literal">_source.fieldname</code> format. For these you should use the
-<a class="link" href="search-request-source-filtering.html" title="Source filtering"><code class="literal">_source</code>  <code class="literal">_source_include</code> and <code class="literal">_source_exclude</code></a>
-parameters instead.</p></li><li class="listitem"><p class="simpara">
-Settings, like <code class="literal">index.analysis.analyzer.default</code> are now returned as proper
-  nested JSON objects, which makes them easier to work with programatically:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "index": {
-        "analysis": {
-            "analyzer": {
-                "default": xxx
-            }
-        }
-    }
-}</pre></div><p class="simpara">You can choose to return them in flattened format by passing <code class="literal">?flat_settings</code>
-in the query string.</p></li><li class="listitem">
-The <a class="link" href="indices-analyze.html" title="Analyze"><code class="literal">analyze</code></a> API no longer supports the text response
-  format, but does support JSON and YAML.
-</li></ul></div></div><div class="navfooter"><span class="prev"><a href="_parameters.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-forcemerge"></a>Force Merge<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/forcemerge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The force merge API allows to force merging of one or more indices through an
+API. The merge relates to the number of segments a Lucene index holds within
+each shard. The force merge operation allows to reduce the number of segments by
+merging them.</p><p>This call will block until the merge is complete. If the http connection is
+lost, the request will continue in the background, and any new requests will
+block until the previous force merge is complete.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPOST 'http://localhost:9200/twitter/_forcemerge'</pre></div><h3><a id="forcemerge-parameters"></a>Request Parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/forcemerge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The force merge API accepts the following request parameters:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">max_num_segments</code>
+</p>
+</td><td valign="top">
+<p>
+The number of segments to merge to. To fully
+merge the index, set it to <code class="literal">1</code>. Defaults to simply checking if a
+merge needs to execute, and if so, executes it.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">only_expunge_deletes</code>
+</p>
+</td><td valign="top">
+<p>
+Should the merge process only expunge segments with
+deletes in it. In Lucene, a document is not deleted from a segment, just marked
+as deleted. During a merge process of segments, a new segment is created that
+does not have those deletes. This flag allows to only merge segments that have
+deletes. Defaults to <code class="literal">false</code>.  Note that this won’t override the
+<code class="literal">index.merge.policy.expunge_deletes_allowed</code> threshold.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">flush</code>
+</p>
+</td><td valign="top">
+<p>
+Should a flush be performed after the forced merge. Defaults to
+<code class="literal">true</code>.
+</p>
+</td></tr></tbody></table></div><h3><a id="forcemerge-multi-index"></a>Multi Index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/forcemerge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The force merge API can be applied to more than one index with a single call, or
+even on <code class="literal">_all</code> the indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPOST 'http://localhost:9200/kimchy,elasticsearch/_forcemerge'
+
+$ curl -XPOST 'http://localhost:9200/_forcemerge'</pre></div></div><div class="navfooter"><span class="prev"><a href="indices-refresh.html">
               « 
-              Parameters</a>
+              Refresh</a>
            
         </span><span class="next">
            
-          <a href="_deprecations_2.html">Deprecations
+          <a href="indices-optimize.html">Optimize
                »
             </a></span></div>
 <!-- end body -->
