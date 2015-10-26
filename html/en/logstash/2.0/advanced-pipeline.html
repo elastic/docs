@@ -762,10 +762,10 @@ User agent
 }</pre></div><h5><a id="indexing-parsed-data-into-elasticsearch"></a>Indexing Parsed Data into Elasticsearch<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Now that the web logs are broken down into specific fields, the Logstash pipeline can index the data into an
 Elasticsearch cluster. Edit the <code class="literal">first-pipeline.conf</code> file to add the following text after the <code class="literal">input</code> section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">output {
     elasticsearch {
-        protocol =&gt; "http"
     }
-}</pre></div><p>With this configuration, Logstash uses multicast discovery to connect to Elasticsearch.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Multicast discovery is acceptable for development work, but unsuited for production environments. For the
-purposes of this example, however, the default behavior is sufficient.</p></div></div><h5><a id="configuring-geoip-plugin"></a>Enhancing Your Data with the Geoip Filter Plugin<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>In addition to parsing log data for better searches, filter plugins can derive supplementary information from existing
+}</pre></div><p>With this configuration, Logstash uses http protocol to connect to Elasticsearch. The above example assumes Logstash
+and Elasticsearch to be running on the same instance. You can specify a remote Elasticsearch instance using <code class="literal">hosts</code>
+configuration like <code class="literal">hosts =&gt; es-machine:9092</code>.</p><h5><a id="configuring-geoip-plugin"></a>Enhancing Your Data with the Geoip Filter Plugin<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>In addition to parsing log data for better searches, filter plugins can derive supplementary information from existing
 data. As an example, the <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-filters-geoip.html" target="_top"><code class="literal">geoip</code></a> plugin looks up IP addresses, derives geographic
 location information from the addresses, and adds that location information to the logs.</p><p>Configure your Logstash instance to use the <code class="literal">geoip</code> filter plugin by adding the following lines to the <code class="literal">filter</code> section
 of the <code class="literal">first-pipeline.conf</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">geoip {
@@ -787,9 +787,7 @@ filter {
     }
 }
 output {
-    elasticsearch {
-        protocol =&gt; "http"
-    }
+    elasticsearch {}
     stdout {}
 }</pre></div><p>To verify your configuration, run the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f first-pipeline.conf --configtest</pre></div><p>The <code class="literal">--configtest</code> option parses your configuration file and reports any errors. When the configuration file passes
 the configuration test, start Logstash with the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f first-pipeline.conf</pre></div><p>Try a test query to Elasticsearch based on the fields created by the <code class="literal">grok</code> filter plugin:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/logstash-$DATE/_search?q=response=401'</pre></div><p>Replace $DATE with the current date, in YYYY.MM.DD format.</p><p>Since our sample has just one 401 HTTP response, we get one hit back:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{"took":2,
@@ -934,11 +932,11 @@ of the <code class="literal">first-pipeline.conf</code> file:</p><div class="pre
 }</pre></div><h5><a id="multiple-es-nodes"></a>Writing to multiple Elasticsearch nodes<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Writing to multiple Elasticsearch nodes lightens the resource demands on a given Elasticsearch node, as well as
 providing redundant points of entry into the cluster when a particular node is unavailable.</p><p>To configure your Logstash instance to write to multiple Elasticsearch nodes, edit the output section of the <code class="literal">first-pipeline.conf</code> file to read:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">output {
     elasticsearch {
-        protocol =&gt; "http"
-        host =&gt; ["IP Address 1", "IP Address 2", "IP Address 3"]
+        hosts =&gt; ["IP Address 1:port1", "IP Address 2:port2", "IP Address 3"]
     }
-}</pre></div><p>Use the IP addresses of three non-master nodes in your Elasticsearch cluster in the host line. When the <code class="literal">host</code>
-parameter lists multiple IP addresses, Logstash load-balances requests across the list of addresses.</p><h5><a id="testing-second-pipeline"></a>Testing the Pipeline<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>At this point, your <code class="literal">first-pipeline.conf</code> file looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">input {
+}</pre></div><p>Use the IP addresses of three non-master nodes in your Elasticsearch cluster in the host line. When the <code class="literal">hosts</code>
+parameter lists multiple IP addresses, Logstash load-balances requests across the list of addresses. Also note that
+default port for Elasticsearch is <code class="literal">9092</code> and can be omitted in the configuration above.</p><h5><a id="testing-second-pipeline"></a>Testing the Pipeline<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>At this point, your <code class="literal">first-pipeline.conf</code> file looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">input {
     twitter {
         consumer_key =&gt;
         consumer_secret =&gt;
@@ -954,8 +952,7 @@ parameter lists multiple IP addresses, Logstash load-balances requests across th
 }
 output {
     elasticsearch {
-        protocol =&gt; "http"
-        host =&gt; ["IP Address 1", "IP Address 2", "IP Address 3"]
+        hosts =&gt; ["IP Address 1:port1", "IP Address 2:port2", "IP Address 3"]
     }
     file {
         path =&gt; /path/to/target/file
