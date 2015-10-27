@@ -2,7 +2,8 @@ jQuery(function() {
   // Move rtp container to top right and make visible
   jQuery('#rtpcontainer').prependTo('#guide').show();
 
-  var default_sense_url = 'http://localhost:9200/_plugin/marvel/sense/';
+  var default_sense_url = 'http://localhost:5601/app/sense/';
+  var default_sense_url_marvel = 'http://localhost:9200/_plugin/marvel/sense/';
   var sense_url = jQuery.cookie('sense_url') || default_sense_url;
 
   // Enable Sense widget
@@ -41,10 +42,11 @@ jQuery(function() {
       + '<input id="sense_url" type="text" value="'
       + sense_url
       + '" />'
-      + '<button id="save_url" type="button">Save</button>'
-      + '<button id="reset_url" type="button">Default URL</button>'
-      + '<p>Or <a href="https://www.elastic.co/guide/en/marvel/current/_installation.html">'
-      + 'install Marvel with the Sense editor' + '</a>.</p>' + '</form></div>');
+      + '<button id="save_url"    type="button">Save</button>'
+      + '<button id="reset_url"   type="button">Default Sense URL</button>'
+      + '<button id="reset_url_1" type="button">Default Sense v1 URL (Marvel)</button>'
+      + '<p>Or install <a href="https://www.elastic.co/guide/en/sense/current/installation.html">'
+      + 'the Sense 2 editor' + '</a>.</p>' + '</form></div>');
     jQuery('body').prepend(div);
 
     div.find('#save_url').click(function(e) {
@@ -58,11 +60,15 @@ jQuery(function() {
       init_sense_widgets(sense_url);
       div.remove();
       e.stopPropagation();
-    })
+    });
     div.find('#reset_url').click(function(e) {
       jQuery('#sense_url').val(default_sense_url);
       e.stopPropagation();
-    })
+    });
+    div.find('#reset_url_1').click(function(e) {
+      jQuery('#sense_url').val(default_sense_url_marvel);
+      e.stopPropagation();
+    });
   }
 
   function init_toc() {
