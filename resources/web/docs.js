@@ -45,7 +45,7 @@ jQuery(function() {
       + '<button id="save_url"    type="button">Save</button>'
       + '<button id="reset_url"   type="button">Default Sense URL</button>'
       + '<button id="reset_url_1" type="button">Default Sense v1 URL (Marvel)</button>'
-      + '<p>Or install <a href="https://www.elastic.co/guide/en/sense/current/installation.html">'
+      + '<p>Or install <a href="https://www.elastic.co/guide/en/sense/current/installing.html">'
       + 'the Sense 2 editor' + '</a>.</p>' + '</form></div>');
     jQuery('body').prepend(div);
 
