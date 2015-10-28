@@ -38,7 +38,7 @@ jQuery(function() {
 
     var div = jQuery('<div id="sense_settings">'
       + '<form>'
-      + '<label for="sense_url">Enter URL of the Sense editor:</label>'
+      + '<label for="sense_url">Enter the URL of the Sense editor:</label>'
       + '<input id="sense_url" type="text" value="'
       + sense_url
       + '" />'
