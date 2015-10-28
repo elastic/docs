@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shadow replica indices</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-optimize.html" title="Optimize" /><link rel="next" href="_node_level_settings_related_to_shadow_replicas.html" title="Node level settings related to shadow replicas" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shadow replica indices</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-warmers.html" title="Warmers" /><link rel="next" href="_node_level_settings_related_to_shadow_replicas.html" title="Node level settings related to shadow replicas" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,20 +590,25 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-node">Shadow replica indices</span></div><div class="navheader"><span class="prev"><a href="indices-optimize.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-node">Shadow replica indices</span></div><div class="navheader"><span class="prev"><a href="indices-warmers.html">
               « 
-              Optimize</a>
+              Warmers</a>
            
         </span><span class="next">
            
           <a href="_node_level_settings_related_to_shadow_replicas.html">Node level settings related to shadow replicas
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-shadow-replicas"></a>Shadow replica indices<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/indices/shadow-replicas.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release.</p></div></div><p>If you would like to use a shared filesystem, you can use the shadow replicas
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-shadow-replicas"></a>Shadow replica indices<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/indices/shadow-replicas.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release.</p></div></div><p>If you would like to use a shared filesystem, you can use the shadow replicas
 settings to choose where on disk the data for an index should be kept, as well
 as how Elasticsearch should replay operations on all the replica shards of an
 index.</p><p>In order to fully utilize the <code class="literal">index.data_path</code> and <code class="literal">index.shadow_replicas</code>
-settings, you need to enable using it in elasticsearch.yml:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.enable_custom_paths: true</pre></div><p>You can then create an index with a custom data path, where each node will use
+settings, you need to allow Elasticsearch to use the same data directory for
+multiple instances by setting <code class="literal">node.add_id_to_custom_path</code> to false in
+elasticsearch.yml:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.add_id_to_custom_path: false</pre></div><p>You will also need to indicate to the security manager where the custom indices
+will be, so that the correct permissions can be applied. You can do this by
+setting the <code class="literal">path.shared_data</code> setting in elasticsearch.yml:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">path.shared_data: /opt/data</pre></div><p>This means that Elasticsearch can read and write to files in any subdirectory of
+the <code class="literal">path.shared_data</code> setting.</p><p>You can then create an index with a custom data path, where each node will use
 this path for the data:</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Because shadow replicas do not index the document on replica shards, it’s
 possible for the replica’s known mapping to be behind the index’s known mapping
 if the latest cluster state has not yet been processed on the node containing
@@ -613,10 +618,10 @@ mappings when using shadow replicas.</p></div></div><div class="pre_wrapper"><pr
     "index" : {
         "number_of_shards" : 1,
         "number_of_replicas" : 4,
-        "data_path": "/var/data/my_index",
+        "data_path": "/opt/data/my_index",
         "shadow_replicas": true
     }
-}'</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>In the above example, the "/var/data/my_index" path is a shared filesystem that
+}'</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>In the above example, the "/opt/data/my_index" path is a shared filesystem that
 must be available on every node in the Elasticsearch cluster. You must also
 ensure that the Elasticsearch process has the correct permissions to read from
 and write to the directory used in the <code class="literal">index.data_path</code> setting.</p></div></div><p>An index that has been created with the <code class="literal">index.shadow_replicas</code> setting set to
@@ -658,9 +663,9 @@ settings API:</p><div class="variablelist"><dl class="variablelist"><dt><span cl
     allowed to recover on any node in the cluster, regardless of the number of
     replicas or whether the node has previously had the shard allocated to it
     before. Defaults to <code class="literal">false</code>.
-</dd></dl></div></div><div class="navfooter"><span class="prev"><a href="indices-optimize.html">
+</dd></dl></div></div><div class="navfooter"><span class="prev"><a href="indices-warmers.html">
               « 
-              Optimize</a>
+              Warmers</a>
            
         </span><span class="next">
            
@@ -820,6 +825,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

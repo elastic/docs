@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Transport Client</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [1.7]" /><link rel="up" href="client.html" title="Client" /><link rel="prev" href="node-client.html" title="Node Client" /><link rel="next" href="index_.html" title="Index API" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Transport Client</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [2.0]" /><link rel="up" href="client.html" title="Client" /><link rel="prev" href="node-client.html" title="Node Client" /><link rel="next" href="java-docs.html" title="Document APIs" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,38 +590,38 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Java API
-      [1.7]
+      [2.0]
     </a></span> » <span class="breadcrumb-link"><a href="client.html">Client</a></span> » <span class="breadcrumb-node">Transport Client</span></div><div class="navheader"><span class="prev"><a href="node-client.html">
               « 
               Node Client</a>
            
         </span><span class="next">
            
-          <a href="index_.html">Index API
+          <a href="java-docs.html">Document APIs
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="transport-client"></a>Transport Client<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/java-api/client.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">TransportClient</code> connects remotely to an Elasticsearch cluster
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="transport-client"></a>Transport Client<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/java-api/client.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">TransportClient</code> connects remotely to an Elasticsearch cluster
 using the transport module. It does not join the cluster, but simply
 gets one or more initial transport addresses and communicates with them
 in round robin fashion on each action (though most actions will probably
 be "two hop" operations).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// on startup
 
-Client client = new TransportClient()
-        .addTransportAddress(new InetSocketTransportAddress("host1", 9300))
-        .addTransportAddress(new InetSocketTransportAddress("host2", 9300));
+Client client = TransportClient.builder().build()
+        .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("host1"), 9300))
+        .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("host2"), 9300));
 
 // on shutdown
 
 client.close();</pre></div><p>Note that you have to set the cluster name if you use one different than
-"elasticsearch":</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings settings = ImmutableSettings.settingsBuilder()
+"elasticsearch":</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings settings = Settings.settingsBuilder()
         .put("cluster.name", "myClusterName").build();
-Client client =    new TransportClient(settings);
-//Add transport addresses and do something with the client...</pre></div><p>Or using <code class="literal">elasticsearch.yml</code> file as shown in <a class="xref" href="node-client.html" title="Node Client">Node Client</a></p><p>The client allows to sniff the rest of the cluster, and add those into
-its list of machines to use. In this case, note that the IP addresses
+Client client = TransportClient.builder().settings(settings).build();
+//Add transport addresses and do something with the client...</pre></div><p>Or using <code class="literal">elasticsearch.yml</code> file as shown in <a class="xref" href="node-client.html" title="Node Client">Node Client</a></p><p>The client allows sniffing the rest of the cluster, which adds data nodes
+into its list of machines to use. In this case, note that the IP addresses
 used will be the ones that the other nodes were started with (the
 "publish" address). In order to enable it, set the
-<code class="literal">client.transport.sniff</code> to <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings settings = ImmutableSettings.settingsBuilder()
+<code class="literal">client.transport.sniff</code> to <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings settings = Settings.settingsBuilder()
         .put("client.transport.sniff", true).build();
-TransportClient client = new TransportClient(settings);</pre></div><p>Other transport client level settings include:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Parameter </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">client.transport.ignore_cluster_name</code></p></td><td align="left" valign="top"><p>Set to <code class="literal">true</code> to ignore cluster
+TransportClient client = TransportClient.builder().settings(settings).build();</pre></div><p>Other transport client level settings include:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Parameter </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">client.transport.ignore_cluster_name</code></p></td><td align="left" valign="top"><p>Set to <code class="literal">true</code> to ignore cluster
 name validation of connected nodes. (since 0.19.4)</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">client.transport.ping_timeout</code></p></td><td align="left" valign="top"><p>The time to wait for a ping response
 from a node. Defaults to <code class="literal">5s</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">client.transport.nodes_sampler_interval</code></p></td><td align="left" valign="top"><p>How often to sample / ping
 the nodes listed and connected. Defaults to <code class="literal">5s</code>.</p></td></tr></tbody></table></div></div><div class="navfooter"><span class="prev"><a href="node-client.html">
@@ -630,7 +630,7 @@ the nodes listed and connected. Defaults to <code class="literal">5s</code>.</p>
            
         </span><span class="next">
            
-          <a href="index_.html">Index API
+          <a href="java-docs.html">Document APIs
                »
             </a></span></div>
 <!-- end body -->
@@ -786,6 +786,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

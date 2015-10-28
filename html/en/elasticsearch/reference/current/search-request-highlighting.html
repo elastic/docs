@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Highlighting</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="search-request-body.html" title="Request Body Search" /><link rel="prev" href="search-request-post-filter.html" title="Post filter" /><link rel="next" href="search-request-rescore.html" title="Rescoring" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Highlighting</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="search-request-body.html" title="Request Body Search" /><link rel="prev" href="search-request-post-filter.html" title="Post filter" /><link rel="next" href="search-request-rescore.html" title="Rescoring" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,7 +590,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
+      [2.0]
     </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-link"><a href="search-request-body.html">Request Body Search</a></span> » <span class="breadcrumb-node">Highlighting</span></div><div class="navheader"><span class="prev"><a href="search-request-post-filter.html">
               « 
               Post filter</a>
@@ -599,7 +599,7 @@
            
           <a href="search-request-rescore.html">Rescoring
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-highlighting"></a>Highlighting<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Allows to highlight search results on one or more fields. The
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-highlighting"></a>Highlighting<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Allows to highlight search results on one or more fields. The
 implementation uses either the lucene <code class="literal">highlighter</code>, <code class="literal">fast-vector-highlighter</code>
 or <code class="literal">postings-highlighter</code>. The following is an example of the  search request
 body:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
@@ -617,7 +617,11 @@ required. If the field in question is stored (has <code class="literal">store</c
 in the mapping) it will be used, otherwise, the actual <code class="literal">_source</code> will
 be loaded and the relevant field will be extracted from it.</p><p>The <code class="literal">_all</code> field cannot be extracted from <code class="literal">_source</code>, so it can only
 be used for highlighting if it mapped to have <code class="literal">store</code> set to <code class="literal">true</code>.</p></div></div><p>The field name supports wildcard notation. For example, using <code class="literal">comment_*</code>
-will cause all fields that match the expression to be highlighted.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="postings-highlighter"></a>Postings highlighter<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If <code class="literal">index_options</code> is set to <code class="literal">offsets</code> in the mapping the postings highlighter
+will cause all fields that match the expression to be highlighted.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="plain-highlighter"></a>Plain highlighter<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The default choice of highlighter is of type <code class="literal">plain</code> and uses the Lucene highlighter.
+It tries hard to reflect the query matching logic in terms of understanding word importance and any word positioning criteria in phrase queries.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>If you want to highlight a lot of fields in a lot of documents with complex queries this highlighter will not be fast.
+In its efforts to accurately reflect query logic it creates a tiny in-memory index and re-runs the original query criteria through
+Lucene’s query execution planner to get access to low-level match information on the current document.
+This is repeated for every field and every document that needs highlighting. If this presents a performance issue in your system consider using an alternative highlighter.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="postings-highlighter"></a>Postings highlighter<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If <code class="literal">index_options</code> is set to <code class="literal">offsets</code> in the mapping the postings highlighter
 will be used instead of the plain highlighter. The postings highlighter:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Is faster since it doesn’t require to reanalyze the text to be highlighted:
 the larger the documents the better the performance gain should be
@@ -639,11 +643,9 @@ highlighting using the postings highlighter on it:</p><div class="pre_wrapper"><
 highlighting, regardless of their positions. That means that when used for
 instance in combination with a phrase query, it will highlight all the terms
 that the query is composed of, regardless of whether they are actually part of
-a query match, effectively ignoring their positions.</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The postings highlighter does support highlighting of multi term queries, like
-prefix queries, wildcard queries and so on. On the other hand, this requires
-the queries to be rewritten using a proper
-<a class="link" href="query-dsl-multi-term-rewrite.html" title="Multi Term Query Rewrite">rewrite method</a> that supports multi term
-extraction, which is a potentially expensive operation.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="fast-vector-highlighter"></a>Fast vector highlighter<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If <code class="literal">term_vector</code> information is provided by setting <code class="literal">term_vector</code> to
+a query match, effectively ignoring their positions.</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The postings highlighter doesn’t support highlighting some complex queries,
+like a <code class="literal">match</code> query with <code class="literal">type</code> set to <code class="literal">match_phrase_prefix</code>. No highlighted
+snippets will be returned in that case.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="fast-vector-highlighter"></a>Fast vector highlighter<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If <code class="literal">term_vector</code> information is provided by setting <code class="literal">term_vector</code> to
 <code class="literal">with_positions_offsets</code> in the mapping then the fast vector highlighter
 will be used instead of the plain highlighter.  The fast vector highlighter:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Is faster especially for large fields (&gt; <code class="literal">1MB</code>)
@@ -666,7 +668,7 @@ the index to be bigger):</p><div class="pre_wrapper"><pre class="programlisting 
     "type_name" : {
         "content" : {"term_vector" : "with_positions_offsets"}
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_force_highlighter_type"></a>Force highlighter type<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">type</code> field allows to force a specific highlighter type. This is useful
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_force_highlighter_type"></a>Force highlighter type<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">type</code> field allows to force a specific highlighter type. This is useful
 for instance when needing to use the plain highlighter on a field that has
 <code class="literal">term_vectors</code> enabled. The allowed values are: <code class="literal">plain</code>, <code class="literal">postings</code> and <code class="literal">fvh</code>.
 The following is an example that forces the use of the plain highlighter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
@@ -676,7 +678,7 @@ The following is an example that forces the use of the plain highlighter:</p><di
             "content" : {"type" : "plain"}
         }
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_force_highlighting_on_source"></a>Force highlighting on source<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Forces the highlighting to highlight fields based on the source even if fields are
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_force_highlighting_on_source"></a>Force highlighting on source<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Forces the highlighting to highlight fields based on the source even if fields are
 stored separately. Defaults to <code class="literal">false</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "query" : {...},
     "highlight" : {
@@ -684,7 +686,7 @@ stored separately. Defaults to <code class="literal">false</code>.</p><div class
             "content" : {"force_source" : true}
         }
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="tags"></a>Highlighting Tags<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default, the highlighting will wrap highlighted text in <code class="literal">&lt;em&gt;</code> and
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="tags"></a>Highlighting Tags<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default, the highlighting will wrap highlighted text in <code class="literal">&lt;em&gt;</code> and
 <code class="literal">&lt;/em&gt;</code>. This can be controlled by setting <code class="literal">pre_tags</code> and <code class="literal">post_tags</code>,
 for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "query" : {...},
@@ -719,9 +721,9 @@ is an example of switching tag schemas:</p><div class="pre_wrapper"><pre class="
             "content" : {}
         }
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_encoder"></a>Encoder<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>An <code class="literal">encoder</code> parameter can be used to define how highlighted text will
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_encoder"></a>Encoder<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>An <code class="literal">encoder</code> parameter can be used to define how highlighted text will
 be encoded. It can be either <code class="literal">default</code> (no encoding) or <code class="literal">html</code> (will
-escape html, if you use html highlighting tags).</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_highlighted_fragments"></a>Highlighted Fragments<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Each field highlighted can control the size of the highlighted fragment
+escape html, if you use html highlighting tags).</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_highlighted_fragments"></a>Highlighted Fragments<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Each field highlighted can control the size of the highlighted fragment
 in characters (defaults to <code class="literal">100</code>), and the maximum number of fragments
 to return (defaults to <code class="literal">5</code>).
 For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
@@ -772,7 +774,7 @@ greater than <code class="literal">0</code>.</p><div class="pre_wrapper"><pre cl
             }
         }
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_highlight_query"></a>Highlight query<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It is also possible to highlight against a query other than the search
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_highlight_query"></a>Highlight query<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It is also possible to highlight against a query other than the search
 query by setting <code class="literal">highlight_query</code>.  This is especially useful if you
 use a rescore query because those are not taken into account by
 highlighting by default.  Elasticsearch does not validate that
@@ -837,7 +839,7 @@ query and the rescore query in <code class="literal">highlight_query</code>.</p>
 highlighting framework. For implementation details you can check the
 <code class="literal">ScoreOrderFragmentsBuilder.java</code> class. On the other hand when using the
 postings highlighter the fragments are scored using, as mentioned above,
-the BM25 algorithm.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="highlighting-settings"></a>Global Settings<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Highlighting settings can be set on a global level and then overridden
+the BM25 algorithm.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="highlighting-settings"></a>Global Settings<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Highlighting settings can be set on a global level and then overridden
 at the field level.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "query" : {...},
     "highlight" : {
@@ -851,14 +853,14 @@ at the field level.</p><div class="pre_wrapper"><pre class="programlisting prett
             "bio.content" : { "number_of_fragments" : 5, "order" : "score" }
         }
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="field-match"></a>Require Field Match<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><code class="literal">require_field_match</code> can be set to <code class="literal">true</code> which will cause a field to
-be highlighted only if a query matched that field. <code class="literal">false</code> means that
-terms are highlighted on all requested fields regardless if the query
-matches specifically on them.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="boundary-characters"></a>Boundary Characters<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When highlighting a field using the fast vector highlighter,
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="field-match"></a>Require Field Match<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><code class="literal">require_field_match</code> can be set to <code class="literal">false</code> which will cause any field to
+be highlighted regardless of whether the query matched specifically on them.
+The default behaviour is <code class="literal">true</code>, meaning that only fields that hold a query
+match will be highlighted.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="boundary-characters"></a>Boundary Characters<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When highlighting a field using the fast vector highlighter,
 <code class="literal">boundary_chars</code> can be configured to define what constitutes a boundary
 for highlighting. It’s a single string with each boundary character
 defined in it. It defaults to <code class="literal">.,!? \t\n</code>.</p><p>The <code class="literal">boundary_max_scan</code> allows to control how far to look for boundary
-characters, and defaults to <code class="literal">20</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="matched-fields"></a>Matched Fields<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Fast Vector Highlighter can combine matches on multiple fields to
+characters, and defaults to <code class="literal">20</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="matched-fields"></a>Matched Fields<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Fast Vector Highlighter can combine matches on multiple fields to
 highlight a single field using <code class="literal">matched_fields</code>.  This is most
 intuitive for multifields that analyze the same string in different
 ways.  All <code class="literal">matched_fields</code> must have <code class="literal">term_vector</code> set to
@@ -936,12 +938,12 @@ matches is off the end of the text then the whole query will fail.</p></div></di
                 "type" : "fvh"
             }
         }
-    }</pre></div></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="phrase-limit"></a>Phrase Limit<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">fast-vector-highlighter</code> has a <code class="literal">phrase_limit</code> parameter that prevents
+    }</pre></div></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="phrase-limit"></a>Phrase Limit<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">fast-vector-highlighter</code> has a <code class="literal">phrase_limit</code> parameter that prevents
 it from analyzing too many phrases and eating tons of memory.  It defaults
 to 256 so only the first 256 matching phrases in the document scored
 considered.  You can raise the limit with the <code class="literal">phrase_limit</code> parameter but
 keep in mind that scoring more phrases consumes more time and memory.</p><p>If using <code class="literal">matched_fields</code> keep in mind that <code class="literal">phrase_limit</code> phrases per
-matched field are considered.</p><h3><a id="explicit-field-order"></a>Field Highlight Order<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elasticsearch highlights the fields in the order that they are sent.  Per the
+matched field are considered.</p><h3><a id="explicit-field-order"></a>Field Highlight Order<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elasticsearch highlights the fields in the order that they are sent.  Per the
 json spec objects are unordered but if you need to be explicit about the order
 that fields are highlighted then you can use an array for <code class="literal">fields</code> like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">    "highlight": {
         "fields": [
@@ -1111,6 +1113,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

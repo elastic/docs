@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Limitations</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [shield-1.3]" /><link rel="up" href="index.html" title="Shield Reference [shield-1.3]" /><link rel="prev" href="reference.html" title="Reference" /><link rel="next" href="troubleshooting.html" title="Troubleshooting" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Limitations</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0]" /><link rel="up" href="index.html" title="Shield Reference [2.0]" /><link rel="prev" href="reference.html" title="Reference" /><link rel="next" href="troubleshooting.html" title="Troubleshooting" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,7 +590,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
-      [shield-1.3]
+      [2.0]
     </a></span> » <span class="breadcrumb-node">Limitations</span></div><div class="navheader"><span class="prev"><a href="reference.html">
               « 
               Reference</a>
@@ -615,42 +615,9 @@ The <code class="literal">allow_no_indices</code> option is ignored, resulting i
 </li></ul></div><p>As a general principle, core Elasticsearch will return empty results in scenarios where wildcard expansion returns no
 indices, while Elasticsearch with Shield returns exceptions. Note that this behavior means that operations with
 multiple items will fail the entire set of operations if any one operation throws an exception due to wildcard
-expansion resulting in an empty set of authorized indices.</p><h3><a id="limitations-filtered-aliases"></a>Filtered Index Aliases</h3><p>You can combine a secured index alias with a <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/query-dsl-filters.html" target="_top">filter</a>
-to approximate document-level security. By manipulating the specific filtering, you can control the set of documents
-that users with privileges on that index alias can access.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Filtering secured index aliases does not provide security for documents retrieved through the
-<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/docs-get.html" target="_top">get api</a>. Read
-<a class="ulink" href="https://github.com/elasticsearch/elasticsearch/issues/3861" target="_top">Elasticsearch issue #3861</a> to learn more about this limitation.
-Users can obtain secure near-real-time get under this restriction with searches by document ID, using the
-<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/search-search.html" target="_top">search api</a> instead. Restrict get operations when you use this approach by granting the <code class="literal">search</code>
-privilege and disallowing <code class="literal">get</code>.</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>In Elasticsearch, issuing a delete operation on an alias also deletes all of the indices that the alias
-points to, regardless of the filter that the alias might hold. Keep this behavior in mind when granting users
-administrative privileges to filtered index aliases. Read
-<a class="ulink" href="https://github.com/elasticsearch/elasticsearch/issues/2318" target="_top">Elasticsearch issue #2318</a> to learn more about this limitation.</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>A filtered index alias will not provide document-level security for the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/search-suggesters.html" target="_top">suggesters apis</a>
-as they do not take into account the filters placed on aliases.</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>A filtered index alias will not provide document-level security when using a
-<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/search-aggregations-bucket-children-aggregation.html" target="_top">Children Aggregation</a> as the filter from the alias is not used
-when computing the aggregation results.</p></div></div><h3><a id="_queries_and_filters"></a>Queries and Filters</h3><h4><a id="limitations-disable-cache"></a>Elasticsearch 1.6+</h4><p>Elasticsearch 1.6 removes all of the limitations below with queries and filters with the exception of the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/query-dsl-mlt-query.html" target="_top">More Like This Query</a>.
-<span class="strong"><strong>But</strong></span> there is the possibility of authorization being bypassed when using a terms filter with the
-<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/query-dsl-terms-filter.html#_terms_lookup_mechanism" target="_top">terms lookup mechanism</a>. The authorization that could be
-bypassed is for the index containing the terms when using Shield 1.2.0 and 1.2.1. If using Shield 1.2.0 or 1.2.1,
-add the following setting to your <code class="literal">elasticsearch.yml</code> file to ensure that requests are properly authorized:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">indices.cache.filter.terms.size: 0</pre></div><p>Shield 1.2.2+ does not require this setting to be specified.</p><p>Elasticsearch 1.6.2+ and 1.7.1+ remove the limitations on the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/query-dsl-mlt-query.html" target="_top">More Like This Query</a>.</p><h4><a id="_elasticsearch_pre_1_6_0"></a>Elasticsearch pre-1.6.0</h4><p>Certain Elasticsearch requests execute other requests as part of their implementation. Some of these requests do not
-maintain the security context that the original request was made with. This causes an <code class="literal">AuthorizationException</code> even when
-the user has authorization to make the subsequent requests. The following requests have this behavior:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/query-dsl-mlt-query.html" target="_top">More Like This Query</a>
-</li><li class="listitem">
-<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/query-dsl-geo-shape-query.html" target="_top">GeoShape Query</a> and <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/query-dsl-geo-shape-filter.html" target="_top">GeoShape Filter</a> when
-  used with an <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/query-dsl-geo-shape-filter.html#_pre_indexed_shape" target="_top">indexed shape</a>
-</li><li class="listitem">
-<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/query-dsl-terms-filter.html" target="_top">Terms Filter</a> when using the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/query-dsl-terms-filter.html#_terms_lookup_mechanism" target="_top">terms lookup mechanism</a>
-</li><li class="listitem">
-<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/search-suggesters-phrase.html" target="_top">Phrase Suggester</a> when specifying the <code class="literal">collate</code> field
-</li><li class="listitem">
-Any query using <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/modules-scripting.html#_indexed_scripts" target="_top">indexed scripts</a>
-</li><li class="listitem">
-Queries using a <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/search-template.html" target="_top">search template</a>
-</li></ul></div><h3><a id="_document_expiration__ttl"></a>Document Expiration (_ttl)</h3><p>Document expiration handled using the built-in <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/mapping-ttl-field.html#mapping-ttl-field" target="_top"><code class="literal">_ttl</code> (time to live) mechanism</a>
-does not work with Shield. The document deletions will fail and the documents continue to live past their expiration.</p><h3><a id="_ldap_realm"></a>LDAP Realm</h3><p>The <a class="link" href="ldap.html" title="Configuring an LDAP Realm">LDAP Realm</a> does not currently support the discovery of nested LDAP Groups.  For example, if a user is a member
-of GroupA and GroupA is a member of GroupB, only GroupA will be discovered.  However, the <a class="link" href="active-directory.html" title="Configuring an Active Directory Realm">Active Directory Realm</a> <span class="emphasis"><em>does</em></span>
-support transitive group membership.</p></div><div class="navfooter"><span class="prev"><a href="reference.html">
+expansion resulting in an empty set of authorized indices.</p><h3><a id="_document_expiration__ttl"></a>Document Expiration (_ttl)</h3><p>Document expiration handled using the built-in <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.0/mapping-ttl-field.html#mapping-ttl-field" target="_top"><code class="literal">_ttl</code> (time to live) mechanism</a>
+does not work with Shield. The document deletions will fail and the documents continue to live past their expiration.</p><h3><a id="_ldap_realm"></a>LDAP Realm</h3><p>The <a class="link" href="ldap.html" title="Using LDAP to Authenticate Users">LDAP Realm</a> does not currently support the discovery of nested LDAP Groups.  For example, if a user is a member
+of GroupA and GroupA is a member of GroupB, only GroupA will be discovered.  However, the <a class="link" href="active-directory.html" title="Using Active Directory to Authenticate Users">Active Directory Realm</a> <span class="emphasis"><em>does</em></span> support transitive group membership.</p></div><div class="navfooter"><span class="prev"><a href="reference.html">
               « 
               Reference</a>
            
@@ -812,6 +779,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

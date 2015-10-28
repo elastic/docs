@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Index Slow Log</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="index-modules.html" title="Index Modules" /><link rel="prev" href="disk.html" title="Disk-based Shard Allocation" /><link rel="next" href="index-modules-merge.html" title="Merge" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Slow Log</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="index-modules.html" title="Index Modules" /><link rel="prev" href="index-modules-similarity.html" title="Similarity module" /><link rel="next" href="index-modules-store.html" title="Store" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,26 +590,26 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-node">Index Slow Log</span></div><div class="navheader"><span class="prev"><a href="disk.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-node">Slow Log</span></div><div class="navheader"><span class="prev"><a href="index-modules-similarity.html">
               « 
-              Disk-based Shard Allocation</a>
+              Similarity module</a>
            
         </span><span class="next">
            
-          <a href="index-modules-merge.html">Merge
+          <a href="index-modules-store.html">Store
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-slowlog"></a>Index Slow Log<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/index-modules/slowlog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><h3><a id="search-slow-log"></a>Search Slow Log<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/index-modules/slowlog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Shard level slow search log allows to log slow search (query and fetch
-executions) into a dedicated log file.</p><p>Thresholds can be set for both the query phase of the execution, and
-fetch phase, here is a sample:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">#index.search.slowlog.threshold.query.warn: 10s
-#index.search.slowlog.threshold.query.info: 5s
-#index.search.slowlog.threshold.query.debug: 2s
-#index.search.slowlog.threshold.query.trace: 500ms
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-slowlog"></a>Slow Log<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/index-modules/slowlog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><h3><a id="search-slow-log"></a>Search Slow Log<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/index-modules/slowlog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Shard level slow search log allows to log slow search (query and fetch
+phases) into a dedicated log file.</p><p>Thresholds can be set for both the query phase of the execution, and
+fetch phase, here is a sample:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">index.search.slowlog.threshold.query.warn: 10s
+index.search.slowlog.threshold.query.info: 5s
+index.search.slowlog.threshold.query.debug: 2s
+index.search.slowlog.threshold.query.trace: 500ms
 
-#index.search.slowlog.threshold.fetch.warn: 1s
-#index.search.slowlog.threshold.fetch.info: 800ms
-#index.search.slowlog.threshold.fetch.debug: 500ms
-#index.search.slowlog.threshold.fetch.trace: 200ms</pre></div><p>By default, none are enabled (set to <code class="literal">-1</code>). Levels (<code class="literal">warn</code>, <code class="literal">info</code>,
+index.search.slowlog.threshold.fetch.warn: 1s
+index.search.slowlog.threshold.fetch.info: 800ms
+index.search.slowlog.threshold.fetch.debug: 500ms
+index.search.slowlog.threshold.fetch.trace: 200ms</pre></div><p>All of the above settings are <span class="emphasis"><em>dynamic</em></span> and can be set per-index.</p><p>By default, none are enabled (set to <code class="literal">-1</code>). Levels (<code class="literal">warn</code>, <code class="literal">info</code>,
 <code class="literal">debug</code>, <code class="literal">trace</code>) allow to control under which logging level the log
 will be logged. Not all are required to be configured (for example, only
 <code class="literal">warn</code> threshold can be set). The benefit of several levels is the
@@ -618,35 +618,38 @@ search request within a specific shard. It does not encompass the whole
 search request, which can be broadcast to several shards in order to
 execute. Some of the benefits of shard level logging is the association
 of the actual execution on the specific machine, compared with request
-level.</p><p>All settings are index level settings (and each index can have different
-values for it), and can be changed in runtime using the index update
-settings API.</p><p>The logging file is configured by default using the following
-configuration (found in <code class="literal">logging.yml</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">index_search_slow_log_file:
+level.</p><p>The logging file is configured by default using the following
+configuration (found in <code class="literal">logging.yml</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">index_search_slow_log_file:
   type: dailyRollingFile
   file: ${path.logs}/${cluster.name}_index_search_slowlog.log
   datePattern: "'.'yyyy-MM-dd"
   layout:
     type: pattern
-    conversionPattern: "[%d{ISO8601}][%-5p][%-25c] %m%n"</pre></div><h3><a id="index-slow-log"></a>Index Slow log<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/index-modules/slowlog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The indexing slow log, similar in functionality to the search slow
+    conversionPattern: "[%d{ISO8601}][%-5p][%-25c] %m%n"</pre></div><h3><a id="index-slow-log"></a>Index Slow log<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/index-modules/slowlog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The indexing slow log, similar in functionality to the search slow
 log. The log file is ends with <code class="literal">_index_indexing_slowlog.log</code>. Log and
 the thresholds are configured in the elasticsearch.yml file in the same
-way as the search slowlog. Index slowlog sample:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">#index.indexing.slowlog.threshold.index.warn: 10s
-#index.indexing.slowlog.threshold.index.info: 5s
-#index.indexing.slowlog.threshold.index.debug: 2s
-#index.indexing.slowlog.threshold.index.trace: 500ms</pre></div><p>The index slow log file is configured by default in the <code class="literal">logging.yml</code>
-file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">index_indexing_slow_log_file:
+way as the search slowlog. Index slowlog sample:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">index.indexing.slowlog.threshold.index.warn: 10s
+index.indexing.slowlog.threshold.index.info: 5s
+index.indexing.slowlog.threshold.index.debug: 2s
+index.indexing.slowlog.threshold.index.trace: 500ms
+index.indexing.slowlog.level: info
+index.indexing.slowlog.source: 1000</pre></div><p>All of the above settings are <span class="emphasis"><em>dynamic</em></span> and can be set per-index.</p><p>By default Elasticsearch will log the first 1000 characters of the _source in
+the slowlog. You can change that with <code class="literal">index.indexing.slowlog.source</code>. Setting
+it to <code class="literal">false</code> or <code class="literal">0</code> will skip logging the source entirely an setting it to
+<code class="literal">true</code> will log the entire source regardless of size.</p><p>The index slow log file is configured by default in the <code class="literal">logging.yml</code>
+file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">index_indexing_slow_log_file:
     type: dailyRollingFile
     file: ${path.logs}/${cluster.name}_index_indexing_slowlog.log
     datePattern: "'.'yyyy-MM-dd"
     layout:
       type: pattern
-      conversionPattern: "[%d{ISO8601}][%-5p][%-25c] %m%n"</pre></div></div><div class="navfooter"><span class="prev"><a href="disk.html">
+      conversionPattern: "[%d{ISO8601}][%-5p][%-25c] %m%n"</pre></div></div><div class="navfooter"><span class="prev"><a href="index-modules-similarity.html">
               « 
-              Disk-based Shard Allocation</a>
+              Similarity module</a>
            
         </span><span class="next">
            
-          <a href="index-modules-merge.html">Merge
+          <a href="index-modules-store.html">Store
                »
             </a></span></div>
 <!-- end body -->
@@ -802,6 +805,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

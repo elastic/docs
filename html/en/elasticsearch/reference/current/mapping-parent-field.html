@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_parent</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="mapping-fields.html" title="Fields" /><link rel="prev" href="mapping-boost-field.html" title="_boost" /><link rel="next" href="mapping-field-names-field.html" title="_field_names" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_parent field</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="mapping-fields.html" title="Meta-Fields" /><link rel="prev" href="mapping-meta-field.html" title="_meta field" /><link rel="next" href="mapping-routing-field.html" title="_routing field" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,34 +590,147 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_parent</code></span></div><div class="navheader"><span class="prev"><a href="mapping-boost-field.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Meta-Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_parent</code> field</span></div><div class="navheader"><span class="prev"><a href="mapping-meta-field.html">
               « 
-              <code class="literal">_boost</code></a>
+              <code class="literal">_meta</code> field</a>
            
         </span><span class="next">
            
-          <a href="mapping-field-names-field.html"><code class="literal">_field_names</code>
+          <a href="mapping-routing-field.html"><code class="literal">_routing</code> field
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-parent-field"></a><code class="literal">_parent</code><a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/parent-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The parent field mapping is defined on a child mapping, and points to
-the parent type this child relates to. For example, in case of a <code class="literal">blog</code>
-type and a <code class="literal">blog_tag</code> type child document, the mapping for <code class="literal">blog_tag</code>
-should be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "blog_tag" : {
-        "_parent" : {
-            "type" : "blog"
-        }
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-parent-field"></a><code class="literal">_parent</code> field<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/parent-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Added in 2.0.0-beta1.</h4><p>The parent-child implementation has been completely rewritten. It is advisable to reindex any 1.x indices which use parent-child to take advantage of the new optimizations.</p></div></div><p>A parent-child relationship can be established between documents in the same
+index by making one mapping type the parent of another:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_parent": {},
+    "my_child": {
+      "_parent": {
+        "type": "my_parent" <a id="CO161-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      }
     }
-}</pre></div><p>The mapping is automatically stored and indexed (meaning it can be
-searched on using the <code class="literal">_parent</code> field notation).</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_field_data_loading"></a>Field data loading<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/parent-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Contrary to other fields the fielddata loading is not <code class="literal">lazy</code>, but <code class="literal">eager</code>. The reason for this is that when this
-field has been enabled it is going to be used in parent/child queries, which heavily relies on field data to perform
-efficiently. This can already be observed during indexing after refresh either automatically or manually has been executed.</p></div></div><div class="navfooter"><span class="prev"><a href="mapping-boost-field.html">
+  }
+}
+
+PUT my_index/my_parent/1 <a id="CO161-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+{
+  "text": "This is a parent document"
+}
+
+PUT my_index/my_child/2?parent=1 <a id="CO161-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+{
+  "text": "This is a child document"
+}
+
+PUT my_index/my_child/3?parent=1 <a id="CO161-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+{
+  "text": "This is another child document"
+}
+
+GET my_index/my_parent/_search
+{
+  "query": {
+    "has_child": { <a id="CO161-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+      "type": "my_child",
+      "query": {
+        "match": {
+          "text": "child document"
+        }
+      }
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-parent-field/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO161-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">my_parent</code> type is parent to the <code class="literal">my_child</code> type.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO161-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Index a parent document.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO161-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO161-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Index two child documents, specifying the parent document’s ID.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO161-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Find all parent documents that have children which match the query.
+</p></td></tr></table></div><p>See the <a class="link" href="query-dsl-has-child-query.html" title="Has Child Query"><code class="literal">has_child</code></a> and
+<a class="link" href="query-dsl-has-parent-query.html" title="Has Parent Query"><code class="literal">has_parent</code></a> queries,
+the <a class="link" href="search-aggregations-bucket-children-aggregation.html" title="Children Aggregation"><code class="literal">children</code></a> aggregation,
+and <a class="link" href="search-request-inner-hits.html#parent-child-inner-hits" title="Parent/child inner hits">inner hits</a> for more information.</p><p>The value of the <code class="literal">_parent</code> field is accessible in queries, aggregations, scripts,
+and when sorting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET my_index/_search
+{
+  "query": {
+    "terms": {
+      "_parent": [ "1" ] <a id="CO162-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    }
+  },
+  "aggs": {
+    "parents": {
+      "terms": {
+        "field": "_parent", <a id="CO162-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        "size": 10
+      }
+    }
+  },
+  "sort": [
+    {
+      "_parent": { <a id="CO162-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        "order": "desc"
+      }
+    }
+  ],
+  "script_fields": {
+    "parent": {
+      "script": "doc['_parent']" <a id="CO162-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-parent-field/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO162-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Querying on the <code class="literal">_parent</code> field (also see the <a class="link" href="query-dsl-has-parent-query.html" title="Has Parent Query"><code class="literal">has_parent</code> query</a> and the <a class="link" href="query-dsl-has-child-query.html" title="Has Child Query"><code class="literal">has_child</code> query</a>)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO162-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Aggregating on the <code class="literal">_parent</code> field (also see the <a class="link" href="search-aggregations-bucket-children-aggregation.html" title="Children Aggregation"><code class="literal">children</code></a> aggregation)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO162-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Sorting on the <code class="literal">_parent</code> field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO162-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Accessing the <code class="literal">_parent</code> field in scripts (inline scripts must be <a class="link" href="modules-scripting.html#enable-dynamic-scripting" title="Enabling dynamic scriptingedit">enabled</a> for this example to work)
+</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_parent_child_restrictions"></a>Parent-child restrictions<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/parent-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The parent and child types must be different — parent-child relationships
+  cannot be established between documents of the same type.
+</li><li class="listitem">
+The <code class="literal">_parent.type</code> setting can only point to a type that doesn’t exist yet.
+  This means that a type cannot become a parent type after it is has been
+  created.
+</li><li class="listitem">
+Parent and child documents must be indexed on the same shard.  The <code class="literal">parent</code>
+  ID is used as the <a class="link" href="mapping-routing-field.html" title="_routing field">routing</a> value for the child,
+  to ensure that the child is indexed on the same shard as the parent.
+  This means that the same <code class="literal">parent</code> value needs to be provided when
+  <a class="link" href="docs-get.html" title="Get API">getting</a>, <a class="link" href="docs-delete.html" title="Delete API">deleting</a>, or <a class="link" href="docs-update.html" title="Update API">updating</a>
+  a child document.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_global_ordinals"></a>Global ordinals<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/parent-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Parent-child uses <a class="link" href="fielddata.html#global-ordinals" title="Global ordinals">global ordinals</a> to speed up joins.
+Global ordinals need to be rebuilt after any change to a shard. The more
+parent id values are stored in a shard, the longer it takes to rebuild the
+global ordinals for the <code class="literal">_parent</code> field.</p><p>Global ordinals, by default, are built lazily: the first parent-child query or
+aggregation after a refresh will trigger building of global ordinals. This can
+introduce a significant latency spike for your users. You can use
+<a class="link" href="fielddata.html#fielddata-loading" title="fielddata.loading">eager_global_ordinals</a> to shift the cost of building global
+ordinals from query time to refresh time, by mapping the <code class="literal">_parent</code> field as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_parent": {},
+    "my_child": {
+      "_parent": {
+        "type": "my_parent",
+        "fielddata": {
+          "loading": "eager_global_ordinals"
+        }
+      }
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-parent-field/3.json"></div><p>The amount of heap used by global ordinals can be checked as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh"># Per-index
+GET _stats/fielddata?human&amp;fields=_parent
+
+# Per-node per-index
+GET _nodes/stats/indices/fielddata?human&amp;fields=_parent</pre></div><div class="sense_widget" data-snippet="snippets/mapping-parent-field/4.json"></div></div></div><div class="navfooter"><span class="prev"><a href="mapping-meta-field.html">
               « 
-              <code class="literal">_boost</code></a>
+              <code class="literal">_meta</code> field</a>
            
         </span><span class="next">
            
-          <a href="mapping-field-names-field.html"><code class="literal">_field_names</code>
+          <a href="mapping-routing-field.html"><code class="literal">_routing</code> field
                »
             </a></span></div>
 <!-- end body -->
@@ -773,6 +886,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

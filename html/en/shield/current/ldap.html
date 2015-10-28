@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuring an LDAP Realm</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [shield-1.3]" /><link rel="up" href="setting-up-authentication.html" title="Setting Up User Authentication" /><link rel="prev" href="esusers.html" title="Configuring an esusers Realm" /><link rel="next" href="active-directory.html" title="Configuring an Active Directory Realm" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using LDAP to Authenticate Users</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0]" /><link rel="up" href="setting-up-authentication.html" title="Setting Up User Authentication" /><link rel="prev" href="esusers.html" title="Using esusers to Authenticate Users" /><link rel="next" href="active-directory.html" title="Using Active Directory to Authenticate Users" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,31 +590,39 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
-      [shield-1.3]
-    </a></span> » <span class="breadcrumb-link"><a href="setting-up-authentication.html">Setting Up User Authentication</a></span> » <span class="breadcrumb-node">Configuring an LDAP Realm</span></div><div class="navheader"><span class="prev"><a href="esusers.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="setting-up-authentication.html">Setting Up User Authentication</a></span> » <span class="breadcrumb-node">Using LDAP to Authenticate Users</span></div><div class="navheader"><span class="prev"><a href="esusers.html">
               « 
-              Configuring an esusers Realm</a>
+              Using esusers to Authenticate Users</a>
            
         </span><span class="next">
            
-          <a href="active-directory.html">Configuring an Active Directory Realm
+          <a href="active-directory.html">Using Active Directory to Authenticate Users
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ldap"></a>Configuring an LDAP Realm</h2></div></div></div><p>A secure Elasticsearch cluster can authenticate users from a Lightweight Directory Access Protocol (LDAP) directory.
-With LDAP Authentication, you can assign roles to LDAP groups.  When a user authenticates with LDAP, the privileges for
-that user are the union of all privileges defined by the roles assigned to the set of groups that the user belongs to.</p><p>This section discusses configuration for an LDAP Realm.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_ldap_overview"></a>LDAP Overview</h3></div></div></div><p>LDAP stores users and groups hierarchically, similar to the way folders are grouped in a file system. The path to any
-entry is a <span class="emphasis"><em>Distinguished Name</em></span>, or DN. A DN uniquely identifies a user or group. User and group names typically use
-attributes such as <span class="emphasis"><em>common name</em></span> (<code class="literal">cn</code>) or <span class="emphasis"><em>unique ID</em></span> (<code class="literal">uid</code>). An LDAP directory’s hierarchy is built from containers
-such as the <span class="emphasis"><em>organizational unit</em></span> (<code class="literal">ou</code>), <span class="emphasis"><em>organization</em></span> (<code class="literal">o</code>), or <span class="emphasis"><em>domain controller</em></span> (<code class="literal">dc</code>).</p><p>LDAP ignores white space in a DN definition. The following two DNs are equivalent:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">"cn=admin,dc=example,dc=com"
-"cn =admin ,dc= example , dc = com"</pre></div><p>Although optional, connections to the LDAP server should use the Secure Sockets Layer (SSL/TLS) protocol to protect
-passwords. Clients and nodes that connect via SSL/TLS to the LDAP server require the certificate or the root CA for the
-server. These certificates should be put into each node’s keystore/truststore.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ldap-realms"></a>LDAP Realm Settings</h3></div></div></div><p>Like all realms, the <code class="literal">ldap</code> realm is configured under the <code class="literal">shield.authc.realms</code> settings namespace in the
-<code class="literal">elasticsearch.yml</code> file. The LDAP realm supports two modes of operation, a user search mode and a mode with specific
-templates for user DNs.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="ldap-user-search"></a>LDAP Realm with User Search <span class="added">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ldap"></a>Using LDAP to Authenticate Users</h2></div></div></div><p>You can configure Shield to communicate with a Lightweight Directory Access Protocol
+(LDAP) directory to authenticate users. To integrate with LDAP, you configure an LDAP realm and
+assign LDAP groups to Shield roles in the <a class="link" href="mapping-roles.html" title="Mapping Users and Groups to Roles">role mapping file</a>.</p><p>To protect passwords, communications between Shield and the LDAP server should be encrypted
+using SSL/TLS. Clients and nodes that connect via SSL/TLS to the LDAP server need to have the
+LDAP server’s certificate or the server’s root CA certificate installed in their keystore or
+truststore. For more information about installing certificates, see <a class="link" href="ssl-tls.html" title="Setting Up SSL/TLS on a Cluster">Setting Up SSL</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_configuring_an_ldap_realm"></a>Configuring an LDAP Realm</h3></div></div></div><p>LDAP stores users and groups hierarchically, similar to the way folders are grouped in a file
+system. An LDAP directory’s hierarchy is built from containers such as the
+ <span class="emphasis"><em>organizational unit</em></span> (<code class="literal">ou</code>), <span class="emphasis"><em>organization</em></span> (<code class="literal">o</code>), and <span class="emphasis"><em>domain controller</em></span> (<code class="literal">dc</code>).</p><p>The path to a entry is a <span class="emphasis"><em>Distinguished Name</em></span> (DN) that uniquely identifies a user or group.
+User and group  names typically have attributes such as a <span class="emphasis"><em>common name</em></span> (<code class="literal">cn</code>) or <span class="emphasis"><em>unique ID</em></span> (<code class="literal">uid</code>).
+A DN is specified as a string, for example  <code class="literal">"cn=admin,dc=example,dc=com"</code>. White space is ignored.</p><p>The LDAP realm supports two modes of operation, a user search mode
+and a mode with specific templates for user DNs. See <a class="link" href="ldap.html#ldap-settings" title="LDAP Realm Settings">LDAP Realm Settings</a>
+for all of the options you can set for an LDAP realm.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="ldap-user-search"></a>Configuring an LDAP Realm with User Search <span class="added">
       [<span class="version">1.1.0</span>]
-      <span class="detail">Added in 1.1.0.</span></span></h4></div></div></div><p>A LDAP user search is the most common mode of operation. In this mode, a specific user with permission to search the LDAP
-is used to seach for the user DN based on the username and a LDAP attribute. The following snippet shows an example of
-such configuration:</p><p><strong>Example LDAP Realm Configuration with User Search. </strong>
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield:
+      <span class="detail">Added in 1.1.0.</span></span></h4></div></div></div><p>LDAP user search is the most common mode of operation. In this mode, a specific user with
+permission to search the LDAP directory is used to search for the user DN based on the username
+and an LDAP attribute.</p><p>To configure an LDAP Realm with User Search:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Add a realm configuration of type <code class="literal">ldap</code> to <code class="literal">elasticsearch.yml</code> in the
+<code class="literal">shield.authc.realms</code> namespace. At a minimum, you must set the realm
+<code class="literal">type</code> to <code class="literal">ldap</code>, specify the <code class="literal">url</code> of the LDAP server, and specify the container DN to search for
+users with the <code class="literal">user_search.base_dn</code> option. If you are configuring multiple realms, you
+should also explicitly set the <code class="literal">order</code> attribute to control the order in which the realms are
+consulted during authentication. See <a class="link" href="ldap.html#ldap-settings" title="LDAP Realm Settings">LDAP Realm Settings</a>
+for all of the options you can set for an LDAP realm.
+</p><p class="simpara">For example, the following snippet shows an LDAP realm configured with a user search:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield:
   authc:
     realms:
       ldap1:
@@ -630,11 +638,20 @@ such configuration:</p><p><strong>Example LDAP Realm Configuration with User Sea
           base_dn: "dc=example,dc=com"
         files:
           role_mapping: "/mnt/elasticsearch/group_to_role_mapping.yml"
-        unmapped_groups_as_roles: false</pre></div><p>
-</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_ldap_realm_with_user_dn_templates"></a>LDAP Realm with User DN Templates</h4></div></div></div><p>User DN templates can be specified if your LDAP environment uses a few specific standard naming conditions for users. The
-advantage of this method is that a search is not needed to find the user DN; conversely the disadvantage is multiple bind
-operations may be needed to find the right user DN. The following snippet shows an example of such configuration:</p><p><strong>Example LDAP Realm Configuration with User DN Templates. </strong>
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield:
+        unmapped_groups_as_roles: false</pre></div></li><li class="listitem">
+Restart Elasticsearch
+</li></ol></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_configuring_an_ldap_realm_with_user_dn_templates"></a>Configuring an LDAP Realm with User DN Templates</h4></div></div></div><p>If your LDAP environment uses a few specific standard naming conditions for users, you can use
+User DN templates to configure the realm. The advantage of this method is that a search does not
+have to be performed to find the user DN. However, multiple bind operations might be needed to find
+the correct user DN.</p><p>To configure an LDAP Realm with User Search:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Add a realm configuration of type <code class="literal">ldap</code> to <code class="literal">elasticsearch.yml</code> in the
+<code class="literal">shield.authc.realms</code> namespace. At a minimum, you must set the realm
+<code class="literal">type</code> to <code class="literal">ldap</code>, specify the <code class="literal">url</code> of the LDAP server, and specify at least one template with
+the  <code class="literal">user_dn_templates</code> option. If you are configuring multiple realms, you
+should also explicitly set the <code class="literal">order</code> attribute to control the order in which the realms are
+consulted during authentication. See <a class="link" href="ldap.html#ldap-settings" title="LDAP Realm Settings">LDAP Realm Settings</a>
+for all of the options you can set for an LDAP realm.
+</p><p class="simpara">For example, the following snippet shows an LDAP realm configured with User DN templates:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield:
   authc:
     realms:
       ldap1:
@@ -648,8 +665,7 @@ operations may be needed to find the right user DN. The following snippet shows 
           base_dn: "dc=example,dc=com"
         files:
           role_mapping: "/mnt/elasticsearch/group_to_role_mapping.yml"
-        unmapped_groups_as_roles: false</pre></div><p>
-</p><div class="table"><a id="ldap-settings"></a><p class="title"><strong>Table 2. Common LDAP Realm Settings</strong></p><div class="table-contents"><table summary="Common LDAP Realm Settings" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Setting</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">type</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>Indicates the realm type. Must be set to <code class="literal">ldap</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">order</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Indicates the priority of this realm within the realm
+        unmapped_groups_as_roles: false</pre></div></li></ol></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="ldap-settings"></a>LDAP Realm Settings</h4></div></div></div><div class="table"><a id="id-1.6.20.4.7.2"></a><p class="title"><strong>Table 1. Common LDAP Realm Settings</strong></p><div class="table-contents"><table summary="Common LDAP Realm Settings" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Setting</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">type</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>Indicates the realm type. Must be set to <code class="literal">ldap</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">order</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Indicates the priority of this realm within the realm
                                               chain. Realms with a lower order are consulted first.
                                               Although not required, we recommend explicitly
                                               setting this value when you configure multiple realms.
@@ -683,7 +699,7 @@ operations may be needed to find the right user DN. The following snippet shows 
                                               <code class="literal">ms</code> indicates milliseconds. Defaults to <code class="literal">5s</code> (5 seconds).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">read_timeout</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The timeout period for an LDAP operation.  An <code class="literal">s</code> at
                                               the end indicates seconds, <code class="literal">ms</code> indicates
                                               milliseconds. Defaults to <code class="literal">5s</code> (5 seconds).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">files.role_mapping</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the path and file name for the
-                                              <a class="link" href="mapping-roles.html#ldap-role-mapping" title="Example LDAP Role Mapping File">YAML role mapping configuration                                               file</a>. Defaults to
+                                              <a class="link" href="mapping-roles.html#ldap-role-mapping">YAML role mapping configuration                                               file</a>. Defaults to
                                               <code class="literal">ES_HOME/config/shield/role_mapping.yml</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">follow_referrals</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies whether Shield should
                                               follow referrals returned by the LDAP server. Referrals
                                               are URLs returned by the server that are to be used to
@@ -694,38 +710,113 @@ operations may be needed to find the right user DN. The following snippet shows 
                                               names in the certificate or the connection will not be
                                               allowed. Due to its potential security impact,
                                               <code class="literal">hostname_verification</code> is not exposed via the
-                                              <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes
+                                              <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.0/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes
                                               info API</a>. Defaults to <code class="literal">true</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">cache.ttl</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the time-to-live for cached user entries. A
                                               user’s credentials are cached for this period of time.
                                               Specify the time period using the standard Elasticsearch
-                                              <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/common-options.html#time-units" target="_top">time units</a>.
+                                              <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.0/common-options.html#time-units" target="_top">time units</a>.
                                               Defaults to <code class="literal">20m</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">cache.max_users</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the maximum number of user entries that can be
                                               stored in the cache at one time. Defaults to 100,000.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">cache.hash_algo</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the hashing algorithm that is used for the
-                                              cached user credentials. See <a class="link" href="ldap.html#ldap-cache-hash-algo" title="Table 5. Cache hash algorithms">Cache hash algorithms</a> for the possible values.
-                                              (Expert Setting)</p></td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><a id="id-1.6.18.5.4.5"></a><p class="title"><strong>Table 3. User Template LDAP Realm Settings</strong></p><div class="table-contents"><table summary="User Template LDAP Realm Settings" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Setting</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_dn_templates</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>Specifies the DN template that replaces the user name with the string <code class="literal">{0}</code>. This element is multivalued, allowing for multiple user contexts.</p></td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><a id="id-1.6.18.5.4.6"></a><p class="title"><strong>Table 4. User Search LDAP Realm Settings <span class="added">
+                                              cached user credentials. See <a class="link" href="controlling-user-cache.html#cache-hash-algo" title="Table 4. Cache hash algorithms">Cache hash algorithms</a> for the possible values.
+                                              (Expert Setting)</p></td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><a id="id-1.6.20.4.7.3"></a><p class="title"><strong>Table 2. User Template LDAP Realm Settings</strong></p><div class="table-contents"><table summary="User Template LDAP Realm Settings" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Setting</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_dn_templates</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>Specifies the DN template that replaces the user name
+                                              with the string <code class="literal">{0}</code>. This element is multivalued,
+                                              allowing for multiple user contexts.</p></td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><a id="id-1.6.20.4.7.4"></a><p class="title"><strong>Table 3. User Search LDAP Realm Settings <span class="added">
       [<span class="version">1.1.0</span>]
-      <span class="detail">Added in 1.1.0.</span></span></strong></p><div class="table-contents"><table summary="User Search LDAP Realm Settings Added in 1.1.0." cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Setting</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bind_dn</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The DN of the user that will be used to bind to the LDAP and perform searches. If this is not specified, an anonymous bind will be attempted.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bind_password</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The password for the user that will be used to bind to the LDAP.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.base_dn</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>Specifies a container DN to search for users.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.scope</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The scope of the user search. Valid values are <code class="literal">sub_tree</code>, <code class="literal">one_level</code> or <code class="literal">base</code>. <code class="literal">one_level</code> only searches objects directly contained within the <code class="literal">base_dn</code>. The default <code class="literal">sub_tree</code> searches all objects contained under <code class="literal">base_dn</code>. <code class="literal">base</code> specifies that the <code class="literal">base_dn</code> is the user object, and that it is the only user considered.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.attribute</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The attribute to match with the username presented to Shield. The default attribute is <code class="literal">uid</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.pool.size</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The maximum number of connections to the LDAP server to allow in the connection pool. Default is <code class="literal">20</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.pool.initial_size</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The initial number of connections to create to the LDAP server on startup. Default is <code class="literal">5</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.pool.health_check.enabled</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Flag to enable or disable a health check on LDAP connections in the connection pool. Connections will be checked in the background at the specified interval. Default is <code class="literal">true</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.pool.health_check.dn</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The distinguished name to be retrieved as part of the health check. Default is the value of <code class="literal">bind_dn</code>. If <code class="literal">bind_dn</code> is not specified, a value must be specified.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.pool.health_check.interval</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The interval to perform background checks of connections in the pool. Default is <code class="literal">60s</code>.</p></td></tr></tbody></table></div></div><br class="table-break" /><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If any settings starting with <code class="literal">user_search</code> are specified the <code class="literal">user_dn_templates</code> setting is ignored.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p><code class="literal">bind_dn</code>, <code class="literal">bind_password</code> and <code class="literal">hostname_verification</code> are considered to be senstivie settings and therefore are not exposed via
-        <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes info API</a>.</p></div></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_adding_an_ldap_server_certificate"></a>Adding an LDAP server certificate</h3></div></div></div><p>To use SSL/TLS to access your LDAP server over an URL with the <code class="literal">ldaps</code> protocol, make sure the LDAP client used by
-Shield can access the certificate of the CA that signed the LDAP server’s certificate. This enables Shield’s LDAP
-client to authenticate the LDAP server before sending any passwords to it.</p><p>To do this, first obtain a certificate for the LDAP servers or a CA certificate that has signed the LDAP certificate.
-You can use the <code class="literal">openssl</code> command to fetch the certificate and add the certificate to the <code class="literal">ldap.crt</code> file, as in
-the following Unix example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">echo | openssl s_client -connect ldap.example.com:636 2&gt;/dev/null | openssl x509 &gt; ldap.crt</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Older versions of openssl might not have the <code class="literal">-connect</code> option.  Instead use the <code class="literal">-host</code> and <code class="literal">-port</code> options.</p></div></div><p><a id="keytool"></a>This certificate needs to be stored in the node keystore/truststore. Import the certificate into the truststore with the
-following command, providing the password for the keystore when prompted.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">keytool -import -keystore node01.jks -file ldap.crt</pre></div><p>If not already configured, add the path of the keystore/truststore to <code class="literal">elasticsearch.yml</code> as described in <a class="link" href="securing-communications.html" title="Securing Communications with Encryption and IP Filtering">Securing Communications with Encryption and IP Filtering</a>.
-By default, Shield will attempt to verify the hostname or IP address used in the <code class="literal">url</code> with the values in the
-certificate. If the values in the certificate do not match, Shield will not allow a connection to the LDAP server. This
-behavior can be disabled by setting the <code class="literal">hostname_verification</code> property.</p><p>Restart Elasticsearch to pick up the changes to <code class="literal">elasticsearch.yml</code>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p><code class="literal">hostname_verification</code> is considered to be a senstivie setting and therefore is not exposed via
-        <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes info API</a>.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ldap-user-cache"></a>User Cache</h3></div></div></div><p>To avoid connecting to the LDAP server for every incoming request, the users and their credentials are cached
-locally on each node. This is a common practice when authenticating against remote servers and as can be seen
-in the table <a class="link" href="ldap.html#ldap-settings" title="Table 2. Common LDAP Realm Settings">above</a>, the characteristics of this cache are configurable.</p><p>The cached user credentials are hashed in memory, and there are several hash algorithms to choose from:</p><div class="table"><a id="ldap-cache-hash-algo"></a><p class="title"><strong>Table 5. Cache hash algorithms</strong></p><div class="table-contents"><table summary="Cache hash algorithms" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><tbody><tr><td align="left" valign="top"><p>Algorithm</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">ssha256</code></p></td><td align="left" valign="top"><p>Uses a salted <code class="literal">SHA-256</code> algorithm (default).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">md5</code></p></td><td align="left" valign="top"><p>Uses <code class="literal">MD5</code> algorithm.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">sha1</code></p></td><td align="left" valign="top"><p>Uses <code class="literal">SHA1</code> algorithm.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bcrypt</code></p></td><td align="left" valign="top"><p>Uses <code class="literal">bcrypt</code> algorithm with salt generated in 10 rounds.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bcrypt4</code></p></td><td align="left" valign="top"><p>Uses <code class="literal">bcrypt</code> algorithm with salt generated in 4 rounds.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bcrypt5</code></p></td><td align="left" valign="top"><p>Uses <code class="literal">bcrypt</code> algorithm with salt generated in 5 rounds.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bcrypt6</code></p></td><td align="left" valign="top"><p>Uses <code class="literal">bcrypt</code> algorithm with salt generated in 6 rounds.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bcrypt7</code></p></td><td align="left" valign="top"><p>Uses <code class="literal">bcrypt</code> algorithm with salt generated in 7 rounds.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bcrypt8</code></p></td><td align="left" valign="top"><p>Uses <code class="literal">bcrypt</code> algorithm with salt generated in 8 rounds.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bcrypt9</code></p></td><td align="left" valign="top"><p>Uses <code class="literal">bcrypt</code> algorithm with salt generated in 9 rounds.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">sha2</code></p></td><td align="left" valign="top"><p>Uses <code class="literal">SHA2</code> algorithm.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">apr1</code></p></td><td align="left" valign="top"><p>Uses <code class="literal">apr1</code> algorithm (md5 crypt).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">noop</code>,<code class="literal">clear_text</code></p></td><td align="left" valign="top"><p>Doesn’t hash the credentials and keeps it in clear text in memory. CAUTION:
-                                    keeping clear text is considered insecure and can be compromised at the OS
-                                    level (e.g. memory dumps and <code class="literal">ptrace</code>).</p></td></tr></tbody></table></div></div><br class="table-break" /><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_cache_eviction_api"></a>Cache Eviction API</h4></div></div></div><p>Shield exposes an API to force cached user eviction. The following example, evicts all users from the <code class="literal">ldap1</code>
-realm:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">$ curl -XPOST 'http://localhost:9200/_shield/realm/ldap1/_cache/clear'</pre></div><p>It is also possible to evict specific users:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">$ curl -XPOST 'http://localhost:9200/_shield/realm/ldap1/_cache/clear?usernames=rdeniro,alpacino'</pre></div><p>Multiple realms can also be specified using comma-delimited list:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">$ curl -XPOST 'http://localhost:9200/_shield/realm/ldap1,ldap2/_cache/clear'</pre></div></div></div></div><div class="navfooter"><span class="prev"><a href="esusers.html">
+      <span class="detail">Added in 1.1.0.</span></span></strong></p><div class="table-contents"><table summary="User Search LDAP Realm Settings Added in 1.1.0." cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Setting</p></td><td align="left" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bind_dn</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The DN of the user that is used to
+                                                        bind to the LDAP and perform searches. If
+                                                        not specified, an anonymous bind
+                                                        is attempted. Due to its potential security
+                                                        impact, <code class="literal">hostname_verification</code> is not
+                                                        exposed via the
+                                                        <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.0/cluster-nodes-info.html#cluster-nodes-info" target="_top">
+                                                        nodes info API</a>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bind_password</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The password for the user that is used
+                                                        to bind to the LDAP. Due to its potential
+                                                        security impact, <code class="literal">hostname_verification</code> is
+                                                        not exposed via the
+                                                        <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.0/cluster-nodes-info.html#cluster-nodes-info" target="_top">
+                                                        nodes info API</a>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.base_dn</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>Specifies a container DN to search for users.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.scope</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The scope of the user search. Valid values
+                                                        are <code class="literal">sub_tree</code>, <code class="literal">one_level</code> or <code class="literal">base</code>.
+                                                        <code class="literal">one_level</code> only searches objects directly
+                                                        contained within the <code class="literal">base_dn</code>.
+                                                        <code class="literal">sub_tree</code> searches all objects contained
+                                                        under <code class="literal">base_dn</code>. <code class="literal">base</code> specifies that the
+                                                        <code class="literal">base_dn</code> is the user object, and that it is
+                                                        the only user considered. Defaults to
+                                                        <code class="literal">sub_tree</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.attribute</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the attribute to match with the
+                                                        username presented to Shield. Defaults to
+                                                        <code class="literal">uid</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.pool.size</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the maximum number of connections
+                                                        to the LDAP server to allow in the connection
+                                                        pool. Defaults to <code class="literal">20</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.pool.initial_size</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>The initial number of connections to create
+                                                        to the LDAP server on startup. Defaults to <code class="literal">5</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.pool.health_check.enabled</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Enables or disables a health check on
+                                                        LDAP connections in the connection pool.
+                                                        Connections are checked in the background at
+                                                        the specified interval. Defaults to <code class="literal">true</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.pool.health_check.dn</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the distinguished name to retrieve
+                                                        as part of the health check. Defaults to the
+                                                        value of <code class="literal">bind_dn</code>. If <code class="literal">bind_dn</code> is not
+                                                        configured, you must specify a value.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.pool.health_check.interval</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>How often to perform background checks
+                                                        of connections in the pool. Defaults to
+                                                        <code class="literal">60s</code>.</p></td></tr></tbody></table></div></div><br class="table-break" /><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If any settings starting with <code class="literal">user_search</code> are specified, the <code class="literal">user_dn_templates</code>
+        the settings are ignored.</p></div></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="assigning-roles-ldap"></a>Assigning LDAP Groups to Roles</h3></div></div></div><p>To configure privileges for LDAP users, you assign LDAP groups to roles in
+the role mapping file stored on each node. When a user authenticates with LDAP,
+the privileges for that user are the union of all privileges defined by
+the roles assigned to the set of groups that the user belongs to.</p><p>You specify groups using their distinguished names. For example, the following mapping
+configuration assigns the LDAP <code class="literal">admins</code> group both the <code class="literal">monitoring</code> and <code class="literal">user</code> roles, and
+assigns the  <code class="literal">user</code> role to the <code class="literal">users</code> group.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">monitoring: <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  - "cn=admins,dc=example,dc=com" <a id="CO3-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+user:
+  - "cn=users,dc=example,dc=com" <a id="CO3-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+  - "cn=admins,dc=example,dc=com"</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The name of a role defined in <a class="link" href="defining-roles.html" title="Defining Roles"><code class="literal">roles.yml</code></a>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The distinguished name of the <code class="literal">admins</code> group.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The distinguished name of the <code class="literal">users</code> group.
+</p></td></tr></table></div><p>For more information, see <a class="link" href="mapping-roles.html" title="Mapping Users and Groups to Roles">Mapping Users and Groups to Roles</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_encrypting_communications_between_shield_and_ldap_with_ssl_tls"></a>Encrypting Communications Between Shield and LDAP with SSL/TLS</h3></div></div></div><p>You should encrypt communications between Shield and your LDAP server to protect the user
+credentials that are sent to for authentication. Connecting via SSL/TLS
+ensures that the identity of the LDAP server is authenticated before Shield
+transmits the user credentials, and the user names and passwords are encrypted in transit.</p><p>To encrypt communications between Shield and your LDAP server:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Configure each node to trust certificates signed by the CA that signed your LDAP server
+certificates. For example, the following command imports <code class="literal">cacert.pem</code>
+into node01’s keystore.  (For information about using truststores, see <a class="link" href="ssl-tls.html#create-truststore" title="Configuring a Separate Truststore">Configuring a Separate Truststore</a>.)
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">cd CONFIG_DIR/shield
+keytool -importcert -keystore node01.jks -file cacert.pem -alias ldap_ca</pre></div><p class="simpara">The CA cert must be a PEM encoded certificate.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You can also import the individual server certificates rather than the CA certificate, but
+this is only recommended if you have a single LDAP server.
+You can fetch the LDAP server certificate with <code class="literal">openssl</code>.
+For example, the following command gets the certificate for <code class="literal">ldap.example.com</code> and stores it locally
+in <code class="literal">ldap.crt</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">echo | openssl s_client -connect ldap.example.com:636 2&gt;/dev/null | openssl x509 &gt; ldap.crt</pre></div><p>If you are using an older version of openssl you might need to use use the <code class="literal">-host</code> and
+<code class="literal">-port</code> options rather than the <code class="literal">-connect</code> option.</p></div></div></li><li class="listitem"><p class="simpara">
+If you haven’t already configured the path to the node’s keystore or truststore  in
+<code class="literal">elasticsearch.yml</code>, set the <code class="literal">shield.ssl.keystore.path</code> or <code class="literal">shield.ssl.truststore.path</code>
+attributes. For example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.ssl.keystore.path:          /home/es/config/shield/node01.jks <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+shield.ssl.keystore.password:      myPass <a id="CO4-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+shield.ssl.keystore.key_password:  myKeyPass <a id="CO4-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The full path to the node keystore file. This must be a location within the Elasticsearch
+configuration directory.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The password used to access the keystore.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The password used to access the certificate. This is only required if you specified a separate
+certificate password when generating the certificate.
+</p><p>For more information, see <a class="link" href="ssl-tls.html" title="Setting Up SSL/TLS on a Cluster">Enabling SSL/TLS in the Node Configuration</a>.</p></td></tr></table></div></li><li class="listitem">
+Set the <code class="literal">url</code> attribute in the realm configuration to specify the LDAPS protocol and
+the secure port number. For example, <code class="literal">url: ldaps://ldap.example.com:636</code>.
+</li><li class="listitem">
+Restart Elasticsearch to pick up the changes to <code class="literal">elasticsearch.yml</code>.
+</li></ol></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>By default, when you configure Shield to connect to an LDAP server using SSL/TLS,
+      Shield attempts to verify the hostname or IP address specified with the <code class="literal">url</code> attribute in
+      the realm configuration with the values in the certificate. If the values in the certificate
+      and realm configuration do not match, Shield does not allow a connection to the LDAP server.
+      This is done to protect against man in the middle attacks. If necessary,
+      you can disable this behavior by setting the <a class="link" href="reference.html#ref-ssl-tls-settings" title="TLS/SSL Settings"><code class="literal">hostname_verification</code></a>
+      property to <code class="literal">false</code>. <code class="literal">hostname_verification</code> is considered to be a sensitive setting and
+      is not exposed via <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.0/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes info API</a>.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="esusers.html">
               « 
-              Configuring an esusers Realm</a>
+              Using esusers to Authenticate Users</a>
            
         </span><span class="next">
            
-          <a href="active-directory.html">Configuring an Active Directory Realm
+          <a href="active-directory.html">Using Active Directory to Authenticate Users
                »
             </a></span></div>
 <!-- end body -->
@@ -881,6 +972,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuration</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [1.0]" /><link rel="up" href="index.html" title="Elasticsearch-PHP [1.0]" /><link rel="prev" href="_installation_2.html" title="Installation" /><link rel="next" href="_dealing_with_json_arrays_and_objects_in_php.html" title="Dealing with JSON Arrays and Objects in PHP" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuration</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [2.0]" /><link rel="up" href="index.html" title="Elasticsearch-PHP [2.0]" /><link rel="prev" href="_installation_2.html" title="Installation" /><link rel="next" href="_per_request_configuration.html" title="Per-request configuration" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,132 +590,192 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch-PHP
-      [1.0]
+      [2.0]
     </a></span> » <span class="breadcrumb-node">Configuration</span></div><div class="navheader"><span class="prev"><a href="_installation_2.html">
               « 
               Installation</a>
            
         </span><span class="next">
            
-          <a href="_dealing_with_json_arrays_and_objects_in_php.html">Dealing with JSON Arrays and Objects in PHP
+          <a href="_per_request_configuration.html">Per-request configuration
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_configuration"></a>Configuration<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Almost every aspect of the client is configurable.  The client is built around <a class="ulink" href="http://pimple.sensiolabs.org" target="_top">Pimple</a> a light-weight dependency injection container.  Most users will only need to configure a few parameters to suit their needs.</p><p>However, since the container also controls all object instantiation, it is possible for users to completely change the internal components used by the client.  A user could, for example, write a custom ConnectionPool class and use that instead of the default connection pools that ship with the client</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_host_configuration"></a>Host Configuration<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A common operation will be telling the client what nodes are in your cluster.  By default, the client will connect to <span class="emphasis"><em>localhost:9200</em></span>, which obviously doesn’t work in many production environments.</p><p>All configurations (both simple parameters and more advanced component-replacement) are injected into the constructor of the client.</p><p>The client accepts an array of hosts that you would like to connect to.  Each value in the array must be a string (either with or without the port number).  SSL can be enabled by prefixing the host with <span class="emphasis"><em>https</em></span>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params = array();
-$params['hosts'] = array (
-    '192.168.1.1:9200',                 // IP + Port
-    '192.168.1.2',                      // Just IP
-    'mydomain.server.com:9201',         // Domain + Port
-    'mydomain2.server.com',             // Just Domain
-    'https://localhost',                // SSL to localhost
-    'https://192.168.1.3:9200',         // SSL to IP + Port
-    'http://user:pass@localhost:9200',  // HTTP Basic Auth
-    'https://user:pass@localhost:9200',  // SSL + HTTP Basic Auth
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_configuration"></a>Configuration<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Almost every aspect of the client is configurable.  Most users will only need to configure a few parameters to suit
+their needs, but it is possible to completely replace much of the internals if required.</p><p>Custom configuration is accomplished before the client is instantiated, through the ClientBuilder helper object.
+We’ll walk through all the configuration options and show sample code to replace the various components.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_host_configuration"></a>Host Configuration<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The most common configuration is telling the client about your cluster: how many nodes, their addresses and ports.  If
+not hosts are specified, the client will attempt to connect to <code class="literal">localhost:9200</code>.</p><p>This behavior can be changed by using the <code class="literal">setHosts()</code> method on <code class="literal">ClientBuilder</code>.  The method accepts an array of values,
+each entry corresponding to one node in your cluster.  The format of the host can vary, depending on your needs (ip vs
+hostname, port, ssl, etc)</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$hosts = [
+    '192.168.1.1:9200',         // IP + Port
+    '192.168.1.2',              // Just IP
+    'mydomain.server.com:9201', // Domain + Port
+    'mydomain2.server.com',     // Just Domain
+    'https://localhost',        // SSL to localhost
+    'https://192.168.1.3:9200'  // SSL to IP + Port
+];
+$client = ClientBuilder::create()           // Instantiate a new ClientBuilder
+                    -&gt;setHosts($hosts)      // Set the hosts
+                    -&gt;build();              // Build the client object</pre></div><p>Notice that the <code class="literal">ClientBuilder</code> object allows chaining method calls for brevity.  It is also possible to call the methods
+individually:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$hosts = [
+    '192.168.1.1:9200',         // IP + Port
+    '192.168.1.2',              // Just IP
+    'mydomain.server.com:9201', // Domain + Port
+    'mydomain2.server.com',     // Just Domain
+    'https://localhost',        // SSL to localhost
+    'https://192.168.1.3:9200'  // SSL to IP + Port
+];
+$clientBuilder = ClientBuilder::create();   // Instantiate a new ClientBuilder
+$clientBuilder-&gt;setHosts($hosts);           // Set the hosts
+$client = $clientBuilder-&gt;build();          // Build the client object</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_authorization_and_encryption"></a>Authorization and Encryption<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>For details about HTTP Authorization and SSL encryption, please see <a class="ulink" href="_security.html" target="_top">Authorization and SSL</a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_set_retries"></a>Set retries<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>By default, the client will retry <code class="literal">n</code> times, where <code class="literal">n = number of nodes</code> in your cluster.  If you would like to disable
+retries, or change the number, you can do so with the <code class="literal">setRetries()</code> method:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()
+                    -&gt;setRetries(2)
+                    -&gt;build();</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="enabling_logger"></a>Enabling the Logger<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch-PHP supports logging, but it is not enabled by default for performance reasons.  If you wish to enable logging,
+you need to select a logging implementation, install it, then enable the logger in the Client.  The recommended logger
+is <a class="ulink" href="https://github.com/Seldaek/monolog" target="_top">Monolog</a>, but any logger that implements the <code class="literal">PSR/Log</code> interface will work.</p><p>You might have noticed that Monolog was suggested during installation.  To begin using Monolog, add it to your <code class="literal">composer.json</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+    "require": {
+        ...
+        "elasticsearch/elasticsearch" : "~2.0",
+        "monolog/monolog": "~1.0"
+    }
+}</pre></div><p>And then update your composer installation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">php composer.phar update</pre></div><p>Once Monolog (or another logger) is installed, you need to create a log object and inject it into the client.  The
+<code class="literal">ClientBuilder</code> object has a helper static function that will generate a common Monolog-based logger for you.  All you need
+to do is provide the path to your desired logging location:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$logger = ClientBuilder::defaultLogger('path/to/your.log');
+
+$client = ClientBuilder::create()       // Instantiate a new ClientBuilder
+            -&gt;setLogger($logger)        // Set the logger with a default logger
+            -&gt;build();                  // Build the client object</pre></div><p>You can also specify the severity of log messages that you wish to log:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">// set severity with second parameter
+$logger = ClientBuilder::defaultLogger('/path/to/logs/', Logger::INFO);
+
+$client = ClientBuilder::create()       // Instantiate a new ClientBuilder
+            -&gt;setLogger($logger)        // Set the logger with a default logger
+            -&gt;build();                  // Build the client object</pre></div><p>The <code class="literal">defaultLogger()</code> method is just a helper, you are not required to use it.  You can create your own logger and inject
+that instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
+$logger = new Logger('name');
+$logger-&gt;pushHandler(new StreamHandler('path/to/your.log', Logger::WARNING));
+
+$client = ClientBuilder::create()       // Instantiate a new ClientBuilder
+            -&gt;setLogger($logger)        // Set your custom logger
+            -&gt;build();                  // Build the client object</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_configure_the_http_handler"></a>Configure the HTTP Handler<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch-PHP uses an interchangeable HTTP transport layer called <a class="ulink" href="https://github.com/guzzle/RingPHP/" target="_top">RingPHP</a>.  This
+allows the client to construct a generic HTTP request, then pass it to the transport layer to execute.  The actual execution
+details are hidden from the client and modular, so that you can choose from several HTTP handlers depending on your needs.</p><p>The default handler that the client uses is a combination handler.  When executing in synchronous mode, the handler
+uses <code class="literal">CurlHandler</code>, which executes single curl calls.  These are very fast for single requests.  When asynchronous (future)
+mode is enabled, the handler switches to <code class="literal">CurlMultiHandler</code>, which uses the curl_multi interface.  This involves a bit
+more overhead, but allows batches of HTTP requests to be processed in parallel.</p><p>You can configure the HTTP handler with one of several helper functions, or provide your own custom handler:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$defaultHandler = ClientBuilder::defaultHandler();
+$singleHandler  = ClientBuilder::singleHandler();
+$multiHandler   = ClientBuilder::multiHandler();
+$customHandler  = new MyCustomHandler();
+
+$client = ClientBuilder::create()
+            -&gt;setHandler($defaultHandler)
+            -&gt;build();</pre></div><p>For details on creating your own custom Ring handler, please see the <a class="ulink" href="http://guzzle.readthedocs.org/en/latest/handlers.html" target="_top">RingPHP Documentation</a></p><p>The default handler is recommended in almost all cases.  This allows fast synchronous execution, while retaining flexibility
+to invoke parallel batches with async future mode.  You may consider using just the <code class="literal">singleHandler</code> if you know you will
+never need async capabilities, since it will save a small amount of overhead by reducing indirection.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_setting_the_connection_pool"></a>Setting the Connection Pool<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The client maintains a pool of connections, with each connection representing a node in your cluster.  There are several
+connection pool implementations available, and each has slightly different behavior (pinging vs no pinging, etc).
+Connection pools are configured via the <code class="literal">setConnectionPool()</code> method:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$connectionPool = '\Elasticsearch\ConnectionPool\StaticNoPingConnectionPool';
+$client = ClientBuilder::create()
+            -&gt;setConnectionPool($connectionPool)
+            -&gt;build();</pre></div><p>For more details, please see the dedicated page on <a class="ulink" href="_connection_pool.html" target="_top">configuring connection pools</a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_setting_the_connection_selector"></a>Setting the Connection Selector<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The connection pool manages the connections to your cluster, but the Selector is the logic that decides which connection
+should be used for the next API request.  There are several selectors that you can choose from.  Selectors can be changed
+via the <code class="literal">setSelector()</code> method:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$selector = '\Elasticsearch\ConnectionPool\Selectors\StickyRoundRobinSelector';
+$client = ClientBuilder::create()
+            -&gt;setSelector($selector)
+            -&gt;build();</pre></div><p>For more details, please see the dedicated page on <a class="ulink" href="_selectors.html" target="_top">configuring selectors</a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_setting_the_serializer"></a>Setting the Serializer<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Requests are given to the client in the form of associative arrays, but Elasticsearch expects JSON.  The Serializer’s
+job is to serialize PHP objects into JSON.  It also de-serializes JSON back into PHP arrays.  This seems trivial, but
+there are a few edgecases which make it useful for the serializer to remain modular.</p><p>The majority of people will never need to change the default serializer (<code class="literal">SmartSerializer</code>), but if you need to,
+it can be done via the <code class="literal">setSerializer()</code> method:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$serializer = '\Elasticsearch\Serializers\SmartSerializer';
+$client = ClientBuilder::create()
+            -&gt;setSerializer($serializer)
+            -&gt;build();</pre></div><p>For more details, please see the dedicated page on <a class="ulink" href="_serializers.html" target="_top">configuring serializers</a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_setting_a_custom_connectionfactory"></a>Setting a custom ConnectionFactory<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The ConnectionFactory instantiates new Connection objects when requested by the ConnectionPool.  A single Connection
+represents a single node.  Since the client hands actual networking work over to RingPHP, the Connection’s main job is
+book-keeping:  Is this node alive?  Did it fail a ping request?  What is the host and port?</p><p>There is little reason to provide your own ConnectionFactory, but if you need to do so, you need to supply an intact
+ConnectionFactory object to the <code class="literal">setConnectionFactory()</code> method.  The object should implement the <code class="literal">ConnectionFactoryInterface</code>
+interface.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">class MyConnectionFactory implements ConnectionFactoryInterface
+{
+
+    public function __construct($handler, array $connectionParams,
+                                SerializerInterface $serializer,
+                                LoggerInterface $logger,
+                                LoggerInterface $tracer)
+    {
+       // Code here
+    }
+
+
+    /**
+     * @param $hostDetails
+     *
+     * @return ConnectionInterface
+     */
+    public function create($hostDetails)
+    {
+        // Code here...must return a Connection object
+    }
+}
+
+
+$connectionFactory = new MyConnectionFactory(
+    $handler,
+    $connectionParams,
+    $serializer,
+    $logger,
+    $tracer
 );
 
-$client = new Elasticsearch\Client($params);</pre></div><p>This associative array holds all custom configurations that you may want to set.  Often, you’ll only need to configure the hosts, but if you need more advanced behavior, read on.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_ignoring_exceptions"></a>Ignoring exceptions<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The library attempts to throw exceptions for common problems.  These exceptions
-match the HTTP response code provided by Elasticsearch.  For example, attempting to
-GET a nonexistent document will throw a <code class="literal">MissingDocument404Exception</code>.</p><p>Exceptions are a useful and consistent way to deal with problems like missing
-documents, syntax errors, version conflicts, etc.  But sometimes you want
-to deal with the response body rather than catch exceptions (often useful
-in test suites).</p><p>If you need that behavior, you can configure an <code class="literal">ignore</code> parameter.  The
-following setting will ignore the <code class="literal">MissingDocument404Exception</code> exception and
-instead return the JSON provided by Elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = new Client();
+$client = ClientBuilder::create()
+            -&gt;setConnectionFactory($connectionFactory);
+            -&gt;build();</pre></div><p>As you can see, if you decide to inject your own ConnectionFactory, you take over the responsibiltiy of wiring it correctly.
+The ConnectionFactory requires a working HTTP handler, serializer, logger and tracer.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_set_the_endpoint_closure"></a>Set the Endpoint closure<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The client uses an Endpoint closure to dispatch API requests to the correct Endpoint object.  A namespace object will
+construct a new Endpoint via this closure, which means this is a handy location if you wish to extend the available set
+of API endpoints available</p><p>For example, we could add a new endpoint like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$transport = $this-&gt;transport;
+$serializer = $this-&gt;serializer;
 
-$params = array(
-    'index'  =&gt; 'test_missing',
-    'type'   =&gt; 'test',
-    'id'     =&gt; 1,
-    'ignore' =&gt; 404 <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-);
-echo $client-&gt;get($params);
+$newEndpoint = function ($class) use ($transport, $serializer) {
+    if ($class == 'SuperSearch') {
+        return new MyProject\SuperSearch($transport);
+    } else {
+        // Default handler
+        $fullPath = '\\Elasticsearch\\Endpoints\\' . $class;
+        if ($class === 'Bulk' || $class === 'Msearch' || $class === 'MPercolate') {
+            return new $fullPath($transport, $serializer);
+        } else {
+            return new $fullPath($transport);
+        }
+    }
+};
 
-&gt; {"_index":"test_missing","_type":"test","_id":"1","found":false}
+$client = ClientBuilder::create()
+            -&gt;setEndpoint($newEndpoint)
+            -&gt;build();</pre></div><p>Obviously, by doing this you take responsibility that all existing endpoints still function correctly.  And you also
+assume the responsibility of correctly wiring the Transport and Serializer into each endpoint.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_building_the_client_from_a_configuration_hash"></a>Building the client from a configuration hash<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To help ease automated building of the client, all configurations can be provided in a setting
+hash instead of calling the individual methods directly.  This functionality is exposed through
+the <code class="literal">ClientBuilder::FromConfig()</code> static method, which accepts an array of configurations
+and returns a fully built client.</p><p>Array keys correspond to the method name, e.g. <code class="literal">retries</code> key corresponds to <code class="literal">setRetries()</code> method.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params = [
+    'hosts' =&gt; [
+        'localhost:9200'
+    ],
+    'retries' =&gt; 2,
+    'handler' =&gt; ClientBuilder::singleHandler()
+];
+$client = ClientBuilder::fromConfig($params);</pre></div><p>Unknown parameters will throw an exception, to help the user find potential problems.
+If this behavior is not desired (e.g. you are using the hash for other purposes, and may have
+keys unrelated to the Elasticsearch client), you can set $quiet = true in fromConfig() to
+silence the exceptions.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params = [
+    'hosts' =&gt; [
+        'localhost:9200'
+    ],
+    'retries' =&gt; 2,
+    'imNotReal' =&gt; 5
+];
 
-
-$params = array(
-    'index'  =&gt; 'test_missing',
-    'type'   =&gt; 'test',
-    'ignore' =&gt; [400, 404] <a id="CO1-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-);
-echo $client-&gt;get($params);
-
-&gt; No handler found for uri [/test_missing/test/] and method [GET]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This will ignore just the 404 missing exception
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-<code class="literal">ignore</code> also accepts an array of exceptions to ignore. In this example,
-the <code class="literal">BadRequest400Exception</code> is being ignored
-</p></td></tr></table></div><p>It should be noted that the response is simply a string, which may or may not
-be encoded as JSON.  In the first example, the response body was a complete
-JSON object which could be decoded.  In the second example, it was simply a string.</p><p>Since the client has no way of knowing what the exception response will contain,
-no attempts to decode it are taken.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_providing_custom_query_parameters"></a>Providing custom query parameters<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Sometimes you need to provide custom query params, such as authentication tokens for a third-party plugin or proxy.
-All query parameters are white-listed in Elasticsearch-php, which is to protect you from specifying a param which is
-not accepted by Elasticsearch.</p><p>If you need custom parameters, you need to bypass this whitelisting mechanism.  To do so, add them to the <code class="literal">custom</code>
-parameter as an array of values:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$getParams = array(
-    'index' =&gt; 'test',
-    'type' =&gt; 'test',
-    'id' =&gt; 1,
-    'parent' =&gt; 'abc',  // white-listed
-    'custom' =&gt; array('customToken' =&gt; 'abc', 'otherToken' =&gt; 123) // user-defined, not white listed, not checked
-);
-$exists = $client-&gt;exists($getParams);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_configuring_the_logger"></a>Configuring the Logger<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>By default, logging in the client is disabled for performance reasons.  If you wish to enable logging, simply set the <code class="literal">logging</code> parameter to true:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params = array();
-$params['logging'] = true;
-$client = new Elasticsearch\Client($params);</pre></div><p>​</p><p>This will enable logging to a file called <code class="literal">elasticsearch.log</code> inside your project directory.  The default logging level is <code class="literal">WARN</code>.  This is a logging level
-that only describes important events that should probably require action from you.</p><p>Often, you’ll want to change the logging location or set the logs file permissions to group writeable. To change these things, simply do the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params = array();
-$params['logging'] = true;
-$params['logPath'] = '/var/logs/elasticsearch/elasticsearch.log';
-$params['logPermission'] = 0664;
-$client = new Elasticsearch\Client($params);</pre></div><p>​</p><p>Not all parameters are strings.  For example, we can change the logging level of the client:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params = array();
-$params['logging']  = true;
-$params['logPath']  = '/var/logs/elasticsearch/elasticsearch.log';
-$params['logLevel'] = Psr\Log\LogLevel::INFO;
-$client = new Elasticsearch\Client($params);</pre></div><p>​</p><p>By default, the client uses a file-based logger provided by the <a class="ulink" href="https://github.com/Seldaek/monolog" target="_top">Monolog</a> framework.  Monolog provides a variety of loggers.  For example, we can instruct the client to log to SysLog instead of a file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">use Monolog\Logger;
-
-// Build a Monolog logger that uses the SyslogHandler
-$logger    = new Logger('log');
-$handler   = new SyslogHandler('my_user');
-$processor = new IntrospectionProcessor();
-
-$logger-&gt;pushHandler($handler);
-$logger-&gt;pushProcessor($processor);
-
-// Over-ride the client's logger object with your own
-$params['logging']   = true;
-$params['logObject'] = $logger;
-$client = new Elasticsearch\Client($params);</pre></div><p>​</p><p>The client uses the generic <a class="ulink" href="https://github.com/php-fig/log" target="_top">PSR\Log interface</a>, which means that any PSR\Log compatible loggers will work just fine in the client.</p><p>Replacing the logger with another PSR\Log compatible logger is similar to the previous example of configuring a Monolog logger:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">use Monolog\Logger;
-
-$logger = new MySpecialPSRLogger();
-
-
-$params['logging'] = true;
-$params['logObject'] = $logger;
-$client = new Elasticsearch\Client($params);</pre></div><p>​</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_full_list_of_configurations"></a>Full list of configurations<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><strong>Default Configurations. </strong>
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$paramDefaults = array(
-    'connectionClass'       =&gt; '\Elasticsearch\Connections\GuzzleConnection',
-    'connectionFactoryClass'=&gt; '\Elasticsearch\Connections\ConnectionFactory',
-    'connectionPoolClass'   =&gt; '\Elasticsearch\ConnectionPool\StaticNoPingConnectionPool',
-    'selectorClass'         =&gt; '\Elasticsearch\ConnectionPool\Selectors\RoundRobinSelector',
-    'serializerClass'       =&gt; '\Elasticsearch\Serializers\SmartSerializer',
-    'sniffOnStart'          =&gt; false,
-    'connectionParams'      =&gt; array(),
-    'logging'               =&gt; false,
-    'logObject'             =&gt; null,
-    'logPath'               =&gt; 'elasticsearch.log',
-    'logLevel'              =&gt; Log\LogLevel::WARNING,
-    'traceObject'           =&gt; null,
-    'tracePath'             =&gt; 'elasticsearch.log',
-    'traceLevel'            =&gt; Log\LogLevel::WARNING,
-    'guzzleOptions'         =&gt; array(),
-    'connectionPoolParams'  =&gt; array(
-        'randomizeHosts' =&gt; true
-    ),
-    'retries'               =&gt; null
-);</pre></div><p>
-</p></div></div><div class="navfooter"><span class="prev"><a href="_installation_2.html">
+// Set $quiet to true to ignore the unknown `imNotReal` key
+$client = ClientBuilder::fromConfig($params, true);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="_installation_2.html">
               « 
               Installation</a>
            
         </span><span class="next">
            
-          <a href="_dealing_with_json_arrays_and_objects_in_php.html">Dealing with JSON Arrays and Objects in PHP
+          <a href="_per_request_configuration.html">Per-request configuration
                »
             </a></span></div>
 <!-- end body -->
@@ -871,6 +931,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

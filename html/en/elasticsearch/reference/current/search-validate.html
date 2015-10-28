@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Validate API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="search.html" title="Search APIs" /><link rel="prev" href="search-exists.html" title="Search Exists API" /><link rel="next" href="search-explain.html" title="Explain API" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Validate API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="search.html" title="Search APIs" /><link rel="prev" href="search-exists.html" title="Search Exists API" /><link rel="next" href="search-explain.html" title="Explain API" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,7 +590,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
+      [2.0]
     </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-node">Validate API</span></div><div class="navheader"><span class="prev"><a href="search-exists.html">
               « 
               Search Exists API</a>
@@ -599,13 +599,13 @@
            
           <a href="search-explain.html">Explain API
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-validate"></a>Validate API<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/validate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The validate API allows a user to validate a potentially expensive query
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-validate"></a>Validate API<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/validate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The validate API allows a user to validate a potentially expensive query
 without executing it. The following example shows how it can be used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'http://localhost:9200/twitter/tweet/1' -d '{
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
 }'</pre></div><p>When the query is valid, the response contains <code class="literal">valid:true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/twitter/_validate/query?q=user:foo'
-{"valid":true,"_shards":{"total":1,"successful":1,"failed":0}}</pre></div><h3><a id="_request_parameters_3"></a>Request Parameters<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/validate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When executing exists using the query parameter <code class="literal">q</code>, the query passed is
+{"valid":true,"_shards":{"total":1,"successful":1,"failed":0}}</pre></div><h3><a id="_request_parameters_3"></a>Request Parameters<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/validate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When executing exists using the query parameter <code class="literal">q</code>, the query passed is
 a query string using Lucene query parser. There are additional
 parameters that can be passed:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Name </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">df</code></p></td><td align="left" valign="top"><p>The default field to use when no field prefix is defined within the
 query.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">analyzer</code></p></td><td align="left" valign="top"><p>The analyzer name to be used when analyzing the query string.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">default_operator</code></p></td><td align="left" valign="top"><p>The default operator to be used, can be <code class="literal">AND</code> or
@@ -614,8 +614,8 @@ providing text to a numeric field) to be ignored. Defaults to false.</p></td></t
 not. Defaults to <code class="literal">true</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">analyze_wildcard</code></p></td><td align="left" valign="top"><p>Should wildcard and prefix queries be analyzed or
 not. Defaults to <code class="literal">false</code>.</p></td></tr></tbody></table></div><p>Or, with a request body:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/twitter/tweet/_validate/query' -d '{
   "query" : {
-    "filtered" : {
-      "query" : {
+    "bool" : {
+      "must" : {
         "query_string" : {
           "query" : "*:*"
         }
@@ -642,20 +642,18 @@ about why a query failed:</p><div class="pre_wrapper"><pre class="programlisting
   "explanations" : [ {
     "index" : "twitter",
     "valid" : false,
-    "error" : "org.elasticsearch.index.query.QueryParsingException: [twitter] Failed to parse; org.elasticsearch.ElasticsearchParseException: failed to parse date field [foo], tried both date format [dateOptionalTime], and timestamp number; java.lang.IllegalArgumentException: Invalid format: \"foo\""
+    "error" : "[twitter] QueryParsingException[Failed to parse]; nested: IllegalArgumentException[Invalid format: \"foo\"];; java.lang.IllegalArgumentException: Invalid format: \"foo\""
   } ]
-}</pre></div><p><span class="added">
-      [<span class="version">1.6.0</span>]
-      <span class="detail">Added in 1.6.0.</span></span> When the query is valid, the explanation defaults to the string
+}</pre></div><p>When the query is valid, the explanation defaults to the string
 representation of that query. With <code class="literal">rewrite</code> set to <code class="literal">true</code>, the explanation
-is more detailed showing the actual Lucene query that will be executed.</p><p>For Fuzzy Queries:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/imdb/movies/_validate/query?rewrite=true'
+is more detailed showing the actual Lucene query that will be executed.</p><p>For Fuzzy Queries:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/imdb/movies/_validate/query?rewrite=true' -d '
 {
   "query": {
     "fuzzy": {
       "actors": "kyle"
     }
   }
-}</pre></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}'</pre></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
    "valid": true,
    "_shards": {
       "total": 1,
@@ -666,7 +664,7 @@ is more detailed showing the actual Lucene query that will be executed.</p><p>Fo
       {
          "index": "imdb",
          "valid": true,
-         "explanation": "filtered(plot:kyle plot:kylie^0.75 plot:kyne^0.75 plot:lyle^0.75 plot:pyle^0.75)-&gt;cache(_type:movies)"
+         "explanation": "plot:kyle plot:kylie^0.75 plot:kyne^0.75 plot:lyle^0.75 plot:pyle^0.75 #_type:movies"
       }
    ]
 }</pre></div><p>For More Like This:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/imdb/movies/_validate/query?rewrite=true'
@@ -690,7 +688,7 @@ is more detailed showing the actual Lucene query that will be executed.</p><p>Fo
       {
          "index": "imdb",
          "valid": true,
-         "explanation": "filtered(((title:terminator^3.71334 plot:future^2.763601 plot:human^2.8415773 plot:sarah^3.4193945 plot:kyle^3.8244398 plot:cyborg^3.9177752 plot:connor^4.040236 plot:reese^4.7133346 ... )~6) -ConstantScore(_uid:movies#88247))-&gt;cache(_type:movies)"
+         "explanation": "((title:terminator^3.71334 plot:future^2.763601 plot:human^2.8415773 plot:sarah^3.4193945 plot:kyle^3.8244398 plot:cyborg^3.9177752 plot:connor^4.040236 plot:reese^4.7133346 ... )~6) -ConstantScore(_uid:movies#88247) #_type:movies"
       }
    ]
 }</pre></div><div class="caution admon"><div class="icon"><img alt="Caution" src="images/icons/caution.png" /></div><div class="admon_content"><p>The request is executed on a single shard only, which is randomly
@@ -857,6 +855,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

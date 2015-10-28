@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Executing Filters</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="_exploring_your_data.html" title="Exploring Your Data" /><link rel="prev" href="_executing_searches.html" title="Executing Searches" /><link rel="next" href="_executing_aggregations.html" title="Executing Aggregations" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Executing Filters</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="_exploring_your_data.html" title="Exploring Your Data" /><link rel="prev" href="_executing_searches.html" title="Executing Searches" /><link rel="next" href="_executing_aggregations.html" title="Executing Aggregations" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,7 +590,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
+      [2.0]
     </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started </a></span> » <span class="breadcrumb-link"><a href="_exploring_your_data.html">Exploring Your Data</a></span> » <span class="breadcrumb-node">Executing Filters</span></div><div class="navheader"><span class="prev"><a href="_executing_searches.html">
               « 
               Executing Searches</a>
@@ -599,15 +599,11 @@
            
           <a href="_executing_aggregations.html">Executing Aggregations
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_executing_filters"></a>Executing Filters<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In the previous section, we skipped over a little detail called the document score (<code class="literal">_score</code> field in the search results). The score is a numeric value that is a relative measure of how well the document matches the search query that we specified. The higher the score, the more relevant the document is, the lower the score, the less relevant the document is.</p><p>All queries in Elasticsearch trigger computation of the relevance scores. In cases where we do not need the relevance scores, Elasticsearch provides another query capability in the form of <a class="link" href="query-dsl-filters.html" title="Filters">filters</a>. Filters are similar in concept to queries except that they are optimized for much faster execution speeds for two primary reasons:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Filters do not score so they are faster to execute than queries
-</li><li class="listitem">
-Filters can be <a class="ulink" href="http://www.elastic.co/blog/all-about-elasticsearch-filter-bitsets/" target="_top">cached in memory</a> allowing repeated search executions to be significantly faster than queries
-</li></ul></div><p>To understand filters, let’s first introduce the <a class="link" href="query-dsl-filtered-query.html" title="Filtered Query"><code class="literal">filtered</code> query</a>, which allows you to combine a query (like <code class="literal">match_all</code>, <code class="literal">match</code>, <code class="literal">bool</code>, etc.) together with a filter. As an example, let’s introduce the <a class="link" href="query-dsl-range-filter.html" title="Range Filter"><code class="literal">range</code> filter</a>, which allows us to filter documents by a range of values. This is generally used for numeric or date filtering.</p><p>This example uses a filtered query to return all accounts with balances between 20000 and 30000, inclusive. In other words, we want to find accounts with a balance that is greater than or equal to 20000 and less than or equal to 30000.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPOST 'localhost:9200/bank/_search?pretty' -d '
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_executing_filters"></a>Executing Filters<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In the previous section, we skipped over a little detail called the document score (<code class="literal">_score</code> field in the search results). The score is a numeric value that is a relative measure of how well the document matches the search query that we specified. The higher the score, the more relevant the document is, the lower the score, the less relevant the document is.</p><p>But queries do not always need to produce scores, in particular when they are only used for "filtering" the document set. Elasticsearch detects these situations and automatically optimizes query execution in order not to compute useless scores.</p><p>The <a class="link" href="query-dsl-bool-query.html" title="Bool Query"><code class="literal">bool</code> query</a> that we introduced in the previous section also supports <code class="literal">filter</code> clauses which allow to use a query to restrict the documents that will be matched by other clauses, without changing how scores are computed. As an example, let’s introduce the <a class="link" href="query-dsl-range-query.html" title="Range Query"><code class="literal">range</code> query</a>, which allows us to filter documents by a range of values. This is generally used for numeric or date filtering.</p><p>This example uses a bool query to return all accounts with balances between 20000 and 30000, inclusive. In other words, we want to find accounts with a balance that is greater than or equal to 20000 and less than or equal to 30000.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPOST 'localhost:9200/bank/_search?pretty' -d '
 {
   "query": {
-    "filtered": {
-      "query": { "match_all": {} },
+    "bool": {
+      "must": { "match_all": {} },
       "filter": {
         "range": {
           "balance": {
@@ -618,7 +614,7 @@ Filters can be <a class="ulink" href="http://www.elastic.co/blog/all-about-elast
       }
     }
   }
-}'</pre></div><p>Dissecting the above, the filtered query contains a <code class="literal">match_all</code> query (the query part) and a <code class="literal">range</code> filter (the filter part). We can substitute any other query into the query part as well as any other filter into the filter part. In the above case, the range filter makes perfect sense since documents falling into the range all match "equally", i.e., no document is more relevant than another.</p><p>In general, the easiest way to decide whether you want a filter or a query is to ask yourself if you care about the relevance score or not. If relevance is not important, use filters, otherwise, use queries. If you come from a SQL background, queries and filters are similar in concept to the <code class="literal">SELECT WHERE</code> clause, although more so for filters than queries.</p><p>In addition to the <code class="literal">match_all</code>, <code class="literal">match</code>, <code class="literal">bool</code>, <code class="literal">filtered</code>, and <code class="literal">range</code> queries, there are a lot of other query/filter types that are available and we won’t go into them here. Since we already have a basic understanding of how they work, it shouldn’t be too difficult to apply this knowledge in learning and experimenting with the other query/filter types.</p></div><div class="navfooter"><span class="prev"><a href="_executing_searches.html">
+}'</pre></div><p>Dissecting the above, the bool query contains a <code class="literal">match_all</code> query (the query part) and a <code class="literal">range</code> query (the filter part). We can substitute any other queries into the query and the filter parts. In the above case, the range query makes perfect sense since documents falling into the range all match "equally", i.e., no document is more relevant than another.</p><p>In addition to the <code class="literal">match_all</code>, <code class="literal">match</code>, <code class="literal">bool</code>, and <code class="literal">range</code> queries, there are a lot of other query types that are available and we won’t go into them here. Since we already have a basic understanding of how they work, it shouldn’t be too difficult to apply this knowledge in learning and experimenting with the other query types.</p></div><div class="navfooter"><span class="prev"><a href="_executing_searches.html">
               « 
               Executing Searches</a>
            
@@ -780,6 +776,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

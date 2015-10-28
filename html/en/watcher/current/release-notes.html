@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Release Notes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [watcher-1.0]" /><link rel="up" href="index.html" title="Elasticsearch Watcher [watcher-1.0]" /><link rel="prev" href="troubleshooting.html" title="Troubleshooting" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Release Notes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0]" /><link rel="up" href="index.html" title="Elasticsearch Watcher [2.0]" /><link rel="prev" href="troubleshooting.html" title="Troubleshooting" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,54 +590,73 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
-      [watcher-1.0]
+      [2.0]
     </a></span> » <span class="breadcrumb-node">Release Notes</span></div><div class="navheader"><span class="prev"><a href="troubleshooting.html">
               « 
               Troubleshooting</a>
            
         </span><span class="next">
            
-          </span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="release-notes"></a>Release Notes</h1></div></div></div><h3><a id="version-compatibility"></a>Version Compatibility</h3><p>Watcher 1.0.0 is compatible with:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Elasticsearch: 1.5.2+
+          </span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="release-notes"></a>Release Notes</h1></div></div></div><h3><a id="version-compatibility"></a>Version Compatibility</h3><p>Watcher 2.0.0 is compatible with:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Elasticsearch: 2.0.0
 </li><li class="listitem">
-License: 1.0
+License 2.0.0
 </li><li class="listitem">
-Shield: 1.2.2
-</li></ul></div><h3><a id="upgrade-instructions"></a>Upgrading Watcher</h3><p>To upgrade Watcher, just uninstall the current Watcher plugin and install the new version of Watcher.
-Your watches and watch history will be preserved and you do this with a rolling upgrade of Elasticsearch.
-On each node, after you have stopped it run:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin remove watcher
-bin/plugin install elasticsearch/watcher/latest <a id="CO43-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-<code class="literal">latest</code> will install the latest version of Watcher compatible with your version of Elasticsearch. A specific version,
-such as <code class="literal">1.0.1</code> can also be specified.
-</p></td></tr></table></div><p>Then start the node. Larger sites should follow the steps in the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/1.7/setup-upgrade.html#_1_0_and_later" target="_top">rolling upgrade section</a> in order to ensure recovery is as quick as possible.</p><h3><a id="old-upgrade-instructions"></a>Upgrading Watcher from beta or rc release</h3><p>Watcher 1.0.0 is not backward compatible with Watcher 1.0.0-rc1 and before. If you are on a beta or rc release then
-follow the following steps:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Shield 2.0.0
+</li></ul></div><h3><a id="upgrade-instructions"></a>Upgrading Watcher</h3><p>Watcher 2.0.0 is backward compatible with Watcher 1.0.x. Follow these steps to
+upgrade:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 Back up all of the watches you’ve defined. You can search/scan the <code class="literal">.watches</code> index and save the
    returned watches aside.
 </li><li class="listitem">
 Stop Elasticsearch on all nodes in your cluster.
 </li><li class="listitem"><p class="simpara">
 Uninstall the Watcher plugin from each node:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">bin/plugin -r watcher</pre></div></li><li class="listitem">
-Restart Elasticsearch on each node.
-</li><li class="listitem"><p class="simpara">
-Delete the <code class="literal">.watches</code> index and all of the existing <code class="literal">.watch_history-*</code> indices
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">DELETE .watches</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">DELETE .watch_history*</pre></div></li><li class="listitem">
-Stop Elasticsearch on all nodes in your cluster.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">bin/plugin remove watcher</pre></div></li><li class="listitem">
+From here on you can simply follow the <a class="link" href="getting-started.html" title="Getting Started">Getting Started</a> guide.
+</li></ol></div><h3><a id="change-list"></a>Change List</h3><h4><a id="_2_0_0"></a>2.0.0</h4><div class="itemizedlist"><p class="title"><strong>Breaking Changes</strong></p><ul class="itemizedlist" type="disc"><li class="listitem">
+The dynamic index names support has been removed and Elasticsearch’s date math index names support should be used instead.
+  The only difference between Watcher’s dynamic index names support and Elasticsearch’s date math index names support is
+  how timezones are expressed. In Watcher this is done via node settings, in Elasticsearch the timezone is part of the
+  date math index names support. Only if you’re using dynamic index names with timezones in Watcher then you need to
+  upgrade your watches after the upgrade, otherwise your watches will work as they did before the upgrade. For example if
+  <code class="literal">watcher.dynamic_indices.time_zone</code> setting was set to <code class="literal">+01:00</code> and a watch has the following index name <code class="literal">&lt;logstash-{now/d}&gt;</code>
+  then after the upgrade you need to update this watch to use the following index name <code class="literal">&lt;logstash-{now/d{YYYY.MM.dd|+01:00}}&gt;</code>.
+</li></ul></div><div class="itemizedlist"><p class="title"><strong>New Features</strong></p><ul class="itemizedlist" type="disc"><li class="listitem">
+Added new <a class="link" href="actions.html#actions-hipchat" title="HipChat Action">HipChat Action</a>
 </li><li class="listitem">
-From here on you can simply follow the <a class="link" href="getting-started.html" title="Getting Started">Getting Started</a> guide. If you are
-   upgrading from Beta1, you can skip the license installation as both Beta1 and Beta2 are
-   compatible with the same license version (1.0.0). Once Watcher is installed, you can use the
-   <a class="link" href="api-rest.html#api-rest-put-watch" title="PUT Watch API">PUT Watch API</a> to restore your backed up watches.
-</li></ol></div><h3><a id="change-list"></a>Change List</h3><h4><a id="_1_0_2"></a>1.0.2</h4><div class="itemizedlist"><p class="title"><strong>Bug fixes</strong></p><ul class="itemizedlist" type="disc"><li class="listitem">
-Fixed an issue where the scheduler may get stuck during Watcher startup. This caused no watches to ever fire.
-</li></ul></div><h4><a id="_1_0_1"></a>1.0.1</h4><div class="itemizedlist"><p class="title"><strong>Enhancements</strong></p><ul class="itemizedlist" type="disc"><li class="listitem">
-Added time zone support to <a class="link" href="dynamic-index-names.html#dynamic-index-name-timezone">dynamic index names</a>. Before the timezone was fixed to UTC.
+Added new <a class="link" href="actions.html#actions-slack" title="Slack Action">Slack Action</a>
+</li><li class="listitem">
+Watches now have an <a class="link" href="watch-active-state.html" title="Watch Active State">active state</a>. In addition, a new API was added to
+  <a class="link" href="api-rest.html#api-rest-activate-watch" title="Activate Watch API">activate</a>/<a class="link" href="api-rest.html#api-rest-deactivate-watch" title="Deactivate Watch API">deactivate</a> registered watches.
+</li><li class="listitem">
+Added new <a class="link" href="condition.html#condition-array-compare" title="Array Compare Condition">array-compare</a>, that can compare an array of values in the
+  <a class="link" href="scripts-templates.html#watch-execution-context" title="Watch Execution Context">Watch Execution Context Model</a> to a given value.
+</li></ul></div><div class="itemizedlist"><p class="title"><strong>Enhancements</strong></p><ul class="itemizedlist" type="disc"><li class="listitem">
+Watcher continuously checks if the index templates for <code class="literal">.watches</code>, <code class="literal">.triggered_watches</code>
+  and <code class="literal">.watch_history-*</code> exist. Whereas before the existence of these index templates was
+  only checked at Watcher startup time. The absence of these index templates leads to
+  watcher data being indexed incorrectly, which then can cause Watcher to behave incorrectly.
+</li><li class="listitem">
+If Watcher was stopped via the stop Watcher api and after that a master election took place
+  then Watcher would then unexpectedly start.
+</li><li class="listitem">
+During Watcher start up only wait for the shards of the <code class="literal">.watches</code> and <code class="literal">.triggered_watches</code>
+  indices to be available. Before Watcher also waited for the shards of the <code class="literal">.watch_history-*</code>
+  indices, which wasn’t needed. This improved time it takes for Watcher to startup.
+</li><li class="listitem">
+If <code class="literal">action.auto_create_index</code> setting has been configured then Watcher will check if the setting is too restrictive.
+  If the <code class="literal">action.auto_create_index</code> is too restrictive then Watcher will fail during startup with a descriptive error message.
 </li></ul></div><div class="itemizedlist"><p class="title"><strong>Bug Fixes</strong></p><ul class="itemizedlist" type="disc"><li class="listitem">
-Fixed a rare bug when stopping Watcher manually, it would start again a small moment later.
+If Watcher was installed with Shield then the Watcher index templates couldn’t be stored and could lead
+  to Watcher behaving incorrectly. This was caused by Watcher not detecting correctly if Shield was installed.
 </li><li class="listitem">
-Made Watcher compatible with Elasticsearch 1.6.2 and 1.7.1
+Update <code class="literal">croneval</code> command line utility to properly handle whitespaces in the elasticsearch home path.
+</li><li class="listitem">
+Fixed an issue where the scheduler may get stuck during Watcher startup. This caused no watches to ever fire.
+</li><li class="listitem">
+Fixed url encoding issue in http input and webhook output. The url params were url encoded twice.
 </li></ul></div><h4><a id="_1_0_0"></a>1.0.0</h4><div class="itemizedlist"><p class="title"><strong>Enhancements</strong></p><ul class="itemizedlist" type="disc"><li class="listitem">
-Added execution time aware <a class="link" href="dynamic-index-names.html" title="Dynamic Index Names">dynamic index names</a> support to <code class="literal">index</code>
+Added execution time aware dynamic index names support to <code class="literal">index</code>
   action, <code class="literal">search</code> input, and <code class="literal">search</code> transform.
 </li><li class="listitem">
 You must now explicitly specify the unit when configuring any time value. (Numeric-only
@@ -846,6 +865,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

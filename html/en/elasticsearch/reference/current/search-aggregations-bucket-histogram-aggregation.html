@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Histogram Aggregation</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="search-aggregations.html" title="Aggregations" /><link rel="prev" href="search-aggregations-bucket-iprange-aggregation.html" title="IPv4 Range Aggregation" /><link rel="next" href="search-aggregations-bucket-datehistogram-aggregation.html" title="Date Histogram Aggregation" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Histogram Aggregation</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="search-aggregations-bucket.html" title="Bucket Aggregations" /><link rel="prev" href="search-aggregations-bucket-global-aggregation.html" title="Global Aggregation" /><link rel="next" href="search-aggregations-bucket-iprange-aggregation.html" title="IPv4 Range Aggregation" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,21 +590,21 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-link"><a href="search-aggregations.html">Aggregations</a></span> » <span class="breadcrumb-node">Histogram Aggregation</span></div><div class="navheader"><span class="prev"><a href="search-aggregations-bucket-iprange-aggregation.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="search-aggregations.html">Aggregations </a></span> » <span class="breadcrumb-link"><a href="search-aggregations-bucket.html">Bucket Aggregations</a></span> » <span class="breadcrumb-node">Histogram Aggregation</span></div><div class="navheader"><span class="prev"><a href="search-aggregations-bucket-global-aggregation.html">
               « 
-              IPv4 Range Aggregation</a>
+              Global Aggregation</a>
            
         </span><span class="next">
            
-          <a href="search-aggregations-bucket-datehistogram-aggregation.html">Date Histogram Aggregation
+          <a href="search-aggregations-bucket-iprange-aggregation.html">IPv4 Range Aggregation
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-bucket-histogram-aggregation"></a>Histogram Aggregation<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A multi-bucket values source based aggregation that can be applied on numeric values extracted from the documents.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-bucket-histogram-aggregation"></a>Histogram Aggregation<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A multi-bucket values source based aggregation that can be applied on numeric values extracted from the documents.
 It dynamically builds fixed size (a.k.a. interval) buckets over the values. For example, if the documents have a field
 that holds a price (numeric), we can configure this aggregation to dynamically build buckets with interval <code class="literal">5</code>
 (in case of price it may represent $5). When the aggregation executes, the price field of every document will be
 evaluated and will be rounded down to its closest bucket - for example, if the price is <code class="literal">32</code> and the bucket size is <code class="literal">5</code>
-then the rounding will yield <code class="literal">30</code> and thus the document will "fall" into the bucket that is associated withe the key <code class="literal">30</code>.
+then the rounding will yield <code class="literal">30</code> and thus the document will "fall" into the bucket that is associated with the key <code class="literal">30</code>.
 To make this more formal, here is the rounding function that is used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">rem = value % interval
 if (rem &lt; 0) {
     rem += interval
@@ -634,22 +634,25 @@ end up in the <code class="literal">-4 &lt;= val &lt; -2</code> bucket instead o
                     "doc_count": 4
                 },
                 {
+                    "key": 100,
+                    "doc_count": 0
+                },
+                {
                     "key": 150,
                     "doc_count": 3
                 }
             ]
         }
     }
-}</pre></div><p>The response above shows that none of the aggregated products has a price that falls within the range of <code class="literal">[100 - 150)</code>.
-By default, the response will only contain those buckets with a <code class="literal">doc_count</code> greater than 0. It is possible change that
-and request buckets with either a higher minimum count or even 0 (in which case elasticsearch will "fill in the gaps"
-and create buckets with zero documents). This can be configured using the <code class="literal">min_doc_count</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_minimum_document_count"></a>Minimum document count<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The response above show that no documents has a price that falls within the range of <code class="literal">[100 - 150)</code>. By default the
+response will fill gaps in the histogram with empty buckets. It is possible change that and request buckets with
+a higher minimum count thanks to the <code class="literal">min_doc_count</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "aggs" : {
         "prices" : {
             "histogram" : {
                 "field" : "price",
                 "interval" : 50,
-                "min_doc_count" : 0
+                "min_doc_count" : 1
             }
         }
     }
@@ -666,22 +669,16 @@ and create buckets with zero documents). This can be configured using the <code 
                     "doc_count": 4
                 },
                 {
-                    "key" : 100,
-                    "doc_count" : 0 <a id="CO38-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                },
-                {
                     "key": 150,
                     "doc_count": 3
                 }
             ]
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-No documents were found that belong in this bucket, yet it is still returned with zero <code class="literal">doc_count</code>.
-</p></td></tr></table></div><p><a id="search-aggregations-bucket-histogram-aggregation-extended-bounds"></a>By default the date_/histogram returns all the buckets within the range of the data itself, that is, the documents with
+}</pre></div><p><a id="search-aggregations-bucket-histogram-aggregation-extended-bounds"></a>By default the date_/histogram returns all the buckets within the range of the data itself, that is, the documents with
 the smallest values (on which with histogram) will determine the min bucket (the bucket with the smallest key) and the
 documents with the highest values will determine the max bucket (the bucket with the highest key). Often, when
-requesting empty buckets (<code class="literal">"min_doc_count" : 0</code>), this causes a confusion, specifically, when the data is also filtered.</p><p>To understand why, let’s look at an example:</p><p>Lets say the you’re filtering your request to get all docs with values between <code class="literal">0</code> and <code class="literal">500</code>, in addition you’d like
+requesting empty buckets, this causes a confusion, specifically, when the data is also filtered.</p><p>To understand why, let’s look at an example:</p><p>Lets say the you’re filtering your request to get all docs with values between <code class="literal">0</code> and <code class="literal">500</code>, in addition you’d like
 to slice the data per price using a histogram with an interval of <code class="literal">50</code>. You also specify <code class="literal">"min_doc_count" : 0</code> as you’d
 like to get all buckets even the empty ones. If it happens that all products (documents) have prices higher than <code class="literal">100</code>,
 the first bucket you’ll get will be the one with <code class="literal">100</code> as its key. This is confusing, as many times, you’d also like
@@ -693,14 +690,13 @@ than the values extracted from the documents, the documents will still dictate w
 same goes for the <code class="literal">extended_bounds.max</code> and the last bucket). For filtering buckets, one should nest the histogram aggregation
 under a range <code class="literal">filter</code> aggregation with the appropriate <code class="literal">from</code>/<code class="literal">to</code> settings.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "query" : {
-        "filtered" : { "filter": { "range" : { "price" : { "to" : "500" } } } }
+        "constant_score" : { "filter": { "range" : { "price" : { "to" : "500" } } } }
     },
     "aggs" : {
         "prices" : {
             "histogram" : {
                 "field" : "price",
                 "interval" : 50,
-                "min_doc_count" : 0,
                 "extended_bounds" : {
                     "min" : 0,
                     "max" : 500
@@ -708,7 +704,7 @@ under a range <code class="literal">filter</code> aggregation with the appropria
             }
         }
     }
-}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_order"></a>Order<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default the returned buckets are sorted by their <code class="literal">key</code> ascending, though the order behaviour can be controlled
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_order"></a>Order<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default the returned buckets are sorted by their <code class="literal">key</code> ascending, though the order behaviour can be controlled
 using the <code class="literal">order</code> setting.</p><p>Ordering the buckets by their key - descending:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "aggs" : {
         "prices" : {
@@ -735,16 +731,16 @@ using the <code class="literal">order</code> setting.</p><p>Ordering the buckets
             "histogram" : {
                 "field" : "price",
                 "interval" : 50,
-                "order" : { "price_stats.min" : "asc" } <a id="CO39-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                "order" : { "price_stats.min" : "asc" } <a id="CO68-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
             },
             "aggs" : {
-                "price_stats" : { "stats" : {} } <a id="CO39-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                "price_stats" : { "stats" : {} } <a id="CO68-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
             }
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO39-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO68-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">{ "price_stats.min" : asc" }</code> will sort the buckets based on <code class="literal">min</code> value of their <code class="literal">price_stats</code> sub-aggregation.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO39-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO68-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 There is no need to configure the <code class="literal">price</code> field for the <code class="literal">price_stats</code> aggregation as it will inherit it by default from its parent histogram aggregation.
 </p></td></tr></table></div><p>It is also possible to order the buckets based on a "deeper" aggregation in the hierarchy. This is supported as long
 as the aggregations path are of a single-bucket type, where the last aggregation in the path may either by a single-bucket
@@ -760,7 +756,7 @@ PATH                :=  &lt;AGG_NAME&gt;[&lt;AGG_SEPARATOR&gt;&lt;AGG_NAME&gt;]*
             "histogram" : {
                 "field" : "price",
                 "interval" : 50,
-                "order" : { "promoted_products&gt;rating_stats.avg" : "desc" } <a id="CO40-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                "order" : { "promoted_products&gt;rating_stats.avg" : "desc" } <a id="CO69-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
             },
             "aggs" : {
                 "promoted_products" : {
@@ -772,50 +768,10 @@ PATH                :=  &lt;AGG_NAME&gt;[&lt;AGG_SEPARATOR&gt;&lt;AGG_NAME&gt;]*
             }
         }
     }
-}</pre></div><p>The above will sort the buckets based on the avg rating among the promoted products</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_minimum_document_count_3"></a>Minimum document count<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It is possible to only return buckets that have a document count that is greater than or equal to a configured
-limit through the <code class="literal">min_doc_count</code> option.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggs" : {
-        "prices" : {
-            "histogram" : {
-                "field" : "price",
-                "interval" : 50,
-                "min_doc_count": 10
-            }
-        }
-    }
-}</pre></div><p>The above aggregation would only return buckets that contain 10 documents or more. Default value is <code class="literal">1</code>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The special value <code class="literal">0</code> can be used to add empty buckets to the response between the minimum and the maximum buckets.
-Here is an example of what the response could look like:</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggregations": {
-        "prices": {
-            "buckets": {
-                "0": {
-                    "key": 0,
-                    "doc_count": 2
-                },
-                "50": {
-                    "key": 50,
-                    "doc_count": 0
-                },
-                "150": {
-                    "key": 150,
-                    "doc_count": 3
-                },
-                "200": {
-                    "key": 150,
-                    "doc_count": 0
-                },
-                "250": {
-                    "key": 150,
-                    "doc_count": 0
-                },
-                "300": {
-                    "key": 150,
-                    "doc_count": 1
-                }
-            }
-        }
-   }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_response_format"></a>Response Format<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default, the buckets are returned as an ordered array. It is also possible to request the response as a hash
+}</pre></div><p>The above will sort the buckets based on the avg rating among the promoted products</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_offset_2"></a>Offset<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default the bucket keys start with 0 and then continue in even spaced steps of <code class="literal">interval</code>, e.g. if the interval is 10 the first buckets
+(assuming there is data inside them) will be [0 - 9], [10-19], [20-29]. The bucket boundaries can be shifted by using the <code class="literal">offset</code> option.</p><p>This can be best illustrated with an example. If there are 10 documents with values ranging from 5 to 14, using interval <code class="literal">10</code> will result in
+two buckets with 5 documents each. If an additional offset <code class="literal">5</code> is used, there will be only one single bucket [5-14] containing all the 10
+documents.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_response_format"></a>Response Format<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default, the buckets are returned as an ordered array. It is also possible to request the response as a hash
 instead keyed by the buckets keys:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "aggs" : {
         "prices" : {
@@ -845,13 +801,27 @@ instead keyed by the buckets keys:</p><div class="pre_wrapper"><pre class="progr
             }
         }
     }
-}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-iprange-aggregation.html">
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_missing_value_11"></a>Missing value<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">missing</code> parameter defines how documents that are missing a value should be treated.
+By default they will be ignored but it is also possible to treat them as if they
+had a value.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "aggs" : {
+        "quantity" : {
+             "histogram" : {
+                 "field" : "quantity",
+                 "interval": 10,
+                 "missing": 0 <a id="CO69-2"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+             }
+         }
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO69-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO69-2"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Documents without a value in the <code class="literal">quantity</code> field will fall into the same bucket as documents that have the value <code class="literal">0</code>.
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-global-aggregation.html">
               « 
-              IPv4 Range Aggregation</a>
+              Global Aggregation</a>
            
         </span><span class="next">
            
-          <a href="search-aggregations-bucket-datehistogram-aggregation.html">Date Histogram Aggregation
+          <a href="search-aggregations-bucket-iprange-aggregation.html">IPv4 Range Aggregation
                »
             </a></span></div>
 <!-- end body -->
@@ -1007,6 +977,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

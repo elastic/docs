@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Dealing with JSON Arrays and Objects in PHP</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [1.0]" /><link rel="up" href="index.html" title="Elasticsearch-PHP [1.0]" /><link rel="prev" href="_configuration.html" title="Configuration" /><link rel="next" href="_index_operations.html" title="Index Operations" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Dealing with JSON Arrays and Objects in PHP</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [2.0]" /><link rel="up" href="index.html" title="Elasticsearch-PHP [2.0]" /><link rel="prev" href="_future_mode.html" title="Future Mode" /><link rel="next" href="_index_management_operations.html" title="Index Management Operations" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,18 +590,18 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch-PHP
-      [1.0]
-    </a></span> » <span class="breadcrumb-node">Dealing with JSON Arrays and Objects in PHP</span></div><div class="navheader"><span class="prev"><a href="_configuration.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-node">Dealing with JSON Arrays and Objects in PHP</span></div><div class="navheader"><span class="prev"><a href="_future_mode.html">
               « 
-              Configuration</a>
+              Future Mode</a>
            
         </span><span class="next">
            
-          <a href="_index_operations.html">Index Operations
+          <a href="_index_management_operations.html">Index Management Operations
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_dealing_with_json_arrays_and_objects_in_php"></a>Dealing with JSON Arrays and Objects in PHP<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>A common source of confusion with the client revolves around JSON arrays and objects, and how to specify them in PHP.
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_dealing_with_json_arrays_and_objects_in_php"></a>Dealing with JSON Arrays and Objects in PHP<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>A common source of confusion with the client revolves around JSON arrays and objects, and how to specify them in PHP.
 In particular, problems are caused by empty objects and arrays of objects.  This page will show you some common patterns
-used in Elasticsearch JSON API, and how to convert that to a PHP representation</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_empty_objects"></a>Empty Objects<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Elasticsearch API uses empty JSON objects in several locations, and this can cause problems for PHP.  Unlike other
+used in Elasticsearch JSON API, and how to convert that to a PHP representation</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_empty_objects"></a>Empty Objects<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Elasticsearch API uses empty JSON objects in several locations, and this can cause problems for PHP.  Unlike other
 languages, PHP does not have a "short" notation for empty objects and so many developers are unaware how to specify
 an empty object.</p><p>Consider adding a Highlight to a query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
     "query" : {
@@ -611,10 +611,10 @@ an empty object.</p><p>Consider adding a Highlight to a query:</p><div class="pr
     },
     "highlight" : {
         "fields" : {
-            "content" : {} <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "content" : {} <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This empty JSON object is what causes problems.
 </p></td></tr></table></div><p>The problem is that PHP will automatically convert <code class="literal">"content" : {}</code> into <code class="literal">"content" : []</code>, which is no longer valid
 Elasticsearch DSL.  We need to tell PHP that the empty object is explicitly an object, not an array.  To define this
@@ -626,23 +626,23 @@ query in PHP, you would do:</p><div class="pre_wrapper"><pre class="programlisti
     ),
     'highlight' =&gt; array(
         'fields' =&gt; array(
-            'content' =&gt; (object) array() <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            'content' =&gt; new \stdClass() <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         )
     )
 );
-$results = $client-&gt;search($params);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-We cast an empty array to an object to represent an empty object.  The JSON will now encode correctly.
-</p></td></tr></table></div><p>By using an empty array cast to an object, we can force the <code class="literal">json_encode</code> parser to correctly output an empty object, instead
+$results = $client-&gt;search($params);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We use the generic PHP stdClass object to represent an empty object.  The JSON will now encode correctly.
+</p></td></tr></table></div><p>By using an explicit stdClass object, we can force the <code class="literal">json_encode</code> parser to correctly output an empty object, instead
 of an empty array.  Sadly, this verbose solution is the only way to acomplish the goal in PHP…there is no "short"
-version of an empty object.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_arrays_of_objects"></a>Arrays of Objects<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Another common pattern in Elasticsearch DSL is an array of objects.  For example, consider adding a sort to your query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+version of an empty object.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_arrays_of_objects"></a>Arrays of Objects<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Another common pattern in Elasticsearch DSL is an array of objects.  For example, consider adding a sort to your query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
     "query" : {
         "match" : { "content" : "quick brown fox" }
     },
-    "sort" : [  <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "sort" : [  <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         {"time" : {"order" : "desc"}},
         {"popularity" : {"order" : "desc"}}
     ]
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 "sort" contains an array of JSON objects
 </p></td></tr></table></div><p>This arrangement is <span class="strong"><strong>very</strong></span> common, but the construction in PHP can be tricky since it requires nesting arrays.  The
 verbosity of PHP tends to obscure what is actually going on.  To construct an array of objects, you actually need
@@ -652,16 +652,16 @@ an array of arrays:</p><div class="pre_wrapper"><pre class="programlisting prett
             'content' =&gt; 'quick brown fox'
         )
     ),
-    'sort' =&gt; array(    <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        array('time' =&gt; array('order' =&gt; 'desc')),  <a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-        array('popularity' =&gt; array('order' =&gt; 'desc')) <a id="CO5-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    'sort' =&gt; array(    <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        array('time' =&gt; array('order' =&gt; 'desc')),  <a id="CO6-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        array('popularity' =&gt; array('order' =&gt; 'desc')) <a id="CO6-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
     )
 );
-$results = $client-&gt;search($params);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+$results = $client-&gt;search($params);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This array encodes the <code class="literal">"sort" : []</code> array
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This array encodes the <code class="literal">{"time" : {"order" : "desc"}}</code> object
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This array encodes the <code class="literal">{"popularity" : {"order" : "desc"}}</code> object
 </p></td></tr></table></div><p>If you are on PHP 5.4+, I would strongly encourage you to use the short array syntax.  It makes these nested arrays
 much simpler to read:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">$params['body'] = [
@@ -675,7 +675,7 @@ much simpler to read:</p><div class="pre_wrapper"><pre class="programlisting pre
         ['popularity' =&gt; ['order' =&gt; 'desc']]
     ]
 ];
-$results = $client-&gt;search($params);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_arrays_of_empty_objects"></a>Arrays of empty objects<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Occasionally, you’ll encounter DSL that requires both of the previous patterns.  The function score query is a good
+$results = $client-&gt;search($params);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_arrays_of_empty_objects"></a>Arrays of empty objects<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Occasionally, you’ll encounter DSL that requires both of the previous patterns.  The function score query is a good
 example, it sometimes requires an array of objects, and some of those objects might be empty JSON objects.</p><p>Given this query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
    "query":{
       "function_score":{
@@ -690,27 +690,27 @@ example, it sometimes requires an array of objects, and some of those objects mi
 }</pre></div><p>We can build it using the following PHP code:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">$params['body'] = array(
     'query' =&gt; array(
         'function_score' =&gt; array(
-            'functions' =&gt; array(  <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                array(  <a id="CO6-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                    'random_score' =&gt; (object) array() <a id="CO6-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+            'functions' =&gt; array(  <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                array(  <a id="CO7-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                    'random_score' =&gt; new \stdClass() <a id="CO7-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
                 )
             )
         )
     )
 );
-$results = $client-&gt;search($params);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+$results = $client-&gt;search($params);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This encodes the array of objects: <code class="literal">"functions" : []</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This encodes an object inside the array: <code class="literal">{ "random_score": {} }</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This encodes the empty JSON object: <code class="literal">"random_score": {}</code>
-</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="_configuration.html">
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="_future_mode.html">
               « 
-              Configuration</a>
+              Future Mode</a>
            
         </span><span class="next">
            
-          <a href="_index_operations.html">Index Operations
+          <a href="_index_management_operations.html">Index Management Operations
                »
             </a></span></div>
 <!-- end body -->
@@ -866,6 +866,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Post filter</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="search-request-body.html" title="Request Body Search" /><link rel="prev" href="search-request-fielddata-fields.html" title="Field Data Fields" /><link rel="next" href="search-request-highlighting.html" title="Highlighting" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Post filter</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="search-request-body.html" title="Request Body Search" /><link rel="prev" href="search-request-fielddata-fields.html" title="Field Data Fields" /><link rel="next" href="search-request-highlighting.html" title="Highlighting" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,7 +590,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
+      [2.0]
     </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-link"><a href="search-request-body.html">Request Body Search</a></span> » <span class="breadcrumb-node">Post filter</span></div><div class="navheader"><span class="prev"><a href="search-request-fielddata-fields.html">
               « 
               Field Data Fields</a>
@@ -599,23 +599,19 @@
            
           <a href="search-request-highlighting.html">Highlighting
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-post-filter"></a>Post filter<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/request/post-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">post_filter</code> is applied to the search <code class="literal">hits</code> at the very end of a search
-request,  after aggregations have already been calculated. It’s purpose is
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-post-filter"></a>Post filter<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/search/request/post-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">post_filter</code> is applied to the search <code class="literal">hits</code> at the very end of a search
+request,  after aggregations have already been calculated. Its purpose is
 best explained by example:</p><p>Imagine that you are selling shirts, and the user has specified two filters:
 <code class="literal">color:red</code> and <code class="literal">brand:gucci</code>.  You only want to show them red shirts made by
 Gucci in the search results.  Normally you would do this with a
-<a class="link" href="query-dsl-filtered-query.html" title="Filtered Query"><code class="literal">filtered</code> query</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl -XGET localhost:9200/shirts/_search -d '
+<a class="link" href="query-dsl-bool-query.html" title="Bool Query"><code class="literal">bool</code> query</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET localhost:9200/shirts/_search -d '
 {
   "query": {
-    "filtered": {
-      "filter": {
-        "bool": {
-          "must": [
-            { "term": { "color": "red"   }},
-            { "term": { "brand": "gucci" }}
-          ]
-        }
-      }
+    "bool": {
+      "filter": [
+        { "term": { "color": "red"   }},
+        { "term": { "brand": "gucci" }}
+      ]
     }
   }
 }
@@ -623,69 +619,65 @@ Gucci in the search results.  Normally you would do this with a
 other options that the user could click on.  Perhaps you have a <code class="literal">model</code> field
 that would allow the user to limit their search results to red Gucci
 <code class="literal">t-shirts</code> or <code class="literal">dress-shirts</code>.</p><p>This can be done with a
-<a class="link" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation"><code class="literal">terms</code> aggregation</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl -XGET localhost:9200/shirts/_search -d '
+<a class="link" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation"><code class="literal">terms</code> aggregation</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET localhost:9200/shirts/_search -d '
 {
   "query": {
-    "filtered": {
-      "filter": {
-        "bool": {
-          "must": [
-            { "term": { "color": "red"   }},
-            { "term": { "brand": "gucci" }}
-          ]
-        }
-      }
+    "bool": {
+      "filter": [
+        { "term": { "color": "red"   }},
+        { "term": { "brand": "gucci" }}
+      ]
     }
   },
   "aggs": {
     "models": {
-      "terms": { "field": "model" } <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "terms": { "field": "model" } <a id="CO18-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
   }
 }
-'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Returns the most popular models of red shirts by Gucci.
 </p></td></tr></table></div><p>But perhaps you would also like to tell the user how many Gucci shirts are
 available in <span class="strong"><strong>other colors</strong></span>. If you just add a <code class="literal">terms</code> aggregation on the
 <code class="literal">color</code> field, you will only get back the color <code class="literal">red</code>, because your query
 returns only red shirts by Gucci.</p><p>Instead, you want to include shirts of all colors during aggregation, then
 apply the <code class="literal">colors</code> filter only to the search results.  This is the purpose of
-the <code class="literal">post_filter</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">curl -XGET localhost:9200/shirts/_search -d '
+the <code class="literal">post_filter</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET localhost:9200/shirts/_search -d '
 {
   "query": {
-    "filtered": {
+    "bool": {
       "filter": {
-        { "term": { "brand": "gucci" }} <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        { "term": { "brand": "gucci" }} <a id="CO19-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
       }
     }
   },
   "aggs": {
     "colors": {
-      "terms": { "field": "color" }, <a id="CO3-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+      "terms": { "field": "color" }, <a id="CO19-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     },
     "color_red": {
       "filter": {
-        "term": { "color": "red" } <a id="CO3-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        "term": { "color": "red" } <a id="CO19-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
       },
       "aggs": {
         "models": {
-          "terms": { "field": "model" } <a id="CO3-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+          "terms": { "field": "model" } <a id="CO19-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
         }
       }
     }
   },
-  "post_filter": { <a id="CO3-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+  "post_filter": { <a id="CO19-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
     "term": { "color": "red" }
   }
 }
-'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The main query now finds all shirts by Gucci, regardless of color.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">colors</code> agg returns popular colors for shirts by Gucci.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO3-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO19-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">color_red</code> agg limits the <code class="literal">models</code> sub-aggregation
     to <span class="strong"><strong>red</strong></span> Gucci shirts.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Finally, the <code class="literal">post_filter</code> removes colors other than red
     from the search <code class="literal">hits</code>.
 </p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="search-request-fielddata-fields.html">
@@ -850,6 +842,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

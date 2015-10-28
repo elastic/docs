@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Aggregations</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="search.html" title="Search APIs" /><link rel="prev" href="search-shards.html" title="Search Shards API" /><link rel="next" href="search-aggregations-metrics-min-aggregation.html" title="Min Aggregation" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Aggregations</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="prev" href="search-field-stats.html" title="Field stats API" /><link rel="next" href="search-aggregations-metrics.html" title="Metrics Aggregations" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,27 +590,21 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-node">Aggregations</span></div><div class="navheader"><span class="prev"><a href="search-shards.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-node">Aggregations </span></div><div class="navheader"><span class="prev"><a href="search-field-stats.html">
               « 
-              Search Shards API</a>
+              Field stats API</a>
            
         </span><span class="next">
            
-          <a href="search-aggregations-metrics-min-aggregation.html">Min Aggregation
+          <a href="search-aggregations-metrics.html">Metrics Aggregations
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations"></a>Aggregations<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Aggregations grew out of the <a class="link" href="search-facets.html" title="Facets">facets</a> module and the long experience of how users use it
-(and would like to use it) for real-time data analytics purposes. As such, it serves as the next generation
-replacement for the functionality we currently refer to as "faceting".</p><p><a class="link" href="search-facets.html" title="Facets">Facets</a> provide a great way to aggregate data within a document set context.
-This context is defined by the executed query in combination with the different levels of filters that can be defined
-(filtered queries, top-level filters, and facet level filters). While powerful, their implementation is not designed
-from the ground up to support complex aggregations and is thus limited.</p><p>The aggregations module breaks the barriers the current facet implementation put in place. The new name ("Aggregations")
-also indicates the intention here - a generic yet extremely powerful framework for building aggregations - any types of
-aggregations.</p><p>An aggregation can be seen as a <span class="emphasis"><em>unit-of-work</em></span> that builds analytic information over a set of documents. The context of
+            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="search-aggregations"></a>Aggregations <a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><p>The aggregations framework helps provide aggregated data based on a search query. It is based on simple building blocks
+called aggregations, that can be composed in order to build complex summaries of the data.</p><p>An aggregation can be seen as a <span class="emphasis"><em>unit-of-work</em></span> that builds analytic information over a set of documents. The context of
 the execution defines what this document set is (e.g. a top-level aggregation executes within the context of the executed
 query/filters of the search request).</p><p>There are many different types of aggregations, each with its own purpose and output. To better understand these types,
 it is often easier to break them into two main families:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<span class="emphasis"><em>Bucketing</em></span>
+<a class="link" href="search-aggregations-bucket.html" title="Bucket Aggregations"><span class="emphasis"><em>Bucketing</em></span></a>
 </span></dt><dd>
                                 A family of aggregations that build buckets, where each bucket is associated with a <span class="emphasis"><em>key</em></span> and a document
                                 criterion. When the aggregation is executed, all the buckets criteria are evaluated on every document in
@@ -618,19 +612,24 @@ it is often easier to break them into two main families:</p><div class="variable
                                 By the end of the aggregation process, we’ll end up with a list of buckets - each one with a set of
                                 documents that "belong" to it.
 </dd><dt><span class="term">
-<span class="emphasis"><em>Metric</em></span>
+<a class="link" href="search-aggregations-metrics.html" title="Metrics Aggregations"><span class="emphasis"><em>Metric</em></span></a>
 </span></dt><dd>
                                 Aggregations that keep track and compute metrics over a set of documents.
+</dd><dt><span class="term">
+<a class="link" href="search-aggregations-pipeline.html" title="Pipeline Aggregations"><span class="emphasis"><em>Pipeline</em></span></a>
+</span></dt><dd>
+                                Aggregations that aggregate the output of other aggregations and their associated metrics
 </dd></dl></div><p>The interesting part comes next. Since each bucket effectively defines a document set (all documents belonging to
 the bucket), one can potentially associate aggregations on the bucket level, and those will execute within the context
 of that bucket. This is where the real power of aggregations kicks in: <span class="strong"><strong>aggregations can be nested!</strong></span></p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Bucketing aggregations can have sub-aggregations (bucketing or metric). The sub-aggregations will be computed for
                 the buckets which their parent aggregation generates. There is no hard limit on the level/depth of nested
                 aggregations (one can nest an aggregation under a "parent" aggregation, which is itself a sub-aggregation of
-                another higher-level aggregation).</p></div></div><h3><a id="_structuring_aggregations"></a>Structuring Aggregations<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following snippet captures the basic structure of aggregations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggregations" : {
+                another higher-level aggregation).</p></div></div><h2><a id="_structuring_aggregations"></a>Structuring Aggregations<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>The following snippet captures the basic structure of aggregations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggregations" : {
     "&lt;aggregation_name&gt;" : {
         "&lt;aggregation_type&gt;" : {
             &lt;aggregation_body&gt;
         }
+        [,"meta" : {  [&lt;meta_data_body&gt;] } ]?
         [,"aggregations" : { [&lt;sub_aggregation&gt;]+ } ]?
     }
     [,"&lt;aggregation_name_2&gt;" : { ... } ]*
@@ -644,9 +643,9 @@ At the same level of the aggregation type definition, one can optionally define 
 though this only makes sense if the aggregation you defined is of a bucketing nature. In this scenario, the
 sub-aggregations you define on the bucketing aggregation level will be computed for all the buckets built by the
 bucketing aggregation. For example, if you define a set of aggregations under the <code class="literal">range</code> aggregation, the
-sub-aggregations will be computed for the range buckets that are defined.</p><h4><a id="_values_source"></a>Values Source<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Some aggregations work on values extracted from the aggregated documents. Typically, the values will be extracted from
+sub-aggregations will be computed for the range buckets that are defined.</p><h3><a id="_values_source"></a>Values Source<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Some aggregations work on values extracted from the aggregated documents. Typically, the values will be extracted from
 a specific document field which is set using the <code class="literal">field</code> key for the aggregations. It is also possible to define a
-<a class="link" href="modules-scripting.html" title="Scripting"><code class="literal">script</code></a> which will generate the values (per document).</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">script</code> parameter expects an inline script. Use <code class="literal">script_id</code> for indexed scripts and <code class="literal">script_file</code> for scripts in the <code class="literal">config/scripts/</code> directory.</p></div></div><p>When both <code class="literal">field</code> and <code class="literal">script</code> settings are configured for the aggregation, the script will be treated as a
+<a class="link" href="modules-scripting.html" title="Scripting"><code class="literal">script</code></a> which will generate the values (per document).</p><p>When both <code class="literal">field</code> and <code class="literal">script</code> settings are configured for the aggregation, the script will be treated as a
 <code class="literal">value script</code>.  While normal scripts are evaluated on a document level (i.e. the script has access to all the data
 associated with the document), value scripts are evaluated on the <span class="strong"><strong>value</strong></span> level. In this mode, the values are extracted
 from the configured <code class="literal">field</code> and the <code class="literal">script</code> is used to apply a "transformation" over these value/s.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><a id="aggs-script-note"></a><p>When working with scripts, the <code class="literal">lang</code> and <code class="literal">params</code> settings can also be defined. The former defines the scripting
@@ -656,39 +655,13 @@ between calls (this will ensure the use of the cached compiled scripts in Elasti
 <code class="literal">script_values_sorted</code> settings to indicate whether these values are sorted or not. Internally, Elasticsearch can
 perform optimizations when dealing with sorted values (for example, with the <code class="literal">min</code> aggregations, knowing the values are
 sorted, Elasticsearch will skip the iterations over all the values and rely on the first value in the list to be the
-minimum value among all other values associated with the same document).</p><h3><a id="_metrics_aggregations"></a>Metrics Aggregations<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The aggregations in this family compute metrics based on values extracted in one way or another from the documents that
-are being aggregated. The values are typically extracted from the fields of the document (using the field data), but
-can also be generated using scripts.</p><p>Numeric metrics aggregations are a special type of metrics aggregation which output numeric values. Some aggregations output
-a single numeric metric (e.g. <code class="literal">avg</code>) and are called <code class="literal">single-value numeric metrics aggregation</code>, others generate multiple
-metrics (e.g. <code class="literal">stats</code>) and are called <code class="literal">multi-value numeric metrics aggregation</code>. The distinction between single-value and
-multi-value numeric metrics aggregations plays a role when these aggregations serve as direct sub-aggregations of some
-bucket aggregations (some bucket aggregations enable you to sort the returned buckets based on the numeric metrics in each bucket).</p><h3><a id="_bucket_aggregations"></a>Bucket Aggregations<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Bucket aggregations don’t calculate metrics over fields like the metrics aggregations do, but instead, they create
-buckets of documents. Each bucket is associated with a criterion (depending on the aggregation type) which determines
-whether or not a document in the current context "falls" into it. In other words, the buckets effectively define document
-sets. In addition to the buckets themselves, the <code class="literal">bucket</code> aggregations also compute and return the number of documents
-that "fell in" to each bucket.</p><p>Bucket aggregations, as opposed to <code class="literal">metrics</code> aggregations, can hold sub-aggregations. These sub-aggregations will be
-aggregated for the buckets created by their "parent" bucket aggregation.</p><p>There are different bucket aggregators, each with a different "bucketing" strategy. Some define a single bucket, some
-define fixed number of multiple buckets, and others dynamically create the buckets during the aggregation process.</p><h3><a id="_caching_heavy_aggregations"></a>Caching heavy aggregations<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Frequently used aggregations (e.g. for display on the home page of a website)
-can be cached for faster responses. These cached results are the same results
-that would be returned by an uncached aggregation — you will never get stale
-results.</p><p>See <a class="xref" href="index-modules-shard-query-cache.html" title="Shard query cache"><em>Shard query cache</em></a> for more details.</p><h3><a id="_returning_only_aggregation_results"></a>Returning only aggregation results<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>There are many occasions when aggregations are required but search hits are not.  For these cases the hits can be ignored by
-adding <code class="literal">search_type=count</code> to the request URL parameters. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/twitter/tweet/_search?search_type=count' -d '{
-  "aggregations": {
-    "my_agg": {
-      "terms": {
-        "field": "text"
-      }
-    }
-  }
-}
-'</pre></div><p>Setting <code class="literal">search_type</code> to <code class="literal">count</code> avoids executing the fetch phase of the search making the request more efficient.  See
-<a class="xref" href="search-request-search-type.html" title="Search Type">Search Type</a> for more information on the <code class="literal">search_type</code> parameter.</p></div><div class="navfooter"><span class="prev"><a href="search-shards.html">
+minimum value among all other values associated with the same document).</p></div></div><div class="navfooter"><span class="prev"><a href="search-field-stats.html">
               « 
-              Search Shards API</a>
+              Field stats API</a>
            
         </span><span class="next">
            
-          <a href="search-aggregations-metrics-min-aggregation.html">Min Aggregation
+          <a href="search-aggregations-metrics.html">Metrics Aggregations
                »
             </a></span></div>
 <!-- end body -->
@@ -844,6 +817,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

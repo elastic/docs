@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Delaying allocation when a node leaves</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="index-modules-allocation.html" title="Index Shard Allocation" /><link rel="prev" href="index-modules-allocation.html" title="Index Shard Allocation" /><link rel="next" href="recovery-prioritization.html" title="Index recovery prioritization" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Delaying allocation when a node leaves</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="index-modules-allocation.html" title="Index Shard Allocation" /><link rel="prev" href="shard-allocation-filtering.html" title="Shard Allocation Filtering" /><link rel="next" href="recovery-prioritization.html" title="Index recovery prioritization" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,16 +590,16 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-link"><a href="index-modules-allocation.html">Index Shard Allocation</a></span> » <span class="breadcrumb-node">Delaying allocation when a node leaves</span></div><div class="navheader"><span class="prev"><a href="index-modules-allocation.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-link"><a href="index-modules-allocation.html">Index Shard Allocation</a></span> » <span class="breadcrumb-node">Delaying allocation when a node leaves</span></div><div class="navheader"><span class="prev"><a href="shard-allocation-filtering.html">
               « 
-              Index Shard Allocation</a>
+              Shard Allocation Filtering</a>
            
         </span><span class="next">
            
           <a href="recovery-prioritization.html">Index recovery prioritization
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="delayed-allocation"></a>Delaying allocation when a node leaves<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When a node leaves the cluster for whatever reason, intentional or otherwise,
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="delayed-allocation"></a>Delaying allocation when a node leaves<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When a node leaves the cluster for whatever reason, intentional or otherwise,
 the master reacts by:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Promoting a replica shard to primary to replace any primaries that were on the node.
 </li><li class="listitem">
@@ -608,7 +608,7 @@ Allocating replica shards to replace the missing replicas (assuming there are en
 Rebalancing shards evenly across the remaining nodes.
 </li></ul></div><p>These actions are intended to protect the cluster against data loss by
 ensuring that every shard is fully replicated as soon as possible.</p><p>Even though we throttle concurrent recoveries both at the
-<a class="link" href="modules-indices.html#recovery" title="Recoveryedit">node level</a> and at the <a class="link" href="modules-cluster.html#shards-allocation" title="Shards Allocationedit">cluster level</a>, this
+<a class="link" href="recovery.html" title="Indices Recovery">node level</a> and at the <a class="link" href="shards-allocation.html" title="Cluster Level Shard Allocation">cluster level</a>, this
 “shard-shuffle” can still put a lot of extra load on the cluster which
 may not be necessary if the missing node is likely to return soon. Imagine
 this scenario:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
@@ -635,7 +635,7 @@ dynamic setting, which defaults to <code class="literal">1m</code>.</p><p>This s
   "settings": {
     "index.unassigned.node_left.delayed_timeout": "5m"
   }
-}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/delayed-allocation/1.json" target="sense">View in Sense</a><p>With delayed allocation enabled, the above scenario changes to look like this:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+}</pre></div><div class="sense_widget" data-snippet="snippets/delayed-allocation/1.json"></div><p>With delayed allocation enabled, the above scenario changes to look like this:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Node 5 loses network connectivity.
 </li><li class="listitem">
 The master promotes a replica shard to primary for each primary that was on Node 5.
@@ -649,18 +649,23 @@ Node 5 returns after a few minutes, before the <code class="literal">timeout</co
 The missing replicas are re-allocated to Node 5 (and sync-flushed shards recover almost immediately).
 </li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This setting will not affect the promotion of replicas to primaries, nor
 will it affect the assignment of replicas that have not been assigned
-previously.</p></div></div><h4><a id="_monitoring_delayed_unassigned_shards"></a>Monitoring delayed unassigned shards<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The number of shards whose allocation has been delayed by this timeout setting
-can be viewed with the <a class="link" href="cluster-health.html" title="Cluster Health">cluster health API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/health <a id="CO117-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO117-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+previously.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_cancellation_of_shard_relocation"></a>Cancellation of shard relocation<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If delayed allocation times out, the master assigns the missing shards to
+another node which will start recovery.  If the missing node rejoins the
+cluster, and its shards still have the same sync-id as the primary, shard
+relocation will be cancelled and the synced shard will be used for recovery
+instead.</p><p>For this reason, the default <code class="literal">timeout</code> is set to just one minute: even if shard
+relocation begins, cancelling recovery in favour of the synced shard is cheap.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_monitoring_delayed_unassigned_shards"></a>Monitoring delayed unassigned shards<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The number of shards whose allocation has been delayed by this timeout setting
+can be viewed with the <a class="link" href="cluster-health.html" title="Cluster Health">cluster health API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/health <a id="CO251-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO251-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This request will return a <code class="literal">delayed_unassigned_shards</code> value.
-</p></td></tr></table></div><h4><a id="_removing_a_node_permanently"></a>Removing a node permanently<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/index-modules/allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If a node is not going to return and you would like Elasticsearch to allocate
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_removing_a_node_permanently"></a>Removing a node permanently<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If a node is not going to return and you would like Elasticsearch to allocate
 the missing shards immediately, just update the timeout to zero:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_all/_settings
 {
   "settings": {
     "index.unassigned.node_left.delayed_timeout": "0"
   }
-}</pre></div><a class="sense_widget" href="sense_widget.html?snippets/delayed-allocation/2.json" target="sense">View in Sense</a><p>You can reset the timeout as soon as the missing shards have started to recover.</p></div><div class="navfooter"><span class="prev"><a href="index-modules-allocation.html">
+}</pre></div><div class="sense_widget" data-snippet="snippets/delayed-allocation/2.json"></div><p>You can reset the timeout as soon as the missing shards have started to recover.</p></div></div><div class="navfooter"><span class="prev"><a href="shard-allocation-filtering.html">
               « 
-              Index Shard Allocation</a>
+              Shard Allocation Filtering</a>
            
         </span><span class="next">
            
@@ -820,6 +825,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

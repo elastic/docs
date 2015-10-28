@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>More Like This Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="query-dsl-queries.html" title="Queries" /><link rel="prev" href="query-dsl-match-all-query.html" title="Match All Query" /><link rel="next" href="query-dsl-nested-query.html" title="Nested Query" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>More Like This Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="specialized-queries.html" title="Specialized queries" /><link rel="prev" href="specialized-queries.html" title="Specialized queries" /><link rel="next" href="query-dsl-template-query.html" title="Template Query" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,16 +590,16 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-link"><a href="query-dsl-queries.html">Queries</a></span> » <span class="breadcrumb-node">More Like This Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-match-all-query.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-link"><a href="specialized-queries.html">Specialized queries</a></span> » <span class="breadcrumb-node">More Like This Query</span></div><div class="navheader"><span class="prev"><a href="specialized-queries.html">
               « 
-              Match All Query</a>
+              Specialized queries</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-nested-query.html">Nested Query
+          <a href="query-dsl-template-query.html">Template Query
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-mlt-query"></a>More Like This Query<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/queries/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The More Like This Query (MLT Query) finds documents that are "like" a given
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-mlt-query"></a>More Like This Query<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/query-dsl/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The More Like This Query (MLT Query) finds documents that are "like" a given
 set of documents. In order to do so, MLT selects a set of representative terms
 of these input documents, forms a query using these terms, executes the query
 and returns the results. The user controls the input documents, how the terms
@@ -610,16 +610,16 @@ similar to "Once upon a time" in their "title" and in their "description"
 fields, limiting the number of selected terms to 12.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "more_like_this" : {
         "fields" : ["title", "description"],
-        "like_text" : "Once upon a time",
+        "like" : "Once upon a time",
         "min_term_freq" : 1,
         "max_query_terms" : 12
     }
-}</pre></div><p>Another use case consists of asking for similar documents to ones already
+}</pre></div><p>A more complicated use case consists of mixing texts with documents already
 existing in the index. In this case, the syntax to specify a document is
 similar to the one used in the <a class="link" href="docs-multi-get.html" title="Multi Get API">Multi GET API</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "more_like_this" : {
         "fields" : ["title", "description"],
-        "docs" : [
+        "like" : [
         {
             "_index" : "imdb",
             "_type" : "movies",
@@ -629,16 +629,18 @@ similar to the one used in the <a class="link" href="docs-multi-get.html" title=
             "_index" : "imdb",
             "_type" : "movies",
             "_id" : "2"
-        }],
+        },
+        "and potentially some more text here as well"
+        ],
         "min_term_freq" : 1,
         "max_query_terms" : 12
     }
-}</pre></div><p>Finally, users can also provide documents not necessarily
-present in the index using a syntax is similar to
-<a class="link" href="docs-termvectors.html#docs-termvectors-artificial-doc" title="Example 3edit">artificial documents</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><p>Finally, users can mix some texts, a chosen set of documents but also provide
+documents not necessarily present in the index. To provide documents not
+present in the index, the syntax is similar to <a class="link" href="docs-termvectors.html#docs-termvectors-artificial-doc" title="Example 3. Artificial documents">artificial documents</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "more_like_this" : {
         "fields" : ["name.first", "name.last"],
-        "docs" : [
+        "like" : [
         {
             "_index" : "marvel",
             "_type" : "quotes",
@@ -660,21 +662,19 @@ present in the index using a syntax is similar to
         "min_term_freq" : 1,
         "max_query_terms" : 12
     }
-}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_how_it_works_2"></a>How it Works<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/queries/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Suppose we wanted to find all documents similar to a given input document.
+}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_how_it_works"></a>How it Works<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/query-dsl/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Suppose we wanted to find all documents similar to a given input document.
 Obviously, the input document itself should be its best match for that type of
 query. And the reason would be mostly, according to
 <a class="ulink" href="https://lucene.apache.org/core/4_9_0/core/org/apache/lucene/search/similarities/TFIDFSimilarity.html" target="_top">Lucene scoring formula</a>,
 due to the terms with the highest tf-idf. Therefore, the terms of the input
 document that have the highest tf-idf are good representatives of that
-document, and could be used within a disjunctive query (or <code class="literal">OR</code>) to retrieve
-similar documents. The MLT query simply extracts the text from the input
-document, analyzes it, usually using the same analyzer as the field, then
-selects the top K terms with highest tf-idf to form a disjunctive query of
-these terms.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The fields on which to perform MLT must be indexed and of type
+document, and could be used within a disjunctive query (or <code class="literal">OR</code>) to retrieve similar
+documents. The MLT query simply extracts the text from the input document,
+analyzes it, usually using the same analyzer at the field, then selects the
+top K terms with highest tf-idf to form a disjunctive query of these terms.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The fields on which to perform MLT must be indexed and of type
 <code class="literal">string</code>. Additionally, when using <code class="literal">like</code> with documents, either <code class="literal">_source</code>
-must be enabled or the fields must be <code class="literal">stored</code> or have <code class="literal">term_vector</code> enabled.
-In order to speed up analysis, it could help to store term vectors at index
-time, but at the expense of disk usage.</p></div></div><p>For example, if we wish to perform MLT on the "title" and "tags.raw" fields,
+must be enabled or the fields must be <code class="literal">stored</code> or store <code class="literal">term_vector</code>. In
+order to speed up analysis, it could help to store term vectors at index time.</p></div></div><p>For example, if we wish to perform MLT on the "title" and "tags.raw" fields,
 we can explicitly store their <code class="literal">term_vector</code> at index time. We can still
 perform MLT on the "description" and "tags" fields, as <code class="literal">_source</code> is enabled by
 default, but there will be no speed up on analysis for these fields.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -s -XPUT 'http://localhost:9200/imdb/' -d '{
@@ -701,42 +701,42 @@ default, but there will be no speed up on analysis for these fields.</p><div cla
       }
     }
   }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_parameters_8"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/queries/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The only required parameters are either <code class="literal">docs</code>, <code class="literal">ids</code> or <code class="literal">like_text</code>, all
-other parameters have sensible defaults. There are three types of parameters:
-one to specify the document input, the other one for term selection and for
-query formation.</p><h4><a id="_document_input_parameters"></a>Document Input Parameters<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/queries/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_parameters_8"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/query-dsl/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The only required parameter is <code class="literal">like</code>, all other parameters have sensible
+defaults. There are three types of parameters: one to specify the document
+input, the other one for term selection and for query formation.</p><h4><a id="_document_input_parameters"></a>Document Input Parameters<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/query-dsl/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
-<code class="literal">docs</code>
+<code class="literal">like</code>
 </p>
 </td><td valign="top">
 <p>
-The list of documents to find documents like it. The syntax to specify
-documents is similar to the one used by the <a class="link" href="docs-multi-get.html" title="Multi Get API">Multi GET API</a>.
-The text is fetched from <code class="literal">fields</code> unless overridden in each document request.
-The text is analyzed by the analyzer at the field, but could also be
-overridden. The syntax to override the analyzer at the field follows a similar
-syntax to the <code class="literal">per_field_analyzer</code> parameter of the
-<a class="link" href="docs-termvectors.html#docs-termvectors-per-field-analyzer" title="Example 4edit">Term Vectors API</a>. Additionally, to
-provide documents not necessarily present in the index,
-<a class="link" href="docs-termvectors.html#docs-termvectors-artificial-doc" title="Example 3edit">artificial documents</a> are also supported.
+<span class="added">
+      [<span class="version">2.0.0-beta1</span>]
+      <span class="detail">Added in 2.0.0-beta1.</span></span>
+The only <span class="strong"><strong>required</strong></span> parameter of the MLT query is <code class="literal">like</code> and follows a
+versatile syntax, in which the user can specify free form text and/or a single
+or multiple documents (see examples above). The syntax to specify documents is
+similar to the one used by the <a class="link" href="docs-multi-get.html" title="Multi Get API">Multi GET API</a>. When
+specifying documents, the text is fetched from <code class="literal">fields</code> unless overridden in
+each document request. The text is analyzed by the analyzer at the field, but
+could also be overridden. The syntax to override the analyzer at the field
+follows a similar syntax to the <code class="literal">per_field_analyzer</code> parameter of the
+<a class="link" href="docs-termvectors.html#docs-termvectors-per-field-analyzer" title="Example 4. Per-field analyzer">Term Vectors API</a>.
+Additionally, to provide documents not necessarily present in the index,
+<a class="link" href="docs-termvectors.html#docs-termvectors-artificial-doc" title="Example 3. Artificial documents">artificial documents</a> are also supported.
 </p>
 </td></tr><tr><td valign="top">
 <p>
-<code class="literal">ids</code>
+<code class="literal">unlike</code>
 </p>
 </td><td valign="top">
 <p>
-A list of document ids, shortcut to <code class="literal">docs</code> if <code class="literal">_index</code> and <code class="literal">_type</code> are the
-same as the request.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">like_text</code>
-</p>
-</td><td valign="top">
-<p>
-The text to find documents like it. <span class="strong"><strong>required</strong></span> if <code class="literal">ids</code> or <code class="literal">docs</code> are not
-specified.
+<span class="added">
+      [<span class="version">2.0.0-beta1</span>]
+      <span class="detail">Added in 2.0.0-beta1.</span></span>
+The <code class="literal">unlike</code> parameter is used in conjunction with <code class="literal">like</code> in order not to
+select terms found in a chosen set of documents. In other words, we could ask
+for documents <code class="literal">like: "Apple"</code>, but <code class="literal">unlike: "cake crumble tree"</code>. The syntax
+is the same as <code class="literal">like</code>.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -744,10 +744,32 @@ specified.
 </p>
 </td><td valign="top">
 <p>
-A list of the fields to run the more like this query against. Defaults to the
-<code class="literal">_all</code> field for <code class="literal">like_text</code> and to all possible fields for <code class="literal">ids</code> or <code class="literal">docs</code>.
+A list of fields to fetch and analyze the text from. Defaults to the <code class="literal">_all</code>
+field for free text and to all possible fields for document inputs.
 </p>
-</td></tr></tbody></table></div><h4><a id="_term_selection_parameters"></a>Term Selection Parameters<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/queries/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">like_text</code>
+</p>
+</td><td valign="top">
+<p>
+<span class="deprecated">
+      [<span class="version">2.0.0-beta1</span>]
+      <span class="detail">Deprecated in 2.0.0-beta1. Replaced by <code class="literal">like</code>.</span></span>
+The text to find documents like it.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">ids</code> or <code class="literal">docs</code>
+</p>
+</td><td valign="top">
+<p>
+<span class="deprecated">
+      [<span class="version">2.0.0-beta1</span>]
+      <span class="detail">Deprecated in 2.0.0-beta1. Replaced by <code class="literal">like</code>.</span></span>
+A list of documents following the same syntax as the <a class="link" href="docs-multi-get.html" title="Multi Get API">Multi GET API</a>.
+</p>
+</td></tr></tbody></table></div><h4><a id="mlt-query-term-selection"></a>Term Selection Parameters<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/query-dsl/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">max_query_terms</code>
 </p>
@@ -791,7 +813,8 @@ such as stop words. Defaults to unbounded (<code class="literal">0</code>).
 </p>
 </td><td valign="top">
 <p>
-The minimum word length below which the terms will be ignored. Defaults to <code class="literal">0</code>.
+The minimum word length below which the terms will be ignored. The old name
+<code class="literal">min_word_len</code> is deprecated. Defaults to <code class="literal">0</code>.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -799,7 +822,8 @@ The minimum word length below which the terms will be ignored. Defaults to <code
 </p>
 </td><td valign="top">
 <p>
-The maximum word length above which the terms will be ignored. Defaults to unbounded (<code class="literal">0</code>).
+The maximum word length above which the terms will be ignored. The old name
+<code class="literal">max_word_len</code> is deprecated. Defaults to unbounded (<code class="literal">0</code>).
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -821,25 +845,16 @@ reasonable to assume that "a stop word is never interesting".
 The analyzer that is used to analyze the free form text. Defaults to the
 analyzer associated with the first field in <code class="literal">fields</code>.
 </p>
-</td></tr></tbody></table></div><h4><a id="_query_formation_parameters"></a>Query Formation Parameters<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/queries/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+</td></tr></tbody></table></div><h4><a id="_query_formation_parameters"></a>Query Formation Parameters<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/query-dsl/mlt-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">minimum_should_match</code>
 </p>
 </td><td valign="top">
 <p>
 After the disjunctive query has been formed, this parameter controls the
-number of terms that must match. The syntax is the same as the
-<a class="link" href="query-dsl-minimum-should-match.html" title="Minimum Should Match">minimum should match</a>. (Defaults to <code class="literal">"30%"</code>).
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">percent_terms_to_match</code>
-</p>
-</td><td valign="top">
-<p>
-<span class="deprecated">
-      [<span class="version">1.5.0</span>]
-      <span class="detail">Deprecated in 1.5.0. Replaced by <code class="literal">minimum_should_match</code>.</span></span>
+number of terms that must match.
+The syntax is the same as the <a class="link" href="query-dsl-minimum-should-match.html" title="Minimum Should Match">minimum should match</a>.
+(Defaults to <code class="literal">"30%"</code>).
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -869,13 +884,13 @@ results returned. Defaults to <code class="literal">false</code>.
 <p>
 Sets the boost value of the whole query. Defaults to <code class="literal">1.0</code>.
 </p>
-</td></tr></tbody></table></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-match-all-query.html">
+</td></tr></tbody></table></div></div></div><div class="navfooter"><span class="prev"><a href="specialized-queries.html">
               « 
-              Match All Query</a>
+              Specialized queries</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-nested-query.html">Nested Query
+          <a href="query-dsl-template-query.html">Template Query
                »
             </a></span></div>
 <!-- end body -->
@@ -1031,6 +1046,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

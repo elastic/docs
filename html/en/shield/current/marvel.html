@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using Marvel with Shield</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [shield-1.3]" /><link rel="up" href="configuring-clients-integrations.html" title="Configuring Clients and Integrations" /><link rel="prev" href="logstash.html" title="Using Logstash with Shield" /><link rel="next" href="kibana.html" title="Using Kibana with Shield" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using Marvel with Shield</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield Reference [2.0]" /><link rel="up" href="configuring-clients-integrations.html" title="Configuring Clients and Integrations" /><link rel="prev" href="kibana.html" title="Using Kibana with Shield" /><link rel="next" href="license-management.html" title="Managing Your License" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,74 +590,82 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield Reference
-      [shield-1.3]
-    </a></span> » <span class="breadcrumb-link"><a href="configuring-clients-integrations.html">Configuring Clients and Integrations</a></span> » <span class="breadcrumb-node">Using Marvel with Shield</span></div><div class="navheader"><span class="prev"><a href="logstash.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="configuring-clients-integrations.html">Configuring Clients and Integrations</a></span> » <span class="breadcrumb-node">Using Marvel with Shield</span></div><div class="navheader"><span class="prev"><a href="kibana.html">
               « 
-              Using Logstash with Shield</a>
+              Using Kibana with Shield</a>
            
         </span><span class="next">
            
-          <a href="kibana.html">Using Kibana with Shield
+          <a href="license-management.html">Managing Your License
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="marvel"></a>Using Marvel with Shield</h2></div></div></div><p>Marvel consists of a user interface over a data exporter known as the <span class="emphasis"><em>agent</em></span>. The agent runs on each node and accesses
-that node’s monitoring API. The agent can store this collected data locally, on the cluster, or send the data to an
-external monitoring cluster. Users can view and analyze the collected data with the Marvel UI.</p><p>To work with the Shield plugin, Marvel’s configuration needs to be adapted for the <span class="emphasis"><em>production</em></span> cluster, which is the
-cluster being monitored, as well as the <span class="emphasis"><em>monitoring</em></span> cluster, where the monitoring data is stored. For clusters that
-store their own monitoring data, apply both sets of settings to the single, production cluster.</p><p>You will configure at least two users to work with Marvel.  These users have to exist on the monitoring cluster.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-The Agent needs to be assigned a user with the correct <a class="link" href="configuring-rbac.html#roles" title="Roles, Permissions and Privileges">privileges</a> to write data to the Marvel indices
-  named <code class="literal">.marvel-*</code>, check the Marvel index template, and upload the Marvel index template. You need only one agent user.
-</li><li class="listitem">
-Marvel UI users must authenticate and have privileges to read data from the Marvel indices. These users also
-  need to able to call the Nodes Info API in order to get the monitoring cluster’s Elasticsearch version.
-  This version check allows Marvel to be compatible with many versions of Elasticsearch. You can have as many of
-  these end users configured as you would like.
-</li></ul></div><p>The default <code class="literal">roles.yml</code> file includes definitions for these two roles.  The steps below show you how to create these
-users on the monitoring cluster.</p><h4><a id="monitoring-cluster"></a>Monitoring Cluster Settings</h4><p>The monitoring cluster is used to both store and view the Marvel data. When configuring Shield, you need to perform the
-following actions:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Make sure there is a user created with the <code class="literal">marvel_agent</code> role. Marvel uses this to export the data.
-</li><li class="listitem">
-Make sure there is a user created with the <code class="literal">marvel_user</code> role. You use this to view the Marvel UI and get  license information.
-</li><li class="listitem">
-When using Marvel on a production server, you must enter your Marvel License. This license is stored in the
-  monitoring cluster. This step needs to be performed once, by a user with permissions to write to the <code class="literal">.marvel-kibana</code>
-  index.  The .marvel-kibana index is used to store Marvel UI settings (for example, set custom warning levels) and
-  therefore write permission for <code class="literal">.marvel-kibana</code> is required for UI customizations. Both storing license and storing
-  settings can be done by any user added to the marvel_user role.
-</li></ul></div><p>This is in the default <code class="literal">roles.yml</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">marvel_agent:
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="marvel"></a>Using Marvel with Shield</h2></div></div></div><p><a class="ulink" href="https://www.elastic.co/guide/en/marvel/current/index.html" target="_top">Marvel</a> consists of two
+components: a Marvel agent that you install on on each node in your cluster, and a Marvel application you install in <a class="ulink" href="https://www.elastic.co/guide/en/kibana/current/introduction.html" target="_top">Kibana</a>. The Marvel agent collects and indexes metrics from Elasticsearch and you visualize the data through the Marvel dashboards in Kibana. The agent can index data on the same cluster, or send it to an external monitoring cluster.</p><p>To use Marvel with Shield enabled, you need to <a class="link" href="kibana.html" title="Using Kibana with Shield">set up Kibana to work with Shield</a> and create at least one user for the Marvel app. If you are using an external monitoring cluster, you also need to configure a user for the Marvel agent and configure the agent to use the appropriate
+credentials when communicating with the monitoring cluster.</p><h4><a id="marvel-app-users"></a>Setting Up Marvel App Users</h4><p>When Shield is enabled, Kibana users are prompted to log in when they access the UI. To use
+the Marvel app, a user must have access to the Kibana indices and permission to read from the
+Marvel indices.</p><p>You set up Marvel app users on the cluster where the monitoring data is being stored. To grant
+all of the necessary permissions, assign user the <code class="literal">kibana_user</code> and <code class="literal">marvel_user</code> roles defined
+in <code class="literal">roles.yml</code>:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+If you’re using the default <code class="literal">esusers</code> realm, you can assign roles when you <a class="link" href="managing-users.html#esusers-add" title="Adding Users">add a user</a>, or modify the role assignments with the <a class="link" href="managing-users.html#esusers-roles" title="Assigning Users to Roles"><code class="literal">roles</code></a> command. For example,
+the following command creates a user named <code class="literal">jacknich</code> and assigns the <code class="literal">marvel_user</code> role:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-console">esusers useradd jacknich -r kibana_user,marvel_user -p password</pre></div></li><li class="listitem"><p class="simpara">
+If you are using an LDAP or Active Directory realm, you can either assign roles on a per user
+basis, or assign roles to groups of users. By default, role mappings are configured in
+<a class="link" href="mapping-roles.html" title="Mapping Users and Groups to Roles"><code class="literal">config/shield/role_mapping.yml</code></a>. For example, the following snippet assigns
+the user named Jack Nicholson to the <code class="literal">kibana_user</code> and <code class="literal">marvel_user</code> roles:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">kibana_user:
+  - "cn=Jack Nicholson,dc=example,dc=com"
+marvel_user:
+  - "cn=Jack Nicholson,dc=example,dc=com"</pre></div></li></ul></div><h4><a id="configuring-marvel-agent-shield"></a>Configuring Marvel Agent to Communicate with a Shield-Enabled Monitoring Cluster</h4><p>To configure the Marvel agent to communicate with a secured monitoring cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Configure a user on the monitoring cluster who has the <code class="literal">marvel_agent</code> role, which is defined in
+<code class="literal">roles.yml</code>. For example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-console">esusers useradd agent-user -r marvel_agent -p password</pre></div><p><strong>Marvel Agent Role. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">marvel_agent:
   cluster: indices:admin/template/get, indices:admin/template/put
   indices:
-    '.marvel-*': indices:data/write/bulk, create_index
+    '.marvel-*': indices:data/write/bulk, create_index</pre></div><p>
+</p></li><li class="listitem"><p class="simpara">
+On each node in the cluster being monitored, configure a Marvel HTTP exporter
+in <code class="literal">elasticsearch.yml</code> and resart Elasticsearch. In the exporter configuration,
+you need to:
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
+Set the <code class="literal">type</code> to <code class="literal">http</code>.
+</li><li class="listitem">
+Specify the location of the monitoring cluster in the <code class="literal">host</code> setting.
+</li><li class="listitem">
+Provide the agent user credentials with the <code class="literal">username</code> and <code class="literal">password</code> settings.
+</li></ol></div><p class="simpara">For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">marvel.agent.exporters:
+  id1:
+    type: http
+    host: [http://es-mon1:9200, http://es-mon2:9200]
+    auth:
+      username: agent-user
+      password: password</pre></div><p class="simpara">If SSL/TLS is enabled on the monitoring cluster:</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
+Specify the HTTPS protocol when setting the monitoring server host.
+</li><li class="listitem">
+Specify a truststore that contains the CA certificate to use to verify the identities of the
+nodes in the monitoring cluster. You need to set the <code class="literal">truststore.path</code> and
+<code class="literal">truststore.password</code>.
+</li></ol></div><p class="simpara">For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">marvel.agent.exporters:
+  id1:
+    type: http
+    host: [ https://es-mon1:9200, https://es-mon2:9200]
 
-marvel_user:
-  cluster: cluster:monitor/nodes/info, cluster:admin/plugin/license/get
-  indices:
-    '.marvel-*': all</pre></div><p>Once the roles are configured, create a user for the agent:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/shield/esusers useradd marvel_export -p strongpassword -r marvel_agent</pre></div><p>Then create one or more users for the Marvel UI:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/shield/esusers useradd USER -p strongerpassword -r marvel_user</pre></div><h4><a id="_production_cluster_settings"></a>Production Cluster Settings</h4><p>The Marvel agent is installed on every node in the production cluster. The agent collects monitoring data from the
-production cluster and stores the data on the monitoring cluster. The agent’s configuration specifies a list of
-hostname and port combinations for access to the monitoring cluster.</p><p>When the monitoring cluster uses the Shield plugin and is configured to accept only HTTPS requests, you must configure the agent
-on the production cluster to use HTTPS instead of the default HTTP protocol.</p><p>Authentication and protocol configuration are both controlled by the <code class="literal">marvel.agent.exporter.es.hosts</code> setting in the
-node’s <code class="literal">elasticsearch.yml</code> file. The setting accepts a list of monitoring cluster servers to serve as a fallback
-in case a server is unavailable. Each of these servers must be properly configured, as in the following example:</p><p>Example <code class="literal">marvel.agent.exporter.es.hosts</code> setting</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">marvel.agent.exporter.es.hosts: [ "https<a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>://USER:PASSWORD<a id="CO14-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>@node01:9200", "https://USER:PASSWORD@node02:9200"]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Indicates to use HTTPS.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Username and password. The user needs to be configured on the Monitoring Cluster as described in the next section.
-</p></td></tr></table></div><p>When the monitoring cluster uses HTTPS, the Marvel agent will attempt to validate the certificate of the Elasticsearch
-node in the monitoring cluster.  If you are using your own CA you should specify a trust store that has the signing
-certificate of the CA.  Here is an example config for the <code class="literal">marvel.agent.exporter.es.truststore.*</code> settings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">marvel.agent.exporter.es.hosts: [ "https://USER:PASSWORD@node01:9200", "https://USER:PASSWORD@node02:9200"]
-marvel.agent.exporter.es.ssl.truststore.path: FULL_FILE_PATH
-marvel.agent.exporter.es.ssl.truststore.password: PASSWORD</pre></div><p>See the <a class="ulink" href="http://www.elastic.co/guide/en/marvel/current/configuration.html" target="_top">Marvel documentation</a> for more details about
-other SSL related settings.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The 1.3.0 release of Marvel adds HTTPS support.</p></div></div><h4><a id="_marvel_user_interface_amp_sense"></a>Marvel user interface &amp; Sense</h4><p>The Marvel UI supports SSL without the need for any additional configuration. You can change URL access scheme for Marvel to
-HTTPS.</p><p>Users attempting to access the Marvel UI with the URL <code class="literal">https://HOST:9200/_plugin/marvel</code> must provide valid
-credentials. See <a class="link" href="marvel.html#monitoring-cluster" title="Monitoring Cluster Settings">Monitoring Cluster settings</a> for information on the required user configuration.</p><p>Sense also supports HTTPS access. Users that access Sense over URLs of the form
-<code class="literal">https://host:9200/_plugin/marvel/sense/index.html</code> must provide valid credentials if they have not already
-authenticated to a dashboard.</p><p>Users connecting to the production cluster with Sense must provide valid credentials. Clusters must be configured to
-enable cross-origin requests to enable users to connect with Sense. See the <a class="link" href="kibana.html#cors">CORS</a> documentation for details.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Providing user credentials to Sense in order to access another cluster is only supported in releases 1.3.0 and
-later of Marvel.</p></div></div></div><div class="navfooter"><span class="prev"><a href="logstash.html">
+    auth:
+      username: agent-user
+      password: password
+
+    ssl:
+      truststore.path: /path/to/file
+      truststore.password: password
+  id2:
+    type: local</pre></div></li></ol></div></div><div class="navfooter"><span class="prev"><a href="kibana.html">
               « 
-              Using Logstash with Shield</a>
+              Using Kibana with Shield</a>
            
         </span><span class="next">
            
-          <a href="kibana.html">Using Kibana with Shield
+          <a href="license-management.html">Managing Your License
                »
             </a></span></div>
 <!-- end body -->
@@ -813,6 +821,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Terms Facet</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="search-facets.html" title="Facets" /><link rel="prev" href="search-facets.html" title="Facets" /><link rel="next" href="search-facets-range-facet.html" title="Range Facets" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Terms Facet</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="redirects.html" title="Appendix A. Deleted pages" /><link rel="prev" href="search-facets-range-facet.html" title="Range Facet" /><link rel="next" href="search-facets-terms-statistical-facet.html" title="Terms Stats Facet" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,196 +590,23 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-link"><a href="search-facets.html">Facets</a></span> » <span class="breadcrumb-node">Terms Facet</span></div><div class="navheader"><span class="prev"><a href="search-facets.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="redirects.html">Deleted pages</a></span> » <span class="breadcrumb-node">Terms Facet</span></div><div class="navheader"><span class="prev"><a href="search-facets-range-facet.html">
               « 
-              Facets</a>
+              Range Facet</a>
            
         </span><span class="next">
            
-          <a href="search-facets-range-facet.html">Range Facets
+          <a href="search-facets-terms-statistical-facet.html">Terms Stats Facet
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-facets-terms-facet"></a>Terms Facet<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/terms-facet.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Facets are deprecated and will be removed in a future release. You are
-encouraged to migrate to <a class="link" href="search-aggregations.html" title="Aggregations">aggregations</a> instead.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The equivalent aggregation would be the
-<a class="link" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation"><code class="literal">terms</code></a>
-aggregation.</p></div></div><p>Allow to specify field facets that return the N most frequent terms. For
-example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "match_all" : {  }
-    },
-    "facets" : {
-        "tag" : {
-            "terms" : {
-                "field" : "tag",
-                "size" : 10
-            }
-        }
-    }
-}</pre></div><p>It is preferred to have the terms facet executed on a non analyzed
-field, or a field without a large number of terms it breaks to.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_accuracy_control"></a>Accuracy Control<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/terms-facet.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">size</code> parameter defines how many top terms should be returned out
-of the overall terms list. By default, the node coordinating the
-search process will ask each shard to provide its own top <code class="literal">size</code> terms
-and once all shards respond, it will reduce the results to the final list
-that will then be sent back to the client. This means that if the number
-of unique terms is greater than <code class="literal">size</code>, the returned list is slightly off
-and not accurate (it could be that the term counts are slightly off and it
-could even be that a term that should have been in the top <code class="literal">size</code> entries
-was not returned).</p><p>The higher the requested <code class="literal">size</code> is, the more accurate the results will be,
-but also, the more expensive it will be to compute the final results (both
-due to bigger priority queues that are managed on a shard level and due to
-bigger data transfers between the nodes and the client). In an attempt to
-minimize the extra work that comes with bigger requested <code class="literal">size</code> the
-<code class="literal">shard_size</code> parameter was introduced. When defined, it will determine
-how many terms the coordinating node will request from each shard. Once
-all the shards responded, the coordinating node will then reduce them
-to a final result which will be based on the <code class="literal">size</code> parameter - this way,
-one can increase the accuracy of the returned terms and avoid the overhead
-of streaming a big list of terms back to the client.</p><p>Note that <code class="literal">shard_size</code> cannot be smaller than <code class="literal">size</code>… if that’s the case
-elasticsearch will override it and reset it to be equal to <code class="literal">size</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_ordering"></a>Ordering<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/terms-facet.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Allow to control the ordering of the terms facets, to be ordered by
-<code class="literal">count</code>, <code class="literal">term</code>, <code class="literal">reverse_count</code> or <code class="literal">reverse_term</code>. The default is
-<code class="literal">count</code>. Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "match_all" : {  }
-    },
-    "facets" : {
-        "tag" : {
-            "terms" : {
-                "field" : "tag",
-                "size" : 10,
-                "order" : "term"
-            }
-        }
-    }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_all_terms"></a>All Terms<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/terms-facet.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Allow to get all the terms in the terms facet, ones that do not match a
-hit, will have a count of 0. Note, this should not be used with fields
-that have many terms.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "match_all" : {  }
-    },
-    "facets" : {
-        "tag" : {
-            "terms" : {
-                "field" : "tag",
-                "all_terms" : true
-            }
-        }
-    }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_excluding_terms"></a>Excluding Terms<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/terms-facet.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It is possible to specify a set of terms that should be excluded from
-the terms facet request result:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "match_all" : { }
-    },
-    "facets" : {
-        "tag" : {
-            "terms" : {
-                "field" : "tag",
-                "exclude" : ["term1", "term2"]
-            }
-        }
-    }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_regex_patterns"></a>Regex Patterns<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/terms-facet.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The terms API allows to define regex expression that will control which
-terms will be included in the faceted list, here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "match_all" : { }
-    },
-    "facets" : {
-        "tag" : {
-            "terms" : {
-                "field" : "tag",
-                "regex" : "_regex expression here_",
-                "regex_flags" : "DOTALL"
-            }
-        }
-    }
-}</pre></div><p>Check
-<a class="ulink" href="http://download.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#field_summary" target="_top">Java
-Pattern API</a> for more details about <code class="literal">regex_flags</code> options.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_term_scripts"></a>Term Scripts<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/terms-facet.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Allow to define a script for terms facet to process the actual term that
-will be used in the term facet collection, and also optionally control
-its inclusion or not.</p><p>The script can either return a boolean value, with <code class="literal">true</code> to include it
-in the facet collection, and <code class="literal">false</code> to exclude it from the facet
-collection.</p><p>Another option is for the script to return a <code class="literal">string</code> controlling the
-term that will be used to count against. The script execution will
-include the term variable which is the current field term used.</p><p>For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "match_all" : {  }
-    },
-    "facets" : {
-        "tag" : {
-            "terms" : {
-                "field" : "tag",
-                "size" : 10,
-                "script" : "term + 'aaa'"
-            }
-        }
-    }
-}</pre></div><p>And using the boolean feature:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "match_all" : {  }
-    },
-    "facets" : {
-        "tag" : {
-            "terms" : {
-                "field" : "tag",
-                "size" : 10,
-                "script" : "term == 'aaa' ? true : false"
-            }
-        }
-    }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multi_fields_2"></a>Multi Fields<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/terms-facet.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The term facet can be executed against more than one field, returning
-the aggregation result across those fields. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "match_all" : {  }
-    },
-    "facets" : {
-        "tag" : {
-            "terms" : {
-                "fields" : ["tag1", "tag2"],
-                "size" : 10
-            }
-        }
-    }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_script_field"></a>Script Field<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/terms-facet.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A script that provides the actual terms that will be processed for a
-given doc. A <code class="literal">script_field</code> (or <code class="literal">script</code> which will be used when no
-<code class="literal">field</code> or <code class="literal">fields</code> are provided) can be set to provide it.</p><p>As an example, a search request (that is quite "heavy") can be executed
-and use either <code class="literal">_source</code> itself or <code class="literal">_fields</code> (for stored fields) without
-needing to load the terms to memory (at the expense of much slower
-execution of the search, and causing more IO load):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "match_all" : {  }
-    },
-    "facets" : {
-        "my_facet" : {
-            "terms" : {
-                "script_field" : "_source.my_field",
-                "size" : 10
-            }
-        }
-    }
-}</pre></div><p>Or:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "match_all" : {  }
-    },
-    "facets" : {
-        "my_facet" : {
-            "terms" : {
-                "script_field" : "_fields['my_field']",
-                "size" : 10
-            }
-        }
-    }
-}</pre></div><p>Note also, that the above will use the whole field value as a single
-term.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_index_2"></a>_index<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/terms-facet.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The term facet allows to specify a special field name called <code class="literal">_index</code>.
-This will return a facet count of hits per <code class="literal">_index</code> the search was
-executed on (relevant when a search request spans more than one index).</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_memory_considerations_2"></a>Memory Considerations<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/terms-facet.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Term facet causes the relevant field values to be loaded into memory.
-This means that per shard, there should be enough memory to contain
-them. It is advisable to explicitly set the fields to be <code class="literal">not_analyzed</code>
-or make sure the number of unique tokens a field can have is not large.</p></div></div><div class="navfooter"><span class="prev"><a href="search-facets.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-facets-terms-facet"></a>Terms Facet<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/redirects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Facets have been removed. Use the
+<a class="link" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation"><code class="literal">terms</code> aggregation</a> instead.</p></div><div class="navfooter"><span class="prev"><a href="search-facets-range-facet.html">
               « 
-              Facets</a>
+              Range Facet</a>
            
         </span><span class="next">
            
-          <a href="search-facets-range-facet.html">Range Facets
+          <a href="search-facets-terms-statistical-facet.html">Terms Stats Facet
                »
             </a></span></div>
 <!-- end body -->
@@ -935,6 +762,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

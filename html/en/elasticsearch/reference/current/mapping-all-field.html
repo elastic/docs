@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_all</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="mapping-fields.html" title="Fields" /><link rel="prev" href="mapping-source-field.html" title="_source" /><link rel="next" href="mapping-analyzer-field.html" title="_analyzer" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_all field</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="mapping-fields.html" title="Meta-Fields" /><link rel="prev" href="mapping-fields.html" title="Meta-Fields" /><link rel="next" href="mapping-field-names-field.html" title="_field_names field" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,73 +590,245 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_all</code></span></div><div class="navheader"><span class="prev"><a href="mapping-source-field.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Meta-Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_all</code> field</span></div><div class="navheader"><span class="prev"><a href="mapping-fields.html">
               « 
-              <code class="literal">_source</code></a>
+              Meta-Fields</a>
            
         </span><span class="next">
            
-          <a href="mapping-analyzer-field.html"><code class="literal">_analyzer</code>
+          <a href="mapping-field-names-field.html"><code class="literal">_field_names</code> field
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-all-field"></a><code class="literal">_all</code><a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The idea of the <code class="literal">_all</code> field is that it includes the text of one or more
-other fields within the document indexed. It can come very handy
-especially for search requests, where we want to execute a search query
-against the content of a document, without knowing which fields to
-search on. This comes at the expense of CPU cycles and index size.</p><p>The <code class="literal">_all</code> fields can be completely disabled. Explicit field mappings and
-object mappings can be excluded / included in the <code class="literal">_all</code> field. By
-default, it is enabled and all fields are included in it for ease of
-use.</p><p>When disabling the <code class="literal">_all</code> field, it is a good practice to set
-<code class="literal">index.query.default_field</code> to a different value (for example, if you
-have a main "message" field in your data, set it to <code class="literal">message</code>).</p><p>One of the nice features of the <code class="literal">_all</code> field is that it takes into
-account specific fields boost levels. Meaning that if a title field is
-boosted more than content, the title (part) in the <code class="literal">_all</code> field will
-mean more than the content (part) in the <code class="literal">_all</code> field.</p><p>Here is a sample mapping:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "person" : {
-        "_all" : {"enabled" : true},
-        "properties" : {
-            "name" : {
-                "type" : "object",
-                "dynamic" : false,
-                "properties" : {
-                    "first" : {"type" : "string", "store" : true , "include_in_all" : false},
-                    "last" : {"type" : "string", "index" : "not_analyzed"}
-                }
-            },
-            "address" : {
-                "type" : "object",
-                "include_in_all" : false,
-                "properties" : {
-                    "first" : {
-                        "properties" : {
-                            "location" : {"type" : "string", "store" : true}
-                        }
-                    },
-                    "last" : {
-                        "properties" : {
-                            "location" : {"type" : "string"}
-                        }
-                    }
-                }
-            },
-            "simple1" : {"type" : "long", "include_in_all" : true},
-            "simple2" : {"type" : "long", "include_in_all" : false}
-        }
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-all-field"></a><code class="literal">_all</code> field<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">_all</code> field is a special <span class="emphasis"><em>catch-all</em></span> field which concatenates the values
+of all of the other fields into one big string, which is then
+<a class="link" href="analysis.html" title="Analysis">analyzed</a> and indexed, but not stored.  This means that it can be
+searched, but not retrieved.</p><p>The <code class="literal">_all</code> field allows you to search for values in documents without knowing
+which field contains the value.  This makes it a useful option when getting
+started with a new dataset. For instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/user/1 <a id="CO151-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+{
+  "first_name":    "John",
+  "last_name":     "Smith",
+  "date_of_birth": "1970-10-24"
+}
+
+GET my_index/_search
+{
+  "query": {
+    "match": {
+      "_all": "john smith 1970"
     }
-}</pre></div><p>The <code class="literal">_all</code> fields allows for <code class="literal">store</code>, <code class="literal">term_vector</code> and <code class="literal">analyzer</code> (with
-specific <code class="literal">index_analyzer</code> and <code class="literal">search_analyzer</code>) to be set.</p><h4><a id="highlighting"></a>Highlighting<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>For any field to allow
-<a class="link" href="search-request-highlighting.html" title="Highlighting">highlighting</a> it has
-to be either stored or part of the <code class="literal">_source</code> field. By default the <code class="literal">_all</code>
-field does not qualify for either, so highlighting for it does not yield
-any data.</p><p>Although it is possible to <code class="literal">store</code> the <code class="literal">_all</code> field, it is basically an
-aggregation of all fields, which means more data will be stored, and
-highlighting it might produce strange results.</p></div><div class="navfooter"><span class="prev"><a href="mapping-source-field.html">
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-all-field/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO151-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">_all</code> field will contain the terms: [ <code class="literal">"john"</code>, <code class="literal">"smith"</code>, <code class="literal">"1970"</code>, <code class="literal">"10"</code>, <code class="literal">"24"</code> ]
+</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>All values treated as strings</h4><p>The <code class="literal">date_of_birth</code> field in the above example is recognised as a <code class="literal">date</code> field
+and so will index a single term representing <code class="literal">1970-10-24 00:00:00 UTC</code>. The
+<code class="literal">_all</code> field, however, treats all values as strings, so the date value is
+indexed as the three string terms: <code class="literal">"1970"</code>, <code class="literal">"24"</code>, <code class="literal">"10"</code>.</p><p>It is important to note that the <code class="literal">_all</code> field combines the original values
+from each field as a string. It does not combine the <span class="emphasis"><em>terms</em></span> from each field.</p></div></div><p>The <code class="literal">_all</code> field is just a <a class="link" href="string.html" title="String datatype"><code class="literal">string</code></a> field, and accepts the same
+parameters that  other string fields accept, including <code class="literal">analyzer</code>,
+<code class="literal">term_vectors</code>, <code class="literal">index_options</code>, and <code class="literal">store</code>.</p><p>The <code class="literal">_all</code> field can be useful, especially when exploring new data using
+simple filtering.  However, by concatenating field values into one big string,
+the <code class="literal">_all</code> field loses the distinction between short fields (more relevant)
+and long fields (less relevant). For use cases where search relevance is
+important, it is better to query individual fields specifically.</p><p>The <code class="literal">_all</code> field is not free: it requires extra CPU cycles and uses more disk
+space. If not needed, it can be completely <a class="link" href="mapping-all-field.html#disabling-all-field" title="Disabling the _all field">disabled</a> or
+customised on a <a class="link" href="include-in-all.html" title="include_in_all">per-field basis</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="querying-all-field"></a>Using the <code class="literal">_all</code> field in queries<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <a class="link" href="query-dsl-query-string-query.html" title="Query String Query"><code class="literal">query_string</code></a> and
+<a class="link" href="query-dsl-simple-query-string-query.html" title="Simple Query String Query"><code class="literal">simple_query_string</code></a> queries query
+the <code class="literal">_all</code> field by default, unless another field is specified:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _search
+{
+  "query": {
+    "query_string": {
+      "query": "john smith 1970"
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-all-field/2.json"></div><p>The same goes for the <code class="literal">?q=</code> parameter in <a class="link" href="search-uri-request.html" title="URI Search">URI search requests</a> (which is rewritten to a <code class="literal">query_string</code> query internally):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _search?q=john+smith+1970</pre></div><p>Other queries, such as the <a class="link" href="query-dsl-match-query.html" title="Match Query"><code class="literal">match</code></a> and
+<a class="link" href="query-dsl-term-query.html" title="Term Query"><code class="literal">term</code></a> queries require you to specify
+the <code class="literal">_all</code> field explicitly, as per the
+<a class="link" href="mapping-all-field.html" title="_all field">first example</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="disabling-all-field"></a>Disabling the <code class="literal">_all</code> field<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">_all</code> field can be completely disabled per-type by setting <code class="literal">enabled</code> to
+<code class="literal">false</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "type_1": { <a id="CO152-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "properties": {...}
+    },
+    "type_2": { <a id="CO152-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+      "_all": {
+        "enabled": false
+      },
+      "properties": {...}
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-all-field/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO152-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">_all</code> field in <code class="literal">type_1</code> is enabled.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO152-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">_all</code> field in <code class="literal">type_2</code> is completely disabled.
+</p></td></tr></table></div><p>If the <code class="literal">_all</code> field is disabled, then URI search requests and the
+<code class="literal">query_string</code> and <code class="literal">simple_query_string</code> queries will not be able to use it
+for queries (see <a class="xref" href="mapping-all-field.html#querying-all-field" title="Using the _all field in queries">Using the <code class="literal">_all</code> field in queries</a>).  You can configure them to use a
+different field with the <code class="literal">index.query.default_field</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "_all": {
+        "enabled": false <a id="CO153-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      },
+      "properties": {
+        "content": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "settings": {
+    "index.query.default_field": "content" <a id="CO153-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  },
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-all-field/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO153-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">_all</code> field is disabled for the <code class="literal">my_type</code> type.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO153-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">query_string</code> query will default to querying the <code class="literal">content</code> field in this index.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="excluding-from-all"></a>Excluding fields from <code class="literal">_all</code><a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Individual fields can be included or excluded from the <code class="literal">_all</code> field with the
+<a class="link" href="include-in-all.html" title="include_in_all"><code class="literal">include_in_all</code></a> setting.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="all-field-and-boosting"></a>Index boosting and the <code class="literal">_all</code> field<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Individual fields can be <span class="emphasis"><em>boosted</em></span> at index time, with the <a class="link" href="index-boost.html" title="boost"><code class="literal">boost</code></a>
+parameter. The <code class="literal">_all</code> field takes these boosts into account:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT myindex
+{
+  "mappings": {
+    "mytype": {
+      "properties": {
+        "title": { <a id="CO154-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "type": "string",
+          "boost": 2
+        },
+        "content": { <a id="CO154-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          "type": "string"
+        }
+      }
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-all-field/5.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO154-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO154-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+When querying the <code class="literal">_all</code> field, words that originated in the
+    <code class="literal">title</code> field are twice as relevant as words that originated in
+    the <code class="literal">content</code> field.
+</p></td></tr></table></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Using index-time boosting with the <code class="literal">_all</code> field has a significant
+impact on query performance. Usually the better solution is to query fields
+individually, with optional query time boosting.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="custom-all-fields"></a>Custom <code class="literal">_all</code> fields<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>While there is only a single <code class="literal">_all</code> field per index, the <a class="link" href="copy-to.html" title="copy_to"><code class="literal">copy_to</code></a>
+parameter allows the creation of multiple <span class="emphasis"><em>custom <code class="literal">_all</code> fields</em></span>. For
+instance, <code class="literal">first_name</code> and <code class="literal">last_name</code> fields can be combined together into
+the <code class="literal">full_name</code> field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT myindex
+{
+  "mappings": {
+    "mytype": {
+      "properties": {
+        "first_name": {
+          "type":    "string",
+          "copy_to": "full_name" <a id="CO155-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        },
+        "last_name": {
+          "type":    "string",
+          "copy_to": "full_name" <a id="CO155-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        },
+        "full_name": {
+          "type":    "string"
+        }
+      }
+    }
+  }
+}
+
+PUT myindex/mytype/1
+{
+  "first_name": "John",
+  "last_name": "Smith"
+}
+
+GET myindex/_search
+{
+  "query": {
+    "match": {
+      "full_name": "John Smith"
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-all-field/6.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO155-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO155-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">first_name</code> and <code class="literal">last_name</code> values are copied to the <code class="literal">full_name</code> field.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="highlighting-all-field"></a>Highlighting and the <code class="literal">_all</code> field<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A field can only be used for <a class="link" href="search-request-highlighting.html" title="Highlighting">highlighting</a>  if
+the original string value is available, either from the
+<a class="link" href="mapping-source-field.html" title="_source field"><code class="literal">_source</code></a>  field or as a stored field.</p><p>The <code class="literal">_all</code> field is not present in the <code class="literal">_source</code> field and it is not stored by
+default, and so cannot be highlighted. There are two options. Either
+<a class="link" href="mapping-all-field.html#all-field-store" title="Store the _all field">store the <code class="literal">_all</code> field</a> or highlight the
+<a class="link" href="mapping-all-field.html#all-highlight-fields" title="Highlight original fields">original fields</a>.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="all-field-store"></a>Store the <code class="literal">_all</code> field<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If <code class="literal">store</code> is set to <code class="literal">true</code>, then the original field value is retrievable and
+can be highlighted:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT myindex
+{
+  "mappings": {
+    "mytype": {
+      "_all": {
+        "store": true
+      }
+    }
+  }
+}
+
+PUT myindex/mytype/1
+{
+  "first_name": "John",
+  "last_name": "Smith"
+}
+
+GET _search
+{
+  "query": {
+    "match": {
+      "_all": "John Smith"
+    }
+  },
+  "highlight": {
+    "fields": {
+      "_all": {}
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-all-field/7.json"></div><p>Of course, storing the <code class="literal">_all</code> field will use significantly more disk space
+and, because it is a combination of other fields, it may result in odd
+highlighting results.</p><p>The <code class="literal">_all</code> field also accepts the <code class="literal">term_vector</code> and <code class="literal">index_options</code>
+parameters, allowing the use of the fast vector highlighter and the postings
+highlighter.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="all-highlight-fields"></a>Highlight original fields<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>You can query the <code class="literal">_all</code> field, but use the original fields for highlighting as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT myindex
+{
+  "mappings": {
+    "mytype": {
+      "_all": {}
+    }
+  }
+}
+
+PUT myindex/mytype/1
+{
+  "first_name": "John",
+  "last_name": "Smith"
+}
+
+GET _search
+{
+  "query": {
+    "match": {
+      "_all": "John Smith" <a id="CO156-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    }
+  },
+  "highlight": {
+    "fields": {
+      "*_name": { <a id="CO156-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        "require_field_match": "false"  <a id="CO156-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+      }
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-all-field/8.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO156-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The query inspects the <code class="literal">_all</code> field to find matching documents.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO156-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Highlighting is performed on the two name fields, which are available from the <code class="literal">_source</code>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO156-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The query wasn’t run against the name fields, so set <code class="literal">require_field_match</code> to <code class="literal">false</code>.
+</p></td></tr></table></div></div></div></div><div class="navfooter"><span class="prev"><a href="mapping-fields.html">
               « 
-              <code class="literal">_source</code></a>
+              Meta-Fields</a>
            
         </span><span class="next">
            
-          <a href="mapping-analyzer-field.html"><code class="literal">_analyzer</code>
+          <a href="mapping-field-names-field.html"><code class="literal">_field_names</code> field
                »
             </a></span></div>
 <!-- end body -->
@@ -812,6 +984,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

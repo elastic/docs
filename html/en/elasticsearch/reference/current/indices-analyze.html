@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Analyze</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-get-settings.html" title="Get Settings" /><link rel="next" href="indices-templates.html" title="Index Templates" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Analyze</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-get-settings.html" title="Get Settings" /><link rel="next" href="indices-templates.html" title="Index Templates" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,7 +590,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
+      [2.0]
     </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-node">Analyze</span></div><div class="navheader"><span class="prev"><a href="indices-get-settings.html">
               « 
               Get Settings</a>
@@ -599,17 +599,47 @@
            
           <a href="indices-templates.html">Index Templates
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-analyze"></a>Analyze<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/indices/analyze.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Performs the analysis process on a text and return the tokens breakdown
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-analyze"></a>Analyze<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/indices/analyze.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Performs the analysis process on a text and return the tokens breakdown
 of the text.</p><p>Can be used without specifying an index against one of the many built in
-analyzers:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/_analyze?analyzer=standard' -d 'this is a test'</pre></div><p>Or by building a custom transient analyzer out of tokenizers,
+analyzers:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/_analyze' -d '
+{
+  "analyzer" : "standard",
+  "text" : "this is a test"
+}'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Added in 2.0.0-beta1.</h4><p> body based parameters were added in 2.0.0.</p></div></div><p>If text parameter is provided as array of strings, it is analyzed as a multi-valued field.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/_analyze' -d '
+{
+  "analyzer" : "standard",
+  "text" : ["this is a test", "the second text"]
+}'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Added in 2.0.0-beta1.</h4><p> body based parameters were added in 2.0.0.</p></div></div><p>Or by building a custom transient analyzer out of tokenizers,
 token filters and char filters. Token filters can use the shorter <span class="emphasis"><em>filters</em></span>
-parameter name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/_analyze?tokenizer=keyword&amp;filters=lowercase' -d 'this is a test'
+parameter name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/_analyze' -d '
+{
+  "tokenizer" : "keyword",
+  "filters" : ["lowercase"],
+  "text" : "this is a test"
+}'
 
-curl -XGET 'localhost:9200/_analyze?tokenizer=keyword&amp;token_filters=lowercase&amp;char_filters=html_strip' -d 'this is a &lt;b&gt;test&lt;/b&gt;'</pre></div><p>It can also run against a specific index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/test/_analyze?text=this+is+a+test'</pre></div><p>The above will run an analysis on the "this is a test" text, using the
+curl -XGET 'localhost:9200/_analyze' -d '
+{
+  "tokenizer" : "keyword",
+  "token_filters" : ["lowercase"],
+  "char_filters" : ["html_strip"],
+  "text" : "this is a &lt;b&gt;test&lt;/b&gt;"
+}'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Added in 2.0.0-beta1.</h4><p> body based parameters were added in 2.0.0.</p></div></div><p>It can also run against a specific index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/test/_analyze' -d '
+{
+  "text" : "this is a test"
+}'</pre></div><p>The above will run an analysis on the "this is a test" text, using the
 default index analyzer associated with the <code class="literal">test</code> index. An <code class="literal">analyzer</code>
-can also be provided to use a different analyzer:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/test/_analyze?analyzer=whitespace' -d 'this is a test'</pre></div><p>Also, the analyzer can be derived based on a field mapping, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/test/_analyze?field=obj1.field1' -d 'this is a test'</pre></div><p>Will cause the analysis to happen based on the analyzer configured in the
-mapping for <code class="literal">obj1.field1</code> (and if not, the default index analyzer).</p><p>Also, the text can be provided as part of the request body, and not as a
-parameter.</p></div><div class="navfooter"><span class="prev"><a href="indices-get-settings.html">
+can also be provided to use a different analyzer:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/test/_analyze' -d '
+{
+  "analyzer" : "whitespace",
+  "text : "this is a test"
+}'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Added in 2.0.0-beta1.</h4><p> body based parameters were added in 2.0.0.</p></div></div><p>Also, the analyzer can be derived based on a field mapping, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/test/_analyze' -d '
+{
+  "field" : "obj1.field1",
+  "text" : "this is a test"
+}'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Added in 2.0.0-beta1.</h4><p> body based parameters were added in 2.0.0.</p></div></div><p>Will cause the analysis to happen based on the analyzer configured in the
+mapping for <code class="literal">obj1.field1</code> (and if not, the default index analyzer).</p><p>All parameters can also supplied as request parameters. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/_analyze?tokenizer=keyword&amp;filters=lowercase&amp;text=this+is+a+test'</pre></div><p>For backwards compatibility, we also accept the text parameter as the body of the request,
+provided it doesn’t start with <code class="literal">{</code> :</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/_analyze?tokenizer=keyword&amp;token_filters=lowercase&amp;char_filters=html_strip' -d 'this is a &lt;b&gt;test&lt;/b&gt;'</pre></div></div><div class="navfooter"><span class="prev"><a href="indices-get-settings.html">
               « 
               Get Settings</a>
            
@@ -771,6 +801,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

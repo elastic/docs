@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Search Operations</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [1.0]" /><link rel="up" href="index.html" title="Elasticsearch-PHP [1.0]" /><link rel="prev" href="_indexing_operations.html" title="Indexing Operations" /><link rel="next" href="_namespaces.html" title="Namespaces" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Search Operations</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [2.0]" /><link rel="up" href="index.html" title="Elasticsearch-PHP [2.0]" /><link rel="prev" href="_deleting_documents.html" title="Deleting documents" /><link rel="next" href="_namespaces.html" title="Namespaces" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,26 +590,53 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch-PHP
-      [1.0]
-    </a></span> » <span class="breadcrumb-node">Search Operations</span></div><div class="navheader"><span class="prev"><a href="_indexing_operations.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-node">Search Operations</span></div><div class="navheader"><span class="prev"><a href="_deleting_documents.html">
               « 
-              Indexing Operations</a>
+              Deleting documents</a>
            
         </span><span class="next">
            
           <a href="_namespaces.html">Namespaces
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_search_operations"></a>Search Operations<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/search-operations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Well…it isn’t called elasticsearch for nothing!  Let’s talk about search operations in the PHP client.</p><p>The client gives you full access to every query and parameter exposed by the REST API, following the naming scheme as much as possible.  Let’s look at a few examples so you can become familiar with the syntax.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_match_query"></a>Match Query<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/search-operations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Here is a standard curl for a Match query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/my_index/my_type/_search' -d '{
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_search_operations"></a>Search Operations<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/search-operations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Well…it isn’t called elasticsearch for nothing!  Let’s talk about search operations in the client.</p><p>The client gives you full access to every query and parameter exposed by the REST API, following the naming scheme as
+much as possible. Let’s look at a few examples so you can become familiar with the syntax.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_match_query"></a>Match Query<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/search-operations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Here is a standard curl for a Match query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/my_index/my_type/_search' -d '{
     "query" : {
         "match" : {
             "testField" : "abc"
         }
     }
-}'</pre></div><p>​</p><p>And here is the same query constructed in the client:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params['index'] = 'my_index';
-$params['type']  = 'my_type';
-$params['body']['query']['match']['testField'] = 'abc';
+}'</pre></div><p>​</p><p>And here is the same query constructed in the client:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params = [
+    'index' =&gt; 'my_index',
+    'type' =&gt; 'my_type',
+    'body' =&gt; [
+        'query' =&gt; [
+            'match' =&gt; [
+                'testField' =&gt; 'abc'
+            ]
+        ]
+    ]
+];
 
-$results = $client-&gt;search($params);</pre></div><p>​</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Using Raw JSON</strong></p></div></div></div><p>As you can see, the translation between JSON and query is very straightforward.  You could serialize JSON directly into the body, or even provide the raw JSON string.  The client will handle it just fine:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$json = '{
+$results = $client-&gt;search($params);</pre></div><p>​</p><p>Notice how the structure and layout of the PHP array is identical to that of the JSON request body.  This makes it very
+simple to convert JSON examples into PHP.  A quick method to check your PHP array (for more complex examples) is to
+encode it back to JSON and check by eye:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params = [
+    'index' =&gt; 'my_index',
+    'type' =&gt; 'my_type',
+    'body' =&gt; [
+        'query' =&gt; [
+            'match' =&gt; [
+                'testField' =&gt; 'abc'
+            ]
+        ]
+    ]
+];
+
+print_r(json_encode($params['body']));
+
+
+{"query":{"match":{"testField":"abc"}}}</pre></div><p>​</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Using Raw JSON</strong></p></div></div></div><p>Sometimes it is convenient to use raw JSON for testing purposes, or when migrating from a different system.  You can
+use raw JSON as a string in the body, and the client will detect this automatically:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$json = '{
     "query" : {
         "match" : {
             "testField" : "abc"
@@ -617,115 +644,103 @@ $results = $client-&gt;search($params);</pre></div><p>​</p><div class="sidebar
     }
 }';
 
-$params['index'] = 'my_index';
-$params['type']  = 'my_type';
-$params['body']  = $json;
+$params = [
+    'index' =&gt; 'my_index',
+    'type' =&gt; 'my_type',
+    'body' =&gt; $json
+];
 
-$results = $client-&gt;search($params);</pre></div></div><p>​</p><p>The search results that come back are simply elasticsearch response elements serialized into an array.  Working with the search results is as simple as iterating over the array values:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$milliseconds = $results['took'];
+$results = $client-&gt;search($params);</pre></div></div><p>​</p><p>Search results follow the same format as Elasticsearch search response, the only difference is that the JSON response is
+serialized back into PHP arrays. Working with the search results is as simple as iterating over the array values:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params = [
+    'index' =&gt; 'my_index',
+    'type' =&gt; 'my_type',
+    'body' =&gt; [
+        'query' =&gt; [
+            'match' =&gt; [
+                'testField' =&gt; 'abc'
+            ]
+        ]
+    ]
+];
+
+$results = $client-&gt;search($params);
+
+$milliseconds = $results['took'];
 $maxScore     = $results['hits']['max_score'];
 
 $score = $results['hits']['hits'][0]['_score'];
-$doc   = $results['hits']['hits'][0]['_source'];</pre></div><p>​</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_bool_queries"></a>Bool Queries<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/search-operations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Bool queries can be easily constructed using the client. For example, this query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/my_index/my_type/_search' -d '{
+$doc   = $results['hits']['hits'][0]['_source'];</pre></div><p>​</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_bool_queries"></a>Bool Queries<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/search-operations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Bool queries can be easily constructed using the client. For example, this query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/my_index/my_type/_search' -d '{
     "query" : {
         "bool" : {
-            "must": {
-                "match" : {
-                    "testField" : "abc"
+            "must": [
+                {
+                    "match" : { "testField" : "abc" }
                 },
-                "match" : {
-                    "anotherTestField" : "xyz"
+                {
+                    "match" : { "testField2" : "xyz" }
                 }
-            }
+            ]
         }
     }
-}'</pre></div><p>​</p><p>Would be structured like this (Note the position of the square brackets):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params['index'] = 'my_index';
-$params['type']  = 'my_type';
-$params['body']['query']['bool']['must'] = array(
-    array('match' =&gt; array('testField' =&gt; 'abc')),
-    array('match' =&gt; array('anotherTestField' =&gt; 'xyz')),
-);
+}'</pre></div><p>​</p><p>Would be structured like this (Note the position of the square brackets):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params = [
+    'index' =&gt; 'my_index',
+    'type' =&gt; 'my_type',
+    'body' =&gt; [
+        'query' =&gt; [
+            'bool' =&gt; [
+                'must' =&gt; [
+                    [ 'match' =&gt; [ 'testField' =&gt; 'abc' ] ],
+                    [ 'match' =&gt; [ 'testField2' =&gt; 'xyz' ] ],
+                ]
+            ]
+        ]
+    ]
+];
 
-$results = $client-&gt;search($params);</pre></div><p>​</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_a_more_complicated_example"></a>A more complicated example<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/search-operations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Let’s construct a slightly more complicated example: a filtered query that contains both a filter and a query.  This is a very common activity in elasticsearch queries, so it will be a good demonstration.</p><p>The curl version of the query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/my_index/my_type/_search' -d '{
+$results = $client-&gt;search($params);</pre></div><p>​</p><p>Notice that the <code class="literal">must</code> clause accepts an array of arrays.  This will be serialized into an array of JSON objects internally,
+so the final resulting output will be identical to the curl example.  For more details about arrays vs objects in PHP,
+see <a class="ulink" href="_php_json_objects.html" target="_top">Dealing with JSON Arrays and Objects in PHP</a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_a_more_complicated_example"></a>A more complicated example<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/search-operations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Let’s construct a slightly more complicated example: a filtered query that contains both a filter and a query.
+This is a very common activity in elasticsearch queries, so it will be a good demonstration.</p><p>The curl version of the query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/my_index/my_type/_search' -d '{
     "query" : {
         "filtered" : {
             "filter" : {
-                "term" : {
-                    "my_field" : "abc"
-                }
+                "term" : { "my_field" : "abc" }
             },
             "query" : {
-                "match" : {
-                    "my_other_field" : "xyz"
-                }
+                "match" : { "my_other_field" : "xyz" }
             }
         }
     }
-}'</pre></div><p>​</p><p>And in PHP:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params['index'] = 'my_index';
-$params['type']  = 'my_type';
+}'</pre></div><p>​</p><p>And in PHP:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params = [
+    'index' =&gt; 'my_index',
+    'type' =&gt; 'my_type',
+    'body' =&gt; [
+        'query' =&gt; [
+            'filtered' =&gt; [
+                'filter' =&gt; [
+                    'term' =&gt; [ 'my_field' =&gt; 'abc' ]
+                ],
+                'query' =&gt; [
+                    'match' =&gt; [ 'my_other_field' =&gt; 'xyz' ]
+                ]
+            ]
+        ]
+    ]
+];
 
-$filter = array();
-$filter['term']['my_field'] = 'abc';
 
-$query = array();
-$query['match']['my_other_field'] = 'xyz';
-
-$params['body']['query']['filtered'] = array(
-    "filter" =&gt; $filter,
-    "query"  =&gt; $query
-);
-
-$results = $client-&gt;search($params);</pre></div><p>​</p><p>For clarity and ease of readability, the filter and query sections were allocated individually as variables and then composed together later.  This is often a good design pattern for applications, since it lets you treat the queries and filters as building blocks that can be passed around your application.</p><p>Of course, at the end of the day, it is built into a single array.  You could easily build the entire array in one definition of nested array blocks, or build them line-by-line.</p><p>All the client requires is an associative array with a structure that matches the JSON query structure.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_function_score_query"></a>Function_Score query<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/search-operations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A special note needs to be made about the <code class="literal">function_score</code> query.  Due to the way PHP handles JSON encoding, everything is converted to an array of one for or another.
-This is usually not a problem, since most places in the Elasticsearch API accept arrays or empty objects interchangeably.</p><p>However, the <code class="literal">function_score</code> is a little different and needs to differentiate between empty arrays and empty objects.  For example, consider this query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-   "query":{
-      "function_score":{
-         "functions":[
-            {
-               "random_score":{}
-            }
-         ],
-         "boost_mode":"replace",
-         "query":{
-            "match_all":{}
-         }
-      }
-   }
-}</pre></div><p>The <code class="literal">function_score</code> defines an array of objects, and the <code class="literal">random_score</code> key has an empty object as it’s value.  PHP’s json_encode will convert that query to this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-   "query":{
-      "function_score":{
-         "functions":[
-            {
-               "random_score":[]
-            }
-         ],
-         "boost_mode":"replace",
-         "query":{
-            "match_all":[]
-         }
-      }
-   }
-}</pre></div><p>Which will result in a parse exception from Elasticsearch.  What we need to do is tell PHP that <code class="literal">random_score</code> contains an empty <span class="strong"><strong>object</strong></span>, not an array.  To do so,
-we need to specify an explicitly empty object:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params['body'] = array(
-    'query' =&gt; array(
-        'function_score' =&gt; array(
-            'functions' =&gt; array(
-                array("random_score" =&gt; (object) array())
-            ),
-            'query' =&gt; array('match_all' =&gt; array())
-        )
-    )
-);
-$results = $client-&gt;search($params);</pre></div><p>Now, the JSON will be encoded properly and your query will no longer generate a parser exception.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_scan_scroll"></a>Scan/Scroll<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/search-operations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Scan/Scroll functionality of Elasticsearch is similar to search, but different in many ways.  It works by executing a search query with a <code class="literal">search_type</code> of <code class="literal">scan</code>.  This initiates a "scan window" which will remain open for the duration of the scan.  This allows proper, consistent pagination.</p><p>Once a scan window is open, you may start _scrolling) over that window.  This returns results matching your query…but returns them in random order.  This random ordering is important to performance.  Deep pagination is expensive when you need to maintain a sorted, consistent order across shards.  By removing this obligation, Scan/Scroll can efficiently export all the data from your index.</p><p>This is an example which can be used as a template for more advanced operations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = new Elasticsearch\Client();
-$params = array(
+$results = $client-&gt;search($params);</pre></div><p>​</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_scan_scroll"></a>Scan/Scroll<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/search-operations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Scan/Scroll functionality of Elasticsearch is similar to search, but different in many ways.  It works by executing a search query with a <code class="literal">search_type</code> of <code class="literal">scan</code>.  This initiates a "scan window" which will remain open for the duration of the scan.  This allows proper, consistent pagination.</p><p>Once a scan window is open, you may start _scrolling) over that window.  This returns results matching your query…but returns them in random order.  This random ordering is important to performance.  Deep pagination is expensive when you need to maintain a sorted, consistent order across shards.  By removing this obligation, Scan/Scroll can efficiently export all the data from your index.</p><p>This is an example which can be used as a template for more advanced operations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()-&gt;build();
+$params = [
     "search_type" =&gt; "scan",    // use search_type=scan
     "scroll" =&gt; "30s",          // how long between scroll requests. should be small!
     "size" =&gt; 50,               // how many results *per shard* you want back
     "index" =&gt; "my_index",
-    "body" =&gt; array(
-        "query" =&gt; array(
-            "match_all" =&gt; array()
-        )
-    )
-);
+    "body" =&gt; [
+        "query" =&gt; [
+            "match_all" =&gt; []
+        ]
+    ]
+];
 
 $docs = $client-&gt;search($params);   // Execute the search
 $scroll_id = $docs['_scroll_id'];   // The response will contain no results, just a _scroll_id
@@ -734,11 +749,10 @@ $scroll_id = $docs['_scroll_id'];   // The response will contain no results, jus
 while (\true) {
 
     // Execute a Scroll request
-    $response = $client-&gt;scroll(
-        array(
+    $response = $client-&gt;scroll([
             "scroll_id" =&gt; $scroll_id,  //...using our previously obtained _scroll_id
             "scroll" =&gt; "30s"           // and the same timeout window
-        )
+        ]
     );
 
     // Check to see if we got any search hits from the scroll
@@ -752,9 +766,9 @@ while (\true) {
         // No results, scroll cursor is empty.  You've exported all the data
         break;
     }
-}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="_indexing_operations.html">
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="_deleting_documents.html">
               « 
-              Indexing Operations</a>
+              Deleting documents</a>
            
         </span><span class="next">
            
@@ -914,6 +928,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

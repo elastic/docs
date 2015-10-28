@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Java API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [watcher-1.0]" /><link rel="up" href="reference.html" title="Reference" /><link rel="prev" href="transform.html" title="Transform" /><link rel="next" href="api-rest.html" title="REST API" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Java API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Watcher [2.0]" /><link rel="up" href="reference.html" title="Reference" /><link rel="prev" href="transform.html" title="Transform" /><link rel="next" href="api-rest.html" title="REST API" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,7 +590,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Watcher
-      [watcher-1.0]
+      [2.0]
     </a></span> » <span class="breadcrumb-link"><a href="reference.html">Reference</a></span> » <span class="breadcrumb-node">Java API</span></div><div class="navheader"><span class="prev"><a href="transform.html">
               « 
               Transform</a>
@@ -600,8 +600,8 @@
           <a href="api-rest.html">REST API
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="api-java"></a>Java API</h2></div></div></div><p>Watcher provides a Java client called WatcherClient that adds support for the Watcher APIs to the standard Java clients
-that ship with Elasticsearch (<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/client/java-api/1.7/transport-client.html" target="_top">Transport Client</a> or
-the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/client/java-api/1.7/node-client.html" target="_top">Node Client</a>).</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_installing_watcherclient"></a>Installing WatcherClient</h3></div></div></div><p>To use the <code class="literal">WatcherClient</code> you will need to make sure the <code class="literal">elasticsearch-watcher</code> JAR file is in the classpath. You can
+that ship with Elasticsearch (<a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/client/java-api/2.0/transport-client.html" target="_top">Transport Client</a> or
+the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/client/java-api/2.0/node-client.html" target="_top">Node Client</a>).</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_installing_watcherclient"></a>Installing WatcherClient</h3></div></div></div><p>To use the <code class="literal">WatcherClient</code> you will need to make sure the <code class="literal">elasticsearch-watcher</code> JAR file is in the classpath. You can
 extract the jar from the downloaded watcher plugin itself.</p><p>If you use Maven to manage dependencies, add the following to the <code class="literal">pom.xml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-xml">&lt;project ...&gt;
 
    &lt;repositories&gt;
@@ -623,9 +623,9 @@ extract the jar from the downloaded watcher plugin itself.</p><p>If you use Mave
    &lt;dependencies&gt;
       &lt;!-- add the Watcher jar as a dependency --&gt;
       &lt;dependency&gt;
-         &lt;groupId&gt;org.elasticsearch&lt;/groupId&gt;
+         &lt;groupId&gt;org.elasticsearch.plugin&lt;/groupId&gt;
          &lt;artifactId&gt;elasticsearch-watcher&lt;/artifactId&gt;
-         &lt;version&gt;1.0.0-Beta1&lt;/version&gt;
+         &lt;version&gt;2.0.0&lt;/version&gt;
       &lt;/dependency&gt;
       ...
    &lt;/dependencies&gt;
@@ -642,14 +642,20 @@ extract the jar from the downloaded watcher plugin itself.</p><p>If you use Mave
 
 dependencies {
   // Provide the Watcher jar on the classpath for compilation and at runtime
-  compile "org.elasticsearch:elasticsearch-watcher:1.0.0-Beta1"
-
+  compile "org.elasticsearch.plugin:elasticsearch-watcher:2.0.0"
   /* ... */
-}</pre></div><p>You can manually download the <a class="ulink" href="http://maven.elasticsearch.org/releases/org/elasticsearch/elasticsearch-watcher/1.0.0-Beta1/elasticsearch-watcher-1.0.0-Beta1.jar" target="_top">Watcher JAR</a>
-directly from our Maven repository.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_creating_the_watcherclient"></a>Creating the WatcherClient</h3></div></div></div><p>Creating the <code class="literal">WatcherClient</code> can simply be done as the following snippet shows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.watcher.client.WatcherClient;
+}</pre></div><p>You can manually download the <a class="ulink" href="http://maven.elasticsearch.org/releases/org/elasticsearch/plugin/elasticsearch-watcher/2.0.0/elasticsearch-2.0.0.jar" target="_top">Watcher JAR</a>
+directly from our Maven repository.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_creating_the_watcherclient"></a>Creating the WatcherClient</h3></div></div></div><p>Creating the <code class="literal">WatcherClient</code> can simply be done as the following snippet shows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.watcher.client.WatcherClient;
 ...
 
-Client client = ... // create and initialize either the transport or the node client
+TransportClient client = TransportClient.builder()
+    .settings(Settings.builder()
+    .put("cluster.name", "myClusterName")
+    .put("plugin.types", "org.elasticsearch.watcher.WatcherPlugin")
+    ...
+    .build())
+    .addTransportAddress(new InetSocketTransportAddress("localhost", 9300));
 
 WatcherClient watcherClient = new WatcherClient(client);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-put-watch"></a>PUT Watch API</h3></div></div></div><p>The PUT watch API either registers a new watch in Watcher or update an existing one. Once registered, a new document
 will be added to the <code class="literal">.watches</code> index, representing the watch, and the watch’s trigger will immediately be registered
@@ -754,7 +760,19 @@ ActionStatus.AckStatus ackStatus = actionStatus.ackStatus();
 ActionStatus.AckStatus.State ackState = ackStatus.state();</pre></div><p>You can acknowledge multiple actions:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AckWatchResponse ackResponse = watcherClient.prepareAckWatch("my-watch")
   .setActionIds("action1", "action2")
   .get();</pre></div><p>To acknowledge all of a watch’s actions, specify <code class="literal">_all</code> as the action ID or simply omit the
-actions altogether.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AckWatchResponse ackResponse = watcherClient.prepareAckWatch("my-watch").get();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AckWatchResponse ackResponse = watcherClient.prepareAckWatch("my-watch", "_all").get();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-stats"></a>Stats API</h3></div></div></div><p>The Watcher <code class="literal">stats</code> API returns information on the aspects of Watcher on your cluster.</p><p>The following example queries the <code class="literal">stats</code> API :</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">WatcherStatsResponse watcherStatsResponse = watcherClient.prepareWatcherStats().get();</pre></div><p>A successful call returns a response structure that can be accessed as shown:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">WatcherBuild build = watcherStatsResponse.getBuild();
+actions altogether.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AckWatchResponse ackResponse = watcherClient.prepareAckWatch("my-watch").get();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AckWatchResponse ackResponse = watcherClient.prepareAckWatch("my-watch", "_all").get();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-activate-watch"></a>Activate Watch API</h3></div></div></div><p>A watch can be either <a class="link" href="watch-active-state.html" title="Watch Active State">active or inactive</a>. This API enables
+you to activate a currently inactive watch.</p><p>The status of an inactive watch is returned with the watch definition
+when you call the <a class="link" href="api-java.html#api-java-get-watch" title="Get Watch API">Get Watch API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">GetWatchResponse getWatchResponse = watcherClient.prepareGetWatch("my-watch").get();
+boolean active = getWatchResponse.getStatus().state().isActive();
+assert !active;</pre></div><p>You can activate the watch by executing the following API call:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ActivateWatchResponse activateResponse = watcherClient.prepareActivateWatch("my-watch", true).get();
+boolean active = activateResponse.getStatus().state().isActive();
+assert active;</pre></div><p>The new state of the watch is returned as part of its overall status.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-deactivate-watch"></a>Deactivate Watch API</h3></div></div></div><p>A watch can be either <a class="link" href="watch-active-state.html" title="Watch Active State">active or inactive</a>. This API enables
+you to deactivate a currently active watch.</p><p>The status of an active watch is returned with the watch definition
+when you call the <a class="link" href="api-java.html#api-java-get-watch" title="Get Watch API">Get Watch API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">GetWatchResponse getWatchResponse = watcherClient.prepareGetWatch("my-watch").get();
+boolean active = getWatchResponse.getStatus().state().isActive();
+assert active;</pre></div><p>You can deactivate the watch by executing the following API call:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ActivateWatchResponse activateResponse = watcherClient.prepareActivateWatch("my-watch", false).get();
+boolean active = activateResponse.getStatus().state().isActive();
+assert !active;</pre></div><p>The new state of the watch is returned as part of its overall status.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api-java-stats"></a>Stats API</h3></div></div></div><p>The Watcher <code class="literal">stats</code> API returns information on the aspects of Watcher on your cluster.</p><p>The following example queries the <code class="literal">stats</code> API :</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">WatcherStatsResponse watcherStatsResponse = watcherClient.prepareWatcherStats().get();</pre></div><p>A successful call returns a response structure that can be accessed as shown:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">WatcherBuild build = watcherStatsResponse.getBuild();
 
 // The Version of watcher currently running
 WatcherVersion version = watcherStatsResponse.getVersion();
@@ -932,6 +950,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

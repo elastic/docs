@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs-delete.html" title="Delete API" /><link rel="next" href="docs-multi-get.html" title="Multi Get API" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Update API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs-delete.html" title="Delete API" /><link rel="next" href="docs-multi-get.html" title="Multi Get API" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,7 +590,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
+      [2.0]
     </a></span> » <span class="breadcrumb-link"><a href="docs.html">Document APIs </a></span> » <span class="breadcrumb-node">Update API</span></div><div class="navheader"><span class="prev"><a href="docs-delete.html">
               « 
               Delete API</a>
@@ -599,7 +599,7 @@
            
           <a href="docs-multi-get.html">Multi Get API
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-update"></a>Update API<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The update API allows to update a document based on a script provided.
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-update"></a>Update API<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The update API allows to update a document based on a script provided.
 The operation gets the document (collocated with the shard) from the
 index, runs the script (with optional script language and parameters),
 and index back the result (also allows to delete, or ignore the
@@ -610,16 +610,20 @@ between the get and the index. The <code class="literal">_source</code> field ne
 for this feature to work.</p><p>For example, lets index a simple doc:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/type1/1 -d '{
     "counter" : 1,
     "tags" : ["red"]
-}'</pre></div><h3><a id="_scripted_updates"></a>Scripted updates<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Now, we can execute a script that would increment the counter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
-    "script" : "ctx._source.counter += count",
-    "params" : {
-        "count" : 4
+}'</pre></div><h3><a id="_scripted_updates"></a>Scripted updates<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Now, we can execute a script that would increment the counter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+    "script" : {
+        "inline": "ctx._source.counter += count",
+        "params" : {
+            "count" : 4
+        }
     }
 }'</pre></div><p>We can add a tag to the list of tags (note, if the tag exists, it
 will still add it, since its a list):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
-    "script" : "ctx._source.tags += tag",
-    "params" : {
-        "tag" : "blue"
+    "script" : {
+        "inline": "ctx._source.tags += tag",
+        "params" : {
+            "tag" : "blue"
+        }
     }
 }'</pre></div><p>In addition to <code class="literal">_source</code>, the following variables are available through
 the <code class="literal">ctx</code> map: <code class="literal">_index</code>, <code class="literal">_type</code>, <code class="literal">_id</code>, <code class="literal">_version</code>, <code class="literal">_routing</code>,
@@ -630,11 +634,13 @@ the <code class="literal">ctx</code> map: <code class="literal">_index</code>, <
 }'</pre></div><p>And, we can even change the operation that is executed.  This example deletes
 the doc if the <code class="literal">tags</code> field contain <code class="literal">blue</code>, otherwise it does nothing
 (<code class="literal">noop</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
-    "script" : "ctx._source.tags.contains(tag) ? ctx.op = \"delete\" : ctx.op = \"none\"",
-    "params" : {
-        "tag" : "blue"
+    "script" : {
+        "inline": "ctx._source.tags.contains(tag) ? ctx.op = \"delete\" : ctx.op = \"none\"",
+        "params" : {
+            "tag" : "blue"
+        }
     }
-}'</pre></div><h3><a id="_updates_with_a_partial_document"></a>Updates with a partial document<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update API also support passing a partial document,
+}'</pre></div><h3><a id="_updates_with_a_partial_document"></a>Updates with a partial document<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update API also support passing a partial document,
 which will be merged into the existing document (simple recursive merge,
 inner merging of objects, replacing core "keys/values" and arrays). For
 example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
@@ -642,7 +648,7 @@ example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang
         "name" : "new_name"
     }
 }'</pre></div><p>If both <code class="literal">doc</code> and <code class="literal">script</code> is specified, then <code class="literal">doc</code> is ignored. Best is
-to put your field pairs of the partial document in the script itself.</p><h3><a id="_literal_detect_noop_literal"></a><code class="literal">detect_noop</code><a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default if <code class="literal">doc</code> is specified then the document is always updated even
+to put your field pairs of the partial document in the script itself.</p><h3><a id="_literal_detect_noop_literal"></a><code class="literal">detect_noop</code><a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default if <code class="literal">doc</code> is specified then the document is always updated even
 if the merging process doesn’t cause any changes.  Specifying <code class="literal">detect_noop</code>
 as <code class="literal">true</code> will cause Elasticsearch to check if there are changes and, if
 there aren’t, turn the update request into a noop. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
@@ -651,37 +657,41 @@ there aren’t, turn the update request into a noop. For example:</p><div class=
     },
     "detect_noop": true
 }'</pre></div><p>If <code class="literal">name</code> was <code class="literal">new_name</code> before the request was sent then the entire update
-request is ignored.</p><h3><a id="upserts"></a>Upserts<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the document does not already exist, the contents of the <code class="literal">upsert</code> element
+request is ignored.</p><h3><a id="upserts"></a>Upserts<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the document does not already exist, the contents of the <code class="literal">upsert</code> element
 will be inserted as a new document.  If the document does exist, then the
 <code class="literal">script</code> will be executed instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
-    "script" : "ctx._source.counter += count",
-    "params" : {
-        "count" : 4
+    "script" : {
+        "inline": "ctx._source.counter += count",
+        "params" : {
+            "count" : 4
+        }
     },
     "upsert" : {
         "counter" : 1
     }
-}'</pre></div><h4><a id="_literal_scripted_upsert_literal"></a><code class="literal">scripted_upsert</code><a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If you would like your script to run regardless of whether the document exists
+}'</pre></div><h4><a id="_literal_scripted_upsert_literal"></a><code class="literal">scripted_upsert</code><a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If you would like your script to run regardless of whether the document exists
 or not — i.e. the script handles initializing the document instead of the
 <code class="literal">upsert</code> element — then set <code class="literal">scripted_upsert</code> to <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/sessions/session/dh3sgudg8gsrgl/_update' -d '{
-    "script_id" : "my_web_session_summariser",
     "scripted_upsert":true,
-    "params" : {
-        "pageViewEvent" : {
+    "script" : {
+        "id": "my_web_session_summariser",
+        "params" : {
+            "pageViewEvent" : {
                 "url":"foo.com/bar",
                 "response":404,
                 "time":"2014-01-01 12:32"
+            }
         }
     },
     "upsert" : {}
-}'</pre></div><h4><a id="_literal_doc_as_upsert_literal"></a><code class="literal">doc_as_upsert</code><a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Instead of sending a partial <code class="literal">doc</code> plus an <code class="literal">upsert</code> doc, setting
+}'</pre></div><h4><a id="_literal_doc_as_upsert_literal"></a><code class="literal">doc_as_upsert</code><a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Instead of sending a partial <code class="literal">doc</code> plus an <code class="literal">upsert</code> doc, setting
 <code class="literal">doc_as_upsert</code> to <code class="literal">true</code> will use the contents of <code class="literal">doc</code> as the <code class="literal">upsert</code>
 value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
     "doc" : {
         "name" : "new_name"
     },
     "doc_as_upsert" : true
-}'</pre></div><h3><a id="_parameters_3"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update operation supports the following query-string parameters:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+}'</pre></div><h3><a id="_parameters_3"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update operation supports the following query-string parameters:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">retry_on_conflict</code>
 </p>
@@ -924,6 +934,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

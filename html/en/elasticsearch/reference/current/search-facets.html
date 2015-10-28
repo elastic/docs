@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Facets</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="search.html" title="Search APIs" /><link rel="prev" href="search-aggregations-bucket-geohashgrid-aggregation.html" title="GeoHash grid Aggregation" /><link rel="next" href="search-facets-terms-facet.html" title="Terms Facet" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Facets</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="redirects.html" title="Appendix A. Deleted pages" /><link rel="prev" href="search-more-like-this.html" title="More Like This API" /><link rel="next" href="search-facets-filter-facet.html" title="Filter Facet" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,181 +590,27 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-node">Facets</span></div><div class="navheader"><span class="prev"><a href="search-aggregations-bucket-geohashgrid-aggregation.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="redirects.html">Deleted pages</a></span> » <span class="breadcrumb-node">Facets</span></div><div class="navheader"><span class="prev"><a href="search-more-like-this.html">
               « 
-              GeoHash grid Aggregation</a>
+              More Like This API</a>
            
         </span><span class="next">
            
-          <a href="search-facets-terms-facet.html">Terms Facet
+          <a href="search-facets-filter-facet.html">Filter Facet
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-facets"></a>Facets<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Facets are deprecated and will be removed in a future release. You are
-encouraged to migrate to <a class="link" href="search-aggregations.html" title="Aggregations">aggregations</a> instead.</p></div></div><p>The usual purpose of a full-text search engine is to return a small
-number of documents matching your query.</p><p><span class="emphasis"><em>Facets</em></span> provide aggregated data based on a search query. In the
-simplest case, a
-<a class="link" href="search-facets-terms-facet.html" title="Terms Facet">terms facet</a>
-can return <span class="emphasis"><em>facet counts</em></span> for various <span class="emphasis"><em>facet values</em></span> for a specific
-<span class="emphasis"><em>field</em></span>. Elasticsearch supports more facet implementations, such as
-<a class="link" href="search-facets-statistical-facet.html" title="Statistical Facet">statistical</a>
-or
-<a class="link" href="search-facets-date-histogram-facet.html" title="Date Histogram Facet">date histogram</a> facets.</p><p>The field used for facet calculations <span class="emphasis"><em>must</em></span> be of type numeric,
-date/time or be analyzed as a single token — see the
-<a class="link" href="mapping.html" title="Mapping"><span class="emphasis"><em>Mapping</em></span></a> guide for details on the
-analysis process.</p><p>You can give the facet a custom <span class="emphasis"><em>name</em></span> and return multiple facets in one
-request.</p><p>Let’s try it out with a simple example. Suppose we have a number of
-articles with a field called <code class="literal">tags</code>, preferably analyzed with the
-<a class="link" href="analysis-keyword-analyzer.html" title="Keyword Analyzer">keyword</a>
-analyzer. The facet aggregation will return counts for the most popular
-tags across the documents matching your query — or across all documents
-in the index.</p><p>We will store some example data first:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -X DELETE "http://localhost:9200/articles"
-curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "One",   "tags" : ["foo"]}'
-curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "Two",   "tags" : ["foo", "bar"]}'
-curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "Three", "tags" : ["foo", "bar", "baz"]}'</pre></div><p>Now, let’s query the index for articles beginning with letter <code class="literal">T</code>
-and retrieve a
-<a class="link" href="search-facets-terms-facet.html" title="Terms Facet"><span class="emphasis"><em>terms facet</em></span></a>
-for the <code class="literal">tags</code> field. We will name the facet simply: <span class="emphasis"><em>tags</em></span>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -X POST "http://localhost:9200/articles/_search?pretty=true" -d '
-  {
-    "query" : { "query_string" : {"query" : "T*"} },
-    "facets" : {
-      "tags" : { "terms" : {"field" : "tags"} }
-    }
-  }
-'</pre></div><p>This request will return articles <code class="literal">Two</code> and <code class="literal">Three</code> (because
-they match our query), as well as the <code class="literal">tags</code> facet:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"facets" : {
-  "tags" : {
-    "_type" : "terms",
-    "missing" : 0,
-    "total": 5,
-    "other": 0,
-    "terms" : [ {
-      "term" : "foo",
-      "count" : 2
-    }, {
-      "term" : "bar",
-      "count" : 2
-    }, {
-      "term" : "baz",
-      "count" : 1
-    } ]
-  }
-}</pre></div><p>In the <code class="literal">terms</code> array, relevant <span class="emphasis"><em>terms</em></span> and <span class="emphasis"><em>counts</em></span> are returned. You’ll
-probably want to display these to your users. The facet returns several
-important counts:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">missing</code> : The number of documents which have no value for the
-faceted field
-</li><li class="listitem">
-<code class="literal">total</code> : The total number of terms in the facet
-</li><li class="listitem">
-<code class="literal">other</code> : The number of terms not included in the returned facet
-(effectively <code class="literal">other</code> = <code class="literal">total</code> - <code class="literal">terms</code> )
-</li></ul></div><p>Notice, that the counts are scoped to the current query: <span class="emphasis"><em>foo</em></span> is
-counted only twice (not three times), <span class="emphasis"><em>bar</em></span> is counted twice and <span class="emphasis"><em>baz</em></span>
-once. Also note that terms are counted once per document, even if the
-occur more frequently in that document.</p><p>That’s because the primary purpose of facets is to enable
-<a class="ulink" href="http://en.wikipedia.org/wiki/Faceted_search" target="_top"><span class="emphasis"><em>faceted navigation</em></span></a>,
-allowing the user to refine her query based on the insight from the
-facet, i.e. restrict the search to a specific category, price or date
-range. Facets can be used, however, for other purposes: computing
-histograms, statistical aggregations, and more. See the blog about
-<a class="ulink" href="/blog/data-visualization-with-elasticsearch-and-protovis/" target="_top">data visualization</a> for inspiration.</p><h3><a id="_scope"></a>Scope<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>As we have already mentioned, facet computation is restricted to the
-scope of the current query, called <code class="literal">main</code>, by default. Facets can be
-computed within the <code class="literal">global</code> scope as well, in which case it will return
-values computed across all documents in the index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "facets" : {
-        "my_facets" : {
-            "terms" : { ... },
-            "global" : true <a id="CO42-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        }
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO42-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">global</code> keyword can be used with any facet type.
-</p></td></tr></table></div><p>There’s one <span class="strong"><strong>important distinction</strong></span> to keep in mind. While search
-<span class="emphasis"><em>queries</em></span> restrict both the returned documents and facet counts, search
-<span class="emphasis"><em>filters</em></span> restrict only returned documents — but <span class="emphasis"><em>not</em></span> facet counts.</p><p>If you need to restrict both the documents and facets, and you’re not
-willing or able to use a query, you may use a <span class="emphasis"><em>facet filter</em></span>.</p><h3><a id="_facet_filter"></a>Facet Filter<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>All facets can be configured with an additional filter (explained in the
-<a class="link" href="query-dsl.html" title="Query DSL">Query DSL</a> section), which <span class="emphasis"><em>will</em></span> reduce
-the documents they use for computing results. An example with a <span class="emphasis"><em>term</em></span>
-filter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "facets" : {
-        "&lt;FACET NAME&gt;" : {
-            "&lt;FACET TYPE&gt;" : {
-                ...
-            },
-            "facet_filter" : {
-                "term" : { "user" : "kimchy"}
-            }
-        }
-    }
-}</pre></div><p>Note that this is different from a facet of the
-<a class="link" href="search-facets-filter-facet.html" title="Filter Facets">filter</a> type.</p><h3><a id="_facets_with_the_emphasis_nested_emphasis_types"></a>Facets with the <span class="emphasis"><em>nested</em></span> types<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p><a class="link" href="mapping-nested-type.html" title="Nested Type">Nested</a> mapping allows
-for better support for "inner" documents faceting, especially when it
-comes to multi valued key and value facets (like histograms, or term
-stats).</p><p>What is it good for? First of all, this is the only way to use facets on
-nested documents once they are used (possibly for other reasons). But,
-there is also facet specific reason why nested documents can be used,
-and that’s the fact that facets working on different key and value field
-(like term_stats, or histogram) can now support cases where both are
-multi valued properly.</p><p>For example, let’s use the following mapping:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "type1" : {
-        "properties" : {
-            "obj1" : {
-                "type" : "nested"
-            }
-        }
-    }
-}</pre></div><p>And, here is a sample data:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "obj1" : [
-        {
-            "name" : "blue",
-            "count" : 4
-        },
-        {
-            "name" : "green",
-            "count" : 6
-        }
-    ]
-}</pre></div><h4><a id="_all_nested_matching_root_documents"></a>All Nested Matching Root Documents<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Another option is to run the facet on all the nested documents matching
-the root objects that the main query will end up producing. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query": {
-        "match_all": {}
-    },
-    "facets": {
-        "facet1": {
-            "terms_stats": {
-                "key_field" : "name",
-                "value_field": "count"
-            },
-            "nested": "obj1"
-        }
-    }
-}</pre></div><p>The <code class="literal">nested</code> element provides the path to the nested document (can be a
-multi level nested docs) that will be used.</p><p>Facet filter allows you to filter your facet on the nested object level.
-It is important that these filters match on the nested object level and
-not on the root document level. In the following example the
-<code class="literal">terms_stats</code> only applies on nested objects with the name <span class="emphasis"><em>blue</em></span>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query": {
-        "match_all": {}
-    },
-    "facets": {
-        "facet1": {
-            "terms_stats": {
-                "key_field" : "name",
-                "value_field": "count"
-            },
-            "nested": "obj1",
-            "facet_filter" : {
-                "term" : {"name" : "blue"}
-            }
-        }
-    }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-geohashgrid-aggregation.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-facets"></a>Facets<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/redirects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Faceted search refers to a way to explore large amounts of data by displaying
+summaries about various partitions of the data and later allowing to narrow
+the navigation to a specific partition.</p><p>In Elasticsearch, <code class="literal">facets</code> are also the name of a feature that allowed to
+compute these summaries. <code class="literal">facets</code> have been replaced by
+<a class="link" href="search-aggregations.html" title="Aggregations">aggregations</a> in Elasticsearch 1.0, which are a superset
+of facets.</p></div><div class="navfooter"><span class="prev"><a href="search-more-like-this.html">
               « 
-              GeoHash grid Aggregation</a>
+              More Like This API</a>
            
         </span><span class="next">
            
-          <a href="search-facets-terms-facet.html">Terms Facet
+          <a href="search-facets-filter-facet.html">Filter Facet
                »
             </a></span></div>
 <!-- end body -->
@@ -920,6 +766,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_ttl</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="mapping-fields.html" title="Fields" /><link rel="prev" href="mapping-timestamp-field.html" title="_timestamp" /><link rel="next" href="mapping-types.html" title="Types" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_ttl field</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="mapping-fields.html" title="Meta-Fields" /><link rel="prev" href="mapping-timestamp-field.html" title="_timestamp field" /><link rel="next" href="mapping-type-field.html" title="_type field" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,44 +590,91 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_ttl</code></span></div><div class="navheader"><span class="prev"><a href="mapping-timestamp-field.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Meta-Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_ttl</code> field</span></div><div class="navheader"><span class="prev"><a href="mapping-timestamp-field.html">
               « 
-              <code class="literal">_timestamp</code></a>
+              <code class="literal">_timestamp</code> field</a>
            
         </span><span class="next">
            
-          <a href="mapping-types.html">Types
+          <a href="mapping-type-field.html"><code class="literal">_type</code> field
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-ttl-field"></a><code class="literal">_ttl</code><a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/ttl-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A lot of documents naturally come with an expiration date. Documents can
-therefore have a <code class="literal">_ttl</code> (time to live), which will cause the expired
-documents to be deleted automatically.</p><p><code class="literal">_ttl</code> accepts two parameters which are described below, every other setting will be silently ignored.</p><h4><a id="_enabled_2"></a>enabled<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/ttl-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default it is disabled, in order to enable it, the following mapping
-should be defined:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "tweet" : {
-        "_ttl" : { "enabled" : true }
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-ttl-field"></a><code class="literal">_ttl</code> field<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/ttl-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><h4>Deprecated in 2.0.0-beta2.</h4><p>The current <code class="literal">_ttl</code> implementation is deprecated and will be replaced with a different implementation in a future version.</p></div></div><p>Some types of documents, such as session data or special offers, come with an
+expiration date. The <code class="literal">_ttl</code> field allows you to specify the minimum time a
+document should live, after which time the document is deleted automatically.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><h4>Prefer index-per-timeframe to TTL</h4><p>With TTL , expired documents first have to be marked as deleted then later
+purged from the index when segments are merged.  For append-only time-based
+data such as log events, it is much more efficient to use an index-per-day /
+week / month instead of TTLs.  Old log data can be removed by simply deleting
+old indices.</p></div></div><p>The <code class="literal">_ttl</code> field may be enabled as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "_ttl": {
+        "enabled": true
+      }
     }
-}</pre></div><p><code class="literal">_ttl</code> can only be enabled once and never be disabled again.</p><h4><a id="_default"></a>default<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/ttl-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>You can provide a per index/type default <code class="literal">_ttl</code> value as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "tweet" : {
-        "_ttl" : { "enabled" : true, "default" : "1d" }
+  }
+}
+
+PUT my_index/my_type/1?ttl=10m <a id="CO170-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+{
+  "text": "Will expire in 10 minutes"
+}
+
+PUT my_index/my_type/2 <a id="CO170-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+{
+  "text": "Will not expire"
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-ttl-field/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO170-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This document will expire 10 minutes after being indexed.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO170-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This document has no TTL set and will not expire.
+</p></td></tr></table></div><p>The expiry time is calculated as the value of the
+<a class="link" href="mapping-timestamp-field.html" title="_timestamp field"><code class="literal">_timestamp</code></a> field (or <code class="literal">now()</code> if the <code class="literal">_timestamp</code>
+is not enabled) plus the <code class="literal">ttl</code> specified in the indexing request.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_default_ttl"></a>Default TTL<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/ttl-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can provide a default <code class="literal">_ttl</code>, which will be applied to indexing requests where the <code class="literal">ttl</code> is not specified:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "_ttl": {
+        "enabled": true,
+        "defaut": "5m"
+      }
     }
-}</pre></div><p>In this case, if you don’t provide a <code class="literal">_ttl</code> value in your query or in
-the <code class="literal">_source</code> all tweets will have a <code class="literal">_ttl</code> of one day.</p><p>In case you do not specify a time unit like <code class="literal">d</code> (days), <code class="literal">m</code> (minutes),
-<code class="literal">h</code> (hours), <code class="literal">ms</code> (milliseconds) or <code class="literal">w</code> (weeks), milliseconds is used as
-default unit.</p><p>If no <code class="literal">default</code> is set and no <code class="literal">_ttl</code> value is given then the document
-has an infinite <code class="literal">_ttl</code> and will not expire.</p><p>You can dynamically update the <code class="literal">default</code> value using the put mapping
+  }
+}
+
+PUT my_index/my_type/1?ttl=10m <a id="CO171-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+{
+  "text": "Will expire in 10 minutes"
+}
+
+PUT my_index/my_type/2 <a id="CO171-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+{
+  "text": "Will expire in 5 minutes"
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-ttl-field/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO171-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This document will expire 10 minutes after being indexed.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO171-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This document has no TTL set and so will expire after the default 5 minutes.
+</p></td></tr></table></div><p>The <code class="literal">default</code> value can use <a class="link" href="common-options.html#time-units" title="Time unitsedit">time units</a> like <code class="literal">d</code> for days, and
+will use <code class="literal">ms</code> as the default unit if no time unit is provided.</p><p>You can dynamically update the <code class="literal">default</code> value using the put mapping
 API. It won’t change the <code class="literal">_ttl</code> of already indexed documents but will be
-used for future documents.</p><h4><a id="_note_on_documents_expiration"></a>Note on documents expiration<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/ttl-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Expired documents will be automatically deleted regularly. You can
-dynamically set the <code class="literal">indices.ttl.interval</code> to fit your needs. The
-default value is <code class="literal">60s</code>.</p><p>The deletion orders are processed by bulk. You can set
-<code class="literal">indices.ttl.bulk_size</code> to fit your needs. The default value is <code class="literal">10000</code>.</p><p>Note that the expiration procedure handle versioning properly so if a
-document is updated between the collection of documents to expire and
-the delete order, the document won’t be deleted.</p></div><div class="navfooter"><span class="prev"><a href="mapping-timestamp-field.html">
+used for future documents.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_note_on_documents_expiration"></a>Note on documents expiration<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/ttl-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Expired documents will be automatically deleted periodoically. The following
+settings control the expiry process:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">indices.ttl.interval</code>
+</span></dt><dd>
+How often the purge process should run. Defaults to <code class="literal">60s</code>. Expired documents
+may still be retrieved before they are purged.
+</dd><dt><span class="term">
+<code class="literal">indices.ttl.bulk_size</code>
+</span></dt><dd>
+How many deletions are handled by a single <a class="link" href="docs-bulk.html" title="Bulk API"><code class="literal">bulk</code></a> request. The
+default value is <code class="literal">10000</code>.
+</dd></dl></div></div></div><div class="navfooter"><span class="prev"><a href="mapping-timestamp-field.html">
               « 
-              <code class="literal">_timestamp</code></a>
+              <code class="literal">_timestamp</code> field</a>
            
         </span><span class="next">
            
-          <a href="mapping-types.html">Types
+          <a href="mapping-type-field.html"><code class="literal">_type</code> field
                »
             </a></span></div>
 <!-- end body -->
@@ -783,6 +830,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

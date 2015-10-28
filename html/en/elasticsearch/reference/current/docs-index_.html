@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Index API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs.html" title="Document APIs" /><link rel="next" href="docs-get.html" title="Get API" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Index API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs.html" title="Document APIs" /><link rel="next" href="docs-get.html" title="Get API" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,7 +590,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
+      [2.0]
     </a></span> » <span class="breadcrumb-link"><a href="docs.html">Document APIs </a></span> » <span class="breadcrumb-node">Index API</span></div><div class="navheader"><span class="prev"><a href="docs.html">
               « 
               Document APIs </a>
@@ -599,19 +599,30 @@
            
           <a href="docs-get.html">Get API
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-index_"></a>Index API<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The index API adds or updates a typed JSON document in a specific index,
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-index_"></a>Index API<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The index API adds or updates a typed JSON document in a specific index,
 making it searchable. The following example inserts the JSON document
 into the "twitter" index, under a type called "tweet" with an id of 1:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/twitter/tweet/1' -d '{
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
 }'</pre></div><p>The result of the above index operation is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "_shards" : {
+        "total" : 10,
+        "failed" : 0,
+        "successful" : 10
+    },
     "_index" : "twitter",
     "_type" : "tweet",
     "_id" : "1",
     "_version" : 1,
     "created" : true
-}</pre></div><h3><a id="index-creation"></a>Automatic Index Creation<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation automatically creates an index if it has not been
+}</pre></div><p>The <code class="literal">_shards</code> header provides information about the replication process of the index operation.
+* <code class="literal">total</code> - Indicates to how many shard copies (primary and replica shards) the index operation should be executed on.
+* <code class="literal">successful</code>- Indicates the number of shard copies the index operation succeeded on.
+* <code class="literal">failures</code> - An array that contains replication related errors in the case an index operation failed on a replica shard.</p><p>The index operation is successful in the case <code class="literal">successful</code> is at least 1.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Replica shards may not all be started when an indexing operation successfully returns (by default, a  quorum is
+        required). In that case, <code class="literal">total</code> will be equal to the total shards based on the index replica settings and
+        <code class="literal">successful</code> will be equal to the number of shards started (primary plus replicas). As there were no failures,
+        the <code class="literal">failed</code> will be 0.</p></div></div><h3><a id="index-creation"></a>Automatic Index Creation<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation automatically creates an index if it has not been
 created before (check out the
 <a class="link" href="indices-create-index.html" title="Create Index">create index API</a> for manually
 creating an index), and also automatically creates a
@@ -620,30 +631,13 @@ created (check out the <a class="link" href="indices-put-mapping.html" title="Pu
 API for manually creating a type mapping).</p><p>The mapping itself is very flexible and is schema-free. New fields and
 objects will automatically be added to the mapping definition of the
 type specified. Check out the <a class="link" href="mapping.html" title="Mapping">mapping</a>
-section for more information on mapping definitions.</p><p>Note that the format of the JSON document can also include the type (very handy
-when using JSON mappers) if the <code class="literal">index.mapping.allow_type_wrapper</code> setting is
-set to true, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPOST 'http://localhost:9200/twitter' -d '{
-  "settings": {
-    "index": {
-      "mapping.allow_type_wrapper": true
-    }
-  }
-}'
-{"acknowledged":true}
-
-$ curl -XPUT 'http://localhost:9200/twitter/tweet/1' -d '{
-    "tweet" : {
-        "user" : "kimchy",
-        "post_date" : "2009-11-15T14:12:12",
-        "message" : "trying out Elasticsearch"
-    }
-}'</pre></div><p>Automatic index creation can be disabled by setting
+section for more information on mapping definitions.</p><p>Automatic index creation can be disabled by setting
 <code class="literal">action.auto_create_index</code> to <code class="literal">false</code> in the config file of all nodes.
 Automatic mapping creation can be disabled by setting
 <code class="literal">index.mapper.dynamic</code> to <code class="literal">false</code> in the config files of all nodes (or
 on the specific index settings).</p><p>Automatic index creation can include a pattern based white/black list,
 for example, set <code class="literal">action.auto_create_index</code> to <code class="literal">+aaa*,-bbb*,+ccc*,-*</code> (+
-meaning allowed, and - meaning disallowed).</p><h3><a id="index-versioning"></a>Versioning<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each indexed document is given a version number. The associated
+meaning allowed, and - meaning disallowed).</p><h3><a id="index-versioning"></a>Versioning<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each indexed document is given a version number. The associated
 <code class="literal">version</code> number is returned as part of the response to the index API
 request. The index API optionally allows for
 <a class="ulink" href="http://en.wikipedia.org/wiki/Optimistic_concurrency_control" target="_top">optimistic
@@ -674,7 +668,7 @@ database, as long as version numbers from the source database are used.
 Even the simple case of updating the elasticsearch index using data from
 a database is simplified if external versioning is used, as only the
 latest version will be used if the index operations are out of order for
-whatever reason.</p><h4><a id="_version_types"></a>Version types<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Next to the <code class="literal">internal</code> &amp; <code class="literal">external</code> version types explained above, Elasticsearch
+whatever reason.</p><h4><a id="_version_types"></a>Version types<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Next to the <code class="literal">internal</code> &amp; <code class="literal">external</code> version types explained above, Elasticsearch
 also supports other types for specific use cases. Here is an overview of
 the different version types and their semantics.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">internal</code>
@@ -702,7 +696,7 @@ the document will be indexed regardless of the version of the stored document or
 is no existing document. The given version will be used as the new version and will be stored
 with the new document. This version type is typically used for correcting errors.
 </dd></dl></div><p><span class="strong"><strong>NOTE</strong></span>: The <code class="literal">external_gte</code> &amp; <code class="literal">force</code> version types are meant for special use cases and should be used
-with care. If used incorrectly, they can result in loss of data.</p><h3><a id="operation-type"></a>Operation Type<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation also accepts an <code class="literal">op_type</code> that can be used to force
+with care. If used incorrectly, they can result in loss of data.</p><h3><a id="operation-type"></a>Operation Type<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation also accepts an <code class="literal">op_type</code> that can be used to force
 a <code class="literal">create</code> operation, allowing for "put-if-absent" behavior. When
 <code class="literal">create</code> is used, the index operation will fail if a document by that id
 already exists in the index.</p><p>Here is an example of using the <code class="literal">op_type</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/twitter/tweet/1?op_type=create' -d '{
@@ -713,7 +707,7 @@ already exists in the index.</p><p>Here is an example of using the <code class="
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
-}'</pre></div><h3><a id="_automatic_id_generation"></a>Automatic ID Generation<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation can be executed without specifying the id. In such a
+}'</pre></div><h3><a id="_automatic_id_generation"></a>Automatic ID Generation<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation can be executed without specifying the id. In such a
 case, an id will be generated automatically. In addition, the <code class="literal">op_type</code>
 will automatically be set to <code class="literal">create</code>. Here is an example (note the
 <span class="strong"><strong>POST</strong></span> used instead of <span class="strong"><strong>PUT</strong></span>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPOST 'http://localhost:9200/twitter/tweet/' -d '{
@@ -726,7 +720,7 @@ will automatically be set to <code class="literal">create</code>. Here is an exa
     "_id" : "6a8ca01c-7896-48e9-81cc-9f70661fcb32",
     "_version" : 1,
     "created" : true
-}</pre></div><h3><a id="index-routing"></a>Routing<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default, shard placement — or <code class="literal">routing</code> — is controlled by using a
+}</pre></div><h3><a id="index-routing"></a>Routing<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default, shard placement — or <code class="literal">routing</code> — is controlled by using a
 hash of the document’s id value. For more explicit control, the value
 fed into the hash function used by the router can be directly specified
 on a per-operation basis using the <code class="literal">routing</code> parameter. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPOST 'http://localhost:9200/twitter/tweet?routing=kimchy' -d '{
@@ -737,14 +731,14 @@ on a per-operation basis using the <code class="literal">routing</code> paramete
 the <code class="literal">routing</code> parameter provided: "kimchy".</p><p>When setting up explicit mapping, the <code class="literal">_routing</code> field can be optionally
 used to direct the index operation to extract the routing value from the
 document itself. This does come at the (very minimal) cost of an
-additional document parsing pass. If the <code class="literal">_routing</code> mapping is defined,
+additional document parsing pass. If the <code class="literal">_routing</code> mapping is defined
 and set to be <code class="literal">required</code>, the index operation will fail if no routing
-value is provided or extracted.</p><h3><a id="parent-children"></a>Parents &amp; Children<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A child document can be indexed by specifying its parent when indexing.
+value is provided or extracted.</p><h3><a id="parent-children"></a>Parents &amp; Children<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A child document can be indexed by specifying its parent when indexing.
 For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT localhost:9200/blogs/blog_tag/1122?parent=1111 -d '{
     "tag" : "something"
 }'</pre></div><p>When indexing a child document, the routing value is automatically set
 to be the same as its parent, unless the routing value is explicitly
-specified using the <code class="literal">routing</code> parameter.</p><h3><a id="index-timestamp"></a>Timestamp<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A document can be indexed with a <code class="literal">timestamp</code> associated with it. The
+specified using the <code class="literal">routing</code> parameter.</p><h3><a id="index-timestamp"></a>Timestamp<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><h4>Deprecated in 2.0.0-beta2.</h4><p>The <code class="literal">_timestamp</code> field is deprecated.  Instead, use a normal <a class="link" href="date.html" title="Date datatype"><code class="literal">date</code></a> field and set its value explicitly.</p></div></div><p>A document can be indexed with a <code class="literal">timestamp</code> associated with it. The
 <code class="literal">timestamp</code> value of a document can be set using the <code class="literal">timestamp</code>
 parameter. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT localhost:9200/twitter/tweet/1?timestamp=2009-11-15T14%3A12%3A12 -d '{
     "user" : "kimchy",
@@ -752,7 +746,7 @@ parameter. For example:</p><div class="pre_wrapper"><pre class="programlisting p
 }'</pre></div><p>If the <code class="literal">timestamp</code> value is not provided externally or in the <code class="literal">_source</code>,
 the <code class="literal">timestamp</code> will be automatically set to the date the document was
 processed by the indexing chain. More information can be found on the
-<a class="link" href="mapping-timestamp-field.html" title="_timestamp">_timestamp mapping page</a>.</p><h3><a id="index-ttl"></a>TTL<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A document can be indexed with a <code class="literal">ttl</code> (time to live) associated with
+<a class="link" href="mapping-timestamp-field.html" title="_timestamp field">_timestamp mapping page</a>.</p><h3><a id="index-ttl"></a>TTL<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><h4>Deprecated in 2.0.0-beta2.</h4><p>The current <code class="literal">_ttl</code> implementation is deprecated and will be replaced with a different implementation in a future version.</p></div></div><p>A document can be indexed with a <code class="literal">ttl</code> (time to live) associated with
 it. Expired documents will be expunged automatically. The expiration
 date that will be set for a document with a provided <code class="literal">ttl</code> is relative
 to the <code class="literal">timestamp</code> of the document, meaning it can be based on the time
@@ -769,24 +763,31 @@ as shown in the following examples:</p><div class="pre_wrapper"><pre class="prog
     "user": "kimchy",
     "message": "Trying out elasticsearch, so far so good?"
 }'</pre></div><p>More information can be found on the
-<a class="link" href="mapping-ttl-field.html" title="_ttl">_ttl mapping page</a>.</p><h3><a id="index-distributed"></a>Distributed<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation is directed to the primary shard based on its route
+<a class="link" href="mapping-ttl-field.html" title="_ttl field">_ttl mapping page</a>.</p><h3><a id="index-distributed"></a>Distributed<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation is directed to the primary shard based on its route
 (see the Routing section above) and performed on the actual node
 containing this shard. After the primary shard completes the operation,
-if needed, the update is distributed to applicable replicas. The index
-operation only returns after all shards within the
-replication group have indexed the document (sync replication).</p><h3><a id="index-consistency"></a>Write Consistency<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To prevent writes from taking place on the "wrong" side of a network
+if needed, the update is distributed to applicable replicas.</p><h3><a id="index-consistency"></a>Write Consistency<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To prevent writes from taking place on the "wrong" side of a network
 partition, by default, index operations only succeed if a quorum
 (&gt;replicas/2+1) of active shards are available. This default can be
 overridden on a node-by-node basis using the <code class="literal">action.write_consistency</code>
 setting. To alter this behavior per-operation, the <code class="literal">consistency</code> request
 parameter can be used.</p><p>Valid write consistency values are <code class="literal">one</code>, <code class="literal">quorum</code>, and <code class="literal">all</code>.</p><p>Note, for the case where the number of replicas is 1 (total of 2 copies
 of the data), then the default behavior is to succeed if 1 copy (the primary)
-can perform the write.</p><h3><a id="index-refresh"></a>Refresh<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To refresh the shard (not the whole index) immediately after the operation
+can perform the write.</p><p>The index operation only returns after all <span class="strong"><strong>active</strong></span> shards within the
+replication group have indexed the document (sync replication).</p><h3><a id="index-refresh"></a>Refresh<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To refresh the shard (not the whole index) immediately after the operation
 occurs, so that the document appears in search results immediately, the
 <code class="literal">refresh</code> parameter can be set to <code class="literal">true</code>. Setting this option to <code class="literal">true</code> should
 <span class="strong"><strong>ONLY</strong></span> be done after careful thought and verification that it does not lead to
 poor performance, both from an indexing and a search standpoint. Note, getting
-a document using the get API is completely realtime.</p><h3><a id="timeout"></a>Timeout<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The primary shard assigned to perform the index operation might not be
+a document using the get API is completely realtime and doesn’t require a
+refresh.</p><h3><a id="index-noop"></a>Noop Updates<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When updating a document using the index api a new version of the document is
+always created even if the document hasn’t changed. If this isn’t acceptable
+use the <code class="literal">_update</code> api with <code class="literal">detect_noop</code> set to true. This option isn’t
+available on the index api because the index api doesn’t fetch the old source
+and isn’t able to compare it against the new source.</p><p>There isn’t a hard and fast rule about when noop updates aren’t acceptable.
+It’s a combination of lots of factors like how frequently your data source
+sends updates that are actually noops and how many queries per second
+elasticsearch runs on the shard with receiving the updates.</p><h3><a id="timeout"></a>Timeout<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The primary shard assigned to perform the index operation might not be
 available when the index operation is executed. Some reasons for this
 might be that the primary shard is currently recovering from a gateway
 or undergoing relocation. By default, the index operation will wait on
@@ -959,6 +960,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

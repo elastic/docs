@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>GeoShape Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="query-dsl-queries.html" title="Queries" /><link rel="prev" href="query-dsl-fuzzy-query.html" title="Fuzzy Query" /><link rel="next" href="query-dsl-has-child-query.html" title="Has Child Query" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>GeoShape Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="geo-queries.html" title="Geo queries" /><link rel="prev" href="geo-queries.html" title="Geo queries" /><link rel="next" href="query-dsl-geo-bounding-box-query.html" title="Geo Bounding Box Query" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,42 +590,88 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-link"><a href="query-dsl-queries.html">Queries</a></span> » <span class="breadcrumb-node">GeoShape Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-fuzzy-query.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-link"><a href="geo-queries.html">Geo queries</a></span> » <span class="breadcrumb-node">GeoShape Query</span></div><div class="navheader"><span class="prev"><a href="geo-queries.html">
               « 
-              Fuzzy Query</a>
+              Geo queries</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-has-child-query.html">Has Child Query
+          <a href="query-dsl-geo-bounding-box-query.html">Geo Bounding Box Query
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-geo-shape-query"></a>GeoShape Query<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/queries/geo-shape-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Query version of the
-<a class="link" href="query-dsl-geo-shape-filter.html" title="GeoShape Filter">geo_shape Filter</a>.</p><p>Requires the <a class="link" href="mapping-geo-shape-type.html" title="Geo Shape Type">geo_shape Mapping</a>.</p><p>Given a document that looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-geo-shape-query"></a>GeoShape Query<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/query-dsl/geo-shape-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Filter documents indexed using the <code class="literal">geo_shape</code> type.</p><p>Requires the <a class="link" href="geo-shape.html" title="Geo-Shape datatype"><code class="literal">geo_shape</code> Mapping</a>.</p><p>The <code class="literal">geo_shape</code> query uses the same grid square representation as the
+geo_shape mapping to find documents that have a shape that intersects
+with the query shape. It will also use the same PrefixTree configuration
+as defined for the field mapping.</p><p>The query supports two ways of defining the query shape, either by
+providing a whole shape definition, or by referencing the name of a shape
+pre-indexed in another index. Both formats are defined below with
+examples.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_inline_shape_definition"></a>Inline Shape Definition<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/query-dsl/geo-shape-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Similar to the <code class="literal">geo_shape</code> type, the <code class="literal">geo_shape</code> Filter uses
+<a class="ulink" href="http://www.geojson.org" target="_top">GeoJSON</a> to represent shapes.</p><p>Given a document that looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "name": "Wind &amp; Wetter, Berlin, Germany",
     "location": {
         "type": "Point",
         "coordinates": [13.400544, 52.530286]
     }
-}</pre></div><p>The following query will find the point:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query": {
-        "geo_shape": {
-            "location": {
-                "shape": {
-                    "type": "envelope",
-                    "coordinates": [[13, 53],[14, 52]]
+}</pre></div><p>The following query will find the point using the Elasticsearch’s
+<code class="literal">envelope</code> GeoJSON extension:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "query":{
+        "bool": {
+            "must": {
+                "match_all": {}
+            },
+            "filter": {
+                "geo_shape": {
+                    "location": {
+                        "shape": {
+                            "type": "envelope",
+                            "coordinates" : [[13.0, 53.0], [14.0, 52.0]]
+                        }
+                    }
                 }
             }
         }
     }
-}</pre></div><p>See the Filter’s documentation for more information.</p><h4><a id="_relevancy_and_score"></a>Relevancy and Score<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/queries/geo-shape-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Currently Elasticsearch does not have any notion of geo shape relevancy,
-consequently the Query internally uses a <code class="literal">constant_score</code> Query which
-wraps a <a class="link" href="query-dsl-geo-shape-filter.html" title="GeoShape Filter">geo_shape filter</a>.</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-fuzzy-query.html">
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_pre_indexed_shape"></a>Pre-Indexed Shape<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/query-dsl/geo-shape-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Filter also supports using a shape which has already been indexed in
+another index and/or index type. This is particularly useful for when
+you have a pre-defined list of shapes which are useful to your
+application and you want to reference this using a logical name (for
+example <span class="emphasis"><em>New Zealand</em></span>) rather than having to provide their coordinates
+each time. In this situation it is only necessary to provide:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">id</code> - The ID of the document that containing the pre-indexed shape.
+</li><li class="listitem">
+<code class="literal">index</code> - Name of the index where the pre-indexed shape is. Defaults
+to <span class="emphasis"><em>shapes</em></span>.
+</li><li class="listitem">
+<code class="literal">type</code> - Index type where the pre-indexed shape is.
+</li><li class="listitem">
+<code class="literal">path</code> - The field specified as path containing the pre-indexed shape.
+Defaults to <span class="emphasis"><em>shape</em></span>.
+</li></ul></div><p>The following is an example of using the Filter with a pre-indexed
+shape:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "bool": {
+        "must": {
+            "match_all": {}
+        },
+        "filter": {
+            "geo_shape": {
+                "location": {
+                    "indexed_shape": {
+                        "id": "DEU",
+                        "type": "countries",
+                        "index": "shapes",
+                        "path": "location"
+                    }
+                }
+            }
+        }
+    }
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="geo-queries.html">
               « 
-              Fuzzy Query</a>
+              Geo queries</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-has-child-query.html">Has Child Query
+          <a href="query-dsl-geo-bounding-box-query.html">Geo Bounding Box Query
                »
             </a></span></div>
 <!-- end body -->
@@ -781,6 +827,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

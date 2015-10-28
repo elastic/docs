@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Selectors</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [1.0]" /><link rel="up" href="index.html" title="Elasticsearch-PHP [1.0]" /><link rel="prev" href="_the_connection_pool.html" title="The Connection Pool" /><link rel="next" href="_connections.html" title="Connections" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Selectors</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [2.0]" /><link rel="up" href="index.html" title="Elasticsearch-PHP [2.0]" /><link rel="prev" href="_connection_pool.html" title="Connection Pool" /><link rel="next" href="_serializers.html" title="Serializers" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,33 +590,38 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch-PHP
-      [1.0]
-    </a></span> » <span class="breadcrumb-node">Selectors</span></div><div class="navheader"><span class="prev"><a href="_the_connection_pool.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-node">Selectors</span></div><div class="navheader"><span class="prev"><a href="_connection_pool.html">
               « 
-              The Connection Pool</a>
+              Connection Pool</a>
            
         </span><span class="next">
            
-          <a href="_connections.html">Connections
+          <a href="_serializers.html">Serializers
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_selectors"></a>Selectors<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/connection-pool.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>The connection pool maintains the list of connections, and decides when nodes should transition from alive to dead (and
-vice versa).  It has no logic to choose connections, however.  That job belongs to the Selector class.</p><p>The selector’s job is to return a single connection from a provided array of connections.  Like the Connection Pool, there
-  are several implementations to choose from:</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_roundrobinselector_default"></a>RoundRobinSelector (Default)<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/connection-pool.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This selector returns connections in a round-robin fashion.  Node #1 is selected on the first request, Node #2 on
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_selectors"></a>Selectors<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/selectors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>The connection pool maintains the list of connections, and decides when nodes should transition from alive to dead (and
+vice versa).  It has no logic to choose connections, however.  That job belongs to the Selector class.</p><p>The selector’s job is to return a single connection from a provided array of connections.  Like the Connection Pool,
+there are several implementations to choose from.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_roundrobinselector_default"></a>RoundRobinSelector (Default)<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/selectors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This selector returns connections in a round-robin fashion.  Node #1 is selected on the first request, Node #2 on
 the second request, etc.  This ensures an even load of traffic across your cluster.  Round-robin’ing happens on a
-per-request basis (e.g. sequential requests go to different nodes).</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_stickyroundrobinselector"></a>StickyRoundRobinSelector<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/connection-pool.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This selector is "sticky", in that it prefers to reuse the same connection repeatedly.  For example, Node #1 is chosen
+per-request basis (e.g. sequential requests go to different nodes).</p><p>The <code class="literal">RoundRobinSelector</code> is default, but if you wish to explicitily configure it you can do:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()
+            -&gt;setSelector('\Elasticsearch\ConnectionPool\Selectors\RoundRobinSelector')
+            -&gt;build();</pre></div><p>Note that the implementation is specified via a namespace path to the class.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_stickyroundrobinselector"></a>StickyRoundRobinSelector<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/selectors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This selector is "sticky", in that it prefers to reuse the same connection repeatedly.  For example, Node #1 is chosen
 on the first request.  Node #1 will continue to be re-used for each subsequent request until that node fails.  Upon failure,
 the selector will round-robin to the next available node, then "stick" to that node.</p><p>This is an ideal strategy for many PHP scripts.  Since PHP scripts are shared-nothing and tend to exit quickly, creating
-new connections for each request is often a sub-optimal strategy and introduces a lot of overhead.  Instead, it is typically
+new connections for each request is often a sub-optimal strategy and introduces a lot of overhead.  Instead, it is
 better to "stick" to a single connection for the duration of the script.</p><p>By default, this selector will randomize the hosts upon initialization, which will still guarantee an even distribution
-of load across the cluster.  It changes the round-robin dynamics from per-request to per-script.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_randomselector"></a>RandomSelector<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/connection-pool.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This selector simply returns a random node, regardless of state.  It is generally just for testing</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_changing_or_replacing_selector_class"></a>Changing or replacing Selector Class<a href="https://github.com/elastic/elasticsearch-php/edit/1.0/docs/connection-pool.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Changing the selector is also very simple: instantiate the client with your chosen implementation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params['selectorClass'] = '\Elasticsearch\ConnectionPool\Selectors\RandomSelector';
-$client = new Elasticsearch\Client($params);</pre></div><p>​</p><p>The client will now query random nodes.  It is sometimes useful to build a custom selector which services your particular
-cluster with custom business logic.</p><p>For example, we can build a new selector that only selects the first connection each time. This is obviously not a good
-selector (!!!), but it demonstrates the concept well:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">namespace MyProject\Selectors;
+of load across the cluster.  It changes the round-robin dynamics from per-request to per-script.</p><p>If you are using <a class="xref" href="_future_mode.html" title="Future Mode"><em>Future Mode</em></a>, the "sticky" behavior of this selector will be non-ideal, since all parallel requests
+will go to the same node instead of multiple nodes in your cluster.  When using future mode, the default <code class="literal">RoundRobinSelector</code>
+should be preferred.</p><p>If you wish to use this selector, you may do so with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()
+            -&gt;setSelector('\Elasticsearch\ConnectionPool\Selectors\StickyRoundRobinSelector')
+            -&gt;build();</pre></div><p>Note that the implementation is specified via a namespace path to the class.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_randomselector"></a>RandomSelector<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/selectors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This selector simply returns a random node, regardless of state.  It is generally just for testing.</p><p>If you wish to use this selector, you may do so with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()
+            -&gt;setSelector('\Elasticsearch\ConnectionPool\Selectors\RandomSelector')
+            -&gt;build();</pre></div><p>Note that the implementation is specified via a namespace path to the class.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_custom_selector"></a>Custom Selector<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/selectors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You can implement your own custom selector.  Custom selectors must implement <code class="literal">SelectorInterface</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">namespace MyProject\Selectors;
 
 use Elasticsearch\Connections\ConnectionInterface;
 use Elasticsearch\ConnectionPool\Selectors\SelectorInterface
 
-class FirstSelector implements SelectorInterface
+class MyCustomSelector implements SelectorInterface
 {
 
     /**
@@ -628,17 +633,21 @@ class FirstSelector implements SelectorInterface
      */
     public function select($connections)
     {
-        return $connections[0];
+        // code here
     }
 
-}</pre></div><p>​</p><p>And now we can specify that when creating the client:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$params['selectorClass'] = '\MyProject\Selectors\FirstSelector';
-$client = new Elasticsearch\Client($params);</pre></div><p>​</p></div></div><div class="navfooter"><span class="prev"><a href="_the_connection_pool.html">
+}</pre></div><p>​</p><p>You can then use your custom selector either via object injection or namespace instantiation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$mySelector = new MyCustomSelector();
+
+$client = ClientBuilder::create()
+            -&gt;setSelector($mySelector)                             // object injection
+            -&gt;setSelector('\MyProject\Selectors\FirstSelector')    // or namespace
+            -&gt;build();</pre></div></div></div><div class="navfooter"><span class="prev"><a href="_connection_pool.html">
               « 
-              The Connection Pool</a>
+              Connection Pool</a>
            
         </span><span class="next">
            
-          <a href="_connections.html">Connections
+          <a href="_serializers.html">Serializers
                »
             </a></span></div>
 <!-- end body -->
@@ -794,6 +803,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

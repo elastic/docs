@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Delete API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs-get.html" title="Get API" /><link rel="next" href="docs-update.html" title="Update API" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Delete API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs-get.html" title="Get API" /><link rel="next" href="docs-update.html" title="Update API" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,7 +590,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
+      [2.0]
     </a></span> » <span class="breadcrumb-link"><a href="docs.html">Document APIs </a></span> » <span class="breadcrumb-node">Delete API</span></div><div class="navheader"><span class="prev"><a href="docs-get.html">
               « 
               Get API</a>
@@ -599,39 +599,44 @@
            
           <a href="docs-update.html">Update API
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-delete"></a>Delete API<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The delete API allows to delete a typed JSON document from a specific
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-delete"></a>Delete API<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The delete API allows to delete a typed JSON document from a specific
 index based on its id. The following example deletes the JSON document
 from an index called twitter, under a type called tweet, with id valued
 1:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XDELETE 'http://localhost:9200/twitter/tweet/1'</pre></div><p>The result of the above delete operation is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "_shards" : {
+        "total" : 10,
+        "failed" : 0,
+        "successful" : 10
+    },
     "found" : true,
     "_index" : "twitter",
     "_type" : "tweet",
     "_id" : "1",
     "_version" : 2
-}</pre></div><h3><a id="delete-versioning"></a>Versioning<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each document indexed is versioned. When deleting a document, the
+}</pre></div><h3><a id="delete-versioning"></a>Versioning<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each document indexed is versioned. When deleting a document, the
 <code class="literal">version</code> can be specified to make sure the relevant document we are
 trying to delete is actually being deleted and it has not changed in the
 meantime. Every write operation executed on a document, deletes included,
-causes its version to be incremented.</p><h3><a id="delete-routing"></a>Routing<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When indexing using the ability to control the routing, in order to
+causes its version to be incremented.</p><h3><a id="delete-routing"></a>Routing<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When indexing using the ability to control the routing, in order to
 delete a document, the routing value should also be provided. For
 example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XDELETE 'http://localhost:9200/twitter/tweet/1?routing=kimchy'</pre></div><p>The above will delete a tweet with id 1, but will be routed based on the
 user. Note, issuing a delete without the correct routing, will cause the
 document to not be deleted.</p><p>Many times, the routing value is not known when deleting a document. For
 those cases, when specifying the <code class="literal">_routing</code> mapping as <code class="literal">required</code>, and
 no routing value is specified, the delete will be broadcast
-automatically to all shards.</p><h3><a id="delete-parent"></a>Parent<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">parent</code> parameter can be set, which will basically be the same as
+automatically to all shards.</p><h3><a id="delete-parent"></a>Parent<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">parent</code> parameter can be set, which will basically be the same as
 setting the routing parameter.</p><p>Note that deleting a parent document does not automatically delete its
 children. One way of deleting all child documents given a parent’s id is
-to perform a <a class="link" href="docs-delete-by-query.html" title="Delete By Query API">delete by query</a> on the child
+to use the <code class="literal">delete-by-query</code> plugin to perform a delete on the child
 index with the automatically generated (and indexed)
-field _parent, which is in the format parent_type#parent_id.</p><h3><a id="delete-index-creation"></a>Automatic index creation<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The delete operation automatically creates an index if it has not been
+field _parent, which is in the format parent_type#parent_id.</p><h3><a id="delete-index-creation"></a>Automatic index creation<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The delete operation automatically creates an index if it has not been
 created before (check out the <a class="link" href="indices-create-index.html" title="Create Index">create index API</a>
 for manually creating an index), and also automatically creates a
 dynamic type mapping for the specific type if it has not been created
 before (check out the <a class="link" href="indices-put-mapping.html" title="Put Mapping">put mapping</a>
-API for manually creating type mapping).</p><h3><a id="delete-distributed"></a>Distributed<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The delete operation gets hashed into a specific shard id. It then gets
+API for manually creating type mapping).</p><h3><a id="delete-distributed"></a>Distributed<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The delete operation gets hashed into a specific shard id. It then gets
 redirected into the primary shard within that id group, and replicated
-(if needed) to shard replicas within that id group.</p><h3><a id="delete-consistency"></a>Write Consistency<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Control if the operation will be allowed to execute based on the number
+(if needed) to shard replicas within that id group.</p><h3><a id="delete-consistency"></a>Write Consistency<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Control if the operation will be allowed to execute based on the number
 of active shards within that partition (replication group). The values
 allowed are <code class="literal">one</code>, <code class="literal">quorum</code>, and <code class="literal">all</code>. The parameter to set it is
 <code class="literal">consistency</code>, and it defaults to the node level setting of
@@ -639,13 +644,13 @@ allowed are <code class="literal">one</code>, <code class="literal">quorum</code
 at least 2 active shards within the relevant partition (<code class="literal">quorum</code>) for
 the operation to succeed. In a N shards with 1 replica scenario, there
 will need to be a single shard active (in this case, <code class="literal">one</code> and <code class="literal">quorum</code>
-is the same).</p><h3><a id="delete-refresh"></a>Refresh<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">refresh</code> parameter can be set to <code class="literal">true</code> in order to refresh the relevant
+is the same).</p><h3><a id="delete-refresh"></a>Refresh<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">refresh</code> parameter can be set to <code class="literal">true</code> in order to refresh the relevant
 primary and replica shards after the delete operation has occurred and make it
 searchable. Setting it to <code class="literal">true</code> should be done after careful thought and
 verification that this does not cause a heavy load on the system (and slows
-down indexing).</p><h3><a id="delete-timeout"></a>Timeout<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The primary shard assigned to perform the delete operation might not be
+down indexing).</p><h3><a id="delete-timeout"></a>Timeout<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/docs/delete.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The primary shard assigned to perform the delete operation might not be
 available when the delete operation is executed. Some reasons for this
-might be that the primary shard is currently recovering from a gateway
+might be that the primary shard is currently recovering from a store
 or undergoing relocation. By default, the delete operation will wait on
 the primary shard to become available for up to 1 minute before failing
 and responding with an error. The <code class="literal">timeout</code> parameter can be used to
@@ -812,6 +817,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

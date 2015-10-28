@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Terms Filter</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="query-dsl-filters.html" title="Filters" /><link rel="prev" href="query-dsl-term-filter.html" title="Term Filter" /><link rel="next" href="query-dsl-type-filter.html" title="Type Filter" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Terms Filter</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="redirects.html" title="Appendix A. Deleted pages" /><link rel="prev" href="query-dsl-term-filter.html" title="Term Filter" /><link rel="next" href="query-dsl-type-filter.html" title="Type Filter" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,8 +590,8 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-link"><a href="query-dsl-filters.html">Filters</a></span> » <span class="breadcrumb-node">Terms Filter</span></div><div class="navheader"><span class="prev"><a href="query-dsl-term-filter.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="redirects.html">Deleted pages</a></span> » <span class="breadcrumb-node">Terms Filter</span></div><div class="navheader"><span class="prev"><a href="query-dsl-term-filter.html">
               « 
               Term Filter</a>
            
@@ -599,210 +599,9 @@
            
           <a href="query-dsl-type-filter.html">Type Filter
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-terms-filter"></a>Terms Filter<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/filters/terms-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Filters documents that have fields that match any of the provided terms
-(<span class="strong"><strong>not analyzed</strong></span>). For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "constant_score" : {
-        "filter" : {
-            "terms" : { "user" : ["kimchy", "elasticsearch"]}
-        }
-    }
-}</pre></div><p>The <code class="literal">terms</code> filter is also aliased with <code class="literal">in</code> as the filter name for
-simpler usage.</p><h4><a id="_execution_mode"></a>Execution Mode<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/filters/terms-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The way terms filter executes is by iterating over the terms provided
-and finding matches docs (loading into a bitset) and caching it.
-Sometimes, we want a different execution model that can still be
-achieved by building more complex queries in the DSL, but we can support
-them in the more compact model that terms filter provides.</p><p>The <code class="literal">execution</code> option now has the following options :</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">plain</code>
-</p>
-</td><td valign="top">
-<p>
-    The default. Works as today. Iterates over all the terms,
-    building a bit set matching it, and filtering. The total filter is
-    cached.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">fielddata</code>
-</p>
-</td><td valign="top">
-<p>
-    Generates a terms filters that uses the fielddata cache to
-    compare terms.  This execution mode is great to use when filtering
-    on a field that is already loaded into the fielddata cache from
-    faceting, sorting, or index warmers.  When filtering on
-    a large number of terms, this execution can be considerably faster
-    than the other modes.  The total filter is not cached unless
-    explicitly configured to do so.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">bool</code>
-</p>
-</td><td valign="top">
-<p>
-    Generates a term filter (which is cached) for each term, and
-    wraps those in a bool filter. The bool filter itself is not cached as it
-    can operate very quickly on the cached term filters.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">and</code>
-</p>
-</td><td valign="top">
-<p>
-    Generates a term filter (which is cached) for each term, and
-    wraps those in an and filter. The and filter itself is not cached.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">or</code>
-</p>
-</td><td valign="top">
-<p>
-    Generates a term filter (which is cached) for each term, and
-    wraps those in an or filter. The or filter itself is not cached.
-    Generally, the <code class="literal">bool</code> execution mode should be preferred.
-</p>
-</td></tr></tbody></table></div><p>If you don’t want the generated individual term queries to be cached,
-you can use: <code class="literal">bool_nocache</code>, <code class="literal">and_nocache</code> or <code class="literal">or_nocache</code> instead, but
-be aware that this will affect performance.</p><p>The "total" terms filter caching can still be explicitly controlled
-using the <code class="literal">_cache</code> option. Note the default value for it depends on the
-execution value.</p><p>For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "constant_score" : {
-        "filter" : {
-            "terms" : {
-                "user" : ["kimchy", "elasticsearch"],
-                "execution" : "bool",
-                "_cache": true
-            }
-        }
-    }
-}</pre></div><h4><a id="_caching_19"></a>Caching<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/filters/terms-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The result of the filter is automatically cached by default. The
-<code class="literal">_cache</code> can be set to <code class="literal">false</code> to turn it off.</p><h4><a id="_terms_lookup_mechanism"></a>Terms lookup mechanism<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/filters/terms-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When it’s needed to specify a <code class="literal">terms</code> filter with a lot of terms it can
-be beneficial to fetch those term values from a document in an index. A
-concrete example would be to filter tweets tweeted by your followers.
-Potentially the amount of user ids specified in the terms filter can be
-a lot. In this scenario it makes sense to use the terms filter’s terms
-lookup mechanism.</p><p>The terms lookup mechanism supports the following options:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">index</code>
-</p>
-</td><td valign="top">
-<p>
-    The index to fetch the term values from. Defaults to the
-    current index.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">type</code>
-</p>
-</td><td valign="top">
-<p>
-    The type to fetch the term values from.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">id</code>
-</p>
-</td><td valign="top">
-<p>
-    The id of the document to fetch the term values from.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">path</code>
-</p>
-</td><td valign="top">
-<p>
-    The field specified as path to fetch the actual values for the
-    <code class="literal">terms</code> filter.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">routing</code>
-</p>
-</td><td valign="top">
-<p>
-    A custom routing value to be used when retrieving the
-    external terms doc.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">cache</code>
-</p>
-</td><td valign="top">
-<p>
-    Whether to cache the filter built from the retrieved document
-    (<code class="literal">true</code> - default) or whether to fetch and rebuild the filter on every
-    request (<code class="literal">false</code>). See "<a class="link" href="query-dsl-terms-filter.html#query-dsl-terms-filter-lookup-caching" title="Terms lookup cachingedit">Terms lookup caching</a>" below
-</p>
-</td></tr></tbody></table></div><p>The values for the <code class="literal">terms</code> filter will be fetched from a field in a
-document with the specified id in the specified type and index.
-Internally a get request is executed to fetch the values from the
-specified path. At the moment for this feature to work the <code class="literal">_source</code>
-needs to be stored.</p><p>Also, consider using an index with a single shard and fully replicated
-across all nodes if the "reference" terms data is not large. The lookup
-terms filter will prefer to execute the get request on a local node if
-possible, reducing the need for networking.</p><h4><a id="query-dsl-terms-filter-lookup-caching"></a>Terms lookup caching<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/filters/terms-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>There is an additional cache involved, which caches the lookup of the
-lookup document to the actual terms. This lookup cache is a LRU cache.
-This cache has the following options:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">indices.cache.filter.terms.size</code>
-</span></dt><dd>
-    The size of the lookup cache. The default is <code class="literal">10mb</code>.
-</dd><dt><span class="term">
-<code class="literal">indices.cache.filter.terms.expire_after_access</code>
-</span></dt><dd>
-    The time after the last read an entry should expire. Disabled by default.
-</dd><dt><span class="term">
-<code class="literal">indices.cache.filter.terms.expire_after_write</code>
-</span></dt><dd>
-    The time after the last write an entry should expire. Disabled by default.
-</dd></dl></div><p>All options for the lookup of the documents cache can only be configured
-via the <code class="literal">elasticsearch.yml</code> file.</p><p>When using the terms lookup the <code class="literal">execution</code> option isn’t taken into
-account and behaves as if the execution mode was set to <code class="literal">plain</code>.</p><h4><a id="_terms_lookup_twitter_example"></a>Terms lookup twitter example<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/filters/terms-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"># index the information for user with id 2, specifically, its followers
-curl -XPUT localhost:9200/users/user/2 -d '{
-   "followers" : ["1", "3"]
-}'
-
-# index a tweet, from user with id 2
-curl -XPUT localhost:9200/tweets/tweet/1 -d '{
-   "user" : "2"
-}'
-
-# search on all the tweets that match the followers of user 2
-curl -XGET localhost:9200/tweets/_search -d '{
-  "query" : {
-    "filtered" : {
-      "filter" : {
-        "terms" : {
-          "user" : {
-            "index" : "users",
-            "type" : "user",
-            "id" : "2",
-            "path" : "followers"
-          },
-          "_cache_key" : "user_2_friends"
-        }
-      }
-    }
-  }
-}'</pre></div><p>The above is highly optimized, both in a sense that the list of
-followers will not be fetched if the filter is already cached in the
-filter cache, and with internal LRU cache for fetching external values
-for the terms filter. Also, the entry in the filter cache will not hold
-<code class="literal">all</code> the terms reducing the memory required for it.</p><p><code class="literal">_cache_key</code> is recommended to be set, so its simple to clear the cache
-associated with it using the clear cache API. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/tweets/_cache/clear?filter_keys=user_2_friends'</pre></div><p>The structure of the external terms document can also include array of
-inner objects, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/users/user/2 -d '{
- "followers" : [
-   {
-     "id" : "1"
-   },
-   {
-     "id" : "2"
-   }
- ]
-}'</pre></div><p>In which case, the lookup path will be <code class="literal">followers.id</code>.</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-term-filter.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-terms-filter"></a>Terms Filter<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/redirects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">terms</code> filter has been replaced by the <a class="xref" href="query-dsl-terms-query.html" title="Terms Query">Terms Query</a>. It behaves
+as a query in “query context” and as a filter in “filter context” (see
+<a class="xref" href="query-dsl.html" title="Query DSL">Query DSL </a>).</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-term-filter.html">
               « 
               Term Filter</a>
            
@@ -964,6 +763,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

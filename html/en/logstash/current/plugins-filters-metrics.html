@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>metrics</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference [1.5]" /><link rel="up" href="filter-plugins.html" title="Filter plugins" /><link rel="prev" href="plugins-filters-mutate.html" title="mutate" /><link rel="next" href="plugins-filters-multiline.html" title="multiline" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>metrics</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference [2.0]" /><link rel="up" href="filter-plugins.html" title="Filter plugins" /><link rel="prev" href="plugins-filters-mutate.html" title="mutate" /><link rel="next" href="plugins-filters-multiline.html" title="multiline" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,7 +590,7 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference
-      [1.5]
+      [2.0]
     </a></span> » <span class="breadcrumb-link"><a href="filter-plugins.html">Filter plugins</a></span> » <span class="breadcrumb-node">metrics</span></div><div class="navheader"><span class="prev"><a href="plugins-filters-mutate.html">
               « 
               mutate</a>
@@ -599,11 +599,14 @@
            
           <a href="plugins-filters-multiline.html">multiline
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="plugins-filters-metrics"></a>metrics<a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The metrics filter is useful for aggregating metrics.</p><p>For example, if you have a field <span class="emphasis"><em>response</em></span> that is
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="plugins-filters-metrics"></a>metrics<a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The metrics filter is useful for aggregating metrics.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Elasticsearch 2.0 no longer allows field names with dots. Version 3.0
+of the metrics filter plugin changes behavior to use nested fields rather than
+dotted notation to avoid colliding with versions of Elasticsearch 2.0+.  Please
+note the changes in the documentation (underscores and sub-fields used).</p></div></div><p>For example, if you have a field <span class="emphasis"><em>response</em></span> that is
 a http response code, and you want to count each
 kind of response, you can do this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">filter {
   metrics {
-    meter =&gt; [ "http.%{response}" ]
+    meter =&gt; [ "http_%{response}" ]
     add_tag =&gt; "metric"
   }
 }</pre></div><p>Metrics are flushed every 5 seconds by default or according to
@@ -612,63 +615,67 @@ new events in the event stream and go through any filters
 that occur after as well as outputs.</p><p>In general, you will want to add a tag to your metrics and have an output
 explicitly look for that tag.</p><p>The event that is flushed will include every <span class="emphasis"><em>meter</em></span> and <span class="emphasis"><em>timer</em></span>
 metric in the following way:</p><p>## <span class="emphasis"><em>meter</em></span> values</p><p>For a <code class="literal">meter =&gt; "something"</code> you will receive the following fields:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-"thing.count" - the total count of events
+"[thing][count]" - the total count of events
 </li><li class="listitem">
-"thing.rate_1m" - the 1-minute rate (sliding)
+"[thing][rate_1m]" - the 1-minute rate (sliding)
 </li><li class="listitem">
-"thing.rate_5m" - the 5-minute rate (sliding)
+"[thing][rate_5m]" - the 5-minute rate (sliding)
 </li><li class="listitem">
-"thing.rate_15m" - the 15-minute rate (sliding)
+"[thing][rate_15m]" - the 15-minute rate (sliding)
 </li></ul></div><p>## <span class="emphasis"><em>timer</em></span> values</p><p>For a <code class="literal">timer =&gt; [ "thing", "%{duration}" ]</code> you will receive the following fields:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-"thing.count" - the total count of events
+"[thing][count]" - the total count of events
 </li><li class="listitem">
-"thing.rate_1m" - the 1-minute rate of events (sliding)
+"[thing][rate_1m]" - the 1-minute rate of events (sliding)
 </li><li class="listitem">
-"thing.rate_5m" - the 5-minute rate of events (sliding)
+"[thing][rate_5m]" - the 5-minute rate of events (sliding)
 </li><li class="listitem">
-"thing.rate_15m" - the 15-minute rate of events (sliding)
+"[thing][rate_15m]" - the 15-minute rate of events (sliding)
 </li><li class="listitem">
-"thing.min" - the minimum value seen for this metric
+"[thing][min]" - the minimum value seen for this metric
 </li><li class="listitem">
-"thing.max" - the maximum value seen for this metric
+"[thing][max]" - the maximum value seen for this metric
 </li><li class="listitem">
-"thing.stddev" - the standard deviation for this metric
+"[thing][stddev]" - the standard deviation for this metric
 </li><li class="listitem">
-"thing.mean" - the mean for this metric
+"[thing][mean]" - the mean for this metric
 </li><li class="listitem">
-"thing.pXX" - the XXth percentile for this metric (see <code class="literal">percentiles</code>)
+"[thing][pXX]" - the XXth percentile for this metric (see <code class="literal">percentiles</code>)
 </li></ul></div><p>## Example: computing event rate</p><p>For a simple example, let’s track how many events per second are running
-through logstash:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">input {
-  generator {
-    type =&gt; "generated"
-  }
-}</pre></div><pre class="literallayout">filter {
-  if [type] == "generated" {
-    metrics {
-      meter =&gt; "events"
-      add_tag =&gt; "metric"
-    }
-  }
-}</pre><pre class="literallayout">output {
-  # only emit events with the 'metric' tag
-  if "metric" in [tags] {
-    stdout {
-      codec =&gt; line {
-        format =&gt; "rate: %{events.rate_1m}"
+through logstash:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">    input {
+      generator {
+        type =&gt; "generated"
       }
     }
-  }
-}</pre><p>Running the above:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">% bin/logstash -f example.conf
+
+    filter {
+      if [type] == "generated" {
+        metrics {
+          meter =&gt; "events"
+          add_tag =&gt; "metric"
+        }
+      }
+    }
+
+    output {
+      # only emit events with the 'metric' tag
+      if "metric" in [tags] {
+        stdout {
+          codec =&gt; line {
+            format =&gt; "rate: %{[events][rate_1m]}"
+          }
+        }
+      }
+    }</pre></div><p>Running the above:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">% bin/logstash -f example.conf
 rate: 23721.983566819246
 rate: 24811.395722536377
 rate: 25875.892745934525
 rate: 26836.42375967113</pre></div><p>We see the output includes our <span class="emphasis"><em>events</em></span> 1-minute rate.</p><p>In the real world, you would emit this to graphite or another metrics store,
 like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">output {
   graphite {
-    metrics =&gt; [ "events.rate_1m", "%{events.rate_1m}" ]
+    metrics =&gt; [ "events.rate_1m", "%{[events][rate_1m]}" ]
   }
-}</pre></div><p> </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_synopsis_129"></a>Synopsis<a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This plugin supports the following configuration options:</p><p>Required configuration options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">metrics {
-}</pre></div><p>Available configuration options:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Input type</th><th align="left" valign="top">Required</th><th align="left" valign="top">Default value</th></tr></thead><tbody><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-add_field" title="add_field"><code class="literal">add_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">{}</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-add_tag" title="add_tag"><code class="literal">add_tag</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-clear_interval" title="clear_interval"><code class="literal">clear_interval</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">-1</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-flush_interval" title="flush_interval"><code class="literal">flush_interval</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">5</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-ignore_older_than" title="ignore_older_than"><code class="literal">ignore_older_than</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">0</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-meter" title="meter"><code class="literal">meter</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-percentiles" title="percentiles"><code class="literal">percentiles</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[1, 5, 10, 90, 95, 99, 100]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-periodic_flush" title="periodic_flush"><code class="literal">periodic_flush</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">false</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-rates" title="rates"><code class="literal">rates</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[1, 5, 15]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-remove_field" title="remove_field"><code class="literal">remove_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-remove_tag" title="remove_tag"><code class="literal">remove_tag</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-timer" title="timer"><code class="literal">timer</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">{}</code></code></p></td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_details_129"></a>Details<a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p> </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-metrics-add_field"></a><code class="literal">add_field</code><a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+}</pre></div><p> </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_synopsis_130"></a>Synopsis<a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This plugin supports the following configuration options:</p><p>Required configuration options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">metrics {
+}</pre></div><p>Available configuration options:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Input type</th><th align="left" valign="top">Required</th><th align="left" valign="top">Default value</th></tr></thead><tbody><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-add_field" title="add_field"><code class="literal">add_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">{}</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-add_tag" title="add_tag"><code class="literal">add_tag</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-clear_interval" title="clear_interval"><code class="literal">clear_interval</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">-1</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-flush_interval" title="flush_interval"><code class="literal">flush_interval</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">5</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-ignore_older_than" title="ignore_older_than"><code class="literal">ignore_older_than</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">0</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-meter" title="meter"><code class="literal">meter</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-percentiles" title="percentiles"><code class="literal">percentiles</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[1, 5, 10, 90, 95, 99, 100]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-periodic_flush" title="periodic_flush"><code class="literal">periodic_flush</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">false</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-rates" title="rates"><code class="literal">rates</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[1, 5, 15]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-remove_field" title="remove_field"><code class="literal">remove_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-remove_tag" title="remove_tag"><code class="literal">remove_tag</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-metrics.html#plugins-filters-metrics-timer" title="timer"><code class="literal">timer</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">{}</code></code></p></td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_details_130"></a>Details<a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p> </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-metrics-add_field"></a><code class="literal">add_field</code><a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a>
 </li><li class="listitem">
 Default value is <code class="literal">{}</code>
@@ -709,14 +716,7 @@ Value type is <a class="link" href="configuration-file-structure.html#number" ti
 </li><li class="listitem">
 Default value is <code class="literal">-1</code>
 </li></ul></div><p>The clear interval, when all counter are reset.</p><p>If set to -1, the default value, the metrics will never be cleared.
-Otherwise, should be a multiple of 5s.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-metrics-exclude_tags"></a><code class="literal">exclude_tags</code>  (DEPRECATED)<a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-DEPRECATED WARNING: This configuration item is deprecated and may not be available in future versions.
-</li><li class="listitem">
-Value type is <a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a>
-</li><li class="listitem">
-Default value is <code class="literal">[]</code>
-</li></ul></div><p>Only handle events without any of these tags.
-Optional.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-metrics-flush_interval"></a><code class="literal">flush_interval</code><a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Otherwise, should be a multiple of 5s.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-metrics-flush_interval"></a><code class="literal">flush_interval</code><a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
 </li><li class="listitem">
 Default value is <code class="literal">5</code>
@@ -782,29 +782,11 @@ filter {
   }
 }</pre></div><p>If the event has field <code class="literal">"somefield" == "hello"</code> this filter, on success,
 would remove the tag <code class="literal">foo_hello</code> if it is present. The second example
-would remove a sad, unwanted tag as well.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-metrics-tags"></a><code class="literal">tags</code>  (DEPRECATED)<a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-DEPRECATED WARNING: This configuration item is deprecated and may not be available in future versions.
-</li><li class="listitem">
-Value type is <a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a>
-</li><li class="listitem">
-Default value is <code class="literal">[]</code>
-</li></ul></div><p>Only handle events with all of these tags.
-Optional.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-metrics-timer"></a><code class="literal">timer</code><a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+would remove a sad, unwanted tag as well.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-metrics-timer"></a><code class="literal">timer</code><a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a>
 </li><li class="listitem">
 Default value is <code class="literal">{}</code>
-</li></ul></div><p>syntax: <code class="literal">timer =&gt; [ "name of metric", "%{time_value}" ]</code></p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-metrics-type"></a><code class="literal">type</code>  (DEPRECATED)<a href="https://github.com/logstash-plugins/logstash-filter-metrics/edit/master/lib/logstash/filters/metrics.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-DEPRECATED WARNING: This configuration item is deprecated and may not be available in future versions.
-</li><li class="listitem">
-Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
-</li><li class="listitem">
-Default value is <code class="literal">""</code>
-</li></ul></div><p>Note that all of the specified routing options (<code class="literal">type</code>,<code class="literal">tags</code>,<code class="literal">exclude_tags</code>,<code class="literal">include_fields</code>,
-<code class="literal">exclude_fields</code>) must be met in order for the event to be handled by the filter.
-The type to act on. If a type is given, then this filter will only
-act on messages with the same type. See any input plugin’s <code class="literal">type</code>
-attribute for more.
-Optional.</p></div></div></div><div class="navfooter"><span class="prev"><a href="plugins-filters-mutate.html">
+</li></ul></div><p>syntax: <code class="literal">timer =&gt; [ "name of metric", "%{time_value}" ]</code></p></div></div></div><div class="navfooter"><span class="prev"><a href="plugins-filters-mutate.html">
               « 
               mutate</a>
            
@@ -966,6 +948,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

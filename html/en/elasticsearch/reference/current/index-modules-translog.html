@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Translog</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="index-modules.html" title="Index Modules" /><link rel="prev" href="index-modules-mapper.html" title="Mapper" /><link rel="next" href="index-modules-cache.html" title="Cache" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Translog</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="index-modules.html" title="Index Modules" /><link rel="prev" href="index-modules-store.html" title="Store" /><link rel="next" href="testing.html" title="Testing" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,49 +590,94 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-node">Translog</span></div><div class="navheader"><span class="prev"><a href="index-modules-mapper.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-node">Translog</span></div><div class="navheader"><span class="prev"><a href="index-modules-store.html">
               « 
-              Mapper</a>
+              Store</a>
            
         </span><span class="next">
            
-          <a href="index-modules-cache.html">Cache
+          <a href="testing.html">Testing 
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-translog"></a>Translog<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Each shard has a transaction log or write ahead log associated with it.
-It allows to guarantee that when an index/delete operation occurs, it is
-applied atomically, while not "committing" the internal Lucene index for
-each request. A flush ("commit") still happens based on several
-parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">index.translog.flush_threshold_ops</code>
-</span></dt><dd>
-After how many operations to flush. Defaults to <code class="literal">unlimited</code>.
-</dd><dt><span class="term">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-translog"></a>Translog<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Changes to Lucene are only persisted to disk during a Lucene commit,
+which is a relatively heavy operation and so cannot be performed after every
+index or delete operation. Changes that happen after one commit and before another
+will be lost in the event of process exit or HW failure.</p><p>To prevent this data loss, each shard has a <span class="emphasis"><em>transaction log</em></span> or write ahead
+log associated with it. Any index or delete operation is written to the
+translog after being processed by the internal Lucene index.</p><p>In the event of a crash, recent transactions can be replayed from the
+transaction log when the shard recovers.</p><p>An Elasticsearch flush is the process of performing a Lucene commit and
+starting a new translog. It is done automatically in the background in order
+to make sure the transaction log doesn’t grow too large, which would make
+replaying its operations take a considerable amount of time during recovery.
+It is also exposed through an API, though its rarely needed to be performed
+manually.</p><h3><a id="_flush_settings"></a>Flush settings<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following <a class="link" href="indices-update-settings.html" title="Update Indices Settings">dynamically updatable</a> settings
+control how often the in-memory buffer is flushed to disk:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">index.translog.flush_threshold_size</code>
 </span></dt><dd>
 Once the translog hits this size, a flush will happen. Defaults to <code class="literal">512mb</code>.
 </dd><dt><span class="term">
+<code class="literal">index.translog.flush_threshold_ops</code>
+</span></dt><dd>
+After how many operations to flush. Defaults to <code class="literal">unlimited</code>.
+</dd><dt><span class="term">
 <code class="literal">index.translog.flush_threshold_period</code>
 </span></dt><dd>
-The period with no flush happening to force a flush. Defaults to <code class="literal">30m</code>.
+How long to wait before triggering a flush regardless of translog size. Defaults to <code class="literal">30m</code>.
 </dd><dt><span class="term">
 <code class="literal">index.translog.interval</code>
 </span></dt><dd>
-How often to check if a flush is needed, randomized
-between the interval value and 2x the interval value. Defaults to <code class="literal">5s</code>.
-</dd><dt><span class="term">
-<code class="literal">index.gateway.local.sync</code>
+How often to check if a flush is needed, randomized between the interval value
+and 2x the interval value. Defaults to <code class="literal">5s</code>.
+</dd></dl></div><h3><a id="_translog_settings"></a>Translog settings<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The data in the transaction log is only persisted to disk when the translog is
+<code class="literal">fsync</code>ed and committed.  In the event of hardware failure, any data written
+since the previous translog commit will be lost.</p><p>By default, Elasticsearch <code class="literal">fsync</code>s and commits the translog every 5 seconds
+and at the end of every <a class="link" href="docs-index_.html" title="Index API">index</a>, <a class="link" href="docs-delete.html" title="Delete API">delete</a>,
+<a class="link" href="docs-update.html" title="Update API">update</a>, or  <a class="link" href="docs-bulk.html" title="Bulk API">bulk</a> request.  In fact, Elasticsearch
+will only report success of an index, delete, update, or bulk request to the
+client after the transaction log has been successfully <code class="literal">fsync</code>ed and committed
+on the primary and on every allocated replica.</p><p>The following <a class="link" href="indices-update-settings.html" title="Update Indices Settings">dynamically updatable</a> per-index settings
+control the behaviour of the transaction log:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">index.translog.sync_interval</code>
 </span></dt><dd>
-How often the translog is <code class="literal">fsync</code>ed to disk. Defaults to <code class="literal">5s</code>.
-</dd></dl></div><p>Note: these parameters except <code class="literal">index.gateway.local.sync</code> can be updated at runtime using the Index
-Settings Update API (for example, these numbers can be increased when
-executing bulk updates to support higher TPS)</p></div><div class="navfooter"><span class="prev"><a href="index-modules-mapper.html">
+How often the translog is <code class="literal">fsync</code>ed to disk and committed, regardless of
+write operations. Defaults to <code class="literal">5s</code>.
+</dd><dt><span class="term">
+<code class="literal">index.translog.durability</code>
+</span></dt><dd><p class="simpara">Whether or not to <code class="literal">fsync</code> and commit the translog after every index, delete,
+update, or bulk request.  This setting accepts the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">request</code>
+</span></dt><dd>
+    (default) <code class="literal">fsync</code> and commit after every request. In the event
+    of hardware failure, all acknowledged writes will already have been
+    commited to disk.
+</dd><dt><span class="term">
+<code class="literal">async</code>
+</span></dt><dd>
+    <code class="literal">fsync</code> and commit in the background every <code class="literal">sync_interval</code>. In
+    the event of hardware failure, all acknowledged writes since the last
+    automatic commit will be discarded.
+</dd></dl></div></dd><dt><span class="term">
+<code class="literal">index.translog.fs.type</code>
+</span></dt><dd><p class="simpara">Whether to buffer writes to the transaction log in memory or not.  This
+setting accepts the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">buffered</code>
+</span></dt><dd>
+    (default) Translog writes first go to a 64kB buffer in memory,
+    and are only written to the disk when the buffer is full, or when an
+    <code class="literal">fsync</code> is triggered by a write request or the <code class="literal">sync_interval</code>.
+</dd><dt><span class="term">
+<code class="literal">simple</code>
+</span></dt><dd>
+    Translog writes are written to the file system immediately, without
+    buffering.  However, these writes will only be persisted to disk when an
+    <code class="literal">fsync</code> and commit is triggered by a write request or the <code class="literal">sync_interval</code>.
+</dd></dl></div></dd></dl></div></div><div class="navfooter"><span class="prev"><a href="index-modules-store.html">
               « 
-              Mapper</a>
+              Store</a>
            
         </span><span class="next">
            
-          <a href="index-modules-cache.html">Cache
+          <a href="testing.html">Testing 
                »
             </a></span></div>
 <!-- end body -->
@@ -788,6 +833,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

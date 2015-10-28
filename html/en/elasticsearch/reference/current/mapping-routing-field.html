@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_routing</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="mapping-fields.html" title="Fields" /><link rel="prev" href="mapping-field-names-field.html" title="_field_names" /><link rel="next" href="mapping-index-field.html" title="_index" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_routing field</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="mapping-fields.html" title="Meta-Fields" /><link rel="prev" href="mapping-parent-field.html" title="_parent field" /><link rel="next" href="mapping-source-field.html" title="_source field" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,53 +590,108 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_routing</code></span></div><div class="navheader"><span class="prev"><a href="mapping-field-names-field.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Meta-Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_routing</code> field</span></div><div class="navheader"><span class="prev"><a href="mapping-parent-field.html">
               « 
-              <code class="literal">_field_names</code></a>
+              <code class="literal">_parent</code> field</a>
            
         </span><span class="next">
            
-          <a href="mapping-index-field.html"><code class="literal">_index</code>
+          <a href="mapping-source-field.html"><code class="literal">_source</code> field
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-routing-field"></a><code class="literal">_routing</code><a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/routing-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The routing field allows to control the <code class="literal">_routing</code> aspect when indexing
-data and explicit routing control is required.</p><h4><a id="_store_index"></a>store / index<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/routing-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The first thing the <code class="literal">_routing</code> mapping does is to store the routing
-value provided (<code class="literal">store</code> set to <code class="literal">true</code>) and index it (<code class="literal">index</code> set to
-<code class="literal">not_analyzed</code>). The reason why the routing is stored by default is so
-reindexing data will be possible if the routing value is completely
-external and not part of the docs.</p><h4><a id="_required"></a>required<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/routing-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Another aspect of the <code class="literal">_routing</code> mapping is the ability to define it as
-required by setting <code class="literal">required</code> to <code class="literal">true</code>. This is very important to set
-when using routing features, as it allows different APIs to make use of
-it. For example, an index operation will be rejected if no routing value
-has been provided (or derived from the doc). A delete operation will be
-broadcasted to all shards if no routing value is provided and <code class="literal">_routing</code>
-is required.</p><h4><a id="_path_2"></a>path<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/routing-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Deprecated in 1.5.0.</p></div></div><p>The routing value can be provided as an external value when indexing
-(and still stored as part of the document, in much the same way
-<code class="literal">_source</code> is stored). But, it can also be automatically extracted from
-the index doc based on a <code class="literal">path</code>. For example, having the following
-mapping:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "comment" : {
-        "_routing" : {
-            "required" : true,
-            "path" : "blog.post_id"
-        }
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-routing-field"></a><code class="literal">_routing</code> field<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/routing-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A document is routed to a particular shard in an index using the following
+formula:</p><pre class="literallayout">shard_num = hash(_routing) % num_primary_shards</pre><p>The default value used for <code class="literal">_routing</code> is the document’s <a class="link" href="mapping-id-field.html" title="_id field"><code class="literal">_id</code></a>
+or the document’s <a class="link" href="mapping-parent-field.html" title="_parent field"><code class="literal">_parent</code></a> ID, if present.</p><p>Custom routing patterns can be implemented by specifying a custom <code class="literal">routing</code>
+value per document.  For instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/my_type/1?routing=user1 <a id="CO163-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+{
+  "title": "This is a document"
+}
+
+GET my_index/my_type/1?routing=user1 <a id="CO163-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="sense_widget" data-snippet="snippets/mapping-routing-field/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO163-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This document uses <code class="literal">user1</code> as its routing value, instead of its ID.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO163-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The the same <code class="literal">routing</code> value needs to be provided when
+    <a class="link" href="docs-get.html" title="Get API">getting</a>, <a class="link" href="docs-delete.html" title="Delete API">deleting</a>, or <a class="link" href="docs-update.html" title="Update API">updating</a>
+    the document.
+</p></td></tr></table></div><p>The value of the <code class="literal">_routing</code> field is accessible in queries, aggregations, scripts,
+and when sorting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET my_index/_search
+{
+  "query": {
+    "terms": {
+      "_routing": [ "user1" ] <a id="CO164-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
-}</pre></div><p>Will cause the following doc to be routed based on the <code class="literal">111222</code> value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "text" : "the comment text"
-    "blog" : {
-        "post_id" : "111222"
+  },
+  "aggs": {
+    "Routing values": {
+      "terms": {
+        "field": "_routing", <a id="CO164-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        "size": 10
+      }
     }
-}</pre></div><p>Note, using <code class="literal">path</code> without explicit routing value provided required an
-additional (though quite fast) parsing phase.</p><h4><a id="_id_uniqueness"></a>id uniqueness<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/routing-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When indexing documents specifying a custom <code class="literal">_routing</code>, the uniqueness
-of the <code class="literal">_id</code> is not guaranteed throughout all the shards that the index
-is composed of. In fact, documents with the same <code class="literal">_id</code> might end up in
-different shards if indexed with different <code class="literal">_routing</code> values.</p></div><div class="navfooter"><span class="prev"><a href="mapping-field-names-field.html">
+  },
+  "sort": [
+    {
+      "_routing": { <a id="CO164-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        "order": "desc"
+      }
+    }
+  ],
+  "script_fields": {
+    "Routing value": {
+      "script": "doc['_routing']" <a id="CO164-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-routing-field/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO164-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Querying on the <code class="literal">_routing</code> field (also see the <a class="link" href="query-dsl-ids-query.html" title="Ids Query"><code class="literal">ids</code> query</a>)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO164-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Aggregating on the <code class="literal">_routing</code> field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO164-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Sorting on the <code class="literal">_routing</code> field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO164-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Accessing the <code class="literal">_routing</code> field in scripts (inline scripts must be <a class="link" href="modules-scripting.html#enable-dynamic-scripting" title="Enabling dynamic scriptingedit">enabled</a> for this example to work)
+</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_searching_with_custom_routing"></a>Searching with custom routing<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/routing-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Custom routing can reduce the impact of searches.  Instead of having to fan
+out a search request to all the shards in an index, the request can be sent to
+just the shard that matches the specific routing value (or values):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET my_index/_search?routing=user1,user2 <a id="CO165-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+{
+  "query": {
+    "match": {
+      "title": "document"
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-routing-field/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO165-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This search request will only be executed on the shards associated with the <code class="literal">user1</code> and <code class="literal">user2</code> routing values.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_making_a_routing_value_required"></a>Making a routing value required<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/routing-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When using custom routing, it is important to provide the routing value
+whenever <a class="link" href="docs-index_.html" title="Index API">indexing</a>, <a class="link" href="docs-get.html" title="Get API">getting</a>,
+<a class="link" href="docs-delete.html" title="Delete API">deleting</a>, or <a class="link" href="docs-update.html" title="Update API">updating</a> a document.</p><p>Forgetting the routing value can lead to a document being indexed on more than
+one shard.  As a safeguard, the <code class="literal">_routing</code> field can be configured to make a
+custom <code class="literal">routing</code> value required for all CRUD operations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "_routing": {
+        "required": true <a id="CO166-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      }
+    }
+  }
+}
+
+PUT my_index/my_type/1 <a id="CO166-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+{
+  "text": "No routing value provided"
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-routing-field/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO166-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Routing is required for <code class="literal">my_type</code> documents.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO166-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This index request throws a <code class="literal">routing_missing_exception</code>.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_unique_ids_with_custom_routing"></a>Unique IDs with custom routing<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/routing-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When indexing documents specifying a custom <code class="literal">_routing</code>, the uniqueness of the
+<code class="literal">_id</code> is not guaranteed across all of the shards in the index. In fact,
+documents with the same <code class="literal">_id</code> might end up on different shards if indexed with
+different <code class="literal">_routing</code> values.</p><p>It is up to the user to ensure that IDs are unique across the index.</p></div></div><div class="navfooter"><span class="prev"><a href="mapping-parent-field.html">
               « 
-              <code class="literal">_field_names</code></a>
+              <code class="literal">_parent</code> field</a>
            
         </span><span class="next">
            
-          <a href="mapping-index-field.html"><code class="literal">_index</code>
+          <a href="mapping-source-field.html"><code class="literal">_source</code> field
                »
             </a></span></div>
 <!-- end body -->
@@ -792,6 +847,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

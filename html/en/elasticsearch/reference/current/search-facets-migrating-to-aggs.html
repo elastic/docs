@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Migrating to aggregations</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="search-facets.html" title="Facets" /><link rel="prev" href="search-facets-geo-distance-facet.html" title="Geo Distance Facets" /><link rel="next" href="search-suggesters.html" title="Suggesters" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Migrating from facets to aggregations</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="redirects.html" title="Appendix A. Deleted pages" /><link rel="prev" href="search-facets-statistical-facet.html" title="Statistical Facet" /><link rel="next" href="shard-query-cache.html" title="Shard request cache" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,237 +590,22 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-link"><a href="search-facets.html">Facets</a></span> » <span class="breadcrumb-node">Migrating to aggregations</span></div><div class="navheader"><span class="prev"><a href="search-facets-geo-distance-facet.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="redirects.html">Deleted pages</a></span> » <span class="breadcrumb-node">Migrating from facets to aggregations</span></div><div class="navheader"><span class="prev"><a href="search-facets-statistical-facet.html">
               « 
-              Geo Distance Facets</a>
+              Statistical Facet</a>
            
         </span><span class="next">
            
-          <a href="search-suggesters.html">Suggesters
+          <a href="shard-query-cache.html">Shard request cache
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-facets-migrating-to-aggs"></a>Migrating to aggregations<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/migrating-to-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Facets have been deprecated in favor of <a class="link" href="search-aggregations.html" title="Aggregations">aggregations</a>
-and as such it is recommended to migrate existing code using facets to
-aggregations.</p><p>It is recommended to read the documentation about aggregations before this
-section.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_simple_cases"></a>Simple cases<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/migrating-to-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In quite a number of cases, the migration is rather straightforward as simple
-facets have their direct aggregation equivalent and the only thing that is
-required is to replace <code class="literal">facets</code> with <code class="literal">aggs</code>.</p><p>For instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "facets" : {
-        "wow" : {
-            "filter" : {
-                "term" : { "tag" : "wow" }
-            }
-        }
-    }
-}</pre></div><p>can be translated to the following aggregation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggs" : {
-        "wow" : {
-            "filter" : {
-                "term" : { "tag" : "wow" }
-            }
-        }
-    }
-}</pre></div><p>We will now spend more time on facets that don’t have their direct aggregation
-equivalent and need more modifications.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_query_facets"></a>Query facets<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/migrating-to-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There is no <code class="literal">query</code> aggregation so such facets must be migrated to the <code class="literal">filter</code>
-aggregation.</p><p>For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "facets" : {
-        "wow" : {
-            "query" : {
-                "query_string" : {
-                    "query" : "tag:wow"
-                }
-            }
-        }
-    }
-}</pre></div><p>can be replaced with the following
-<a class="link" href="search-aggregations-bucket-filter-aggregation.html" title="Filter Aggregation">filter aggregation</a> that uses
-the <a class="link" href="query-dsl-query-filter.html" title="Query Filter">query filter</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggs" : {
-        "wow" : {
-            "filter" : {
-                "query" : {
-                    "query_string" : {
-                        "query" : "tag:wow"
-                    }
-                }
-            }
-        }
-    }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_term_stats"></a>Term stats<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/migrating-to-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There is no <code class="literal">term_stats</code> aggregation, so you actually need to create a
-<a class="link" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation">terms aggregation</a> that will
-create buckets that will be processed with a
-<a class="link" href="search-aggregations-metrics-stats-aggregation.html" title="Stats Aggregation">stats aggregation</a>.</p><p>For example</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "facets" : {
-        "tag_price_stats" : {
-            "terms_stats" : {
-                "key_field" : "tag",
-                "value_field" : "price"
-            }
-        }
-    }
-}</pre></div><p>can be replaced with</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggs" : {
-        "tags" : {
-            "terms" : {
-                "field" : "tag"
-            },
-            "aggs" : {
-                "price_stats" : {
-                    "stats" : {
-                        "field" : "price"
-                    }
-                }
-            }
-        }
-    }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_value_field_2"></a>value_field<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/migrating-to-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">histogram</code>, <code class="literal">date_histogram</code>, <code class="literal">range</code> and <code class="literal">geo_distance</code> facets have a
-<code class="literal">value_field</code> parameter that allows to compute statistics per bucket. With
-aggregations this needs to be changed to a sub
-<a class="link" href="search-aggregations-metrics-stats-aggregation.html" title="Stats Aggregation">stats aggregation</a>.</p><p>For example</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "facets" : {
-        "histo1" : {
-            "date_histogram" : {
-                "key_field" : "timestamp",
-                "value_field" : "price",
-                "interval" : "day"
-            }
-        }
-    }
-}</pre></div><p>can be replaced with</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggs" : {
-        "histo1" : {
-            "date_histogram" : {
-                "field" : "timestamp",
-                "interval" : "day"
-            },
-            "aggs" : {
-                "price_stats" : {
-                    "stats" : {
-                        "field" : "price"
-                    }
-                }
-            }
-        }
-    }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_global_scope"></a>Global scope<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/migrating-to-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Facets allow to set a global scope by setting <code class="literal">global : true</code> in the facet
-definition. With aggregations, you will need to put your aggregation under a
-<a class="link" href="search-aggregations-bucket-global-aggregation.html" title="Global Aggregation">global aggregation</a> instead.</p><p>For example</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "facets" : {
-        "terms1" : {
-            "terms" : { ... },
-            "global" : true
-        }
-    }
-}</pre></div><p>can be replaced with</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggs" : {
-        "global_count" : {
-            "global" : {},
-            "aggs" : {
-                "terms1" : {
-                    "terms" : { ... }
-                }
-            }
-        }
-    }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_facet_filters"></a>Facet filters<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/migrating-to-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Facet filters can be replaced with a
-<a class="link" href="search-aggregations-bucket-filter-aggregation.html" title="Filter Aggregation">filter aggregation</a>.</p><p>For example</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "facets" : {
-        "&lt;FACET NAME&gt;" : {
-            "&lt;FACET TYPE&gt;" : {
-                ...
-            },
-            "facet_filter" : {
-                "term" : { "user" : "mvg" }
-            }
-        }
-    }
-}</pre></div><p>can be replaced with</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggs" : {
-        "filter1" : {
-            "filter" : {
-                "term" : { "user" : "mvg" }
-            },
-            "aggs" : {
-                "&lt;AGG NAME&gt;" : {
-                    "&lt;AGG TYPE&gt;" : {
-                        ...
-                    }
-                }
-            }
-        }
-    }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_nested"></a>Nested<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/search/facets/migrating-to-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Aggregations have a dedicated
-<a class="link" href="search-aggregations-bucket-nested-aggregation.html" title="Nested Aggregation">nested aggregation</a> to deal
-with nested objects.</p><p>For example</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "facets" : {
-        "facet1" : {
-            "terms" : {
-                "field" : "name"
-            },
-            "nested" : "obj1"
-        }
-    }
-}</pre></div><p>can be replaced with</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggs" : {
-        "agg1" : {
-            "nested" : {
-                "path" : "obj1"
-            },
-            "aggs" : {
-                "agg1": {
-                    "terms": {
-                        "field" : "obj1.name"
-                    }
-                }
-            }
-        }
-    }
-}</pre></div><p>Note how fields are identified with their full path instead of relative path.</p><p>Similarly, this more complex facet that combines <code class="literal">nested</code> and facet filters:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "facets" : {
-        "facet1" : {
-            "terms" : {
-                "field" : "name"
-            },
-            "nested" : "obj1",
-            "facet_filter" : {
-                "term" : { "color" : "blue" }
-            }
-        }
-    }
-}</pre></div><p>can be replaced with the following aggregation, which puts a terms aggregation
-under a filter aggregation, and the filter aggregation under a nested
-aggregation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggs" : {
-        "nested_obj1" : {
-            "nested" : {
-                "path" : "obj1"
-            },
-            "aggs" : {
-                "color_filter" : {
-                    "filter" : {
-                        "term" : { "obj1.color" : "blue" }
-                    },
-                    "aggs" : {
-                        "name_terms" : {
-                            "terms" : {
-                                "field" : "obj1.name"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}</pre></div><p>In short, this aggregation first moves from the root documents to their nested
-documents following the path <code class="literal">obj1</code>. Then for each nested document, it filters
-out those that are not blue, and for the remaining documents, it computes a
-terms aggregation on the <code class="literal">name</code> field.</p></div></div><div class="navfooter"><span class="prev"><a href="search-facets-geo-distance-facet.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-facets-migrating-to-aggs"></a>Migrating from facets to aggregations<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/redirects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Facets have been removed. Use <a class="xref" href="search-aggregations.html" title="Aggregations">Aggregations </a> instead.</p></div><div class="navfooter"><span class="prev"><a href="search-facets-statistical-facet.html">
               « 
-              Geo Distance Facets</a>
+              Statistical Facet</a>
            
         </span><span class="next">
            
-          <a href="search-suggesters.html">Suggesters
+          <a href="shard-query-cache.html">Shard request cache
                »
             </a></span></div>
 <!-- end body -->
@@ -976,6 +761,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Top Children Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="query-dsl-queries.html" title="Queries" /><link rel="prev" href="query-dsl-terms-query.html" title="Terms Query" /><link rel="next" href="query-dsl-wildcard-query.html" title="Wildcard Query" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Top Children Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="redirects.html" title="Appendix A. Deleted pages" /><link rel="prev" href="query-dsl-has-parent-filter.html" title="Has Parent Filter" /><link rel="next" href="query-dsl-ids-filter.html" title="IDs Filter" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,65 +590,22 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-link"><a href="query-dsl-queries.html">Queries</a></span> » <span class="breadcrumb-node">Top Children Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-terms-query.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="redirects.html">Deleted pages</a></span> » <span class="breadcrumb-node">Top Children Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-has-parent-filter.html">
               « 
-              Terms Query</a>
+              Has Parent Filter</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-wildcard-query.html">Wildcard Query
+          <a href="query-dsl-ids-filter.html">IDs Filter
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-top-children-query"></a>Top Children Query<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/queries/top-children-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><h4>Deprecated in 1.6.0.</h4><p> Use the <code class="literal">has_child</code> query instead.</p></div></div><p>The <code class="literal">top_children</code> query runs the child query with an estimated hits
-size, and out of the hit docs, aggregates it into parent docs. If there
-aren’t enough parent docs matching the requested from/size search
-request, then it is run again with a wider (more hits) search.</p><p>The <code class="literal">top_children</code> also provide scoring capabilities, with the ability
-to specify <code class="literal">max</code>, <code class="literal">sum</code> or <code class="literal">avg</code> as the score type.</p><p>One downside of using the <code class="literal">top_children</code> is that if there are more child
-docs matching the required hits when executing the child query, then the
-<code class="literal">total_hits</code> result of the search response will be incorrect.</p><p>How many hits are asked for in the first child query run is controlled
-using the <code class="literal">factor</code> parameter (defaults to <code class="literal">5</code>). For example, when asking
-for 10 parent docs (with <code class="literal">from</code> set to 0), then the child query will
-execute with 50 hits expected. If not enough parents are found (in our
-example 10), and there are still more child docs to query, then the
-child search hits are expanded by multiplying by the
-<code class="literal">incremental_factor</code> (defaults to <code class="literal">2</code>).</p><p>The required parameters are the <code class="literal">query</code> and <code class="literal">type</code> (the child type to
-execute the query on). Here is an example with all different parameters,
-including the default values:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "top_children" : {
-        "type": "blog_tag",
-        "query" : {
-            "term" : {
-                "tag" : "something"
-            }
-        },
-        "score" : "max",
-        "factor" : 5,
-        "incremental_factor" : 2
-    }
-}</pre></div><h4><a id="_scope_2"></a>Scope<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/queries/top-children-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A <code class="literal">_scope</code> can be defined on the query allowing to run facets on the
-same scope name that will work against the child documents. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "top_children" : {
-        "_scope" : "my_scope",
-        "type": "blog_tag",
-        "query" : {
-            "term" : {
-                "tag" : "something"
-            }
-        }
-    }
-}</pre></div><h4><a id="_memory_considerations_7"></a>Memory Considerations<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/query-dsl/queries/top-children-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In order to support parent-child joins, all of the (string) parent IDs
-must be resident in memory (in the <a class="link" href="index-modules-fielddata.html" title="Field data">field data cache</a>.
-Additionally, every child document is mapped to its parent using a long
-value (approximately). It is advisable to keep the string parent ID short
-in order to reduce memory usage.</p><p>You can check how much memory is being used by the ID cache using the
-<a class="link" href="indices-stats.html" title="Indices Stats">indices stats</a> or <a class="link" href="cluster-nodes-stats.html" title="Nodes Stats">nodes stats</a>
-APIS, eg:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET "http://localhost:9200/_stats/id_cache?pretty&amp;human"</pre></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-terms-query.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-top-children-query"></a>Top Children Query<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/redirects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">top_children</code> query has been removed. Use the <a class="xref" href="query-dsl-has-child-query.html" title="Has Child Query">Has Child Query</a> instead.</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-has-parent-filter.html">
               « 
-              Terms Query</a>
+              Has Parent Filter</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-wildcard-query.html">Wildcard Query
+          <a href="query-dsl-ids-filter.html">IDs Filter
                »
             </a></span></div>
 <!-- end body -->
@@ -804,6 +761,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

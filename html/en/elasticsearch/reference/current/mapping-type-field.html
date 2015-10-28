@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_type</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="mapping-fields.html" title="Fields" /><link rel="prev" href="mapping-id-field.html" title="_id" /><link rel="next" href="mapping-source-field.html" title="_source" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_type field</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="mapping-fields.html" title="Meta-Fields" /><link rel="prev" href="mapping-ttl-field.html" title="_ttl field" /><link rel="next" href="mapping-uid-field.html" title="_uid field" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,35 +590,71 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_type</code></span></div><div class="navheader"><span class="prev"><a href="mapping-id-field.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Meta-Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_type</code> field</span></div><div class="navheader"><span class="prev"><a href="mapping-ttl-field.html">
               « 
-              <code class="literal">_id</code></a>
+              <code class="literal">_ttl</code> field</a>
            
         </span><span class="next">
            
-          <a href="mapping-source-field.html"><code class="literal">_source</code>
+          <a href="mapping-uid-field.html"><code class="literal">_uid</code> field
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-type-field"></a><code class="literal">_type</code><a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/type-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Each document indexed is associated with an id and a type. The type,
-when indexing, is automatically indexed into a <code class="literal">_type</code> field. By
-default, the <code class="literal">_type</code> field is indexed (but <span class="strong"><strong>not</strong></span> analyzed) and not
-stored. This means that the <code class="literal">_type</code> field can be queried.</p><p>The <code class="literal">_type</code> field can be stored as well, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "tweet" : {
-        "_type" : {"store" : true}
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-type-field"></a><code class="literal">_type</code> field<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/type-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Each document indexed is associated with a <a class="link" href="mapping-type-field.html" title="_type field"><code class="literal">_type</code></a> (see
+<a class="xref" href="mapping.html#mapping-type" title="Mapping Typesedit">the section called “Mapping Types<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a>) and an <a class="link" href="mapping-id-field.html" title="_id field"><code class="literal">_id</code></a>.  The <code class="literal">_type</code> field is
+indexed in order to make searching by type name fast.</p><p>The value of the <code class="literal">_type</code> field is accessible in queries, aggregations,
+scripts, and when sorting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"># Example documents
+PUT my_index/type_1/1
+{
+  "text": "Document with type 1"
+}
+
+PUT my_index/type_2/2
+{
+  "text": "Document with type 2"
+}
+
+GET my_index/_search/type_*
+{
+  "query": {
+    "terms": {
+      "_type": [ "type_1", "type_2" ] <a id="CO172-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
-}</pre></div><p>The <code class="literal">_type</code> field can also not be indexed, and all the APIs will still
-work except for specific queries (term queries / filters) or faceting
-done on the <code class="literal">_type</code> field.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "tweet" : {
-        "_type" : {"index" : "no"}
+  },
+  "aggs": {
+    "types": {
+      "terms": {
+        "field": "_type", <a id="CO172-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        "size": 10
+      }
     }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="mapping-id-field.html">
+  },
+  "sort": [
+    {
+      "_type": { <a id="CO172-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        "order": "desc"
+      }
+    }
+  ],
+  "script_fields": {
+    "type": {
+      "script": "doc['_type']" <a id="CO172-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-type-field/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO172-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Querying on the <code class="literal">_type</code> field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO172-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Aggregating on the <code class="literal">_type</code> field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO172-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Sorting on the <code class="literal">_type</code> field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO172-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Accessing the <code class="literal">_type</code> field in scripts (inline scripts must be <a class="link" href="modules-scripting.html#enable-dynamic-scripting" title="Enabling dynamic scriptingedit">enabled</a> for this example to work)
+</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="mapping-ttl-field.html">
               « 
-              <code class="literal">_id</code></a>
+              <code class="literal">_ttl</code> field</a>
            
         </span><span class="next">
            
-          <a href="mapping-source-field.html"><code class="literal">_source</code>
+          <a href="mapping-uid-field.html"><code class="literal">_uid</code> field
                »
             </a></span></div>
 <!-- end body -->
@@ -774,6 +810,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

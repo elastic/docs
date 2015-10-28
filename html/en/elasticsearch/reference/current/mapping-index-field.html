@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_index</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="mapping-fields.html" title="Fields" /><link rel="prev" href="mapping-routing-field.html" title="_routing" /><link rel="next" href="mapping-size-field.html" title="_size" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>_index field</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="mapping-fields.html" title="Meta-Fields" /><link rel="prev" href="mapping-id-field.html" title="_id field" /><link rel="next" href="mapping-meta-field.html" title="_meta field" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,28 +590,71 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_index</code></span></div><div class="navheader"><span class="prev"><a href="mapping-routing-field.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-fields.html">Meta-Fields</a></span> » <span class="breadcrumb-node"><code class="literal">_index</code> field</span></div><div class="navheader"><span class="prev"><a href="mapping-id-field.html">
               « 
-              <code class="literal">_routing</code></a>
+              <code class="literal">_id</code> field</a>
            
         </span><span class="next">
            
-          <a href="mapping-size-field.html"><code class="literal">_size</code>
+          <a href="mapping-meta-field.html"><code class="literal">_meta</code> field
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-index-field"></a><code class="literal">_index</code><a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/mapping/fields/index-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The ability to store in a document the index it belongs to. By default
-it is disabled, in order to enable it, the following mapping should be
-defined:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "tweet" : {
-        "_index" : { "enabled" : true }
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-index-field"></a><code class="literal">_index</code> field<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/mapping/fields/index-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When performing queries across multiple indexes, it is sometimes desirable
+to add query clauses that are associated with documents of only certain
+indexes. The <code class="literal">_index</code> field allows matching on the index a document was
+indexed into. Its value is accessible in queries, aggregations, scripts, and when sorting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"># Example documents
+PUT index_1/my_type/1
+{
+  "text": "Document in index 1"
+}
+
+PUT index_2/my_type/2
+{
+  "text": "Document in index 2"
+}
+
+GET index_1,index_2/_search
+{
+  "query": {
+    "terms": {
+      "_index": ["index_1", "index_2"] <a id="CO159-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="mapping-routing-field.html">
+  },
+  "aggs": {
+    "indices": {
+      "terms": {
+        "field": "_index", <a id="CO159-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        "size": 10
+      }
+    }
+  },
+  "sort": [
+    {
+      "_index": { <a id="CO159-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        "order": "asc"
+      }
+    }
+  ],
+  "script_fields": {
+    "index_name": {
+      "script": "doc['_index']" <a id="CO159-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/mapping-index-field/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO159-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Querying on the <code class="literal">_index</code> field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO159-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Aggregating on the <code class="literal">_index</code> field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO159-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Sorting on the <code class="literal">_index</code> field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO159-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Accessing the <code class="literal">_index</code> field in scripts (inline scripts must be <a class="link" href="modules-scripting.html#enable-dynamic-scripting" title="Enabling dynamic scriptingedit">enabled</a> for this example to work)
+</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="mapping-id-field.html">
               « 
-              <code class="literal">_routing</code></a>
+              <code class="literal">_id</code> field</a>
            
         </span><span class="next">
            
-          <a href="mapping-size-field.html"><code class="literal">_size</code>
+          <a href="mapping-meta-field.html"><code class="literal">_meta</code> field
                »
             </a></span></div>
 <!-- end body -->
@@ -767,6 +810,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>

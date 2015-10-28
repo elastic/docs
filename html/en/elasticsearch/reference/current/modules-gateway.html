@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Gateway</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [1.7]" /><link rel="up" href="modules.html" title="Modules" /><link rel="prev" href="modules-discovery-zen.html" title="Zen Discovery" /><link rel="next" href="modules-gateway-local.html" title="Local Gateway" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Local Gateway</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.0]" /><link rel="up" href="modules.html" title="Modules" /><link rel="prev" href="modules-discovery-zen.html" title="Zen Discovery" /><link rel="next" href="modules-http.html" title="HTTP" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
@@ -590,57 +590,62 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [1.7]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-node">Gateway</span></div><div class="navheader"><span class="prev"><a href="modules-discovery-zen.html">
+      [2.0]
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-node">Local Gateway</span></div><div class="navheader"><span class="prev"><a href="modules-discovery-zen.html">
               « 
               Zen Discovery</a>
            
         </span><span class="next">
            
-          <a href="modules-gateway-local.html">Local Gateway
+          <a href="modules-http.html">HTTP
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="modules-gateway"></a>Gateway<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/modules/gateway.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The gateway module allows one to store the state of the cluster meta
-data across full cluster restarts. The cluster meta data mainly holds
-all the indices created with their respective (index level) settings and
-explicit type mappings.</p><p>Each time the cluster meta data changes (for example, when an index is
-added or deleted), those changes will be persisted using the gateway.
-When the cluster first starts up, the state will be read from the
-gateway and applied.</p><p>The gateway set on the node level will automatically control the index
-gateway that will be used. For example, if the <code class="literal">local</code> gateway is used,
-then automatically, each index created on the node will also use its own
-respective index level <code class="literal">local</code> gateway. In this case, if an index should
-not persist its state, it should be explicitly set to <code class="literal">none</code> (which is
-the only other value it can be set to).</p><p>The default gateway used is the
-<a class="link" href="modules-gateway-local.html" title="Local Gateway">local</a> gateway.</p><h3><a id="recover-after"></a>Recovery After Nodes / Time<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/modules/gateway.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In many cases, the actual cluster meta data should only be recovered
-after specific nodes have started in the cluster, or a timeout has
-passed. This is handy when restarting the cluster, and each node local
-index storage still exists to be reused and not recovered from the
-gateway (which reduces the time it takes to recover from the gateway).</p><p>The <code class="literal">gateway.recover_after_nodes</code> setting (which accepts a number)
-controls after how many data and master eligible nodes within the
-cluster recovery will start. The <code class="literal">gateway.recover_after_data_nodes</code> and
-<code class="literal">gateway.recover_after_master_nodes</code> setting work in a similar fashion,
-except they consider only the number of data nodes and only the number
-of master nodes respectively. The <code class="literal">gateway.recover_after_time</code> setting
-(which accepts a time value) sets the time to wait till recovery happens
-once all <code class="literal">gateway.recover_after...nodes</code> conditions are met.</p><p>The <code class="literal">gateway.expected_nodes</code> allows to set how many data and master
-eligible nodes are expected to be in the cluster, and once met, the
-<code class="literal">gateway.recover_after_time</code> is ignored and recovery starts.
-Setting <code class="literal">gateway.expected_nodes</code> also defaults <code class="literal">gateway.recover_after_time</code> to <code class="literal">5m</code> The <code class="literal">gateway.expected_data_nodes</code> and <code class="literal">gateway.expected_master_nodes</code>
-settings are also supported. For example setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">gateway:
-    recover_after_time: 5m
-    expected_nodes: 2</pre></div><p>In an expected 2 nodes cluster will cause recovery to start 5 minutes
-after the first node is up, but once there are 2 nodes in the cluster,
-recovery will begin immediately (without waiting).</p><p>Note, once the meta data has been recovered from the gateway (which
-indices to create, mappings and so on), then this setting is no longer
-effective until the next full restart of the cluster.</p><p>Operations are blocked while the cluster meta data has not been
-recovered in order not to mix with the actual cluster meta data that
-will be recovered once the settings has been reached.</p></div><div class="navfooter"><span class="prev"><a href="modules-discovery-zen.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="modules-gateway"></a>Local Gateway<a href="https://github.com/elastic/elasticsearch/edit/2.0/docs/reference/modules/gateway.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The local gateway module stores the cluster state and shard data across full
+cluster restarts.</p><p>The following <span class="emphasis"><em>static</em></span> settings, which must be set on every data node in the
+cluster, controls how long nodes should wait before they try to recover any
+shards which are stored locally:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">gateway.expected_nodes</code>
+</span></dt><dd>
+    The number of (data or master) nodes that are expected to be in the cluster.
+    Recovery of local shards will start as soon as the expected number of
+    nodes have joined the cluster. Defaults to <code class="literal">0</code>
+</dd><dt><span class="term">
+<code class="literal">gateway.expected_master_nodes</code>
+</span></dt><dd>
+    The number of master nodes that are expected to be in the cluster.
+    Recovery of local shards will start as soon as the expected number of
+    master nodes have joined the cluster. Defaults to <code class="literal">0</code>
+</dd><dt><span class="term">
+<code class="literal">gateway.expected_data_nodes</code>
+</span></dt><dd>
+    The number of data nodes that are expected to be in the cluster.
+    Recovery of local shards will start as soon as the expected number of
+    data nodes have joined the cluster. Defaults to <code class="literal">0</code>
+</dd><dt><span class="term">
+<code class="literal">gateway.recover_after_time</code>
+</span></dt><dd>
+    If the expected number of nodes is not achieved, the recovery process waits
+    for the configured amount of time before trying to recover regardless.
+    Defaults to <code class="literal">5m</code> if one of the <code class="literal">expected_nodes</code> settings is configured.
+</dd></dl></div><p>Once the <code class="literal">recover_after_time</code> duration has timed out, recovery will start
+as long as the following conditions are met:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">gateway.recover_after_nodes</code>
+</span></dt><dd>
+    Recover as long as this many data or master nodes have joined the cluster.
+</dd><dt><span class="term">
+<code class="literal">gateway.recover_after_master_nodes</code>
+</span></dt><dd>
+    Recover as long as this many master nodes have joined the cluster.
+</dd><dt><span class="term">
+<code class="literal">gateway.recover_after_data_nodes</code>
+</span></dt><dd>
+    Recover as long as this many data nodes have joined the cluster.
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>These settings only take effect on a full cluster restart.</p></div></div></div><div class="navfooter"><span class="prev"><a href="modules-discovery-zen.html">
               « 
               Zen Discovery</a>
            
         </span><span class="next">
            
-          <a href="modules-gateway-local.html">Local Gateway
+          <a href="modules-http.html">HTTP
                »
             </a></span></div>
 <!-- end body -->
@@ -796,6 +801,7 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
 </script>	
 
             <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 <script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
 
             </body>
