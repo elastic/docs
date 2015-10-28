@@ -159,16 +159,17 @@ sub books {
     my @books;
     my $base_dir = shift();
     while ( my $next = shift @_ ) {
+        my $new_base_dir = $base_dir;
         if ( $next->{sections} ) {
             if ( $next->{base_dir} ) {
-                $base_dir .= '/' . $next->{base_dir};
+                $new_base_dir .= '/' . $next->{base_dir};
             }
-            push @books, books( $base_dir, @{ $next->{sections} } );
+            push @books, books( $new_base_dir, @{ $next->{sections} } );
         }
         else {
             my %details = %$next;
-            if ($base_dir) {
-                $details{prefix} = $base_dir . "/" . $details{prefix};
+            if ($new_base_dir) {
+                $details{prefix} = $new_base_dir . "/" . $details{prefix};
             }
             push @books, \%details;
         }
