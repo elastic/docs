@@ -604,31 +604,26 @@
           <a href="suggester-context.html">Context Suggester
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-suggesters-completion"></a>Completion Suggester<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>In order to understand the format of suggestions, please
-read the <a class="xref" href="search-suggesters.html" title="Suggesters"><em>Suggesters</em></a> page first.</p></div></div><p>The <code class="literal">completion</code> suggester is a so-called prefix suggester. It does not
-do spell correction like the <code class="literal">term</code> or <code class="literal">phrase</code> suggesters but allows
-basic <code class="literal">auto-complete</code> functionality.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_why_another_suggester_why_not_prefix_queries"></a>Why another suggester? Why not prefix queries?<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The first question which comes to mind when reading about a prefix
-suggestion is, why you should use it at all, if you have prefix queries
-already. The answer is simple: Prefix suggestions are fast.</p><p>The data structures are internally backed by Lucenes
-<code class="literal">AnalyzingSuggester</code>, which uses FSTs (finite state transducers) to
-execute suggestions. Usually these data structures are costly to
-create, stored in-memory and need to be rebuilt every now and then to
-reflect changes in your indexed documents. The <code class="literal">completion</code> suggester
-circumvents this by storing the FST (finite state transducer) as part
-of your index during index time. This allows for really fast
-loads and executions.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="completion-suggester-mapping"></a>Mapping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In order to use this feature, you have to specify a special mapping for
-this field, which enables the special storage of the field.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -X PUT localhost:9200/music
-curl -X PUT localhost:9200/music/song/_mapping -d '{
+read the <a class="xref" href="search-suggesters.html" title="Suggesters"><em>Suggesters</em></a> page first.</p></div></div><p>The <code class="literal">completion</code> suggester provides auto-complete/search-as-you-type
+functionality. This is a navigational feature to guide users to
+relevant results as they are typing, improving search precision.
+It is not meant for spell correction or did-you-mean functionality
+like the <code class="literal">term</code> or <code class="literal">phrase</code> suggesters.</p><p>Ideally, auto-complete functionality should be as fast as a user
+types to provide instant feedback relevant to what a user has already
+typed in. Hence, <code class="literal">completion</code> suggester is optimized for speed.
+The suggester uses data structures that enable fast lookups,
+but are costly to build and are stored in-memory.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="completion-suggester-mapping"></a>Mapping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To use this feature, specify a special mapping for this field,
+which indexes the field values for fast completions.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT music/song/_mapping
+{
   "song" : {
         "properties" : {
-            "name" : { "type" : "string" },
-            "suggest" : { "type" : "completion",
-                          "analyzer" : "simple",
-                          "search_analyzer" : "simple",
-                          "payloads" : true
+            ...
+            "suggest" : {
+                "type" : "completion",
             }
         }
     }
-}'</pre></div><p>Mapping supports the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+}</pre></div><p>Mapping supports the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">analyzer</code>
 </span></dt><dd>
     The index analyzer to use, defaults to <code class="literal">simple</code>.
@@ -641,10 +636,6 @@ curl -X PUT localhost:9200/music/song/_mapping -d '{
 </span></dt><dd>
     The search analyzer to use, defaults to value of <code class="literal">analyzer</code>.
 </dd><dt><span class="term">
-<code class="literal">payloads</code>
-</span></dt><dd>
-    Enables the storing of payloads, defaults to <code class="literal">false</code>
-</dd><dt><span class="term">
 <code class="literal">preserve_separators</code>
 </span></dt><dd>
     Preserves the separators, defaults to <code class="literal">true</code>.
@@ -653,8 +644,8 @@ curl -X PUT localhost:9200/music/song/_mapping -d '{
 </dd><dt><span class="term">
 <code class="literal">preserve_position_increments</code>
 </span></dt><dd>
-    Enables position increments, defaults
-    to <code class="literal">true</code>. If disabled and using stopwords analyzer, you could get a
+    Enables position increments, defaults to <code class="literal">true</code>.
+    If disabled and using stopwords analyzer, you could get a
     field starting with <code class="literal">The Beatles</code>, if you suggest for <code class="literal">b</code>. <span class="strong"><strong>Note</strong></span>: You
     could also achieve this by indexing two inputs, <code class="literal">Beatles</code> and
     <code class="literal">The Beatles</code>, no need to change a simple analyzer, if you are able to
@@ -665,61 +656,56 @@ curl -X PUT localhost:9200/music/song/_mapping -d '{
     Limits the length of a single input, defaults to <code class="literal">50</code> UTF-16 code points.
     This limit is only used at index time to reduce the total number of
     characters per input string in order to prevent massive inputs from
-    bloating the underlying datastructure. The most usecases won’t be influenced
-    by the default value since prefix completions hardly grow beyond prefixes longer
-    than a handful of characters. (Old name "max_input_len" is deprecated)
-</dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="indexing"></a>Indexing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -X PUT 'localhost:9200/music/song/1?refresh=true' -d '{
-    "name" : "Nevermind",
+    bloating the underlying datastructure. Most usecases won’t be influenced
+    by the default value since prefix completions seldom grow beyond prefixes longer
+    than a handful of characters.
+</dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="indexing"></a>Indexing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You index suggestions like any other field. A suggestion is made of an
+<code class="literal">input</code> and an optional <code class="literal">weight</code> attribute. An <code class="literal">input</code> is the expected
+text to be matched by a suggestion query and the <code class="literal">weight</code> determines how
+the suggestions will be scored. Indexing a suggestion is as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT music/song/1?refresh=true
+{
     "suggest" : {
         "input": [ "Nevermind", "Nirvana" ],
-        "output": "Nirvana - Nevermind",
-        "payload" : { "artistId" : 2321 },
         "weight" : 34
     }
-}'</pre></div><p>The following parameters are supported:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+}</pre></div><p>The following parameters are supported:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">input</code>
 </span></dt><dd>
     The input to store, this can be a an array of strings or just
     a string. This field is mandatory.
-</dd><dt><span class="term">
-<code class="literal">output</code>
-</span></dt><dd>
-    The string to return, if a suggestion matches. This is very
-    useful to normalize outputs (i.e. have them always in the format
-    <code class="literal">artist - songname</code>). This is optional.
-    <span class="strong"><strong>Note</strong></span>: The result is de-duplicated if several documents
-    have the same output, i.e. only one is returned as part of the
-    suggest result.
-</dd><dt><span class="term">
-<code class="literal">payload</code>
-</span></dt><dd>
-    An arbitrary JSON object, which is simply returned in the
-    suggest option. You could store data like the id of a document, in order
-    to load it from elasticsearch without executing another search (which
-    might not yield any results, if <code class="literal">input</code> and <code class="literal">output</code> differ strongly).
 </dd><dt><span class="term">
 <code class="literal">weight</code>
 </span></dt><dd>
     A positive integer or a string containing a positive integer,
     which defines a weight and allows you to rank your suggestions.
     This field is optional.
-</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Even though you will lose most of the features of the
-completion suggest, you can choose to use the following shorthand form.
-Keep in mind that you will not be able to use several inputs, an output,
-payloads or weights. This form does still work inside of multi fields.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "suggest" : "Nirvana"
-}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The suggest data structure might not reflect deletes on documents
-immediately. You may need to do an <a class="xref" href="indices-forcemerge.html" title="Force Merge"><em>Force Merge</em></a> for that. You can call
-force merge with the <code class="literal">only_expunge_deletes=true</code> to only target deletions for
-merging.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="querying"></a>Querying<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Suggesting works as usual, except that you have to specify the suggest
-type as <code class="literal">completion</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -X POST 'localhost:9200/music/_suggest?pretty' -d '{
+</dd></dl></div><p>You can index multiple suggestions for a document as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT music/song/1?refresh=true
+{
+    "suggest" : [
+        {
+            "input": "Nevermind",
+            "weight" : 10
+        },
+        {
+            "input": "Nirvana",
+            "weight" : 3
+        }
+    ]
+}</pre></div><p>You can use the following shorthand form. Note that you can not specify
+a weight with suggestion(s).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "suggest" : [ "Nevermind", "Nirvana" ]
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="querying"></a>Querying<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Suggesting works as usual, except that you have to specify the suggest
+type as <code class="literal">completion</code>. Suggestions are near real-time, which means
+new suggestions can be made visible by <a class="link" href="indices-refresh.html" title="Refresh">refresh</a> and
+documents once deleted are never shown.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_suggest?pretty
+{
     "song-suggest" : {
-        "text" : "n",
+        "prefix" : "n",
         "completion" : {
             "field" : "suggest"
         }
     }
-}'
+}
 
 {
   "_shards" : {
@@ -732,15 +718,51 @@ type as <code class="literal">completion</code>.</p><div class="pre_wrapper"><pr
     "offset" : 0,
     "length" : 1,
     "options" : [ {
-      "text" : "Nirvana - Nevermind",
-      "score" : 34.0, "payload" : {"artistId":2321}
+      "text" : "Nirvana",
+      "score" : 34.0
     } ]
   } ]
-}</pre></div><p>As you can see, the payload is included in the response, if configured
-appropriately. If you configured a weight for a suggestion, this weight
-is used as <code class="literal">score</code>. Also the <code class="literal">text</code> field uses the <code class="literal">output</code> of your
-indexed suggestion, if configured, otherwise the matched part of the
-<code class="literal">input</code> field.</p><p>The basic completion suggester query supports the following two parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+}</pre></div><p>The configured weight for a suggestion is returned as <code class="literal">score</code>.
+The <code class="literal">text</code> field uses the <code class="literal">input</code> of your indexed suggestion.</p><p>Suggestions are document oriented, you can specify fields to be
+returned as part of suggestion payload. All field types (<code class="literal">string</code>,
+<code class="literal">numeric</code>, <code class="literal">date</code>, etc) are supported.</p><p>For example, if you index a "title" field along with the suggestion
+as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/song
+{
+    "suggest" : "Nirvana",
+    "title" : "Nevermind"
+}</pre></div><p>You can get the "title" as part of the suggestion
+payload by specifying it as a <code class="literal">payload</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_suggest?pretty
+{
+    "song-suggest" : {
+        "prefix" : "n",
+        "completion" : {
+            "field" : "suggest"
+            "payload" : [ "title" ] <a id="CO31-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        }
+    }
+}
+
+{
+  "_shards" : {
+    "total" : 5,
+    "successful" : 5,
+    "failed" : 0
+  },
+  "song-suggest" : [ {
+    "text" : "n",
+    "offset" : 0,
+    "length" : 1,
+    "options" : [ {
+      "text" : "Nirvana",
+      "score" : 34.0,
+      "payload" : {
+        "title" : [ "Nevermind" ]
+      }
+    } ]
+  } ]
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The fields to be returned as part of each suggestion payload.
+</p></td></tr></table></div><p>The basic completion suggester query supports the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">field</code>
 </span></dt><dd>
 The name of the field on which to run the query (required).
@@ -748,12 +770,20 @@ The name of the field on which to run the query (required).
 <code class="literal">size</code>
 </span></dt><dd>
 The number of suggestions to return (defaults to <code class="literal">5</code>).
+</dd><dt><span class="term">
+<code class="literal">payload</code>
+</span></dt><dd>
+The name of the field or field name array to be returned
+             as payload (defaults to no fields).
 </dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The completion suggester considers all documents in the index.
 See <a class="xref" href="suggester-context.html" title="Context Suggester">Context Suggester</a> for an explanation of how to query a subset of
-documents instead.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="fuzzy"></a>Fuzzy queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The completion suggester also supports fuzzy queries - this means,
-you can actually have a typo in your search and still get results back.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -X POST 'localhost:9200/music/_suggest?pretty' -d '{
+documents instead.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Specifying <code class="literal">payload</code> fields will incur additional search performance
+hit. The <code class="literal">payload</code> fields are retrieved eagerly (single pass) for top
+suggestions at the shard level using field data or from doc values.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="fuzzy"></a>Fuzzy queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The completion suggester also supports fuzzy queries - this means,
+you can have a typo in your search and still get results back.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_suggest?pretty
+{
     "song-suggest" : {
-        "text" : "n",
+        "prefix" : "n",
         "completion" : {
             "field" : "suggest",
             "fuzzy" : {
@@ -761,7 +791,8 @@ you can actually have a typo in your search and still get results back.</p><div 
             }
         }
     }
-}'</pre></div><p>The fuzzy query can take specific fuzzy parameters.
+}</pre></div><p>Suggestions that share the longest prefix to the query <code class="literal">prefix</code> will
+be scored higher.</p><p>The fuzzy query can take specific fuzzy parameters.
 The following parameters are supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">fuzziness</code>
@@ -804,13 +835,48 @@ The following parameters are supported:</p><div class="horizontal"><table cellpa
 </p>
 </td><td valign="top">
 <p>
-    Sets all are measurements (like edit distance,
-    transpositions and lengths) in unicode code points
-    (actual letters) instead of bytes.
+    If <code class="literal">true</code>, all measurements (like fuzzy edit
+    distance, transpositions, and lengths) are
+    measured in Unicode code points instead of
+    in bytes.  This is slightly slower than raw
+    bytes, so it is set to <code class="literal">false</code> by default.
 </p>
 </td></tr></tbody></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you want to stick with the default values, but
       still use fuzzy, you can either use <code class="literal">fuzzy: {}</code>
-      or <code class="literal">fuzzy: true</code>.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="search-suggesters-phrase.html">
+      or <code class="literal">fuzzy: true</code>.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="regex"></a>Regex queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The completion suggester also supports regex queries meaning
+you can express a prefix as a regular expression</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_suggest?pretty
+{
+    "song-suggest" : {
+        "regex" : "n[ever|i]r",
+        "completion" : {
+            "field" : "suggest",
+        }
+    }
+}</pre></div><p>The regex query can take specific regex parameters.
+The following parameters are supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">flags</code>
+</p>
+</td><td valign="top">
+<p>
+    Possible flags are <code class="literal">ALL</code> (default), <code class="literal">ANYSTRING</code>, <code class="literal">COMPLEMENT</code>,
+    <code class="literal">EMPTY</code>, <code class="literal">INTERSECTION</code>, <code class="literal">INTERVAL</code>, or <code class="literal">NONE</code>. See <a class="link" href="query-dsl-regexp-query.html" title="Regexp Query">regexp-syntax</a>
+    for their meaning
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">max_determinized_states</code>
+</p>
+</td><td valign="top">
+<p>
+    Regular expressions are dangerous because it’s easy to accidentally
+    create an innocuous looking one that requires an exponential number of
+    internal determinized automaton states (and corresponding RAM and CPU)
+    for Lucene to execute.  Lucene prevents these using the
+    <code class="literal">max_determinized_states</code> setting (defaults to 10000).  You can raise
+    this limit to allow more complex regular expressions to execute.
+</p>
+</td></tr></tbody></table></div></div></div><div class="navfooter"><span class="prev"><a href="search-suggesters-phrase.html">
               « 
               Phrase Suggester</a>
            
