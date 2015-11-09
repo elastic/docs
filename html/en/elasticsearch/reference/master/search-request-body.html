@@ -697,7 +697,30 @@ example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang
 query-string parameters. The rest of the search request should be passed
 within the body itself. The body content can also be passed as a REST
 parameter named <code class="literal">source</code>.</p><p>Both HTTP GET and HTTP POST can be used to execute search with body. Since not
-all clients support GET with body, POST is allowed as well.</p></div><div class="navfooter"><span class="prev"><a href="search-uri-request.html">
+all clients support GET with body, POST is allowed as well.</p><h3><a id="_fast_check_for_any_matching_docs"></a>Fast check for any matching docs<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request-body.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In case we only want to know if there are any documents matching a
+specific query, we can set the <code class="literal">size</code> to <code class="literal">0</code> to indicate that we are not
+interested in the search results. Also we can set <code class="literal">terminate_after</code> to <code class="literal">1</code>
+to indicate that the query execution can be terminated whenever the first
+matching document was found (per shard).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XGET 'http://localhost:9200/_search?q=tag:wow&amp;size=0&amp;terminate_after=1'</pre></div><p>The response will not contain any hits as the <code class="literal">size</code> was set to <code class="literal">0</code>. The
+<code class="literal">hits.total</code> will be either equal to <code class="literal">0</code>, indicating that there were no
+matching documents, or greater than <code class="literal">0</code> meaning that there were at least
+as many documents matching the query when it was early terminated.
+Also if the query was terminated early, the <code class="literal">terminated_early</code> flag will
+be set to <code class="literal">true</code> in the response.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "took": 3,
+  "timed_out": false,
+  "terminated_early": true,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "failed": 0
+  },
+  "hits": {
+    "total": 1,
+    "max_score": 0,
+    "hits": []
+  }
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="search-uri-request.html">
               « 
               URI Search</a>
            
