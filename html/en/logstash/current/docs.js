@@ -137,7 +137,7 @@ jQuery(function() {
     var items = 0;
     var ul = jQuery('#this_page ul');
 
-    jQuery('#guide div.book a[id]').each(
+    jQuery('#guide a[id]').each(
       function() {
         // Make headers into real links for permalinks
         this.href = '#' + this.id;
