@@ -620,17 +620,18 @@ input {
 output {
 }</pre></div><p>This skeleton is non-functional, because the input and output sections don’t have any valid options defined. The
 examples in this tutorial build configuration files to address specific use cases.</p><p>Paste the skeleton into a file named <code class="literal">first-pipeline.conf</code> in your home Logstash directory.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="parsing-into-es"></a>Parsing Apache Logs into Elasticsearch<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This example creates a Logstash pipeline that takes Apache web logs as input, parses those logs to create specific,
-named fields from the logs, and writes the parsed data to an Elasticsearch cluster.</p><h5><a id="configuring-file-input"></a>Configuring Logstash for File Input<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>To start your Logstash pipeline, configure the Logstash instance to read from a file using the
+named fields from the logs, and writes the parsed data to an Elasticsearch cluster.</p><p>You can download the sample data set used in this example
+<a class="ulink" href="https://download.elastic.co/demos/logstash/gettingstarted/logstash-tutorial.log.gz" target="_top">here</a>. Unpack this file.</p><h5><a id="configuring-file-input"></a>Configuring Logstash for File Input<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>To start your Logstash pipeline, configure the Logstash instance to read from a file using the
 <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-file.html" target="_top">file</a> input plugin.</p><p>Edit the <code class="literal">first-pipeline.conf</code> file to add the following text:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">input {
     file {
-        path =&gt; "/path/to/groksample.log"
+        path =&gt; "/path/to/logstash-tutorial.log"
         start_position =&gt; beginning <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The default behavior of the file input plugin is to monitor a file for new information, in a manner similar to the
 UNIX <code class="literal">tail -f</code> command. To change this default behavior and process the entire file, we need to specify the position
 where Logstash starts processing the file.
-</p></td></tr></table></div><p>Replace <code class="literal">/path/to/</code> with the actual path to the location of <code class="literal">groksample.log</code> in your file system.</p><h5><a id="configuring-grok-filter"></a>Parsing Web Logs with the Grok Filter Plugin<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-filters-grok.html" target="_top"><code class="literal">grok</code></a> filter plugin is one of several plugins that are available by default in
+</p></td></tr></table></div><p>Replace <code class="literal">/path/to/</code> with the actual path to the location of <code class="literal">logstash-tutorial.log</code> in your file system.</p><h5><a id="configuring-grok-filter"></a>Parsing Web Logs with the Grok Filter Plugin<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-filters-grok.html" target="_top"><code class="literal">grok</code></a> filter plugin is one of several plugins that are available by default in
 Logstash. For details on how to manage Logstash plugins, see the <a class="link" href="working-with-plugins.html" title="Working with plugins">reference documentation</a> for
 the plugin manager.</p><p>Because the <code class="literal">grok</code> filter plugin looks for patterns in the incoming log data, configuration requires you to make
 decisions about how to identify the patterns that are of interest to your use case. A representative line from the web
@@ -754,8 +755,9 @@ Elasticsearch cluster. Edit the <code class="literal">first-pipeline.conf</code>
     elasticsearch {
         protocol =&gt; "http"
     }
-}</pre></div><p>With this configuration, Logstash uses multicast discovery to connect to Elasticsearch.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Multicast discovery is acceptable for development work, but unsuited for production environments. For the
-purposes of this example, however, the default behavior is sufficient.</p></div></div><h5><a id="configuring-geoip-plugin"></a>Enhancing Your Data with the Geoip Filter Plugin<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>In addition to parsing log data for better searches, filter plugins can derive supplementary information from existing
+}</pre></div><p>With this configuration, Logstash uses http protocol to connect to Elasticsearch. The above example assumes Logstash
+and Elasticsearch to be running on the same instance. You can specify a remote Elasticsearch instance using <code class="literal">hosts</code>
+configuration like <code class="literal">hosts =&gt; "es-machine:9092"</code>.</p><h5><a id="configuring-geoip-plugin"></a>Enhancing Your Data with the Geoip Filter Plugin<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>In addition to parsing log data for better searches, filter plugins can derive supplementary information from existing
 data. As an example, the <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-filters-geoip.html" target="_top"><code class="literal">geoip</code></a> plugin looks up IP addresses, derives geographic
 location information from the addresses, and adds that location information to the logs.</p><p>Configure your Logstash instance to use the <code class="literal">geoip</code> filter plugin by adding the following lines to the <code class="literal">filter</code> section
 of the <code class="literal">first-pipeline.conf</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">geoip {
@@ -782,7 +784,7 @@ output {
     }
     stdout {}
 }</pre></div><p>To verify your configuration, run the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f first-pipeline.conf --configtest</pre></div><p>The <code class="literal">--configtest</code> option parses your configuration file and reports any errors. When the configuration file passes
-the configuration test, start Logstash with the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f first-pipeline.conf</pre></div><p>Try a test query to Elasticsearch based on the fields created by the <code class="literal">grok</code> filter plugin:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/logstash-$DATE/_search?q=response=401'</pre></div><p>Replace $DATE with the current date, in YYYY.MM.DD format.</p><p>Since our sample has just one 401 HTTP response, we get one hit back:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{"took":2,
+the configuration test, start Logstash with the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f first-pipeline.conf</pre></div><p>Try a test query to Elasticsearch based on the fields created by the <code class="literal">grok</code> filter plugin:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/logstash-$DATE/_search?q=response=200'</pre></div><p>Replace $DATE with the current date, in YYYY.MM.DD format.</p><p>Since our sample has just one 200 HTTP response, we get one hit back:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{"took":2,
 "timed_out":false,
 "_shards":{"total":5,
   "successful":5,
@@ -927,8 +929,9 @@ providing redundant points of entry into the cluster when a particular node is u
         protocol =&gt; "http"
         host =&gt; ["IP Address 1", "IP Address 2", "IP Address 3"]
     }
-}</pre></div><p>Use the IP addresses of three non-master nodes in your Elasticsearch cluster in the host line. When the <code class="literal">host</code>
-parameter lists multiple IP addresses, Logstash load-balances requests across the list of addresses.</p><h5><a id="testing-second-pipeline"></a>Testing the Pipeline<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>At this point, your <code class="literal">first-pipeline.conf</code> file looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">input {
+}</pre></div><p>Use the IP addresses of three non-master nodes in your Elasticsearch cluster in the host line. When the <code class="literal">hosts</code>
+parameter lists multiple IP addresses, Logstash load-balances requests across the list of addresses. Also note that
+the default port for Elasticsearch is <code class="literal">9200</code> and can be omitted in the configuration above.</p><h5><a id="testing-second-pipeline"></a>Testing the Pipeline<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>At this point, your <code class="literal">first-pipeline.conf</code> file looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">input {
     twitter {
         consumer_key =&gt;
         consumer_secret =&gt;
