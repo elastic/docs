@@ -612,7 +612,7 @@ where it is installed. If you are monitoring a production cluster we recommend
 that you store the Marvel data in a separate monitoring cluster. Sending the Marvel
 data to a monitoring cluster helps ensure that you can continue to monitor your
 production cluster if it’s in an unhealthy state.</p><p>For basic installation instructions, see <a class="link" href="getting-started.html" title="Getting Started">Getting Started with Marvel</a>. For
-information about storing Marvel data in a separate monitoring cluster, see <a class="link" href="installing-marvel.html#monitoring-cluster" title="Setting up a Separate Monitoring Cluster">Setting up a Separate Monitoring Cluster</a>.</p><h3><a id="marvel-prequisites"></a>Marvel Installation Prequisites</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+information about storing Marvel data in a separate monitoring cluster, see <a class="link" href="installing-marvel.html#monitoring-cluster" title="Setting up a Separate Monitoring Cluster">Setting up a Separate Monitoring Cluster</a>.</p><h3><a id="marvel-prequisites"></a>Marvel Installation Prerequisites</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Elasticsearch 2.0 or later.
 </li><li class="listitem">
 Kibana 4.2+ or later.
@@ -647,7 +647,7 @@ Specify the archive files when you run <code class="literal">bin/plugin</code> a
 bin/plugin install marvel-agent file:///path/to/file/marvel-agent-2.0.0.zip
 bin/kibana plugin --install marvel --url file:///path/to/file/marvel-2.0.0.tar.gz</pre></div></li></ol></div><h3><a id="monitoring-cluster"></a>Setting up a Separate Monitoring Cluster</h3><p>To store Marvel data in a separate monitoring cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 Set up the Elasticsearch cluster you want to use for monitoring and start Elasticsearch.
-For example, a two host cluster with the nodes <code class="literal">es-mon-1</code> and <code class="literal">es-mon-2</code>.
+For example, you might set up a two host cluster with the nodes <code class="literal">es-mon-1</code> and <code class="literal">es-mon-2</code>.
 </li><li class="listitem"><p class="simpara">
 Configure the nodes in your production cluster to send Marvel data to your monitoring cluster by
 configuring an HTTP exporter in the <code class="literal">marvel.agent.exporters</code> settings in <code class="literal">elasticsearch.yml</code>:
@@ -685,7 +685,36 @@ Using Marvel with Shield</a> in the Shield Reference.</p><h3><a id="enabling-ind
 when indexing documents. If you have disabled automatic index creation, you
 need to configure the <code class="literal">action.auto_create_index</code> setting to allow the
 creation of Marvel indices:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">action.auto_create_index: .marvel-*</pre></div><p>For more information see <a class="ulink" href="https://wwww.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html#index-creation" target="_top">Index Creation</a> in the Elasticsearch
-Reference.</p><h3><a id="uninstalling-marvel"></a>Uninstalling Marvel</h3><p>To uninstall Marvel:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Reference.</p><h3><a id="upgrading"></a>Upgrading Marvel</h3><p>When upgrading Marvel, you must upgrade the Marvel agent on every node you are monitoring. You
+do not need to fully shut down your production cluster to perform the upgrade, you
+can perform a rolling upgrade.</p><p>To perform a rolling upgrade of Marvel:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Disable shard reallocation. While this is optional, it enables a faster startup after cluster
+shutdown.  If you don’t disable shard reallocation, the nodes immediately start trying to
+replicate shards to each other on startup and spend a lot of time on wasted I/O. With shard
+reallocation disabled, the nodes join the cluster with their indices intact and do not attempt to
+rebalance. After startup is complete, you can turn reallocation back on.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPUT localhost:9200/_cluster/settings -d '{
+  "transient" : {
+    "cluster.routing.allocation.enable" : "none"
+  }
+}'</pre></div></li><li class="listitem"><p class="simpara">
+Upgrade each node, one at a time:
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
+Stop Elasticsearch.
+</li><li class="listitem"><p class="simpara">
+Remove the old version of the Marvel agent from Elasticsearch:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/plugin remove marvel-agent</pre></div></li><li class="listitem"><p class="simpara">
+Install the latest version of the Marvel agent:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/plugin install marvel-agent</pre></div></li><li class="listitem">
+Start Elasticsearch and confirm that the node rejoins the cluster and that there are no errors
+in the logs.
+</li></ol></div></li><li class="listitem"><p class="simpara">
+When you’ve upgraded all of the nodes in the cluster, reenable shard allocation:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPUT localhost:9200/_cluster/settings -d '{
+  "transient" : {
+      "cluster.routing.allocation.enable" : "all"
+  }
+}'</pre></div></li></ol></div><h3><a id="uninstalling-marvel"></a>Uninstalling Marvel</h3><p>To uninstall Marvel:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 Shut down Elasticsearch and Kibana.
 </li><li class="listitem"><p class="simpara">
 Remove the Marvel agent plugin from Elasticsearch:
