@@ -621,7 +621,7 @@ output {
 }</pre></div><p>This skeleton is non-functional, because the input and output sections don’t have any valid options defined. The
 examples in this tutorial build configuration files to address specific use cases.</p><p>Paste the skeleton into a file named <code class="literal">first-pipeline.conf</code> in your home Logstash directory.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="parsing-into-es"></a>Parsing Apache Logs into Elasticsearch<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This example creates a Logstash pipeline that takes Apache web logs as input, parses those logs to create specific,
 named fields from the logs, and writes the parsed data to an Elasticsearch cluster.</p><p>You can download the sample data set used in this example
-<a class="ulink" href="https://download.elastic.co/demos/logstash/gettingstarted/logstash-tutorial.log.gz" target="_top">here</a>. Unpack this file.</p><h5><a id="configuring-file-input"></a>Configuring Logstash for File Input<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>To start your Logstash pipeline, configure the Logstash instance to read from a file using the
+<a class="ulink" href="https://download.elastic.co/demos/logstash/gettingstarted/logstash-tutorial.log.gz" target="_top">here</a>. Unpack this file.</p><h4><a id="configuring-file-input"></a>Configuring Logstash for File Input<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To start your Logstash pipeline, configure the Logstash instance to read from a file using the
 <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-file.html" target="_top">file</a> input plugin.</p><p>Edit the <code class="literal">first-pipeline.conf</code> file to add the following text:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">input {
     file {
         path =&gt; "/path/to/logstash-tutorial.log"
@@ -753,7 +753,6 @@ User agent
 }</pre></div><h5><a id="indexing-parsed-data-into-elasticsearch"></a>Indexing Parsed Data into Elasticsearch<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Now that the web logs are broken down into specific fields, the Logstash pipeline can index the data into an
 Elasticsearch cluster. Edit the <code class="literal">first-pipeline.conf</code> file to add the following text after the <code class="literal">input</code> section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">output {
     elasticsearch {
-        protocol =&gt; "http"
     }
 }</pre></div><p>With this configuration, Logstash uses http protocol to connect to Elasticsearch. The above example assumes Logstash
 and Elasticsearch to be running on the same instance. You can specify a remote Elasticsearch instance using <code class="literal">hosts</code>
@@ -779,9 +778,7 @@ filter {
     }
 }
 output {
-    elasticsearch {
-        protocol =&gt; "http"
-    }
+    elasticsearch {}
     stdout {}
 }</pre></div><p>To verify your configuration, run the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f first-pipeline.conf --configtest</pre></div><p>The <code class="literal">--configtest</code> option parses your configuration file and reports any errors. When the configuration file passes
 the configuration test, start Logstash with the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f first-pipeline.conf</pre></div><p>Try a test query to Elasticsearch based on the fields created by the <code class="literal">grok</code> filter plugin:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/logstash-$DATE/_search?q=response=200'</pre></div><p>Replace $DATE with the current date, in YYYY.MM.DD format.</p><p>Since our sample has just one 200 HTTP response, we get one hit back:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{"took":2,
@@ -865,8 +862,8 @@ the configuration test, start Logstash with the following command:</p><div class
  }
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="multiple-input-output-plugins"></a>Multiple Input and Output Plugins<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The information you need to manage often comes from several disparate sources, and use cases can require multiple
 destinations for your data. Your Logstash pipeline can use multiple input and output plugins to handle these
-requirements.</p><p>This example creates a Logstash pipeline that takes input from a Twitter feed and the Logstash Forwarder client, then
-sends the information to an Elasticsearch cluster as well as writing the information directly to a file.</p><h5><a id="twitter-configuration"></a>Reading from a Twitter feed<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>To add a Twitter feed, you need several pieces of information:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+requirements.</p><p>This example creates a Logstash pipeline that takes input from a Twitter feed and the Filebeat client, then
+sends the information to an Elasticsearch cluster as well as writing the information directly to a file.</p><h4><a id="twitter-configuration"></a>Reading from a Twitter feed<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To add a Twitter feed, you need several pieces of information:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 A <span class="emphasis"><em>consumer</em></span> key, which uniquely identifies your Twitter app, which is Logstash in this case.
 </li><li class="listitem">
 A <span class="emphasis"><em>consumer secret</em></span>, which serves as the password for your Twitter app.
@@ -883,55 +880,55 @@ your OAuth token and secret.</p><p>Use this information to add the following lin
     keywords =&gt;
     oauth_token =&gt;
     oauth_token_secret =&gt;
-}</pre></div><h5><a id="configuring-lsf"></a>The Logstash Forwarder<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <a class="ulink" href="https://github.com/elastic/logstash-forwarder" target="_top">Logstash Forwarder</a> is a lightweight, resource-friendly tool that
+}</pre></div><h4><a id="configuring-lsf"></a>The Filebeat Client<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <a class="ulink" href="https://github.com/elastic/filebeat" target="_top">filebeat</a> client is a lightweight, resource-friendly tool that
 collects logs from files on the server and forwards these logs to your Logstash instance for processing. The
-Logstash Forwarder uses a secure protocol called <span class="emphasis"><em>lumberjack</em></span> to communicate with your Logstash instance. The
-lumberjack protocol is designed for reliability and low latency. The Logstash Forwarder uses the computing resources of
-the machine hosting the source data, and the Lumberjack input plugin minimizes the resource demands on the Logstash
-instance.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>In a typical use case, the Logstash Forwarder client runs on a separate machine from the machine running your
-Logstash instance. For the purposes of this tutorial, both Logstash and the Logstash Forwarder will be running on the
-same machine.</p></div></div><p>Default Logstash configuration includes the <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-lumberjack.html" target="_top">Lumberjack input plugin</a>, which is
-designed to be resource-friendly. To install the Logstash Forwarder on your data source machine, install the
-appropriate package from the main Logstash <a class="ulink" href="https://www.elastic.co/downloads/logstash" target="_top">product page</a>.</p><p>Create a configuration file for the Logstash Forwarder similar to the following example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-    "network": {
-        "servers": [ "localhost:5043" ],
-        "ssl ca": "/path/to/localhost.crt", <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        "timeout": 15
-    },
-    "files": [
-        {
-            "paths": [
-                "/path/to/sample-log" <a id="CO2-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-            ],
-            "fields": { "type": "apache" }
-        }
-    ]
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Path to the SSL certificate for the Logstash instance.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Path to the file or files that the Logstash Forwarder processes.
-</p></td></tr></table></div><p>Save this configuration file as <code class="literal">logstash-forwarder.conf</code>.</p><p>Configure your Logstash instance to use the Lumberjack input plugin by adding the following lines to the <code class="literal">input</code> section
-of the <code class="literal">first-pipeline.conf</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">lumberjack {
+Filebeat client uses the secure Beats protocol to communicate with your Logstash instance. The
+lumberjack protocol is designed for reliability and low latency. Filebeat uses the computing resources of
+the machine hosting the source data, and the <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-beats.html" target="_top">Beats input</a> plugin minimizes the
+resource demands on the Logstash instance.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>In a typical use case, Filebeat runs on a separate machine from the machine running your
+Logstash instance. For the purposes of this tutorial, Logstash and Filebeat are running on the
+same machine.</p></div></div><p>Default Logstash configuration includes the <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-beats.html" target="_top">Beats input plugin</a>, which is
+designed to be resource-friendly. To install Filebeat on your data source machine, download the
+appropriate package from the Filebeat <a class="ulink" href="https://www.elastic.co/downloads/beats/filebeat" target="_top">product page</a>.</p><p>Create a configuration file for Filebeat similar to the following example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">filebeat:
+  prospectors:
+    -
+      paths:
+        - "/path/to/sample-log" <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      fields:
+        type: syslog
+output:
+  elasticsearch:
+    enabled: true
+    hosts: ["http://localhost:5043"]
+  tls:
+    certificate: /path/to/ssl-certificate.crt <a id="CO2-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    certificate_key: /path/to/ssl-certificate.key
+    certificate_authorities: /path/to/ssl-certificate.crt
+    timeout: 15
+
+<a id="CO2-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span> Path to the file or files that Filebeat processes.
+<a id="CO2-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span> Path to the SSL certificate for the Logstash instance.</pre></div><p>Save this configuration file as <code class="literal">filebeat.yml</code>.</p><p>Configure your Logstash instance to use the Filebeat input plugin by adding the following lines to the <code class="literal">input</code> section
+of the <code class="literal">first-pipeline.conf</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">beats {
     port =&gt; "5043"
-    ssl_certificate =&gt; "/path/to/ssl-cert" <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    ssl_key =&gt; "/path/to/ssl-key" <a id="CO3-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Path to the SSL certificate that the Logstash instance uses to authenticate itself to Logstash Forwarder.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+    ssl =&gt; true
+    ssl_certificate =&gt; "/path/to/ssl-cert" <a id="CO2-5"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    ssl_key =&gt; "/path/to/ssl-key" <a id="CO2-6"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO2-5"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Path to the SSL certificate that the Logstash instance uses to authenticate itself to Filebeat.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO2-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO2-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> <a href="#CO2-6"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Path to the key for the SSL certificate.
-</p></td></tr></table></div><h5><a id="logstash-file-output"></a>Writing Logstash Data to a File<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>You can configure your Logstash pipeline to write data directly to a file with the
+</p></td></tr></table></div><h4><a id="logstash-file-output"></a>Writing Logstash Data to a File<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>You can configure your Logstash pipeline to write data directly to a file with the
 <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-outputs-file.html" target="_top"><code class="literal">file</code></a> output plugin.</p><p>Configure your Logstash instance to use the <code class="literal">file</code> output plugin by adding the following lines to the <code class="literal">output</code> section
 of the <code class="literal">first-pipeline.conf</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">file {
     path =&gt; /path/to/target/file
-}</pre></div><h5><a id="multiple-es-nodes"></a>Writing to multiple Elasticsearch nodes<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Writing to multiple Elasticsearch nodes lightens the resource demands on a given Elasticsearch node, as well as
+}</pre></div><h4><a id="multiple-es-nodes"></a>Writing to multiple Elasticsearch nodes<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Writing to multiple Elasticsearch nodes lightens the resource demands on a given Elasticsearch node, as well as
 providing redundant points of entry into the cluster when a particular node is unavailable.</p><p>To configure your Logstash instance to write to multiple Elasticsearch nodes, edit the output section of the <code class="literal">first-pipeline.conf</code> file to read:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">output {
     elasticsearch {
-        protocol =&gt; "http"
-        host =&gt; ["IP Address 1", "IP Address 2", "IP Address 3"]
+        hosts =&gt; ["IP Address 1:port1", "IP Address 2:port2", "IP Address 3"]
     }
 }</pre></div><p>Use the IP addresses of three non-master nodes in your Elasticsearch cluster in the host line. When the <code class="literal">hosts</code>
 parameter lists multiple IP addresses, Logstash load-balances requests across the list of addresses. Also note that
-the default port for Elasticsearch is <code class="literal">9200</code> and can be omitted in the configuration above.</p><h5><a id="testing-second-pipeline"></a>Testing the Pipeline<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>At this point, your <code class="literal">first-pipeline.conf</code> file looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">input {
+default port for Elasticsearch is <code class="literal">9200</code> and can be omitted in the configuration above.</p><h5><a id="testing-second-pipeline"></a>Testing the Pipeline<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>At this point, your <code class="literal">first-pipeline.conf</code> file looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">input {
     twitter {
         consumer_key =&gt;
         consumer_secret =&gt;
@@ -939,22 +936,22 @@ the default port for Elasticsearch is <code class="literal">9200</code> and can 
         oauth_token =&gt;
         oauth_token_secret =&gt;
     }
-    lumberjack {
+    beats {
         port =&gt; "5043"
+        ssl =&gt; true
         ssl_certificate =&gt; "/path/to/ssl-cert"
         ssl_key =&gt; "/path/to/ssl-key"
     }
 }
 output {
     elasticsearch {
-        protocol =&gt; "http"
-        host =&gt; ["IP Address 1", "IP Address 2", "IP Address 3"]
+        hosts =&gt; ["IP Address 1:port1", "IP Address 2:port2", "IP Address 3"]
     }
     file {
         path =&gt; /path/to/target/file
     }
-}</pre></div><p>Logstash is consuming data from the Twitter feed you configured, receiving data from the Logstash Forwarder, and
-indexing this information to three nodes in an Elasticsearch cluster as well as writing to a file.</p><p>At the data source machine, run the Logstash Forwarder with the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">logstash-forwarder -config logstash-forwarder.conf</pre></div><p>Logstash Forwarder will attempt to connect on port 5403. Until Logstash starts with an active Lumberjack plugin, there
+}</pre></div><p>Logstash is consuming data from the Twitter feed you configured, receiving data from Filebeat, and
+indexing this information to three nodes in an Elasticsearch cluster as well as writing to a file.</p><p>At the data source machine, run Filebeat with the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">sudo ./filebeat -e -c filebeat.yml -d "publish"</pre></div><p>Filebeat will attempt to connect on port 5403. Until Logstash starts with an active Beats plugin, there
 won’t be any answer on that port, so any messages you see regarding failure to connect on that port are normal for now.</p><p>To verify your configuration, run the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f first-pipeline.conf --configtest</pre></div><p>The <code class="literal">--configtest</code> option parses your configuration file and reports any errors. When the configuration file passes
 the configuration test, start Logstash with the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -f first-pipeline.conf</pre></div><p>Use the <code class="literal">grep</code> utility to search in the target file to verify that information is present:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">grep Mozilla /path/to/target/file</pre></div><p>Run an Elasticsearch query to find the same information in the Elasticsearch cluster:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/logstash-2015.07.30/_search?q=agent=Mozilla'</pre></div></div></div><div class="navfooter"><span class="prev"><a href="first-event.html">
               « 
