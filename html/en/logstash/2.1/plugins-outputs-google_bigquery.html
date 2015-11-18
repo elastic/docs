@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Logstash Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>google_bigquery</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference [2.1]" /><link rel="up" href="output-plugins.html" title="Output plugins" /><link rel="prev" href="plugins-outputs-file.html" title="file" /><link rel="next" href="plugins-outputs-google_cloud_storage.html" title="google_cloud_storage" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -594,15 +594,173 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Logstash Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">Logstash Reference: master</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference
+      [2.1]
+    </a></span> » <span class="breadcrumb-link"><a href="output-plugins.html">Output plugins</a></span> » <span class="breadcrumb-node">google_bigquery</span></div><div class="navheader"><span class="prev"><a href="plugins-outputs-file.html">
+              « 
+              file</a>
+           
+        </span><span class="next">
+           
+          <a href="plugins-outputs-google_cloud_storage.html">google_cloud_storage
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="plugins-outputs-google_bigquery"></a>google_bigquery<a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This is a community-maintained plugin! It does not ship with Logstash by default, but it is easy to install by running <code class="literal">bin/plugin install logstash-output-google_bigquery</code>.</p></div></div><p>Author: Rodrigo De Castro &lt;<a class="ulink" href="mailto:rdc@google.com" target="_top">rdc@google.com</a>&gt;
+Date: 2013-09-20</p><p>Copyright 2013 Google Inc.</p><p>Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p><pre class="literallayout">http://www.apache.org/licenses/LICENSE-2.0</pre><p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+Summary: plugin to upload log events to Google BigQuery (BQ), rolling
+files based on the date pattern provided as a configuration setting. Events
+are written to files locally and, once file is closed, this plugin uploads
+it to the configured BigQuery dataset.</p><p>VERY IMPORTANT:
+1 - To make good use of BigQuery, your log events should be parsed and
+structured. Consider using grok to parse your events into fields that can
+be uploaded to BQ.
+2 - You must configure your plugin so it gets events with the same structure,
+so the BigQuery schema suits them. In case you want to upload log events
+with different structures, you can utilize multiple configuration blocks,
+separating different log events with Logstash conditionals. More details on
+Logstash conditionals can be found here:
+<a class="ulink" href="http://logstash.net/docs/1.2.1/configuration#conditionals" target="_top">http://logstash.net/docs/1.2.1/configuration#conditionals</a></p><p>For more info on Google BigQuery, please go to:
+<a class="ulink" href="https://developers.google.com/bigquery/" target="_top">https://developers.google.com/bigquery/</a></p><p>In order to use this plugin, a Google service account must be used. For
+more information, please refer to:
+<a class="ulink" href="https://developers.google.com/storage/docs/authentication#service_accounts" target="_top">https://developers.google.com/storage/docs/authentication#service_accounts</a></p><p>Recommendations:
+a - Experiment with the settings depending on how much log data you generate,
+your needs to see "fresh" data, and how much data you could lose in the event
+of crash. For instance, if you want to see recent data in BQ quickly, you
+could configure the plugin to upload data every minute or so (provided you
+have enough log events to justify that). Note also, that if uploads are too
+frequent, there is no guarantee that they will be imported in the same order,
+so later data may be available before earlier data.
+b - BigQuery charges for storage and for queries, depending on how much data
+it reads to perform a query. These are other aspects to consider when
+considering the date pattern which will be used to create new tables and also
+how to compose the queries when using BQ. For more info on BigQuery Pricing,
+please access:
+<a class="ulink" href="https://developers.google.com/bigquery/pricing" target="_top">https://developers.google.com/bigquery/pricing</a></p><p>USAGE:
+This is an example of logstash config:</p><p>output {
+   google_bigquery {
+     project_id ⇒ "folkloric-guru-278"                        (required)
+     dataset ⇒ "logs"                                         (required)
+     csv_schema ⇒ "path:STRING,status:INTEGER,score:FLOAT"    (required)
+     key_path ⇒ "/path/to/privatekey.p12"                     (required)
+     key_password ⇒ "notasecret"                              (optional)
+     service_account ⇒ "1234@developer.gserviceaccount.com"   (required)
+     temp_directory ⇒ "/tmp/logstash-bq"                      (optional)
+     temp_file_prefix ⇒ "logstash_bq"                         (optional)
+     date_pattern ⇒ "%Y-%m-%dT%H:00"                          (optional)
+     flush_interval_secs ⇒ 2                                  (optional)
+     uploader_interval_secs ⇒ 60                              (optional)
+     deleter_interval_secs ⇒ 60                               (optional)
+   }
+}</p><p>Improvements TODO list:
+- Refactor common code between Google BQ and GCS plugins.
+- Turn Google API code into a Plugin Mixin (like AwsConfig).
+- There’s no recover method, so if logstash/plugin crashes, files may not
+be uploaded to BQ.</p><p> </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_synopsis_61"></a>Synopsis<a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This plugin supports the following configuration options:</p><p>Required configuration options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">google_bigquery {
+    csv_schema =&gt; ...
+    dataset =&gt; ...
+    key_path =&gt; ...
+    project_id =&gt; ...
+    service_account =&gt; ...
+}</pre></div><p>Available configuration options:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Input type</th><th align="left" valign="top">Required</th><th align="left" valign="top">Default value</th></tr></thead><tbody><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-codec" title="codec"><code class="literal">codec</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#codec" title="Codecedit">codec</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">"plain"</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-csv_schema" title="csv_schema"><code class="literal">csv_schema</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>Yes</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-dataset" title="dataset"><code class="literal">dataset</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>Yes</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-date_pattern" title="date_pattern"><code class="literal">date_pattern</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">"%Y-%m-%dT%H:00"</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-deleter_interval_secs" title="deleter_interval_secs"><code class="literal">deleter_interval_secs</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">60</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-flush_interval_secs" title="flush_interval_secs"><code class="literal">flush_interval_secs</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">2</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-ignore_unknown_values" title="ignore_unknown_values"><code class="literal">ignore_unknown_values</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">false</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-key_password" title="key_password"><code class="literal">key_password</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">"notasecret"</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-key_path" title="key_path"><code class="literal">key_path</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>Yes</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-project_id" title="project_id"><code class="literal">project_id</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>Yes</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-service_account" title="service_account"><code class="literal">service_account</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>Yes</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-table_prefix" title="table_prefix"><code class="literal">table_prefix</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">"logstash"</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-temp_directory" title="temp_directory"><code class="literal">temp_directory</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">""</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-temp_file_prefix" title="temp_file_prefix"><code class="literal">temp_file_prefix</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">"logstash_bq"</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-uploader_interval_secs" title="uploader_interval_secs"><code class="literal">uploader_interval_secs</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">60</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-workers" title="workers"><code class="literal">workers</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">1</code></code></p></td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_details_61"></a>Details<a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p> </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-codec"></a><code class="literal">codec</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#codec" title="Codecedit">codec</a>
 </li><li class="listitem">
-<a class="ulink" href="2.1/index.html" target="_top">Logstash Reference: 2.1</a>
+Default value is <code class="literal">"plain"</code>
+</li></ul></div><p>The codec used for output data. Output codecs are a convenient method for encoding your data before it leaves the output, without needing a separate filter in your Logstash pipeline.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-csv_schema"></a><code class="literal">csv_schema</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+This is a required setting.
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Logstash Reference: 2.0 (current)</a>
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
 </li><li class="listitem">
-<a class="ulink" href="1.5/index.html" target="_top">Logstash Reference: 1.5</a>
-</li></ul></div></div>
+There is no default value for this setting.
+</li></ul></div><p>Schema for log data. It must follow this format:
+&lt;field1-name&gt;:&lt;field1-type&gt;,&lt;field2-name&gt;:&lt;field2-type&gt;,…
+Example: path:STRING,status:INTEGER,score:FLOAT</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-dataset"></a><code class="literal">dataset</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+This is a required setting.
+</li><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>BigQuery dataset to which these events will be added to.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-date_pattern"></a><code class="literal">date_pattern</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+Default value is <code class="literal">"%Y-%m-%dT%H:00"</code>
+</li></ul></div><p>Time pattern for BigQuery table, defaults to hourly tables.
+Must Time.strftime patterns: www.ruby-doc.org/core-2.0/Time.html#method-i-strftime</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-deleter_interval_secs"></a><code class="literal">deleter_interval_secs</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
+</li><li class="listitem">
+Default value is <code class="literal">60</code>
+</li></ul></div><p>Deleter interval when checking if upload jobs are done for file deletion.
+This only affects how long files are on the hard disk after the job is done.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-flush_interval_secs"></a><code class="literal">flush_interval_secs</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
+</li><li class="listitem">
+Default value is <code class="literal">2</code>
+</li></ul></div><p>Flush interval in seconds for flushing writes to log files. 0 will flush
+on every message.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-ignore_unknown_values"></a><code class="literal">ignore_unknown_values</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a>
+</li><li class="listitem">
+Default value is <code class="literal">false</code>
+</li></ul></div><p>Indicates if BigQuery should allow extra values that are not represented in the table schema.
+If true, the extra values are ignored. If false, records with extra columns are treated as bad records, and if there are too many bad records, an invalid error is returned in the job result. The default value is false.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-key_password"></a><code class="literal">key_password</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+Default value is <code class="literal">"notasecret"</code>
+</li></ul></div><p>Private key password for service account private key.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-key_path"></a><code class="literal">key_path</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+This is a required setting.
+</li><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>Path to private key file for Google Service Account.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-project_id"></a><code class="literal">project_id</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+This is a required setting.
+</li><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>Google Cloud Project ID (number, not Project Name!).</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-service_account"></a><code class="literal">service_account</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+This is a required setting.
+</li><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>Service account to access Google APIs.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-table_prefix"></a><code class="literal">table_prefix</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+Default value is <code class="literal">"logstash"</code>
+</li></ul></div><p>BigQuery table ID prefix to be used when creating new tables for log data.
+Table name will be &lt;table_prefix&gt;_&lt;date&gt;</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-temp_directory"></a><code class="literal">temp_directory</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+Default value is <code class="literal">""</code>
+</li></ul></div><p>Directory where temporary files are stored.
+Defaults to /tmp/logstash-bq-&lt;random-suffix&gt;</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-temp_file_prefix"></a><code class="literal">temp_file_prefix</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+Default value is <code class="literal">"logstash_bq"</code>
+</li></ul></div><p>Temporary local file prefix. Log file will follow the format:
+&lt;prefix&gt;_hostname_date.part?.log</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-uploader_interval_secs"></a><code class="literal">uploader_interval_secs</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
+</li><li class="listitem">
+Default value is <code class="literal">60</code>
+</li></ul></div><p>Uploader interval when uploading new files to BigQuery. Adjust time based
+on your time pattern (for example, for hourly files, this interval can be
+around one hour).</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-outputs-google_bigquery-workers"></a><code class="literal">workers</code><a href="https://github.com/logstash-plugins/logstash-output-google_bigquery/edit/master/lib/logstash/outputs/google_bigquery.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
+</li><li class="listitem">
+Default value is <code class="literal">1</code>
+</li></ul></div><p>The number of workers to use for this output.
+Note that this setting may not be useful for all outputs.</p></div></div></div><div class="navfooter"><span class="prev"><a href="plugins-outputs-file.html">
+              « 
+              file</a>
+           
+        </span><span class="next">
+           
+          <a href="plugins-outputs-google_cloud_storage.html">google_cloud_storage
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

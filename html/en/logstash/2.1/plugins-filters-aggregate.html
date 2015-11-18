@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Logstash Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>aggregate</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference [2.1]" /><link rel="up" href="filter-plugins.html" title="Filter plugins" /><link rel="prev" href="filter-plugins.html" title="Filter plugins" /><link rel="next" href="plugins-filters-alter.html" title="alter" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -594,15 +594,215 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Logstash Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">Logstash Reference: master</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference
+      [2.1]
+    </a></span> » <span class="breadcrumb-link"><a href="filter-plugins.html">Filter plugins</a></span> » <span class="breadcrumb-node">aggregate</span></div><div class="navheader"><span class="prev"><a href="filter-plugins.html">
+              « 
+              Filter plugins</a>
+           
+        </span><span class="next">
+           
+          <a href="plugins-filters-alter.html">alter
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="plugins-filters-aggregate"></a>aggregate<a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This is a community-maintained plugin! It does not ship with Logstash by default, but it is easy to install by running <code class="literal">bin/plugin install logstash-filter-aggregate</code>.</p></div></div><p>The aim of this filter is to aggregate information available among several events (typically log lines) belonging to a same task,
+and finally push aggregated information into final task event.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_example_1"></a>Example #1<a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+with these given logs :
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">  INFO - 12345 - TASK_START - start
+  INFO - 12345 - SQL - sqlQuery1 - 12
+  INFO - 12345 - SQL - sqlQuery2 - 34
+  INFO - 12345 - TASK_END - end</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+you can aggregate "sql duration" for the whole task with this configuration :
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">    filter {
+        grok {
+            match =&gt; [ "message", "%{LOGLEVEL:loglevel} - %{NOTSPACE:taskid} - %{NOTSPACE:logger} - %{WORD:label}( - %{INT:duration:int})?" ]
+        }
+
+        if [logger] == "TASK_START" {
+            aggregate {
+                task_id =&gt; "%{taskid}"
+                code =&gt; "map['sql_duration'] = 0"
+                map_action =&gt; "create"
+            }
+        }
+
+        if [logger] == "SQL" {
+            aggregate {
+                task_id =&gt; "%{taskid}"
+                code =&gt; "map['sql_duration'] += event['duration']"
+                map_action =&gt; "update"
+            }
+        }
+
+        if [logger] == "TASK_END" {
+            aggregate {
+                task_id =&gt; "%{taskid}"
+                code =&gt; "event['sql_duration'] = map['sql_duration']"
+                map_action =&gt; "update"
+                end_of_task =&gt; true
+                timeout =&gt; 120
+            }
+        }
+    }</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+the final event then looks like :
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">{
+        "message" =&gt; "INFO - 12345 - TASK_END - end message",
+   "sql_duration" =&gt; 46
+}</pre></div><p>the field <code class="literal">sql_duration</code> is added and contains the sum of all sql queries durations.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_example_2_2"></a>Example #2<a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+If you have the same logs than example #1, but without a start log :
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">  INFO - 12345 - SQL - sqlQuery1 - 12
+  INFO - 12345 - SQL - sqlQuery2 - 34
+  INFO - 12345 - TASK_END - end</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+you can also aggregate "sql duration" with a slightly different configuration :
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">    filter {
+        grok {
+            match =&gt; [ "message", "%{LOGLEVEL:loglevel} - %{NOTSPACE:taskid} - %{NOTSPACE:logger} - %{WORD:label}( - %{INT:duration:int})?" ]
+        }
+
+        if [logger] == "SQL" {
+            aggregate {
+                task_id =&gt; "%{taskid}"
+                code =&gt; "map['sql_duration'] ||= 0 ; map['sql_duration'] += event['duration']"
+            }
+        }
+
+        if [logger] == "TASK_END" {
+            aggregate {
+                task_id =&gt; "%{taskid}"
+                code =&gt; "event['sql_duration'] = map['sql_duration']"
+                end_of_task =&gt; true
+                timeout =&gt; 120
+            }
+        }
+    }</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+the final event is exactly the same than example #1
 </li><li class="listitem">
-<a class="ulink" href="2.1/index.html" target="_top">Logstash Reference: 2.1</a>
+the key point is the "||=" ruby operator. It allows to initialize <span class="emphasis"><em>sql_duration</em></span> map entry to 0 only if this map entry is not already initialized
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_how_it_works"></a>How it works<a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+the filter needs a "task_id" to correlate events (log lines) of a same task
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Logstash Reference: 2.0 (current)</a>
+at the task beggining, filter creates a map, attached to task_id
 </li><li class="listitem">
-<a class="ulink" href="1.5/index.html" target="_top">Logstash Reference: 1.5</a>
-</li></ul></div></div>
+for each event, you can execute code using <span class="emphasis"><em>event</em></span> and <span class="emphasis"><em>map</em></span> (for instance, copy an event field to map)
+</li><li class="listitem">
+in the final event, you can execute a last code (for instance, add map data to final event)
+</li><li class="listitem">
+after the final event, the map attached to task is deleted
+</li><li class="listitem">
+in one filter configuration, it is recommanded to define a timeout option to protect the feature against unterminated tasks. It tells the filter to delete expired maps
+</li><li class="listitem">
+if no timeout is defined, by default, all maps older than 1800 seconds are automatically deleted
+</li><li class="listitem">
+finally, if <code class="literal">code</code> execution raises an exception, the error is logged and event is tagged <span class="emphasis"><em>_aggregateexception</em></span>
+</li></ul></div><p> </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_synopsis_106"></a>Synopsis<a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This plugin supports the following configuration options:</p><p>Required configuration options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">aggregate {
+    code =&gt; ...
+    task_id =&gt; ...
+}</pre></div><p>Available configuration options:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Input type</th><th align="left" valign="top">Required</th><th align="left" valign="top">Default value</th></tr></thead><tbody><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-aggregate.html#plugins-filters-aggregate-add_field" title="add_field"><code class="literal">add_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">{}</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-aggregate.html#plugins-filters-aggregate-add_tag" title="add_tag"><code class="literal">add_tag</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-aggregate.html#plugins-filters-aggregate-code" title="code"><code class="literal">code</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>Yes</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-aggregate.html#plugins-filters-aggregate-end_of_task" title="end_of_task"><code class="literal">end_of_task</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">false</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-aggregate.html#plugins-filters-aggregate-map_action" title="map_action"><code class="literal">map_action</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">"create_or_update"</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-aggregate.html#plugins-filters-aggregate-periodic_flush" title="periodic_flush"><code class="literal">periodic_flush</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">false</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-aggregate.html#plugins-filters-aggregate-remove_field" title="remove_field"><code class="literal">remove_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-aggregate.html#plugins-filters-aggregate-remove_tag" title="remove_tag"><code class="literal">remove_tag</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-aggregate.html#plugins-filters-aggregate-task_id" title="task_id"><code class="literal">task_id</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>Yes</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-aggregate.html#plugins-filters-aggregate-timeout" title="timeout"><code class="literal">timeout</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">0</code></code></p></td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_details_106"></a>Details<a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p> </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-aggregate-add_field"></a><code class="literal">add_field</code><a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a>
+</li><li class="listitem">
+Default value is <code class="literal">{}</code>
+</li></ul></div><p>If this filter is successful, add any arbitrary fields to this event.
+Field names can be dynamic and include parts of the event using the <code class="literal">%{field}</code>.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">filter {
+  aggregate {
+    add_field =&gt; { "foo_%{somefield}" =&gt; "Hello world, from %{host}" }
+  }
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># You can also add multiple fields at once:
+filter {
+  aggregate {
+    add_field =&gt; {
+      "foo_%{somefield}" =&gt; "Hello world, from %{host}"
+      "new_field" =&gt; "new_static_value"
+    }
+  }
+}</pre></div><p>If the event has field <code class="literal">"somefield" == "hello"</code> this filter, on success,
+would add field <code class="literal">foo_hello</code> if it is present, with the
+value above and the <code class="literal">%{host}</code> piece replaced with that value from the
+event. The second example would also add a hardcoded field.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-aggregate-add_tag"></a><code class="literal">add_tag</code><a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a>
+</li><li class="listitem">
+Default value is <code class="literal">[]</code>
+</li></ul></div><p>If this filter is successful, add arbitrary tags to the event.
+Tags can be dynamic and include parts of the event using the <code class="literal">%{field}</code>
+syntax.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">filter {
+  aggregate {
+    add_tag =&gt; [ "foo_%{somefield}" ]
+  }
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># You can also add multiple tags at once:
+filter {
+  aggregate {
+    add_tag =&gt; [ "foo_%{somefield}", "taggedy_tag"]
+  }
+}</pre></div><p>If the event has field <code class="literal">"somefield" == "hello"</code> this filter, on success,
+would add a tag <code class="literal">foo_hello</code> (and the second example would of course add a <code class="literal">taggedy_tag</code> tag).</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-aggregate-code"></a><code class="literal">code</code><a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+This is a required setting.
+</li><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>The code to execute to update map, using current event.</p><p>Or on the contrary, the code to execute to update event, using current map.</p><p>You will have a <span class="emphasis"><em>map</em></span> variable and an <span class="emphasis"><em>event</em></span> variable available (that is the event itself).</p><p>Example value : "map[<span class="emphasis"><em>sql_duration</em></span>] += event[<span class="emphasis"><em>duration</em></span>]"</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-aggregate-end_of_task"></a><code class="literal">end_of_task</code><a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a>
+</li><li class="listitem">
+Default value is <code class="literal">false</code>
+</li></ul></div><p>Tell the filter that task is ended, and therefore, to delete map after code execution.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-aggregate-map_action"></a><code class="literal">map_action</code><a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+Default value is <code class="literal">"create_or_update"</code>
+</li></ul></div><p>Tell the filter what to do with aggregate map.</p><p><code class="literal">create</code>: create the map, and execute the code only if map wasn’t created before</p><p><code class="literal">update</code>: doesn’t create the map, and execute the code only if map was created before</p><p><code class="literal">create_or_update</code>: create the map if it wasn’t created before, execute the code in all cases</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-aggregate-periodic_flush"></a><code class="literal">periodic_flush</code><a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a>
+</li><li class="listitem">
+Default value is <code class="literal">false</code>
+</li></ul></div><p>Call the filter flush method at regular interval.
+Optional.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-aggregate-remove_field"></a><code class="literal">remove_field</code><a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a>
+</li><li class="listitem">
+Default value is <code class="literal">[]</code>
+</li></ul></div><p>If this filter is successful, remove arbitrary fields from this event.
+Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">filter {
+  aggregate {
+    remove_field =&gt; [ "foo_%{somefield}" ]
+  }
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># You can also remove multiple fields at once:
+filter {
+  aggregate {
+    remove_field =&gt; [ "foo_%{somefield}", "my_extraneous_field" ]
+  }
+}</pre></div><p>If the event has field <code class="literal">"somefield" == "hello"</code> this filter, on success,
+would remove the field with name <code class="literal">foo_hello</code> if it is present. The second
+example would remove an additional, non-dynamic field.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-aggregate-remove_tag"></a><code class="literal">remove_tag</code><a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a>
+</li><li class="listitem">
+Default value is <code class="literal">[]</code>
+</li></ul></div><p>If this filter is successful, remove arbitrary tags from the event.
+Tags can be dynamic and include parts of the event using the <code class="literal">%{field}</code>
+syntax.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">filter {
+  aggregate {
+    remove_tag =&gt; [ "foo_%{somefield}" ]
+  }
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># You can also remove multiple tags at once:
+filter {
+  aggregate {
+    remove_tag =&gt; [ "foo_%{somefield}", "sad_unwanted_tag"]
+  }
+}</pre></div><p>If the event has field <code class="literal">"somefield" == "hello"</code> this filter, on success,
+would remove the tag <code class="literal">foo_hello</code> if it is present. The second example
+would remove a sad, unwanted tag as well.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-aggregate-task_id"></a><code class="literal">task_id</code><a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+This is a required setting.
+</li><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>The expression defining task ID to correlate logs.</p><p>This value must uniquely identify the task in the system.</p><p></p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-aggregate-timeout"></a><code class="literal">timeout</code><a href="https://github.com/logstash-plugins/logstash-filter-aggregate/edit/master/lib/logstash/filters/aggregate.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
+</li><li class="listitem">
+Default value is <code class="literal">0</code>
+</li></ul></div><p>The amount of seconds after a task "end event" can be considered lost.</p><p>The task "map" is evicted.</p><p>Default value (<code class="literal">0</code>) means no timeout so no auto eviction.</p></div></div></div><div class="navfooter"><span class="prev"><a href="filter-plugins.html">
+              « 
+              Filter plugins</a>
+           
+        </span><span class="next">
+           
+          <a href="plugins-filters-alter.html">alter
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

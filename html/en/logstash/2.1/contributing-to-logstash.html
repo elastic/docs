@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Logstash Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Contributing to Logstash</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference [2.1]" /><link rel="up" href="index.html" title="Reference [2.1]" /><link rel="prev" href="working-with-plugins.html" title="Working with plugins" /><link rel="next" href="community-maintainer.html" title="Logstash Plugins Community Maintainer Guide" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -594,15 +594,54 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Logstash Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">Logstash Reference: master</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference
+      [2.1]
+    </a></span> » <span class="breadcrumb-node">Contributing to Logstash</span></div><div class="navheader"><span class="prev"><a href="working-with-plugins.html">
+              « 
+              Working with plugins</a>
+           
+        </span><span class="next">
+           
+          <a href="community-maintainer.html">Logstash Plugins Community Maintainer Guide
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="contributing-to-logstash"></a>Contributing to Logstash<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/contributing-to-logstash.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Before version 1.5, Logstash included all plugins in each release.  This made it
+easy to make use of any plugin, but it complicated plugin development—a new
+release of Logstash became necessary if a plugin needed patching.  Since version
+1.5, all plugins are independent of the Logstash core. Now you can add your own
+input, codec, filter, or output plugins to Logstash much more easily!</p><h3><a id="_adding_plugins"></a>Adding plugins<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/contributing-to-logstash.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Since plugins can now be developed and deployed independently of the Logstash
+core, there are documents which guide you through the process of coding and
+deploying your own plugins:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="ulink" href="http://www.elasticsearch.org/guide/en/logstash/current/_how_to_write_a_logstash_input_plugin.html" target="_top">How to write a Logstash input plugin</a>
 </li><li class="listitem">
-<a class="ulink" href="2.1/index.html" target="_top">Logstash Reference: 2.1</a>
+<a class="ulink" href="http://www.elasticsearch.org/guide/en/logstash/current/_how_to_write_a_logstash_codec_plugin.html" target="_top">How to write a Logstash codec plugin</a>
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Logstash Reference: 2.0 (current)</a>
+<a class="ulink" href="http://www.elasticsearch.org/guide/en/logstash/current/_how_to_write_a_logstash_filter_plugin.html" target="_top">How to write a Logstash filter plugin</a>
 </li><li class="listitem">
-<a class="ulink" href="1.5/index.html" target="_top">Logstash Reference: 1.5</a>
-</li></ul></div></div>
+<a class="ulink" href="http://www.elasticsearch.org/guide/en/logstash/current/_how_to_write_a_logstash_output_plugin.html" target="_top">How to write a Logstash output plugin</a>
+</li></ul></div><h4><a id="_plugin_api_changes_phrase_revisionflag_added_revision_2_0_added_in_2_0_phrase"></a>Plugin API Changes <span class="added">
+      [<span class="version">2.0</span>]
+      <span class="detail">Added in 2.0.</span></span><a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/contributing-to-logstash.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The 2.0 release of Logstash changes how input plugins shut down to increase shutdown reliability. There are three methods
+for plugin shutdown: <code class="literal">stop</code>, <code class="literal">stop?</code>, and <code class="literal">close</code>.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Call the <code class="literal">stop</code> method from outside the plugin thread. This method signals the plugin to stop.
+</li><li class="listitem">
+The <code class="literal">stop?</code> method returns <code class="literal">true</code> when the <code class="literal">stop</code> method has already been called for that plugin.
+</li><li class="listitem">
+The <code class="literal">close</code> method performs final bookkeeping and cleanup after the plugin’s <code class="literal">run</code> method and the plugin’s thread both
+exit. The <code class="literal">close</code> method is a a new name for the method known as <code class="literal">teardown</code> in previous versions of Logstash.
+</li></ul></div><p>The <code class="literal">shutdown</code>, <code class="literal">finished</code>, <code class="literal">finished?</code>, <code class="literal">running?</code>, and <code class="literal">terminating?</code> methods are redundant and no longer present in the
+Plugin Base class.</p><p>Sample code for the new plugin shutdown APIs is <a class="ulink" href="https://github.com/logstash-plugins/logstash-input-example/blob/master/lib/logstash/inputs/example.rb" target="_top">available</a>.</p><h3><a id="_extending_logstash_core"></a>Extending Logstash core<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/contributing-to-logstash.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>We also welcome contributions and bug fixes to the Logstash core feature set.</p><p>Please read through our
+<a class="ulink" href="https://github.com/elastic/logstash/blob/master/CONTRIBUTING.md" target="_top">contribution</a>
+guide, and the Logstash
+<a class="ulink" href="https://github.com/elastic/logstash/blob/master/README.md" target="_top">readme</a>
+document.</p></div><div class="navfooter"><span class="prev"><a href="working-with-plugins.html">
+              « 
+              Working with plugins</a>
+           
+        </span><span class="next">
+           
+          <a href="community-maintainer.html">Logstash Plugins Community Maintainer Guide
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

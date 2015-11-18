@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Logstash Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Upgrading Logstash and Elasticsearch to 2.0</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference [2.1]" /><link rel="up" href="upgrading-logstash.html" title="Upgrading Logstash" /><link rel="prev" href="_upgrading_using_a_direct_download.html" title="Upgrading Using a Direct Download" /><link rel="next" href="configuration.html" title="Configuring Logstash" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -594,15 +594,40 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Logstash Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">Logstash Reference: master</a>
-</li><li class="listitem">
-<a class="ulink" href="2.1/index.html" target="_top">Logstash Reference: 2.1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Logstash Reference: 2.0 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.5/index.html" target="_top">Logstash Reference: 1.5</a>
-</li></ul></div></div>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference
+      [2.1]
+    </a></span> » <span class="breadcrumb-link"><a href="upgrading-logstash.html">Upgrading Logstash</a></span> » <span class="breadcrumb-node">Upgrading Logstash and Elasticsearch to 2.0</span></div><div class="navheader"><span class="prev"><a href="_upgrading_using_a_direct_download.html">
+              « 
+              Upgrading Using a Direct Download</a>
+           
+        </span><span class="next">
+           
+          <a href="configuration.html">Configuring Logstash
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_upgrading_logstash_and_elasticsearch_to_2_0"></a>Upgrading Logstash and Elasticsearch to 2.0<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/upgrading.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you are using Elasticsearch as an output, and wish to upgrade to Elasticsearch 2.0, please be
+aware of <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.0/breaking-changes-2.0.html" target="_top">breaking changes</a>
+before you upgrade. In addition, the following steps needs to be performed after upgrading to Elasticsearch 2.0:</p><p><span class="strong"><strong>Mapping changes:</strong></span> Users may have custom template changes, so by default a Logstash upgrade will
+leave the template as is. Even if you don’t have a custom template, Logstash will not overwrite an existing
+template by default.</p><p>There is one known issue (removal of <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping-object-type.html#_path_3" target="_top">path</a>) with using GeoIP filter that needs a manual update to the template.</p><p>Note: If you have custom template changes, please make sure to save it and merge any changes. You can
+get the existing template by running:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET localhost:9200/_template/logstash</pre></div><p>Add the following option to your Logstash config:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">output {
+        elasticsearch {
+                template_overwrite =&gt; true
+        }
+}</pre></div><p>Restart Logstash.</p><p><span class="strong"><strong>Dots in fields:</strong></span> Elasticsearch 2.0 does not allow field names to contain the <code class="literal">.</code> character.
+Further details about this change <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.0/breaking_20_mapping_changes.html#_field_names_may_not_contain_dots" target="_top">here</a>. Some plugins already have been updated to compensate
+for this breaking change, including logstash-filter-metrics and logstash-filter-elapsed.
+These plugin updates are available for Logstash 2.0. To upgrade to the latest version of these
+plugins, the command is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin update &lt;plugin_name&gt;</pre></div><p><span class="strong"><strong>Multiline Filter:</strong></span> If you are using the Multiline Filter in your configuration and upgrade to Logstash 2.0,
+you will get an error. Make sure to explicitly set the number of filter workers (<code class="literal">-w</code>) to <code class="literal">1</code>. You can set the number
+of workers by passing a command line flag such as:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash `-w 1`</pre></div></div><div class="navfooter"><span class="prev"><a href="_upgrading_using_a_direct_download.html">
+              « 
+              Upgrading Using a Direct Download</a>
+           
+        </span><span class="next">
+           
+          <a href="configuration.html">Configuring Logstash
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Logstash Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Structure of a Config File</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference [2.1]" /><link rel="up" href="configuration.html" title="Configuring Logstash" /><link rel="prev" href="configuration.html" title="Configuring Logstash" /><link rel="next" href="event-dependent-configuration.html" title="Event Dependent Configuration" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -594,15 +594,79 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Logstash Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">Logstash Reference: master</a>
-</li><li class="listitem">
-<a class="ulink" href="2.1/index.html" target="_top">Logstash Reference: 2.1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Logstash Reference: 2.0 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.5/index.html" target="_top">Logstash Reference: 1.5</a>
-</li></ul></div></div>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference
+      [2.1]
+    </a></span> » <span class="breadcrumb-link"><a href="configuration.html">Configuring Logstash</a></span> » <span class="breadcrumb-node">Structure of a Config File</span></div><div class="navheader"><span class="prev"><a href="configuration.html">
+              « 
+              Configuring Logstash</a>
+           
+        </span><span class="next">
+           
+          <a href="event-dependent-configuration.html">Event Dependent Configuration
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-file-structure"></a>Structure of a Config File<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A Logstash config file has a separate section for each type of plugin you want to add to the event processing pipeline. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"># This is a comment. You should use comments to describe
+# parts of your configuration.
+input {
+  ...
+}
+
+filter {
+  ...
+}
+
+output {
+  ...
+}</pre></div><p>Each section contains the configuration options for one or more plugins. If you specify
+multiple filters, they are applied in the order of their appearance in the configuration file.</p><h3><a id="plugin_configuration"></a>Plugin Configuration<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The configuration of a plugin consists of the plugin name followed
+by a block of settings for that plugin. For example, this input section configures two file inputs:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">input {
+  file {
+    path =&gt; "/var/log/messages"
+    type =&gt; "syslog"
+  }
+
+  file {
+    path =&gt; "/var/log/apache/access.log"
+    type =&gt; "apache"
+  }
+}</pre></div><p>In this example, two settings are configured for each of the file inputs: <span class="emphasis"><em>path</em></span> and <span class="emphasis"><em>type</em></span>.</p><p>The settings you can configure vary according to the plugin type. For information about each plugin, see <a class="link" href="input-plugins.html" title="Input plugins">Input Plugins</a>, <a class="link" href="output-plugins.html" title="Output plugins">Output Plugins</a>, <a class="link" href="filter-plugins.html" title="Filter plugins">Filter Plugins</a>, and <a class="link" href="codec-plugins.html" title="Codec plugins">Codec Plugins</a>.</p><h3><a id="plugin-value-types"></a>Value Types<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A plugin can require that the value for a setting be a
+certain type, such as boolean or hash. The following value
+types are supported.</p><h4><a id="array"></a>Array<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>An array can be a single string value or multiple values. If you specify the same
+setting multiple times, it appends to the array.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  path =&gt; [ "/var/log/messages", "/var/log/*.log" ]
+  path =&gt; "/data/mysql/mysql.log"</pre></div><p>This example configures <code class="literal">path</code> to be an array that contains an element for each of the three strings.</p><h4><a id="boolean"></a>Boolean<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A boolean must be either <code class="literal">true</code> or <code class="literal">false</code>. Note that the <code class="literal">true</code> and <code class="literal">false</code> keywords
+are not enclosed in quotes.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  ssl_enable =&gt; true</pre></div><h4><a id="bytes"></a>Bytes<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A bytes field is a string field that represents a valid unit of bytes. It is a
+convenient way to declare specific sizes in your plugin options. Both SI (k M G T P E Z Y)
+and Binary (Ki Mi Gi Ti Pi Ei Zi Yi) units are supported. Binary units are in
+base-1024 and SI units are in base-1000. This field is case-insensitive
+and accepts space between the value and the unit. If no unit is specified, the integer string
+represents the number of bytes.</p><p>Examples:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  my_bytes =&gt; "1113"   # 1113 bytes
+  my_bytes =&gt; "10MiB"  # 10485760 bytes
+  my_bytes =&gt; "100kib" # 102400 bytes
+  my_bytes =&gt; "180 mb" # 180000000 bytes</pre></div><h4><a id="codec"></a>Codec<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A codec is the name of Logstash codec used to represent the data. Codecs can be
+used in both inputs and outputs.</p><p>Input codecs provide a convenient way to decode your data before it enters the input.
+Output codecs provide a convenient way to encode your data before it leaves the output.
+Using an input or output codec eliminates the need for a separate filter in your Logstash pipeline.</p><p>A list of available codecs can be found at the <a class="link" href="codec-plugins.html" title="Codec plugins">Codec Plugins</a> page.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  codec =&gt; "json"</pre></div><h4><a id="hash"></a>Hash<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A hash is a collection of key value pairs specified in the format <code class="literal">"field1" =&gt; "value1"</code>.
+Note that multiple key value entries are separated by spaces rather than commas.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">match =&gt; {
+  "field1" =&gt; "value1"
+  "field2" =&gt; "value2"
+  ...
+}</pre></div><h4><a id="number"></a>Number<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Numbers must be valid numeric values (floating point or integer).</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  port =&gt; 33</pre></div><h4><a id="password"></a>Password<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A password is a string with a single value that is not logged or printed.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  my_password =&gt; "password"</pre></div><h4><a id="path"></a>Path<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A path is a string that represents a valid operating system path.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  my_path =&gt; "/tmp/logstash"</pre></div><h4><a id="string"></a>String<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A string must be a single character sequence. Note that string values are
+enclosed in quotes, either double or single. Literal quotes in the string
+need to be escaped with a backslash if they are of the same kind as the string
+delimiter, i.e. single quotes within a single-quoted string need to be escaped
+as well as double quotes within a double-quoted string.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  name =&gt; "Hello world"
+  name =&gt; 'It\'s a beautiful day'</pre></div><h3><a id="comments"></a>Comments<a href="https://github.com/elastic/logstash/edit/master/docs/asciidoc/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Comments are the same as in perl, ruby, and python. A comment starts with a <span class="emphasis"><em>#</em></span> character, and does not need to be at the beginning of a line. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"># this is a comment
+
+input { # comments can appear at the end of a line, too
+  # ...
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="configuration.html">
+              « 
+              Configuring Logstash</a>
+           
+        </span><span class="next">
+           
+          <a href="event-dependent-configuration.html">Event Dependent Configuration
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Logstash Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>sqs</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference [2.1]" /><link rel="up" href="input-plugins.html" title="Input plugins" /><link rel="prev" href="plugins-inputs-s3.html" title="s3" /><link rel="next" href="plugins-inputs-stomp.html" title="stomp" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -594,15 +594,143 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Logstash Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">Logstash Reference: master</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference
+      [2.1]
+    </a></span> » <span class="breadcrumb-link"><a href="input-plugins.html">Input plugins</a></span> » <span class="breadcrumb-node">sqs</span></div><div class="navheader"><span class="prev"><a href="plugins-inputs-s3.html">
+              « 
+              s3</a>
+           
+        </span><span class="next">
+           
+          <a href="plugins-inputs-stomp.html">stomp
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="plugins-inputs-sqs"></a>sqs<a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Pull events from an Amazon Web Services Simple Queue Service (SQS) queue.</p><p>SQS is a simple, scalable queue system that is part of the
+Amazon Web Services suite of tools.</p><p>Although SQS is similar to other queuing systems like AMQP, it
+uses a custom API and requires that you have an AWS account.
+See <a class="ulink" href="http://aws.amazon.com/sqs/" target="_top">http://aws.amazon.com/sqs/</a> for more details on how SQS works,
+what the pricing schedule looks like and how to setup a queue.</p><p>To use this plugin, you <span class="strong"><strong>must</strong></span>:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Have an AWS account
 </li><li class="listitem">
-<a class="ulink" href="2.1/index.html" target="_top">Logstash Reference: 2.1</a>
+Setup an SQS queue
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Logstash Reference: 2.0 (current)</a>
+Create an identify that has access to consume messages from the queue.
+</li></ul></div><p>The "consumer" identity must have the following permissions on the queue:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">sqs:ChangeMessageVisibility</code>
 </li><li class="listitem">
-<a class="ulink" href="1.5/index.html" target="_top">Logstash Reference: 1.5</a>
-</li></ul></div></div>
+<code class="literal">sqs:ChangeMessageVisibilityBatch</code>
+</li><li class="listitem">
+<code class="literal">sqs:DeleteMessage</code>
+</li><li class="listitem">
+<code class="literal">sqs:DeleteMessageBatch</code>
+</li><li class="listitem">
+<code class="literal">sqs:GetQueueAttributes</code>
+</li><li class="listitem">
+<code class="literal">sqs:GetQueueUrl</code>
+</li><li class="listitem">
+<code class="literal">sqs:ListQueues</code>
+</li><li class="listitem">
+<code class="literal">sqs:ReceiveMessage</code>
+</li></ul></div><p>Typically, you should setup an IAM policy, create a user and apply the IAM policy to the user.
+A sample policy is as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  "Statement": [
+    {
+      "Action": [
+        "sqs:ChangeMessageVisibility",
+        "sqs:ChangeMessageVisibilityBatch",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl",
+        "sqs:ListQueues",
+        "sqs:SendMessage",
+        "sqs:SendMessageBatch"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:sqs:us-east-1:123456789012:Logstash"
+      ]
+    }
+  ]
+}</pre></div><p>See <a class="ulink" href="http://aws.amazon.com/iam/" target="_top">http://aws.amazon.com/iam/</a> for more details on setting up AWS identities.</p><p> </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_synopsis_37"></a>Synopsis<a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This plugin supports the following configuration options:</p><p>Required configuration options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">sqs {
+    queue =&gt; ...
+}</pre></div><p>Available configuration options:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Input type</th><th align="left" valign="top">Required</th><th align="left" valign="top">Default value</th></tr></thead><tbody><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-access_key_id" title="access_key_id"><code class="literal">access_key_id</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-add_field" title="add_field"><code class="literal">add_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">{}</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-aws_credentials_file" title="aws_credentials_file"><code class="literal">aws_credentials_file</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-codec" title="codec"><code class="literal">codec</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#codec" title="Codecedit">codec</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">"json"</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-id_field" title="id_field"><code class="literal">id_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-md5_field" title="md5_field"><code class="literal">md5_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-polling_frequency" title="polling_frequency"><code class="literal">polling_frequency</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">20</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-proxy_uri" title="proxy_uri"><code class="literal">proxy_uri</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-queue" title="queue"><code class="literal">queue</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>Yes</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-region" title="region"><code class="literal">region</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>, one of <code class="literal">["us-east-1", "us-west-1", "us-west-2", "eu-central-1", "eu-west-1", "ap-southeast-1", "ap-southeast-2", "ap-northeast-1", "sa-east-1", "us-gov-west-1", "cn-north-1"]</code></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">"us-east-1"</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-secret_access_key" title="secret_access_key"><code class="literal">secret_access_key</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-sent_timestamp_field" title="sent_timestamp_field"><code class="literal">sent_timestamp_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-session_token" title="session_token"><code class="literal">session_token</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-tags" title="tags"><code class="literal">tags</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-threads" title="threads"><code class="literal">threads</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">1</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-inputs-sqs.html#plugins-inputs-sqs-type" title="type"><code class="literal">type</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_details_37"></a>Details<a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p> </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-access_key_id"></a><code class="literal">access_key_id</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-add_field"></a><code class="literal">add_field</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a>
+</li><li class="listitem">
+Default value is <code class="literal">{}</code>
+</li></ul></div><p>Add a field to an event</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-aws_credentials_file"></a><code class="literal">aws_credentials_file</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-codec"></a><code class="literal">codec</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#codec" title="Codecedit">codec</a>
+</li><li class="listitem">
+Default value is <code class="literal">"json"</code>
+</li></ul></div><p>The codec used for input data. Input codecs are a convenient method for decoding your data before it enters the input, without needing a separate filter in your Logstash pipeline.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-id_field"></a><code class="literal">id_field</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>Name of the event field in which to store the SQS message ID</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-md5_field"></a><code class="literal">md5_field</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>Name of the event field in which to store the SQS message MD5 checksum</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-polling_frequency"></a><code class="literal">polling_frequency</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
+</li><li class="listitem">
+Default value is <code class="literal">20</code>
+</li></ul></div><p>Polling frequency, default is 20 seconds</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-proxy_uri"></a><code class="literal">proxy_uri</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-queue"></a><code class="literal">queue</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+This is a required setting.
+</li><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>Name of the SQS Queue name to pull messages from. Note that this is just the name of the queue, not the URL or ARN.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-region"></a><code class="literal">region</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value can be any of: <code class="literal">us-east-1</code>, <code class="literal">us-west-1</code>, <code class="literal">us-west-2</code>, <code class="literal">eu-central-1</code>, <code class="literal">eu-west-1</code>, <code class="literal">ap-southeast-1</code>, <code class="literal">ap-southeast-2</code>, <code class="literal">ap-northeast-1</code>, <code class="literal">sa-east-1</code>, <code class="literal">us-gov-west-1</code>, <code class="literal">cn-north-1</code>
+</li><li class="listitem">
+Default value is <code class="literal">"us-east-1"</code>
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-secret_access_key"></a><code class="literal">secret_access_key</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-sent_timestamp_field"></a><code class="literal">sent_timestamp_field</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>Name of the event field in which to store the SQS message Sent Timestamp</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-session_token"></a><code class="literal">session_token</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-tags"></a><code class="literal">tags</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#array" title="Arrayedit">array</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>Add any number of arbitrary tags to your event.</p><p>This can help with processing later.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-threads"></a><code class="literal">threads</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
+</li><li class="listitem">
+Default value is <code class="literal">1</code>
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-sqs-type"></a><code class="literal">type</code><a href="https://github.com/logstash-plugins/logstash-input-sqs/edit/master/lib/logstash/inputs/sqs.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p>Add a <code class="literal">type</code> field to all events handled by this input.</p><p>Types are used mainly for filter activation.</p><p>The type is stored as part of the event itself, so you can
+also use the type to search for it in Kibana.</p><p>If you try to set a type on an event that already has one (for
+example when you send an event from a shipper to an indexer) then
+a new input will not override the existing type. A type set at
+the shipper stays with that event for its life even
+when sent to another Logstash server.</p></div></div></div><div class="navfooter"><span class="prev"><a href="plugins-inputs-s3.html">
+              « 
+              s3</a>
+           
+        </span><span class="next">
+           
+          <a href="plugins-inputs-stomp.html">stomp
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>
