@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Azure Repository</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="repository-azure.html" title="Azure Repository Plugin" /><link rel="prev" href="repository-azure.html" title="Azure Repository Plugin" /><link rel="next" href="repository-azure-testing.html" title="Testing Azure" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Azure Repository</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="repository-azure.html" title="Azure Repository Plugin" /><link rel="prev" href="repository-azure.html" title="Azure Repository Plugin" /><link rel="next" href="repository-s3.html" title="S3 Repository Plugin" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -600,16 +600,28 @@
            
         </span><span class="next">
            
-          <a href="repository-azure-testing.html">Testing Azure
+          <a href="repository-s3.html">S3 Repository Plugin
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="repository-azure-usage"></a>Azure Repository<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-azure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To enable Azure repositories, you have first to set your azure storage settings in <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
     azure:
         storage:
-            account: your_azure_storage_account
-            key: your_azure_storage_key</pre></div><p>For information, in previous version of the azure plugin, settings were:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+            my_account:
+                account: your_azure_storage_account
+                key: your_azure_storage_key</pre></div><p>Note that you can also define more than one account:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
     azure:
-        storage_account: your_azure_storage_account
-        storage_key: your_azure_storage_key</pre></div><p>The Azure repository supports following settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        storage:
+            my_account1:
+                account: your_azure_storage_account1
+                key: your_azure_storage_key1
+                default: true
+            my_account2:
+                account: your_azure_storage_account2
+                key: your_azure_storage_key2</pre></div><p><code class="literal">my_account1</code> is the default account which will be used by a repository unless you set an explicit one.</p><p>The Azure repository supports following settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">account</code>
+</span></dt><dd>
+    Azure account settings to use. Defaults to the only one if you set a single
+    account or to the one marked as <code class="literal">default</code> if you have more than one.
+</dd><dt><span class="term">
 <code class="literal">container</code>
 </span></dt><dd>
     Container name. Defaults to <code class="literal">elasticsearch-snapshots</code>
@@ -636,6 +648,11 @@
     Makes repository read-only. <span class="coming">
       [<span class="version">coming in 2.1.0</span>]
       <span class="detail">Coming in 2.1.0.</span></span>  Defaults to <code class="literal">false</code>.
+</dd><dt><span class="term">
+<code class="literal">location_mode</code>
+</span></dt><dd>
+    <code class="literal">primary_only</code> or <code class="literal">secondary_only</code>. Defaults to <code class="literal">primary_only</code>. Note that if you set it
+    to <code class="literal">secondary_only</code>, it will force <code class="literal">read_only</code> to true.
 </dd></dl></div><p>Some examples, using scripts:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json"># The simpliest one
 PUT _snapshot/my_backup1
 {
@@ -652,7 +669,25 @@ PUT _snapshot/my_backup2
         "chunk_size": "32m",
         "compress": true
     }
-}</pre></div><div class="sense_widget" data-snippet="snippets/repository-azure-usage/1.json"></div><p>Example using Java:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">client.admin().cluster().preparePutRepository("my_backup3")
+}
+
+
+# With two accounts defined in elasticsearch.yml (my_account1 and my_account2)
+PUT _snapshot/my_backup3
+{
+    "type": "azure",
+    "settings": {
+        "account": "my_account1"
+    }
+}
+PUT _snapshot/my_backup4
+{
+    "type": "azure",
+    "settings": {
+        "account": "my_account2",
+        "location_mode": "primary_only"
+    }
+}</pre></div><div class="sense_widget" data-snippet="snippets/repository-azure-usage/1.json"></div><p>Example using Java:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">client.admin().cluster().preparePutRepository("my_backup_java1")
     .setType("azure").setSettings(Settings.settingsBuilder()
         .put(Storage.CONTAINER, "backup_container")
         .put(Storage.CHUNK_SIZE, new ByteSizeValue(32, ByteSizeUnit.MB))
@@ -672,7 +707,7 @@ Container names must be from 3 through 63 characters long.
            
         </span><span class="next">
            
-          <a href="repository-azure-testing.html">Testing Azure
+          <a href="repository-s3.html">S3 Repository Plugin
                »
             </a></span></div>
 <!-- end body -->
