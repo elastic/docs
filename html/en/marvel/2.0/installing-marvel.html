@@ -643,8 +643,8 @@ https://download.elastic.co/elasticsearch/marvel/marvel-latest.tar.gz</a>
 Transfer the archive files to the offline machine.
 </li><li class="listitem"><p class="simpara">
 Specify the archive files when you run <code class="literal">bin/plugin</code> and <code class="literal">bin/kibana</code>. For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin install license file:///path/to/file/license-2.0.0.zip
-bin/plugin install marvel-agent file:///path/to/file/marvel-agent-2.0.0.zip
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin install file:///path/to/file/license-2.0.0.zip
+bin/plugin install file:///path/to/file/marvel-agent-2.0.0.zip
 bin/kibana plugin --install marvel --url file:///path/to/file/marvel-2.0.0.tar.gz</pre></div></li></ol></div><h3><a id="monitoring-cluster"></a>Setting up a Separate Monitoring Cluster</h3><p>To store Marvel data in a separate monitoring cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 Set up the Elasticsearch cluster you want to use for monitoring and start Elasticsearch.
 For example, you might set up a two host cluster with the nodes <code class="literal">es-mon-1</code> and <code class="literal">es-mon-2</code>.
@@ -655,7 +655,7 @@ configuring an HTTP exporter in the <code class="literal">marvel.agent.exporters
 
   id1:
     type: http
-    host: [http://es-mon-1:9200, http://es-mon2:9200]</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If Shield is enabled on the monitoring cluster, you must also configure
+    host: ["http://es-mon-1:9200", "http://es-mon2:9200"]</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If Shield is enabled on the monitoring cluster, you must also configure
 credentials for the agent. If SSL is enabled, you must specify the truststore to use to
 verify the identity of the nodes in the monitoring cluster. For more information,
 see <a class="ulink" href="https://www.elastic.co/guide/en/shield/current/marvel.html" target="_top">Using Marvel with Shield</a>
@@ -687,12 +687,13 @@ need to configure the <code class="literal">action.auto_create_index</code> sett
 creation of Marvel indices:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">action.auto_create_index: .marvel-*</pre></div><p>For more information see <a class="ulink" href="https://wwww.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html#index-creation" target="_top">Index Creation</a> in the Elasticsearch
 Reference.</p><h3><a id="upgrading"></a>Upgrading Marvel</h3><p>When upgrading Marvel, you must upgrade the Marvel agent on every node you are monitoring. You
 do not need to fully shut down your production cluster to perform the upgrade, you
-can perform a rolling upgrade.</p><p>To perform a rolling upgrade of Marvel:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Disable shard reallocation. While this is optional, it enables a faster startup after cluster
-shutdown.  If you don’t disable shard reallocation, the nodes immediately start trying to
-replicate shards to each other on startup and spend a lot of time on wasted I/O. With shard
-reallocation disabled, the nodes join the cluster with their indices intact and do not attempt to
-rebalance. After startup is complete, you can turn reallocation back on.
+can perform a rolling upgrade.</p><p>To upgrade Marvel:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Disable shard reallocation on the nodes you are monitoring. While this is optional,
+it enables a faster startup after cluster shutdown.  If you don’t disable shard reallocation,
+the nodes immediately start trying to replicate shards to each other on startup and spend a
+lot of time on wasted I/O. With shard reallocation disabled, the nodes join the cluster
+with their indices intact and do not attempt to rebalance. After startup is complete,
+you can turn reallocation back on.
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPUT localhost:9200/_cluster/settings -d '{
   "transient" : {
     "cluster.routing.allocation.enable" : "none"
@@ -714,7 +715,17 @@ When you’ve upgraded all of the nodes in the cluster, reenable shard allocatio
   "transient" : {
       "cluster.routing.allocation.enable" : "all"
   }
-}'</pre></div></li></ol></div><h3><a id="uninstalling-marvel"></a>Uninstalling Marvel</h3><p>To uninstall Marvel:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+}'</pre></div></li><li class="listitem"><p class="simpara">
+Upgrade the Marvel Kibana app:
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
+Stop Kibana.
+</li><li class="listitem"><p class="simpara">
+Remove the old version of the Marvel app:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/kibana plugin --remove marvel</pre></div></li><li class="listitem"><p class="simpara">
+Install the new version of the Marvel app:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/kibana plugin --install marvel</pre></div></li><li class="listitem">
+Restart Kibana by running <code class="literal">bin/kibana</code>.
+</li></ol></div></li></ol></div><h3><a id="uninstalling-marvel"></a>Uninstalling Marvel</h3><p>To uninstall Marvel:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 Shut down Elasticsearch and Kibana.
 </li><li class="listitem"><p class="simpara">
 Remove the Marvel agent plugin from Elasticsearch:
