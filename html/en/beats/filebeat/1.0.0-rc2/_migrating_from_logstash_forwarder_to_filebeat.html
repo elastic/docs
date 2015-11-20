@@ -615,9 +615,9 @@ Command line options were removed and moved to the configuration file.
 </li><li class="listitem">
 Configuration options for outputs are now inherited from libbeat. For details, see the <a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/1.0.0-rc2/index.html" target="_top">Beats Platform Reference</a>.
 </li><li class="listitem">
-A new Logstash input plugin called <a class="ulink" href="https://github.com/logstash-plugins/logstash-input-beats" target="_top">logstash-input-beats</a> is required.
+A new Logstash input plugin called <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-beats.html" target="_top">logstash-input-beats</a> is required.
 </li></ul></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_migrating_to_the_logstash_input_beats_plugin"></a>Migrating to the Logstash Input Beats Plugin<a href="https://github.com/elastic/filebeat/edit/1.0.0-rc2/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Filebeat requires a new input plugin in Logstash, called
-<a class="ulink" href="https://github.com/logstash-plugins/logstash-input-beats" target="_top">logstash-input-beats</a>.
+<a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-beats.html" target="_top">logstash-input-beats</a>.
 For information about getting started with this plugin, see <a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/1.0.0-rc2/getting-started.html#logstash-setup" target="_top">Setting up Logstash</a>.</p><p>In both the 1.5.x and 2.x versions of Logstash, this plugin can be loaded in
 parallel with the
 <a class="ulink" href="https://github.com/logstash-plugins/logstash-input-lumberjack" target="_top">logstash-input-lumberjack</a>
@@ -661,7 +661,11 @@ with this configuration in Logstash Forwarder:</p><div class="pre_wrapper"><pre 
       ],
 
       # A dictionary of fields to annotate on each event.
-      "fields": { "type": "syslog" }
+      "fields": {
+        "type": "syslog",
+        "service": "apache",
+        "zone": "us-east-1"
+      }
     }, {
       # A path of "-" means stdin.
       "paths": [ "-" ],
@@ -680,24 +684,29 @@ with this configuration in Logstash Forwarder:</p><div class="pre_wrapper"><pre 
       paths:
         - /var/log/messages
         - "/var/log/*.log"
+      document_type: syslog <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      fields:
+        service: apache
+        zone: us-east-1
     -
       paths:
         - "-"
-      input_type: stdin <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      input_type: stdin <a id="CO1-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
       document_type: stdin
     -
       paths:
         - "/var/log/apache/httpd-*.log"
       document_type: apache</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The explicit <code class="literal">input_type</code> field was introduced to differentiate between normal files and
+The <code class="literal">document_type</code> option controls the output <code class="literal">type</code> field, which is used by the
+    Elasticsearch output to determine the document type.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The explicit <code class="literal">input_type</code> option was introduced to differentiate between normal files and
     stdin. In the future, additional types might be supported.
-</p></td></tr></table></div><p>As you can see, apart from the new optional <code class="literal">document_type</code> field,
-the remaining options can be migrated mechanically. If no type is defined,
-the default is set to <code class="literal">log</code>. If Filebeat is used to index into Elasticsearch
-directly, the <code class="literal">document_type</code> determines the document type to use when indexing.</p><p>The Filebeat configuration gives you more control over how each prospector behaves
+</p></td></tr></table></div><p>As you can see, apart from the new <code class="literal">document_type</code> and <code class="literal">input_type</code> options,
+which were before implicitly defined via the <code class="literal">type</code> custom field, the remaining
+options can be migrated mechanically.</p><p>The Filebeat configuration gives you more control over how each prospector behaves
 by allowing you to configure options that were previously global in Logstash Forwarder
-and set them separately for each prospector. See
-<a class="xref" href="filebeat-configuration-details.html" title="Configuration Options"><em>Configuration Options</em></a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_migrating_the_network_section"></a>Migrating the "network" Section<a href="https://github.com/elastic/filebeat/edit/1.0.0-rc2/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Like Logstash Forwarder, Filebeat can communicate directly with Logstash.
+and set them separately for each prospector. See <a class="xref" href="filebeat-configuration-details.html" title="Configuration Options"><em>Configuration Options</em></a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_migrating_the_network_section"></a>Migrating the "network" Section<a href="https://github.com/elastic/filebeat/edit/1.0.0-rc2/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Like Logstash Forwarder, Filebeat can communicate directly with Logstash.
 Filebeat can also insert log entries directly
 into Elasticsearch. This results in an <code class="literal">output</code> section that is a bit more complex, as
 you can see in the following example. You’ll find, however, that you can easily
@@ -762,7 +771,10 @@ and its equivalent for Filebeat.</p><p>Logstash Forwarder configuration:</p><div
       "paths": [
         "/var/log/*.log"
       ],
-      "fields": { "type": "syslog" }
+      "fields": {
+        "type": "syslog",
+        "service": "test01"
+      }
     }
   ],
   "network": {
@@ -773,8 +785,9 @@ and its equivalent for Filebeat.</p><p>Logstash Forwarder configuration:</p><div
     -
       paths:
         - "/var/log/*.log"
+      document_type: syslog
       fields:
-        type: syslog
+        service: test01
 output:
   elasticsearch:
     enabled: true
@@ -786,7 +799,35 @@ configuration file. For naming changes, see <a class="xref" href="_migrating_fro
 these options, see <a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/1.0.0-rc2/command-line-options.html" target="_top">Beats Command Line Options</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="renamed-options"></a>Renamed Options<a href="https://github.com/elastic/filebeat/edit/1.0.0-rc2/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following command line options have been renamed and moved to the config file. Also see
 <a class="xref" href="_migrating_from_logstash_forwarder_to_filebeat.html#changed-configuration-options" title="Changed Configuration File Options">Changed Configuration File Options</a> for a list of configuration file options that were completely removed or
 replaced by options specified in libbeat.</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><thead><tr><th align="left" valign="top">Command Line Option</th><th align="left" valign="top">Config File Option</th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">-config</code></p></td><td align="left" valign="top"><p><code class="literal">-c</code> command line option and <code class="literal">config_dir</code></p></td><td align="left" valign="top"><p>The config option was split into two parts. You use the <code class="literal">-c</code> command line option to specify the location of the base (required) config file when you start Filebeat. To use additional config files, you specify the <code class="literal">config_dir</code> configuration option.</p>
-<p>The <code class="literal">config_dir</code> option specifies the path to the directory that contains additional configuration files. This option MUST point to a directory other than the directory where the main Filebeat config file resides.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-idle-timeout</code></p></td><td align="left" valign="top"><p><code class="literal">idle_timeout</code></p></td><td align="left" valign="top"><p><code class="literal">idle_timeout</code> was moved to the config file and removed as a flag.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-spool-size</code></p></td><td align="left" valign="top"><p><code class="literal">spool_size</code></p></td><td align="left" valign="top"><p><code class="literal">spool_size</code> was moved to the config file and removed as a flag.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-harvester-buff-size</code></p></td><td align="left" valign="top"><p><code class="literal">harvester_buffer_size</code></p></td><td align="left" valign="top"><p><code class="literal">harvester_buffer_size</code> was moved to the config file and removed as a flag. You can now configure the buffer size separately for each harvester.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-tail</code></p></td><td align="left" valign="top"><p><code class="literal">tail_files</code></p></td><td align="left" valign="top"><p><code class="literal">tail_files</code> was moved to the config file and removed as a flag. You can now configure this option separately for each prospector.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-cpuProfileFile</code></p></td><td align="left" valign="top"><p></p></td><td align="left" valign="top"><p><code class="literal">cpuProfileFile</code> option was removed. You can use the profiling options of libbeat instead. For more details on profiling, see <a class="ulink" href="https://github.com/elastic/libbeat/issues/122" target="_top">https://github.com/elastic/libbeat/issues/122</a>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-quiet</code></p></td><td align="left" valign="top"><p></p></td><td align="left" valign="top"><p>The <code class="literal">quiet</code> option was removed. Libbeat is now used for logging, so you must use the libbeat <a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/1.0.0-rc2/configuration.html#configuration-logging" target="_top">logging options</a> instead.</p></td></tr></tbody></table></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_other_changes"></a>Other Changes<a href="https://github.com/elastic/filebeat/edit/1.0.0-rc2/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The following list of implementation changes should not affect your experience migrating
+<p>The <code class="literal">config_dir</code> option specifies the path to the directory that contains additional configuration files. This option MUST point to a directory other than the directory where the main Filebeat config file resides.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-idle-timeout</code></p></td><td align="left" valign="top"><p><code class="literal">idle_timeout</code></p></td><td align="left" valign="top"><p><code class="literal">idle_timeout</code> was moved to the config file and removed as a flag.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-spool-size</code></p></td><td align="left" valign="top"><p><code class="literal">spool_size</code></p></td><td align="left" valign="top"><p><code class="literal">spool_size</code> was moved to the config file and removed as a flag.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-harvester-buff-size</code></p></td><td align="left" valign="top"><p><code class="literal">harvester_buffer_size</code></p></td><td align="left" valign="top"><p><code class="literal">harvester_buffer_size</code> was moved to the config file and removed as a flag. You can now configure the buffer size separately for each harvester.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-tail</code></p></td><td align="left" valign="top"><p><code class="literal">tail_files</code></p></td><td align="left" valign="top"><p><code class="literal">tail_files</code> was moved to the config file and removed as a flag. You can now configure this option separately for each prospector.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-cpuProfileFile</code></p></td><td align="left" valign="top"><p></p></td><td align="left" valign="top"><p><code class="literal">cpuProfileFile</code> option was removed. You can use the profiling options of libbeat instead. For more details on profiling, see <a class="ulink" href="https://github.com/elastic/libbeat/issues/122" target="_top">https://github.com/elastic/libbeat/issues/122</a>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">-quiet</code></p></td><td align="left" valign="top"><p></p></td><td align="left" valign="top"><p>The <code class="literal">quiet</code> option was removed. Libbeat is now used for logging, so you must use the libbeat <a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/1.0.0-rc2/configuration.html#configuration-logging" target="_top">logging options</a> instead.</p></td></tr></tbody></table></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_changes_in_the_output_fields"></a>Changes in the output fields<a href="https://github.com/elastic/filebeat/edit/1.0.0-rc2/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In the default configuration, Filebeat structures its output documents a little
+different from the Logstash Forwarder. This section discusses the differences
+and the options you have in case you want compatibility with the Logstash
+Forwarder.</p><p>One such difference is that the custom fields (added from the configuration
+file) are set top level in Logstash Forwarder but are grouped together under a
+<code class="literal">fields</code> dictionary in Filebeat. If you need the old behavior during the
+migration phase, you can use the <a class="xref" href="filebeat-configuration-details.html#fields-under-root" title="fields_under_root">fields_under_root</a> configuration option:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat:
+  prospectors:
+    -
+      paths:
+        - "/var/log/*.log"
+      document_type: syslog
+      fields:
+        service: test01
+      fields_under_root: true</pre></div><p>Another difference is that while the Logstash Forwarder sends the hostname of
+the server it is running on in the <code class="literal">host</code> field, Filebeat uses the
+<code class="literal">beat.hostname</code> field for the same purpose. Because <code class="literal">host</code> is commonly used in
+the Logstash plugin ecosystem, the Beats input plugin automatically copies
+<code class="literal">beat.hostname</code> into <code class="literal">host</code>.</p><p>Similarly, the <code class="literal">file</code> field was renamed to <code class="literal">source</code>. If you rely on this field
+being named <code class="literal">file</code> you can rename it by using the mutate filter in Logstash. For
+example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-plain">filter {
+    mutate {
+        rename =&gt; {
+            "source" =&gt; "file"
+        }
+    }
+}</pre></div><p>Finally, the <code class="literal">line</code> field was removed. This field wasn’t correct in case of
+restarts and making it correct would require a performance penalty. We recommend
+using the <code class="literal">offset</code> field instead.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_other_changes"></a>Other Changes<a href="https://github.com/elastic/filebeat/edit/1.0.0-rc2/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The following list of implementation changes should not affect your experience migrating
 from Logstash Forwarder, but you should be aware of the changes. Please post GitHub issues
 if you notice any regressions from Logstash Forwarder.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_packaging"></a>Packaging<a href="https://github.com/elastic/filebeat/edit/1.0.0-rc2/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The packaging process for Filebeat uses the Beats infrastructure, so some
 aspects of packaging, such as the init scripts, are different from
