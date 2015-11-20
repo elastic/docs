@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Packetbeat Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Developer Guide: Creating a New Beat</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Beats Platform Reference [1.0.0]" /><link rel="up" href="index.html" title="Beats Platform Reference [1.0.0]" /><link rel="prev" href="_using_https_and_basic_authentication.html" title="Using HTTPS and Basic Authentication" /><link rel="next" href="setup-repositories.html" title="Repositories" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -592,23 +592,251 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Packetbeat Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">Packetbeat Reference: master</a>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Beats Platform Reference
+      [1.0.0]
+    </a></span> » <span class="breadcrumb-node">Developer Guide: Creating a New Beat</span></div><div class="navheader"><span class="prev"><a href="_using_https_and_basic_authentication.html">
+              « 
+              Using HTTPS and Basic Authentication</a>
+           
+        </span><span class="next">
+           
+          <a href="setup-repositories.html">Repositories
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="new-beat"></a>Developer Guide: Creating a New Beat<a href="https://github.com/elastic/libbeat/edit/1.0.0/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>This guide walks you through the steps for creating a new Elastic Beat.  The
+Beats are a collection of lightweight daemons that collect operational data from
+your servers and ship it to Elasticsearch or Logstash.  The common parts for
+all Beats are placed in the libbeat library, which contains packages for sending
+data to Elasticsearch and Logstash, for configuration file handling, for signal
+handling, for logging, and more. By using this common framework, you can ensure
+that all Beats behave consistently and that they are easy to package and run
+with common tools.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_getting_ready"></a>Getting Ready<a href="https://github.com/elastic/libbeat/edit/1.0.0/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>All Beats are written in <a class="ulink" href="http://golang.org/" target="_top">Go</a>, so having Go installed and knowing
+the basics are prerequisites for understanding this guide.
+But don’t worry if you aren’t a Go expert. Go is a relatively new
+language, and very few people are experts in it. In fact, several
+people learned Go by contributing to Packetbeat and libbeat, including the
+original Packetbeat authors.</p><p>After you have <a class="ulink" href="https://golang.org/doc/install" target="_top">installed Go</a> and set up the
+<a class="ulink" href="https://golang.org/doc/code.html#GOPATH" target="_top">GOPATH</a> environment variable to point to
+your preferred workspace location, a simple way of getting the source code for
+Topbeat and libbeat and compiling them at the same time is to do:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">go get github.com/elastic/topbeat</pre></div><p>In this guide, we use working examples from the <a class="ulink" href="https://github.com/elastic/topbeat" target="_top">Topbeat</a>
+source code to demonstrate how to implement a Beat. Topbeat is similar to
+the <code class="literal">top</code> command line tool, but instead of printing the statistics to the screen,
+Topbeat periodically ships them to Elasticsearch for storage.</p><p>You can use Topbeat as an example implementation for creating a new Beat. Just copy
+the source files and modify them as necessary for your Beat.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_overview"></a>Overview<a href="https://github.com/elastic/libbeat/edit/1.0.0/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>At the high level, a simple Beat like Topbeat has two main components:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+a component that collects the actual data, and
 </li><li class="listitem">
-<a class="ulink" href="1.0.0/index.html" target="_top">Packetbeat Reference: 1.0.0</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Packetbeat Reference: 1.0.0-rc2 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.0.0-rc1/index.html" target="_top">Packetbeat Reference: 1.0.0-rc1</a>
-</li><li class="listitem">
-<a class="ulink" href="1.0.0-beta4/index.html" target="_top">Packetbeat Reference: 1.0.0-beta4</a>
-</li><li class="listitem">
-<a class="ulink" href="1.0.0-beta3/index.html" target="_top">Packetbeat Reference: 1.0.0-beta3</a>
-</li><li class="listitem">
-<a class="ulink" href="1.0.0-beta2/index.html" target="_top">Packetbeat Reference: 1.0.0-beta2</a>
-</li><li class="listitem">
-<a class="ulink" href="1.0.0.Beta1/index.html" target="_top">Packetbeat Reference: 1.0.0.Beta1</a>
-</li></ul></div></div>
+a publisher that sends the data to the specified output, such as Elasticsearch or
+Logstash.
+</li></ul></div><p>The publisher is already implemented in libbeat, so you typically only have to worry about the logic
+specific to your Beat (the code that creates the event and sends it to the publisher).
+Libbeat also offers common services like configuration management, logging,
+daemonizing, and Windows service handling, and in the future, will offer data processing modules,
+such as filtering or sampling.</p><p><span class="inlinemediaobject"><img src="./images/beat_overview.png" alt="Beat overview architecture" /></span></p><p>The event that you create is a JSON-like object (Golang type <code class="literal">map[string]interface{}</code>) that
+contains the collected data to send to the publisher. At a minimum, the event object
+must contain a <code class="literal">@timestamp</code> field and a <code class="literal">type</code> field. Beyond
+that, events can contain any additional fields, and they can be created as often
+as necessary.</p><p>The following example shows an event object in Topbeat:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  count":1,
+  "proc.cpu":{
+    "user":20,
+    "percent":0.983284169124877,
+    "system":0,
+    "total":20,
+    "start_time":"20:20"
+  },
+  "proc.mem":{
+    "size":333772,
+    "rss":6316,
+    "share":2996
+  },
+  "proc.name":"topbeat",
+  "proc.pid":13954,
+  "proc.ppid":10027,
+  "proc.state":"sleeping",
+  "shipper":"vagrant-ubuntu-trusty-64",
+  "@timestamp":"2015-08-06T20:20:34.089Z",
+  "type":"proc"
+}</pre></div><p>Now that you have the big picture, let’s dig into the code.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_developing_the_beat_specific_code"></a>Developing the Beat-Specific Code<a href="https://github.com/elastic/libbeat/edit/1.0.0/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Beat-specific code should implement the <code class="literal">Beater</code> interface defined
+in libbeat.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">type Beater interface {
+        Config(*Beat) error
+        Setup(*Beat) error
+        Run(*Beat) error
+        Cleanup(*Beat) error
+        Stop()
+}</pre></div><p>This means your Beat should implement the following methods:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<a class="link" href="new-beat.html#config-method" title="Config Method">Config</a>
+</p>
+</td><td valign="top">
+<p>
+Deals with the configuration file and optionally with
+custom CLI flags
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="new-beat.html#setup-method" title="Setup Method">Setup</a>
+</p>
+</td><td valign="top">
+<p>
+Contains logic that executes before the main loop, usually for initialization
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="new-beat.html#run-method" title="Run Method">Run</a>
+</p>
+</td><td valign="top">
+<p>
+Contains the main application loop that captures data
+and sends it to the publisher
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="new-beat.html#cleanup-method" title="Cleanup Method">Cleanup</a>
+</p>
+</td><td valign="top">
+<p>
+Contains logic that executes after the main loop finishes
+(or is interrupted)
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="new-beat.html#stop-method" title="Stop Method">Stop</a>
+</p>
+</td><td valign="top">
+<p>
+Contains logic that is called when the Beat is signaled to stop
+</p>
+</td></tr></tbody></table></div><p>The <code class="literal">Beat</code> parameter received by most of these methods contains data about the
+Beat, such as the name, version, and common configuration options.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To be consistent with other Beats, you should append <code class="literal">beat</code> to your Beat name.</p></div></div><p>Let’s go through each of the methods in the <code class="literal">Beater</code> interface and look at a
+sample implementation.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="config-method"></a>Config Method<a href="https://github.com/elastic/libbeat/edit/1.0.0/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">Config</code> method deals with the configuration file and optionally with
+custom CLI flags.</p><p>The recommended way of handling the configuration is to create a
+<code class="literal">ConfigSettings</code> type that matches the structure of the expected configuration
+file. Here is an example configuration section for Topbeat:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">input:
+  period: 1
+
+  procs: [".*"]</pre></div><p>And here are the corresponding Go structures, which are defined in <code class="literal">config.go</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">type TopConfig struct {
+        Period *int64
+        Procs  *[]string
+}
+
+type ConfigSettings struct {
+        Input TopConfig
+}</pre></div><p>Pointers are used to distinguish between when the setting is completely
+missing from the configuration file and when it has a value that matches the
+type’s default value.</p><p>With these structures defined, the <code class="literal">Config</code> method looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (tb *Topbeat) Config(b *beat.Beat) error {
+
+        err := cfgfile.Read(&amp;tb.TbConfig, "") <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        if err != nil {
+                logp.Err("Error reading configuration file: %v", err)
+                return err
+        }
+
+        if tb.TbConfig.Input.Period != nil { <a id="CO3-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                tb.period = time.Duration(*tb.TbConfig.Input.Period) * time.Second
+        } else {
+                tb.period = 1 * time.Second
+        }
+
+        [...]
+
+        return nil
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Read the configuration.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set default values for options that are not present in the configuration
+    file.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="setup-method"></a>Setup Method<a href="https://github.com/elastic/libbeat/edit/1.0.0/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">Setup</code> method enables you to execute logic before the main
+loop, usually for initialization. In the Topbeat implementation, this method
+only assigns the Beat object to the Topbeat object, so it doesn’t have to be
+passed to all sub-functions.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (tb *Topbeat) Setup(b *beat.Beat) error {
+
+        tb.Beat = b
+        return nil
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="run-method"></a>Run Method<a href="https://github.com/elastic/libbeat/edit/1.0.0/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">Run</code> method should contain your main application loop. For Topbeat it looks
+like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (t *Topbeat) Run(b *beat.Beat) error {
+
+        t.isAlive = true
+
+        t.initProcStats()
+
+        var err error
+
+        for t.isAlive {
+                time.Sleep(t.period)
+
+                err = t.exportSystemStats()
+                if err != nil {
+                        logp.Err("Error reading system stats: %v", err)
+                }
+                [...]
+        }
+
+        return err
+}</pre></div><p>Inside the loop, Topbeat sleeps for a configurable period of time and then
+captures the required data and sends it to the publisher via the <code class="literal">events</code>
+publisher client. The publisher client is available as part of the Beat object
+through the <code class="literal">Beat.Events</code> variable.</p><p>The actual sending is done inside the <code class="literal">exportSystemStats()</code> method:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (t *Topbeat) exportSystemStats() error {
+
+        load_stat, err := GetSystemLoad()
+        if err != nil {
+                logp.Warn("Getting load statistics: %v", err)
+                return err
+        }
+
+        [...]
+
+        event := common.MapStr{ <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                "@timestamp": common.Time(time.Now()), <a id="CO4-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                "type":      "system",
+                "load":      load_stat,
+                "cpu":       cpu_stat,
+                "mem":       mem_stat,
+                "swap":      swap_stat,
+        }
+
+        t.Beat.Events.PublishEvent(event) <a id="CO4-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+
+        return nil
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Create the event object.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Specify a <code class="literal">@timestamp</code> field of time <code class="literal">common.Time</code>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Send the event.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cleanup-method"></a>Cleanup Method<a href="https://github.com/elastic/libbeat/edit/1.0.0/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">Cleanup</code> method is executed after the main loop finishes (or is interrupted)
+and gives you the opportunity to release any resources you might use. For
+Topbeat, the method is completely empty:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (tb *Topbeat) Cleanup(b *beat.Beat) error {
+        return nil
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="stop-method"></a>Stop Method<a href="https://github.com/elastic/libbeat/edit/1.0.0/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">Stop</code> method is called when the Beat is signaled to stop, for
+example through the SIGTERM signal on Unix systems or the service control
+interface on Windows. For Topbeat, this method simply sets <code class="literal">isAlive</code> to
+<code class="literal">false</code>, which breaks the main loop.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (t *Topbeat) Stop() {
+        t.isAlive = false
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_the_main_function"></a>The main Function<a href="https://github.com/elastic/libbeat/edit/1.0.0/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you follow the Topbeat model and put your Beat-specific code in its own type
+that implements the <code class="literal">Beater</code> interface, the code from your main package is
+very simple:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func main() {
+
+        tb := &amp;Topbeat{}
+
+        b := beat.NewBeat(Name, Version, tb)
+
+        b.CommandLineSetup()
+
+        b.LoadConfig()
+
+        tb.Config(b)
+
+        b.Run()
+
+}</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_sharing_your_beat_with_the_community"></a>Sharing Your Beat with the Community<a href="https://github.com/elastic/libbeat/edit/1.0.0/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When you’re done with your new Beat, how about letting everyone know? Open
+a pull request to add your link <a class="link" href="community-beats.html" title="Community Beats">here</a>.</p></div></div><div class="navfooter"><span class="prev"><a href="_using_https_and_basic_authentication.html">
+              « 
+              Using HTTPS and Basic Authentication</a>
+           
+        </span><span class="next">
+           
+          <a href="setup-repositories.html">Repositories
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>
