@@ -10,7 +10,8 @@ jQuery(function() {
   init_sense_widgets(sense_url);
 
   function init_sense_widgets(sense_url) {
-    var base_url = window.location.href.replace(/\/[^/?]+(?:\?.*)?$/, '/');
+    var base_url = window.location.href.replace(/\/[^/?]+(?:\?.*)?$/, '/')
+      .replace('^https:', 'http:');
     jQuery('div.sense_widget')
       .each(
         function() {
