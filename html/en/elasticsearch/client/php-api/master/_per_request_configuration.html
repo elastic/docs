@@ -759,7 +759,27 @@ Array
                     [field] =&gt; value
                 )
         )
-)</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_enabling_future_mode"></a>Enabling Future Mode<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/per-request-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The client supports asynchronous, batch processing of requests.  This is enabled (if your HTTP handler supports it) on
+)</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_curl_timeouts"></a>Curl Timeouts<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/per-request-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>It is possible to configure per-request curl timeouts via the <code class="literal">timeout</code> and <code class="literal">connect_timeout</code> parameters.  These
+control the client-side, curl timeouts.  The <code class="literal">connect_timeout</code> paramter controls how long curl should wait for the
+"connect" phase to finish, while the <code class="literal">timeout</code> parameter controls how long curl should wait for the entire request
+to finish.</p><p>If either timeout expires, curl will close the connection and return an error.  Both parameters should be specified
+in seconds.</p><p>Note: client-side timeouts <span class="strong"><strong>do not</strong></span> mean that Elasticsearch aborts the request.  Elasticsearch will continue executing
+the request until it completes.  In the case of a slow query or bulk request, the operation will continue executing
+"in the background", unknown to your client.  If your client kills connections rapidly with a timeout, only to immediately
+execute another request, it is possible to swamp the server with many connections because there is no "back-pressure" on the
+client.  In these situations, you will see the appropriate threadpool queue growing in size, and may start receiving
+<code class="literal">EsRejectedExecutionException</code> exceptions from Elasticsearch when the queue finally reaches capacity.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()-&gt;build();
+
+$params = [
+    'index' =&gt; 'test',
+    'type' =&gt; 'test',
+    'id' =&gt; 1,
+    'client' =&gt; [
+        'timeout' =&gt; 10,        // ten second timeout
+        'connect_timeout' =&gt; 10
+    ]
+];
+$response = $client-&gt;get($params);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_enabling_future_mode"></a>Enabling Future Mode<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/per-request-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The client supports asynchronous, batch processing of requests.  This is enabled (if your HTTP handler supports it) on
 a per-request basis via the <code class="literal">future</code> parameter in the client options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()-&gt;build();
 
 $params = [
