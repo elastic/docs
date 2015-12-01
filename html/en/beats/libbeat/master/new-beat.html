@@ -706,7 +706,18 @@ Contains logic that executes after the main loop finishes
 Contains logic that is called when the Beat is signaled to stop
 </p>
 </td></tr></tbody></table></div><p>The <code class="literal">Beat</code> parameter received by most of these methods contains data about the
-Beat, such as the name, version, and common configuration options.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To be consistent with other Beats, you should append <code class="literal">beat</code> to your Beat name.</p></div></div><p>Let’s go through each of the methods in the <code class="literal">Beater</code> interface and look at a
+Beat, such as the name, version, and common configuration options.</p><p>For more complex Beats, the optional <code class="literal">FlagsHandler</code> interface is available.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">type FlagsHandler interface {
+        HandleFlags(*Beat)
+}</pre></div><p>You can use the <code class="literal">FlagsHandler</code> interface to add additional command line flags to
+your Beat. The <code class="literal">HandleFlags</code> callback is called after the Beat parses the
+command line arguments inherited from libbeat and handles the <code class="literal">--help</code> and
+<code class="literal">--version</code> flags. For an example of how to implement <code class="literal">HandleFlags</code>, take a look
+at the
+<a class="ulink" href="https://github.com/elastic/packetbeat/blob/master/beat/packetbeat.go" target="_top">Packetbeat</a>
+code.</p><p>We strongly recommend that you create a main package that contains only the main
+method. All your Beat-specific code should go in a separate folder and package.
+This will allow other Beats to use the other parts of your Beat as a library, if
+needed.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To be consistent with other Beats, you should append <code class="literal">beat</code> to your Beat name.</p></div></div><p>Let’s go through each of the methods in the <code class="literal">Beater</code> interface and look at a
 sample implementation.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="config-method"></a>Config Method<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">Config</code> method deals with the configuration file and optionally with
 custom CLI flags.</p><p>The recommended way of handling the configuration is to create a
 <code class="literal">ConfigSettings</code> type that matches the structure of the expected configuration
@@ -813,21 +824,12 @@ interface on Windows. For Topbeat, this method simply sets <code class="literal"
         t.isAlive = false
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_the_main_function"></a>The main Function<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you follow the Topbeat model and put your Beat-specific code in its own type
 that implements the <code class="literal">Beater</code> interface, the code from your main package is
-very simple:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func main() {
+very simple:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">var Version = "1.0.0"
+var Name = "topbeat"
 
-        tb := &amp;Topbeat{}
-
-        b := beat.NewBeat(Name, Version, tb)
-
-        b.CommandLineSetup()
-
-        b.LoadConfig()
-
-        tb.Config(b)
-
-        b.Run()
-
-}</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_sharing_your_beat_with_the_community"></a>Sharing Your Beat with the Community<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When you’re done with your new Beat, how about letting everyone know? Open
+func main() {
+        beat.Run(Name, Version, topbeat.New())
+}</pre></div><p>We recommend that you implement a <code class="literal">New</code> function that creates your Beats object.</p></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_sharing_your_beat_with_the_community"></a>Sharing Your Beat with the Community<a href="https://github.com/elastic/libbeat/edit/master/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When you’re done with your new Beat, how about letting everyone know? Open
 a pull request to add your link <a class="link" href="community-beats.html" title="Community Beats">here</a>.</p></div></div><div class="navfooter"><span class="prev"><a href="_https_and_basic_authentication.html">
               « 
               HTTPS and Basic Authentication</a>
