@@ -644,29 +644,25 @@ you can catch a specific curl exception then check if it wraps a MaxRetriesExcep
 try {
     $client-&gt;search($searchParams);
 } catch (Elasticsearch\Common\Exceptions\Curl\CouldNotConnectToHost $e) {
-
     $previous = $e-&gt;getPrevious();
     if ($previous instanceof 'Elasticsearch\Common\Exceptions\MaxRetriesException') {
         echo "Max retries!"
     }
-}
----
+}</pre></div><p>Alternatively, all "hard" curl exceptions (<code class="literal">CouldNotConnectToHost</code>, <code class="literal">CouldNotResolveHostException</code>, <code class="literal">OperationTimeoutException</code>)
+extend the more general <code class="literal">TransportException</code>.  So you could instead catch the general <code class="literal">TransportException</code> and then
+check it’s previous value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = Elasticsearch\ClientBuilder::create()
+    -&gt;setHosts(["localhost:1"])
+    -&gt;setRetries(0)
+    -&gt;build();
 
-Alternatively, all "hard" curl exceptions (`CouldNotConnectToHost`, `CouldNotResolveHostException`, `OperationTimeoutException`)
-extend the more general `TransportException`.  So you could instead catch the general `TransportException` and then
-check it's previous value:
-
-[source,php]</pre></div><p>$client = Elasticsearch\ClientBuilder::create()
-    →setHosts(["localhost:1"])
-    →setRetries(0)
-    →build();</p><p>try {
-    $client→search($searchParams);
-} catch (Elasticsearch\Common\Exceptions\TransportException $e) {</p><pre class="literallayout">    $previous = $e-&gt;getPrevious();
+try {
+    $client-&gt;search($searchParams);
+} catch (Elasticsearch\Common\Exceptions\TransportException $e) {
+    $previous = $e-&gt;getPrevious();
     if ($previous instanceof 'Elasticsearch\Common\Exceptions\MaxRetriesException') {
         echo "Max retries!"
     }
-}
----</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="enabling_logger"></a>Enabling the Logger<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch-PHP supports logging, but it is not enabled by default for performance reasons.  If you wish to enable logging,
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="enabling_logger"></a>Enabling the Logger<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch-PHP supports logging, but it is not enabled by default for performance reasons.  If you wish to enable logging,
 you need to select a logging implementation, install it, then enable the logger in the Client.  The recommended logger
 is <a class="ulink" href="https://github.com/Seldaek/monolog" target="_top">Monolog</a>, but any logger that implements the <code class="literal">PSR/Log</code> interface will work.</p><p>You might have noticed that Monolog was suggested during installation.  To begin using Monolog, add it to your <code class="literal">composer.json</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
     "require": {
