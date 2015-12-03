@@ -15,12 +15,25 @@
   <xsl:param name="generate.section.toc.level"  select="chunk.section.depth"/>
   <xsl:param name="toc.section.depth"           select="chunk.section.depth"/>
   <xsl:param name="toc.max.depth"               select="5"/>
+
   <xsl:param name="generate.toc">
     book      toc
   </xsl:param>
 
-  <!-- Include link to other versions on the homepage ToC -->
-    <xsl:template name="user.header.content" />
+  <xsl:template name="user.header.content" />
+
+  <!-- Page header -->
+  <xsl:template match="processing-instruction('page_header')"/>
+  <xsl:template name="page.header">
+    <xsl:variable name="page.header">
+      <xsl:value-of select="normalize-space(preceding::processing-instruction('page_header')[1])"/>
+    </xsl:variable>
+    <xsl:if test="$page.header!=''">
+      <div class="page_header">
+        <xsl:value-of select="$page.header" disable-output-escaping="yes"/>
+      </div>
+    </xsl:if>
+  </xsl:template>
 
   <!-- Generate ToC for book and parts -->
   <xsl:template name="division.toc">
@@ -98,6 +111,7 @@
     <xsl:param name="prev" />
     <xsl:param name="next" />
     <xsl:param name="nav.context"/>
+    <xsl:call-template name="page.header" />
     <xsl:if test="$nav.context != 'toc'">
       <xsl:call-template name="breadcrumbs"/>
     </xsl:if>
