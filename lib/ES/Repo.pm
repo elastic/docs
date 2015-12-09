@@ -141,7 +141,7 @@ sub checkout {
 
     run qw( git reset --hard );
     run qw( git clean --force -d);
-    run qw( git checkout -B _build_docs ), "origin/$branch";
+    run qw( git checkout -B --force _build_docs ), "origin/$branch";
     return 1;
 }
 
