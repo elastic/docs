@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ignore_above</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="mapping-params.html" title="Mapping parameters" /><link rel="prev" href="geohash-prefix.html" title="geohash_prefix" /><link rel="next" href="ignore-malformed.html" title="ignore_malformed" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Explain Analyze</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="indices-analyze.html" title="Analyze" /><link rel="prev" href="indices-analyze.html" title="Analyze" /><link rel="next" href="indices-templates.html" title="Index Templates" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -596,74 +596,72 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-params.html">Mapping parameters</a></span> » <span class="breadcrumb-node"><code class="literal">ignore_above</code></span></div><div class="navheader"><span class="prev"><a href="geohash-prefix.html">
+    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-link"><a href="indices-analyze.html">Analyze</a></span> » <span class="breadcrumb-node">Explain Analyze</span></div><div class="navheader"><span class="prev"><a href="indices-analyze.html">
               « 
-              <code class="literal">geohash_prefix</code></a>
+              Analyze</a>
            
         </span><span class="next">
            
-          <a href="ignore-malformed.html"><code class="literal">ignore_malformed</code>
+          <a href="indices-templates.html">Index Templates
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ignore-above"></a><code class="literal">ignore_above</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/params/ignore-above.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Strings longer than the <code class="literal">ignore_above</code> setting will not be processed by the
-<a class="link" href="analyzer.html" title="analyzer">analyzer</a> and will not be indexed. This is mainly useful for
-<a class="link" href="mapping-index.html" title="index"><code class="literal">not_analyzed</code></a> string fields, which are typically used for
-filtering, aggregations, and sorting.  These are structured fields and it
-doesn’t usually make sense to allow very long terms to be indexed in these
-fields.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_explain_analyze"></a>Explain Analyze<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/analyze.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you want to get more advanced details, set <code class="literal">explain</code> to <code class="literal">true</code> (defaults to <code class="literal">false</code>). It will output all token attributes for each token.
+You can filter token attributes you want to output by setting <code class="literal">attributes</code> option.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The format of the additional detail information is experimental and can change at any time.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test/_analyze
 {
-  "mappings": {
-    "my_type": {
-      "properties": {
-        "message": {
-          "type": "string",
-          "index": "not_analyzed",
-          "ignore_above": 20 <a id="CO196-3"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        }
-      }
-    }
+  "tokenizer" : "standard",
+  "token_filters" : ["snowball"],
+  "text" : "detailed output",
+  "explain" : true,
+  "attributes" : ["keyword"] <a id="CO115-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+}</pre></div><div class="sense_widget" data-snippet="snippets/_explain_analyze/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO115-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set "keyword" to output "keyword" attribute only
+</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Coming in 2.0.0.</h4><p> body based parameters were added in 2.0.0.</p></div></div><p>The request returns the following result:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "detail" : {
+    "custom_analyzer" : true,
+    "charfilters" : [ ],
+    "tokenizer" : {
+      "name" : "standard",
+      "tokens" : [ {
+        "token" : "detailed",
+        "start_offset" : 0,
+        "end_offset" : 8,
+        "type" : "&lt;ALPHANUM&gt;",
+        "position" : 0
+      }, {
+        "token" : "output",
+        "start_offset" : 9,
+        "end_offset" : 15,
+        "type" : "&lt;ALPHANUM&gt;",
+        "position" : 1
+      } ]
+    },
+    "tokenfilters" : [ {
+      "name" : "snowball",
+      "tokens" : [ {
+        "token" : "detail",
+        "start_offset" : 0,
+        "end_offset" : 8,
+        "type" : "&lt;ALPHANUM&gt;",
+        "position" : 0,
+        "keyword" : false <a id="CO116-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      }, {
+        "token" : "output",
+        "start_offset" : 9,
+        "end_offset" : 15,
+        "type" : "&lt;ALPHANUM&gt;",
+        "position" : 1,
+        "keyword" : false <a id="CO116-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+      } ]
+    } ]
   }
-}
-
-PUT my_index/my_type/1 <a id="CO196-4"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-{
-  "message": "Syntax error"
-}
-
-PUT my_index/my_type/2 <a id="CO196-5"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-{
-  "message": "Syntax error with some long stacktrace"
-}
-
-GET _search <a id="CO196-6"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-{
-  "aggs": {
-    "messages": {
-      "terms": {
-        "field": "message"
-      }
-    }
-  }
-}</pre></div><div class="sense_widget" data-snippet="snippets/ignore-above/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO196-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO196-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO196-3"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This field will ignore any string longer than 20 characters.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO196-4"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This document is indexed successfully.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO196-5"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This document will be indexed, but without indexing the <code class="literal">message</code> field.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO196-6"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Search returns both documents, but only the first is present in the terms aggregation.
-</p></td></tr></table></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">ignore_above</code> setting is allowed to have different settings for
-fields of the same name in the same index.  Its value can be updated on
-existing fields using the <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a>.</p></div></div><p>This option is also useful for protecting against Lucene’s term byte-length
-limit of <code class="literal">32766</code>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The value for <code class="literal">ignore_above</code> is the <span class="emphasis"><em>character count</em></span>, but Lucene counts
-bytes. If you use UTF-8 text with many non-ASCII characters, you may want to
-set the limit to <code class="literal">32766 / 3 = 10922</code> since UTF-8 characters may occupy at most
-3 bytes.</p></div></div></div><div class="navfooter"><span class="prev"><a href="geohash-prefix.html">
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO116-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO116-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Output only "keyword" attribute, since specify "attributes" in the request.
+</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="indices-analyze.html">
               « 
-              <code class="literal">geohash_prefix</code></a>
+              Analyze</a>
            
         </span><span class="next">
            
-          <a href="ignore-malformed.html"><code class="literal">ignore_malformed</code>
+          <a href="indices-templates.html">Index Templates
                »
             </a></span></div>
 <!-- end body -->
