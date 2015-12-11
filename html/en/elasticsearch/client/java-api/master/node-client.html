@@ -605,11 +605,9 @@
           <a href="transport-client.html">Transport Client
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="node-client"></a>Node Client<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/client.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Instantiating a node based client is the simplest way to get a <code class="literal">Client</code>
-that can execute operations against elasticsearch.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import static org.elasticsearch.node.NodeBuilder.*;
+that can execute operations against elasticsearch.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// on startup
 
-// on startup
-
-Node node = nodeBuilder().node();
+Node node = new Node(Settings.EMPTY).start();
 Client client = node.client();
 
 // on shutdown
@@ -629,17 +627,14 @@ allocated to it. Many times we would like to have the clients just be
 clients, without shards being allocated to them. This is simple to
 configure by setting either <code class="literal">node.data</code> setting to <code class="literal">false</code> or
 <code class="literal">node.client</code> to <code class="literal">true</code> (the <code class="literal">NodeBuilder</code> respective helper methods on
-it):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import static org.elasticsearch.node.NodeBuilder.*;
-
-// on startup
+it):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// on startup
 
 // Embedded node clients behave just like standalone nodes,
 // which means that they will leave the HTTP port open!
-Node node =
-    nodeBuilder()
-        .settings(Settings.settingsBuilder().put("http.enabled", false))
-        .client(true)
-    .node();
+Node node = new Node(Settings.settingsBuilder()
+        .put("http.enabled", false)
+        .put("node.client", true).build())
+    .start();
 
 Client client = node.client();
 
@@ -651,11 +646,9 @@ unit/integration tests. In such a case, we would like to start a "local"
 matter of a simple setting when starting the <code class="literal">Node</code>. Note, "local" here
 means local on the JVM (well, actually class loader) level, meaning that
 two <span class="strong"><strong>local</strong></span> servers started within the same JVM will discover themselves
-and form a cluster.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import static org.elasticsearch.node.NodeBuilder.*;
+and form a cluster.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// on startup
 
-// on startup
-
-Node node = nodeBuilder().local(true).node();
+Node node = new Node(Settings.builder().put("node.local", true).build()).start();
 Client client = node.client();
 
 // on shutdown
