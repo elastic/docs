@@ -610,49 +610,56 @@ used when either the data being indexed or the queries being executed
 contain shapes other than just points.</p><p>You can query documents using this type using
 <a class="link" href="query-dsl-geo-shape-query.html" title="GeoShape Query">geo_shape Query</a>.</p><h4><a id="geo-shape-mapping-options"></a>Mapping Options<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/geo-shape.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The geo_shape mapping maps geo_json geometry objects to the geo_shape
 type. To enable it, users must explicitly map fields to the geo_shape
-type.</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Option </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">tree</code></p></td><td align="left" valign="top"><p>Name of the PrefixTree implementation to be used: <code class="literal">geohash</code> for
-GeohashPrefixTree and <code class="literal">quadtree</code> for QuadPrefixTree. Defaults to
-<code class="literal">geohash</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">precision</code></p></td><td align="left" valign="top"><p>This parameter may be used instead of <code class="literal">tree_levels</code> to set
+type.</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><thead><tr><th align="left" valign="top">Option </th><th align="left" valign="top">Description</th><th align="left" valign="top"> Default</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">tree</code></p></td><td align="left" valign="top"><p>Name of the PrefixTree implementation to be used: <code class="literal">geohash</code> for
+GeohashPrefixTree and <code class="literal">quadtree</code> for QuadPrefixTree.</p></td><td align="left" valign="top"><p><code class="literal">geohash</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">precision</code></p></td><td align="left" valign="top"><p>This parameter may be used instead of <code class="literal">tree_levels</code> to set
 an appropriate value for the <code class="literal">tree_levels</code> parameter. The value
 specifies the desired precision and Elasticsearch will calculate the
 best tree_levels value to honor this precision. The value should be a
 number followed by an optional distance unit. Valid distance units
 include: <code class="literal">in</code>, <code class="literal">inch</code>, <code class="literal">yd</code>, <code class="literal">yard</code>, <code class="literal">mi</code>, <code class="literal">miles</code>, <code class="literal">km</code>, <code class="literal">kilometers</code>,
-<code class="literal">m</code>,<code class="literal">meters</code> (default), <code class="literal">cm</code>,<code class="literal">centimeters</code>, <code class="literal">mm</code>, <code class="literal">millimeters</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">tree_levels</code></p></td><td align="left" valign="top"><p>Maximum number of layers to be used by the PrefixTree.
+<code class="literal">m</code>,<code class="literal">meters</code>, <code class="literal">cm</code>,<code class="literal">centimeters</code>, <code class="literal">mm</code>, <code class="literal">millimeters</code>.</p></td><td align="left" valign="top"><p><code class="literal">meters</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">tree_levels</code></p></td><td align="left" valign="top"><p>Maximum number of layers to be used by the PrefixTree.
 This can be used to control the precision of shape representations and
 therefore how many terms are indexed. Defaults to the default value of
 the chosen PrefixTree implementation. Since this parameter requires a
 certain level of understanding of the underlying implementation, users
 may use the <code class="literal">precision</code> parameter instead. However, Elasticsearch only
 uses the tree_levels parameter internally and this is what is returned
-via the mapping API even if you use the precision parameter.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">distance_error_pct</code></p></td><td align="left" valign="top"><p>Used as a hint to the PrefixTree about how
+via the mapping API even if you use the precision parameter.</p></td><td align="left" valign="top"><p><code class="literal">50m</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">strategy</code></p></td><td align="left" valign="top"><p>The strategy parameter defines the approach for how to
+represent shapes at indexing and search time. It also influences the
+capabilities available so it is recommended to let Elasticsearch set
+this parameter automatically. There are two strategies available:
+<code class="literal">recursive</code> and <code class="literal">term</code>. Term strategy supports point types only (the
+<code class="literal">points_only</code> parameter will be automatically set to true) while
+Recursive strategy supports all shape types. (IMPORTANT: see
+<a class="link" href="geo-shape.html#prefix-trees" title="Prefix treesedit">Prefix trees</a> for more detailed information)</p></td><td align="left" valign="top"><p><code class="literal">recursive</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">distance_error_pct</code></p></td><td align="left" valign="top"><p>Used as a hint to the PrefixTree about how
 precise it should be. Defaults to 0.025 (2.5%) with 0.5 as the maximum
-supported value. PERFORMANCE NOTE: This value will be default to 0 if a <code class="literal">precision</code> or
+supported value. PERFORMANCE NOTE: This value will default to 0 if a <code class="literal">precision</code> or
 <code class="literal">tree_level</code> definition is explicitly defined. This guarantees spatial precision
 at the level defined in the mapping. This can lead to significant memory usage
 for high resolution shapes with low error (e.g., large shapes at 1m with &lt; 0.001 error).
 To improve indexing performance (at the cost of query accuracy) explicitly define
 <code class="literal">tree_level</code> or <code class="literal">precision</code> along with a reasonable <code class="literal">distance_error_pct</code>, noting
-that large shapes will have greater false positives.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">orientation</code></p></td><td align="left" valign="top"><p>Optionally define how to interpret vertex order for
+that large shapes will have greater false positives.</p></td><td align="left" valign="top"><p><code class="literal">0.025</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">orientation</code></p></td><td align="left" valign="top"><p>Optionally define how to interpret vertex order for
 polygons / multipolygons.  This parameter defines one of two coordinate
 system rules (Right-hand or Left-hand) each of which can be specified in three
-different ways. 1. Right-hand rule (default): <code class="literal">right</code>, <code class="literal">ccw</code>, <code class="literal">counterclockwise</code>,
+different ways. 1. Right-hand rule: <code class="literal">right</code>, <code class="literal">ccw</code>, <code class="literal">counterclockwise</code>,
 2. Left-hand rule: <code class="literal">left</code>, <code class="literal">cw</code>, <code class="literal">clockwise</code>. The default orientation
 (<code class="literal">counterclockwise</code>) complies with the OGC standard which defines
 outer ring vertices in counterclockwise order with inner ring(s) vertices (holes)
 in clockwise order. Setting this parameter in the geo_shape mapping explicitly
 sets vertex order for the coordinate list of a geo_shape field but can be
-overridden in each individual GeoJSON document.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">points_only</code></p></td><td align="left" valign="top"><p>Setting this option to <code class="literal">true</code> (defaults to <code class="literal">false</code>) configures
+overridden in each individual GeoJSON document.</p></td><td align="left" valign="top"><p><code class="literal">ccw</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">points_only</code></p></td><td align="left" valign="top"><p>Setting this option to <code class="literal">true</code> (defaults to <code class="literal">false</code>) configures
 the <code class="literal">geo_shape</code> field type for point shapes only (NOTE: Multi-Points are not
 yet supported). This optimizes index and search performance for the <code class="literal">geohash</code> and
 <code class="literal">quadtree</code> when it is known that only points will be indexed. At present geo_shape
 queries can not be executed on <code class="literal">geo_point</code> field types. This option bridges the gap
 by improving point performance on a <code class="literal">geo_shape</code> field so that <code class="literal">geo_shape</code> queries are
-optimal on a point only field.</p></td></tr></tbody></table></div><h4><a id="_prefix_trees"></a>Prefix trees<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/geo-shape.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To efficiently represent shapes in the index, Shapes are converted into
-a series of hashes representing grid squares using implementations of a
-PrefixTree. The tree notion comes from the fact that the PrefixTree uses
-multiple grid layers, each with an increasing level of precision to
-represent the Earth.</p><p>Multiple PrefixTree implementations are provided:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+optimal on a point only field.</p></td><td align="left" valign="top"><p><code class="literal">false</code></p></td></tr></tbody></table></div><h4><a id="prefix-trees"></a>Prefix trees<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/geo-shape.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To efficiently represent shapes in the index, Shapes are converted into
+a series of hashes representing grid squares (commonly referred to as "rasters")
+using implementations of a PrefixTree. The tree notion comes from the fact that
+the PrefixTree uses multiple grid layers, each with an increasing level of
+precision to represent the Earth. This can be thought of as increasing the level
+of detail of a map or image at higher zoom levels.</p><p>Multiple PrefixTree implementations are provided:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 GeohashPrefixTree - Uses
 <a class="ulink" href="http://en.wikipedia.org/wiki/Geohash" target="_top">geohashes</a> for grid squares.
 Geohashes are base32 encoded strings of the bits of the latitude and
@@ -668,7 +675,16 @@ Similar to geohash, quad trees interleave the bits of the latitude and
 longitude the resulting hash is a bit set. A tree level in a quad tree
 represents 2 bits in this bit set, one for each coordinate. The maximum
 amount of levels for the quad trees in Elasticsearch is 50.
-</li></ul></div><h5><a id="_accuracy"></a>Accuracy<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/geo-shape.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Geo_shape does not provide 100% accuracy and depending on how it is
+</li></ul></div><h5><a id="spatial-strategy"></a>Spatial strategies<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/geo-shape.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The PrefixTree implementations rely on a SpatialStrategy for decomposing
+the provided Shape(s) into approximated grid squares. Each strategy answers
+the following:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+What type of Shapes can be indexed?
+</li><li class="listitem">
+What types of Query Operations and Shapes can be used?
+</li><li class="listitem">
+Does it support more than one Shape per field?
+</li></ul></div><p>The following Strategy implementations (with corresponding capabilities)
+are provided:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top">Strategy </th><th align="left" valign="top">Supported Shapes </th><th align="left" valign="top">Supported Queries </th><th align="left" valign="top">Multiple Shapes</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">recursive</code></p></td><td align="left" valign="top"><p><a class="link" href="geo-shape.html#input-structure" title="Input Structureedit">All</a></p></td><td align="left" valign="top"><p><code class="literal">INTERSECTS</code>, <code class="literal">DISJOINT</code>, <code class="literal">WITHIN</code>, <code class="literal">CONTAINS</code></p></td><td align="left" valign="top"><p>Yes</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">term</code></p></td><td align="left" valign="top"><p><a class="link" href="geo-shape.html#point" title="Pointedit">Points</a></p></td><td align="left" valign="top"><p><code class="literal">INTERSECTS</code></p></td><td align="left" valign="top"><p>Yes</p></td></tr></tbody></table></div><h5><a id="_accuracy"></a>Accuracy<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/geo-shape.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Geo_shape does not provide 100% accuracy and depending on how it is
 configured it may return some false positives or false negatives for
 certain queries. To mitigate this, it is important to select an
 appropriate value for the tree_levels parameter and to adjust
@@ -695,7 +711,7 @@ Which setting is right depends on the use case. Generally one trades off
 accuracy against index size and query performance.</p><p>The defaults in Elasticsearch for both implementations are a compromise
 between index size and a reasonable level of precision of 50m at the
 equator. This allows for indexing tens of millions of shapes without
-overly bloating the resulting index too much relative to the input size.</p><h4><a id="_input_structure"></a>Input Structure<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/geo-shape.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <a class="ulink" href="http://www.geojson.org" target="_top">GeoJSON</a> format is used to represent
+overly bloating the resulting index too much relative to the input size.</p><h4><a id="input-structure"></a>Input Structure<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/geo-shape.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <a class="ulink" href="http://www.geojson.org" target="_top">GeoJSON</a> format is used to represent
 <a class="ulink" href="http://geojson.org/geojson-spec.html#geometry-objects" target="_top">shapes</a> as input
 as follows:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><thead><tr><th align="left" valign="top">GeoJSON Type </th><th align="left" valign="top">Elasticsearch Type </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">Point</code></p></td><td align="left" valign="top"><p><code class="literal">point</code></p></td><td align="left" valign="top"><p>A single geographic coordinate.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">LineString</code></p></td><td align="left" valign="top"><p><code class="literal">linestring</code></p></td><td align="left" valign="top"><p>An arbitrary line given two or more points.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">Polygon</code></p></td><td align="left" valign="top"><p><code class="literal">polygon</code></p></td><td align="left" valign="top"><p>A <span class="emphasis"><em>closed</em></span> polygon whose first and last point
 must match, thus requiring <code class="literal">n + 1</code> vertices to create an <code class="literal">n</code>-sided
@@ -708,7 +724,7 @@ units, which default to <code class="literal">METERS</code>.</p></td></tr></tbod
 required.</p><p>In GeoJSON, and therefore Elasticsearch, the correct <span class="strong"><strong>coordinate
 order is longitude, latitude (X, Y)</strong></span> within coordinate arrays. This
 differs from many Geospatial APIs (e.g., Google Maps) that generally
-use the colloquial latitude, longitude (Y, X).</p></div></div><h5><a id="_ulink_url_http_geojson_org_geojson_spec_html_id2_point_ulink"></a><a class="ulink" href="http://geojson.org/geojson-spec.html#id2" target="_top">Point</a><a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/geo-shape.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>A point is a single geographic coordinate, such as the location of a
+use the colloquial latitude, longitude (Y, X).</p></div></div><h5><a id="point"></a><a class="ulink" href="http://geojson.org/geojson-spec.html#id2" target="_top">Point</a><a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/geo-shape.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>A point is a single geographic coordinate, such as the location of a
 building or the current position given by a smartphone’s Geolocation
 API.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "location" : {
