@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Packetbeat Reference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Thrift-RPC Support</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Packetbeat Reference [1.0.1]" /><link rel="up" href="index.html" title="Packetbeat Reference [1.0.1]" /><link rel="prev" href="_https_and_basic_authentication.html" title="HTTPS and Basic Authentication" /><link rel="next" href="_kibana_queries_and_filters.html" title="Kibana Queries and Filters" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -595,13 +595,62 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Packetbeat Reference</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">Packetbeat Reference: master</a>
-</li><li class="listitem">
-<a class="ulink" href="1.0.1/index.html" target="_top">Packetbeat Reference: 1.0.1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Packetbeat Reference: 1.0.0 (current)</a>
-</li></ul></div></div>
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Packetbeat Reference
+      [1.0.1]
+    </a></span> » <span class="breadcrumb-node">Thrift-RPC Support</span></div><div class="navheader"><span class="prev"><a href="_https_and_basic_authentication.html">
+              « 
+              HTTPS and Basic Authentication</a>
+           
+        </span><span class="next">
+           
+          <a href="_kibana_queries_and_filters.html">Kibana Queries and Filters
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_thrift_rpc_support"></a>Thrift-RPC Support<a href="https://github.com/elastic/beats/edit/1.0.1/packetbeat/docs/thrift.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p><a class="ulink" href="https://thrift.apache.org/" target="_top">Apache Thrift</a> is a communication protocol and RPC
+framework initially created at Facebook. It is sometimes used in
+<a class="ulink" href="http://martinfowler.com/articles/microservices.html" target="_top">microservices</a>
+architectures because it provides better performance when compared to the more
+obvious HTTP/RESTful API choice, while still supporting a wide range of
+programming languages and frameworks.</p><p>Packetbeat works based on a copy of the traffic, which means that you get
+performance management features without having to modify your services in
+any way and without any latency overhead. Packetbeat captures the transactions from the
+network and indexes them in Elasticsearch so that they can be analyzed and
+searched.</p><p>Packetbeat indexes the method, parameters, return value, and
+exceptions of each Thrift-RPC call. You can search by and create statistics
+based on any of these fields. Packetbeat automatically fills in the <code class="literal">status</code>
+column with either <code class="literal">OK</code> or <code class="literal">Error</code>, so it’s easy to find the problematic RPC calls.
+A transaction is put into the <code class="literal">Error</code> state if it returned an exception.</p><p>Packetbeat also indexes the <code class="literal">responsetime</code> field so you can get performance
+analytics and find the slow RPC calls.</p><p>Here is an example performance dashboard:</p><p><span class="inlinemediaobject"><img src="./images/thrift-dashboard.png" alt="Thrift-RPC dashboard" /></span></p><p>Thrift supports multiple <a class="ulink" href="http://en.wikipedia.org/wiki/Apache_Thrift" target="_top">transport
+and protocol types</a>. Currently Packetbeat supports the default <code class="literal">TSocket</code>
+transport as well as the <code class="literal">TFramed</code> transport. From the protocol point of view,
+Packetbeat currently supports only the default <code class="literal">TBinary</code> protocol.</p><p>Packetbeat also has several configuration options that allow you to get
+the right balance between visibility, disk usage, and data protection. You can,
+for example, choose to obfuscate all strings or to store the requests but not
+the responses, while still capturing the response time for each of the RPC
+calls. You can also choose to limit the size of strings and lists to a given
+number of elements, so you can fine tune how much data you want to have stored in
+Elasticsearch.</p><p>Here is an example configuration section for the Thrift protocol:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">protocols:
+  thrift:
+    transport_type = "socket"
+    protocol_type = "binary"
+    idl_files = ["tutorial.thrift", "shared.thrift"]
+    string_max_size = 200
+    collection_max_size = 20
+    capture_reply = true
+    obfuscate_strings = true
+    drop_after_n_struct_fields = 100</pre></div><p>For more details about the configuration options, see the
+<a class="xref" href="packetbeat-configuration.html#configuration-thrift" title="Thrift Configuration Options">Thrift Configuration Options</a> section.</p><p>Providing the Thrift IDL files to Packetbeat is optional. The binary
+Thrift messages include the called method name and enough structural information
+to decode the messages without needing the IDL files. However, if you
+provide the IDL files, Packetbeat can also resolve the service name,
+arguments, and exception names.</p></div><div class="navfooter"><span class="prev"><a href="_https_and_basic_authentication.html">
+              « 
+              HTTPS and Basic Authentication</a>
+           
+        </span><span class="next">
+           
+          <a href="_kibana_queries_and_filters.html">Kibana Queries and Filters
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>
