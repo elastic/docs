@@ -29,7 +29,7 @@ sub new {
         unless ref $branches eq 'ARRAY';
 
     die "Current branch <$current> is not in <branches> in repo <$name>"
-        unless grep { $current eq $_ } @$branches;
+        unless grep { ref $_ ? $_->{$current} : $current eq $_ } @$branches;
 
     my $self = bless {
         name     => $name,
