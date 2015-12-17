@@ -634,14 +634,24 @@ Open a PowerShell prompt as an Administrator (right-click the PowerShell icon an
 Run the following commands to install Topbeat as a Windows service:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">PS &gt; cd 'C:\Program Files\Topbeat'
 PS C:\Program Files\Topbeat&gt; .\install-service-topbeat.ps1</pre></div></li></ol></div><p>Before starting Topbeat, you should look at the configuration options in the configuration file,
-for example <code class="literal">C:\Program Files\Topbeat\topbeat.yml</code>. For more information about these options, see <a class="xref" href="topbeat-configuration-options.html" title="Configuration Options"><em>Configuration Options</em></a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="topbeat-configuration"></a>Configuring Topbeat<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you plan to use Logstash, you need to set up Logstash to work with the Beat before you
-configure Topbeat. For detailed steps, see <a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/master/getting-started.html#logstash-setup" target="_top">Setting Up Logstash</a>.</p></div></div><p>To configure Topbeat, you edit the <span class="emphasis"><em>topbeat.yml</em></span> file. Here is a sample of
+for example <code class="literal">C:\Program Files\Topbeat\topbeat.yml</code>. For more information about these options, see <a class="xref" href="topbeat-configuration-options.html" title="Configuration Options"><em>Configuration Options</em></a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="topbeat-configuration"></a>Configuring Topbeat<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To configure Topbeat, you edit the <span class="emphasis"><em>topbeat.yml</em></span> file. Here is a sample of
 the <span class="emphasis"><em>topbeat.yml</em></span> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">input:
   period: 10
   procs: [".*"]</pre></div><p>The <code class="literal">period</code> option defines how often to read system-wide and per-process statistics from your servers. The interval is in seconds.
 By default, it’s set to 10 seconds.</p><p>The <code class="literal">procs</code> option defines a list of regular expressions to match all the processes that need to be monitored. By default, all the running processes are monitored.</p><p>If you are not interested in monitoring your processes, you can use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">input:
   period: 10
-  procs: ["^$"]</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="topbeat-template"></a>Loading the Index Template in Elasticsearch<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Before starting Topbeat, you need to load the
+  procs: ["^$"]</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_configuring_topbeat_to_use_logstash"></a>Configuring Topbeat to Use Logstash<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you want to use Logstash to perform additional processing on the data collected by
+Topbeat, you need to configure Topbeat to use Logstash.</p><p>To do this, you edit the Topbeat configuration file to disable the Elasticsearch
+output and use the Logstash output instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
+  logstash:
+    hosts: ["127.0.0.1:5044"]
+
+    # configure logstash plugin to loadbalance events between
+    # configured logstash hosts
+    #loadbalance: false</pre></div><p>In this configuration, <code class="literal">hosts</code> specifies the Logstash server and the port (<code class="literal">5044</code>)
+where Logstash is configured to listen for incoming Beats connections.</p><p>To use this configuration, you must also
+<a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/master/getting-started.html#logstash-setup" target="_top">set up Logstash</a> to receive events
+from Beats.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="topbeat-template"></a>Loading the Index Template in Elasticsearch<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Before starting Topbeat, you need to load the
 <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/indices-templates.html" target="_top">index
 template</a>, which lets Elasticsearch know which fields should be analyzed
 in which way.</p><p>The recommended template file is installed by the Topbeat packages. Load it with the
