@@ -17,6 +17,8 @@ our $Sitemap_Path = '/sitemap.xml';
 our $Guide_Prefix = '/guide';
 our $Max_Page     = 10;
 our $Page_Size    = 15;
+our $Max_Sections = 10;
+our $Max_Hits_Per_Section = 5;
 
 our $es = Search::Elasticsearch->new( nodes => 'http://localhost:9200' );
 
@@ -25,7 +27,7 @@ sub create_index {
 #===================================
     my $name       = shift;
     my $index_name = $name . '_' . time();
-    my $json       = file("web/$name.json")->slurp;
+    my $json       = file("web/config_$name.json")->slurp;
     my $defn       = $JSON->decode($json);
     $es->indices->create(
         index => $index_name,
@@ -39,7 +41,7 @@ sub create_index {
 sub switch_alias {
 #===================================
     my ( $alias, $index ) = @_;
-    my $aliases = $es->indices->get_alias( index => $alias );
+    my $aliases = $es->indices->get_alias( index => $alias, ignore => 404 );
     my @actions = { add => { index => $index, alias => $alias } };
     my @old = keys %$aliases;
 

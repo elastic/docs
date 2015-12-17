@@ -10,6 +10,7 @@
   <!-- book versions -->
   <xsl:param name="local.book.version">test build</xsl:param>
   <xsl:param name="local.book.multi_version" select="0"/>
+  <xsl:param name="local.book.section.title">Docs/</xsl:param>
 
   <!-- css -->
   <xsl:param name="generate.consistent.ids" select="1"/>
@@ -28,6 +29,14 @@
   <xsl:param name="generate.toc"></xsl:param>
   <xsl:param name="toc.list.type"           select="'ul'"/>
 
+  <!-- meta elements -->
+  <xsl:template name="user.head.content">
+    <meta name="DC.type">
+      <xsl:attribute name="content">
+        <xsl:value-of select="$local.book.section.title" />
+      </xsl:attribute>
+    </meta>
+  </xsl:template>
 
   <!-- Edit me links -->
 

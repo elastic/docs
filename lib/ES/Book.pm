@@ -52,6 +52,9 @@ sub new {
     my $template = $args{template}
         or die "No <template> specified for book <$title>";
 
+    my $tags = $args{tags}
+        or die "No <tags> specified for book <$title>";
+
     bless {
         title         => $title,
         dir           => $dir->subdir($prefix),
@@ -65,7 +68,8 @@ sub new {
         src_path      => $index->parent,
         branches      => \@branches,
         branch_titles => \%branch_titles,
-        current       => $current
+        current       => $current,
+        tags          => $tags,
     }, $class;
 }
 
@@ -115,7 +119,8 @@ sub build {
         return {
             title => "$title [" . $self->branch_title( $self->current ) . "\\]",
             url   => $self->prefix . '/current/index.html',
-            versions => $self->prefix . '/index.html',
+            versions      => $self->prefix . '/index.html',
+            section_title => $self->section_title()
         };
     }
 
@@ -133,12 +138,13 @@ sub _build_book {
 #===================================
     my ( $self, $branch ) = @_;
 
-    my $branch_dir = $self->dir->subdir($branch);
-    my $repo       = $self->repo;
-    my $template   = $self->template;
-    my $src_path   = $self->src_path;
-    my $index      = $self->index;
-    my $edit_url   = $repo->edit_url( $branch, $index );
+    my $branch_dir    = $self->dir->subdir($branch);
+    my $repo          = $self->repo;
+    my $template      = $self->template;
+    my $src_path      = $self->src_path;
+    my $index         = $self->index;
+    my $edit_url      = $repo->edit_url( $branch, $index );
+    my $section_title = $self->section_title($branch);
 
     return say "   - Reusing existing"
         if -e $branch_dir
@@ -155,22 +161,24 @@ sub _build_book {
             build_single(
                 $repo->dir->file($index),
                 $branch_dir,
-                version  => $branch,
-                edit_url => $edit_url,
-                multi    => $self->is_multi_version,
-                toc      => $self->toc,
-                template => $template
+                version       => $branch,
+                edit_url      => $edit_url,
+                multi         => $self->is_multi_version,
+                section_title => $section_title,
+                toc           => $self->toc,
+                template      => $template
             );
         }
         else {
             build_chunked(
                 $repo->dir->file($index),
                 $branch_dir,
-                version  => $branch,
-                edit_url => $edit_url,
-                chunk    => $self->chunk,
-                multi    => $self->is_multi_version,
-                template => $template
+                version       => $branch,
+                edit_url      => $edit_url,
+                chunk         => $self->chunk,
+                multi         => $self->is_multi_version,
+                section_title => $section_title,
+                template      => $template
             );
             $self->_add_title_to_toc( $branch, $branch_dir );
         }
@@ -250,6 +258,16 @@ sub remove_old_branches {
 }
 
 #===================================
+sub section_title {
+#===================================
+    my $self   = shift;
+    my $branch = shift || '';
+    my $title  = $self->tags;
+    return $title unless $self->is_multi_version;
+    return $title . "/" . $branch;
+}
+
+#===================================
 sub title            { shift->{title} }
 sub dir              { shift->{dir} }
 sub src_path         { shift->{src_path} }
@@ -264,6 +282,7 @@ sub branches         { shift->{branches} }
 sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
 sub is_multi_version { @{ shift->branches } > 1 }
+sub tags             { shift->{tags} }
 #===================================
 
 1;

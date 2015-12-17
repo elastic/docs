@@ -1,0 +1,156 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "similarity.default.type": "BM25",
+    "analysis": {
+      "analyzer": {
+        "text": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "asciifolding"
+          ],
+          "char_filter": [
+            "punct_to_spaces"
+          ]
+        },
+        "autocomplete": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "autocomplete"
+          ],
+          "char_filter": [
+            "punct_to_spaces"
+          ]
+        },
+        "shingles": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "stop",
+            "asciifolding",
+            "shingles"
+          ],
+          "char_filter": [
+            "punct_to_spaces"
+          ]
+        },
+        "sections": {
+          "tokenizer": "keyword",
+          "filter": [
+            "sections"
+          ]
+        }
+      },
+      "filter": {
+        "autocomplete": {
+          "type": "edge_ngram",
+          "min_gram": 1,
+          "max_gram": 20
+        },
+        "shingles": {
+          "type": "shingle",
+          "output_unigrams": false,
+          "output_unigrams_if_no_shingles": true,
+          "min_shingle_size": 2,
+          "max_shingle_size": 2,
+          "token_separator": "",
+          "filler_token": " "
+        },
+        "sections": {
+          "type": "pattern_capture",
+          "preserve_original": true,
+          "patterns": [
+            "^([^/]+/)",
+            "^([^/]+/[^/]+/)",
+            "^([^/]+/[^/]+/[^/]+/)"
+          ]
+        }
+      },
+      "char_filter": {
+        "punct_to_spaces": {
+          "type": "pattern_replace",
+          "pattern": "[-_:. ]",
+          "replacement": " "
+        }
+      }
+    }
+  },
+  "mappings": {
+    "doc": {
+      "properties": {
+        "is_current": {
+          "type": "boolean"
+        },
+        "is_subsection": {
+          "type": "boolean"
+        },
+        "title": {
+          "type": "string",
+          "analyzer": "text",
+          "fields": {
+            "autocomplete": {
+              "type": "string",
+              "search_analyzer": "text",
+              "analyzer": "autocomplete"
+            },
+            "shingles": {
+              "type": "string",
+              "analyzer": "shingles"
+            },
+            "stemmed": {
+              "type": "string",
+              "analyzer": "english"
+            }
+          }
+        },
+        "content": {
+          "type": "string",
+          "analyzer": "text",
+          "index_options": "offsets",
+          "fields": {
+            "autocomplete": {
+              "type": "string",
+              "search_analyzer": "text",
+              "analyzer": "autocomplete"
+            },
+            "shingles": {
+              "type": "string",
+              "analyzer": "shingles"
+            },
+            "stemmed": {
+              "type": "string",
+              "analyzer": "english",
+              "index_options": "offsets"
+            }
+          }
+        },
+        "section": {
+          "type": "string",
+          "analyzer": "sections",
+          "search_analyzer": "keyword",
+          "fields": {
+            "autocomplete": {
+              "type": "string",
+              "analyzer": "autocomplete",
+              "search_analyzer": "standard"
+            }
+          }
+        },
+        "tags": {
+          "type": "string",
+          "index": "not_analyzed",
+          "fields": {
+            "autocomplete": {
+              "type": "string",
+              "analyzer": "autocomplete",
+              "search_analyzer": "standard"
+            }
+          }
+        }
+      }
+    }
+  }
+}

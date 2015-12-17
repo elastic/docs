@@ -15,9 +15,9 @@ sub new {
             "caption", "dd",         "div",        "dl",
             "dt",      "figcaption", "h1",         "h2",
             "h3",      "h4",         "h5",         "h6",
-            "header",  "li",         "output",     "p",
-            "pre",     "section",    "textarea",   "th",
-            "title"
+            "header",  "li",         "meta",       "output",
+            "p",       "pre",        "section",    "textarea",
+            "th",      "title"
         ],
         handlers => {
             text           => [ \&text,      'self, dtext' ],
@@ -37,6 +37,8 @@ sub start_doc {
     $self->{title}   = [];
     $self->{content} = [];
     $self->{stack}   = [];
+    $self->{tags}    = [];
+    $self->{section} = '';
     $self->{dest}    = 'ignore';
 }
 
@@ -51,14 +53,37 @@ sub text {
     $text =~ s/ $//;
     $text =~ s/\x{2019}/'/g;
     push @{ $self->{ $self->{dest} } }, $text;
+
 }
 
 #===================================
 sub start {
 #===================================
     my ( $self, $tag, $attr ) = @_;
+
+    if ( $tag eq 'meta' ) {
+        my $name    = $attr->{name}    || '';
+        my $content = $attr->{content} || '';
+
+        if ($content) {
+            if ( $name eq 'DC.title' ) {
+                $self->{title} = [$content];
+            }
+            elsif ( $name eq 'DC.type' ) {
+                $self->{section} = $content;
+            }
+            elsif ( $name eq 'DC.subject' ) {
+                push @{ $self->{tags} }, split /\s*,\s*/, $content;
+            }
+            elsif ( $name eq 'date' ) {
+                $self->{published_at} = $content || undef;
+            }
+        }
+        $self->{dest} = 'ignore';
+    }
+
     if ( $tag eq 'title' ) {
-        return $self->{dest} = 'title';
+        return $self->{dest} = @{ $self->{title} } ? 'ignore' : 'title';
     }
     if ( $tag eq 'div' ) {
         my $id = $attr->{id} || '';
@@ -91,8 +116,11 @@ sub output {
 #===================================
     my $self = shift;
     return {
-        title   => join( " ", @{ $self->{title} } ),
-        content => join( " ", @{ $self->{content} } )
+        title        => join( " ", @{ $self->{title} } ),
+        content      => join( " ", @{ $self->{content} } ),
+        section      => $self->{section},
+        tags         => $self->{tags},
+        published_at => $self->{published_at}
     };
 }
 

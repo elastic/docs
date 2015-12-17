@@ -56,8 +56,10 @@ sub main {
                 max_count => 100
             );
 
+            my $current
+                = $book->{current} || $Conf->{repos}{ $book->{repo} }{current};
             my @docs = index_docs( $b, $dir, $book->{prefix}, $book->{tags},
-                $book->{single} );
+                $book->{single}, $current );
 
             my $result = $b->flush;
 
@@ -79,13 +81,18 @@ sub main {
 #===================================
 sub index_docs {
 #===================================
-    my ( $bulk, $dir, $prefix, $tags, $single ) = @_;
+    my ( $bulk, $dir, $prefix, $tags, $single, $current ) = @_;
 
     my $length_dir = length($dir);
     my $book_dir   = $dir->subdir($prefix);
-    my @versions   = grep { $_->is_dir } $book_dir->children();
+    my @versions   = grep { $_->is_dir && $_->basename ne 'current' }
+        $book_dir->children();
 
     for my $version_dir (@versions) {
+
+        my $version = $version_dir->basename;
+        my $is_current = $version eq $current ? \1 : \0;
+
         my @files;
         my $toc = $version_dir->file('toc.html');
         if ( -e $toc ) {
@@ -96,37 +103,36 @@ sub index_docs {
             @files = 'index.html';
         }
 
+        my $section
+            = @versions > 1
+            ? 'Docs/' . $tags . '/' . $version
+            : 'Docs/' . $tags;
+
+        my ( $product, $book_title ) = split '/', $tags;
+
         for (@files) {
             my $file = $version_dir->file($_);
             my $url = $Guide_Prefix . substr( $file, $length_dir );
-            my ( $product, $book_title ) = split '/', $tags;
-
-            if (@versions) {
-                my $version = $version_dir->basename;
-                $book_title .= " [$version]" if $version ne 'current';
-            }
 
             for my $page ( _load_file( $file, $single ) ) {
-                my $title
-                    = $page->{title}
-                    ? $page->{title} . " | $book_title | $product"
-                    : "$book_title | $product";
+
+                # single-page books don't have their titles detected
+                my $title = $page->{title} || $book_title;
 
                 $bulk->index(
                     {   _id     => $url . $page->{id},
                         _source => {
-                            book       => $prefix,
-                            version    => $version_dir->basename,
-                            title      => $title,
-                            content    => $page->{text},
-                            url        => $url . $page->{id},
-                            tags       => $tags,
-                            is_section => $page->{main} ? \0 : \1
+                            title          => $title,
+                            content        => $page->{text},
+                            url            => $url . $page->{id},
+                            tags           => $product,
+                            section        => $section,
+                            is_current     => $is_current,
+                            is_sub_section => $page->{main} ? \0 : \1
                         }
                     }
                 );
             }
-
         }
     }
     return;

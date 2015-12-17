@@ -1,0 +1,138 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "similarity.default.type": "BM25",
+    "analysis": {
+      "analyzer": {
+        "autocomplete": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "autocomplete"
+          ]
+        },
+        "shingles": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "stop",
+            "asciifolding",
+            "shingles"
+          ]
+        },
+        "sections": {
+          "tokenizer": "keyword",
+          "filter": [
+            "sections"
+          ]
+        }
+      },
+      "filter": {
+        "autocomplete": {
+          "type": "edge_ngram",
+          "min_gram": 1,
+          "max_gram": 20
+        },
+        "shingles": {
+          "type": "shingle",
+          "output_unigrams": false,
+          "output_unigrams_if_no_shingles": true,
+          "min_shingle_size": 2,
+          "max_shingle_size": 2,
+          "token_separator": "",
+          "filler_token": " "
+        },
+        "sections": {
+          "type": "pattern_capture",
+          "preserve_original": true,
+          "patterns": [
+            "^([^/]+/)",
+            "^([^/]+/[^/]+/)",
+            "^([^/]+/[^/]+/[^/]+/)"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "doc": {
+      "properties": {
+        "is_current": {
+          "type": "boolean"
+        },
+        "title": {
+          "type": "string",
+          "analyzer": "standard",
+          "fields": {
+            "autocomplete": {
+              "type": "string",
+              "analyzer": "autocomplete",
+              "search_analyzer": "standard"
+            },
+            "shingles": {
+              "type": "string",
+              "analyzer": "shingles"
+            },
+            "stemmed": {
+              "type": "string",
+              "analyzer": "english"
+            },
+            "raw": {
+              "type": "string",
+              "index": "not_analyzed"
+            }
+          }
+        },
+        "content": {
+          "type": "string",
+          "analyzer": "standard",
+          "index_options": "offsets",
+          "fields": {
+            "autocomplete": {
+              "type": "string",
+              "search_analyzer": "standard",
+              "analyzer": "autocomplete"
+            },
+            "shingles": {
+              "type": "string",
+              "analyzer": "shingles"
+            },
+            "stemmed": {
+              "type": "string",
+              "analyzer": "english",
+              "index_options": "offsets"
+            }
+          }
+        },
+        "published_at": {
+          "type": "date",
+          "format": "dateOptionalTime"
+        },
+        "section": {
+          "type": "string",
+          "analyzer": "sections",
+          "search_analyzer": "keyword",
+          "fields": {
+            "autocomplete": {
+              "type": "string",
+              "analyzer": "autocomplete",
+              "search_analyzer": "standard"
+            }
+          }
+        },
+        "tags": {
+          "type": "string",
+          "index": "not_analyzed",
+          "fields": {
+            "autocomplete": {
+              "type": "string",
+              "analyzer": "autocomplete",
+              "search_analyzer": "standard"
+            }
+          }
+        }
+      }
+    }
+  }
+}

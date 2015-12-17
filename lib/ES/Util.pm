@@ -35,6 +35,7 @@ sub build_chunked {
     my $multi    = $opts{multi} || 0;
     my $lenient  = $opts{lenient} || '';
     my $edit_url = $opts{edit_url} || '';
+    my $section  = $opts{section_title} || '';
 
     my $output = run(
         'a2x', '-v',
@@ -53,6 +54,7 @@ sub build_chunked {
             "chunk.section.depth"      => $chunk,
             "local.book.version"       => $version,
             "local.book.multi_version" => $multi,
+            "local.book.section.title" => "Docs/$section",
             "local.root_dir"           => $index->dir->absolute,
             "local.edit_url"           => $edit_url
         ),
@@ -83,11 +85,12 @@ sub build_single {
 
     my $type = $opts{type} || 'book';
     my $toc = $opts{toc} ? "$type toc" : '';
-    my $lenient  = $opts{lenient}  || '';
-    my $version  = $opts{version}  || 'test build';
-    my $multi    = $opts{multi}    || 0;
-    my $edit_url = $opts{edit_url} || '';
-    my $comments = $opts{comments} || 0;
+    my $lenient  = $opts{lenient}       || '';
+    my $version  = $opts{version}       || 'test build';
+    my $multi    = $opts{multi}         || 0;
+    my $edit_url = $opts{edit_url}      || '';
+    my $comments = $opts{comments}      || 0;
+    my $section  = $opts{section_title} || '';
 
     my $output = run(
         'a2x', '-v',
@@ -105,6 +108,7 @@ sub build_single {
             "toc.section.depth"        => 0,
             "local.book.version"       => $version,
             "local.book.multi_version" => $multi,
+            "local.book.section.title" => "Docs/$section",
             "local.root_dir"           => $index->dir->absolute,
             "local.edit_url"           => $edit_url,
             "local.comments"           => $comments,
@@ -238,7 +242,8 @@ sub get_url {
     push @cmd, ( '--user', $cred ) if $cred;
 
     my $res;
-    eval { $res = run( @cmd, $url ); } && return $res;
+    eval { $res = run( @cmd, $url ); die $res if $res =~ /^Moved/; 1 }
+        && return $res;
 
     die "URL ($url) failed with $@\n";
 }
