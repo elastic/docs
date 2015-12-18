@@ -610,7 +610,8 @@
           <a href="java-search.html">Search API
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-docs-bulk-processor"></a>Using Bulk Processor<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/java-api/docs/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">BulkProcessor</code> class offers a simple interface to flush bulk operations automatically based on the number or size
-of requests, or after a given period.</p><p>To use it, first create a <code class="literal">BulkProcessor</code> instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.action.bulk.BulkProcessor;
+of requests, or after a given period.</p><p>To use it, first create a <code class="literal">BulkProcessor</code> instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.action.bulk.BackoffPolicy;
+import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
@@ -636,6 +637,8 @@ BulkProcessor bulkProcessor = BulkProcessor.builder(
         .setBulkSize(new ByteSizeValue(1, ByteSizeUnit.GB)) <a id="CO5-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
         .setFlushInterval(TimeValue.timeValueSeconds(5)) <a id="CO5-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
         .setConcurrentRequests(1) <a id="CO5-8"></a><span><img src="images/icons/callouts/8.png" alt="" /></span>
+        .setBackoffPolicy(
+            BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(100), 3)) <a id="CO5-9"></a><span><img src="images/icons/callouts/9.png" alt="" /></span>
         .build();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Add your elasticsearch client
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
@@ -655,6 +658,11 @@ We want to flush the bulk every 5 seconds whatever the number of requests
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-8"><span><img src="images/icons/callouts/8.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Set the number of concurrent requests. A value of 0 means that only a single request will  be allowed to be
     executed. A value of 1 means 1 concurrent request is allowed to be executed while accumulating new bulk requests.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-9"><span><img src="images/icons/callouts/9.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set a custom backoff policy which will initially wait for 100ms, increase exponentially and retries up to three
+    times. A retry is attempted whenever one or more bulk item requests have failed with an <code class="literal">EsRejectedExecutionException</code>
+    which indicates that there were too little compute resources available for processing the request. To disable backoff,
+    pass <code class="literal">BackoffPolicy.noBackoff()</code>.
 </p></td></tr></table></div><p>Then you can simply add your requests to the <code class="literal">BulkProcessor</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">bulkProcessor.add(new IndexRequest("twitter", "tweet", "1").source(/* your doc here */));
 bulkProcessor.add(new DeleteRequest("twitter", "tweet", "2"));</pre></div><p>By default, <code class="literal">BulkProcessor</code>:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 sets bulkActions to <code class="literal">1000</code>
@@ -664,6 +672,8 @@ sets bulkSize to <code class="literal">5mb</code>
 does not set flushInterval
 </li><li class="listitem">
 sets concurrentRequests to 1
+</li><li class="listitem">
+sets backoffPolicy to an exponential backoff with 8 retries and a start delay of 50ms. The total wait time is roughly 5.1 seconds.
 </li></ul></div><p>When all documents are loaded to the <code class="literal">BulkProcessor</code> it can be closed by using <code class="literal">awaitClose</code> or <code class="literal">close</code> methods:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">bulkProcessor.awaitClose(10, TimeUnit.MINUTES);</pre></div><p>or</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">bulkProcessor.close();</pre></div><p>Both methods flush any remaining documents and disable all other scheduled flushes if they were scheduled by setting
 <code class="literal">flushInterval</code>. If concurrent requests were enabled the <code class="literal">awaitClose</code> method waits for up to the specified timeout for
 all bulk requests to complete then returns <code class="literal">true</code>, if the specified waiting time elapses before all bulk requests complete,
