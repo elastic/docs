@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>String datatype</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.x]" /><link rel="up" href="mapping-types.html" title="Field datatypes" /><link rel="prev" href="object.html" title="Object datatype" /><link rel="next" href="token-count.html" title="Token count datatype" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>query Section</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.x]" /><link rel="up" href="search-profile.html" title="Profile API" /><link rel="prev" href="search-profile.html" title="Profile API" /><link rel="next" href="_literal_collectors_literal_section.html" title="collectors Section" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -601,227 +601,147 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [2.x]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-types.html">Field datatypes</a></span> » <span class="breadcrumb-node">String datatype</span></div><div class="navheader"><span class="prev"><a href="object.html">
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-link"><a href="search-profile.html">Profile API</a></span> » <span class="breadcrumb-node"><code class="literal">query</code> Section</span></div><div class="navheader"><span class="prev"><a href="search-profile.html">
               « 
-              Object datatype</a>
+              Profile API</a>
            
         </span><span class="next">
            
-          <a href="token-count.html">Token count datatype
+          <a href="_literal_collectors_literal_section.html"><code class="literal">collectors</code> Section
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="string"></a>String datatype<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/string.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Fields of type <code class="literal">string</code> accept text values.  Strings may be sub-divided into:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Full text
-</span></dt><dd><p class="simpara">Full text values, like the body of an email, are typically used for text based
-relevance searches, such as: <span class="emphasis"><em>Find the most relevant documents that match a
-query for "quick brown fox"</em></span>.</p><p class="simpara">These fields are <code class="literal">analyzed</code>, that is they are passed through an
-<a class="link" href="analysis.html" title="Analysis">analyzer</a> to convert the string into a list of individual terms
-before being indexed. The analysis process allows Elasticsearch to search for
-individual words <span class="emphasis"><em>within</em></span>  each full text field.  Full text fields are not
-used for sorting and seldom used for aggregations (although the
-<a class="link" href="search-aggregations-bucket-significantterms-aggregation.html" title="Significant Terms Aggregation">significant terms aggregation</a> is a notable exception).</p></dd><dt><span class="term">
-Keywords
-</span></dt><dd>
-Keywords are exact values like email addresses, hostnames, status codes, or
-tags.  They are typically used for filtering (<span class="emphasis"><em>Find me all blog posts where
-<code class="literal">status</code> is <code class="literal">published</code></em></span>), for sorting, and for aggregations. Keyword
-fields are <code class="literal">not_analyzed</code>.  Instead, the exact string value is added to the
-index as a single term.
-</dd></dl></div><p>Below is an example of a mapping for a full text (<code class="literal">analyzed</code>) and a keyword
-(<code class="literal">not_analyzed</code>) string field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
-{
-  "mappings": {
-    "my_type": {
-      "properties": {
-        "full_name": { <a id="CO164-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-          "type":  "string"
-        },
-        "status": {
-          "type":  "string", <a id="CO164-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-          "index": "not_analyzed"
-        }
-      }
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_literal_query_literal_section"></a><code class="literal">query</code> Section<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">query</code> section contains detailed timing of the query tree executed by Lucene on a particular shard.
+The overall structure of this query tree will resemble your original Elasticsearch query, but may be slightly
+(or sometimes very) different.  It will also use similar but not always identical naming.  Using our previous
+<code class="literal">term</code> query example, let’s analyze the <code class="literal">query</code> section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"query": [
+    {
+       "query_type": "BooleanQuery",
+       "lucene": "message:search message:test",
+       "time": "15.52889800ms",
+       "breakdown": {...},               <a id="CO40-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+       "children": [
+          {
+             "query_type": "TermQuery",
+             "lucene": "message:search",
+             "time": "4.938855000ms",
+             "breakdown": {...}
+          },
+          {
+             "query_type": "TermQuery",
+             "lucene": "message:test",
+             "time": "0.5016660000ms",
+             "breakdown": {...}
+          }
+       ]
     }
-  }
-}</pre></div><div class="sense_widget" data-snippet="snippets/string/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO164-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">full_name</code> field is an <code class="literal">analyzed</code> full text field — <code class="literal">index:analyzed</code> is the default.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO164-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">status</code> field is a <code class="literal">not_analyzed</code> keyword field.
-</p></td></tr></table></div><p>Sometimes it is useful to have both a full text (<code class="literal">analyzed</code>) and a keyword
-(<code class="literal">not_analyzed</code>) version of the same field: one for full text search and the
-other for aggregations and sorting. This can be achieved with
-<a class="link" href="multi-fields.html" title="fields">multi-fields</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="string-params"></a>Parameters for string fields<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/string.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following parameters are accepted by <code class="literal">string</code> fields:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO40-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The breakdown timings are omitted for simplicity
+</p></td></tr></table></div><p>Based on the profile structure, we can see that our <code class="literal">match</code> query was rewritten by Lucene into a BooleanQuery with two
+clauses (both holding a TermQuery).  The <code class="literal">"query_type"</code> field displays the Lucene class name, and often aligns with
+the equivalent name in Elasticsearch.  The <code class="literal">"lucene"</code> field displays the Lucene explanation text for the query, and
+is made available to help differentiating between parts of your query (e.g. both <code class="literal">"message:search"</code> and <code class="literal">"message:test"</code>
+are TermQuery’s and would appear identical otherwise.</p><p>The <code class="literal">"time"</code> field shows that this query took ~15ms for the entire BooleanQuery to execute.  The recorded time is inclusive
+of all children.</p><p>The <code class="literal">"breakdown"</code> field will give detailed stats about how the time was spent, we’ll look at
+that in a moment.  Finally, the <code class="literal">"children"</code> array lists any sub-queries that may be present.  Because we searched for two
+values ("search test"), our BooleanQuery holds two children TermQueries.  They have identical information (query_type, time,
+breakdown, etc).  Children are allowed to have their own children.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_timing_breakdown"></a>Timing Breakdown<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">breakdown</code> component lists detailed timing statistics about low-level Lucene execution:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"breakdown": {
+  "score": 0,
+  "next_doc": 24495,
+  "match": 0,
+  "create_weight": 8488388,
+  "build_scorer": 7016015,
+  "advance": 0
+
+}</pre></div><p>Timings are listed in wall-clock nanoseconds and are not normalized at all.  All caveats about the overall
+<code class="literal">time</code> apply here.  The intention of the breakdown is to give you a feel for A) what machinery in Lucene is
+actually eating time, and B) the magnitude of differences in times between the various components.  Like the overall time,
+the breakdown is inclusive of all children times.</p><p>The meaning of the stats are as follows:</p><h3><a id="_all_parameters_3"></a>All parameters:<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
-<a class="link" href="analyzer.html" title="analyzer"><code class="literal">analyzer</code></a>
+<code class="literal">create_weight</code>
 </p>
 </td><td valign="top">
 <p>
-    The <a class="link" href="analysis.html" title="Analysis">analyzer</a> which should be used for
-    <a class="link" href="mapping-index.html" title="index"><code class="literal">analyzed</code></a> string fields, both at index-time and at
-    search-time (unless overridden by the  <a class="link" href="search-analyzer.html" title="search_analyzer"><code class="literal">search_analyzer</code></a>).
-    Defaults to the default index analyzer, or the
-    <a class="link" href="analysis-standard-analyzer.html" title="Standard Analyzer"><code class="literal">standard</code> analyzer</a>.
+    A Query in Lucene must be capable of reuse across multiple IndexSearchers (think of it as the engine that
+    executes a search against a specific Lucene Index).  This puts Lucene in a tricky spot, since many queries
+    need to accumulate temporary state/statistics associated with the index it is being used against, but the
+    Query contract mandates that it must be immutable.
+    
+    
+    To get around this, Lucene asks each query to generate a Weight object which acts as a temporary context
+    object to hold state associated with this particular (IndexSearcher, Query) tuple.  The <code class="literal">weight</code> metric
+    shows how long this process takes
 </p>
 </td></tr><tr><td valign="top">
 <p>
-<a class="link" href="index-boost.html" title="boost"><code class="literal">boost</code></a>
+<code class="literal">build_scorer</code>
 </p>
 </td><td valign="top">
 <p>
-    Field-level index time boosting. Accepts a floating point number, defaults
-    to <code class="literal">1.0</code>.
+    This parameter shows how long it takes to build a Scorer for the query.  A Scorer is the mechanism that
+    iterates over matching documents generates a score per-document (e.g. how well does "foo" match the document?).
+    Note, this records the time required to generate the Scorer object, not actuall score the documents.  Some
+    queries have faster or slower initialization of the Scorer, depending on optimizations, complexity, etc.
+    
+    
+    This may also showing timing associated with caching, if enabled and/or applicable for the query
 </p>
 </td></tr><tr><td valign="top">
 <p>
-<a class="link" href="doc-values.html" title="doc_values"><code class="literal">doc_values</code></a>
+<code class="literal">next_doc</code>
 </p>
 </td><td valign="top">
 <p>
-    Should the field be stored on disk in a column-stride fashion, so that it
-    can later be used for sorting, aggregations, or scripting? Accepts <code class="literal">true</code>
-    or <code class="literal">false</code>. Defaults to <code class="literal">true</code> for <code class="literal">not_analyzed</code> fields. Analyzed fields
-    do not support doc values.
+    The Lucene method <code class="literal">next_doc</code> returns Doc ID of the next document matching the query.  This statistic shows
+    the time it takes to determine which document is the next match, a process that varies considerably depending
+    on the nature of the query.   Next_doc is a specialized form of advance() which is more convenient for many
+    queries in Lucene.  It is equivalent to advance(docId() + 1)
 </p>
 </td></tr><tr><td valign="top">
 <p>
-<a class="link" href="fielddata.html" title="fielddata"><code class="literal">fielddata</code></a>
+<code class="literal">advance</code>
 </p>
 </td><td valign="top">
 <p>
-    Can the field use in-memory fielddata for sorting, aggregations,
-    or scripting? Accepts <code class="literal">disabled</code> or <code class="literal">paged_bytes</code> (default).
-    Not analyzed fields will use <a class="link" href="doc-values.html" title="doc_values">doc values</a> in preference
-    to fielddata.
+    <code class="literal">advance</code> is the "lower level" version of next_doc: it serves the same purpose of finding the next matching
+    doc, but requires the calling query to perform extra tasks such as identifying and moving past skips, etc.
+    However,  not all queries can use next_doc, so <code class="literal">advance</code> is also timed for those queries.
+    
+    
+    Conjunctions (e.g. <code class="literal">must</code> clauses in a boolean) are typical consumers of <code class="literal">advance</code>
 </p>
 </td></tr><tr><td valign="top">
 <p>
-<a class="link" href="multi-fields.html" title="fields"><code class="literal">fields</code></a>
+<code class="literal">matches</code>
 </p>
 </td><td valign="top">
 <p>
-    Multi-fields allow the same string value to be indexed in multiple ways for
-    different purposes, such as one field for search and a multi-field for
-    sorting and aggregations, or the same string value analyzed by different
-    analyzers.
+    Some queries, such as phrase queries, match documents using a "Two Phase" process.  First, the document is
+    "approximately" matched, and if it matches approximately, it is checked a second time with a more rigorous
+    (and expensive) process.  The second phase verification is what the <code class="literal">matches</code> statistic measures.
+    
+    
+    For example, a phrase query first checks a document approximately by ensuring all terms in the phrase are
+    present in the doc.  If all the terms are present, it then executes the second phase verification to ensure
+    the terms are in-order to form the phrase, which is relatively more expensive than just checking for presence
+    of the terms.
+    
+    
+    Because this two-phase process is only used by a handful of queries, the <code class="literal">metric</code> statistic will often be zero
 </p>
 </td></tr><tr><td valign="top">
 <p>
-<a class="link" href="ignore-above.html" title="ignore_above"><code class="literal">ignore_above</code></a>
+<code class="literal">score</code>
 </p>
 </td><td valign="top">
 <p>
-    Do not index or analyze any string longer than this value.  Defaults to <code class="literal">0</code> (disabled).
+    This records the time taken to score a particular document via it’s Scorer
 </p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="include-in-all.html" title="include_in_all"><code class="literal">include_in_all</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Whether or not the field value should be included in the
-    <a class="link" href="mapping-all-field.html" title="_all field"><code class="literal">_all</code></a> field? Accepts <code class="literal">true</code> or <code class="literal">false</code>.  Defaults
-    to <code class="literal">false</code> if <a class="link" href="mapping-index.html" title="index"><code class="literal">index</code></a> is set to <code class="literal">no</code>, or if a parent
-    <a class="link" href="object.html" title="Object datatype"><code class="literal">object</code></a> field sets <code class="literal">include_in_all</code> to <code class="literal">false</code>.
-    Otherwise defaults to <code class="literal">true</code>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="mapping-index.html" title="index"><code class="literal">index</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Should the field be searchable? Accepts <code class="literal">analyzed</code> (default, treat as full-text field),
-    <code class="literal">not_analyzed</code> (treat as keyword field) and <code class="literal">no</code>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="index-options.html" title="index_options"><code class="literal">index_options</code></a>
-</p>
-</td><td valign="top">
-<p>
-    What information should be stored in the index, for search and highlighting purposes.
-    Defaults to <code class="literal">positions</code> for <a class="link" href="mapping-index.html" title="index"><code class="literal">analyzed</code></a> fields, and to <code class="literal">docs</code> for
-    <code class="literal">not_analyzed</code> fields.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="norms.html" title="norms"><code class="literal">norms</code></a>
-</p>
-</td><td valign="top">
-<p>Whether field-length should be taken into account when scoring queries.
-Defaults depend on the <a class="link" href="mapping-index.html" title="index"><code class="literal">index</code></a> setting:</p>
-<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">analyzed</code> fields default to <code class="literal">{ "enabled": true, "loading": "lazy" }</code>.
-</li><li class="listitem">
-<code class="literal">not_analyzed</code> fields default to <code class="literal">{ "enabled": false }</code>.
-</li></ul></div>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="null-value.html" title="null_value"><code class="literal">null_value</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Accepts a string value which is substituted for any explicit <code class="literal">null</code>
-    values.  Defaults to <code class="literal">null</code>, which means the field is treated as missing.
-    If the field is <code class="literal">analyzed</code>, the <code class="literal">null_value</code> will also be analyzed.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="position-increment-gap.html" title="position_increment_gap"><code class="literal">position_increment_gap</code></a>
-</p>
-</td><td valign="top">
-<p>
-    The number of fake term positions which should be inserted between
-    each element of an array of strings. Defaults to 0.
-    The number of fake term position which should be inserted between each
-    element of an array of strings. Defaults to the position_increment_gap
-    configured on the analyzer which defaults to 100. 100 was chosen because it
-    prevents phrase queries with reasonably large slops (less than 100) from
-    matching terms across field values.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="mapping-store.html" title="store"><code class="literal">store</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Whether the field value should be stored and retrievable separately from
-    the <a class="link" href="mapping-source-field.html" title="_source field"><code class="literal">_source</code></a> field. Accepts <code class="literal">true</code> or <code class="literal">false</code>
-    (default).
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="search-analyzer.html" title="search_analyzer"><code class="literal">search_analyzer</code></a>
-</p>
-</td><td valign="top">
-<p>
-    The <a class="link" href="analyzer.html" title="analyzer"><code class="literal">analyzer</code></a> that should be used at search time on
-    <a class="link" href="mapping-index.html" title="index"><code class="literal">analyzed</code></a> fields. Defaults to the <code class="literal">analyzer</code> setting.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="similarity.html" title="similarity"><code class="literal">similarity</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Which scoring algorithm or <span class="emphasis"><em>similarity</em></span> should be used. Defaults
-    to <code class="literal">default</code>, which uses TF/IDF.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="term-vector.html" title="term_vector"><code class="literal">term_vector</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Whether term vectors should be stored for an <a class="link" href="mapping-index.html" title="index"><code class="literal">analyzed</code></a>
-    field. Defaults to <code class="literal">no</code>.
-</p>
-</td></tr></tbody></table></div></div></div><div class="navfooter"><span class="prev"><a href="object.html">
+</td></tr></tbody></table></div></div></div><div class="navfooter"><span class="prev"><a href="search-profile.html">
               « 
-              Object datatype</a>
+              Profile API</a>
            
         </span><span class="next">
            
-          <a href="token-count.html">Token count datatype
+          <a href="_literal_collectors_literal_section.html"><code class="literal">collectors</code> Section
                »
             </a></span></div>
 <!-- end body -->

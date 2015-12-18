@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>String datatype</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.x]" /><link rel="up" href="mapping-types.html" title="Field datatypes" /><link rel="prev" href="object.html" title="Object datatype" /><link rel="next" href="token-count.html" title="Token count datatype" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>A more complex example</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.x]" /><link rel="up" href="search-profile.html" title="Profile API" /><link rel="prev" href="_literal_rewrite_literal_section.html" title="rewrite Section" /><link rel="next" href="_performance_notes.html" title="Performance Notes" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
  	<!-- RTP tag --> 
@@ -601,227 +601,175 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [2.x]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-types.html">Field datatypes</a></span> » <span class="breadcrumb-node">String datatype</span></div><div class="navheader"><span class="prev"><a href="object.html">
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-link"><a href="search-profile.html">Profile API</a></span> » <span class="breadcrumb-node">A more complex example</span></div><div class="navheader"><span class="prev"><a href="_literal_rewrite_literal_section.html">
               « 
-              Object datatype</a>
+              <code class="literal">rewrite</code> Section</a>
            
         </span><span class="next">
            
-          <a href="token-count.html">Token count datatype
+          <a href="_performance_notes.html">Performance Notes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="string"></a>String datatype<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/string.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Fields of type <code class="literal">string</code> accept text values.  Strings may be sub-divided into:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Full text
-</span></dt><dd><p class="simpara">Full text values, like the body of an email, are typically used for text based
-relevance searches, such as: <span class="emphasis"><em>Find the most relevant documents that match a
-query for "quick brown fox"</em></span>.</p><p class="simpara">These fields are <code class="literal">analyzed</code>, that is they are passed through an
-<a class="link" href="analysis.html" title="Analysis">analyzer</a> to convert the string into a list of individual terms
-before being indexed. The analysis process allows Elasticsearch to search for
-individual words <span class="emphasis"><em>within</em></span>  each full text field.  Full text fields are not
-used for sorting and seldom used for aggregations (although the
-<a class="link" href="search-aggregations-bucket-significantterms-aggregation.html" title="Significant Terms Aggregation">significant terms aggregation</a> is a notable exception).</p></dd><dt><span class="term">
-Keywords
-</span></dt><dd>
-Keywords are exact values like email addresses, hostnames, status codes, or
-tags.  They are typically used for filtering (<span class="emphasis"><em>Find me all blog posts where
-<code class="literal">status</code> is <code class="literal">published</code></em></span>), for sorting, and for aggregations. Keyword
-fields are <code class="literal">not_analyzed</code>.  Instead, the exact string value is added to the
-index as a single term.
-</dd></dl></div><p>Below is an example of a mapping for a full text (<code class="literal">analyzed</code>) and a keyword
-(<code class="literal">not_analyzed</code>) string field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_a_more_complex_example"></a>A more complex example<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To demonstrate a slightly more complex query and the associated results, we can profile the following query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /test/_search
 {
-  "mappings": {
-    "my_type": {
-      "properties": {
-        "full_name": { <a id="CO164-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-          "type":  "string"
-        },
-        "status": {
-          "type":  "string", <a id="CO164-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-          "index": "not_analyzed"
+  "profile": true,
+  "query": {
+    "term": {
+      "message": {
+        "value": "search"
+      }
+    }
+  },
+  "aggs": {
+    "non_global_term": {
+      "terms": {
+        "field": "agg"
+      },
+      "aggs": {
+        "second_term": {
+          "terms": {
+            "field": "sub_agg"
+          }
+        }
+      }
+    },
+    "another_agg": {
+      "cardinality": {
+        "field": "aggB"
+      }
+    },
+    "global_agg": {
+      "global": {},
+      "aggs": {
+        "my_agg2": {
+          "terms": {
+            "field": "globalAgg"
+          }
         }
       }
     }
+  },
+  "post_filter": {
+    "term": {
+      "my_field": "foo"
+    }
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/string/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO164-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">full_name</code> field is an <code class="literal">analyzed</code> full text field — <code class="literal">index:analyzed</code> is the default.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO164-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">status</code> field is a <code class="literal">not_analyzed</code> keyword field.
-</p></td></tr></table></div><p>Sometimes it is useful to have both a full text (<code class="literal">analyzed</code>) and a keyword
-(<code class="literal">not_analyzed</code>) version of the same field: one for full text search and the
-other for aggregations and sorting. This can be achieved with
-<a class="link" href="multi-fields.html" title="fields">multi-fields</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="string-params"></a>Parameters for string fields<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/mapping/types/string.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following parameters are accepted by <code class="literal">string</code> fields:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<a class="link" href="analyzer.html" title="analyzer"><code class="literal">analyzer</code></a>
-</p>
-</td><td valign="top">
-<p>
-    The <a class="link" href="analysis.html" title="Analysis">analyzer</a> which should be used for
-    <a class="link" href="mapping-index.html" title="index"><code class="literal">analyzed</code></a> string fields, both at index-time and at
-    search-time (unless overridden by the  <a class="link" href="search-analyzer.html" title="search_analyzer"><code class="literal">search_analyzer</code></a>).
-    Defaults to the default index analyzer, or the
-    <a class="link" href="analysis-standard-analyzer.html" title="Standard Analyzer"><code class="literal">standard</code> analyzer</a>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="index-boost.html" title="boost"><code class="literal">boost</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Field-level index time boosting. Accepts a floating point number, defaults
-    to <code class="literal">1.0</code>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="doc-values.html" title="doc_values"><code class="literal">doc_values</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Should the field be stored on disk in a column-stride fashion, so that it
-    can later be used for sorting, aggregations, or scripting? Accepts <code class="literal">true</code>
-    or <code class="literal">false</code>. Defaults to <code class="literal">true</code> for <code class="literal">not_analyzed</code> fields. Analyzed fields
-    do not support doc values.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="fielddata.html" title="fielddata"><code class="literal">fielddata</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Can the field use in-memory fielddata for sorting, aggregations,
-    or scripting? Accepts <code class="literal">disabled</code> or <code class="literal">paged_bytes</code> (default).
-    Not analyzed fields will use <a class="link" href="doc-values.html" title="doc_values">doc values</a> in preference
-    to fielddata.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="multi-fields.html" title="fields"><code class="literal">fields</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Multi-fields allow the same string value to be indexed in multiple ways for
-    different purposes, such as one field for search and a multi-field for
-    sorting and aggregations, or the same string value analyzed by different
-    analyzers.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="ignore-above.html" title="ignore_above"><code class="literal">ignore_above</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Do not index or analyze any string longer than this value.  Defaults to <code class="literal">0</code> (disabled).
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="include-in-all.html" title="include_in_all"><code class="literal">include_in_all</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Whether or not the field value should be included in the
-    <a class="link" href="mapping-all-field.html" title="_all field"><code class="literal">_all</code></a> field? Accepts <code class="literal">true</code> or <code class="literal">false</code>.  Defaults
-    to <code class="literal">false</code> if <a class="link" href="mapping-index.html" title="index"><code class="literal">index</code></a> is set to <code class="literal">no</code>, or if a parent
-    <a class="link" href="object.html" title="Object datatype"><code class="literal">object</code></a> field sets <code class="literal">include_in_all</code> to <code class="literal">false</code>.
-    Otherwise defaults to <code class="literal">true</code>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="mapping-index.html" title="index"><code class="literal">index</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Should the field be searchable? Accepts <code class="literal">analyzed</code> (default, treat as full-text field),
-    <code class="literal">not_analyzed</code> (treat as keyword field) and <code class="literal">no</code>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="index-options.html" title="index_options"><code class="literal">index_options</code></a>
-</p>
-</td><td valign="top">
-<p>
-    What information should be stored in the index, for search and highlighting purposes.
-    Defaults to <code class="literal">positions</code> for <a class="link" href="mapping-index.html" title="index"><code class="literal">analyzed</code></a> fields, and to <code class="literal">docs</code> for
-    <code class="literal">not_analyzed</code> fields.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="norms.html" title="norms"><code class="literal">norms</code></a>
-</p>
-</td><td valign="top">
-<p>Whether field-length should be taken into account when scoring queries.
-Defaults depend on the <a class="link" href="mapping-index.html" title="index"><code class="literal">index</code></a> setting:</p>
-<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">analyzed</code> fields default to <code class="literal">{ "enabled": true, "loading": "lazy" }</code>.
+}</pre></div><p>This example has:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+A query
 </li><li class="listitem">
-<code class="literal">not_analyzed</code> fields default to <code class="literal">{ "enabled": false }</code>.
-</li></ul></div>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="null-value.html" title="null_value"><code class="literal">null_value</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Accepts a string value which is substituted for any explicit <code class="literal">null</code>
-    values.  Defaults to <code class="literal">null</code>, which means the field is treated as missing.
-    If the field is <code class="literal">analyzed</code>, the <code class="literal">null_value</code> will also be analyzed.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="position-increment-gap.html" title="position_increment_gap"><code class="literal">position_increment_gap</code></a>
-</p>
-</td><td valign="top">
-<p>
-    The number of fake term positions which should be inserted between
-    each element of an array of strings. Defaults to 0.
-    The number of fake term position which should be inserted between each
-    element of an array of strings. Defaults to the position_increment_gap
-    configured on the analyzer which defaults to 100. 100 was chosen because it
-    prevents phrase queries with reasonably large slops (less than 100) from
-    matching terms across field values.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="mapping-store.html" title="store"><code class="literal">store</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Whether the field value should be stored and retrievable separately from
-    the <a class="link" href="mapping-source-field.html" title="_source field"><code class="literal">_source</code></a> field. Accepts <code class="literal">true</code> or <code class="literal">false</code>
-    (default).
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="search-analyzer.html" title="search_analyzer"><code class="literal">search_analyzer</code></a>
-</p>
-</td><td valign="top">
-<p>
-    The <a class="link" href="analyzer.html" title="analyzer"><code class="literal">analyzer</code></a> that should be used at search time on
-    <a class="link" href="mapping-index.html" title="index"><code class="literal">analyzed</code></a> fields. Defaults to the <code class="literal">analyzer</code> setting.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="similarity.html" title="similarity"><code class="literal">similarity</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Which scoring algorithm or <span class="emphasis"><em>similarity</em></span> should be used. Defaults
-    to <code class="literal">default</code>, which uses TF/IDF.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<a class="link" href="term-vector.html" title="term_vector"><code class="literal">term_vector</code></a>
-</p>
-</td><td valign="top">
-<p>
-    Whether term vectors should be stored for an <a class="link" href="mapping-index.html" title="index"><code class="literal">analyzed</code></a>
-    field. Defaults to <code class="literal">no</code>.
-</p>
-</td></tr></tbody></table></div></div></div><div class="navfooter"><span class="prev"><a href="object.html">
+A scoped aggregation
+</li><li class="listitem">
+A global aggregation
+</li><li class="listitem">
+A post_filter
+</li></ul></div><p>And the response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "profile": {
+         "shards": [
+            {
+               "id": "[P6-vulHtQRWuD4YnubWb7A][test][0]",
+               "searches": [
+                  {
+                     "query": [
+                        {
+                           "query_type": "TermQuery",
+                           "lucene": "my_field:foo",
+                           "time": "0.4094560000ms",
+                           "breakdown": {
+                              "score": 0,
+                              "next_doc": 0,
+                              "match": 0,
+                              "create_weight": 31584,
+                              "build_scorer": 377872,
+                              "advance": 0
+                           }
+                        },
+                        {
+                           "query_type": "TermQuery",
+                           "lucene": "message:search",
+                           "time": "0.3037020000ms",
+                           "breakdown": {
+                              "score": 0,
+                              "next_doc": 5936,
+                              "match": 0,
+                              "create_weight": 185215,
+                              "build_scorer": 112551,
+                              "advance": 0
+                           }
+                        }
+                     ],
+                     "rewrite_time": 7208,
+                     "collector": [
+                        {
+                           "name": "MultiCollector",
+                           "reason": "search_multi",
+                           "time": "1.378943000ms",
+                           "children": [
+                              {
+                                 "name": "FilteredCollector",
+                                 "reason": "search_post_filter",
+                                 "time": "0.4036590000ms",
+                                 "children": [
+                                    {
+                                       "name": "SimpleTopScoreDocCollector",
+                                       "reason": "search_top_hits",
+                                       "time": "0.006391000000ms"
+                                    }
+                                 ]
+                              },
+                              {
+                                 "name": "BucketCollector: [[non_global_term, another_agg]]",
+                                 "reason": "aggregation",
+                                 "time": "0.9546020000ms"
+                              }
+                           ]
+                        }
+                     ]
+                  },
+                  {
+                     "query": [
+                        {
+                           "query_type": "MatchAllDocsQuery",
+                           "lucene": "*:*",
+                           "time": "0.04829300000ms",
+                           "breakdown": {
+                              "score": 0,
+                              "next_doc": 3672,
+                              "match": 0,
+                              "create_weight": 6311,
+                              "build_scorer": 38310,
+                              "advance": 0
+                           }
+                        }
+                     ],
+                     "rewrite_time": 1067,
+                     "collector": [
+                        {
+                           "name": "GlobalAggregator: [global_agg]",
+                           "reason": "aggregation_global",
+                           "time": "0.1226310000ms"
+                        }
+                     ]
+                  }
+               ]
+            }
+         ]
+      }
+}</pre></div><p>As you can see, the output is significantly verbose from before.  All the major portions of the query are
+represented:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+The first <code class="literal">TermQuery</code> (message:search) represents the main <code class="literal">term</code> query
+</li><li class="listitem">
+The second <code class="literal">TermQuery</code> (my_field:foo) represents the <code class="literal">post_filter</code> query
+</li><li class="listitem">
+There is a  <code class="literal">MatchAllDocsQuery</code> (*:*) query which is being executed as a second, distinct search.  This was
+not part of the query specified by the user, but is auto-generated by the global aggregation to provide a global query scope
+</li></ol></div><p>The Collector tree is fairly straightforward, showing how a single MultiCollector wraps a FilteredCollector
+to execute the post_filter (and in turn wraps the normal scoring SimpleCollector), a BucketCollector to run
+all scoped aggregations.  In the MatchAll search, there is a single GlobalAggregator to run the global aggregation.</p></div><div class="navfooter"><span class="prev"><a href="_literal_rewrite_literal_section.html">
               « 
-              Object datatype</a>
+              <code class="literal">rewrite</code> Section</a>
            
         </span><span class="next">
            
-          <a href="token-count.html">Token count datatype
+          <a href="_performance_notes.html">Performance Notes
                »
             </a></span></div>
 <!-- end body -->
