@@ -36,7 +36,7 @@
 <meta name="msapplication-TileColor" content="#ffffff">
 <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
 <meta name="theme-color" content="#ffffff">
-<script type="text/javascript">visitor_count = "2824"</script>
+<script type="text/javascript">visitor_count = "3384"</script>
 <script type="text/javascript">mod_value = "0"</script>
 <!-- DC tags section -->
 <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" >
@@ -713,13 +713,12 @@
            
           <a href="search-field-stats.html">Field stats API
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-percolate"></a>Percolator<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/percolate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Traditionally you design documents based on your data, store them into an index, and then define queries via the search API
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-percolate"></a>Percolator<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/percolate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Added in 3.0.0.</h4><p>Percolator queries modifications aren’t visible immediately and a refresh is required.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Added in 3.0.0.</h4><p>Percolate api by defaults limits the number of matches to <code class="literal">10</code> whereas before this wasn’t set.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h4>Added in 3.0.0.</h4><p>For indices created on or after version 3.0.0 the percolator automatically indexes the query terms with the percolator queries this allows the percolator to percolate documents quicker. It is advisable to reindex any pre 3.0.0 indices to take advantage of this new optimization.</p></div></div><p>Traditionally you design documents based on your data, store them into an index, and then define queries via the search API
 in order to retrieve these documents. The percolator works in the opposite direction. First you store queries into an
 index and then, via the percolate API, you define documents in order to retrieve these queries.</p><p>The reason that queries can be stored comes from the fact that in Elasticsearch both documents and queries are defined in
 JSON. This allows you to embed queries into documents via the index API. Elasticsearch can extract the query from a
 document and make it available to the percolate API. Since documents are also defined as JSON, you can define a document
-in a request to the percolate API.</p><p>The percolator and most of its features work in realtime, so once a percolate query is indexed it can immediately be used
-in the percolate API.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Fields referred to in a percolator query must <span class="strong"><strong>already</strong></span> exist in the mapping
+in a request to the percolate API.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Fields referred to in a percolator query must <span class="strong"><strong>already</strong></span> exist in the mapping
 associated with the index used for percolation.
 There are two ways to make sure that a field mapping exist:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Add or update a mapping via the <a class="link" href="indices-create-index.html" title="Create Index">create index</a> or
@@ -839,7 +838,7 @@ occurred for the filter to included the latest percolate queries.
 <code class="literal">query</code> - Same as the <code class="literal">filter</code> option, but also the score is computed. The computed scores can then be used by the
 <code class="literal">track_scores</code> and <code class="literal">sort</code> option.
 </li><li class="listitem">
-<code class="literal">size</code> - Defines to maximum number of matches (percolate queries) to be returned. Defaults to unlimited.
+<code class="literal">size</code> - Defines to maximum number of matches (percolate queries) to be returned. Defaults to 10.
 </li><li class="listitem">
 <code class="literal">track_scores</code> - Whether the <code class="literal">_score</code> is included for each match. The <code class="literal">_score</code> is based on the query and represents
 how the query matched the <span class="strong"><strong>percolate query’s metadata</strong></span>, <span class="strong"><strong>not</strong></span> how the document (that is being percolated) matched
@@ -899,7 +898,9 @@ document.</p><div class="itemizedlist"><p class="title"><strong>Supported option
 </li><li class="listitem">
 <code class="literal">version</code> - Enables a version check. If the fetched document’s version isn’t equal to the specified version then the request fails with a version conflict and the percolation request is aborted.
 </li></ul></div><p>Internally the percolate API will issue a GET request for fetching the <code class="literal">_source</code> of the document to percolate.
-For this feature to work, the <code class="literal">_source</code> for documents to be percolated needs to be stored.</p><h4><a id="_example"></a>Example<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/percolate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Index response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+For this feature to work, the <code class="literal">_source</code> for documents to be percolated needs to be stored.</p><p>If percolating an existing document and the a document is also specified in the source of the percolate request then
+an error is thrown. Either the document to percolate should be specified in the source or be defined by specifying the
+index, type and id.</p><h4><a id="_example"></a>Example<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/percolate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Index response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
         "_index" : "my-index",
         "_type" : "message",
         "_id" : "1",
@@ -923,13 +924,11 @@ document actions support different parameters.</p><div class="itemizedlist"><p c
 doesn’t specify an index or type.</p><p>requests.txt:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{"percolate" : {"index" : "twitter", "type" : "tweet"}}
 {"doc" : {"message" : "some text"}}
 {"percolate" : {"index" : "twitter", "type" : "tweet", "id" : "1"}}
-{}
 {"percolate" : {"index" : "users", "type" : "user", "id" : "3", "percolate_index" : "users_2012" }}
 {"size" : 10}
 {"count" : {"index" : "twitter", "type" : "tweet"}}
 {"doc" : {"message" : "some other text"}}
-{"count" : {"index" : "twitter", "type" : "tweet", "id" : "1"}}
-{}</pre></div><p>For a percolate existing document item (headers with the <code class="literal">id</code> field), the response can be an empty JSON object.
+{"count" : {"index" : "twitter", "type" : "tweet", "id" : "1"}}</pre></div><p>For a percolate existing document item (headers with the <code class="literal">id</code> field), the response can be an empty JSON object.
 All the required options are set in the header.</p><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "responses" : [
         {
