@@ -36,8 +36,8 @@
 <meta name="msapplication-TileColor" content="#ffffff">
 <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
 <meta name="theme-color" content="#ffffff">
-<script type="text/javascript">visitor_count = "10287"</script>
-<script type="text/javascript">mod_value = "1"</script>
+<script type="text/javascript">visitor_count = "41346"</script>
+<script type="text/javascript">mod_value = "0"</script>
 <!-- DC tags section -->
 <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" >
 <link rel="schema.DCTERMS" href="http://purl.org/dc/terms/" >
@@ -727,7 +727,7 @@ appropriate number of shards to allow for expected growth:</p><div class="pre_wr
     "number_of_shards": 3
   }
 }</pre></div><p>The next step is to migrate the data from the shared index into the dedicated
-index, which can be done using <a class="link" href="scan-scroll.html" title="scan and scroll">scan-and-scroll</a> and the
+index, which can be done using a <a class="link" href="scroll.html" title="Scroll"><code class="literal">scroll</code></a> query and the
 <a class="link" href="bulk.html" title="Cheaper in Bulk"><code class="literal">bulk</code> API</a>.  As soon as the migration is finished, the index alias
 can be updated to point to the new index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">POST /_aliases
 {
@@ -740,15 +740,8 @@ continues talking to the <code class="literal">baking</code> API and is complete
 points to a new dedicated index.</p><p>The dedicated index no longer needs the filter or the routing values. We can
 just rely on the default sharding that Elasticsearch does using each
 document’s <code class="literal">_id</code> field.</p><p>The last step is to remove the old documents from the shared index, which can
-be done with a <code class="literal">delete-by-query</code> request, using the original routing value and
-forum ID:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">DELETE /forums/post/_query?routing=baking
-{
-  "query": {
-    "term": {
-      "forum_id": "baking"
-    }
-  }
-}</pre></div><p>The beauty of this index-per-user model is that it allows you to reduce
+be done by searching using the original routing value and forum ID and performing
+a bulk delete.</p><p>The beauty of this index-per-user model is that it allows you to reduce
 resources, keeping costs low, while still giving you the flexibility to scale
 out when necessary, and with zero downtime.</p></div><div class="navfooter"><span class="prev"><a href="faking-it.html">
               « 
