@@ -20,8 +20,7 @@ BEGIN {
     do "web/base.pl" or die $!;
 }
 
-#our $JSON = JSON::XS->new->utf8;
-our $JSON = JSON::XS->new->utf8->pretty->canonical;
+our $JSON = JSON::XS->new->utf8;
 
 builder {
     mount '/search'  => \&search;
@@ -246,8 +245,9 @@ sub _highlight {
 #===================================
     my %fields    = @_;
     my %highlight = (
-        pre_tags  => ['[[['],
-        post_tags => [']]]'],
+        pre_tags      => ['[[['],
+        post_tags     => [']]]'],
+        no_match_size => 300,
     );
     for ( keys %fields ) {
         $highlight{fields}{"$_.autocomplete"}{number_of_fragments}
@@ -444,7 +444,6 @@ sub _format_hit {
     for my $field (qw(title content)) {
         my $highlight
             = _format_highlights( $hit->{highlight}{"$field.autocomplete"} )
-            || $hit->{_source}{$field}
             || next;
         $result{$field} = $highlight;
     }
