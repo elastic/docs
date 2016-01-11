@@ -184,11 +184,9 @@ sub _add_query {
                 }
             }
         ];
-        $request->{highlight} = _highlight(%$fields);
     }
     else {
         push @filter, { exists => { field => 'published_at' } };
-        push @source, keys %$fields;
         $request->{sort} = [
             {   "published_at" => {
                     order         => 'desc',
@@ -199,6 +197,8 @@ sub _add_query {
         ];
 
     }
+
+    $request->{highlight} = _highlight(%$fields);
 
     $request->{query} = {
         bool => {
