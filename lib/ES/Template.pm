@@ -190,6 +190,10 @@ sub _update_template {
         $content =~s{<script[^>]+>visitor_count[^>]+>}{};
         $content =~s{<script[^>]+>mod_value[^>]+>}{};
 
+        # remove meta date and DC.title
+        $content =~s{<meta name=.date.[^>]+>}{};
+        $content =~s{<meta name=.DC.title.[^>]+>}{};
+
         # prehead
         $content =~ s{(<head>)}{$1\n<!-- DOCS PREHEAD -->}
             or die "Couldn't add PREHEAD\n";
