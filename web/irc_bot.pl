@@ -17,8 +17,8 @@ my $bot = ES::Bot->new(
     name     => "ElasticSearch document search",
 
     search_url => 'http://localhost/search',
-    search_book =>
-        'http://www.elastic.co/guide/en/elasticsearch/reference/current',
+    search_section =>
+        'Docs/Elasticsearch/Reference/2.1',
     doc_max_results => 2,
 );
 
@@ -66,11 +66,11 @@ sub docs {
         unless defined $keywords && length $keywords;
 
     my $u = URI->new( $self->{search_url} );
-    $u->query_form( book => $self->{search_book}, q => $keywords );
+    $u->query_form( section => $self->{search_section}, q => $keywords );
 
     my $results = eval { decode_json( HTTP::Tiny->new->get($u)->{content} ); };
 
-    return _format_results( @{ $results->{book}{hits} }[ 0 .. 2 ] )
+    return _format_results( @{ $results->{hits} }[ 0 .. 2 ] )
         if $results;
 
     my $error = $@ || 'Unknown error';
