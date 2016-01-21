@@ -723,7 +723,9 @@ heap memory usage. This alternative format is <a id="id-1.7.12.6.3.1" class="ind
 <a id="id-1.7.12.6.3.2" class="indexterm"></a><a id="id-1.7.12.6.3.3" class="indexterm"></a>called <span class="emphasis"><em>doc values</em></span>.</p><p>Doc values were added to Elasticsearch in version 1.0.0 but, until recently,
 they were much slower than in-memory fielddata.  By benchmarking and profiling
 performance, various bottlenecks have been identified—in both Elasticsearch
-and Lucene—and removed.</p><p>Doc values are now only about 10–25% slower than in-memory fielddata, and
+and Lucene—and removed. Starting in version 2.0, doc values became the default
+format for almost all field types, with the notable exception of analyzed
+string fields.</p><p>Doc values are now only about 10–25% slower than in-memory fielddata, and
 come with two major advantages:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 They live on disk instead of in heap memory.  This allows you to work with
     quantities of fielddata that would normally be too large to fit into
@@ -739,28 +741,21 @@ values are remarkably efficient, so for many queries you might not even notice
 the slightly slower speed.  Combine that with faster garbage collections and
 improved initialization times and you may notice a net gain.</p><p>The more filesystem cache space that you have available, the better doc values
 will perform.  If the files holding the doc values are resident in the filesystem cache, then accessing the files is almost equivalent to reading from
-RAM.  And the filesystem cache is managed by the kernel instead of the JVM.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_enabling_doc_values"></a>Enabling Doc Values<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/300_Aggregations/110_docvalues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Doc values can be enabled for numeric, date, Boolean, binary, and geo-point
+RAM.  And the filesystem cache is managed by the kernel instead of the JVM.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_enabling_doc_values"></a>Enabling Doc Values<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/300_Aggregations/110_docvalues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Doc values are enabled by default for numeric, date, Boolean, binary, and geo-point
 fields, and for <code class="literal">not_analyzed</code> string fields.<a id="id-1.7.12.6.9.2.2" class="indexterm"></a>
 <a id="id-1.7.12.6.9.2.3" class="indexterm"></a> They do not currently work with
-<code class="literal">analyzed</code> string fields.  Doc values are enabled per field in the field
-mapping, which means that you can combine in-memory fielddata with doc values:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /music/_mapping/song
+<code class="literal">analyzed</code> string fields.  If you are sure that you don’t need to sort or aggregate
+on a field, or access the field value from a script, you can disable doc values in
+order to save disk space:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /music/_mapping/song
 {
   "properties" : {
     "tag": {
       "type":       "string",
       "index" :     "not_analyzed",
-      "doc_values": true <a id="CO222-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "doc_values": false
     }
   }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO222-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Setting <code class="literal">doc_values</code> to <code class="literal">true</code> at field creation time is all
-    that is required to use disk-based fielddata instead of in-memory
-    fielddata.
-</p></td></tr></table></div><p>That’s it!  Queries, aggregations, sorting, and scripts will function as
-normal; they’ll just be using doc values now.  There is no other
-configuration necessary.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Use doc values freely.  The more you use them, the less stress you place on
-the heap.  It is possible that doc values will become the default format in
-the near future.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="_fielddata_filtering.html">
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="_fielddata_filtering.html">
               « 
               Fielddata Filtering</a>
            
