@@ -772,17 +772,26 @@ Flush the <code class="literal">blogs</code> index.
 Flush all indices and wait until all flushes have completed before
     returning.
 </p></td></tr></table></div><p>You seldom need to issue a manual <code class="literal">flush</code> yourself; usually, automatic
-flushing is all that is required.</p><p>That said, it is beneficial to <a class="link" href="translog.html#flush-api" title="flush API">flush</a> your indices before restarting a node or closing an index. When Elasticsearch tries to recover or reopen an index, it has to replay all of the operations in the translog, so the shorter the log, the faster the recovery.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>How Safe Is the Translog?</strong></p></div></div></div><p>The purpose of the translog is to ensure that operations are not lost.  This
+flushing is all that is required.</p><p>That said, it is beneficial to <a class="link" href="translog.html#flush-api" title="flush API">flush</a> your indices before restarting a node or closing an index. When Elasticsearch tries to recover or reopen an index, it has to replay all of the operations in the translog, so the shorter the log, the faster the recovery.</p><div class="sidebar"><a id="how-safe-is-the-translog"></a><div class="titlepage"><div><div><p class="title"><strong>How Safe Is the Translog?</strong></p></div></div></div><p>The purpose of the translog is to ensure that operations are not lost.  This
 begs the question: how safe<a id="id-1.4.13.9.10.8.2.1" class="indexterm"></a>
 <a id="id-1.4.13.9.10.8.2.2" class="indexterm"></a> is the translog?</p><p>Writes to a file will not survive a reboot until the file has been
 <code class="literal">fsync</code>'ed to disk.  By default, the translog is <code class="literal">fsync</code>'ed every 5
-seconds. Potentially, we could lose 5 seconds worth of data—if the translog
-were the only mechanism that we had for dealing with failure.</p><p>Fortunately, the translog is only part of a much bigger system.  Remember that
-an indexing request is considered successful only after it has  completed
-on both the primary shard and all replica shards.  Even if the node holding
-the primary shard were to suffer catastrophic failure, it would be unlikely to
-affect the nodes holding the replica shards at the same time.</p><p>While we could force the translog to <code class="literal">fsync</code> more frequently (at the cost of
-indexing performance), it is unlikely to provide more reliability.</p></div></div></div><div class="navfooter"><span class="prev"><a href="near-real-time.html">
+seconds <span class="emphasis"><em>and</em></span> after a write request completes (e.g. index, delete, update, bulk).
+This process occurs on both the primary and replica shards. Ultimately, that means
+your client won’t receive a <code class="literal">200 OK</code> response until the entire request has been
+<code class="literal">fsync</code>'ed in the translog of the primary and all replicas.</p><p>Executing an fsync after every request does come with some performance cost,
+although in practice it is relatively small (especially for bulk ingestion, which
+amortizes the cost over many documents in the single request).</p><p>But for some high-volume clusters where losing a few seconds of data is not
+critical, it can be advantageous to fsync <span class="emphasis"><em>asynchronously</em></span>.  E.g. writes are
+buffered in memory and <code class="literal">fsync</code>'ed together every 5s.</p><p>This behavior can be enabled by setting the <code class="literal">durability</code> parameter to <code class="literal">async</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_index/_settings
+{
+    "index.translog.durability": "async",
+    "index.translog.sync_interval": "5s"
+}</pre></div><p>This setting can be configured per-index and is dynamically updatable. If
+you decide to enable async translog behavior, you are <span class="emphasis"><em>guaranteed</em></span> to lose
+<code class="literal">sync_interval</code>'s worth of data if a crash happens.  Please be aware of this
+characteristic before deciding!</p><p>If you are unsure the ramifications of this action, it is best to use the default
+(<code class="literal">"index.translog.durability": "request"</code>) to avoid data-loss.</p></div></div></div><div class="navfooter"><span class="prev"><a href="near-real-time.html">
               « 
               Near Real-Time Search</a>
            
