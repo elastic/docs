@@ -16,10 +16,8 @@ my $bot = ES::Bot->new(
     password => $ENV{IRC_PASSWORD},
     name     => "ElasticSearch document search",
 
-    search_url => 'http://localhost/search',
-    search_section =>
-        'Docs/Elasticsearch/Reference/2.1',
-    doc_max_results => 2,
+    search_url     => 'http://localhost/search',
+    search_section => 'Docs/Elasticsearch/Reference/'
 );
 
 $bot->run();
