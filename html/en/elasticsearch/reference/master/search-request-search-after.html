@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Inner hits</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-request-body.html" title="Request Body Search" /><link rel="prev" href="search-request-named-queries-and-filters.html" title="Named Queries" /><link rel="next" href="search-request-search-after.html" title="Search After" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Search After</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-request-body.html" title="Request Body Search" /><link rel="prev" href="search-request-inner-hits.html" title="Inner hits" /><link rel="next" href="search-template.html" title="Search Template" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -704,270 +704,60 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-link"><a href="search-request-body.html">Request Body Search</a></span> » <span class="breadcrumb-node">Inner hits</span></div><div class="navheader"><span class="prev"><a href="search-request-named-queries-and-filters.html">
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-link"><a href="search-request-body.html">Request Body Search</a></span> » <span class="breadcrumb-node">Search After</span></div><div class="navheader"><span class="prev"><a href="search-request-inner-hits.html">
               « 
-              Named Queries</a>
+              Inner hits</a>
            
         </span><span class="next">
            
-          <a href="search-request-search-after.html">Search After
+          <a href="search-template.html">Search Template
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-inner-hits"></a>Inner hits<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <a class="link" href="mapping-parent-field.html" title="_parent field">parent/child</a> and <a class="link" href="nested.html" title="Nested datatype">nested</a> features allow the return of documents that
-have matches in a different scope. In the parent/child case, parent document are returned based on matches in child
-documents or child document are returned based on matches in parent documents. In the nested case, documents are returned
-based on matches in nested inner objects.</p><p>In both cases, the actual matches in the different scopes that caused a document to be returned is hidden. In many cases,
-it’s very useful to know which inner nested objects (in the case of nested) or children/parent documents (in the case
-of parent/child) caused certain information to be returned. The inner hits feature can be used for this. This feature
-returns per search hit in the search response additional nested hits that caused a search hit to match in a different scope.</p><p>Inner hits can be used by defining an <code class="literal">inner_hits</code> definition on a <code class="literal">nested</code>, <code class="literal">has_child</code> or <code class="literal">has_parent</code> query and filter.
-The structure looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"&lt;query&gt;" : {
-    "inner_hits" : {
-        &lt;inner_hits_options&gt;
-    }
-}</pre></div><p>If <code class="literal">_inner_hits</code> is defined on a query that supports it then each search hit will contain an <code class="literal">inner_hits</code> json object with the following structure:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"hits": [
-     {
-        "_index": ...,
-        "_type": ...,
-        "_id": ...,
-        "inner_hits": {
-           "&lt;inner_hits_name&gt;": {
-              "hits": {
-                 "total": ...,
-                 "hits": [
-                    {
-                       "_type": ...,
-                       "_id": ...,
-                       ...
-                    },
-                    ...
-                 ]
-              }
-           }
-        },
-        ...
-     },
-     ...
-]</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_options"></a>Options<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Inner hits support the following options:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">from</code>
-</p>
-</td><td valign="top">
-<p>
-The offset from where the first hit to fetch for each <code class="literal">inner_hits</code> in the returned regular search hits.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">size</code>
-</p>
-</td><td valign="top">
-<p>
-The maximum number of hits to return per <code class="literal">inner_hits</code>. By default the top three matching hits are returned.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">sort</code>
-</p>
-</td><td valign="top">
-<p>
-How the inner hits should be sorted per <code class="literal">inner_hits</code>. By default the hits are sorted by the score.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">name</code>
-</p>
-</td><td valign="top">
-<p>
-The name to be used for the particular inner hit definition in the response. Useful when multiple inner hits
-         have been defined in a single search request. The default depends in which query the inner hit is defined.
-         For <code class="literal">has_child</code> query and filter this is the child type, <code class="literal">has_parent</code> query and filter this is the parent type
-         and the nested query and filter this is the nested path.
-</p>
-</td></tr></tbody></table></div><p>Inner hits also supports the following per document features:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="link" href="search-request-highlighting.html" title="Highlighting">Highlighting</a>
-</li><li class="listitem">
-<a class="link" href="search-request-explain.html" title="Explain">Explain</a>
-</li><li class="listitem">
-<a class="link" href="search-request-source-filtering.html" title="Source filtering">Source filtering</a>
-</li><li class="listitem">
-<a class="link" href="search-request-script-fields.html" title="Script Fields">Script fields</a>
-</li><li class="listitem">
-<a class="link" href="search-request-fielddata-fields.html" title="Field Data Fields">Fielddata fields</a>
-</li><li class="listitem">
-<a class="link" href="search-request-version.html" title="Version">Include versions</a>
-</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="nested-inner-hits"></a>Nested inner hits<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The nested <code class="literal">inner_hits</code> can be used to include nested inner objects as inner hits to a search hit.</p><p>The example below assumes that there is a nested object field defined with the name <code class="literal">comments</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "nested" : {
-            "path" : "comments",
-            "query" : {
-                "match" : {"comments.message" : "[actual query]"}
-            },
-            "inner_hits" : {} <a id="CO21-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        }
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO21-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The inner hit definition in the nested query. No other options need to be defined.
-</p></td></tr></table></div><p>An example of a response snippet that could be generated from the above search request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">...
-"hits": {
-  ...
-  "hits": [
-     {
-        "_index": "my-index",
-        "_type": "question",
-        "_id": "1",
-        "_source": ...,
-        "inner_hits": {
-           "comments": { <a id="CO22-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-              "hits": {
-                 "total": ...,
-                 "hits": [
-                    {
-                       "_type": "question",
-                       "_id": "1",
-                       "_nested": {
-                          "field": "comments",
-                          "offset": 2
-                       },
-                       "_source": ...
-                    },
-                    ...
-                 ]
-              }
-           }
-        }
-     },
-     ...</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO22-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The name used in the inner hit definition in the search request. A custom key can be used via the <code class="literal">name</code> option.
-</p></td></tr></table></div><p>The <code class="literal">_nested</code> metadata is crucial in the above example, because it defines from what inner nested object this inner hit
-came from. The <code class="literal">field</code> defines the object array field the nested hit is from and the <code class="literal">offset</code> relative to its location
-in the <code class="literal">_source</code>. Due to sorting and scoring the actual location of the hit objects in the <code class="literal">inner_hits</code> is usually
-different than the location a nested inner object was defined.</p><p>By default the <code class="literal">_source</code> is returned also for the hit objects in <code class="literal">inner_hits</code>, but this can be changed. Either via
-<code class="literal">_source</code> filtering feature part of the source can be returned or be disabled. If stored fields are defined on the
-nested level these can also be returned via the <code class="literal">fields</code> feature.</p><p>An important default is that the <code class="literal">_source</code> returned in hits inside <code class="literal">inner_hits</code> is relative to the <code class="literal">_nested</code> metadata.
-So in the above example only the comment part is returned per nested hit and not the entire source of the top level
-document that contained the the comment.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="hierarchical-nested-inner-hits"></a>Hierarchical levels of nested object fields and inner hits.<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If a mapping has multiple levels of hierarchical nested object fields each level can be accessed via dot notated path.
-For example if there is a <code class="literal">comments</code> nested field that contains a <code class="literal">votes</code> nested field and votes should directly be returned
-with the the root hits then the following path can be defined:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "query" : {
-      "nested" : {
-         "path" : "comments.votes",
-         "query" : { ... },
-         "inner_hits" : {}
-      }
-    }
-}</pre></div><p>This indirect referencing is only supported for nested inner hits.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="parent-child-inner-hits"></a>Parent/child inner hits<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The parent/child <code class="literal">inner_hits</code> can be used to include parent or child</p><p>The examples below assumes that there is a <code class="literal">_parent</code> field mapping in the <code class="literal">comment</code> type:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "has_child" : {
-            "type" : "comment",
-            "query" : {
-                "match" : {"message" : "[actual query]"}
-            },
-            "inner_hits" : {} <a id="CO23-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        }
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO23-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The inner hit definition like in the nested example.
-</p></td></tr></table></div><p>An example of a response snippet that could be generated from the above search request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">...
-"hits": {
-  ...
-  "hits": [
-     {
-        "_index": "my-index",
-        "_type": "question",
-        "_id": "1",
-        "_source": ...,
-        "inner_hits": {
-           "comment": {
-              "hits": {
-                 "total": ...,
-                 "hits": [
-                    {
-                       "_type": "comment",
-                       "_id": "5",
-                       "_source": ...
-                    },
-                    ...
-                 ]
-              }
-           }
-        }
-     },
-     ...</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="top-level-inner-hits"></a>top level inner hits<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Besides defining inner hits on query and filters, inner hits can also be defined as a top level construct alongside the
-<code class="literal">query</code> and <code class="literal">aggregations</code> definition. The main reason for using the top level inner hits definition is to let the
-inner hits return documents that don’t match with the main query. Also inner hits definitions can be nested via the
-top level notation. Other than that, the inner hit definition inside the query should be used because that is the most
-compact way for defining inner hits.</p><p>The following snippet explains the basic structure of inner hits defined at the top level of the search request body:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"inner_hits" : {
-    "&lt;inner_hits_name&gt;" : {
-        "&lt;path|type&gt;" : {
-            "&lt;path-to-nested-object-field|child-or-parent-type&gt;" : {
-                &lt;inner_hits_body&gt;
-                [,"inner_hits" : { [&lt;sub_inner_hits&gt;]+ } ]?
-            }
-        }
-    }
-    [,"&lt;inner_hits_name_2&gt;" : { ... } ]*
-}</pre></div><p>Inside the <code class="literal">inner_hits</code> definition, first the name of the inner hit is defined then whether the inner_hit
-is a nested by defining <code class="literal">path</code> or a parent/child based definition by defining <code class="literal">type</code>. The next object layer contains
-the name of the nested object field if the inner_hits is nested or the parent or child type if the inner_hit definition
-is parent/child based.</p><p>Multiple inner hit definitions can be defined in a single request. In the <code class="literal">&lt;inner_hits_body&gt;</code> any option for features
-that <code class="literal">inner_hits</code> support can be defined. Optionally another <code class="literal">inner_hits</code> definition can be defined in the <code class="literal">&lt;inner_hits_body&gt;</code>.</p><p>An example that shows the use of nested inner hits via the top level notation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "nested" : {
-            "path" : "comments",
-            "query" : {
-                "match" : {"comments.message" : "[actual query]"}
-            }
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-search-after"></a>Search After<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/search-after.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Pagination of results can be done by using the <code class="literal">from</code> and <code class="literal">size</code> but the cost becomes prohibitive when the deep pagination is reached.
+The <code class="literal">index.max_result_window</code> which defaults to 10,000 is a safeguard, search requests take heap memory and time proportional to <code class="literal">from + size</code>.
+The <a class="link" href="search-request-scroll.html" title="Scroll">Scroll</a> api is recommended for efficient deep scrolling but scroll contexts are costly and it is not
+recommended to use it for real time user requests.
+The <code class="literal">search_after</code> parameter circumvents this problem by providing a live cursor.
+The idea is to use the results from the previous page to help the retrieval of the next page.</p><p>Suppose that the query to retrieve the first page looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/twitter/tweet/_search'
+{
+    size: "10"
+    "query": {
+        "match" : {
+            "title" : "elasticsearch"
         }
     },
-    "inner_hits" : {
-        "comment" : {
-            "path" : { <a id="CO24-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                "comments" : { <a id="CO24-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                    "query" : {
-                        "match" : {"comments.message" : "[different query]"} <a id="CO24-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-                    }
-                }
-            }
+    "sort": [
+        {"age": "asc"},
+        {"_uid": "desc"}
+    ]
+}
+'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>A field with one unique value per document should be used as the tiebreaker of the sort specification.
+Otherwise the sort order for documents that have the same sort values would be undefined. The recommended way is to use
+the field <code class="literal">_uid</code> which is certain to contain one unique value for each document.</p></div></div><p>The result from the above request includes an array of <code class="literal">sort values</code> for each document.
+These <code class="literal">sort values</code> can be used in conjunction with the <code class="literal">search_after</code> parameter to start returning results "after" any
+document in the result list.
+For instance we can use the <code class="literal">sort values</code> of the last document and pass it to <code class="literal">search_after</code> to retrieve the next page of results:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/twitter/tweet/_search'
+{
+    "size": 10
+    "query": {
+        "match" : {
+            "title" : "elasticsearch"
         }
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The inner hit definition is nested and requires the <code class="literal">path</code> option.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The path option refers to the nested object field <code class="literal">comments</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-A query that runs to collect the nested inner documents for each search hit returned. If no query is defined all nested
-    inner documents will be included belonging to a search hit. This shows that it only make sense to the top level
-    inner hit definition if no query or a different query is specified.
-</p></td></tr></table></div><p>Additional options that are only available when using the top level inner hits notation:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">path</code>
-</p>
-</td><td valign="top">
-<p>
-Defines the nested scope where hits will be collected from.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">type</code>
-</p>
-</td><td valign="top">
-<p>
-Defines the parent or child type score where hits will be collected from.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">query</code>
-</p>
-</td><td valign="top">
-<p>
-Defines the query that will run in the defined nested, parent or child scope to collect and score hits. By default all document in the scope will be matched.
-</p>
-</td></tr></tbody></table></div><p>Either <code class="literal">path</code> or <code class="literal">type</code> must be defined. The <code class="literal">path</code> or <code class="literal">type</code> defines the scope from where hits are fetched and
-used as inner hits.</p></div></div><div class="navfooter"><span class="prev"><a href="search-request-named-queries-and-filters.html">
+    },
+    "search_after": [18, "tweet#654323"],
+    "sort": [
+        {"age": "asc"},
+        {"_uid": "desc"}
+    ]
+}
+'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The parameter <code class="literal">from</code> must be set to 0 (or -1) when <code class="literal">search_after</code> is used.</p></div></div><p><code class="literal">search_after</code> is not a solution to jump freely to a random page but rather to scroll many queries in parallel.
+It is very similar to the <code class="literal">scroll</code> API but unlike it, the <code class="literal">search_after</code> parameter is stateless, it is always resolved against the latest
+ version of the searcher. For this reason the sort order may change during a walk depending on the updates and deletes of your index.</p></div><div class="navfooter"><span class="prev"><a href="search-request-inner-hits.html">
               « 
-              Named Queries</a>
+              Inner hits</a>
            
         </span><span class="next">
            
-          <a href="search-request-search-after.html">Search After
+          <a href="search-template.html">Search Template
                »
             </a></span></div>
 <!-- end body -->
