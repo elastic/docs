@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Index APIs</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.x]" /><link rel="up" href="breaking-changes-2.2.html" title="Breaking changes in 2.2" /><link rel="prev" href="breaking-changes-2.2.html" title="Breaking changes in 2.2" /><link rel="next" href="breaking_22_plugins.html" title="Plugins" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/2.x" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Scripting and the Java Security Manager</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-advanced-scripting.html" title="Text scoring in scripts" /><link rel="next" href="modules-snapshots.html" title="Snapshot And Restore" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -712,33 +712,89 @@
 
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [2.x]
-    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-2.2.html">Breaking changes in 2.2</a></span> » <span class="breadcrumb-node">Index APIs</span></div><div class="navheader"><span class="prev"><a href="breaking-changes-2.2.html">
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-scripting.html">Scripting</a></span> » <span class="breadcrumb-node">Scripting and the Java Security Manager</span></div><div class="navheader"><span class="prev"><a href="modules-advanced-scripting.html">
               « 
-              Breaking changes in 2.2</a>
+              Text scoring in scripts</a>
            
         </span><span class="next">
            
-          <a href="breaking_22_plugins.html">Plugins
+          <a href="modules-snapshots.html">Snapshot And Restore
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="breaking_22_index_apis"></a>Index APIs<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/migration/migrate_2_2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_field_stats_api"></a>Field stats API<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/migration/migrate_2_2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The field stats response format has been changed for number based and date fields. The <code class="literal">min_value</code> and
-<code class="literal">max_value</code> elements now return values as number and the new <code class="literal">min_value_as_string</code> and <code class="literal">max_value_as_string</code>
-return the values as string.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_adding_system_cpu_percent_to_os_stats"></a>Adding system CPU percent to OS stats<a href="https://github.com/elastic/elasticsearch/edit/2.x/docs/reference/migration/migrate_2_2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The recent CPU usage (as a percent) has been added to the OS stats reported under the node stats API and the cat nodes
-API. If you send an appropriate nodes stats request to a node running version 2.2.0 or later of Elasticsearch, the CPU
-usage will be shown for any nodes in the response that are also running version 2.2.0 or later of Elasticsearch. Do
-note that if you send a node stats request to a node running a version of Elasticsearch earlier than 2.2.0, the CPU
-usage will not be shown for any nodes. The "cpu" field in the cat nodes API is not output by default. If you send an
-appropriate cat nodes request to a node running version 2.2.0 or later of Elasticsearch, the CPU usage will be shown
-for any nodes in the response that are also running version 2.2.0 or later of Elasticsearch and will be null for any
-other node in the response. Do note that if you send a cat nodes request to a node running a version of Elasticsearch
-earlier than 2.2.0, the CPU usage will not be shown for any nodes. Finally, the API for
-org.elasticsearch.monitor.os.OsStats has an additional method <code class="literal">OsStats#getCpuPercent</code>.</p></div></div><div class="navfooter"><span class="prev"><a href="breaking-changes-2.2.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-security"></a>Scripting and the Java Security Manager<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/security.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch runs with the <a class="ulink" href="https://docs.oracle.com/javase/tutorial/essential/environment/security.html" target="_top">Java Security Manager</a>
+enabled by default.  The security policy in Elasticsearch locks down the
+permissions granted to each class to the bare minimum required to operate.
+The benefit of doing this is that it severely limits the attack vectors
+available to a hacker.</p><p>Restricting permissions is particularly important with scripting languages
+like Groovy and Javascript which are designed to do anything that can be done
+in Java itself, including writing to the file system, opening sockets to
+remote servers, etc.</p><h3><a id="_script_classloader_whitelist"></a>Script Classloader Whitelist<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/security.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Scripting languages are only allowed to load classes which appear in a
+hardcoded whitelist that can be found in
+<a class="ulink" href="https://github.com/elastic/elasticsearch/blob/master/core/src/main/java/org/elasticsearch/script/ClassPermission.java" target="_top"><code class="literal">org.elasticsearch.script.ClassPermission</code></a>.</p><p>In a script, attempting to load a class that does not appear in the whitelist
+<span class="emphasis"><em>may</em></span> result in a <code class="literal">ClassNotFoundException</code>, for instance this script:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">GET _search
+{
+  "script_fields": {
+    "the_hour": {
+      "script": "use(java.math.BigInteger); new BigInteger(1)"
+    }
+  }
+}</pre></div><p>will return the following exception:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  "reason": {
+    "type": "script_exception",
+    "reason": "failed to run inline script [use(java.math.BigInteger); new BigInteger(1)] using lang [groovy]",
+    "caused_by": {
+      "type": "no_class_def_found_error",
+      "reason": "java/math/BigInteger",
+      "caused_by": {
+        "type": "class_not_found_exception",
+        "reason": "java.math.BigInteger"
+      }
+    }
+  }
+}</pre></div><p>However, classloader issues may also result in more difficult to interpret
+exceptions.  For instance, this script:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-groovy">use(groovy.time.TimeCategory); new Date(123456789).format('HH')</pre></div><p>Returns the following exception:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  "reason": {
+    "type": "script_exception",
+    "reason": "failed to run inline script [use(groovy.time.TimeCategory); new Date(123456789).format('HH')] using lang [groovy]",
+    "caused_by": {
+      "type": "missing_property_exception",
+      "reason": "No such property: groovy for class: 8d45f5c1a07a1ab5dda953234863e283a7586240"
+    }
+  }
+}</pre></div><h2><a id="_dealing_with_java_security_manager_issues"></a>Dealing with Java Security Manager issues<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/security.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>If you encounter issues with the Java Security Manager, you have three options
+for resolving these issues:</p><h3><a id="_fix_the_security_problem"></a>Fix the security problem<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/security.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The safest and most secure long term solution is to change the code causing
+the security issue.  We recognise that this may take time to do correctly and
+so we provide the following two alternatives.</p><h3><a id="_disable_the_java_security_manager"></a>Disable the Java Security Manager<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/security.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><h4>Deprecated in 2.2.0.</h4><p>The ability to disable the Java Security Manager will be removed in a future version.</p></div></div><p>You can disable the Java Security Manager entirely with the
+<code class="literal">security.manager.enabled</code> command line flag:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">./bin/elasticsearch --security.manager.enabled false</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This disables the Security Manager entirely and makes Elasticsearch
+much more vulnerable to attacks! It is an option that should only be used in
+the most urgent of situations and for the shortest amount of time possible.
+Optional security is not secure at all because it <span class="strong"><strong>will</strong></span> be disabled and
+leave the system vulnerable.  This option will be removed in a future version.</p></div></div><h3><a id="_customising_the_classloader_whitelist"></a>Customising the classloader whitelist<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/security.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The classloader whitelist can be customised by tweaking the local Java
+Security Policy either:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+system wide: <code class="literal">$JAVA_HOME/lib/security/java.policy</code>,
+</li><li class="listitem">
+for just the <code class="literal">elasticsearch</code> user: <code class="literal">/home/elasticsearch/.java.policy</code>, or
+</li><li class="listitem">
+from a file specified on the command line: <code class="literal">-Djava.security.policy=someURL</code>
+</li></ul></div><p>Permissions may be granted at the class, package, or global level.  For instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">grant {
+    permission org.elasticsearch.script.ClassPermission "java.util.Base64"; // allow class
+    permission org.elasticsearch.script.ClassPermission "java.util.*"; // allow package
+    permission org.elasticsearch.script.ClassPermission "*"; // allow all (disables filtering basically)
+};</pre></div><p>Here is an example of how to enable the <code class="literal">groovy.time.TimeCategory</code> class:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">grant {
+    permission org.elasticsearch.script.ClassPermission "java.lang.Class";
+    permission org.elasticsearch.script.ClassPermission "groovy.time.TimeCategory";
+};</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Before adding classes to the whitelist, consider the security impact that it
+will have on Elasticsearch. Do you really need an extra class or can your code
+be rewritten in a more secure way?</p><p>It is quite possible that we have not whitelisted a generically useful and
+safe class. If you have a class that you think should be whitelisted by
+default, please open an issue on GitHub and we will consider the impact of
+doing so.</p></div></div><p>See <a class="ulink" href="http://docs.oracle.com/javase/7/docs/technotes/guides/security/PolicyFiles.html" target="_top">http://docs.oracle.com/javase/7/docs/technotes/guides/security/PolicyFiles.html</a> for more information.</p></div><div class="navfooter"><span class="prev"><a href="modules-advanced-scripting.html">
               « 
-              Breaking changes in 2.2</a>
+              Text scoring in scripts</a>
            
         </span><span class="next">
            
-          <a href="breaking_22_plugins.html">Plugins
+          <a href="modules-snapshots.html">Snapshot And Restore
                »
             </a></span></div>
 <!-- end body -->

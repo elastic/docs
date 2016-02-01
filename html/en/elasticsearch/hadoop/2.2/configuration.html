@@ -733,7 +733,7 @@ Elasticsearch resource used for reading (but not writing) data. Useful when read
 <code class="literal">es.resource.write</code>(defaults to <code class="literal">es.resource</code>)
 </span></dt><dd>
 Elasticsearch resource used for writing (but not reading) data. Used typically for <span class="emphasis"><em>dynamic resource</em></span> writes or when writing and reading data to different Elasticsearch indices within the <span class="emphasis"><em>same</em></span> job. Typically set automatically (expect for the Map/Reduce module which requires manual configuration).
-</dd></dl></div><p>Note that [multiple](<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/current/multi-index-multi-type.html" target="_top">https://www.elastic.co/guide/en/elasticsearch/guide/current/multi-index-multi-type.html</a>) indices and/or types are allowed <span class="strong"><strong>only</strong></span> for reading. Use <code class="literal">_all/types</code> to search <code class="literal">types</code> in all indices or <code class="literal">index/</code> to search
+</dd></dl></div><p>Note that <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/current/multi-index-multi-type.html" target="_top">multiple</a> indices and/or types are allowed <span class="strong"><strong>only</strong></span> for reading. Use <code class="literal">_all/types</code> to search <code class="literal">types</code> in all indices or <code class="literal">index/</code> to search
 all types within <code class="literal">index</code>.
 Do note that reading multiple indices/types typically works only when the have the same structure and only with some libraries. Integrations that require a strongly type mapping (such as a table like Hive or SparkSQL) are likely to fail.</p><h5><a id="cfg-multi-writes"></a>Dynamic/multi resource writes<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.2/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>For writing, elasticsearch-hadoop allows the target resource to be resolved at runtime by using patterns (by using the <code class="literal">{&lt;field-name&gt;}</code> format), resolved at runtime based on the data being streamed to Elasticsearch. That is, one can save documents to a certain <code class="literal">index</code> or <code class="literal">type</code> based on one or multiple fields resolved from the document about to be saved.</p><p>For example, assuming the following document set (described here in JSON for readability - feel free to translate this into the actual Java objects):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
     "media_type":"game",
@@ -885,7 +885,24 @@ Whether to create a <span class="emphasis"><em>rich</em></span> <code class="lit
 true. The actual object type is based on the library used; noteable exception being Map/Reduce which provides no built-in <code class="literal">Date</code> object and as such
 <code class="literal">LongWritable</code> and <code class="literal">Text</code> are returned regardless of this setting.
 </dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Added in 2.2.</p></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">es.field.read.as.array.include</code> (default empty)
+<code class="literal">es.read.field.include</code> (default empty)
+</span></dt><dd>
+Fields/properties that are parsed and considered when reading the documents from Elasticsearch. By default empty meaning all fields are considered. Use this property with <span class="emphasis"><em>caution</em></span>
+as it can have nasty side-effects. Typically used in cases where some documents returned do not fit into an expected mapping.
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Added in 2.2.</p></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.read.field.exclude</code> (default empty)
+</span></dt><dd>
+Fields/properties that are discarded when reading the documents from Elasticsearch. By default empty meaning no fields are excluded. Use this property with <span class="emphasis"><em>caution</em></span>
+as it can have nasty side-effects. Typically used in cases where some documents returned do not fit into an expected mapping.
+</dd></dl></div><p>For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ini"># To exclude field company.income
+es.read.field.exclude = company.income</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.read.field.as.array.exclude</code> (default empty)
+</span></dt><dd>
+Fields/properties that should be considered as arrays/lists. Similar to <code class="literal">es.read.field.as.array.include</code> above. Multiple values can be specified by using a comma.
+By default, no value is specified meaning no properties/fields are excluded (and since none is included as indicated above), no field is treated as array
+before-hand.
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Added in 2.2.</p></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.read.field.as.array.include</code> (default empty)
 </span></dt><dd>
 Fields/properties that should be considered as arrays/lists. Since Elasticsearch can map one or multiple values to a field, elasticsearch-hadoop cannot determine from the mapping
 whether to instantiate one value or a array type (depending on the library type). When encountering multiple values, elasticsearch-hadoop will automatically use
@@ -893,10 +910,13 @@ the array/list type but in strict mapping scenarios (like Spark SQL) this might 
 The syntax is similar to that of Elasticsearch <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.0/search-request-source-filtering.html" target="_top">include/exclude</a>.
 Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are included.
 </dd></dl></div><p>For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ini"># mapping nested.bar as an array
-es.field.read.as.array.include = nested.bar</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">es.field.read.as.array.exclude</code> (default empty)
+es.read.field.as.array.include = nested.bar
+
+# mapping nested.bar as an 3-levels/dimensions array
+es.read.field.as.array.include = nested.bar:3</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.read.field.as.array.exclude</code> (default empty)
 </span></dt><dd>
-Fields/properties that should be considered as arrays/lists. Similar to <code class="literal">es.field.read.as.array.include</code> above. Multiple values can be specified by using a comma.
+Fields/properties that should be considered as arrays/lists. Similar to <code class="literal">es.read.field.as.array.include</code> above. Multiple values can be specified by using a comma.
 By default, no value is specified meaning no properties/fields are excluded (and since none is included as indicated above), no field is treated as array
 before-hand.
 </dd></dl></div><h4><a id="_metadata_when_reading_from_elasticsearch"></a>Metadata (when reading from Elasticsearch)<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.2/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
@@ -1067,6 +1087,38 @@ Http proxy password
 <code class="literal">es.net.proxy.http.use.system.props</code>(default yes)
 </span></dt><dd>
 Whether the use the system Http proxy properties (namely <code class="literal">http.proxyHost</code> and <code class="literal">http.proxyPort</code>) or not
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Added in 2.2.</p></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.net.proxy.https.host</code>
+</span></dt><dd>
+Https proxy host name
+<span class="added">
+      [<span class="version">2.2</span>]
+      <span class="detail">Added in 2.2.</span></span>
+</dd><dt><span class="term">
+<code class="literal">es.net.proxy.https.port</code>
+</span></dt><dd>
+Https proxy port
+<span class="added">
+      [<span class="version">2.2</span>]
+      <span class="detail">Added in 2.2.</span></span>
+</dd><dt><span class="term">
+<code class="literal">es.net.proxy.https.user</code>
+</span></dt><dd>
+Https proxy user name
+<span class="added">
+      [<span class="version">2.2</span>]
+      <span class="detail">Added in 2.2.</span></span>
+</dd><dt><span class="term">
+<code class="literal">es.net.proxy.https.pass</code>
+</span></dt><dd>
+Https proxy password
+<span class="added">
+      [<span class="version">2.2</span>]
+      <span class="detail">Added in 2.2.</span></span>
+</dd><dt><span class="term">
+<code class="literal">es.net.proxy.https.use.system.props</code>(default yes)
+</span></dt><dd>
+Whether the use the system Https proxy properties (namely <code class="literal">https.proxyHost</code> and <code class="literal">https.proxyPort</code>) or not
 </dd><dt><span class="term">
 <code class="literal">es.net.proxy.socks.host</code>
 </span></dt><dd>
@@ -1087,7 +1139,9 @@ Http proxy password
 <code class="literal">es.net.proxy.socks.use.system.props</code>(default yes)
 </span></dt><dd>
 Whether the use the system Socks proxy properties (namely <code class="literal">socksProxyHost</code> and <code class="literal">socksProxyHost</code>) or not
-</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>elasticsearch-hadoop allows proxy settings to be applied only to its connection using the setting above. Take extra care when there is already a JVM-wide proxy setting (typically through system properties) to avoid unexpected behavior.</p></div></div><h4><a id="configuration-serialization"></a>Serialization<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.2/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>elasticsearch-hadoop allows proxy settings to be applied only to its connection using the setting above. Take extra care when there is already a JVM-wide proxy setting (typically through system properties) to avoid unexpected behavior.
+IMPORTANT: The semantics of these properties are described in the JVM <a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html#Proxies" target="_top">docs</a>. In some cases, setting up the JVM property <code class="literal">java.net.useSystemProxies</code>
+to <code class="literal">true</code> works better then setting these properties manually.</p></div></div><h4><a id="configuration-serialization"></a>Serialization<a href="https://github.com/elastic/elasticsearch-hadoop/edit/2.2/docs/src/reference/asciidoc/core/configuration.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">es.batch.size.bytes</code> (default 1mb)
 </span></dt><dd>
 Size (in bytes) for batch writes using Elasticsearch <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.0/docs-bulk.html" target="_top">bulk</a> API. Note the bulk size is allocated <span class="emphasis"><em>per task</em></span> instance. Always multiply by the number of tasks within a Hadoop job to get the total bulk size at runtime hitting Elasticsearch.
