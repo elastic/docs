@@ -751,45 +751,57 @@ Run <code class="literal">bin/plugin</code> with the <code class="literal">-u</c
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/plugin install file:///path/to/file/license-2.1.1.zip <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 bin/plugin install file:///path/to/file/shield-2.1.1.zip</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Note that you must specify an absolute path to the zip file after the <code class="literal">file://</code> protocol.
-</p></td></tr></table></div></li></ol></div><h3><a id="tribe-node"></a>Installing Shield on Tribe Nodes</h3><p>Shield supports the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.1/modules-tribe.html" target="_top">Tribe Node</a>, which acts as a federated client across multiple clusters. When using Tribe Nodes with Shield, you must have the same Shield configuration (users, roles, user-role mappings, SSL/TLS CA) on each cluster, and on the Tribe Node itself, where security checking is primarily done. This, of course, also means
-that all clusters must be running Shield.</p><p>To use a Tribe Node with Shield:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Configure the same privileges on all connected clusters. The Tribe Node has its own configuration and privileges, which need to grant access to actions and indices on all of the
-connected clusters. Also, each cluster needs to grant access to indices belonging to other connected clusters as well.
-</p><p class="simpara">Let’s look at an example: assuming we have two clusters, <code class="literal">cluster1</code> and <code class="literal">cluster2</code>, each one holding an index, <code class="literal">index1</code>
-and <code class="literal">index2</code>. A search request that targets multiple clusters, as follows</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET tribe_node:9200/index1,index2/_search -u tribe_user:tribe_user</pre></div><p class="simpara">requires <code class="literal">search</code> privileges for both <code class="literal">index1</code> and <code class="literal">index2</code> on the Tribe Node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">tribe_user:
+</p></td></tr></table></div></li></ol></div><h3><a id="tribe-node"></a>Installing Shield on Tribe Nodes</h3><p>Shield supports <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.1/modules-tribe.html" target="_top">tribe nodes</a> that act as a federated client across multiple clusters. When using tribe nodes with Shield, all clusters must run Shield and share the same Shield configuration (users, roles, user-role mappings, SSL/TLS CA). The tribe node itself also must be configured to grant access to actions and indices on all of the connected clusters, as security checking is primarily done on the tribe node.</p><p>To use a tribe node with Shield:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Install Shield on the tribe node and every node in each connected cluster.
+</li><li class="listitem"><p class="simpara">
+Enable <a class="link" href="enable-message-authentication.html" title="Enable Message Authentication">message authentication</a> globally. Generate a system key on one node and copy it to the tribe node and every other node in each connected cluster.
+</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>For message authentication to work properly across multiple clusters, the tribe node and all of the connected clusters must share the same system key. By default, Shield reads the system key from <code class="literal">CONFIG_DIR/shield/system_key</code>. If you store the
+key in a different location, you must configure the <code class="literal">shield.system_key.file</code> setting in <code class="literal">elasticsearch.yml</code>.</p></div></div></li><li class="listitem"><p class="simpara">
+Enable encryption globally. To encrypt communications, you must <a class="link" href="ssl-tls.html" title="Setting Up SSL/TLS on a Cluster">enable SSL/TLS</a> on every node.
+</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>To simplify SSL/TLS configuration, use the same certificate authority to generate certificates for all connected clusters.</p></div></div></li><li class="listitem"><p class="simpara">
+Configure the tribe in the tribe node’s <code class="literal">elasticsearch.yml</code> file. You must specify each cluster that’s a part of the tribe and configure discovery and encryption settings per cluster. For example, the following configuration adds two clusters to the tribe:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">tribe:
+  on_conflict: prefer_cluster1 <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  c1: <a id="CO2-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    cluster.name: cluster1
+    discovery.zen.ping.unicast.hosts: [ "cluster1-node1:9300", "cluster1-node2:9300"]
+    shield.ssl.keystore.path: /path-to-keystore/es-tribe-01.jks
+    shield.ssl.keystore.password: secretpassword
+    shield.ssl.keystore.key_password: secretpassword
+    shield.transport.ssl: true
+    shield.http.ssl: true
+  c2:
+    cluster.name: cluster2
+    discovery.zen.ping.unicast.hosts: [ "cluster2-node1:9300", "cluster2-node2:9300"]
+    shield.ssl.keystore.path: /path-to-keystore/es-tribe-01.jks
+    shield.ssl.keystore.password: secretpassword
+    shield.ssl.keystore.key_password: secretpassword
+    shield.transport.ssl: true
+    shield.http.ssl: true</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Results are returned from the preferred cluster if the named index exists in multiple clusters.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+An arbitrary name that represents the connection to the cluster.
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+Configure the same index privileges for your users on all nodes, including the tribe node. The nodes in each cluster must grant access to indices in other connected clusters as well as their own.
+</p><p class="simpara">For example, let’s assume <code class="literal">cluster1</code> and <code class="literal">cluster2</code> each have a single index, <code class="literal">index1</code> and <code class="literal">index2</code>. To
+enable a user to submit a request through the tribe node to search both clusters:</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+On the tribe node and both clusters, <a class="link" href="defining-roles.html" title="Defining Roles">define a <code class="literal">tribe_user</code> role</a> that has read access to <code class="literal">index1</code> and <code class="literal">index2</code>:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">tribe_user:
   indices:
-    'index*': search</pre></div><p class="simpara">Also, the same privileges need to be granted on the connected clusters, meaning that <code class="literal">cluster1</code> has to grant access to
-<code class="literal">index2</code> even though <code class="literal">index2</code> only exists on <code class="literal">cluster2</code>; the same requirement applies for <code class="literal">index1</code> on <code class="literal">cluster2</code>. This
-applies to any indices action. As for cluster state read operations (e.g. cluster state api, get mapping api etc.),
-they always get executed locally on the Tribe Node, to make sure that the merged cluster state gets returned; their
-privileges are then required on the Tribe Node only.</p></li><li class="listitem">
-Use the same system key on all clusters. For <a class="link" href="enable-message-authentication.html" title="Enable Message Authentication">message authentication</a> to properly work across multiple clusters, the Tribe Node
-and all of the connected clusters need to share the same system key.
-</li><li class="listitem">
-Enable encryption globally. Encrypted communication via SSL/TLS can only be enabled globally, meaning that either all of the connected clusters and the Tribe Node have SSL enabled, or none of them have.
-</li><li class="listitem">
-Use the same certification authority on all clusters. When using encrypted communication, for simplicity, we recommend all of the connected clusters and the Tribe Node use
-the same certification authority to generate their certificates.
-</li></ol></div><h4><a id="_tribe_node_example"></a>Tribe Node Example</h4><p>Let’s see a complete example on how to use the Tribe Node with shield and the configuration required. First of all the
-Shield and License plugins need to be installed and enabled on all clusters and on the Tribe Node.</p><p>The system key needs to be generated on one node, as described in <a class="link" href="enable-message-authentication.html" title="Enable Message Authentication">Enabling Message Authentication</a>,
-and then copied over to all of the other nodes in each cluster and the Tribe Node itself.</p><p>Each cluster can have its own users with <code class="literal">admin</code> privileges that don’t need to be present in the Tribe Node too. In fact,
-administration tasks (e.g. create index) cannot be performed through the Tribe Node but need to be sent directly to the
-corresponding cluster. The users that need to be created on Tribe Node are those that allow to get back data merged from
-the different clusters through the Tribe Node itself. Let’s for instance create as follows a <code class="literal">tribe_user</code> user, with
-role <code class="literal">user</code>, that has <code class="literal">read</code> privileges on any index.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">./bin/shield/esusers useradd tribe_user -p tribe_user -r user</pre></div><p>The above command needs to be executed on each cluster, since the same user needs to be present on the Tribe Node as well
-as on every connected cluster.</p><p>The following is the configuration required on the Tribe Node, that needs to be added to <code class="literal">elasticsearch.yml</code>.
-Elasticsearch allows to list specific settings per cluster. We disable multicast discovery and configure the proper unicast discovery hosts for each cluster,
-as well as their cluster names:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">tribe:
-  t1:
-    cluster.name: tribe1
-    discovery.zen.ping.multicast.enabled: false
-    discovery.zen.ping.unicast.hosts: ["tribe1:9300"]
-  t2:
-    cluster.name: tribe2
-    discovery.zen.ping.multicast.enabled: false
-    discovery.zen.ping.unicast.hosts: ["tribe2:9300"]</pre></div><p>The Tribe Node can then be started and once initialized it will be ready to accept requests like the following search,
-which will return documents coming from the different connected clusters:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET localhost:9200/_search -u tribe_user:tribe_user</pre></div><p>As for encrypted communication, the required settings are the same as described in <a class="link" href="securing-communications.html" title="Securing Communications with Encryption and IP Filtering">Securing Communications with Encryption and IP Filtering</a>,
-but need to be specified per tribe as we did for discovery settings above.</p></div><div class="navfooter"><span class="prev"><a href="how-shield-works.html">
+    'index*': search</pre></div></li><li class="listitem"><p class="simpara">
+Assign the <code class="literal">tribe_user</code> role to a user on the tribe node and both clusters. For example, run the following
+command on each node to create <code class="literal">my_tribe_user</code> and assign the <code class="literal">tribe_user</code> role:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">./bin/shield/esusers useradd my_tribe_user -p password -r tribe_user</pre></div></li></ol></div></li><li class="listitem"><p class="simpara">
+Grant selected users permission to retrieve merged cluster state information for the tribe from
+the tribe node. To do that, grant them the <a class="link" href="reference.html#privileges-list-cluster" title="Cluster">monitor privilege</a> on the tribe node.
+For example, you could create a <code class="literal">tribe_monitor</code> role that assigns the <code class="literal">monitor</code> privilege:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">tribe_monitor:
+  cluster: monitor</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Each cluster can have it’s own users with admin privileges.
+In fact, you cannot perform administration tasks such as create index through the tribe node,
+you must send the request directly to the appropriate cluster.</p></div></div></li><li class="listitem">
+Start the tribe node. If you’ve made configuration changes to the nodes in the connected clusters, they
+also need to to be restarted.
+</li></ol></div></div><div class="navfooter"><span class="prev"><a href="how-shield-works.html">
               « 
               How Shield Works</a>
            
