@@ -745,22 +745,37 @@ Open a PowerShell prompt as an Administrator (right-click the PowerShell icon an
 Run the following commands to install Topbeat as a Windows service:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">PS &gt; cd 'C:\Program Files\Topbeat'
 PS C:\Program Files\Topbeat&gt; .\install-service-topbeat.ps1</pre></div></li></ol></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If script execution is disabled on your system, you need to set the execution policy for the current session to allow the script to run. For example: <code class="literal">PowerShell.exe -ExecutionPolicy UnRestricted -File .\install-service-topbeat.ps1</code>.</p></div></div><p>Before starting Topbeat, you should look at the configuration options in the configuration file,
-for example <code class="literal">C:\Program Files\Topbeat\topbeat.yml</code>. For more information about these options, see <a class="xref" href="topbeat-configuration-options.html" title="Configuration Options"><em>Configuration Options</em></a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="topbeat-configuration"></a>Configuring Topbeat<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To configure Topbeat, you edit the <span class="emphasis"><em>topbeat.yml</em></span> file. Here is a sample of
-the <span class="emphasis"><em>topbeat.yml</em></span> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">input:
+for example <code class="literal">C:\Program Files\Topbeat\topbeat.yml</code>. For more information about these options, see <a class="xref" href="topbeat-configuration-options.html" title="Configuration Options"><em>Configuration Options</em></a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="topbeat-configuration"></a>Configuring Topbeat<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To configure Topbeat, you edit the configuration file. For rpm and deb, you’ll
+find the configuration file at <code class="literal">/etc/topbeat/topbeat.yml</code>. For mac and win, look in
+the archive that you just extracted.</p><p>Here is a sample of the <code class="literal">topbeat.yml</code> file. Topbeat uses predefined
+default values for most configuration options.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">input:
   period: 10
-  procs: [".*"]</pre></div><p>The <code class="literal">period</code> option defines how often to read system-wide and per-process statistics from your servers. The interval is in seconds.
-By default, it’s set to 10 seconds.</p><p>The <code class="literal">procs</code> option defines a list of regular expressions to match all the processes that need to be monitored. By default, all the running processes are monitored.</p><p>If you are not interested in monitoring your processes, you can use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">input:
+  procs: [".*"]</pre></div><p>To configure Topbeat:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Set the following options to specify how often Topbeat reads statistics and specify which processes it monitors:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The <code class="literal">period</code> option defines how often to read system-wide and per-process statistics from your servers. The interval is in seconds.
+By default, it’s set to 10 seconds.
+</li><li class="listitem"><p class="simpara">
+The <code class="literal">procs</code> option defines a list of regular expressions to match all the processes that need to be monitored. By default, all the running processes are monitored.
+</p><p class="simpara">If you are not interested in monitoring processes, you can use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">input:
   period: 10
-  procs: ["^$"]</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_configuring_topbeat_to_use_logstash"></a>Configuring Topbeat to Use Logstash<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you want to use Logstash to perform additional processing on the data collected by
+  procs: ["^$"]</pre></div></li></ul></div></li><li class="listitem"><p class="simpara">
+If you are sending output to Elasticsearch, set the IP address and port where Topbeat can find the Elasticsearch installation:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml"># Configure what outputs to use when sending the data collected by the beat.
+# Multiple outputs may be used.
+output:
+  ### Elasticsearch as output
+  elasticsearch:
+    # Array of hosts to connect to.
+     hosts: ["192.168.1.42:9200"]</pre></div><p class="simpara">If you are sending output to Logstash, see <a class="xref" href="topbeat-getting-started.html#config-filebeat-logstash" title="Configuring Topbeat to Use Logstash">Configuring Topbeat to Use Logstash</a> instead.</p></li></ol></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="config-filebeat-logstash"></a>Configuring Topbeat to Use Logstash<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you want to use Logstash to perform additional processing on the data collected by
 Topbeat, you need to configure Topbeat to use Logstash.</p><p>To do this, you edit the Topbeat configuration file to disable the Elasticsearch
 output by commenting it out and enable the Logstash output by uncommenting the
 logstash section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output:
   logstash:
     hosts: ["127.0.0.1:5044"]
 
-    # configure logstash plugin to loadbalance events between
-    # configured logstash hosts
-    #loadbalance: false</pre></div><p>In this configuration, <code class="literal">hosts</code> specifies the Logstash server and the port (<code class="literal">5044</code>)
+    # Optional load balance the events between the Logstash hosts
+    #loadbalance: true</pre></div><p>In this configuration, <code class="literal">hosts</code> specifies the Logstash server and the port (<code class="literal">5044</code>)
 where Logstash is configured to listen for incoming Beats connections.</p><p>To use this configuration, you must also
 <a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/master/getting-started.html#logstash-setup" target="_top">set up Logstash</a> to receive events
 from Beats.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="topbeat-template"></a>Loading the Index Template in Elasticsearch<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Before starting Topbeat, you need to load the
@@ -768,7 +783,7 @@ from Beats.</p></div><div class="section"><div class="titlepage"><div><div><h2 c
 template</a>, which lets Elasticsearch know which fields should be analyzed
 in which way.</p><p>The recommended template file is installed by the Topbeat packages. Load it with the
 following command:</p><p><span class="strong"><strong>deb or rpm:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XPUT 'http://localhost:9200/_template/topbeat' -d@/etc/topbeat/topbeat.template.json</pre></div><p><span class="strong"><strong>mac:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">cd topbeat-master-darwin
-curl -XPUT 'http://localhost:9200/_template/topbeat' -d@topbeat.template.json</pre></div><p>where <code class="literal">localhost:9200</code> is the IP and port where Elasticsearch is listening.</p><p><span class="strong"><strong>win:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">PS C:\Program Files\Topbeat&gt; Invoke-WebRequest -Method Put -InFile topbeat.template.json -Uri http://localhost:9200/_template/topbeat?pretty</pre></div><p>where <code class="literal">localhost:9200</code> is the IP and port where Elasticsearch is listening.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you’ve already used Topbeat to index data into Elasticsearch,
+curl -XPUT 'http://localhost:9200/_template/topbeat' -d@topbeat.template.json</pre></div><p><span class="strong"><strong>win:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">PS C:\Program Files\Topbeat&gt; Invoke-WebRequest -Method Put -InFile topbeat.template.json -Uri http://localhost:9200/_template/topbeat?pretty</pre></div><p>where <code class="literal">localhost:9200</code> is the IP and port where Elasticsearch is listening.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you’ve already used Topbeat to index data into Elasticsearch,
 the index may contain old documents. After you load the index template,
 you can delete the old documents from <code class="literal">topbeat-*</code> to force Kibana to look
 at the newest documents. Use this command:
