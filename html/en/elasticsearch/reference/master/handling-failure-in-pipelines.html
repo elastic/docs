@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Testing GCE</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="discovery-gce.html" title="GCE Discovery Plugin" /><link rel="prev" href="discovery-gce-usage-tips.html" title="GCE Tips" /><link rel="next" href="ingest.html" title="Ingest Plugins" /><meta name="DC.type" content="Docs/Elasticsearch/Plugins/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Handling Failure in Pipelines</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="_accessing_data_in_pipelines.html" title="Accessing data in pipelines" /><link rel="prev" href="_accessing_data_in_pipelines.html" title="Accessing data in pipelines" /><link rel="next" href="_ingest_apis.html" title="Ingest APIs" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -711,30 +711,89 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="discovery-gce.html">GCE Discovery Plugin</a></span> » <span class="breadcrumb-node">Testing GCE</span></div><div class="navheader"><span class="prev"><a href="discovery-gce-usage-tips.html">
+    </a></span> » <span class="breadcrumb-link"><a href="ingest.html">Ingest Node </a></span> » <span class="breadcrumb-link"><a href="_accessing_data_in_pipelines.html">Accessing data in pipelines</a></span> » <span class="breadcrumb-node">Handling Failure in Pipelines</span></div><div class="navheader"><span class="prev"><a href="_accessing_data_in_pipelines.html">
               « 
-              GCE Tips</a>
+              Accessing data in pipelines</a>
            
         </span><span class="next">
            
-          <a href="ingest.html">Ingest Plugins
+          <a href="_ingest_apis.html">Ingest APIs
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="discovery-gce-usage-testing"></a>Testing GCE<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Integrations tests in this plugin require working GCE configuration and
-therefore disabled by default. To enable tests prepare a config file
-elasticsearch.yml with the following content:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
-  gce:
-      project_id: es-cloud
-      zone: europe-west1-a
-discovery:
-      type: gce</pre></div><p>Replaces <code class="literal">project_id</code> and <code class="literal">zone</code> with your settings.</p><p>To run test:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">mvn -Dtests.gce=true -Dtests.config=/path/to/config/file/elasticsearch.yml clean test</pre></div></div><div class="navfooter"><span class="prev"><a href="discovery-gce-usage-tips.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="handling-failure-in-pipelines"></a>Handling Failure in Pipelines<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In its simplest case, pipelines describe a list of processors which
+are executed sequentially and processing halts at the first exception. This
+may not be desirable when failures are expected. For example, not all your logs
+may match a certain grok expression and you may wish to index such documents into
+a separate index.</p><p>To enable this behavior, you can utilize the <code class="literal">on_failure</code> parameter. <code class="literal">on_failure</code>
+defines a list of processors to be executed immediately following the failed processor.
+This parameter can be supplied at the pipeline level, as well as at the processor
+level. If a processor has an <code class="literal">on_failure</code> configuration option provided, whether
+it is empty or not, any exceptions that are thrown by it will be caught and the
+pipeline will continue executing the proceeding processors defined. Since further processors
+are defined within the scope of an <code class="literal">on_failure</code> statement, failure handling can be nested.</p><p>Example: In the following example we define a pipeline that hopes to rename documents with
+a field named <code class="literal">foo</code> to <code class="literal">bar</code>. If the document does not contain the <code class="literal">foo</code> field, we
+go ahead and attach an error message within the document for later analysis within
+Elasticsearch.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "description" : "my first pipeline with handled exceptions",
+  "processors" : [
+    {
+      "rename" : {
+        "field" : "foo",
+        "to" : "bar",
+        "on_failure" : [
+          {
+            "set" : {
+              "field" : "error",
+              "value" : "field \"foo\" does not exist, cannot rename to \"bar\""
+            }
+          }
+        ]
+      }
+    }
+  ]
+}</pre></div><p>Example: Here we define an <code class="literal">on_failure</code> block on a whole pipeline to change
+the index for which failed documents get sent.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "description" : "my first pipeline with handled exceptions",
+  "processors" : [ ... ],
+  "on_failure" : [
+    {
+      "set" : {
+        "field" : "_index",
+        "value" : "failed-{{ _index }}"
+      }
+    }
+  ]
+}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_accessing_error_metadata_from_processors_handling_exceptions"></a>Accessing Error Metadata From Processors Handling Exceptions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Sometimes you may want to retrieve the actual error message that was thrown
+by a failed processor. To do so you can access metadata fields called
+<code class="literal">on_failure_message</code>, <code class="literal">on_failure_processor_type</code>, <code class="literal">on_failure_processor_tag</code>. These fields are only accessible
+from within the context of an <code class="literal">on_failure</code> block. Here is an updated version of
+our first example which leverages these fields to provide the error message instead
+of manually setting it.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "description" : "my first pipeline with handled exceptions",
+  "processors" : [
+    {
+      "rename" : {
+        "field" : "foo",
+        "to" : "bar",
+        "on_failure" : [
+          {
+            "set" : {
+              "field" : "error",
+              "value" : "{{ _ingest.on_failure_message }}"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="_accessing_data_in_pipelines.html">
               « 
-              GCE Tips</a>
+              Accessing data in pipelines</a>
            
         </span><span class="next">
            
-          <a href="ingest.html">Ingest Plugins
+          <a href="_ingest_apis.html">Ingest APIs
                »
             </a></span></div>
 <!-- end body -->

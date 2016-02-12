@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Testing GCE</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="discovery-gce.html" title="GCE Discovery Plugin" /><link rel="prev" href="discovery-gce-usage-tips.html" title="GCE Tips" /><link rel="next" href="ingest.html" title="Ingest Plugins" /><meta name="DC.type" content="Docs/Elasticsearch/Plugins/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Accessing data in pipelines</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="ingest.html" title="Ingest Node" /><link rel="prev" href="_foreach_processor.html" title="Foreach processor" /><link rel="next" href="handling-failure-in-pipelines.html" title="Handling Failure in Pipelines" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -711,30 +711,68 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="discovery-gce.html">GCE Discovery Plugin</a></span> » <span class="breadcrumb-node">Testing GCE</span></div><div class="navheader"><span class="prev"><a href="discovery-gce-usage-tips.html">
+    </a></span> » <span class="breadcrumb-link"><a href="ingest.html">Ingest Node </a></span> » <span class="breadcrumb-node">Accessing data in pipelines</span></div><div class="navheader"><span class="prev"><a href="_foreach_processor.html">
               « 
-              GCE Tips</a>
+              Foreach processor</a>
            
         </span><span class="next">
            
-          <a href="ingest.html">Ingest Plugins
+          <a href="handling-failure-in-pipelines.html">Handling Failure in Pipelines
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="discovery-gce-usage-testing"></a>Testing GCE<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Integrations tests in this plugin require working GCE configuration and
-therefore disabled by default. To enable tests prepare a config file
-elasticsearch.yml with the following content:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
-  gce:
-      project_id: es-cloud
-      zone: europe-west1-a
-discovery:
-      type: gce</pre></div><p>Replaces <code class="literal">project_id</code> and <code class="literal">zone</code> with your settings.</p><p>To run test:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">mvn -Dtests.gce=true -Dtests.config=/path/to/config/file/elasticsearch.yml clean test</pre></div></div><div class="navfooter"><span class="prev"><a href="discovery-gce-usage-tips.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="_accessing_data_in_pipelines"></a>Accessing data in pipelines<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Processors in pipelines have read and write access to documents that pass through the pipeline.
+The fields in the source of a document and its metadata fields are accessible.</p><p>Accessing a field in the source is straightforward and one can refer to fields by
+their name. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "set": {
+    "field": "my_field"
+    "value": 582.1
+  }
+}</pre></div><p>On top of this fields from the source are always accessible via the <code class="literal">_source</code> prefix:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "set": {
+    "field": "_source.my_field"
+    "value": 582.1
+  }
+}</pre></div><p>Metadata fields can also be accessed in the same way as fields from the source. This
+is possible because Elasticsearch doesn’t allow fields in the source that have the
+same name as metadata fields.</p><p>The following example sets the id of a document to <code class="literal">1</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "set": {
+    "field": "_id"
+    "value": "1"
+  }
+}</pre></div><p>The following metadata fields are accessible by a processor: <code class="literal">_index</code>, <code class="literal">_type</code>, <code class="literal">_id</code>, <code class="literal">_routing</code>, <code class="literal">_parent</code>,
+<code class="literal">_timestamp</code> and <code class="literal">_ttl</code>.</p><p>Beyond metadata fields and source fields, ingest also adds ingest metadata to documents being processed.
+These metadata properties are accessible under the <code class="literal">_ingest</code> key. Currently ingest adds the ingest timestamp
+under <code class="literal">_ingest.timestamp</code> key to the ingest metadata, which is the time ES received the index or bulk
+request to pre-process. But any processor is free to add more ingest related metadata to it. Ingest metadata is transient
+and is lost after a document has been processed by the pipeline and thus ingest metadata won’t be indexed.</p><p>The following example adds a field with the name <code class="literal">received</code> and the value is the ingest timestamp:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "set": {
+    "field": "received"
+    "value": "{{_ingest.timestamp}}"
+  }
+}</pre></div><p>As opposed to Elasticsearch metadata fields, the ingest metadata field name _ingest can be used as a valid field name
+in the source of a document. Use _source._ingest to refer to it, otherwise _ingest will be interpreted as ingest
+metadata fields.</p><p>A number of processor settings also support templating. Settings that support templating can have zero or more
+template snippets. A template snippet begins with <code class="literal">{{</code> and ends with <code class="literal">}}</code>.
+Accessing fields and metafields in templates is exactly the same as via regular processor field settings.</p><p>In this example a field by the name <code class="literal">field_c</code> is added and its value is a concatenation of
+the values of <code class="literal">field_a</code> and <code class="literal">field_b</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "set": {
+    "field": "field_c"
+    "value": "{{field_a}} {{field_b}}"
+  }
+}</pre></div><p>The following example changes the index a document is going to be indexed into. The index a document will be redirected
+to depends on the field in the source with name <code class="literal">geoip.country_iso_code</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "set": {
+    "field": "_index"
+    "value": "{{geoip.country_iso_code}}"
+  }
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="_foreach_processor.html">
               « 
-              GCE Tips</a>
+              Foreach processor</a>
            
         </span><span class="next">
            
-          <a href="ingest.html">Ingest Plugins
+          <a href="handling-failure-in-pipelines.html">Handling Failure in Pipelines
                »
             </a></span></div>
 <!-- end body -->
