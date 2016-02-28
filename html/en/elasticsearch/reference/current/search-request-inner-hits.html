@@ -706,17 +706,9 @@ different than the location a nested inner object was defined.</p><p>By default 
 <code class="literal">_source</code> filtering feature part of the source can be returned or be disabled. If stored fields are defined on the
 nested level these can also be returned via the <code class="literal">fields</code> feature.</p><p>An important default is that the <code class="literal">_source</code> returned in hits inside <code class="literal">inner_hits</code> is relative to the <code class="literal">_nested</code> metadata.
 So in the above example only the comment part is returned per nested hit and not the entire source of the top level
-document that contained the comment.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="hierarchical-nested-inner-hits"></a>Hierarchical levels of nested object fields and inner hits.<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If a mapping has multiple levels of hierarchical nested object fields each level can be accessed via dot notated path.
-For example if there is a <code class="literal">comments</code> nested field that contains a <code class="literal">votes</code> nested field and votes should directly be returned
-with the root hits then the following path can be defined:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "query" : {
-      "nested" : {
-         "path" : "comments.votes",
-         "query" : { ... },
-         "inner_hits" : {}
-      }
-    }
-}</pre></div><p>This indirect referencing is only supported for nested inner hits.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="parent-child-inner-hits"></a>Parent/child inner hits<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The parent/child <code class="literal">inner_hits</code> can be used to include parent or child</p><p>The examples below assumes that there is a <code class="literal">_parent</code> field mapping in the <code class="literal">comment</code> type:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+document that contained the comment.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>A bug in Elasticsearch 2.x means that if you explicitly specify fields to be returned as part of the _source for inner_hits, you need to define them using the relative path, so in the example above you must write:</p></div></div><pre class="screen">"inner_hits" : {
+     "_source":["message"]
+     }</pre><p>If you return field data using fielddata_fields, you need to specify the full path instead.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="hierarchical-nested-inner-hits"></a>Hierarchical levels of nested object fields and inner hits.<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If a mapping has multiple levels of hierarchical nested object fields each level can be accessed using <a class="link" href="search-request-inner-hits.html#top-level-inner-hits" title="Top level inner hits">Top level inner hits</a> (see below).</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="parent-child-inner-hits"></a>Parent/child inner hits<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The parent/child <code class="literal">inner_hits</code> can be used to include parent or child</p><p>The examples below assumes that there is a <code class="literal">_parent</code> field mapping in the <code class="literal">comment</code> type:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "query" : {
         "has_child" : {
             "type" : "comment",
@@ -753,7 +745,7 @@ The inner hit definition like in the nested example.
            }
         }
      },
-     ...</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="top-level-inner-hits"></a>top level inner hits<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Besides defining inner hits on query and filters, inner hits can also be defined as a top level construct alongside the
+     ...</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="top-level-inner-hits"></a>Top level inner hits<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Besides defining inner hits on query and filters, inner hits can also be defined as a top level construct alongside the
 <code class="literal">query</code> and <code class="literal">aggregations</code> definition. The main reason for using the top level inner hits definition is to let the
 inner hits return documents that don’t match with the main query. Also inner hits definitions can be nested via the
 top level notation. Other than that, the inner hit definition inside the query should be used because that is the most
