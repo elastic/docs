@@ -6,7 +6,7 @@ use POE;
 
 my $bot = ES::Bot->new(
 
-    server   => "card.freenode.net",
+    server   => "irc.freenode.net",
     port     => "6667",
     channels => ["#elasticsearch"],
 
