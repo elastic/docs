@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Join processor</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="_processors.html" title="Processors" /><link rel="prev" href="_gsub_processor.html" title="Gsub processor" /><link rel="next" href="_lowercase_processor.html" title="Lowercase processor" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Foreach Processor</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="ingest-processors.html" title="Processors" /><link rel="prev" href="fail-processor.html" title="Fail Processor" /><link rel="next" href="grok-processor.html" title="Grok Processor" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -613,27 +613,98 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="ingest.html">Ingest Node </a></span> » <span class="breadcrumb-link"><a href="_processors.html">Processors</a></span> » <span class="breadcrumb-node">Join processor</span></div><div class="navheader"><span class="prev"><a href="_gsub_processor.html">
+    </a></span> » <span class="breadcrumb-link"><a href="ingest.html">Ingest Node </a></span> » <span class="breadcrumb-link"><a href="ingest-processors.html">Processors</a></span> » <span class="breadcrumb-node">Foreach Processor</span></div><div class="navheader"><span class="prev"><a href="fail-processor.html">
               « 
-              Gsub processor</a>
+              Fail Processor</a>
            
         </span><span class="next">
            
-          <a href="_lowercase_processor.html">Lowercase processor
+          <a href="grok-processor.html">Grok Processor
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_join_processor"></a>Join processor<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Joins each element of an array into a single string using a separator character between each element.
-Throws error when the field is not an array.</p><div class="table"><a id="join-options"></a><p class="title"><strong>Table 21. Join Options</strong></p><div class="table-contents"><table summary="Join Options" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top"> Name          </th><th align="left" valign="top"> Required  </th><th align="left" valign="top"> Default  </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">field</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The field to be separated</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">separator</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The separator character</p></td></tr></tbody></table></div></div><br class="table-break" /><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "join": {
-    "field": "joined_array_field",
-    "separator": "-"
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="foreach-processor"></a>Foreach Processor<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Processes elements in an array of unknown length.</p><p>All processors can operate on elements inside an array, but if all elements of an array need to
+be processed in the same way, defining a processor for each element becomes cumbersome and tricky
+because it is likely that the number of elements in an array is unknown. For this reason the <code class="literal">foreach</code>
+processor exists. By specifying the field holding array elements and a list of processors that
+define what should happen to each element, array fields can easily be preprocessed.</p><p>Processors inside the foreach processor work in a different context, and the only valid top-level
+field is <code class="literal">_value</code>, which holds the array element value. Under this field other fields may exist.</p><p>If the <code class="literal">foreach</code> processor fails to process an element inside the array, and no <code class="literal">on_failure</code> processor has been specified,
+then it aborts the execution and leaves the array unmodified.</p><div class="table"><a id="foreach-options"></a><p class="title"><strong>Table 18. Foreach Options</strong></p><div class="table-contents"><table summary="Foreach Options" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top"> Name          </th><th align="left" valign="top"> Required  </th><th align="left" valign="top"> Default  </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">field</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The array field</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">processors</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The processors</p></td></tr></tbody></table></div></div><br class="table-break" /><p>Assume the following document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "value" : ["foo", "bar", "baz"]
+}</pre></div><p>When this <code class="literal">foreach</code> processor operates on this sample document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "foreach" : {
+    "field" : "values",
+    "processors" : [
+      {
+        "uppercase" : {
+          "field" : "_value"
+        }
+      }
+    ]
   }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="_gsub_processor.html">
+}</pre></div><p>Then the document will look like this after preprocessing:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "value" : ["FOO", "BAR", "BAZ"]
+}</pre></div><p>Let’s take a look at another example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "persons" : [
+    {
+      "id" : "1",
+      "name" : "John Doe"
+    },
+    {
+      "id" : "2",
+      "name" : "Jane Doe"
+    }
+  ]
+}</pre></div><p>In this case, the <code class="literal">id</code> field needs to be removed,
+so the following <code class="literal">foreach</code> processor is used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "foreach" : {
+    "field" : "persons",
+    "processors" : [
+      {
+        "remove" : {
+          "field" : "_value.id"
+        }
+      }
+    ]
+  }
+}</pre></div><p>After preprocessing the result is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "persons" : [
+    {
+      "name" : "John Doe"
+    },
+    {
+      "name" : "Jane Doe"
+    }
+  ]
+}</pre></div><p>As for any processor, you can define <code class="literal">on_failure</code> processors
+in processors that are wrapped inside the <code class="literal">foreach</code> processor.</p><p>For example, the <code class="literal">id</code> field may not exist on all person objects.
+Instead of failing the index request, you can use an <code class="literal">on_failure</code>
+block to send the document to the <span class="emphasis"><em>failure_index</em></span> index for later inspection:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "foreach" : {
+    "field" : "persons",
+    "processors" : [
+      {
+        "remove" : {
+          "field" : "_value.id",
+          "on_failure" : [
+            {
+              "set" : {
+                "field", "_index",
+                "value", "failure_index"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}</pre></div><p>In this example, if the <code class="literal">remove</code> processor does fail, then
+the array elements that have been processed thus far will
+be updated.</p></div><div class="navfooter"><span class="prev"><a href="fail-processor.html">
               « 
-              Gsub processor</a>
+              Fail Processor</a>
            
         </span><span class="next">
            
-          <a href="_lowercase_processor.html">Lowercase processor
+          <a href="grok-processor.html">Grok Processor
                »
             </a></span></div>
 <!-- end body -->

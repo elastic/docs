@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Get pipeline API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="_ingest_apis.html" title="Ingest APIs" /><link rel="prev" href="_put_pipeline_api.html" title="Put pipeline API" /><link rel="next" href="_delete_pipeline_api.html" title="Delete pipeline API" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Grok Processor</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="ingest-processors.html" title="Processors" /><link rel="prev" href="foreach-processor.html" title="Foreach Processor" /><link rel="next" href="gsub-processor.html" title="Gsub Processor" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -613,38 +613,76 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="ingest.html">Ingest Node </a></span> » <span class="breadcrumb-link"><a href="_ingest_apis.html">Ingest APIs</a></span> » <span class="breadcrumb-node">Get pipeline API</span></div><div class="navheader"><span class="prev"><a href="_put_pipeline_api.html">
+    </a></span> » <span class="breadcrumb-link"><a href="ingest.html">Ingest Node </a></span> » <span class="breadcrumb-link"><a href="ingest-processors.html">Processors</a></span> » <span class="breadcrumb-node">Grok Processor</span></div><div class="navheader"><span class="prev"><a href="foreach-processor.html">
               « 
-              Put pipeline API</a>
+              Foreach Processor</a>
            
         </span><span class="next">
            
-          <a href="_delete_pipeline_api.html">Delete pipeline API
+          <a href="gsub-processor.html">Gsub Processor
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_get_pipeline_api"></a>Get pipeline API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The get pipeline api returns pipelines based on id. This api always returns a local reference of the pipeline.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _ingest/pipeline/my-pipeline-id</pre></div><div class="sense_widget" data-snippet="snippets/_get_pipeline_api/1.json"></div><p>Example response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "my-pipeline-id": {
-      "_source" : {
-        "description": "describe pipeline",
-        "processors": [
-          {
-            "simple" : {
-              // settings
-            }
-          },
-          // other processors
-        ]
-      },
-      "_version" : 0
-   }
-}</pre></div><p>For each returned pipeline the source and the version is returned.
-The version is useful for knowing what version of the pipeline the node has.
-Multiple ids can be provided at the same time. Also wildcards are supported.</p></div><div class="navfooter"><span class="prev"><a href="_put_pipeline_api.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="grok-processor"></a>Grok Processor<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Extracts structured fields out of a single text field within a document. You choose which field to
+extract matched fields from, as well as the grok pattern you expect will match. A grok pattern is like a regular
+expression that supports aliased expressions that can be reused.</p><p>This tool is perfect for syslog logs, apache and other webserver logs, mysql logs, and in general, any log format
+that is generally written for humans and not computer consumption.</p><p>The processor comes packaged with over 120 reusable patterns that are located at <code class="literal">$ES_HOME/config/ingest/grok/patterns</code>.
+Here, you can add your own custom grok pattern files with custom grok expressions to be used by the processor.</p><p>If you need help building patterns to match your logs, you will find the <a class="ulink" href="http://grokdebug.herokuapp.com" target="_top">http://grokdebug.herokuapp.com</a> and
+<a class="ulink" href="http://grokconstructor.appspot.com/" target="_top">http://grokconstructor.appspot.com/</a> applications quite useful!</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="grok-basics"></a>Grok Basics<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Grok sits on top of regular expressions, so any regular expressions are valid in grok as well.
+The regular expression library is Oniguruma, and you can see the full supported regexp syntax
+<a class="ulink" href="https://github.com/kkos/oniguruma/blob/master/doc/RE" target="_top">on the Onigiruma site</a>.</p><p>Grok works by leveraging this regular expression language to allow naming existing patterns and combining them into more
+complex patterns that match your fields.</p><p>The syntax for reusing a grok pattern comes in three forms: <code class="literal">%{SYNTAX:SEMANTIC}</code>, <code class="literal">%{SYNTAX}</code>, <code class="literal">%{SYNTAX:SEMANTIC:TYPE}</code>.</p><p>The <code class="literal">SYNTAX</code> is the name of the pattern that will match your text. For example, <code class="literal">3.44</code> will be matched by the <code class="literal">NUMBER</code>
+pattern and <code class="literal">55.3.244.1</code> will be matched by the <code class="literal">IP</code> pattern. The syntax is how you match. <code class="literal">NUMBER</code> and <code class="literal">IP</code> are both
+patterns that are provided within the default patterns set.</p><p>The <code class="literal">SEMANTIC</code> is the identifier you give to the piece of text being matched. For example, <code class="literal">3.44</code> could be the
+duration of an event, so you could call it simply <code class="literal">duration</code>. Further, a string <code class="literal">55.3.244.1</code> might identify
+the <code class="literal">client</code> making a request.</p><p>The <code class="literal">TYPE</code> is the type you wish to cast your named field. <code class="literal">int</code> and <code class="literal">float</code> are currently the only types supported for coercion.</p><p>For example, you might want to match the following text:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">3.44 55.3.244.1</pre></div><p>You may know that the message in the example is a number followed by an IP address. You can match this text by using the following
+Grok expression.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">%{NUMBER:duration} %{IP:client}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="custom-patterns"></a>Custom Patterns and Pattern Files<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Grok processor comes pre-packaged with a base set of pattern files. These patterns may not always have
+what you are looking for. These pattern files have a very basic format. Each line describes a named pattern with
+the following format:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">NAME ' '+ PATTERN '\n'</pre></div><p>You can add new patterns to an existing file, or add your own file in the patterns directory here: <code class="literal">$ES_HOME/config/ingest/grok/patterns</code>.
+Ingest node picks up files in this directory and loads the patterns into the grok processor’s known patterns.
+These patterns are loaded at startup, so you need to restart your ingest node if you want to update these files.</p><p>Here is an example snippet of pattern definitions found in the <code class="literal">grok-patterns</code> patterns file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">YEAR (?&gt;\d\d){1,2}
+HOUR (?:2[0123]|[01]?[0-9])
+MINUTE (?:[0-5][0-9])
+SECOND (?:(?:[0-5]?[0-9]|60)(?:[:.,][0-9]+)?)
+TIME (?!&lt;[0-9])%{HOUR}:%{MINUTE}(?::%{SECOND})(?![0-9])</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="using-grok"></a>Using the Grok Processor in a Pipeline<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="table"><a id="grok-options"></a><p class="title"><strong>Table 19. Grok Options</strong></p><div class="table-contents"><table summary="Grok Options" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top"> Name                   </th><th align="left" valign="top"> Required  </th><th align="left" valign="top"> Default             </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">field</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The field to use for grok expression parsing</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">pattern</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The grok expression to match and extract named captures with</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">pattern_definitions</code></p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>A map of pattern-name and pattern tuples defining custom patterns to be used by the current processor. Patterns matching existing names will override the pre-existing definition.</p></td></tr></tbody></table></div></div><br class="table-break" /><p>Here is an example of using the provided patterns to extract out and name structured fields from a string field in
+a document.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "message": "55.3.244.1 GET /index.html 15824 0.043"
+}</pre></div><p>The pattern for this could be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">%{IP:client} %{WORD:method} %{URIPATHPARAM:request} %{NUMBER:bytes} %{NUMBER:duration}</pre></div><p>Here is an example pipeline for processing the above document by using Grok:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "description" : "...",
+  "processors": [
+    {
+      "grok": {
+        "field": "message",
+        "pattern": "%{IP:client} %{WORD:method} %{URIPATHPARAM:request} %{NUMBER:bytes} %{NUMBER:duration}"
+      }
+    }
+  ]
+}</pre></div><p>This pipeline will insert these named captures as new fields within the document, like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "message": "55.3.244.1 GET /index.html 15824 0.043",
+  "client": "55.3.244.1",
+  "method": "GET",
+  "request": "/index.html",
+  "bytes": 15824,
+  "duration": "0.043"
+}</pre></div><p>Here is an example of a pipeline specifying custom pattern definitions:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "description" : "...",
+  "processors": [
+    {
+      "grok": {
+        "field": "message",
+        "pattern": "my %{FAVORITE_DOG:dog} is colored %{RGB:color}"
+        "pattern_definitions" : {
+          "FAVORITE_DOG" : "beagle",
+          "RGB" : "RED|GREEN|BLUE"
+        }
+      }
+    }
+  ]
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="foreach-processor.html">
               « 
-              Put pipeline API</a>
+              Foreach Processor</a>
            
         </span><span class="next">
            
-          <a href="_delete_pipeline_api.html">Delete pipeline API
+          <a href="gsub-processor.html">Gsub Processor
                »
             </a></span></div>
 <!-- end body -->

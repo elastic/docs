@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Convert processor</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="_processors.html" title="Processors" /><link rel="prev" href="_append_processor.html" title="Append processor" /><link rel="next" href="_date_processor.html" title="Date processor" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Simulate Pipeline API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="ingest-apis.html" title="Ingest APIs" /><link rel="prev" href="delete-pipeline-api.html" title="Delete Pipeline API" /><link rel="next" href="accessing-data-in-pipelines.html" title="Accessing Data in Pipelines" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -613,28 +613,244 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="ingest.html">Ingest Node </a></span> » <span class="breadcrumb-link"><a href="_processors.html">Processors</a></span> » <span class="breadcrumb-node">Convert processor</span></div><div class="navheader"><span class="prev"><a href="_append_processor.html">
+    </a></span> » <span class="breadcrumb-link"><a href="ingest.html">Ingest Node </a></span> » <span class="breadcrumb-link"><a href="ingest-apis.html">Ingest APIs</a></span> » <span class="breadcrumb-node">Simulate Pipeline API</span></div><div class="navheader"><span class="prev"><a href="delete-pipeline-api.html">
               « 
-              Append processor</a>
+              Delete Pipeline API</a>
            
         </span><span class="next">
            
-          <a href="_date_processor.html">Date processor
+          <a href="accessing-data-in-pipelines.html">Accessing Data in Pipelines
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_convert_processor"></a>Convert processor<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Converts an existing field’s value to a different type, like turning a string to an integer.
-If the field value is an array, all members will be converted.</p><p>The supported types include: <code class="literal">integer</code>, <code class="literal">float</code>, <code class="literal">string</code>, and <code class="literal">boolean</code>.</p><p><code class="literal">boolean</code> will set the field to true if its string value is equal to <code class="literal">true</code> (ignore case), to
-false if its string value is equal to <code class="literal">false</code> (ignore case) and it will throw exception otherwise.</p><div class="table"><a id="convert-options"></a><p class="title"><strong>Table 15. Convert Options</strong></p><div class="table-contents"><table summary="Convert Options" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top"> Name      </th><th align="left" valign="top"> Required  </th><th align="left" valign="top"> Default  </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">field</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The field whose value is to be converted</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">type</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The type to convert the existing value to</p></td></tr></tbody></table></div></div><br class="table-break" /><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "convert": {
-    "field" : "foo"
-    "type": "integer"
-  }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="_append_processor.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="simulate-pipeline-api"></a>Simulate Pipeline API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The simulate pipeline API executes a specific pipeline against
+the set of documents provided in the body of the request.</p><p>You can either specify an existing pipeline to execute
+against the provided documents, or supply a pipeline definition in
+the body of the request.</p><p>Here is the structure of a simulate request with a pipeline definition provided
+in the body of the request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _ingest/pipeline/_simulate
+{
+  "pipeline" : {
+    // pipeline definition here
+  },
+  "docs" : [
+    { /** first document **/ },
+    { /** second document **/ },
+    // ...
+  ]
+}</pre></div><p>Here is the structure of a simulate request against an existing pipeline:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _ingest/pipeline/my-pipeline-id/_simulate
+{
+  "docs" : [
+    { /** first document **/ },
+    { /** second document **/ },
+    // ...
+  ]
+}</pre></div><p>Here is an example of a simulate request with a pipeline defined in the request
+and its response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _ingest/pipeline/_simulate
+{
+  "pipeline" :
+  {
+    "description": "_description",
+    "processors": [
+      {
+        "set" : {
+          "field" : "field2",
+          "value" : "_value"
+        }
+      }
+    ]
+  },
+  "docs": [
+    {
+      "_index": "index",
+      "_type": "type",
+      "_id": "id",
+      "_source": {
+        "foo": "bar"
+      }
+    },
+    {
+      "_index": "index",
+      "_type": "type",
+      "_id": "id",
+      "_source": {
+        "foo": "rab"
+      }
+    }
+  ]
+}</pre></div><div class="sense_widget" data-snippet="snippets/simulate-pipeline-api/1.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "docs": [
+      {
+         "doc": {
+            "_id": "id",
+            "_ttl": null,
+            "_parent": null,
+            "_index": "index",
+            "_routing": null,
+            "_type": "type",
+            "_timestamp": null,
+            "_source": {
+               "field2": "_value",
+               "foo": "bar"
+            },
+            "_ingest": {
+               "timestamp": "2016-01-04T23:53:27.186+0000"
+            }
+         }
+      },
+      {
+         "doc": {
+            "_id": "id",
+            "_ttl": null,
+            "_parent": null,
+            "_index": "index",
+            "_routing": null,
+            "_type": "type",
+            "_timestamp": null,
+            "_source": {
+               "field2": "_value",
+               "foo": "rab"
+            },
+            "_ingest": {
+               "timestamp": "2016-01-04T23:53:27.186+0000"
+            }
+         }
+      }
+   ]
+}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ingest-verbose-param"></a>Viewing Verbose Results<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can use the simulate pipeline API to see how each processor affects the ingest document
+as it passes through the pipeline. To see the intermediate results of
+each processor in the simulate request, you can add the <code class="literal">verbose</code> parameter
+to the request.</p><p>Here is an example of a verbose request and its response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _ingest/pipeline/_simulate?verbose
+{
+  "pipeline" :
+  {
+    "description": "_description",
+    "processors": [
+      {
+        "set" : {
+          "field" : "field2",
+          "value" : "_value2"
+        }
+      },
+      {
+        "set" : {
+          "field" : "field3",
+          "value" : "_value3"
+        }
+      }
+    ]
+  },
+  "docs": [
+    {
+      "_index": "index",
+      "_type": "type",
+      "_id": "id",
+      "_source": {
+        "foo": "bar"
+      }
+    },
+    {
+      "_index": "index",
+      "_type": "type",
+      "_id": "id",
+      "_source": {
+        "foo": "rab"
+      }
+    }
+  ]
+}</pre></div><div class="sense_widget" data-snippet="snippets/simulate-pipeline-api/2.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "docs": [
+      {
+         "processor_results": [
+            {
+               "tag": "processor[set]-0",
+               "doc": {
+                  "_id": "id",
+                  "_ttl": null,
+                  "_parent": null,
+                  "_index": "index",
+                  "_routing": null,
+                  "_type": "type",
+                  "_timestamp": null,
+                  "_source": {
+                     "field2": "_value2",
+                     "foo": "bar"
+                  },
+                  "_ingest": {
+                     "timestamp": "2016-01-05T00:02:51.383+0000"
+                  }
+               }
+            },
+            {
+               "tag": "processor[set]-1",
+               "doc": {
+                  "_id": "id",
+                  "_ttl": null,
+                  "_parent": null,
+                  "_index": "index",
+                  "_routing": null,
+                  "_type": "type",
+                  "_timestamp": null,
+                  "_source": {
+                     "field3": "_value3",
+                     "field2": "_value2",
+                     "foo": "bar"
+                  },
+                  "_ingest": {
+                     "timestamp": "2016-01-05T00:02:51.383+0000"
+                  }
+               }
+            }
+         ]
+      },
+      {
+         "processor_results": [
+            {
+               "tag": "processor[set]-0",
+               "doc": {
+                  "_id": "id",
+                  "_ttl": null,
+                  "_parent": null,
+                  "_index": "index",
+                  "_routing": null,
+                  "_type": "type",
+                  "_timestamp": null,
+                  "_source": {
+                     "field2": "_value2",
+                     "foo": "rab"
+                  },
+                  "_ingest": {
+                     "timestamp": "2016-01-05T00:02:51.384+0000"
+                  }
+               }
+            },
+            {
+               "tag": "processor[set]-1",
+               "doc": {
+                  "_id": "id",
+                  "_ttl": null,
+                  "_parent": null,
+                  "_index": "index",
+                  "_routing": null,
+                  "_type": "type",
+                  "_timestamp": null,
+                  "_source": {
+                     "field3": "_value3",
+                     "field2": "_value2",
+                     "foo": "rab"
+                  },
+                  "_ingest": {
+                     "timestamp": "2016-01-05T00:02:51.384+0000"
+                  }
+               }
+            }
+         ]
+      }
+   ]
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="delete-pipeline-api.html">
               « 
-              Append processor</a>
+              Delete Pipeline API</a>
            
         </span><span class="next">
            
-          <a href="_date_processor.html">Date processor
+          <a href="accessing-data-in-pipelines.html">Accessing Data in Pipelines
                »
             </a></span></div>
 <!-- end body -->
