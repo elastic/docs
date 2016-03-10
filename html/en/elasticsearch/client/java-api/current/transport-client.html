@@ -658,11 +658,19 @@ client.close();</pre></div><p>Note that you have to set the cluster name if you 
 "elasticsearch":</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings settings = Settings.settingsBuilder()
         .put("cluster.name", "myClusterName").build();
 Client client = TransportClient.builder().settings(settings).build();
-//Add transport addresses and do something with the client...</pre></div><p>The client allows sniffing the rest of the cluster, which adds data nodes
-into its list of machines to use. In this case, note that the IP addresses
-used will be the ones that the other nodes were started with (the
-"publish" address). In order to enable it, set the
-<code class="literal">client.transport.sniff</code> to <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings settings = Settings.settingsBuilder()
+//Add transport addresses and do something with the client...</pre></div><p>The Transport client comes with a cluster sniffing feature which
+allows it to dynamically add new hosts and remove old ones.
+When sniffing is enabled the the transport client will connect to the nodes in its
+internal node list, which is built via calls to addTransportAddress.
+After this, the client will call the internal cluster state API on those nodes
+to discover available data nodes. The internal node list of the client will
+be replaced with those data nodes only. This list is refreshed every five seconds by default.
+Note that the IP addresses the sniffer connects to are the ones declared as the <span class="emphasis"><em>publish</em></span>
+address in those node’s elasticsearch config.</p><p>Keep in mind that list might possibly not include the original node it connected to
+if that node is not a data node. If, for instance, you initially connect to a
+master node, after sniffing no further requests will go to that master node,
+but rather to any data nodes instead. The reason the transport excludes non-data
+nodes is to avoid sending search traffic to master only nodes.</p><p>In order to enable sniffing, set <code class="literal">client.transport.sniff</code> to <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings settings = Settings.settingsBuilder()
         .put("client.transport.sniff", true).build();
 TransportClient client = TransportClient.builder().settings(settings).build();</pre></div><p>Other transport client level settings include:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Parameter </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">client.transport.ignore_cluster_name</code></p></td><td align="left" valign="top"><p>Set to <code class="literal">true</code> to ignore cluster
 name validation of connected nodes. (since 0.19.4)</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">client.transport.ping_timeout</code></p></td><td align="left" valign="top"><p>The time to wait for a ping response
