@@ -164,6 +164,7 @@ sub _build_book {
                 version       => $branch,
                 edit_url      => $edit_url,
                 multi         => $self->is_multi_version,
+                page_header   => $self->_page_header($branch),
                 section_title => $section_title,
                 toc           => $self->toc,
                 template      => $template
@@ -177,6 +178,7 @@ sub _build_book {
                 edit_url      => $edit_url,
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
+                page_header   => $self->_page_header($branch),
                 section_title => $section_title,
                 template      => $template
             );
@@ -238,6 +240,31 @@ sub _copy_branch_to_current {
         title => "Version: $branch (current)",
         url   => 'current/index.html'
     };
+}
+
+#===================================
+sub _page_header {
+#===================================
+    my ( $self, $branch ) = @_;
+    return '' unless $self->is_multi_version;
+    return '' if $self->current eq $branch;
+
+    if ( $self->branch_title($branch) lt $self->current ) {
+        return <<"HEADER";
+<b>PLEASE NOTE:</b>
+<br/>
+This page is for an older version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+HEADER
+    }
+
+    return <<"HEADER";
+<b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+HEADER
+
 }
 
 #===================================

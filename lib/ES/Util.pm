@@ -29,13 +29,14 @@ sub build_chunked {
 #===================================
     my ( $index, $dest, %opts ) = @_;
 
-    my $chunk    = $opts{chunk} || 0;
-    my $build    = $dest->parent;
-    my $version  = $opts{version} || 'test build';
-    my $multi    = $opts{multi} || 0;
-    my $lenient  = $opts{lenient} || '';
-    my $edit_url = $opts{edit_url} || '';
-    my $section  = $opts{section_title} || '';
+    my $chunk       = $opts{chunk} || 0;
+    my $build       = $dest->parent;
+    my $version     = $opts{version} || 'test build';
+    my $multi       = $opts{multi} || 0;
+    my $lenient     = $opts{lenient} || '';
+    my $edit_url    = $opts{edit_url} || '';
+    my $section     = $opts{section_title} || '';
+    my $page_header = $opts{page_header} || '';
 
     my $output = run(
         'a2x', '-v',
@@ -54,6 +55,7 @@ sub build_chunked {
             "chunk.section.depth"      => $chunk,
             "local.book.version"       => $version,
             "local.book.multi_version" => $multi,
+            "local.page.header"        => $page_header,
             "local.book.section.title" => "Docs/$section",
             "local.root_dir"           => $index->dir->absolute,
             "local.edit_url"           => $edit_url
@@ -91,6 +93,7 @@ sub build_single {
     my $edit_url = $opts{edit_url}      || '';
     my $comments = $opts{comments}      || 0;
     my $section  = $opts{section_title} || '';
+    my $page_header = $opts{page_header} || '';
 
     my $output = run(
         'a2x', '-v',
@@ -108,6 +111,7 @@ sub build_single {
             "toc.section.depth"        => 0,
             "local.book.version"       => $version,
             "local.book.multi_version" => $multi,
+            "local.page.header"        => $page_header,
             "local.book.section.title" => "Docs/$section",
             "local.root_dir"           => $index->dir->absolute,
             "local.edit_url"           => $edit_url,

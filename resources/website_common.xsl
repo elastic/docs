@@ -10,6 +10,7 @@
   <!-- book versions -->
   <xsl:param name="local.book.version">test build</xsl:param>
   <xsl:param name="local.book.multi_version" select="0"/>
+  <xsl:param name="local.page.header"></xsl:param>
   <xsl:param name="local.book.section.title">Docs/</xsl:param>
 
   <!-- css -->
@@ -68,6 +69,12 @@
  <!--  head title element with version -->
 
     <xsl:template name="user.header.content">
+      <xsl:if test="$local.page.header!=''">
+        <div class="page_header">
+          <xsl:value-of select="$local.page.header" disable-output-escaping="yes"/>
+        </div>
+      </xsl:if>
+
         <xsl:if test="$local.book.multi_version &gt; 0">
           <p>
              These docs are for branch: <xsl:value-of select="$local.book.version" />.

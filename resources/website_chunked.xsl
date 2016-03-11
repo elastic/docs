@@ -25,8 +25,18 @@
   <!-- Page header -->
   <xsl:template match="processing-instruction('page_header')"/>
   <xsl:template name="page.header">
-    <xsl:variable name="page.header">
+    <xsl:variable name="pp.page.header">
       <xsl:value-of select="normalize-space(preceding::processing-instruction('page_header')[1])"/>
+    </xsl:variable>
+    <xsl:variable name="page.header">
+      <xsl:choose>
+        <xsl:when test="$pp.page.header!=''">
+          <xsl:value-of select="$pp.page.header" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$local.page.header" />
+        </xsl:otherwise>
+      </xsl:choose>
     </xsl:variable>
     <xsl:if test="$page.header!=''">
       <div class="page_header">
