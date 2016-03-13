@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Percolator</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-5.0.html" title="Breaking changes in 5.0" /><link rel="prev" href="_reroute_commands.html" title="Reroute commands" /><link rel="next" href="breaking_50_packaging.html" title="Packaging" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Percolator changes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-5.0.html" title="Breaking changes in 5.0" /><link rel="prev" href="breaking_50_mapping_changes.html" title="Mapping changes" /><link rel="next" href="breaking_50_index_apis.html" title="Index APIs changes" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -638,27 +638,35 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-5.0.html">Breaking changes in 5.0</a></span> » <span class="breadcrumb-node">Percolator</span></div><div class="navheader"><span class="prev"><a href="_reroute_commands.html">
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-5.0.html">Breaking changes in 5.0</a></span> » <span class="breadcrumb-node">Percolator changes</span></div><div class="navheader"><span class="prev"><a href="breaking_50_mapping_changes.html">
               « 
-              Reroute commands</a>
+              Mapping changes</a>
            
         </span><span class="next">
            
-          <a href="breaking_50_packaging.html">Packaging
+          <a href="breaking_50_index_apis.html">Index APIs changes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="breaking_50_percolator"></a>Percolator<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Adding percolator queries and modifications to existing percolator queries are no longer visible in immediately
-to the percolator. A refresh is required to run before the changes are visible to the percolator.</p><p>The reason that this has changed is that on newly created indices the percolator automatically indexes the query terms
-and these query terms are used at percolate time to reduce the amount of queries the percolate API needs evaluate.
-This optimization didn’t work in the percolate API mode where modifications to queries are immediately visible.</p><p>The percolator by defaults sets the <code class="literal">size</code> option to <code class="literal">10</code> whereas before this was set to unlimited.</p><p>The percolate api can no longer accept documents that have fields that don’t exist in the mapping.</p><p>When percolating an existing document then specifying a document in the source of the percolate request is not allowed
-any more.</p><p>The percolate api no longer modifies the mappings. Before the percolate api could be used to dynamically introduce new
-fields to the mappings based on the fields in the document being percolated. This no longer works, because these
-unmapped fields are not persisted in the mapping.</p><p>Percolator documents are no longer excluded from the search response.</p></div><div class="navfooter"><span class="prev"><a href="_reroute_commands.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="breaking_50_percolator"></a>Percolator changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_percolator_is_near_real_time"></a>Percolator is near-real time<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Previously percolators were activated in real-time, i.e. as soon as they were
+indexed.  Now, changes to the percolator query are visible in near-real time,
+as soon as the index has been refreshed. This change was required because, in
+indices created from 5.0 onwards, the terms used in a percolator query are
+automatically indexed to allow for more efficient query selection during
+percolation.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_percolator_mapping"></a>Percolator mapping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The percolate API can no longer accept documents that reference fields that
+don’t already exist in the mapping.</p><p>The percolate API no longer modifies the mappings. Before the percolate API
+could be used to dynamically introduce new fields to the mappings based on the
+fields in the document being percolated. This no longer works, because these
+unmapped fields are not persisted in the mapping.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_percolator_documents_returned_by_search"></a>Percolator documents returned by search<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Documents with the <code class="literal">.percolate</code> type were previously excluded from the search
+response, unless the <code class="literal">.percolate</code> type was specified explicitly in the search
+request.  Now, percolator documents are treated in the same way as any other
+document and are returned by search requests.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_percolator_literal_size_literal_default"></a>Percolator <code class="literal">size</code> default<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The percolator by default sets the <code class="literal">size</code> option to <code class="literal">10</code> whereas before this
+was unlimited.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_percolate_api"></a>Percolate API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When percolating an existing document then specifying a document in the source
+of the percolate request is not allowed any more.</p></div></div><div class="navfooter"><span class="prev"><a href="breaking_50_mapping_changes.html">
               « 
-              Reroute commands</a>
+              Mapping changes</a>
            
         </span><span class="next">
            
-          <a href="breaking_50_packaging.html">Packaging
+          <a href="breaking_50_index_apis.html">Index APIs changes
                »
             </a></span></div>
 <!-- end body -->

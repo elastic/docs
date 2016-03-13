@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Warmers</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-5.0.html" title="Breaking changes in 5.0" /><link rel="prev" href="breaking-changes-5.0.html" title="Breaking changes in 5.0" /><link rel="next" href="_search_changes.html" title="Search changes" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Search and Query DSL changes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-5.0.html" title="Breaking changes in 5.0" /><link rel="prev" href="breaking-changes-5.0.html" title="Breaking changes in 5.0" /><link rel="next" href="breaking_50_mapping_changes.html" title="Mapping changes" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -638,25 +638,120 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-5.0.html">Breaking changes in 5.0</a></span> » <span class="breadcrumb-node">Warmers</span></div><div class="navheader"><span class="prev"><a href="breaking-changes-5.0.html">
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-5.0.html">Breaking changes in 5.0</a></span> » <span class="breadcrumb-node">Search and Query DSL changes</span></div><div class="navheader"><span class="prev"><a href="breaking-changes-5.0.html">
               « 
               Breaking changes in 5.0</a>
            
         </span><span class="next">
            
-          <a href="_search_changes.html">Search changes
+          <a href="breaking_50_mapping_changes.html">Mapping changes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="breaking_50_search_changes"></a>Warmers<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Thanks to several changes like doc values by default or disk-based norms,
-warmers have become quite useless. As a consequence, warmers and the warmer
-API have been removed: it is not possible anymore to register queries that
-will run before a new IndexSearcher is published.</p><p>Don’t worry if you have warmers defined on your indices, they will simply be
-ignored when upgrading to 5.0.</p></div><div class="navfooter"><span class="prev"><a href="breaking-changes-5.0.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="breaking_50_search_changes"></a>Search and Query DSL changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_search_type_literal"></a><code class="literal">search_type</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_literal_search_type_count_literal_removed"></a><code class="literal">search_type=count</code> removed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">count</code> search type was deprecated since version 2.0.0 and is now removed.
+In order to get the same benefits, you just need to set the value of the <code class="literal">size</code>
+parameter to <code class="literal">0</code>.</p><p>For instance, the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /my_index/_search?search_type=count
+{
+  "aggs": {
+    "my_terms": {
+       "terms": {
+         "field": "foo"
+       }
+     }
+  }
+}</pre></div><p>can be replaced with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /my_index/_search
+{
+  "size": 0,
+  "aggs": {
+    "my_terms": {
+       "terms": {
+         "field": "foo"
+       }
+     }
+  }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_literal_search_type_scan_literal_removed"></a><code class="literal">search_type=scan</code> removed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">scan</code> search type was deprecated since version 2.1.0 and is now removed.
+All benefits from this search type can now be achieved by doing a scroll
+request that sorts documents in <code class="literal">_doc</code> order, for instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /my_index/_search?scroll=2m
+{
+  "sort": [
+    "_doc"
+  ]
+}</pre></div><p>Scroll requests sorted by <code class="literal">_doc</code> have been optimized to more efficiently resume
+from where the previous request stopped, so this will have the same performance
+characteristics as the former <code class="literal">scan</code> search type.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_fields_literal_parameter"></a><code class="literal">fields</code> parameter<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">fields</code> parameter used to try to retrieve field values from stored
+fields, and fall back to extracting from the <code class="literal">_source</code> if a field is not
+marked as stored.  Now, the <code class="literal">fields</code> parameter will only return stored fields — it will no longer extract values from the <code class="literal">_source</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_search_exists_api_removed"></a>search-exists API removed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The search exists api has been removed in favour of using the search api with
+<code class="literal">size</code> set to <code class="literal">0</code> and <code class="literal">terminate_after</code> set to <code class="literal">1</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_deprecated_queries_removed"></a>Deprecated queries removed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following deprecated queries have been removed:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">filtered</code>
+</span></dt><dd>
+Use <code class="literal">bool</code> query instead, which supports <code class="literal">filter</code> clauses too.
+</dd><dt><span class="term">
+<code class="literal">and</code>
+</span></dt><dd>
+Use <code class="literal">must</code> clauses in a <code class="literal">bool</code> query instead.
+</dd><dt><span class="term">
+<code class="literal">or</code>
+</span></dt><dd>
+Use <code class="literal">should</code> clauses in a <code class="literal">bool</code> query instead.
+</dd><dt><span class="term">
+<code class="literal">limit</code>
+</span></dt><dd>
+Use the <code class="literal">terminate_after</code> parameter instead.
+</dd><dt><span class="term">
+<code class="literal">fquery</code>
+</span></dt><dd>
+Is obsolete after filters and queries have been merged.
+</dd><dt><span class="term">
+<code class="literal">query</code>
+</span></dt><dd>
+Is obsolete after filters and queries have been merged.
+</dd><dt><span class="term">
+<code class="literal">query_binary</code>
+</span></dt><dd>
+Was undocumented and has been removed.
+</dd><dt><span class="term">
+<code class="literal">filter_binary</code>
+</span></dt><dd>
+Was undocumented and has been removed.
+</dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_changes_to_queries"></a>Changes to queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Removed support for the deprecated <code class="literal">min_similarity</code> parameter in <code class="literal">fuzzy
+  query</code>, in favour of <code class="literal">fuzziness</code>.
+</li><li class="listitem">
+Removed support for the deprecated <code class="literal">fuzzy_min_sim</code> parameter in
+  <code class="literal">query_string</code> query, in favour of <code class="literal">fuzziness</code>.
+</li><li class="listitem">
+Removed support for the deprecated <code class="literal">edit_distance</code> parameter in completion
+  suggester, in favour of <code class="literal">fuzziness</code>.
+</li><li class="listitem">
+Removed support for the deprecated <code class="literal">filter</code> and <code class="literal">no_match_filter</code> fields in <code class="literal">indices</code> query,
+in favour of <code class="literal">query</code> and <code class="literal">no_match_query</code>.
+</li><li class="listitem">
+Removed support for the deprecated <code class="literal">filter</code> fields in <code class="literal">nested</code> query, in favour of <code class="literal">query</code>.
+</li><li class="listitem">
+Removed support for the deprecated <code class="literal">minimum_should_match</code> and
+  <code class="literal">disable_coord</code> in <code class="literal">terms</code> query, use <code class="literal">bool</code> query instead. Also removed
+  support for the deprecated <code class="literal">execution</code> parameter.
+</li><li class="listitem">
+Removed support for the top level <code class="literal">filter</code> element in <code class="literal">function_score</code> query, replaced by <code class="literal">query</code>.
+</li><li class="listitem">
+The <code class="literal">collect_payloads</code> parameter of the <code class="literal">span_near</code> query has been deprecated.  Payloads will be loaded when needed.
+</li><li class="listitem">
+The <code class="literal">score_type</code> parameter to the <code class="literal">has_child</code> and <code class="literal">has_parent</code> queries has been removed in favour of <code class="literal">score_mode</code>.
+  Also, the <code class="literal">sum</code> score mode has been removed in favour of the <code class="literal">total</code> mode.
+</li><li class="listitem">
+When the <code class="literal">max_children</code> parameter was set to <code class="literal">0</code> on the <code class="literal">has_child</code> query
+   then there was no upper limit on how many child documents were allowed to
+   match. Now, <code class="literal">0</code> really means that zero child documents are allowed. If no
+   upper limit is needed then the <code class="literal">max_children</code> parameter shouldn’t be specified
+   at all.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_top_level_literal_filter_literal_parameter"></a>Top level <code class="literal">filter</code> parameter<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Removed support for the deprecated top level <code class="literal">filter</code> in the search api,
+replaced by <code class="literal">post_filter</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_highlighters"></a>Highlighters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Removed support for multiple highlighter names, the only supported ones are:
+<code class="literal">plain</code>, <code class="literal">fvh</code> and <code class="literal">postings</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_term_vectors_api"></a>Term vectors API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The term vectors APIs no longer persist unmapped fields in the mappings.</p><p>The <code class="literal">dfs</code> parameter to the term vectors API has been removed completely. Term
+vectors don’t support distributed document frequencies anymore.</p></div></div><div class="navfooter"><span class="prev"><a href="breaking-changes-5.0.html">
               « 
               Breaking changes in 5.0</a>
            
         </span><span class="next">
            
-          <a href="_search_changes.html">Search changes
+          <a href="breaking_50_mapping_changes.html">Mapping changes
                »
             </a></span></div>
 <!-- end body -->
