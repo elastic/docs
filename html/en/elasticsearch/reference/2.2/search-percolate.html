@@ -646,7 +646,11 @@
            
           <a href="search-field-stats.html">Field stats API
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-percolate"></a>Percolator<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/percolate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Traditionally you design documents based on your data, store them into an index, and then define queries via the search API
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-percolate"></a>Percolator<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/percolate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h4>Percolating geo-queries in Elasticsearch 2.2.0 or later</h4><p>The new <a class="link" href="geo-point.html" title="Geo-point datatype"><code class="literal">geo_point</code> fields</a> added in Elasticsearch 2.2.0 and
+above require that <a class="link" href="doc-values.html" title="doc_values"><code class="literal">doc_values</code></a> are enabled in order to
+function. Unfortunately, the in-memory index used by the percolator does not
+yet have support for <code class="literal">doc_values</code>, meaning that <a class="link" href="geo-queries.html" title="Geo queries">geo-queries</a>
+will not work in a percolator index created in Elasticsearch 2.2.0 or later.</p><p>See <a class="xref" href="search-percolate.html#geo-percolate" title="Percolating geo-queries in Elasticsearch 2.2.0 and lateredit">the section called “Percolating geo-queries in Elasticsearch 2.2.0 and later<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/percolate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for a workaround.</p></div></div><p>Traditionally you design documents based on your data, store them into an index, and then define queries via the search API
 in order to retrieve these documents. The percolator works in the opposite direction. First you store queries into an
 index and then, via the percolate API, you define documents in order to retrieve these queries.</p><p>The reason that queries can be stored comes from the fact that in Elasticsearch both documents and queries are defined in
 JSON. This allows you to embed queries into documents via the index API. Elasticsearch can extract the query from a
@@ -790,7 +794,7 @@ look at the aggregation documentation on how to define aggregations.
 matching query. This allows you to see how each match is highlighting the document being percolated. See highlight
 documentation on how to define highlights. The <code class="literal">size</code> option is required for highlighting, the performance of highlighting
  in the percolate API depends of how many matches are being highlighted.
-</li></ul></div><h3><a id="_dedicated_percolator_index"></a>Dedicated Percolator Index<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/percolate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Percolate queries can be added to any index. Instead of adding percolate queries to the index the data resides in,
+</li></ul></div><h3><a id="dedicated-percolator"></a>Dedicated Percolator Index<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/percolate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Percolate queries can be added to any index. Instead of adding percolate queries to the index the data resides in,
 these queries can also be added to a dedicated index. The advantage of this is that this dedicated percolator index
 can have its own index settings (For example the number of primary and replica shards). If you choose to have a dedicated
 percolate index, you need to make sure that the mappings from the normal index are also available on the percolate index.
@@ -950,7 +954,72 @@ to have the field with the appropriate settings, and then the percolator query c
 if all unmapped fields are handled as if these were default string fields. In those cases one can configure the
 <code class="literal">index.percolator.map_unmapped_fields_as_string</code> setting to <code class="literal">true</code> (default to <code class="literal">false</code>) and then if a field referred in
 a percolator query does not exist, it will be handled as a default string field so that adding the percolator query doesn’t
-fail.</p></div><div class="navfooter"><span class="prev"><a href="_understanding_multitermquery_output.html">
+fail.</p><h3><a id="geo-percolate"></a>Percolating geo-queries in Elasticsearch 2.2.0 and later<a href="https://github.com/elastic/elasticsearch/edit/2.2/docs/reference/search/percolate.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The new <a class="link" href="geo-point.html" title="Geo-point datatype"><code class="literal">geo_point</code> fields</a> added in Elasticsearch 2.2.0 and
+above require that <a class="link" href="doc-values.html" title="doc_values"><code class="literal">doc_values</code></a> are enabled in order to
+function. Unfortunately, the in-memory index used by the percolator does not
+yet have support for <code class="literal">doc_values</code>, meaning that <a class="link" href="geo-queries.html" title="Geo queries">geo-queries</a>
+will not work in a percolator index created in Elasticsearch 2.2.0 or later.</p><p>A workaround exists which allows you to both benefit from the new <code class="literal">geo_point</code>
+field format when searching or aggregating, and to use geo-queries in the
+percolator.</p><p>Documents with `geo_point`fields should be indexed into a new index created in
+Elasticsearch 2.2.0 or later for searching or aggregations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "location": {
+          "type": "geo_point"
+        }
+      }
+    }
+  }
+}
+
+PUT my_index/my_type/1
+{
+  "location": {
+    "lat": 0,
+    "lon": 0
+  }
+}</pre></div><p>Percolator queries should be created in a separate
+<a class="link" href="search-percolate.html#dedicated-percolator" title="Dedicated Percolator Indexedit">dedicated percolator index</a>, which claims to have been
+created in Elasticsearch 2.1.0:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_percolator_index
+{
+  "settings": {
+    "index.version.created": 2010299 <a id="CO37-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  },
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "location": {
+          "type": "geo_point"
+        }
+      }
+    }
+  }
+}
+
+PUT my_percolator_index/.percolator/my_geo_query
+{
+  "query": {
+    "geo_distance": {
+      "distance": "5km",
+      "location": {
+        "lat": 0,
+        "lon": 0
+      }
+    }
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO37-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Marks the index as having been created in Elasticsearch 2.1.0
+</p></td></tr></table></div><p>With this setup, you can percolate an inline document as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET my_percolator_index/my_type/_percolate
+{
+  "doc": {
+    "location": {
+      "lat": 0,
+      "lon": 0
+    }
+  }
+}</pre></div><p>or percolate a document already indexed in <code class="literal">my_index</code> as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET my_index/my_type/1/_percolate?percolate_index=my_percolator_index</pre></div></div><div class="navfooter"><span class="prev"><a href="_understanding_multitermquery_output.html">
               « 
               Understanding MultiTermQuery output</a>
            
