@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>term_vector</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="mapping-params.html" title="Mapping parameters" /><link rel="prev" href="mapping-store.html" title="store" /><link rel="next" href="dynamic-mapping.html" title="Dynamic Mapping" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Text datatype</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="mapping-types.html" title="Field datatypes" /><link rel="prev" href="string.html" title="String datatype" /><link rel="next" href="token-count.html" title="Token count datatype" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -642,106 +642,201 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-params.html">Mapping parameters</a></span> » <span class="breadcrumb-node"><code class="literal">term_vector</code></span></div><div class="navheader"><span class="prev"><a href="mapping-store.html">
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-types.html">Field datatypes</a></span> » <span class="breadcrumb-node">Text datatype</span></div><div class="navheader"><span class="prev"><a href="string.html">
               « 
-              <code class="literal">store</code></a>
+              String datatype</a>
            
         </span><span class="next">
            
-          <a href="dynamic-mapping.html">Dynamic Mapping
+          <a href="token-count.html">Token count datatype
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="term-vector"></a><code class="literal">term_vector</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/params/term-vector.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Term vectors contain information about the terms produced by the
-<a class="link" href="analysis.html" title="Analysis">analysis</a> process, including:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-a list of terms.
-</li><li class="listitem">
-the position (or order) of each term.
-</li><li class="listitem">
-the start and end character offsets mapping the term to its
-  origin in the original string.
-</li></ul></div><p>These term vectors can be stored so that they can be retrieved for a
-particular document.</p><p>The <code class="literal">term_vector</code> setting accepts:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">no</code>
-</p>
-</td><td valign="top">
-<p>
-No term vectors are stored. (default)
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">yes</code>
-</p>
-</td><td valign="top">
-<p>
-Just the terms in the field are stored.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">with_positions</code>
-</p>
-</td><td valign="top">
-<p>
-Terms and positions are stored.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">with_offsets</code>
-</p>
-</td><td valign="top">
-<p>
-Terms and character offsets are stored.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">with_positions_offsets</code>
-</p>
-</td><td valign="top">
-<p>
-Terms, positions, and character offsets are stored.
-</p>
-</td></tr></tbody></table></div><p>The fast vector highlighter requires <code class="literal">with_positions_offsets</code>.  The term
-vectors API can retrieve whatever is stored.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Setting <code class="literal">with_positions_offsets</code> will double the size of a field’s
-index.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="text"></a>Text datatype<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/text.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A field to index full-text values, such as the body of on email or the
+description of a product. These fields are <code class="literal">analyzed</code>, that is they are passed through an
+<a class="link" href="analysis.html" title="Analysis">analyzer</a> to convert the string into a list of individual terms
+before being indexed. The analysis process allows Elasticsearch to search for
+individual words <span class="emphasis"><em>within</em></span>  each full text field.  Text fields are not
+used for sorting and seldom used for aggregations (although the
+<a class="link" href="search-aggregations-bucket-significantterms-aggregation.html" title="Significant Terms Aggregation">significant terms aggregation</a>
+is a notable exception).</p><p>If you need to index structured content such as email addresses, hostnames, status
+codes, or tags, it is likely that you should rather use a <a class="link" href="keyword.html" title="Keyword datatype"><code class="literal">keyword</code></a> field.</p><p>Below is an example of a mapping for a text field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
   "mappings": {
     "my_type": {
       "properties": {
-        "text": {
-          "type":        "text",
-          "term_vector": "with_positions_offsets"
+        "full_name": {
+          "type":  "text"
         }
       }
     }
   }
-}
-
-PUT my_index/my_type/1
-{
-  "text": "Quick brown fox"
-}
-
-GET my_index/_search
-{
-  "query": {
-    "match": {
-      "text": "brown fox"
-    }
-  },
-  "highlight": {
-    "fields": {
-      "text": {} <a id="CO205-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    }
-  }
-}</pre></div><div class="sense_widget" data-snippet="snippets/term-vector/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO205-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The fast vector highlighter will be used by default for the <code class="literal">text</code> field
-    because term vectors are enabled.
-</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"></pre></div><div class="sense_widget" data-snippet=":AUTOSENSE:"></div></div><div class="navfooter"><span class="prev"><a href="mapping-store.html">
+}</pre></div><div class="sense_widget" data-snippet="snippets/text/1.json"></div><p>Sometimes it is useful to have both a full text (<code class="literal">text</code>) and a keyword
+(<code class="literal">keyword</code>) version of the same field: one for full text search and the
+other for aggregations and sorting. This can be achieved with
+<a class="link" href="multi-fields.html" title="fields">multi-fields</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="text-params"></a>Parameters for text fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/text.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following parameters are accepted by <code class="literal">text</code> fields:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<a class="link" href="analyzer.html" title="analyzer"><code class="literal">analyzer</code></a>
+</p>
+</td><td valign="top">
+<p>
+    The <a class="link" href="analysis.html" title="Analysis">analyzer</a> which should be used for
+    <a class="link" href="mapping-index.html" title="index"><code class="literal">analyzed</code></a> string fields, both at index-time and at
+    search-time (unless overridden by the  <a class="link" href="search-analyzer.html" title="search_analyzer"><code class="literal">search_analyzer</code></a>).
+    Defaults to the default index analyzer, or the
+    <a class="link" href="analysis-standard-analyzer.html" title="Standard Analyzer"><code class="literal">standard</code> analyzer</a>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="mapping-boost.html" title="boost"><code class="literal">boost</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Mapping field-level query time boosting. Accepts a floating point number, defaults
+    to <code class="literal">1.0</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="fielddata.html#global-ordinals" title="Global ordinals"><code class="literal">eager_global_ordinals</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Should global ordinals be loaded eagerly on refresh? Accepts <code class="literal">true</code> or <code class="literal">false</code>
+    (default). Enabling this is a good idea on fields that are frequently used for
+    (significant) terms aggregations.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="fielddata.html" title="fielddata"><code class="literal">fielddata</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Can the field use in-memory fielddata for sorting, aggregations,
+    or scripting? Accepts <code class="literal">true</code> or <code class="literal">false</code> (default).
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="fielddata.html#field-data-filtering" title="fielddata_frequency_filter"><code class="literal">fielddata_frequency_filter</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Expert settings which allow to decide which values to load in memory when <code class="literal">fielddata</code>
+    is enabled. By default all values are loaded.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="multi-fields.html" title="fields"><code class="literal">fields</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Multi-fields allow the same string value to be indexed in multiple ways for
+    different purposes, such as one field for search and a multi-field for
+    sorting and aggregations, or the same string value analyzed by different
+    analyzers.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="include-in-all.html" title="include_in_all"><code class="literal">include_in_all</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Whether or not the field value should be included in the
+    <a class="link" href="mapping-all-field.html" title="_all field"><code class="literal">_all</code></a> field? Accepts <code class="literal">true</code> or <code class="literal">false</code>.  Defaults
+    to <code class="literal">false</code> if <a class="link" href="mapping-index.html" title="index"><code class="literal">index</code></a> is set to <code class="literal">no</code>, or if a parent
+    <a class="link" href="object.html" title="Object datatype"><code class="literal">object</code></a> field sets <code class="literal">include_in_all</code> to <code class="literal">false</code>.
+    Otherwise defaults to <code class="literal">true</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="mapping-index.html" title="index"><code class="literal">index</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Should the field be searchable? Accepts <code class="literal">true</code> (default) or <code class="literal">false</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="index-options.html" title="index_options"><code class="literal">index_options</code></a>
+</p>
+</td><td valign="top">
+<p>
+    What information should be stored in the index, for search and highlighting purposes.
+    Defaults to <code class="literal">positions</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="norms.html" title="norms"><code class="literal">norms</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Whether field-length should be taken into account when scoring queries.
+    Accepts <code class="literal">true</code> (default) or <code class="literal">false</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="position-increment-gap.html" title="position_increment_gap"><code class="literal">position_increment_gap</code></a>
+</p>
+</td><td valign="top">
+<p>
+    The number of fake term positions which should be inserted between
+    each element of an array of strings. Defaults to 0.
+    The number of fake term position which should be inserted between each
+    element of an array of strings. Defaults to the position_increment_gap
+    configured on the analyzer which defaults to 100. 100 was chosen because it
+    prevents phrase queries with reasonably large slops (less than 100) from
+    matching terms across field values.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="mapping-store.html" title="store"><code class="literal">store</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Whether the field value should be stored and retrievable separately from
+    the <a class="link" href="mapping-source-field.html" title="_source field"><code class="literal">_source</code></a> field. Accepts <code class="literal">true</code> or <code class="literal">false</code>
+    (default).
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="search-analyzer.html" title="search_analyzer"><code class="literal">search_analyzer</code></a>
+</p>
+</td><td valign="top">
+<p>
+    The <a class="link" href="analyzer.html" title="analyzer"><code class="literal">analyzer</code></a> that should be used at search time on
+    <a class="link" href="mapping-index.html" title="index"><code class="literal">analyzed</code></a> fields. Defaults to the <code class="literal">analyzer</code> setting.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="analyzer.html#search-quote-analyzer" title="search_quote_analyzer"><code class="literal">search_quote_analyzer</code></a>
+</p>
+</td><td valign="top">
+<p>
+    The <a class="link" href="analyzer.html" title="analyzer"><code class="literal">analyzer</code></a> that should be used at search time when a
+    phrase is encountered. Defaults to the <code class="literal">search_analyzer</code> setting.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="similarity.html" title="similarity"><code class="literal">similarity</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Which scoring algorithm or <span class="emphasis"><em>similarity</em></span> should be used. Defaults
+    to <code class="literal">classic</code>, which uses TF/IDF.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="term-vector.html" title="term_vector"><code class="literal">term_vector</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Whether term vectors should be stored for an <a class="link" href="mapping-index.html" title="index"><code class="literal">analyzed</code></a>
+    field. Defaults to <code class="literal">no</code>.
+</p>
+</td></tr></tbody></table></div></div></div><div class="navfooter"><span class="prev"><a href="string.html">
               « 
-              <code class="literal">store</code></a>
+              String datatype</a>
            
         </span><span class="next">
            
-          <a href="dynamic-mapping.html">Dynamic Mapping
+          <a href="token-count.html">Token count datatype
                »
             </a></span></div>
 <!-- end body -->
