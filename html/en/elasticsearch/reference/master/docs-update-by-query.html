@@ -721,11 +721,20 @@ or get the status of the task. For now, once the request is finished the task
 is gone and the only place to look for the ultimate result of the task is in
 the Elasticsearch log file. This will be fixed soon.</p><p><code class="literal">consistency</code> controls how many copies of a shard must respond to each write
 request. <code class="literal">timeout</code> controls how long each write request waits for unavailable
-shards to become available. Both work exactly how they work in the</p><p><code class="literal">timeout</code> controls how long each batch waits for the target shard to become</p><h3><a id="_response_body"></a>Response body<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The JSON response looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+shards to become available. Both work exactly how they work in the</p><p><code class="literal">requests_per_second</code> can be set to any decimal number (1.4, 6, 1000, etc) and
+throttle the number of requests per second that the update by query issues. The
+throttling is done waiting between bulk batches so that it can manipulate the
+scroll timeout. The wait time is the difference between the time it took the
+batch to complete and the time <code class="literal">requests_per_second * requests_in_the_batch</code>.
+Since the batch isn’t broken into multiple bulk requests large batch sizes will
+cause Elasticsearch to create many requests and then wait for a while before
+starting the next set. This is "bursty" instead of "smooth".</p><h3><a id="_response_body"></a>Response body<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The JSON response looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "took" : 639,
   "updated": 0,
   "batches": 1,
   "version_conflicts": 2,
+  "retries": 0,
+  "throttled_millis": 0,
   "failures" : [ ]
 }</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">took</code>
@@ -743,6 +752,14 @@ The number of scroll responses pulled back by the the update by query.
 <code class="literal">version_conflicts</code>
 </span></dt><dd>
 The number of version conflicts that the update by query hit.
+</dd><dt><span class="term">
+<code class="literal">retries</code>
+</span></dt><dd>
+The number of retries that the update by query did in response to a full queue.
+</dd><dt><span class="term">
+<code class="literal">throttled_millis</code>
+</span></dt><dd>
+Number of milliseconds the request slept to conform to <code class="literal">requests_per_second</code>.
 </dd><dt><span class="term">
 <code class="literal">failures</code>
 </span></dt><dd>
@@ -772,7 +789,9 @@ from aborting the operation.
           "deleted" : 0,
           "batches" : 36,
           "version_conflicts" : 0,
-          "noops" : 0
+          "noops" : 0,
+          "retries": 0,
+          "throttled_millis": 0
         },
         "description" : ""
       } ]
