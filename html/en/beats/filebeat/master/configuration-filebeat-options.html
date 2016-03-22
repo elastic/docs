@@ -714,7 +714,35 @@ without causing Filebeat to scan too frequently. The default setting is
 10s.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_document_type"></a>document_type<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/reference/configuration/filebeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The event type to use for published lines read by harvesters. For Elasticsearch
 output, the value that you specify here is used to set the <code class="literal">type</code> field in the output
 document. The default value is <code class="literal">log</code>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_harvester_buffer_size"></a>harvester_buffer_size<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/reference/configuration/filebeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The buffer size every harvester uses when fetching the file. The default is 16384.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_max_bytes"></a>max_bytes<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/reference/configuration/filebeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The maximum number of bytes that a single log message can have. All bytes after <code class="literal">max_bytes</code> are discarded and not sent.
-This setting is especially useful for multiline log messages, which can get large. The default is 10MB (10485760).</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="multiline"></a>multiline<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/reference/configuration/filebeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Options that control how Filebeat deals with log messages that span multiple lines. Multiline messages are common in files that contain Java stack traces.</p><p>The following example shows how to configure Filebeat to handle a multiline message where the first line of the message begins with a bracket (<code class="literal">[</code>).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">multiline:
+This setting is especially useful for multiline log messages, which can get large. The default is 10MB (10485760).</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="config-json"></a>json<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/reference/configuration/filebeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>These options make it possible for Filebeat to decode logs structured as JSON messages. Filebeat
+processes the logs line by line, so the JSON decoding only works if there is one JSON object per
+line.</p><p>The decoding happens before line filtering and multiline. You can combine JSON decoding with filtering
+and multiline if you set the <code class="literal">message_key</code> option. This can be helpful in situations where the application
+logs are wrapped in JSON objects, like it happens for example with Docker.</p><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">json:
+  message_key: log
+  keys_under_root: true
+  add_error_key: true</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="strong"><strong><code class="literal">message_key</code></strong></span>
+</span></dt><dd>
+JSON key on which to apply the line filtering and multiline settings. This key must be top level
+and its value must be string, otherwise it is ignored. If no text key is defined, the line
+filtering and multiline features cannot be used.
+</dd><dt><span class="term">
+<span class="strong"><strong><code class="literal">keys_under_root</code></strong></span>
+</span></dt><dd>
+By default, the decoded JSON is placed under a "json" key in the output document.
+If you enable this setting, the keys are copied top level in the output document. The default is false.
+</dd><dt><span class="term">
+<span class="strong"><strong><code class="literal">overwrite_keys</code></strong></span>
+</span></dt><dd>
+If <code class="literal">keys_under_root</code> and this setting are enabled, then the values from the decoded
+JSON object overwrite the fields that Filebeat normally adds (type, source, offset, etc.) in case of conflicts.
+</dd><dt><span class="term">
+<span class="strong"><strong><code class="literal">add_error_key</code></strong></span>
+</span></dt><dd>
+If this setting is enabled, Filebeat adds a "json_error" key in case of JSON
+unmarshaling errors or when a text key is defined in the configuration but cannot be used.
+</dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="multiline"></a>multiline<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/reference/configuration/filebeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Options that control how Filebeat deals with log messages that span multiple lines. Multiline messages are common in files that contain Java stack traces.</p><p>The following example shows how to configure Filebeat to handle a multiline message where the first line of the message begins with a bracket (<code class="literal">[</code>).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">multiline:
     pattern: ^\[
     negate: true
     match: after</pre></div><p>Filebeat takes all the lines that do not start with <code class="literal">[</code> and combines them with the previous line that does. For example, you could use this configuration to join the following lines of a multiline message into a single event:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">[beat-logstash-some-name-832-2015.11.28] IndexNotFoundException[no such index]
