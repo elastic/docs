@@ -750,17 +750,22 @@ version&#39;s documentation here</a>.
            
           <a href="modules-advanced-scripting.html">Text scoring in scripts
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting"></a>Scripting<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The scripting module allows to use scripts in order to evaluate custom
-expressions. For example, scripts can be used to return "script fields"
-as part of a search request, or can be used to evaluate a custom score
-for a query and so on.</p><p>The scripting module uses by default <a class="ulink" href="http://groovy-lang.org/" target="_top">groovy</a>
-(previously <a class="ulink" href="http://mvel.codehaus.org/" target="_top">mvel</a> in 1.3.x and earlier) as the
-scripting language with some extensions. Groovy is used since it is extremely
-fast and very simple to use.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h4>Groovy dynamic scripting off by default from v1.4.3</h4><p>Groovy dynamic scripting is off by default, preventing dynamic Groovy scripts
-from being accepted as part of a request or retrieved from the special
-<code class="literal">.scripts</code> index. You will still be able to use Groovy scripts stored in files
-in the <code class="literal">config/scripts/</code> directory on every node.</p><p>To convert an inline script to a file, take this simple script
-as an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting"></a>Scripting<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The scripting module enables you to use scripts to evaluate custom
+expressions. For example, you could use a script to return "script fields"
+as part of a search request or evaluate a custom score for a query.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Elasticsearch now has a built-in scripting language called <span class="emphasis"><em>Painless</em></span>
+that provides a more secure alternative for implementing
+scripts for Elasticsearch. We encourage you to try it out--
+for more information, see <a class="link" href="modules-scripting-painless.html" title="Painless Scripting Language">Painless Scripting Language</a>.</p></div></div><p>The default scripting language is <a class="ulink" href="http://groovy-lang.org/" target="_top">groovy</a>
+(<a class="ulink" href="http://mvel.codehaus.org/" target="_top">mvel</a> was the default in 1.3.x and earlier).</p><p>Additional <code class="literal">lang</code> plugins enable you to run scripts written in other languages.
+Everywhere a script can be used, you can include a <code class="literal">lang</code> parameter
+to specify the language of the script. Plugins are available for following languages:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><thead><tr><th align="left" valign="top">Language   </th><th align="left" valign="top">Sandboxed </th><th align="left" valign="top">Required plugin</th></tr></thead><tbody><tr><td align="left" valign="top"><p>groovy</p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>built-in</p></td></tr><tr><td align="left" valign="top"><p>expression</p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>built-in</p></td></tr><tr><td align="left" valign="top"><p>mustache</p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>built-in
+/painless   /yes       /built-in (module)</p></td></tr><tr><td align="left" valign="top"><p>javascript</p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p><a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/lang-javascript.html" target="_top">elasticsearch-lang-javascript</a></p></td></tr><tr><td align="left" valign="top"><p>python</p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p><a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/lang-python.html" target="_top">elasticsearch-lang-python</a></p></td></tr></tbody></table></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h4>Groovy dynamic scripting off by default from v1.4.3</h4><p>Groovy dynamic scripting is off by default. This prevents Groovy scripts
+from being accepted as part of a request or retrieved from the
+<code class="literal">.scripts</code> index. You can still use Groovy file scripts stored in
+the <code class="literal">config/scripts/</code> directory on every node.</p><p>To convert an inline script to a file-based script, save the contents
+of the <code class="literal">inline</code> field to a file with the <code class="literal">.groovy</code> extension and
+store it in the <code class="literal">config/scripts</code> directory on every data node in your
+cluster.</p><p>For example, if you have the following inline script:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
 {
     "script_fields": {
         "my_field": {
@@ -770,8 +775,7 @@ as an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprin
             }
         }
     }
-}</pre></div><p>Save the contents of the <code class="literal">inline</code> field as a file called <code class="literal">config/scripts/my_script.groovy</code>
-on every data node in the cluster:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">1 + my_var</pre></div><p>Now you can access the script by file name (without the extension):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+}</pre></div><p>Save <code class="literal">1 + my_var</code> in a file called <code class="literal">config/scripts/my_script.groovy</code>.</p><p>To use the script in a request, specify its name (without the <code class="literal">.groovy</code> extension) in the <code class="literal">file</code> field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
 {
     "script_fields": {
         "my_field": {
@@ -783,10 +787,7 @@ on every data node in the cluster:</p><div class="pre_wrapper"><pre class="progr
             }
         }
     }
-}</pre></div></div></div><p>Additional <code class="literal">lang</code> plugins are provided to allow to execute scripts in
-different languages. All places where a script can be used, a <code class="literal">lang</code> parameter
-can be provided to define the language of the script. The following are the
-supported scripting languages:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><thead><tr><th align="left" valign="top">Language   </th><th align="left" valign="top">Sandboxed </th><th align="left" valign="top">Required plugin</th></tr></thead><tbody><tr><td align="left" valign="top"><p>groovy</p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p>built-in</p></td></tr><tr><td align="left" valign="top"><p>expression</p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>built-in</p></td></tr><tr><td align="left" valign="top"><p>mustache</p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>built-in</p></td></tr><tr><td align="left" valign="top"><p>javascript</p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p><a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/lang-javascript.html" target="_top">elasticsearch-lang-javascript</a></p></td></tr><tr><td align="left" valign="top"><p>python</p></td><td align="left" valign="top"><p>no</p></td><td align="left" valign="top"><p><a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/lang-python.html" target="_top">elasticsearch-lang-python</a></p></td></tr></tbody></table></div><p>To increase security, Elasticsearch does not allow you to specify scripts for
+}</pre></div></div></div><h3><a id="_file_based_scripts"></a>File-based Scripts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To increase security, Elasticsearch does not allow you to specify scripts for
 non-sandboxed languages with a request. Instead, scripts must be placed in the
 <code class="literal">scripts</code> directory inside the configuration directory (the directory where
 elasticsearch.yml is). The default location of this <code class="literal">scripts</code> directory can be
