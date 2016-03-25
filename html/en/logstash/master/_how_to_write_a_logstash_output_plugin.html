@@ -1,0 +1,1277 @@
+
+<!DOCTYPE HTML>
+<html lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>How to write a Logstash output plugin</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference [master]" /><link rel="up" href="contributing-to-logstash.html" title="Contributing to Logstash" /><link rel="prev" href="_how_to_write_a_logstash_filter_plugin.html" title="How to write a Logstash filter plugin" /><link rel="next" href="contributing-patch-plugin.html" title="Contributing a Patch to a Logstash Plugin" /><meta name="DC.type" content="Docs/Logstash/Reference/master" />
+  
+ 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+ 	<!-- RTP tag --> 
+	<script type='text/javascript' async>
+	(function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+	 c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";
+	 g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);
+	 })(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
+	 
+	rtp('send','view');
+	rtp('get', 'campaign',true);
+	</script>
+	<!-- End of RTP tag -->
+	
+	
+ 	<link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+<link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+<link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+<link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+<link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192">
+<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#ffffff">
+<meta name="apple-mobile-web-app-title" content="Elastic">
+<meta name="application-name" content="Elastic">
+<meta name="msapplication-TileColor" content="#ffffff">
+<meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<meta name="theme-color" content="#ffffff">
+
+<!-- DC tags section -->
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" >
+<link rel="schema.DCTERMS" href="http://purl.org/dc/terms/" >
+
+
+<!-- end DC tags -->
+
+	<meta name="description" content="" />
+
+	<link rel="canonical" href="" />
+
+	<meta property="og:image" content="https://www.elastic.co/static/img/elastic-logo-200.png" />
+	
+
+
+	
+	<link type="text/css" rel="stylesheet" href="https://static-www.elastic.co/static/css/skel.css?q=320" />
+	<link type="text/css" rel="stylesheet" href="https://static-www.elastic.co/static/css/style.css?q=320" />	
+	<script src="https://static-www.elastic.co/static/js/skel.min.js?q=320"></script>
+	
+		<script type="text/javascript">form_name = "" ; cdn_url="https://static-www.elastic.co";cdn_slug = "320"</script>
+	
+	<script src="https://static-www.elastic.co/static/js/init.js?q=320"></script>
+	<script src="https://static-www.elastic.co/static/js/jquery.min.js?q=320"></script>
+	<script src="https://static-www.elastic.co/static/js/jquery.cookie.js?q=320"></script>
+	<!--<script type="text/javascript">
+	    (function() {
+	        var path = '//easy.myfonts.net/v2/js?sid=10336(font-family=Avenir+35+Light)&sid=10338(font-family=Avenir+55+Roman)&sid=10340(font-family=Avenir+85+Heavy)&sid=10344(font-family=Avenir+65+Medium)&key=nAD6PCOPrX',
+	            protocol = ('https:' == document.location.protocol ? 'https:' : 'http:'),
+	            trial = document.createElement('script');
+	        trial.type = 'text/javascript';
+	        trial.async = true;
+	        trial.src = protocol + path;
+	        var head = document.getElementsByTagName("head")[0];
+	        head.appendChild(trial);
+	    })();
+	</script>-->
+
+	
+	<link type="text/css" rel="stylesheet" href="/static/css/prettify.css" />
+	<script type="text/javascript" src="/static/js/prettify.js"></script>
+	<script type="text/javascript">
+	// $(document).ready(function(){
+		// var path_name = window.location.pathname.substring(1, window.location.pathname.length);
+		// $('.all-languages li').each(function(){
+		// 	var new_path = $('a',this).attr('href')+path_name;
+		// 	$('a',this).attr('href',new_path);
+		// })
+	// })
+	</script>
+
+
+
+<link rel="stylesheet" type="text/css" href="styles.css" />
+
+</head>
+<body >
+	<!-- Google Tag Manager -->
+	<script>dataLayer = [];</script><noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-58RLH5"
+													  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+			new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+			j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+			'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	})(window,document,'script','dataLayer','GTM-58RLH5');</script>
+	<!-- End Google Tag Manager -->
+	<!-- begin olark code -->
+	<script data-cfasync="false" type='text/javascript'>/*<![CDATA[*/window.olark||(function(c){var f=window,d=document,l=f.location.protocol=="https:"?"https:":"http:",z=c.name,r="load";var nt=function(){
+	f[z]=function(){
+	(a.s=a.s||[]).push(arguments)};var a=f[z]._={
+	},q=c.methods.length;while(q--){(function(n){f[z][n]=function(){
+	f[z]("call",n,arguments)}})(c.methods[q])}a.l=c.loader;a.i=nt;a.p={
+	0:+new Date};a.P=function(u){
+	a.p[u]=new Date-a.p[0]};function s(){
+	a.P(r);f[z](r)}f.addEventListener?f.addEventListener(r,s,false):f.attachEvent("on"+r,s);var ld=function(){function p(hd){
+	hd="head";return["<",hd,"></",hd,"><",i,' onl' + 'oad="var d=',g,";d.getElementsByTagName('head')[0].",j,"(d.",h,"('script')).",k,"='",l,"//",a.l,"'",'"',"></",i,">"].join("")}var i="body",m=d[i];if(!m){
+	return setTimeout(ld,100)}a.P(1);var j="appendChild",h="createElement",k="src",n=d[h]("div"),v=n[j](d[h](z)),b=d[h]("iframe"),g="document",e="domain",o;n.style.display="none";m.insertBefore(n,m.firstChild).id=z;b.frameBorder="0";b.id=z+"-loader";if(/MSIE[ ]+6/.test(navigator.userAgent)){
+	b.src="javascript:false"}b.allowTransparency="true";v[j](b);try{
+	b.contentWindow[g].open()}catch(w){
+	c[e]=d[e];o="javascript:var d="+g+".open();d.domain='"+d.domain+"';";b[k]=o+"void(0);"}try{
+	var t=b.contentWindow[g];t.write(p());t.close()}catch(x){
+	b[k]=o+'d.write("'+p().replace(/"/g,String.fromCharCode(92)+'"')+'");d.close();'}a.P(2)};ld()};nt()})({
+	loader: "static.olark.com/jsclient/loader0.js",name:"olark",methods:["configure","extend","declare","identify"]});
+	/* custom configuration goes here (www.olark.com/documentation) */
+	olark.identify('1356-750-10-5709');/*]]>*/</script><noscript><a href="https://www.olark.com/site/1356-750-10-5709/contact" title="Contact us" target="_blank">Questions? Feedback?</a> powered by <a href="http://www.olark.com?welcome" title="Olark live chat software">Olark live chat software</a></noscript>
+	<!-- end olark code -->
+
+
+	<div class="header-cont">
+		<div id="header-wrapper">
+			
+
+
+	<script src="/static/js/jquery.tokeninput.js?change=123"></script>
+	<link rel="stylesheet" type="text/css" href="/static/css/token-input.css">
+
+<div class="shortcuts-wrapper">
+	<div class="container">
+		<!-- Shortcuts -->
+		<nav id="shortcuts">
+			<ul class="links">
+				
+					
+					
+						
+						
+					
+					
+					
+						
+					
+					<li class="shortcut-1">
+						<a href="/downloads" id="header_downloads" >
+							<span class="txt">downloads</span>
+						</a>
+					</li>
+				
+					
+					
+						
+						
+					
+					
+					
+						
+					
+					<li class="shortcut-2">
+						<a href="/guide" id="header_guide" >
+							<span class="txt">docs</span>
+						</a>
+					</li>
+				
+					
+					
+						
+						
+					
+					
+					
+						
+					
+					<li class="shortcut-3">
+						<a href="/subscriptions" id="header_subscriptions" >
+							<span class="txt">support</span>
+						</a>
+					</li>
+				
+					
+					
+						
+						
+					
+					
+					
+						
+					
+					<li class="shortcut-4">
+						<a href="https://discuss.elastic.co" id="header_forums" target="_blank">
+							<span class="txt">forums</span>
+						</a>
+					</li>
+				
+					
+					
+						
+						
+					
+					
+					
+						
+						
+					
+					<li class="shortcut-5">
+						<a href="/contact?storm=global-header-en" id="header_contact" >
+							<span class="txt">contact</span>
+						</a>
+					</li>
+				
+			</ul>
+		</nav>
+		<div class="languages-wrapper">
+			<div class="global-language">
+				<ul class="language">
+					<!-- <li class="active-language"><a class="active" href="#">EN</a></li> -->
+					
+						<li><a href="#">EN</a></li>
+					
+				</ul>
+				<ul class="all-languages">
+					
+						
+							
+						
+						<li><a href="/">English</a></li>
+					
+						
+							
+						
+						<li><a href="/fr/">French</a></li>
+					
+						
+							
+						
+						<li><a href="/de/">German</a></li>
+					
+						
+							
+						
+						<li><a href="/jp/">Japanese</a></li>
+					
+						
+							
+						
+						<li><a href="/kr/">Korean</a></li>
+					
+				</ul>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="container w100">
+	<div class="row 0%">
+		<div class="12u">
+			
+
+<section class="first-container desktop-main-nav">
+	<div class="row 0%">
+		<div class="11u 6u(small) 6u(xsmall)">
+			<div id="elastic">
+				<h1>
+					<a href="/">
+						<div id="elastic-logo">
+						<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0" viewBox="-155 383.3 687.5 235.7" xml:space="preserve" enable-background="new -155 383.3 687.5 235.7"><path fill="#FFFFFF" d="M81.6 506.8c0-19.8-12.3-37.2-30.8-43.9 0.8-4.2 1.2-8.4 1.2-12.7 0-36.9-30-66.9-66.8-66.9 -21.6 0-41.6 10.3-54.2 27.7 -6.2-4.8-13.8-7.4-21.7-7.4 -19.6 0-35.5 15.9-35.5 35.5 0 4.3 0.8 8.5 2.2 12.4 -18.4 6.6-31 24.3-31 44 0 19.9 12.4 37.3 30.9 44 -0.8 4.1-1.2 8.4-1.2 12.7 0 36.8 29.9 66.7 66.7 66.7 21.6 0 41.6-10.4 54.1-27.8 6.2 4.9 13.8 7.6 21.7 7.6 19.6 0 35.5-15.9 35.5-35.5 0-4.3-0.8-8.5-2.2-12.4C68.9 544.2 81.6 526.5 81.6 506.8"/><path fill="#FED10A" d="M-62 484.8l51.8 23.6L42 462.6c0.8-3.8 1.1-7.5 1.1-11.5 0-32.2-26.2-58.4-58.4-58.4 -19.3 0-37.2 9.5-48.1 25.4l-8.7 45.1L-62 484.8z"/><path fill="#24BBB1" d="M-115.6 539.6c-0.8 3.8-1.1 7.7-1.1 11.7 0 32.3 26.3 58.5 58.6 58.5 19.4 0 37.5-9.6 48.4-25.6l8.6-44.9 -11.5-22 -52-23.7L-115.6 539.6z"/><path fill="#EF5098" d="M-115.9 450l35.5 8.4 7.8-40.3c-4.8-3.7-10.8-5.7-17-5.7 -15.4 0-28 12.5-28 28C-117.6 443.7-117 447-115.9 450"/><path fill="#17A8E0" d="M-119 458.5c-15.8 5.2-26.9 20.4-26.9 37.1 0 16.3 10.1 30.8 25.2 36.6l49.8-45 -9.1-19.5L-119 458.5z"/><path fill="#93C83E" d="M-0.7 584.2c4.9 3.7 10.8 5.8 16.9 5.8 15.4 0 28-12.5 28-28 0-3.4-0.6-6.7-1.7-9.7L7.1 544 -0.7 584.2z"/><path fill="#0779A1" d="M6.5 534.7l39 9.1c15.9-5.2 26.9-20.4 26.9-37.2 0-16.2-10.1-30.8-25.2-36.5l-51 44.7L6.5 534.7z"/><path d="M175.8 548.8l4.7-0.5 0.3 9.6c-12.4 1.7-23 2.6-31.8 2.6 -11.7 0-20-3.4-24.9-10.2s-7.3-17.4-7.3-31.7c0-28.6 11.4-42.9 34.1-42.9 11 0 19.2 3.1 24.6 9.2s8.1 15.8 8.1 28.9l-0.7 9.3h-53.8c0 9 1.6 15.7 4.9 20 3.3 4.3 8.9 6.5 17 6.5C159.2 549.8 167.4 549.5 175.8 548.8zM171.4 513.5c0-10-1.6-17.1-4.8-21.2 -3.2-4.1-8.4-6.2-15.6-6.2s-12.7 2.2-16.3 6.5c-3.6 4.3-5.5 11.3-5.6 20.9H171.4z"/><path d="M200.6 559V442h12.2v117H200.6z"/><path d="M289.9 502.1v40.1c0 4.1 10.1 4.9 10.1 4.9l-0.6 10.8c-8.6 0-15.7 0.7-20-3.4 -9.8 4.3-19.5 6.1-29.3 6.1 -7.5 0-13.2-2.1-17.1-6.4 -3.9-4.2-5.9-10.3-5.9-18.3 0-7.9 2-13.8 6-17.5 4-3.7 10.3-6.1 18.9-6.9l25.6-2.4v-7c0-5.5-1.2-9.5-3.6-11.9 -2.4-2.4-5.7-3.6-9.8-3.6h-32.1v-10.8h31.3c9.2 0 15.9 2.1 20.1 6.4C287.8 486.4 289.9 493.1 289.9 502.1zM239.7 535.3c0 10 4.1 15 12.4 15 7.4 0 14.7-1.2 21.8-3.7l3.7-1.3v-26.9l-24.1 2.3c-4.9 0.4-8.4 1.8-10.6 4.2C240.7 527.3 239.7 530.8 239.7 535.3z"/><path d="M337.6 486.7c-11.8 0-17.8 4.1-17.8 12.4 0 3.8 1.4 6.5 4.1 8.1s8.9 3.2 18.6 4.9c9.7 1.7 16.5 4 20.5 7.1 4 3 6 8.7 6 17.1 0 8.4-2.7 14.5-8.1 18.4 -5.4 3.9-13.2 5.9-23.6 5.9 -6.7 0-29.2-2.5-29.2-2.5l0.7-10.6c12.9 1.2 22.3 2.2 28.6 2.2 6.3 0 11.1-1 14.4-3s5-5.4 5-10.1 -1.4-7.9-4.2-9.6c-2.8-1.7-9-3.3-18.6-4.8s-16.4-3.7-20.4-6.7c-4-2.9-6-8.4-6-16.3 0-7.9 2.8-13.8 8.4-17.6 5.6-3.8 12.6-5.7 20.9-5.7 6.6 0 29.6 1.7 29.6 1.7v10.7C354.4 487.6 344.5 486.7 337.6 486.7z"/><path d="M428 488.1h-25.9v39c0 9.3 0.7 15.5 2 18.4 1.4 2.9 4.6 4.4 9.7 4.4l14.5-1 0.8 10.1c-7.3 1.2-12.8 1.8-16.6 1.8 -8.5 0-14.3-2.1-17.6-6.2s-4.9-12-4.9-23.6v-42.9h-11.6v-10.6H390v-25h12.1v24.9H428V488.1z"/><path d="M445 459v-14.1h12.2v14.2L445 459 445 459zM445 559v-81.5h12.2V559H445z"/><path d="M510.2 475.8c3.6 0 9.7 0.7 18.3 2l3.9 0.5 -0.5 9.9c-8.7-1-15.1-1.5-19.2-1.5 -9.2 0-15.5 2.2-18.8 6.6s-5 12.6-5 24.5c0 11.9 1.5 20.2 4.6 24.9 3.1 4.7 9.5 7 19.3 7l19.2-1.5 0.5 10.1c-10.1 1.5-17.7 2.3-22.7 2.3 -12.7 0-21.5-3.3-26.3-9.8s-7.3-17.5-7.3-33 2.6-26.4 7.8-32.6C489.3 479 498 475.8 510.2 475.8z"/></svg>
+						</div>
+					</a>
+				</h1>
+			</div>
+			<nav id="nav">
+				<ul>
+					
+					<li>
+						
+							
+						
+						<a href="/products" id="nav_products"   >Products</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/products/elasticsearch" id="nav_elasticsearch" >elasticsearch</a></li>								
+							
+								<li><a href="/cloud" id="nav_elasticsearch_as_a_service" >elasticsearch as a service</a></li>								
+							
+								<li><a href="/products/logstash" id="nav_logstash" >logstash</a></li>								
+							
+								<li><a href="/products/kibana" id="nav_kibana" >kibana</a></li>								
+							
+								<li><a href="/products/beats" id="nav_beats" >beats</a></li>								
+							
+								<li><a href="/products/watcher" id="nav_watcher" >watcher</a></li>								
+							
+								<li><a href="/products/shield" id="nav_shield" >shield</a></li>								
+							
+								<li><a href="/products/marvel" id="nav_marvel" >marvel</a></li>								
+							
+								<li><a href="/products/graph" id="nav_graph" >graph</a></li>								
+							
+								<li><a href="/products/hadoop" id="nav_hadoop" >hadoop</a></li>								
+							
+								<li><a href="/downloads" id="nav_downloads" >downloads</a></li>								
+								
+						</ul>							
+					</li>
+					
+					<li>
+						
+							
+						
+						<a href="/cloud" id="nav_cloud"   >Cloud</a>
+						
+						<ul class="dropdown">
+								
+						</ul>							
+					</li>
+					
+					<li>
+						
+							
+						
+						<a href="/subscriptions" id="nav_subscriptions"   >Subscriptions</a>
+						
+						<ul class="dropdown">
+								
+						</ul>							
+					</li>
+					
+					<li>
+						
+							
+						
+						<a href="/learn" id="nav_learn"   >Learn</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/guide" id="nav_guide" >docs</a></li>								
+							
+								<li><a href="/videos" id="nav_videos" >videos</a></li>								
+							
+								<li><a href="/training" id="nav_training" >training</a></li>								
+							
+								<li><a href="/services" id="nav_services" >services</a></li>								
+							
+								<li><a href="/blog" id="nav_learn_blog" >blog</a></li>								
+							
+								<li><a href="/elasticon" id="nav_learn_elasticon" >elastic{ON}</a></li>								
+								
+						</ul>							
+					</li>
+					
+					<li>
+						
+							
+						
+						<a href="/community" id="nav_community"   >Community</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/community/meetups" id="nav_meetups" >meetups</a></li>								
+							
+								<li><a href="https://discuss.elastic.co" id="nav_forums" target="_blank">forums</a></li>								
+							
+								<li><a href="/community/codeofconduct" id="nav_codeofconduct" >code of conduct</a></li>								
+								
+						</ul>							
+					</li>
+					
+					<li>
+						
+							
+						
+						<a href="/use-cases" id="nav_usecases"   >Use Cases</a>
+						
+						<ul class="dropdown">
+								
+						</ul>							
+					</li>
+					
+					<li>
+						
+							
+						
+						<a href="/blog" id="nav_blog"   >Blog</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/blog/category/news" id="blog_news" >News</a></li>								
+							
+								<li><a href="/blog/category/engineering" id="blog_engineering" >Engineering</a></li>								
+							
+								<li><a href="/blog/category/user-stories" id="blog_user-stories" >User Stories</a></li>								
+							
+								<li><a href="/blog/category/releases" id="blog_releases" >Releases</a></li>								
+							
+								<li><a href="/blog/archive" id="blog_archive" >Archive</a></li>								
+								
+						</ul>							
+					</li>
+					
+					<li>
+						
+							
+						
+						<a href="/about" id="nav_about"   >About</a>
+						
+						<ul class="dropdown">
+							
+								<li><a href="/about/leadership" id="nav_leadership" >leadership</a></li>								
+							
+								<li><a href="/about/board" id="nav_board" >board of directors</a></li>								
+							
+								<li><a href="/about/careers" id="nav_careers" >careers</a></li>								
+							
+								<li><a href="/about/partners" id="nav_partners" >partners</a></li>								
+							
+								<li><a href="/about/press" id="nav_press" >press</a></li>								
+								
+						</ul>							
+					</li>
+					
+				</ul>
+			</nav>			
+			<!-- Searchbar Input box -->
+			 <!-- <form method="get" action="/search" name="searchForm" class="header-search-form" id="searchMobileFrm">
+			   <input type="text" id="search-header-autocomplete" name="q" class="form-control global-input" placeholder="elastic{search}">
+			</form>
+			<div class="mobile-auto-complete"></div> -->  
+		</div>
+		<div class="1u 6u(small) 6u(xsmall)">
+			<div id="searchbar">
+				<a href="#" class="button icon"></a>
+			</div>
+			<!-- <div class="nav-auto-complete"></div> -->
+		</div>
+	</div>
+</section>
+<div class="mobile-menu-wrapper">
+	<div class="row 0%">
+		<div class="8u 6u(small) 6u(xsmall)">
+			<div id="elastic">
+				<h1>
+					<a href="/">
+						<div id="elastic-logo">
+						<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0" viewBox="-155 383.3 687.5 235.7" xml:space="preserve" enable-background="new -155 383.3 687.5 235.7"><path fill="#FFFFFF" d="M81.6 506.8c0-19.8-12.3-37.2-30.8-43.9 0.8-4.2 1.2-8.4 1.2-12.7 0-36.9-30-66.9-66.8-66.9 -21.6 0-41.6 10.3-54.2 27.7 -6.2-4.8-13.8-7.4-21.7-7.4 -19.6 0-35.5 15.9-35.5 35.5 0 4.3 0.8 8.5 2.2 12.4 -18.4 6.6-31 24.3-31 44 0 19.9 12.4 37.3 30.9 44 -0.8 4.1-1.2 8.4-1.2 12.7 0 36.8 29.9 66.7 66.7 66.7 21.6 0 41.6-10.4 54.1-27.8 6.2 4.9 13.8 7.6 21.7 7.6 19.6 0 35.5-15.9 35.5-35.5 0-4.3-0.8-8.5-2.2-12.4C68.9 544.2 81.6 526.5 81.6 506.8"/><path fill="#FED10A" d="M-62 484.8l51.8 23.6L42 462.6c0.8-3.8 1.1-7.5 1.1-11.5 0-32.2-26.2-58.4-58.4-58.4 -19.3 0-37.2 9.5-48.1 25.4l-8.7 45.1L-62 484.8z"/><path fill="#24BBB1" d="M-115.6 539.6c-0.8 3.8-1.1 7.7-1.1 11.7 0 32.3 26.3 58.5 58.6 58.5 19.4 0 37.5-9.6 48.4-25.6l8.6-44.9 -11.5-22 -52-23.7L-115.6 539.6z"/><path fill="#EF5098" d="M-115.9 450l35.5 8.4 7.8-40.3c-4.8-3.7-10.8-5.7-17-5.7 -15.4 0-28 12.5-28 28C-117.6 443.7-117 447-115.9 450"/><path fill="#17A8E0" d="M-119 458.5c-15.8 5.2-26.9 20.4-26.9 37.1 0 16.3 10.1 30.8 25.2 36.6l49.8-45 -9.1-19.5L-119 458.5z"/><path fill="#93C83E" d="M-0.7 584.2c4.9 3.7 10.8 5.8 16.9 5.8 15.4 0 28-12.5 28-28 0-3.4-0.6-6.7-1.7-9.7L7.1 544 -0.7 584.2z"/><path fill="#0779A1" d="M6.5 534.7l39 9.1c15.9-5.2 26.9-20.4 26.9-37.2 0-16.2-10.1-30.8-25.2-36.5l-51 44.7L6.5 534.7z"/><path d="M175.8 548.8l4.7-0.5 0.3 9.6c-12.4 1.7-23 2.6-31.8 2.6 -11.7 0-20-3.4-24.9-10.2s-7.3-17.4-7.3-31.7c0-28.6 11.4-42.9 34.1-42.9 11 0 19.2 3.1 24.6 9.2s8.1 15.8 8.1 28.9l-0.7 9.3h-53.8c0 9 1.6 15.7 4.9 20 3.3 4.3 8.9 6.5 17 6.5C159.2 549.8 167.4 549.5 175.8 548.8zM171.4 513.5c0-10-1.6-17.1-4.8-21.2 -3.2-4.1-8.4-6.2-15.6-6.2s-12.7 2.2-16.3 6.5c-3.6 4.3-5.5 11.3-5.6 20.9H171.4z"/><path d="M200.6 559V442h12.2v117H200.6z"/><path d="M289.9 502.1v40.1c0 4.1 10.1 4.9 10.1 4.9l-0.6 10.8c-8.6 0-15.7 0.7-20-3.4 -9.8 4.3-19.5 6.1-29.3 6.1 -7.5 0-13.2-2.1-17.1-6.4 -3.9-4.2-5.9-10.3-5.9-18.3 0-7.9 2-13.8 6-17.5 4-3.7 10.3-6.1 18.9-6.9l25.6-2.4v-7c0-5.5-1.2-9.5-3.6-11.9 -2.4-2.4-5.7-3.6-9.8-3.6h-32.1v-10.8h31.3c9.2 0 15.9 2.1 20.1 6.4C287.8 486.4 289.9 493.1 289.9 502.1zM239.7 535.3c0 10 4.1 15 12.4 15 7.4 0 14.7-1.2 21.8-3.7l3.7-1.3v-26.9l-24.1 2.3c-4.9 0.4-8.4 1.8-10.6 4.2C240.7 527.3 239.7 530.8 239.7 535.3z"/><path d="M337.6 486.7c-11.8 0-17.8 4.1-17.8 12.4 0 3.8 1.4 6.5 4.1 8.1s8.9 3.2 18.6 4.9c9.7 1.7 16.5 4 20.5 7.1 4 3 6 8.7 6 17.1 0 8.4-2.7 14.5-8.1 18.4 -5.4 3.9-13.2 5.9-23.6 5.9 -6.7 0-29.2-2.5-29.2-2.5l0.7-10.6c12.9 1.2 22.3 2.2 28.6 2.2 6.3 0 11.1-1 14.4-3s5-5.4 5-10.1 -1.4-7.9-4.2-9.6c-2.8-1.7-9-3.3-18.6-4.8s-16.4-3.7-20.4-6.7c-4-2.9-6-8.4-6-16.3 0-7.9 2.8-13.8 8.4-17.6 5.6-3.8 12.6-5.7 20.9-5.7 6.6 0 29.6 1.7 29.6 1.7v10.7C354.4 487.6 344.5 486.7 337.6 486.7z"/><path d="M428 488.1h-25.9v39c0 9.3 0.7 15.5 2 18.4 1.4 2.9 4.6 4.4 9.7 4.4l14.5-1 0.8 10.1c-7.3 1.2-12.8 1.8-16.6 1.8 -8.5 0-14.3-2.1-17.6-6.2s-4.9-12-4.9-23.6v-42.9h-11.6v-10.6H390v-25h12.1v24.9H428V488.1z"/><path d="M445 459v-14.1h12.2v14.2L445 459 445 459zM445 559v-81.5h12.2V559H445z"/><path d="M510.2 475.8c3.6 0 9.7 0.7 18.3 2l3.9 0.5 -0.5 9.9c-8.7-1-15.1-1.5-19.2-1.5 -9.2 0-15.5 2.2-18.8 6.6s-5 12.6-5 24.5c0 11.9 1.5 20.2 4.6 24.9 3.1 4.7 9.5 7 19.3 7l19.2-1.5 0.5 10.1c-10.1 1.5-17.7 2.3-22.7 2.3 -12.7 0-21.5-3.3-26.3-9.8s-7.3-17.5-7.3-33 2.6-26.4 7.8-32.6C489.3 479 498 475.8 510.2 475.8z"/></svg>
+						</div>
+					</a>
+				</h1>
+			</div>
+		</div>
+		<div class="4u 6u(small) 6u(xsmall) text-right">
+			<!-- <div class="mobile-menu-wrapper"> -->
+				<ul class="m-shortcuts">
+					
+					<li><a href="#" class="m-search" id="header-search"></a></li>
+					
+					<li><a href="/guide" class="m-docs" id="mobile-docs"></a></li>
+					
+					<li><a href="/contact" class="m-contact" id="mobile-contact"></a></li>
+					
+				</ul>	
+				<nav class="nav-menu">
+					<div class="menu-button">
+						<span></span>
+					</div>
+					<div class="nav-menu-list-wrap">
+						<div class="nav-menu-list">
+							
+								<h3><a href="/products" id="nav_products" >Products</a></h3>
+
+								
+								<ul>
+									
+									
+										
+									
+									<li><a href="/products/elasticsearch" id="nav_elasticsearch" >elasticsearch</a></li>
+									
+									
+										
+									
+									<li><a href="/cloud" id="nav_elasticsearch_as_a_service" >elasticsearch as a service</a></li>
+									
+									
+										
+									
+									<li><a href="/products/logstash" id="nav_logstash" >logstash</a></li>
+									
+									
+										
+									
+									<li><a href="/products/kibana" id="nav_kibana" >kibana</a></li>
+									
+									
+										
+									
+									<li><a href="/products/beats" id="nav_beats" >beats</a></li>
+									
+									
+										
+									
+									<li><a href="/products/watcher" id="nav_watcher" >watcher</a></li>
+									
+									
+										
+									
+									<li><a href="/products/shield" id="nav_shield" >shield</a></li>
+									
+									
+										
+									
+									<li><a href="/products/marvel" id="nav_marvel" >marvel</a></li>
+									
+									
+										
+									
+									<li><a href="/products/graph" id="nav_graph" >graph</a></li>
+									
+									
+										
+									
+									<li><a href="/products/hadoop" id="nav_hadoop" >hadoop</a></li>
+									
+									
+										
+									
+									<li><a href="/downloads" id="nav_downloads" >downloads</a></li>
+									
+								</ul>
+								
+							
+								<h3><a href="/cloud" id="nav_cloud" >Cloud</a></h3>
+
+								
+							
+								<h3><a href="/subscriptions" id="nav_subscriptions" >Subscriptions</a></h3>
+
+								
+							
+								<h3><a href="/learn" id="nav_learn" >Learn</a></h3>
+
+								
+								<ul>
+									
+									
+										
+									
+									<li><a href="/guide" id="nav_guide" >docs</a></li>
+									
+									
+										
+									
+									<li><a href="/videos" id="nav_videos" >videos</a></li>
+									
+									
+										
+									
+									<li><a href="/training" id="nav_training" >training</a></li>
+									
+									
+										
+									
+									<li><a href="/services" id="nav_services" >services</a></li>
+									
+									
+										
+									
+									<li><a href="/blog" id="nav_learn_blog" >blog</a></li>
+									
+									
+										
+									
+									<li><a href="/elasticon" id="nav_learn_elasticon" >elastic{ON}</a></li>
+									
+								</ul>
+								
+							
+								<h3><a href="/community" id="nav_community" >Community</a></h3>
+
+								
+								<ul>
+									
+									
+										
+									
+									<li><a href="/community/meetups" id="nav_meetups" >meetups</a></li>
+									
+									
+										
+									
+									<li><a href="https://discuss.elastic.co" id="nav_forums" target="_blank">forums</a></li>
+									
+									
+										
+									
+									<li><a href="/community/codeofconduct" id="nav_codeofconduct" >code of conduct</a></li>
+									
+								</ul>
+								
+							
+								<h3><a href="/use-cases" id="nav_usecases" >Use Cases</a></h3>
+
+								
+							
+								<h3><a href="/blog" id="nav_blog" >Blog</a></h3>
+
+								
+								<ul>
+									
+									
+										
+									
+									<li><a href="/blog/category/news" id="blog_news" >News</a></li>
+									
+									
+										
+									
+									<li><a href="/blog/category/engineering" id="blog_engineering" >Engineering</a></li>
+									
+									
+										
+									
+									<li><a href="/blog/category/user-stories" id="blog_user-stories" >User Stories</a></li>
+									
+									
+										
+									
+									<li><a href="/blog/category/releases" id="blog_releases" >Releases</a></li>
+									
+									
+										
+									
+									<li><a href="/blog/archive" id="blog_archive" >Archive</a></li>
+									
+								</ul>
+								
+							
+								<h3><a href="/about" id="nav_about" >About</a></h3>
+
+								
+								<ul>
+									
+									
+										
+									
+									<li><a href="/about/leadership" id="nav_leadership" >leadership</a></li>
+									
+									
+										
+									
+									<li><a href="/about/board" id="nav_board" >board of directors</a></li>
+									
+									
+										
+									
+									<li><a href="/about/careers" id="nav_careers" >careers</a></li>
+									
+									
+										
+									
+									<li><a href="/about/partners" id="nav_partners" >partners</a></li>
+									
+									
+										
+									
+									<li><a href="/about/press" id="nav_press" >press</a></li>
+									
+								</ul>
+								
+							
+						</div>
+					</div>
+				</nav>
+			<!-- </div> -->
+		</div>
+	</div>
+</div>
+<!-- Mobile Menu -->
+
+
+		</div>
+	</div>
+</div>
+<div class="header-search-wrapper">	
+	<div class="container">
+		<div class="big-search">
+			<i class="big-search-icon"></i>
+			<form method="get" action="/search" autocomplete="on" name="searchForm" id="searchfrm">
+				<ul class="tags-wrapper">
+					<li class="search-field"><input type="text" class="form-control global-input" id="autocomplete" name="q"></li>
+				</ul>
+			</form>
+			<a href="#" class="header-search-cancel"></a>
+		</div>
+		<div class="nav-auto-complete"></div>
+	</div>
+</div>
+<style>	
+	
+	
+		.m-shortcuts li a.m-search {
+			background: url("https://static-www.elastic.co/assets/blt174b13be89ff803c/m-search-icon.png?q=320") no-repeat scroll center center rgba(0, 0, 0, 0);
+			background-size: contain;}
+	
+		.m-shortcuts li a.m-docs {
+			background: url("https://static-www.elastic.co/assets/blt5ba03f594a7d610a/m-guide-icon.png?q=320") no-repeat scroll center center rgba(0, 0, 0, 0);
+			background-size: contain;}
+	
+		.m-shortcuts li a.m-contact {
+			background: url("https://static-www.elastic.co/assets/blt38c3e853c4b1174d/m-contact-icon.png?q=320") no-repeat scroll center center rgba(0, 0, 0, 0);
+			background-size: contain;}
+		
+</style>
+		</div>
+	</div>
+  	<div id="content">
+  		
+	  			
+            <div id="pageheader">
+    <div class="container">
+        <header>
+            <h1><a href="/learn" title="Learn">Learn</a> |</h1>
+            <h2><a href="/guide" title="Docs">Docs</a></h2>
+        </header>
+    </div>
+</div>
+<section id="guide">
+
+            <!-- start body -->
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="contributing-to-logstash.html">Contributing to Logstash</a></span> » <span class="breadcrumb-node">How to write a Logstash output plugin</span></div><div class="navheader"><span class="prev"><a href="_how_to_write_a_logstash_filter_plugin.html">
+              « 
+              How to write a Logstash filter plugin</a>
+           
+        </span><span class="next">
+           
+          <a href="contributing-patch-plugin.html">Contributing a Patch to a Logstash Plugin
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_how_to_write_a_logstash_output_plugin"></a>How to write a Logstash output plugin<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To develop a new output for Logstash, you build a self-contained Ruby gem
+whose source code lives in its own GitHub repository. The Ruby gem can then be
+hosted and shared on RubyGems.org. You can use the example output
+implementation as a starting point. (If you’re unfamiliar with
+Ruby, you can find an excellent quickstart guide at
+<a class="ulink" href="https://www.ruby-lang.org/en/documentation/quickstart/" target="_top">https://www.ruby-lang.org/en/documentation/quickstart/</a>.)</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>As of Logstash 1.5, all plugins are self-contained Ruby gems. This change
+makes it possible to develop and release plugins separately. In previous
+versions, plugins were part of the core Logstash distribution.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_get_started_4"></a>Get started<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Let’s step through creating an output plugin using the <a class="ulink" href="https://github.com/logstash-plugins/logstash-output-example/" target="_top">example output plugin</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_create_a_github_repo_for_your_new_plugin_4"></a>Create a GitHub repo for your new plugin<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Each Logstash plugin lives in its own GitHub repository. To create a new repository for your plugin:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Log in to GitHub.
+</li><li class="listitem">
+Click the <span class="strong"><strong>Repositories</strong></span> tab. You’ll see a list of other repositories you’ve forked or contributed to.
+</li><li class="listitem">
+Click the green <span class="strong"><strong>New</strong></span> button in the upper right.
+</li><li class="listitem"><p class="simpara">
+Specify the following settings for your new repo:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong"><strong>Repository name</strong></span> — a unique name of the form <code class="literal">logstash-output-pluginname</code>.
+</li><li class="listitem">
+<span class="strong"><strong>Public or Private</strong></span> — your choice, but the repository must be Public if you want to submit it as an official plugin.
+</li><li class="listitem">
+<span class="strong"><strong>Initialize this repository with a README</strong></span> — enables you to immediately clone the repository to your computer.
+</li></ul></div></li><li class="listitem">
+Click <span class="strong"><strong>Create Repository</strong></span>.
+</li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_copy_the_output_code"></a>Copy the output code<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Build your local repository:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+<span class="strong"><strong>Clone your plugin.</strong></span> Replace <code class="literal">GITUSERNAME</code> with your github username, and
+<code class="literal">MYPLUGINNAME</code> with your plugin name.
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+<code class="literal">git clone https://github.com/GITUSERNAME/logstash-</code><code class="literal">output-MYPLUGINNAME.git</code>
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+alternately, via ssh: <code class="literal">git clone git@github.com:GITUSERNAME/logstash</code><code class="literal">-output-MYPLUGINNAME.git</code>
+</li></ul></div></li><li class="listitem">
+<code class="literal">cd logstash-output-MYPLUGINNAME</code>
+</li></ul></div></li><li class="listitem"><p class="simpara">
+</p><p class="simpara">You don’t want to include the example .git directory or its contents, so delete
+it before you copy the example.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">cd /tmp</code>
+</li><li class="listitem">
+<code class="literal">git clone https://github.com/logstash-plugins/logstash</code><code class="literal">-output-example.git</code>
+</li><li class="listitem">
+<code class="literal">cd logstash-output-example</code>
+</li><li class="listitem">
+<code class="literal">rm -rf .git</code>
+</li><li class="listitem">
+<code class="literal">cp -R * /path/to/logstash-output-mypluginname/</code>
+</li></ul></div></li><li class="listitem"><p class="simpara">
+<span class="strong"><strong>Rename the following files to match the name of your plugin.</strong></span>
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">logstash-output-example.gemspec</code>
+</li><li class="listitem">
+<code class="literal">example.rb</code>
+</li><li class="listitem"><p class="simpara">
+<code class="literal">example_spec.rb</code>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">cd /path/to/logstash-output-mypluginname
+mv logstash-output-example.gemspec logstash-output-mypluginname.gemspec
+mv lib/logstash/outputs/example.rb lib/logstash/outputs/mypluginname.rb
+mv spec/outputs/example_spec.rb spec/outputs/mypluginname_spec.rb</pre></div></li></ul></div></li></ol></div><p>Your file structure should look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">$ tree logstash-output-mypluginname
+├── Gemfile
+├── LICENSE
+├── README.md
+├── Rakefile
+├── lib
+│   └── logstash
+│       └── outputs
+│           └── mypluginname.rb
+├── logstash-output-mypluginname.gemspec
+└── spec
+    └── outputs
+        └── mypluginname_spec.rb</pre></div><p>For more information about the Ruby gem file structure and an excellent
+walkthrough of the Ruby gem creation process, see
+<a class="ulink" href="http://timelessrepo.com/making-ruby-gems" target="_top">http://timelessrepo.com/making-ruby-gems</a></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_see_what_your_plugin_looks_like_4"></a>See what your plugin looks like<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Before we dive into the details, open up the plugin file in your favorite text editor
+and take a look.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># encoding: utf-8
+require "logstash/outputs/base"
+require "logstash/namespace"
+
+# Add any asciidoc formatted documentation here
+# An example output that does nothing.
+class LogStash::Outputs::Example &lt; LogStash::Outputs::Base
+  config_name "example"
+
+  # If declared logstash will only allow a single instance of this plugin
+  # to exist, regardless of how many CPU cores logstash detects. This is best
+  # used in cases like the File output, where separate threads writing to a single
+  # File would only cause problems.
+  #
+  # respond_to? check needed for backwards compatibility with &lt; 2.2 Logstashes
+  declare_workers_not_supported! if self.respond_to?(:declare_workers_not_supported!)
+
+  # If declared threadsafe logstash will only ever create one
+  # instance of this plugin per pipeline.
+  # That instance will be shared across all workers
+  # It is up to the plugin author to correctly write concurrent code!
+  #
+  # respond_to? check needed for backwards compatibility with &lt; 2.2 Logstashes
+  declare_threadsafe! if self.respond_to?(:declare_threadsafe!)
+
+  public
+  def register
+    # Does the same thing as declare_workers_not_supported!
+    # But works in &lt; 2.2 logstashes
+    # workers_not_supported
+  end # def register
+
+  public
+  # Takes an array of events
+  def multi_receive(events)
+  end # def multi_receive
+
+  public
+  # Needed for logstash &lt; 2.2 compatibility
+  # Takes events one at a time
+  def receive(event)
+  end # def receive
+
+end # class LogStash::Outputs::Example</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_coding_output_plugins"></a>Coding output plugins<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Now let’s take a line-by-line look at the example plugin.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_encoding_literal_4"></a><code class="literal">encoding</code><a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It seems like a small thing, but remember to specify the encoding at the
+beginning of your plugin code:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh"># encoding: utf-8</pre></div><p>Logstash depends on things being in UTF-8, so we put this here to tell the Ruby
+interpreter that we’re going to be using the UTF-8 encoding.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_require_literal_statements_4"></a><code class="literal">require</code> Statements<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Logstash output plugins require parent classes defined in
+<code class="literal">logstash/outputs/base</code> and logstash/namespace:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">require "logstash/outputs/base"
+require "logstash/namespace"</pre></div><p>Of course, the plugin you build may depend on other code, or even gems. Just put
+them here along with these Logstash dependencies.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_plugin_body_4"></a>Plugin Body<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Let’s go through the various elements of the plugin itself.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_inline_documentation_4"></a>Inline Documentation<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Logstash provides infrastructure to automatically generate documentation for
+plugins. We use the asciidoc format to write documentation so <span class="emphasis"><em>any</em></span> comments in
+the source code will be first converted into asciidoc and then into html.</p><p>All plugin documentation is then rendered and placed in
+<a class="ulink" href="http://www.elasticsearch.org/guide/en/logstash/current/index.html" target="_top">the Logstash section of the Elasticsearch Guide</a>.</p><p>The inline documentation can include code blocks and config examples! To include
+Ruby code, use the asciidoc <code class="literal">[source,ruby]</code> directive:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt"># Using hashes:
+# [source,ruby]
+# ----------------------------------
+# match =&gt; {
+#  "field1" =&gt; "value1"
+#  "field2" =&gt; "value2"
+#  ...
+# }
+# ----------------------------------</pre></div><p>In the rendered HTML document, this block would look like:</p><div class="informalexample"><p>Using hashes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">match =&gt; {
+  "field1" =&gt; "value1"
+  "field2" =&gt; "value2"
+  ...
+ }</pre></div></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>For more asciidoc formatting tips, see the excellent reference at
+<a class="ulink" href="https://github.com/elastic/docs#asciidoc-guide" target="_top">https://github.com/elastic/docs#asciidoc-guide</a></p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_class_literal_declaration_4"></a><code class="literal">class</code> Declaration<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The output plugin class should be a subclass of
+<code class="literal">LogStash::Outputs::Base</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">class LogStash::Outputs::Example &lt; LogStash::Outputs::Base</pre></div><p>The class name should closely mirror the plugin name, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">LogStash::Outputs::Example</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_config_name_literal_4"></a><code class="literal">config_name</code><a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">  config_name "example"</pre></div><p>This is the name your plugin will call inside the output configuration
+block.</p><p>If you set <code class="literal">config_name "example"</code> in your plugin code,
+the corresponding Logstash configuration block would need to look like this:</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_configuration_parameters_4"></a>Configuration Parameters<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">  config :variable_name, :validate =&gt; :variable_type, :default =&gt; "Default value", :required =&gt; boolean, :deprecated =&gt; boolean, :obsolete =&gt; string</pre></div><p>The configuration, or <code class="literal">config</code> section allows you to define as many (or as few)
+parameters as are needed to enable Logstash to process events.</p><p>There are several configuration attributes:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">:validate</code> - allows you to enforce passing a particular data type to Logstash
+for this configuration option, such as <code class="literal">:string</code>, <code class="literal">:password</code>, <code class="literal">:boolean</code>,
+<code class="literal">:number</code>, <code class="literal">:array</code>, <code class="literal">:hash</code>, <code class="literal">:path</code> (a file-system path), <code class="literal">:codec</code> (since
+1.2.0), <code class="literal">:bytes</code> (starting in 1.5.0).  Note that this also works as a coercion
+in that if I specify "true" for boolean (even though technically a string), it
+will become a valid boolean in the config.  This coercion works for the
+<code class="literal">:number</code> type as well where "1.2" becomes a float and "22" is an integer.
+</li><li class="listitem">
+<code class="literal">:default</code> - lets you specify a default value for a parameter
+</li><li class="listitem">
+<code class="literal">:required</code> - whether or not this parameter is mandatory (a Boolean <code class="literal">true</code> or
+<code class="literal">false</code>)
+</li><li class="listitem">
+<code class="literal">:deprecated</code> - informational (also a Boolean <code class="literal">true</code> or <code class="literal">false</code>)
+</li><li class="listitem">
+<code class="literal">:obsolete</code> - used to declare that a given setting has been removed and is no longer functioning. The idea is to provide an informed upgrade path to users who are still using a now-removed setting.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_plugin_methods_4"></a>Plugin Methods<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Logstash outputs must implement the <code class="literal">register</code> and <code class="literal">multi_receive</code> methods.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_register_literal_method_4"></a><code class="literal">register</code> Method<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">  public
+  def register
+  end # def register</pre></div><p>The Logstash <code class="literal">register</code> method is like an <code class="literal">initialize</code> method. It was originally
+created to enforce having <code class="literal">super</code> called, preventing headaches for newbies.
+(Note: It may go away in favor of <code class="literal">initialize</code>, in conjunction with some
+enforced testing to ensure <code class="literal">super</code> is called.)</p><p><code class="literal">public</code> means the method can be called anywhere, not just within the class.
+This is the default behavior for methods in Ruby, but it is specified explicitly
+here anyway.</p><p>You can also assign instance variables here (variables prepended by <code class="literal">@</code>).
+Configuration variables are now in scope as instance variables, like <code class="literal">@message</code></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_building_the_plugin_4"></a>Building the Plugin<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>At this point in the process you have coded your plugin and are ready to build
+a Ruby Gem from it.  The following steps will help you complete the process.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_external_dependencies_4"></a>External dependencies<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A <code class="literal">require</code> statement in Ruby is used to include necessary code. In some cases
+your plugin may require additional files.  For example, the collectd plugin
+<a class="ulink" href="https://github.com/logstash-plugins/logstash-codec-collectd/blob/master/lib/logstash/codecs/collectd.rb#L148" target="_top">uses</a>
+the <code class="literal">types.db</code> file provided by collectd.  In the main directory of your plugin,
+a file called <code class="literal">vendor.json</code> is where these files are described.</p><p>The <code class="literal">vendor.json</code> file contains an array of JSON objects, each describing a file
+dependency. This example comes from the
+<a class="ulink" href="https://github.com/logstash-plugins/logstash-codec-collectd/blob/master/vendor.json" target="_top">collectd</a>
+codec plugin:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">[{
+        "sha1": "a90fe6cc53b76b7bdd56dc57950d90787cb9c96e",
+        "url": "http://collectd.org/files/collectd-5.4.0.tar.gz",
+        "files": [ "/src/types.db" ]
+}]</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">sha1</code> is the sha1 signature used to verify the integrity of the file
+referenced by <code class="literal">url</code>.
+</li><li class="listitem">
+<code class="literal">url</code> is the address from where Logstash will download the file.
+</li><li class="listitem">
+<code class="literal">files</code> is an optional array of files to extract from the downloaded file.
+Note that while tar archives can use absolute or relative paths, treat them as
+absolute in this array.  If <code class="literal">files</code> is not present, all files will be
+uncompressed and extracted into the vendor directory.
+</li></ul></div><p>Another example of the <code class="literal">vendor.json</code> file is the
+<a class="ulink" href="https://github.com/logstash-plugins/logstash-filter-geoip/blob/master/vendor.json" target="_top"><code class="literal">geoip</code> filter</a></p><p>The process used to download these dependencies is to call <code class="literal">rake vendor</code>.  This
+will be discussed further in the testing section of this document.</p><p>Another kind of external dependency is on jar files.  This will be described
+in the "Add a <code class="literal">gemspec</code> file" section.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_add_a_gemfile_4"></a>Add a Gemfile<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Gemfiles allow Ruby’s Bundler to maintain the dependencies for your plugin.
+Currently, all we’ll need is the Logstash gem, for testing, but if you require
+other gems, you should add them in here.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>See <a class="ulink" href="http://bundler.io/gemfile.html" target="_top">Bundler’s Gemfile page</a> for more details.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">source 'https://rubygems.org'
+gemspec
+gem "logstash", :github =&gt; "elastic/logstash", :branch =&gt; "2.2"</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_add_a_literal_gemspec_literal_file_4"></a>Add a <code class="literal">gemspec</code> file<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Gemspecs define the Ruby gem which will be built and contain your plugin.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>More information can be found on the
+<a class="ulink" href="http://guides.rubygems.org/specification-reference/" target="_top">Rubygems Specification page</a>.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">Gem::Specification.new do |s|
+  s.name = 'logstash-output-example'
+  s.version = '0.1.0'
+  s.licenses = ['Apache License (2.0)']
+  s.summary = "This output does x, y, z in Logstash"
+  s.description = "This gem is a logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/logstash-plugin install gemname. This gem is not a stand-alone program"
+  s.authors = ["Elastic"]
+  s.email = 'info@elastic.co'
+  s.homepage = "http://www.elastic.co/guide/en/logstash/current/index.html"
+  s.require_paths = ["lib"]
+
+  # Files
+  s.files = Dir['lib/**/*','spec/**/*','vendor/**/*','*.gemspec','*.md','CONTRIBUTORS','Gemfile','LICENSE','NOTICE.TXT']
+   # Tests
+  s.test_files = s.files.grep(%r{^(test|spec|features)/})
+
+  # Special flag to let us know this is actually a logstash plugin
+  s.metadata = { "logstash_plugin" =&gt; "true", "logstash_group" =&gt; "output" }
+
+  # Gem dependencies
+  s.add_runtime_dependency 'logstash-core', '&gt;= 1.4.0', '&lt; 2.0.0'
+  s.add_development_dependency 'logstash-devutils'
+end</pre></div><p>It is appropriate to change these values to fit your plugin. In particular,
+<code class="literal">s.name</code> and <code class="literal">s.summary</code> shoud reflect your plugin’s name and behavior.</p><p><code class="literal">s.licenses</code> and <code class="literal">s.version</code> are also important and will come into play when
+you are ready to publish your plugin.</p><p>Logstash and all its plugins are licensed under
+<a class="ulink" href="https://github.com/elastic/logstash/blob/master/LICENSE" target="_top">Apache License, version 2 ("ALv2")</a>.
+If you make your plugin publicly available via <a class="ulink" href="http://rubygems.org" target="_top">RubyGems.org</a>,
+please make sure to have this line in your gemspec:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">s.licenses = ['Apache License (2.0)']</code>
+</li></ul></div><p>The gem version, designated by <code class="literal">s.version</code>, helps track changes to plugins over
+time.</p><p><span class="strong"><strong>Version messaging from Logstash</strong></span></p><p>If you start Logstash with the <code class="literal">--verbose</code> flag, you will see messages like
+these to indicate the relative maturity indicated by the plugin version number:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+<span class="strong"><strong>0.1.x</strong></span>
+</p><pre class="screen">This plugin isn't well supported by the community and likely has no maintainer.</pre></li><li class="listitem"><p class="simpara">
+<span class="strong"><strong>0.9.x</strong></span>
+</p><pre class="screen">This plugin should work but would benefit from use by folks like you. Please let us know if you find bugs or have suggestions on how to improve this plugin.</pre></li><li class="listitem">
+<span class="strong"><strong>1.x.x</strong></span>
+You will no longer see a message indicating potential code immaturity when a
+plugin reaches version 1.0.0
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_runtime_amp_development_dependencies_4"></a>Runtime &amp; Development Dependencies<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>At the bottom of the <code class="literal">gemspec</code> file is a section with a comment:
+<code class="literal">Gem dependencies</code>.  This is where any other needed gems must be mentioned. If
+a gem is necessary for your plugin to function, it is a runtime dependency. If
+a gem are only used for testing, then it would be a development dependency.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You can also have versioning requirements for your dependencies—including other
+Logstash plugins:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">  # Gem dependencies
+  s.add_runtime_dependency 'logstash-core', '&gt;= 1.4.0', '&lt; 2.0.0'
+  s.add_development_dependency 'logstash-devutils'</pre></div><p>This gemspec has a runtime dependency on the core Logstash gem and requires that
+it have a version number greater than or equal to version 1.4.0 <code class="literal">'&gt;= 1.4.0'</code>,
+and less than version 2.0 <code class="literal">'&lt; 2.0.0'</code>.</p></div></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>All plugins have a runtime dependency on the <code class="literal">logstash</code> core gem, and
+a development dependency on <code class="literal">logstash-devutils</code>.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_jar_dependencies_4"></a>Jar dependencies<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In some cases, such as the
+<a class="ulink" href="https://github.com/logstash-plugins/logstash-output-elasticsearch/blob/master/logstash-output-elasticsearch.gemspec#L22-L23" target="_top">Elasticsearch output plugin</a>,
+your code may depend on a jar file.  In cases such as this, the dependency is
+added in the gemspec file in this manner:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">  # Jar dependencies
+  s.requirements &lt;&lt; "jar 'org.elasticsearch:elasticsearch', '1.4.0'"
+  s.add_runtime_dependency 'jar-dependencies'</pre></div><p>With these both defined, the install process will search for the required jar
+file at <a class="ulink" href="http://mvnrepository.com" target="_top">http://mvnrepository.com</a> and download the specified version.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_add_tests_4"></a>Add Tests<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Logstash loves tests. Lots of tests. If you’re using your new output
+plugin in a production environment, you’ll want to have some tests to ensure you
+are not breaking any existing functionality.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>A full exposition on RSpec is outside the scope of this document. Learn
+more about RSpec at <a class="ulink" href="http://rspec.info" target="_top">http://rspec.info</a></p></div></div><p>For help learning about tests and testing, look in the
+<code class="literal">spec/outputs/</code> directory of several other similar
+plugins.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_clone_and_test_4"></a>Clone and test!<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Now let’s start with a fresh clone of the plugin, build it and run the tests.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+<span class="strong"><strong>Clone your plugin into a temporary location</strong></span> Replace <code class="literal">GITUSERNAME</code> with
+your github username, and <code class="literal">MYPLUGINNAME</code> with your plugin name.
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem"><p class="simpara">
+<code class="literal">git clone https://github.com/GITUSERNAME/logstash-</code><code class="literal">output-MYPLUGINNAME.git</code>
+</p><div class="itemizedlist"><ul class="itemizedlist" type="square"><li class="listitem">
+alternately, via ssh: <code class="literal">git clone git@github.com:GITUSERNAME/logstash-</code><code class="literal">output-MYPLUGINNAME.git</code>
+</li></ul></div></li><li class="listitem">
+<code class="literal">cd logstash-output-MYPLUGINNAME</code>
+</li></ul></div></li></ul></div><p>Then, you’ll need to install your plugins dependencies with bundler:</p><pre class="screen">bundle install</pre><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If your plugin has an external file dependency described in <code class="literal">vendor.json</code>, you
+must download that dependency before running or testing.  You can do this by
+running:</p><pre class="screen">rake vendor</pre></div></div><p>And finally, run the tests:</p><pre class="screen">bundle exec rspec</pre><p>You should see a success message, which looks something like this:</p><pre class="screen">Finished in 0.034 seconds
+1 example, 0 failures</pre><p>Hooray! You’re almost there! (Unless you saw failures… you should fix those
+  first).</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_building_and_testing_4"></a>Building and Testing<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Now you’re ready to build your (well-tested) plugin into a Ruby gem.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_build_4"></a>Build<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You already have all the necessary ingredients, so let’s go ahead and run the
+build command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">gem build logstash-output-example.gemspec</pre></div><p>That’s it!  Your gem should be built and be in the same path with the name</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">logstash-output-mypluginname-0.1.0.gem</pre></div><p>The <code class="literal">s.version</code> number from your gemspec file will provide the gem version, in
+this case, <code class="literal">0.1.0</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_test_installation_4"></a>Test installation<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You should test install your plugin into a clean installation of Logstash.
+Download the latest version from the
+<a class="ulink" href="https://www.elastic.co/downloads/logstash/" target="_top">Logstash downloads page</a>.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Untar and cd in to the directory:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -O https://download.elastic.co/logstash/logstash/logstash-2.2.2.tar.gz
+tar xzvf logstash-2.2.2.tar.gz
+cd logstash-2.2.2</pre></div></li><li class="listitem"><p class="simpara">
+Using the plugin tool, we can install the gem we just built.
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+Replace <code class="literal">/my/logstash/plugins</code> with  the correct path to the gem for your
+environment, and <code class="literal">0.1.0</code> with the correct version number from the gemspec file.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/logstash-plugin install /my/logstash/plugins/logstash-output-example/logstash-output-example-0.1.0.gem</pre></div></li><li class="listitem"><p class="simpara">
+After running this, you should see feedback from Logstash that it was
+successfully installed:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">validating /my/logstash/plugins/logstash-output-example/logstash-output-example-0.1.0.gem &gt;= 0
+Valid logstash plugin. Continuing...
+Successfully installed 'logstash-output-example' with version '0.1.0'</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>You can also use the Logstash plugin tool to determine which plugins are
+currently available:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/logstash-plugin list</pre></div><p>Depending on what you have installed, you might see a short or long list of
+plugins: inputs, codecs, filters and outputs.</p></div></div></li></ul></div></li><li class="listitem">
+Now try running Logstash with a simple configuration passed in via the
+command-line, using the <code class="literal">-e</code> flag.
+</li></ol></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Your results will depend on what your output plugin is designed to do.</p></div></div><p>Congratulations! You’ve built, deployed and successfully run a Logstash
+output.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_submitting_your_plugin_to_ulink_url_http_rubygems_org_rubygems_org_ulink_and_ulink_url_https_github_com_logstash_plugins_logstash_plugins_ulink_4"></a>Submitting your plugin to <a class="ulink" href="http://rubygems.org" target="_top">RubyGems.org</a> and <a class="ulink" href="https://github.com/logstash-plugins" target="_top">logstash-plugins</a><a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Logstash uses <a class="ulink" href="http://rubygems.org" target="_top">RubyGems.org</a> as its repository for all plugin
+artifacts. Once you have developed your new plugin, you can make it available to
+Logstash users by simply publishing it to RubyGems.org.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_licensing_4"></a>Licensing<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Logstash and all its plugins are licensed under
+<a class="ulink" href="https://github.com/elasticsearch/logstash/blob/master/LICENSE" target="_top">Apache License, version 2 ("ALv2")</a>.
+If you make your plugin publicly available via <a class="ulink" href="http://rubygems.org" target="_top">RubyGems.org</a>,
+please make sure to have this line in your gemspec:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">s.licenses = ['Apache License (2.0)']</code>
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_publishing_to_ulink_url_http_rubygems_org_rubygems_org_ulink_4"></a>Publishing to <a class="ulink" href="http://rubygems.org" target="_top">RubyGems.org</a><a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To begin, you’ll need an account on RubyGems.org</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="ulink" href="https://rubygems.org/sign_up" target="_top">Sign-up for a RubyGems account</a>.
+</li></ul></div><p>After creating an account,
+<a class="ulink" href="http://guides.rubygems.org/rubygems-org-api/#api-authorization" target="_top">obtain</a> an API
+key from RubyGems.org. By default, RubyGems uses the file <code class="literal">~/.gem/credentials</code>
+to store your API key. These credentials will be used to publish the gem.
+Replace <code class="literal">username</code> and <code class="literal">password</code> with the credentials you created at
+RubyGems.org:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -u username:password https://rubygems.org/api/v1/api_key.yaml &gt; ~/.gem/credentials
+chmod 0600 ~/.gem/credentials</pre></div><p>Before proceeding, make sure you have the right version in your gemspec file
+and commit your changes.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">s.version = '0.1.0'</code>
+</li></ul></div><p>To publish version 0.1.0 of your new logstash gem:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bundle install
+bundle exec rake vendor
+bundle exec rspec
+bundle exec rake publish_gem</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Executing <code class="literal">rake publish_gem</code>:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Reads the version from the gemspec file (<code class="literal">s.version = '0.1.0'</code>)
+</li><li class="listitem">
+Checks in your local repository if a tag exists for that version. If the tag
+already exists, it aborts the process. Otherwise, it creates a new version tag
+in your local repository.
+</li><li class="listitem">
+Builds the gem
+</li><li class="listitem">
+Publishes the gem to RubyGems.org
+</li></ol></div></div></div><p>That’s it! Your plugin is published! Logstash users can now install your plugin
+by running:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/logstash-plugin install logstash-output-mypluginname</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_contributing_your_source_code_to_ulink_url_https_github_com_logstash_plugins_logstash_plugins_ulink_4"></a>Contributing your source code to <a class="ulink" href="https://github.com/logstash-plugins" target="_top">logstash-plugins</a><a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It is not required to contribute your source code to
+<a class="ulink" href="https://github.com/logstash-plugins" target="_top">logstash-plugins</a> github organization, but
+we always welcome new plugins!</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_benefits_4"></a>Benefits<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Some of the many benefits of having your plugin in the logstash-plugins
+repository are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong"><strong>Discovery</strong></span> Your plugin will appear in the <a class="ulink" href="http://www.elasticsearch.org/guide/en/logstash/current/index.html" target="_top">Logstash Reference</a>,
+where Logstash users look first for plugins and documentation.
+</li><li class="listitem">
+<span class="strong"><strong>Documentation</strong></span> Your plugin documentation will automatically be added to the
+ <a class="ulink" href="http://www.elasticsearch.org/guide/en/logstash/current/index.html" target="_top">Logstash Reference</a>.
+</li><li class="listitem">
+<span class="strong"><strong>Testing</strong></span> With our testing infrastructure, your plugin will be continuously
+tested against current and future releases of Logstash.  As a result, users will
+have the assurance that if incompatibilities arise, they will be quickly
+discovered and corrected.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_acceptance_guidelines_4"></a>Acceptance Guidelines<a href="https://github.com/elastic/logstash/edit/master/docs/static/include/pluginbody.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong"><strong>Code Review</strong></span> Your plugin must be reviewed by members of the community for
+coherence, quality, readability, stability and security.
+</li><li class="listitem">
+<span class="strong"><strong>Tests</strong></span> Your plugin must contain tests to be accepted.  These tests are also
+subject to code review for scope and completeness.  It’s ok if you don’t know
+how to write tests — we will guide you. We are working on publishing a guide to
+creating tests for Logstash which will make it easier.  In the meantime, you can
+refer to <a class="ulink" href="http://betterspecs.org/" target="_top">http://betterspecs.org/</a> for examples.
+</li></ul></div><p>To begin migrating your plugin to logstash-plugins, simply create a new
+<a class="ulink" href="https://github.com/elasticsearch/logstash/issues" target="_top">issue</a> in
+the Logstash repository. When the acceptance guidelines are completed, we will
+facilitate the move to the logstash-plugins organization using the recommended
+<a class="ulink" href="https://help.github.com/articles/transferring-a-repository/#transferring-from-a-user-to-an-organization" target="_top">github process</a>.</p></div></div><div class="navfooter"><span class="prev"><a href="_how_to_write_a_logstash_filter_plugin.html">
+              « 
+              How to write a Logstash filter plugin</a>
+           
+        </span><span class="next">
+           
+          <a href="contributing-patch-plugin.html">Contributing a Patch to a Logstash Plugin
+               »
+            </a></span></div>
+<!-- end body -->
+
+            </section>
+
+            <div id="rtpcontainer"
+        >
+	<h3>Top Videos</h3>
+	<ul class="lists">
+		<li><a href="https://www.elastic.co/webinars/get-started-with-elasticsearch/?baymax=default&elektra=docs&storm=top-video">Getting Started</a></li>
+		<li><a href="http://www.elastic.co/webinars/elasticsearch-performance-optimization-tale-two-tickets/?elektra=docs">Scaling</a></li>
+		<li><a href="http://www.elastic.co/webinars/shield-securing-your-data-in-elasticsearch/?elektra=docs">Security</a></li>
+	</ul>
+</div>
+
+
+	  	
+
+
+
+<script src="//app-lon02.marketo.com/js/forms2/js/forms2.min.js"></script>
+	<!-- subscribe-newsletter -->
+	<div id="subscribe-newsletter">
+		<div class="container">
+			<div class="row">
+				<div class="12u">
+					<div class="subscribe-wrapper" id="rtp-newsletter">
+						<header>
+							<h3>Subscribe to our newsletter</h3>
+						</header>
+						<div class="subscribe-form">
+							<form id="mktoForm_1398" class="container"></form>
+							<div class="form_thanks hide">
+								
+									<p>Thanks for subscribing! We'll keep you updated with new releases.</p>
+								
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+  	<!-- Footer -->
+	<div id="footer-wrapper">
+		<section id="footer" class="container">
+			<div class="row">
+				<div class="12u">
+					<!-- Copyright -->
+					<div id="copyright">
+	<p>
+		© 2016. All Rights Reserved - Elasticsearch
+	</p>
+	<ul class="links">
+		<li>Elasticsearch is a trademark of Elasticsearch BV, registered in the U.S. and in other countries</li>
+		<li><a href="/legal/trademarks" id="footer_trademarks">Trademarks</a></li>
+		<li><a href="/legal/terms-of-use" id="footer_terms">Terms</a></li>
+		<li><a href="/legal/privacy-policy" id="footer_privacy">Privacy</a></li>
+<li><a href="/brand" id="footer_brand">Brand</a></li>
+	</ul>
+	<p>
+		Apache, Apache Lucene, Apache Hadoop, Hadoop, HDFS and the yellow elephant logo are trademarks of the <a href="http://www.apache.org/" target="_blank">Apache Software Foundation</a> in the United States and/or other&nbsp;countries.
+	</p>
+</div>
+<!--<div class="row">
+{replace4}
+</div>-->
+				</div>
+			</div>					
+		</section>
+	</div>
+			
+	<!-- Social Media -->
+	<div id="socialmedia-wrapper">
+		<section id="socialmedia" class="container">
+			<!-- social icons -->
+			<div id="social">
+				<ul class="links">
+					
+						<li class="facebook grayscale"><a href="http://www.facebook.com/elastic.co" target="_blank" id="footer_facebook"></a></li>
+					
+						<li class="twitter grayscale"><a href="https://www.twitter.com/elastic" target="_blank" id="footer_twitter"></a></li>
+					
+						<li class="linkedin grayscale"><a href="https://www.linkedin.com/company/elastic-co" target="_blank" id="footer_linkedin"></a></li>
+					
+						<li class="xing grayscale"><a href="https://www.xing.com/companies/elastic.co" target="_blank" id="footer_xing"></a></li>
+					
+						<li class="youtube grayscale"><a href="https://www.youtube.com/user/elasticsearch" target="_blank" id="footer_youtube"></a></li>
+					
+				</ul>
+			</div>
+		</section>
+	</div>
+
+
+<style type="text/css">
+	
+		.facebook{background:url("https://static-www.elastic.co/assets/bltda40eebd7c7cae9a/facebook.svg?q=320") no-repeat;}		
+	
+		.twitter{background:url("https://static-www.elastic.co/assets/bltfd3b1511512f4632/twitter.svg?q=320") no-repeat;}		
+	
+		.linkedin{background:url("https://static-www.elastic.co/assets/blt6b4f6f8d6b96f814/linkedin.svg?q=320") no-repeat;}		
+	
+		.xing{background:url("https://static-www.elastic.co/assets/blta76b2ae2b2f10a98/xing.svg?q=320") no-repeat;}		
+	
+		.youtube{background:url("https://static-www.elastic.co/assets/blt5761648c9581fb53/youtube.svg?q=320") no-repeat;}		
+	
+</style>
+
+<script>
+MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form){
+	form.onSuccess(function(form){
+		$('#mktoForm_1398').css('display','none');
+		$('#subscribe-newsletter header').hide();
+		$('#mktoForm_1398').siblings('.form_thanks').removeClass('hide')
+		dataLayer.push({'event': 'mktoFormSubmit'});
+	    return false;
+  	});
+});
+</script>	
+
+  	</div>
+  	<!-- <div class="preloader">
+    	<div class="status"></div>
+	</div> -->
+  	<style></style>
+   	<script type="text/javascript">
+	var suggestionsUrl = "https://search.elastic.co/suggest";	
+</script>
+<script src="https://static-www.elastic.co/static/js/jquery.autocomplete.js?q=320"></script>
+<script src="https://static-www.elastic.co/static/js/script.js?q=320"></script>
+
+
+   	
+   	
+   	
+   	<script type="application/ld+json">
+	
+		
+	
+	{
+	  	"@context": "http://schema.org",
+	  	"@type": "Organization",
+	  	"name" : "Elastic",
+	  	"url": "https://www.elastic.co/",
+	  	"logo": "https://www.elastic.co/static/img/elastic-logo-200.png",
+		"sameAs" : [ "https://www.facebook.com/elastic.co",
+			"https://twitter.com/elastic",
+			"https://plus.google.com/105178019064686397293",
+			"https://www.youtube.com/user/elasticsearch",
+			"https://www.linkedin.com/company/elasticsearch"
+		],
+	  	"potentialAction": {
+	    	"@type": "SearchAction",
+	    	"target": "https://www.elastic.co/search?q={query_string}",
+	    	"query-input": "required name=query_string"
+	  	}
+	}
+</script>	
+
+            <script type="text/javascript" src="docs.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script type='text/javascript' src='https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js'></script>
+
+            </body>
+        
+
