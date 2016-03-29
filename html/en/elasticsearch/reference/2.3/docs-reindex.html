@@ -750,8 +750,8 @@ version&#39;s documentation here</a>.
            
           <a href="docs-termvectors.html">Term Vectors
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-reindex"></a>Reindex API<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><code class="literal">_reindex</code>'s most basic form just copies documents from one index to another.
-This will copy documents from <code class="literal">twitter</code> into <code class="literal">new_twitter</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-reindex"></a>Reindex API<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The most basic form of <code class="literal">_reindex</code> just copies documents from one index to another.
+This will copy documents from the <code class="literal">twitter</code> index into the <code class="literal">new_twitter</code> index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex
 {
   "source": {
     "index": "twitter"
@@ -766,12 +766,13 @@ This will copy documents from <code class="literal">twitter</code> into <code cl
   "version_conflicts": 0,
   "failures" : [ ],
   "created": 12344
-}</pre></div><p>Just like <code class="literal">_update_by_query</code>, <code class="literal">_reindex</code> gets a snapshot of the source index
-but its target must be a <span class="strong"><strong>different</strong></span> index so version conflicts are unlikely.
-The <code class="literal">dest</code> element can be configured like the index API to control optimistic
-concurrency control. Just leaving out <code class="literal">version_type</code> (as above) or setting it
-to <code class="literal">internal</code> will cause Elasticsearch to blindly dump documents into the
-target, overwriting any that happen to have the same type and id:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex
+}</pre></div><p>Just like <a class="link" href="docs-update-by-query.html" title="Update By Query API"><code class="literal">_update_by_query</code></a>, <code class="literal">_reindex</code> gets a
+snapshot of the source index but its target must be a <span class="strong"><strong>different</strong></span> index so
+version conflicts are unlikely. The <code class="literal">dest</code> element can be configured like the
+index API to control optimistic concurrency control. Just leaving out
+<code class="literal">version_type</code> (as above) or setting it to <code class="literal">internal</code> will cause Elasticsearch
+to blindly dump documents into the target, overwriting any that happen to have
+the same type and id:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex
 {
   "source": {
     "index": "twitter"
@@ -815,7 +816,7 @@ count them by settings <code class="literal">"conflicts": "proceed"</code> in th
     "op_type": "create"
   }
 }</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/5.json"></div><p>You can limit the documents by adding a type to the <code class="literal">source</code> or by adding a
-query. This will only copy <code class="literal">tweet`s made by `kimchy</code> into <code class="literal">new_twitter</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex
+query. This will only copy <code class="literal">tweet</code>'s made by <code class="literal">kimchy</code> into <code class="literal">new_twitter</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex
 {
   "source": {
     "index": "twitter",
@@ -834,9 +835,8 @@ lots of sources in one request. This will copy documents from the <code class="l
 <code class="literal">post</code> types in the <code class="literal">twitter</code> and <code class="literal">blog</code> index. It’d include the <code class="literal">post</code> type in
 the <code class="literal">twitter</code> index and the <code class="literal">tweet</code> type in the <code class="literal">blog</code> index. If you want to be
 more specific you’ll need to use the <code class="literal">query</code>. It also makes no effort to handle
-id collisions. The target index will remain valid but it’s not easy to predict
-which document will survive because the iteration order isn’t well defined.
-Just avoid that situation, ok?</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex
+ID collisions. The target index will remain valid but it’s not easy to predict
+which document will survive because the iteration order isn’t well defined.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex
 {
   "source": {
     "index": ["twitter", "blog"],
@@ -884,15 +884,23 @@ document’s metadata. This example bumps the version of the source document:</p
     "internal": "if (ctx._source.foo == 'bar') {ctx._version++; ctx._source.remove('foo')}"
   }
 }</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/10.json"></div><p>Think of the possibilities! Just be careful! With great power…. You can
-change:
- * "_id"
- * "_type"
- * "_index"
- * "_version"
- * "_routing"
- * "_parent"
- * "_timestamp"
- * "_ttl"</p><p>Setting <code class="literal">_version</code> to <code class="literal">null</code> or clearing it from the <code class="literal">ctx</code> map is just like not
+change:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">_id</code>
+</li><li class="listitem">
+<code class="literal">_type</code>
+</li><li class="listitem">
+<code class="literal">_index</code>
+</li><li class="listitem">
+<code class="literal">_version</code>
+</li><li class="listitem">
+<code class="literal">_routing</code>
+</li><li class="listitem">
+<code class="literal">_parent</code>
+</li><li class="listitem">
+<code class="literal">_timestamp</code>
+</li><li class="listitem">
+<code class="literal">_ttl</code>
+</li></ul></div><p>Setting <code class="literal">_version</code> to <code class="literal">null</code> or clearing it from the <code class="literal">ctx</code> map is just like not
 sending the version in an indexing request. It will cause that document to be
 overwritten in the target index regardless of the version on the target or the
 version type you use in the <code class="literal">_reindex</code> request.</p><p>By default if <code class="literal">_reindex</code> sees a document with routing then the routing is
@@ -937,7 +945,8 @@ the status of the task. For now, once the request is finished the task is gone
 and the only place to look for the ultimate result of the task is in the
 Elasticsearch log file. This will be fixed soon.</p><p><code class="literal">consistency</code> controls how many copies of a shard must respond to each write
 request. <code class="literal">timeout</code> controls how long each write request waits for unavailable
-shards to become available. Both work exactly how they work in the</p><p><code class="literal">timeout</code> controls how long each batch waits for the target shard to become</p><h3><a id="_response_body_2"></a>Response body<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The JSON response looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+shards to become available. Both work exactly how they work in the
+<a class="link" href="docs-bulk.html" title="Bulk API">Bulk API</a>.</p><p><code class="literal">timeout</code> controls how long each batch waits for the target shard to become</p><h3><a id="_response_body_2"></a>Response body<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The JSON response looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "took" : 639,
   "updated": 0,
   "created": 123,
@@ -970,7 +979,8 @@ The number of version conflicts that reindex hit.
 Array of all indexing failures. If this is non-empty then the request aborted
 because of those failures. See <code class="literal">conflicts</code> for how to prevent version conflicts
 from aborting the operation.
-</dd></dl></div><h3><a id="docs-reindex-task-api"></a>Works with the Task API<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>While Reindex is running you can fetch their status using the</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_tasks/?pretty&amp;detailed=true&amp;actions=*reindex</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/12.json"></div><p>The responses looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+</dd></dl></div><h3><a id="docs-reindex-task-api"></a>Works with the Task API<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>While Reindex is running you can fetch their status using the
+<a class="link" href="nodes-task.html" title="Nodes Task API">Nodes Task API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_tasks/?pretty&amp;detailed=true&amp;actions=*reindex</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/12.json"></div><p>The responses looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "nodes" : {
     "r1A2WoRbTwKZ516z6NEs5A" : {
       "name" : "Tyrannus",
