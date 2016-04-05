@@ -749,21 +749,69 @@
           <a href="property-inference.html">Property Name Inference
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="field-inference"></a>Field Inference<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/asciidoc/client-concepts/high-level/inference/field-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Several places in the Elasticsearch API expect the path to a field from your original source document as a string.
-NEST allows you to use C# expressions to strongly type these field path strings.</p><p>These expressions are assigned to a type called <code class="literal">Field</code> and there are several ways to create an instance of one</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_constructor"></a>Constructor<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/asciidoc/client-concepts/high-level/inference/field-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Using the constructor directly is possible but rather involved</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var fieldString = new Field { Name = "name" };</pre></div><p>This is more cumbersome when using C# expressions since they cannot be instantiated easily</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expression&lt;Func&lt;Project, object&gt;&gt; expression = p =&gt; p.Name;
-
-var fieldExpression = Field.Create(expression);
+NEST allows you to use C# expressions to strongly type these field path strings.</p><p>These expressions are assigned to a type called <code class="literal">Field</code> and there are several ways to create an instance of one</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_constructor"></a>Constructor<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/asciidoc/client-concepts/high-level/inference/field-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Using the constructor directly is possible <span class="emphasis"><em>but</em></span> rather involved</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var fieldString = new Field { Name = "name" };
+var fieldProperty = new Field { Property = typeof(Project).GetProperty(nameof(Project.Name)) };
+Expression&lt;Func&lt;Project, object&gt;&gt; expression = p =&gt; p.Name;
+var fieldExpression = new Field { Expression = expression };
 Expect("name")
     .WhenSerializing(fieldExpression)
-    .WhenSerializing(fieldString);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_implicit_conversion_3"></a>Implicit Conversion<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/asciidoc/client-concepts/high-level/inference/field-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Therefore you can also implicitly convert strings and expressions to a <code class="literal">Field</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Field fieldString = "name";</pre></div><p>but for expressions this is <span class="emphasis"><em>still</em></span> rather involved</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expression&lt;Func&lt;Project, object&gt;&gt; expression = p =&gt; p.Name;
+    .WhenSerializing(fieldString)
+    .WhenSerializing(fieldProperty);</pre></div><p>When using the constructor and passing a value for <code class="literal">Name</code>, <code class="literal">Property</code> or <code class="literal">Expression</code>,
+<code class="literal">ComparisonValue</code> is also set on the <code class="literal">Field</code> instance; this is used when</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+determining <code class="literal">Field</code> equality
+</li><li class="listitem">
+getting the hash code for a <code class="literal">Field</code> instance
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var fieldStringWithBoostTwo = new Field { Name = "name^2" };
+
+var fieldStringWithBoostThree = new Field { Name = "name^3" };
+
+Expression&lt;Func&lt;Project, object&gt;&gt; expression = p =&gt; p.Name;
+
+var fieldExpression = new Field { Expression = expression };
+
+var fieldProperty = new Field { Property = typeof(Project).GetProperty(nameof(Project.Name)) };
+
+fieldStringWithBoostTwo.GetHashCode().Should().NotBe(0);
+
+fieldStringWithBoostThree.GetHashCode().Should().NotBe(0);
+
+fieldExpression.GetHashCode().Should().NotBe(0);
+
+fieldProperty.GetHashCode().Should().NotBe(0);
+
+fieldStringWithBoostTwo.Should().Be(fieldStringWithBoostThree); <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<a class="link" href="field-inference.html#field-name-with-boost" title="Field Names with Boost">Fields can constructed with a name that contains a boost</a>
+</p></td></tr></table></div><p>No more than one of <code class="literal">Name</code>, <code class="literal">Expression</code> or <code class="literal">Property</code> should be set (with a non-null value) when using the constructor
+to prevent ambiguity over which property should be used when resolving the path to a field that will be sent to Elasticsearch</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_implicit_conversion_3"></a>Implicit Conversion<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/asciidoc/client-concepts/high-level/inference/field-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>As you can see from the previous examples, using the constructor is rather involved and cumbersome.
+Becuase of this, you can also implicitly convert strings and expressions to a <code class="literal">Field</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Field fieldString = "name";</pre></div><p>but for expressions this is <span class="emphasis"><em>still</em></span> rather involved</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expression&lt;Func&lt;Project, object&gt;&gt; expression = p =&gt; p.Name;
 
 Field fieldExpression = expression;
 
 Expect("name")
     .WhenSerializing(fieldExpression)
-    .WhenSerializing(fieldString);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="nest-infer"></a>Using Nest.Infer<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/asciidoc/client-concepts/high-level/inference/field-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To ease creating a <code class="literal">Field</code> instance from expressions, there is a static <code class="literal">Infer</code> class you can use</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Field fieldString = "name";</pre></div><p>but for expressions this is still rather involved</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var fieldExpression = Infer.Field&lt;Project&gt;(p =&gt; p.Name);</pre></div><p>this can be even shortened even further using a <a class="ulink" href="https://msdn.microsoft.com/en-us/library/sf0df423.aspx#Anchor_0" target="_top">static import in C# 6</a> i.e.
+    .WhenSerializing(fieldString);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="field-name-with-boost"></a>Field Names with Boost<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/asciidoc/client-concepts/high-level/inference/field-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When specifying a <code class="literal">Field</code> name, the name can include a boost value; NEST will split the name and boost
+value and set the <code class="literal">Boost</code> property</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Field fieldString = "name^2";
+
+Field fieldStringConstructor = new Field { Name = "name^2" };
+
+Field fieldStringCreate = Field.Create("name^2", 3); <a id="CO15-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+
+fieldString.Name.Should().Be("name");
+
+fieldStringConstructor.Name.Should().Be("name");
+
+fieldStringCreate.Name.Should().Be("name");
+
+fieldString.Boost.Should().Be(2);
+
+fieldStringConstructor.Boost.Should().Be(2);
+
+fieldStringCreate.Boost.Should().Be(2);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+NEST will take the boost from the name
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="nest-infer"></a>Using Nest.Infer<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/asciidoc/client-concepts/high-level/inference/field-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To ease creating a <code class="literal">Field</code> instance from expressions, there is a static <code class="literal">Infer</code> class you can use</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Field fieldString = "name";</pre></div><p>but for expressions this is still rather involved</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var fieldExpression = Infer.Field&lt;Project&gt;(p =&gt; p.Name);</pre></div><p>this can be even shortened even further using a <a class="ulink" href="https://msdn.microsoft.com/en-us/library/sf0df423.aspx#Anchor_0" target="_top">static import in C# 6</a> i.e.
                         <code class="literal">using static Nest.Infer;</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">fieldExpression = Field&lt;Project&gt;(p =&gt; p.Name);</pre></div><p>Now that is much terser then our first example using the constructor!</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("name")
     .WhenSerializing(fieldString)
-    .WhenSerializing(fieldExpression);</pre></div><p>You can also specify boosts in the field using a string</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">fieldString = "name^2.1";
+    .WhenSerializing(fieldExpression);</pre></div><p>You can specify boosts in the field using a string</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">fieldString = "name^2.1";
 
 fieldString.Boost.Should().Be(2.1);</pre></div><p>As well as using <code class="literal">Nest.Infer.Field</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">fieldExpression = Field&lt;Project&gt;(p =&gt; p.Name, 2.1);
 
@@ -896,28 +944,28 @@ Pass the MemberInfo’s Name to the DefaultFieldNameInferrer which by default ca
 {
     [String(Name = "renamedIgnoresNest")]
     [JsonProperty("renamedIgnoresJsonProperty")]
-    public string RenamedOnConnectionSettings { get; set; } <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    public string RenamedOnConnectionSettings { get; set; } <a id="CO16-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
     [String(Name = "nestAtt")]
     [JsonProperty("jsonProp")]
-    public string NestAttribute { get; set; } <a id="CO14-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    public string NestAttribute { get; set; } <a id="CO16-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
 
     [JsonProperty("jsonProp")]
-    public string JsonProperty { get; set; } <a id="CO14-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    public string JsonProperty { get; set; } <a id="CO16-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
 
     [JsonProperty("dontaskme")]
-    public string AskSerializer { get; set; } <a id="CO14-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    public string AskSerializer { get; set; } <a id="CO16-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
 
-    public string DefaultFieldNameInferrer { get; set; } <a id="CO14-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+    public string DefaultFieldNameInferrer { get; set; } <a id="CO16-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Even though this property has a NEST property mapping <span class="emphasis"><em>and</em></span> a <code class="literal">JsonProperty</code> attribute, We are going to provide a hard rename for it on ConnectionSettings later that should win.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This property has both a NEST attribute and a <code class="literal">JsonProperty</code>, NEST should win.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 We should take the json property into account by itself
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This property we are going to special case in our custom serializer to resolve to ask
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 We are going to register a DefaultFieldNameInferrer on ConnectionSettings that will uppercase all properties.
 </p></td></tr></table></div><p>Here we create a custom serializer that renames any property named <code class="literal">AskSerializer</code> to <code class="literal">ask</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">class CustomSerializer : JsonNetSerializer
 {
