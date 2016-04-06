@@ -749,17 +749,17 @@
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-monitoring"></a>Configuring Monitoring</h2></div></div></div><p>You control how Monitoring collects data from an Elasticsearch cluster by configuring
  Monitoring-specific settings in the <code class="literal">elasticsearch.yml</code> configuration file on each
 node. You can add a custom index template to change the settings for the indices Monitoring
-creates to store the data collected from a cluster.</p><h3><a id="stats-export"></a>Controlling Monitoring Data Collection</h3><p>You can set the following <code class="literal">marvel.agent</code> options in a node’s <code class="literal">elasticsearch.yml</code> file to
+creates to store the data collected from a cluster.</p><h3><a id="stats-export"></a>Controlling Monitoring Data Collection</h3><p>You can set the following <code class="literal">xpack.monitoring.agent</code> options in a node’s <code class="literal">elasticsearch.yml</code> file to
 control how Monitoring data is collected from the node.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">marvel.agent.cluster.state.timeout</code>
+<code class="literal">xpack.monitoring.agent.cluster.state.timeout</code>
 </span></dt><dd>
 Sets the timeout for collecting the cluster state. Defaults to <code class="literal">10m</code>.
 </dd><dt><span class="term">
-<code class="literal">marvel.agent.cluster.stats.timeout</code>
+<code class="literal">xpack.monitoring.agent.cluster.stats.timeout</code>
 </span></dt><dd>
 Sets the timeout for collecting the cluster statistics. Defaults to <code class="literal">10m</code>.
 </dd><dt><span class="term">
-<code class="literal">marvel.agent.indices</code>
+<code class="literal">xpack.monitoring.agent.indices</code>
 </span></dt><dd><p class="simpara">
 Controls which indices Monitoring collects data from. Defaults to all indices. Specify the index names
 as a comma-separated list, for example <code class="literal">test1,test2,test3</code>. Names can include wildcards, for
@@ -767,20 +767,20 @@ example <code class="literal">test*</code>. You can explicitly include or exclud
 <code class="literal">+</code> to include the index, or <code class="literal">-</code> to exclude the index. For example, to include all indices that
 start with <code class="literal">test</code> except <code class="literal">test3</code>, you could specify <code class="literal">+test*,-test3</code>.
 </p><p class="simpara">You can update this setting through the Cluster Update Settings API.</p></dd><dt><span class="term">
-<code class="literal">marvel.agent.index.stats.timeout</code>
+<code class="literal">xpack.monitoring.agent.index.stats.timeout</code>
 </span></dt><dd>
 Sets the timeout for collecting index statistics. Defaults to <code class="literal">10m</code>.
 </dd><dt><span class="term">
-<code class="literal">marvel.agent.indices.stats.timeout</code>
+<code class="literal">xpack.monitoring.agent.indices.stats.timeout</code>
 </span></dt><dd>
 Sets the timeout for collecting total indices statistics. Defaults to <code class="literal">10m</code>.
 </dd><dt><span class="term">
-<code class="literal">marvel.agent.exporters</code> 
+<code class="literal">xpack.monitoring.agent.exporters</code> 
 </span></dt><dd><p class="simpara">
 Configures where the agent stores monitoring data. By default, the agent uses a local exporter that
 indexes monitoring data on the cluster where it is installed. Use an HTTP exporter to send data to
 a separate monitoring cluster. For more information, see <a class="link" href="configuring-monitoring.html#monitoring-cluster" title="Setting up a Separate Monitoring Cluster">Setting up a Separate Monitoring Cluster</a>.
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">marvel.agent.exporters:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">xpack.monitoring.agent.exporters:
   id1:                              # default local exporter
     type: local
 
@@ -806,33 +806,32 @@ a separate monitoring cluster. For more information, see <a class="link" href="c
 
     index:
       name:
-        time_format: &lt;string&gt;              # time format suffix for marvel indices (default: "YYYY.MM.dd")</pre></div></dd><dt><span class="term">
-<code class="literal">marvel.agent.index.recovery.active_only</code>
+        time_format: &lt;string&gt;              # time format suffix for Monitoring indices (default: "YYYY.MM.dd")</pre></div></dd><dt><span class="term">
+<code class="literal">xpack.monitoring.agent.index.recovery.active_only</code>
 </span></dt><dd>
 Controls whether or not all recoveries are collected. Set to <code class="literal">true</code> to
 collect only active recoveries. Defaults to <code class="literal">false</code>.
 </dd><dt><span class="term">
-<code class="literal">marvel.agent.index.recovery.timeout</code>
+<code class="literal">xpack.monitoring.agent.index.recovery.timeout</code>
 </span></dt><dd>
 Sets the timeout for collecting the recovery information. Defaults to <code class="literal">10m</code>.
-*
 </dd><dt><span class="term">
-<code class="literal">marvel.agent.interval</code>
+<code class="literal">xpack.monitoring.agent.interval</code>
 </span></dt><dd>
 Controls how often data samples are collected. Defaults to <code class="literal">10s</code>. Set to
 <code class="literal">-1</code> to temporarily disable data collection. You can update this setting
 through the Cluster Update Settings API.
 </dd><dt><span class="term">
-<code class="literal">marvel.history.duration</code>
-</span></dt><dd>
+<code class="literal">xpack.monitoring.history.duration</code>
+</span></dt><dd><p class="simpara">
 Sets the retention duration beyond which the indices created by a Monitoring exporter will
 be automatically deleted. Defaults to 7 days (<code class="literal">7d</code>).
-</dd></dl></div><p>This setting has a minimum value of 1 day (<code class="literal">1d</code>) to ensure that something is being monitored,
+</p><p class="simpara">This setting has a minimum value of 1 day (<code class="literal">1d</code>) to ensure that something is being monitored,
 and it cannot be disabled.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>This setting currently only impacts <code class="literal">local</code>-type exporters. Indices created using
-the <code class="literal">http</code> exporter will not be deleted automatically.</p></div></div><h3><a id="config-marvel-indices"></a>Configuring Monitoring’s Indices</h3><p>Monitoring uses an <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/indices-templates.html" target="_top">index template</a> to configure the indices used to
-store the data collected from a cluster.</p><p>You can retrieve the default template with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /_template/.marvel-es</pre></div><p>By default, the template configures one shard and one replica for the Monitoring indices.
+the <code class="literal">http</code> exporter will not be deleted automatically.</p></div></div></dd></dl></div><h3><a id="config-monitoring-indices"></a>Configuring Monitoring’s Indices</h3><p>Monitoring uses multiple <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/indices-templates.html" target="_top">index template</a> to configure the indices used to
+store the data collected from a cluster.</p><p>You can retrieve the templates with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /_template/.monitoring-*</pre></div><p>By default, the template configures one shard and one replica for the Monitoring indices.
 To override the default settings, add your own template:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-Set the <code class="literal">template</code> pattern to <code class="literal">.marvel-es-*</code>.
+Set the <code class="literal">template</code> pattern to <code class="literal">.monitoring-*</code>.
 </li><li class="listitem">
 Set the template <code class="literal">order</code> to <code class="literal">1</code>. This ensures your template is
 applied after the default template, which has an order of 0.
@@ -840,9 +839,9 @@ applied after the default template, which has an order of 0.
 Specify the <code class="literal">number_of_shards</code> and/or
 <code class="literal">number_of_replicas</code> in the <code class="literal">settings</code> section.
 </li></ol></div><p>For example, the following template increases the number of shards to five
-and the number of replicas to two.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /_template/custom_marvel
+and the number of replicas to two.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT /_template/custom_monitoring
 {
-    "template": ".marvel*",
+    "template": ".monitoring-*",
     "order": 1,
     "settings": {
         "number_of_shards": 5,
@@ -853,18 +852,18 @@ settings section. Overriding other Monitoring template settings could cause your
 Monitoring dashboards to stop working correctly.</p></div></div><h3><a id="app-config"></a>Configuring Monitoring in Kibana</h3><p>You can set the following <code class="literal">marvel</code> options in the Kibana configuration file (<code class="literal">kibana.yml</code>).
 In most cases, however, you can just rely on the defaults. For more information about modifying
 Server Properties] in the Kibana User Guide.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">marvel.max_bucket_size</code>
+<code class="literal">xpack.monitoring.max_bucket_size</code>
 </span></dt><dd>
     The number of term buckets to return out of the overall terms list when
     performing terms aggregations to retrieve index and node metrics. For more
     information about the <code class="literal">size</code> parameter, see <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/search-aggregations-bucket-terms-aggregation.html#_size" target="_top">
     Terms Aggregation</a> in the Elasticsearch Reference. Defaults to 10000.
 </dd><dt><span class="term">
-<code class="literal">marvel.min_interval_seconds</code>
+<code class="literal">xpack.monitoring.min_interval_seconds</code>
 </span></dt><dd>
     The minimum number of seconds that a time bucket in a chart can represent. Defaults to 10.
 </dd><dt><span class="term">
-<code class="literal">marvel.report_stats</code>
+<code class="literal">xpack.monitoring.report_stats</code>
 </span></dt><dd>
     Whether or not to send cluster statistics to Elastic. Reporting your cluster statistics
     helps us improve your user experience. Your data is never shared with anyone. Set to
@@ -901,25 +900,26 @@ property in the <code class="literal">kibana.yml</code> configuration file. For 
 Start Kibana by running <code class="literal">bin/kibana</code>.
 </li><li class="listitem"><p class="simpara">
 To verify your Monitoring installation, point your web browser at your Kibana host, click the App Switcher icon in the Kibana menu bar, and select Monitoring.
-</p><p class="simpara">marvel-app-switcher.jpg["Kibana App Switcher",link="images/marvel-app-switcher.jpg"]</p><p class="simpara">You should see a list of the clusters you are monitoring.</p><p class="simpara">marvel-clusters.jpg["Cluster Overview",link="images/marvel-clusters.jpg"]</p></li></ol></div><h3><a id="tribe-config"></a>Configuring a Tribe Node to Work with Monitoring</h3><p>If you connect to a cluster through a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-tribe.html" target="_top">tribe node</a>, to monitor the cluster you need to install the Monitoring agent on the tribe node as well as the nodes in the cluster. If the cluster is protected by , you also need to install and configure Security on the tribe node. For more information, see <a class="link" href="tribe-node-configuring.html" title="Tribe Nodes Security">Using Tribe Nodes with Secured Clusters</a>.</p><p>To exclude the tribe node from the monitoring data, set <code class="literal">marvel.enabled: false</code> in the tribe node’s  <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.name: tribe
-marvel.enabled: false
+</p><p class="simpara">marvel-app-switcher.jpg["Kibana App Switcher",link="images/marvel-app-switcher.jpg"]</p><p class="simpara">You should see a list of the clusters you are monitoring.</p><p class="simpara">marvel-clusters.jpg["Cluster Overview",link="images/marvel-clusters.jpg"]</p></li></ol></div><h3><a id="tribe-config"></a>Configuring a Tribe Node to Work with Monitoring</h3><p>If you connect to a cluster through a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-tribe.html" target="_top">tribe node</a>, to monitor the cluster you need to install the Monitoring agent on the tribe node as well as the nodes in the cluster. If the cluster is protected by , you also need to install and configure Security on the tribe node. For more information, see <a class="link" href="tribe-node-configuring.html" title="Tribe Nodes Security">Using Tribe Nodes with Secured Clusters</a>.</p><p>To exclude the tribe node from the monitoring data, set <code class="literal">xpack.monitoring.enabled: false</code> in the tribe node’s  <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.name: tribe
+xpack.monitoring.enabled: false
 
 tribe:
 t1:
   cluster.name: cluster1
   discovery.zen.ping.unicast.hosts: ["cluster1-node1:9300", "cluster1-node2:9300"]</pre></div><p>With this configuration, the tribe node is included in the node count displayed in the Monitoring UI,
 but is not included in the node list because it does not export any data to the monitoring cluster.</p><p>To include the tribe node in the monitoring data, enable Monitoring data collection at the tribe level:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.name: tribe
-marvel.enabled: false
+xpack.monitoring.enabled: false
 
 tribe:
   t1:
     cluster.name: cluster1
     discovery.zen.ping.unicast.hosts: ["cluster1-node1:9300", "cluster1-node2:9300"]
-    marvel.enabled: true <a id="CO33-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    marvel.agent.exporters:
-      id1:
-        type: http <a id="CO33-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-        host: ["monitoringhost:9200"]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO33-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+    xpack.monitoring
+      enabled: true <a id="CO33-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      agent.exporters:
+        id1:
+          type: http <a id="CO33-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          host: ["monitoringhost:9200"]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO33-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Enable data collection from the tribe node.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO33-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Export data via HTTP to the monitoring cluster.
