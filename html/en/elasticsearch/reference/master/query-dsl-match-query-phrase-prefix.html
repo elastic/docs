@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>position_increment_gap</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="mapping-params.html" title="Mapping parameters" /><link rel="prev" href="null-value.html" title="null_value" /><link rel="next" href="precision-step.html" title="precision_step" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Match Phrase Prefix Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="full-text-queries.html" title="Full text queries" /><link rel="prev" href="query-dsl-match-query-phrase.html" title="Match Phrase Query" /><link rel="next" href="query-dsl-multi-match-query.html" title="Multi Match Query" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -744,92 +744,37 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-params.html">Mapping parameters</a></span> » <span class="breadcrumb-node"><code class="literal">position_increment_gap</code></span></div><div class="navheader"><span class="prev"><a href="null-value.html">
+    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-link"><a href="full-text-queries.html">Full text queries</a></span> » <span class="breadcrumb-node">Match Phrase Prefix Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-match-query-phrase.html">
               « 
-              <code class="literal">null_value</code></a>
+              Match Phrase Query</a>
            
         </span><span class="next">
            
-          <a href="precision-step.html"><code class="literal">precision_step</code>
+          <a href="query-dsl-multi-match-query.html">Multi Match Query
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="position-increment-gap"></a><code class="literal">position_increment_gap</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/params/position-increment-gap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><a class="link" href="mapping-index.html" title="index">Analyzed</a> string fields take term <a class="link" href="index-options.html" title="index_options">positions</a>
-into account, in order to be able to support
-<a class="link" href="query-dsl-match-query-phrase.html" title="Match Phrase Query">proximity or phrase queries</a>.
-When indexing string fields with multiple values a "fake" gap is added between
-the values to prevent most phrase queries from matching across the values. The
-size of this gap is configured using <code class="literal">position_increment_gap</code> and defaults to
-<code class="literal">100</code>.</p><p>For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_index/groups/1
-{
-    "names": [ "John Abraham", "Lincoln Smith"]
-}
-
-GET /my_index/groups/_search
-{
-    "query": {
-        "match_phrase": {
-            "names": {
-                "query": "Abraham Lincoln" <a id="CO209-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            }
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-match-query-phrase-prefix"></a>Match Phrase Prefix Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/match-phrase-prefix-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">match_phrase_prefix</code> is the same as <code class="literal">match_phrase</code>, except that it
+allows for prefix matches on the last term in the text. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "match_phrase_prefix" : {
+        "message" : "this is a test"
+    }
+}</pre></div><p>It accepts the same parameters as the phrase type. In addition, it also
+accepts a <code class="literal">max_expansions</code> parameter that can control to how many
+prefixes the last term will be expanded. It is highly recommended to set
+it to an acceptable value to control the execution time of the query.
+For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "match_phrase_prefix" : {
+        "message" : {
+            "query" : "this is a test",
+            "max_expansions" : 10
         }
     }
-}
-
-GET /my_index/groups/_search
-{
-    "query": {
-        "match_phrase": {
-            "names": {
-                "query": "Abraham Lincoln",
-                "slop": 101 <a id="CO209-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-            }
-        }
-    }
-}</pre></div><div class="sense_widget" data-snippet="snippets/position-increment-gap/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO209-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This phrase query doesn’t match our document which is totally expected.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO209-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This phrase query matches our document, even though <code class="literal">Abraham</code> and <code class="literal">Lincoln</code>
-    are in separate strings, because <code class="literal">slop</code> &gt; <code class="literal">position_increment_gap</code>.
-</p></td></tr></table></div><p>The <code class="literal">position_increment_gap</code> can be specified in the mapping.  For instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
-{
-  "mappings": {
-    "groups": {
-      "properties": {
-        "names": {
-          "type": "text",
-          "position_increment_gap": 0 <a id="CO210-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        }
-      }
-    }
-  }
-}
-
-PUT /my_index/groups/1
-{
-    "names": [ "John Abraham", "Lincoln Smith"]
-}
-
-GET /my_index/groups/_search
-{
-    "query": {
-        "match_phrase": {
-            "names": "Abraham Lincoln" <a id="CO210-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-        }
-    }
-}</pre></div><div class="sense_widget" data-snippet="snippets/position-increment-gap/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO210-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The first term in the next array element will be 0 terms apart from the
-    last term in the previous array element.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO210-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The phrase query matches our document which is weird, but its what we asked
-    for in the mapping.
-</p></td></tr></table></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">position_increment_gap</code> setting is allowed to have different settings
-for fields of the same name in the same index.  Its value can be updated on
-existing fields using the <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a>.</p></div></div></div><div class="navfooter"><span class="prev"><a href="null-value.html">
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-match-query-phrase.html">
               « 
-              <code class="literal">null_value</code></a>
+              Match Phrase Query</a>
            
         </span><span class="next">
            
-          <a href="precision-step.html"><code class="literal">precision_step</code>
+          <a href="query-dsl-multi-match-query.html">Multi Match Query
                »
             </a></span></div>
 <!-- end body -->
