@@ -856,28 +856,36 @@ In most cases, however, you can just rely on the defaults. For more information 
 Server Properties] in the Kibana User Guide.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">marvel.max_bucket_size</code>
 </span></dt><dd>
-    The number of term buckets to return out of the overall terms list when
-    performing terms aggregations to retrieve index and node metrics. For more
-    information about the <code class="literal">size</code> parameter, see <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.3/search-aggregations-bucket-terms-aggregation.html#_size" target="_top">
-    Terms Aggregation</a> in the Elasticsearch Reference. Defaults to 10000.
+The number of term buckets to return out of the overall terms list when
+performing terms aggregations to retrieve index and node metrics. For more
+information about the <code class="literal">size</code> parameter, see <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.3/search-aggregations-bucket-terms-aggregation.html#_size" target="_top">
+Terms Aggregation</a> in the Elasticsearch Reference. Defaults to 10000.
 </dd><dt><span class="term">
 <code class="literal">marvel.min_interval_seconds</code>
 </span></dt><dd>
-    The minimum number of seconds that a time bucket in a chart can represent. Defaults to 10.
+The minimum number of seconds that a time bucket in a chart can represent. Defaults to 10.
 </dd><dt><span class="term">
+<code class="literal">marvel.node_resolver</code>
+</span></dt><dd><p class="simpara">
+The node resolver controls how nodes are considered unique. This can be set to either
+<code class="literal">transport_address</code> or <code class="literal">name</code>. <code class="literal">transport_address</code> controls uniqueness based on the node’s published
+hostname/IP and port. <code class="literal">name</code> controls uniqueness based on the node’s <code class="literal">node.name</code> setting. Defaults to
+<code class="literal">transport_address</code>.
+</p><p class="simpara">If you actively set your Elasticsearch node names via <code class="literal">node.name</code>, then you should set this to <code class="literal">name</code>.
+This is particularly helpful for cloud deployments of Elasticsearch where IPs are not always static.</p></dd><dt><span class="term">
 <code class="literal">marvel.report_stats</code>
 </span></dt><dd>
-    Whether or not to send cluster statistics to Elastic. Reporting your cluster statistics
-    helps us improve your user experience. Your data is never shared with anyone. Set to
-    <code class="literal">false</code> to disable statistics reporting from any browser connected to the Kibana instance.
-    You can also opt-out on a per-browser basis through the Marvel user interface. Defaults to <code class="literal">true</code>.
+Whether or not to send cluster statistics to Elastic. Reporting your cluster statistics
+helps us improve your user experience. Your data is never shared with anyone. Set to
+<code class="literal">false</code> to disable statistics reporting from any browser connected to the Kibana instance.
+You can also opt-out on a per-browser basis through the Marvel user interface. Defaults to <code class="literal">true</code>.
 </dd></dl></div><h3><a id="tribe-config"></a>Configuring a Tribe Node to Work with Marvel</h3><p>If you connect to a cluster through a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-tribe.html" target="_top">tribe node</a>, to monitor the cluster you need to install the Marvel agent on the tribe node as well as the nodes in the cluster. If the cluster is protected by Shield, you also need to install and configure Shield on the tribe node. For more information, see <a class="ulink" href="https://www.elastic.co/guide/en/shield/current/installing-shield.html#tribe-node" target="_top">Installing Shield on Tribe Nodes</a>.</p><p>To exclude the tribe node from the monitoring data, set <code class="literal">marvel.enabled: false</code> in the tribe node’s  <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.name: tribe
 marvel.enabled: false
 
 tribe:
-t1:
-  cluster.name: cluster1
-  discovery.zen.ping.unicast.hosts: ["cluster1-node1:9300", "cluster1-node2:9300"]</pre></div><p>With this configuration, the tribe node is included in the node count displayed in the Marvel UI,
+  t1:
+    cluster.name: cluster1
+    discovery.zen.ping.unicast.hosts: ["cluster1-node1:9300", "cluster1-node2:9300"]</pre></div><p>With this configuration, the tribe node is included in the node count displayed in the Marvel UI,
 but is not included in the node list because it does not export any data to the monitoring cluster.</p><p>To include the tribe node in the monitoring data, enable Marvel data collection at the tribe level:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.name: tribe
 marvel.enabled: false
 
@@ -885,11 +893,12 @@ tribe:
   t1:
     cluster.name: cluster1
     discovery.zen.ping.unicast.hosts: ["cluster1-node1:9300", "cluster1-node2:9300"]
-    marvel.enabled: true <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    marvel.agent.exporters:
-      id1:
-        type: http <a id="CO1-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-        host: ["monitoringhost:9200"]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+    marvel:
+      enabled: true <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      agent.exporters:
+        id1:
+          type: http <a id="CO1-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          host: ["monitoringhost:9200"]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Enable data collection from the tribe node.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Export data via HTTP to the monitoring cluster.
