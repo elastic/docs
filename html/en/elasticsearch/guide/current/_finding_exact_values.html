@@ -750,17 +750,20 @@
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_finding_exact_values"></a>Finding Exact Values<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/080_Structured_Search/05_term.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When working with exact values,<a id="id-1.5.3.6.2.1" class="indexterm"></a>
 <a id="id-1.5.3.6.2.2" class="indexterm"></a><a id="id-1.5.3.6.2.3" class="indexterm"></a>
-<a id="id-1.5.3.6.2.4" class="indexterm"></a> you will be working with filters. Filters are
-important because they are very, very fast.  Filters do not calculate
+<a id="id-1.5.3.6.2.4" class="indexterm"></a>
+you will be working with non-scoring, filtering queries. Filters are
+important because they are very fast.  They do not calculate
 relevance (avoiding the entire scoring phase) and are easily cached. We’ll
 talk about the performance benefits of filters later in <a class="xref" href="filter-caching.html" title="All About Caching">All About Caching</a>,
-but for now, just keep in mind that you should use filters as often as you
-can.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_term_filter_with_numbers"></a>term Filter with Numbers<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/080_Structured_Search/05_term.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>We are going to explore the <code class="literal">term</code> filter <a id="id-1.5.3.6.3.2.2" class="indexterm"></a>
-<a id="id-1.5.3.6.3.2.3" class="indexterm"></a><a id="id-1.5.3.6.3.2.4" class="indexterm"></a>
+but for now, just keep in mind that you should use filtering queries as often as you
+can.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_term_query_with_numbers"></a>term Query with Numbers<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/080_Structured_Search/05_term.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>We are going to explore the <code class="literal">term</code> query <a id="id-1.5.3.6.3.2.2" class="indexterm"></a>
+<a id="id-1.5.3.6.3.2.3" class="indexterm"></a>
+<a id="id-1.5.3.6.3.2.4" class="indexterm"></a>
 <a id="id-1.5.3.6.3.2.5" class="indexterm"></a>
-<a id="id-1.5.3.6.3.2.6" class="indexterm"></a>first because you will use it often.
-This filter is capable of handling numbers, Booleans, dates, and text.</p><p>Let’s look at an example using numbers first by indexing some products.  These
-documents have a <code class="literal">price</code> and a <code class="literal">productID</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /my_store/products/_bulk
+<a id="id-1.5.3.6.3.2.6" class="indexterm"></a>
+first because you will use it often. This query is capable of handling numbers,
+booleans, dates, and text.</p><p>We’ll start by indexing some documents representing products, each having a
+ <code class="literal">price</code> and <code class="literal">productID</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /my_store/products/_bulk
 { "index": { "_id": 1 }}
 { "price" : 10, "productID" : "XHDK-A-1293-#fJ3" }
 { "index": { "_id": 2 }}
@@ -772,38 +775,30 @@ documents have a <code class="literal">price</code> and a <code class="literal">
 with SQL if you are coming from a relational database background.  If we
 expressed this query as an SQL query, it would look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT document
 FROM   products
-WHERE  price = 20</pre></div><p>In the Elasticsearch query DSL, we use a <code class="literal">term</code> filter to accomplish the same
-thing.  The <code class="literal">term</code> filter will look for the exact value that we specify.  By
-itself, a <code class="literal">term</code> filter is simple. It accepts a field name and the value
+WHERE  price = 20</pre></div><p>In the Elasticsearch query DSL, we use a <code class="literal">term</code> query to accomplish the same
+thing.  The <code class="literal">term</code> query will look for the exact value that we specify.  By
+itself, a <code class="literal">term</code> query is simple. It accepts a field name and the value
 that we wish to find:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "term" : {
         "price" : 20
     }
-}</pre></div><p>The <code class="literal">term</code> filter isn’t very useful on its own, though.  As discussed in
-<a class="xref" href="query-dsl-intro.html" title="Query DSL">Query DSL</a>, the <code class="literal">search</code> API expects a <code class="literal">query</code>, not a <code class="literal">filter</code>. To
-use our <code class="literal">term</code> filter, <a id="id-1.5.3.6.3.10.7" class="indexterm"></a>we need to wrap it with a
-<a class="link" href="_combining_queries_with_filters.html#filtered-query" title="Filtering a Query"><code class="literal">filtered</code> query</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_store/products/_search
+}</pre></div><p>Usually, when looking for an exact value, we don’t want to score the query.  We just
+want to include/exclude documents, so we will use a <code class="literal">constant_score</code> query to execute
+the <code class="literal">term</code> query in a non-scoring mode and apply a uniform score of one.</p><p>The final combination will be a <code class="literal">constant_score</code> query which contains a <code class="literal">term</code> query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_store/products/_search
 {
     "query" : {
-        "filtered" : { <a id="CO41-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            "query" : {
-                "match_all" : {} <a id="CO41-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-            },
+        "constant_score" : { <a id="CO43-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
             "filter" : {
-                "term" : { <a id="CO41-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+                "term" : { <a id="CO43-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
                     "price" : 20
                 }
             }
         }
     }
-}</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/05_Term_number.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO41-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">filtered</code> query accepts both a <code class="literal">query</code> and a <code class="literal">filter</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO41-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-A <code class="literal">match_all</code> is used to return all matching documents.<a id="id-1.5.3.6.3.13.2.1.2" class="indexterm"></a>  This is the default
-behavior, so in future examples we will simply omit the <code class="literal">query</code> section.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO41-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">term</code> filter that we saw previously.  Notice how it is placed inside
-the <code class="literal">filter</code> clause.
+}</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/05_Term_number.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We use a <code class="literal">constant_score</code> to convert the <code class="literal">term</code> query into a filter
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">term</code> query that we saw previously.
 </p></td></tr></table></div><p>Once executed, the search results from this query are exactly what you would
 expect: only document 2 is returned as a hit (because only <code class="literal">2</code> had a price
 of <code class="literal">20</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">"hits" : [
@@ -811,20 +806,20 @@ of <code class="literal">20</code>):</p><div class="pre_wrapper"><pre class="pro
         "_index" : "my_store",
         "_type" :  "products",
         "_id" :    "2",
-        "_score" : 1.0, <a id="CO42-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "_score" : 1.0, <a id="CO44-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         "_source" : {
           "price" :     20,
           "productID" : "KDKE-B-9947-#kL5"
         }
     }
-]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO42-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Filters do not perform scoring or relevance. The score comes from the
-    <code class="literal">match_all</code> query, which treats all docs as equal, so all results receive
-    a neutral score of <code class="literal">1</code>.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_term_filter_with_text"></a>term Filter with Text<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/080_Structured_Search/05_term.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>As mentioned at the top of <a id="id-1.5.3.6.4.2.1" class="indexterm"></a>
+]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Queries placed inside the <code class="literal">filter</code> clause do not perform scoring or relevance,
+so all results receive a neutral score of <code class="literal">1</code>.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_term_query_with_text"></a>term Query with Text<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/080_Structured_Search/05_term.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>As mentioned at the top of <a id="id-1.5.3.6.4.2.1" class="indexterm"></a>
 <a id="id-1.5.3.6.4.2.2" class="indexterm"></a>
-<a id="id-1.5.3.6.4.2.3" class="indexterm"></a><a id="id-1.5.3.6.4.2.4" class="indexterm"></a>
-<a id="id-1.5.3.6.4.2.5" class="indexterm"></a>this section, the <code class="literal">term</code> filter can match strings
+<a id="id-1.5.3.6.4.2.3" class="indexterm"></a>
+<a id="id-1.5.3.6.4.2.4" class="indexterm"></a>
+<a id="id-1.5.3.6.4.2.5" class="indexterm"></a>this section, the <code class="literal">term</code> query can match strings
 just as easily as numbers.  Instead of price, let’s try to find products that
 have a certain UPC identification code. To do this with SQL, we might use a
 query like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT product
@@ -833,7 +828,7 @@ WHERE  productID = "XHDK-A-1293-#fJ3"</pre></div><p>Translated into the query DS
 filter, like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_store/products/_search
 {
     "query" : {
-        "filtered" : {
+        "constant_score" : {
             "filter" : {
                 "term" : {
                     "productID" : "XHDK-A-1293-#fJ3"
@@ -877,34 +872,34 @@ We have four distinct tokens instead of a single token representing the UPC.
 All letters have been lowercased.
 </li><li class="listitem">
 We lost the hyphen and the hash (<code class="literal">#</code>) sign.
-</li></ul></div><p>So when our <code class="literal">term</code> filter looks for the exact value <code class="literal">XHDK-A-1293-#fJ3</code>, it
+</li></ul></div><p>So when our <code class="literal">term</code> query looks for the exact value <code class="literal">XHDK-A-1293-#fJ3</code>, it
 doesn’t find anything, because that token does not exist in our inverted index.
 Instead, there are the four tokens listed previously.</p><p>Obviously, this is not what we want to happen when dealing with identification
 codes, or any kind of precise enumeration.</p><p>To prevent this from happening, we need to tell Elasticsearch that this field
 contains an exact value by  setting it to be <code class="literal">not_analyzed</code>.<a id="id-1.5.3.6.4.15.2" class="indexterm"></a> We saw this
 originally in <a class="xref" href="mapping-intro.html#custom-field-mappings" title="Customizing Field Mappings">Customizing Field Mappings</a>.  To do this, we need to first delete
 our old index (because it has the incorrect mapping) and create a new one with
-the correct mappings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE /my_store <a id="CO43-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+the correct mappings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE /my_store <a id="CO45-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
-PUT /my_store <a id="CO43-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+PUT /my_store <a id="CO45-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
 {
     "mappings" : {
         "products" : {
             "properties" : {
                 "productID" : {
                     "type" : "string",
-                    "index" : "not_analyzed" <a id="CO43-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+                    "index" : "not_analyzed" <a id="CO45-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
                 }
             }
         }
     }
 
-}</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/05_Term_text.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/05_Term_text.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO45-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Deleting the index first is required, since we cannot change mappings that
     already exist.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO45-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 With the index deleted, we can re-create it with our custom mapping.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO45-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Here we explicitly say that we don’t want <code class="literal">productID</code> to be analyzed.
 </p></td></tr></table></div><p>Now we can go ahead and reindex our documents:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /my_store/products/_bulk
 { "index": { "_id": 1 }}
@@ -914,12 +909,12 @@ Here we explicitly say that we don’t want <code class="literal">productID</cod
 { "index": { "_id": 3 }}
 { "price" : 30, "productID" : "JODL-X-1937-#pV7" }
 { "index": { "_id": 4 }}
-{ "price" : 30, "productID" : "QQPX-R-3956-#aD8" }</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/05_Term_text.json"></div><p>Only now will our <code class="literal">term</code> filter work as expected.  Let’s try it again on the
+{ "price" : 30, "productID" : "QQPX-R-3956-#aD8" }</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/05_Term_text.json"></div><p>Only now will our <code class="literal">term</code> query work as expected.  Let’s try it again on the
 newly indexed data (notice, the query and filter have not changed at all, just
 how the data is mapped):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_store/products/_search
 {
     "query" : {
-        "filtered" : {
+        "constant_score" : {
             "filter" : {
                 "term" : {
                     "productID" : "XHDK-A-1293-#fJ3"
@@ -927,29 +922,44 @@ how the data is mapped):</p><div class="pre_wrapper"><pre class="programlisting 
             }
         }
     }
-}</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/05_Term_text.json"></div><p>Since the <code class="literal">productID</code> field is not analyzed, and the <code class="literal">term</code> filter performs no
+}</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/05_Term_text.json"></div><p>Since the <code class="literal">productID</code> field is not analyzed, and the <code class="literal">term</code> query performs no
 analysis, the query finds the exact match and returns document 1 as a hit.
 Success!</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_internal_filter_operation"></a>Internal Filter Operation<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/080_Structured_Search/05_term.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Internally, Elasticsearch is<a id="id-1.5.3.6.5.2.1" class="indexterm"></a>
 <a id="id-1.5.3.6.5.2.2" class="indexterm"></a>
-<a id="id-1.5.3.6.5.2.3" class="indexterm"></a><a id="id-1.5.3.6.5.2.4" class="indexterm"></a>
+<a id="id-1.5.3.6.5.2.3" class="indexterm"></a>
+<a id="id-1.5.3.6.5.2.4" class="indexterm"></a>
 <a id="id-1.5.3.6.5.2.5" class="indexterm"></a> performing several operations when executing a
-filter:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+non-scoring query:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 <span class="emphasis"><em>Find matching docs</em></span>.
-</p><p class="simpara">The <code class="literal">term</code> filter looks up the term <code class="literal">XHDK-A-1293-#fJ3</code> in the inverted index
+</p><p class="simpara">The <code class="literal">term</code> query looks up the term <code class="literal">XHDK-A-1293-#fJ3</code> in the inverted index
 and retrieves the list of documents that contain that term.  In this case,
 only document 1 has the term we are looking for.</p></li><li class="listitem"><p class="simpara">
 <span class="emphasis"><em>Build a bitset</em></span>.
 </p><p class="simpara">The filter then builds a <span class="emphasis"><em>bitset</em></span>--an array of 1s and 0s—that
 describes which documents contain the term.  Matching documents receive a  <code class="literal">1</code>
-bit.  In our example, the bitset would be <code class="literal">[1,0,0,0]</code>.</p></li><li class="listitem"><p class="simpara">
-<span class="emphasis"><em>Cache the bitset</em></span>.
-</p><p class="simpara">Last, the bitset is stored in memory, since we can use this in the future
-and skip steps 1 and 2.  This adds a lot of performance and makes filters very
-fast.</p></li></ol></div><p>When executing a <code class="literal">filtered</code> query, the <code class="literal">filter</code> is executed before the
-<code class="literal">query</code>. The resulting bitset is given to the <code class="literal">query</code>, which uses it to simply
-skip over any documents that have already been excluded by the filter. This is
-one of the ways that filters can improve performance.  Fewer documents
-evaluated by the query  means faster response times.</p></div></div><div class="navfooter"><span class="prev"><a href="structured-search.html">
+bit.  In our example, the bitset would be <code class="literal">[1,0,0,0]</code>.  Internally, this is represented
+as a <a class="ulink" href="https://www.elastic.co/blog/frame-of-reference-and-roaring-bitmaps" target="_top">"roaring bitmap"</a>,
+which can efficiently encode both sparse and dense sets.</p></li><li class="listitem"><p class="simpara">
+<span class="emphasis"><em>Iterate over the bitset(s)</em></span>
+</p><p class="simpara">Once the bitsets are generated for each query, Elasticsearch iterates over the
+bitsets to find the set of matching documents that satisfy all filtering criteria.
+The order of execution is decided heuristically, but generally the most sparse
+bitset is iterated on first (since it excludes the largest number of documents).</p></li><li class="listitem"><p class="simpara">
+<span class="emphasis"><em>Increment the usage counter</em></span>.
+</p><p class="simpara">Elasticsearch can cache non-scoring queries for faster access, but its silly to
+cache something that is used only rarely.  Non-scoring queries are already quite fast
+due to the inverted index, so we only want to cache queries we <span class="emphasis"><em>know</em></span> will be used
+again in the future to prevent resource wastage.</p><p class="simpara">To do this, Elasticsearch tracks the history of query usage on a per-index basis.
+If a query is used more than a few times in the last 256 queries, it is cached
+in memory.  And when the bitset is cached, caching is omitted on segments that have
+fewer than 10,000 documents (or less than 3% of the total index size). These
+small segments tend to disappear quickly anyway and it is a waste to associate a
+cache with them.</p></li></ol></div><p>Although not quite true in reality (execution is a bit more complicated based on
+how the query planner re-arranges things, and some heuristics based on query cost),
+you can conceptually think of non-scoring queries as executing <span class="emphasis"><em>before</em></span> the scoring
+queries.  The job of non-scoring queries is to reduce the number of documents that
+the more costly scoring queries need to evaluate, resulting in a faster search request.</p><p>By conceptually thinking of non-scoring queries as executing first, you’ll be
+equipped to write efficient and fast search requests.</p></div></div><div class="navfooter"><span class="prev"><a href="structured-search.html">
               « 
               Structured Search</a>
            

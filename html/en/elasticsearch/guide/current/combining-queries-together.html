@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Geo Shape Filters and Caching</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide [master]" /><link rel="up" href="geo-shapes.html" title="Geo Shapes" /><link rel="prev" href="indexed-geo-shapes.html" title="Querying with Indexed Shapes" /><link rel="next" href="modeling-your-data.html" title="Modeling Your Data" /><meta name="DC.type" content="Docs/Elasticsearch/Definitive Guide/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Combining queries together</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide [master]" /><link rel="up" href="full-body-search.html" title="Full-Body Search" /><link rel="prev" href="_most_important_queries.html" title="Most Important Queries" /><link rel="next" href="_validating_queries.html" title="Validating Queries" /><meta name="DC.type" content="Docs/Elasticsearch/Definitive Guide/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -740,51 +740,122 @@
             <!-- start body -->
 <div class="page_header"><b>PLEASE NOTE:</b><br/>We are working on updating this book for the latest version. Some content might be out of date.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch: The Definitive Guide
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="geoloc.html">Geolocation </a></span> » <span class="breadcrumb-link"><a href="geo-shapes.html">Geo Shapes</a></span> » <span class="breadcrumb-node">Geo Shape Filters and Caching</span></div><div class="navheader"><span class="prev"><a href="indexed-geo-shapes.html">
+    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started </a></span> » <span class="breadcrumb-link"><a href="full-body-search.html">Full-Body Search</a></span> » <span class="breadcrumb-node">Combining queries together</span></div><div class="navheader"><span class="prev"><a href="_most_important_queries.html">
               « 
-              Querying with Indexed Shapes</a>
+              Most Important Queries</a>
            
         </span><span class="next">
            
-          <a href="modeling-your-data.html">Modeling Your Data 
+          <a href="_validating_queries.html">Validating Queries
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="geo-shape-caching"></a>Geo Shape Filters and Caching<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/340_Geoshapes/80_Caching_geo_shapes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">geo_shape</code> query and filter perform the same function.<a id="id-1.8.6.13.2.2" class="indexterm"></a>
-<a id="id-1.8.6.13.2.3" class="indexterm"></a><a id="id-1.8.6.13.2.4" class="indexterm"></a>
-<a id="id-1.8.6.13.2.5" class="indexterm"></a><a id="id-1.8.6.13.2.6" class="indexterm"></a>
-<a id="id-1.8.6.13.2.7" class="indexterm"></a>  The query simply
-acts as a filter: any matching documents receive a relevance <code class="literal">_score</code> of
-<code class="literal">1</code>. Query results cannot be cached, but filter results can be.</p><p>The results are not cached by default.  Just as with geo-points, any
-change in the coordinates in a shape are likely to produce a different set of
-geohashes, so there is little point in caching filter results.  That said, if
-you filter using the same shapes repeatedly, it can be worth caching the
-results, by setting <code class="literal">_cache</code> to <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">GET /attractions/neighborhood/_search
-{
-  "query": {
-    "filtered": {
-      "filter": {
-        "geo_shape": {
-          "_cache": true, <a id="CO250-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-          "location": {
-            "indexed_shape": {
-              "index": "attractions",
-              "type":  "landmark",
-              "id":    "dam_square",
-              "path":  "location"
-            }
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="combining-queries-together"></a>Combining queries together<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/054_Query_DSL/75_Combining_queries_together.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Real world search requests are never simple; they search multiple fields with
+various input text, and filter based on an array of criteria.  To build
+sophisticated search, you will need a way to combine multiple queries together
+into a single search request.</p><p>To do that, you can use the <code class="literal">bool</code> query.  This query combines multiple queries
+together in user-defined boolean combinations. This query accepts the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">must</code>
+</span></dt><dd>
+   Clauses that <span class="emphasis"><em>must</em></span> match for the document to be included.
+</dd><dt><span class="term">
+<code class="literal">must_not</code>
+</span></dt><dd>
+   Clauses that <span class="emphasis"><em>must not</em></span> match for the document to be included.
+</dd><dt><span class="term">
+<code class="literal">should</code>
+</span></dt><dd>
+   If these clauses match, they increase the <code class="literal">_score</code>;
+                otherwise, they have no effect. They are simply used to refine
+                the relevance score for each document.
+</dd><dt><span class="term">
+<code class="literal">filter</code>
+</span></dt><dd>
+   Clauses that <span class="emphasis"><em>must</em></span> match, but are run in non-scoring, filtering mode.  These
+   clauses do not contribute to the score, instead they simply include/exclude
+   documents based on their criteria.
+</dd></dl></div><p>Because this is the first query we’ve seen that contains other queries, we need
+to talk about how scores are combined.  Each sub-query clause will individually
+calculate a relevance score for the document.  Once these scores are calculated,
+the <code class="literal">bool</code> query will merge the scores together and return a single score representing
+the total score of the boolean operation.</p><p>The following query finds documents whose <code class="literal">title</code> field matches
+the query string <code class="literal">how to make millions</code> and that are not marked
+as <code class="literal">spam</code>.  If any documents are <code class="literal">starred</code> or are from 2014 onward,
+they will rank higher than they would have otherwise. Documents that
+match <span class="emphasis"><em>both</em></span> conditions will rank even higher:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "bool": {
+        "must":     { "match": { "title": "how to make millions" }},
+        "must_not": { "match": { "tag":   "spam" }},
+        "should": [
+            { "match": { "tag": "starred" }},
+            { "range": { "date": { "gte": "2014-01-01" }}}
+        ]
+    }
+}</pre></div><div class="sense_widget" data-snippet="snippets/054_Query_DSL/70_Bool_query.json"></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>If there are no <code class="literal">must</code> clauses, at least one <code class="literal">should</code> clause has to
+match. However, if there is at least one <code class="literal">must</code> clause, no <code class="literal">should</code> clauses
+are required to match.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_adding_a_filtering_query"></a>Adding a filtering query<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/054_Query_DSL/75_Combining_queries_together.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If we don’t want the date of the document to affect scoring at all, we can re-arrange
+the previous example to use a <code class="literal">filter</code> clause:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "bool": {
+        "must":     { "match": { "title": "how to make millions" }},
+        "must_not": { "match": { "tag":   "spam" }},
+        "should": [
+            { "match": { "tag": "starred" }}
+        ],
+        "filter": {
+          "range": { "date": { "gte": "2014-01-01" }} <a id="CO23-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        }
+    }
+}</pre></div><div class="sense_widget" data-snippet="snippets/054_Query_DSL/70_Bool_query.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO23-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The range query was moved out of the <code class="literal">should</code> clause and into a <code class="literal">filter</code> clause
+</p></td></tr></table></div><p>By moving the range query into the <code class="literal">filter</code> clause, we have converted it into a
+non-scoring query.  It will no longer contribute a score to the document’s relevance
+ranking.  And because it is now a non-scoring query, it can use the variety of optimizations
+available to filters which should increase performance.</p><p>Any query can be used in this manner.  Simply move a query into the
+<code class="literal">filter</code> clause of a <code class="literal">bool</code> query and it automatically converts to a non-scoring
+filter.</p><p>If you need to filter on many different criteria, the <code class="literal">bool</code> query itself can be
+used as a non-scoring query.  Simply place it inside the <code class="literal">filter</code> clause and
+continue building your boolean logic:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "bool": {
+        "must":     { "match": { "title": "how to make millions" }},
+        "must_not": { "match": { "tag":   "spam" }},
+        "should": [
+            { "match": { "tag": "starred" }}
+        ],
+        "filter": {
+          "bool": { <a id="CO24-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+              "must": [
+                  { "range": { "date": { "gte": "2014-01-01" }}},
+                  { "range": { "price": { "lte": 29.99 }}}
+              ],
+              "must_not": [
+                  { "term": { "category": "ebooks" }}
+              ]
           }
         }
-      }
     }
-  }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO250-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The results of this <code class="literal">geo_shape</code> filter will be cached.
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="indexed-geo-shapes.html">
+}</pre></div><div class="sense_widget" data-snippet="snippets/054_Query_DSL/70_Bool_query.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+By embedding a <code class="literal">bool</code> query in the <code class="literal">filter</code> clause, we can add boolean logic
+to our filtering criteria
+</p></td></tr></table></div><p>By mixing and matching where Boolean queries are placed, we can flexibly encode
+both scoring and filtering logic in our search request.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_constant_score_query"></a>constant_score Query<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/054_Query_DSL/75_Combining_queries_together.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Although not used nearly as often as the <code class="literal">bool</code> query, the <code class="literal">constant_score</code> query is
+still useful to have in your toolbox.  The query applies a static, constant score to
+all matching documents.  It is predominantly used when you want to execute a filter
+and nothing else (e.g. no scoring queries).</p><p>You can use this instead of a <code class="literal">bool</code> that only has filter clauses.  Performance
+will be identical, but it may aid in query simplicity/clarity.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "constant_score":   {
+        "filter": {
+            "term": { "category": "ebooks" } <a id="CO25-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        }
+    }
+}</pre></div><div class="sense_widget" data-snippet="snippets/054_Query_DSL/70_bool_query.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO25-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+A <code class="literal">term</code> query is placed inside the <code class="literal">constant_score</code>, converting it to a
+non-scoring filter.  This method can be used in place of a <code class="literal">bool</code> query which only
+has a single filter
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="_most_important_queries.html">
               « 
-              Querying with Indexed Shapes</a>
+              Most Important Queries</a>
            
         </span><span class="next">
            
-          <a href="modeling-your-data.html">Modeling Your Data 
+          <a href="_validating_queries.html">Validating Queries
                »
             </a></span></div>
 <!-- end body -->

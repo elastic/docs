@@ -750,20 +750,21 @@
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="combining-filters"></a>Combining Filters<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/080_Structured_Search/10_compoundfilters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The previous two examples showed a single filter in use.<a id="id-1.5.3.7.2.1" class="indexterm"></a>
 <a id="id-1.5.3.7.2.2" class="indexterm"></a><a id="id-1.5.3.7.2.3" class="indexterm"></a>
-<a id="id-1.5.3.7.2.4" class="indexterm"></a> In practice, you
-will probably need to filter on multiple values or fields.  For example, how
-would you express this SQL in Elasticsearch?</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT product
+<a id="id-1.5.3.7.2.4" class="indexterm"></a>
+In practice, you will probably need to filter on multiple values or fields.
+For example, how would you express this SQL in Elasticsearch?</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT product
 FROM   products
 WHERE  (price = 20 OR productID = "XHDK-A-1293-#fJ3")
-  AND  (price != 30)</pre></div><p>In these situations, you will need the <code class="literal">bool</code> filter.<a id="id-1.5.3.7.4.2" class="indexterm"></a>
+  AND  (price != 30)</pre></div><p>In these situations, you will need to use a <code class="literal">bool</code> query<a id="id-1.5.3.7.4.2" class="indexterm"></a>
 <a id="id-1.5.3.7.4.3" class="indexterm"></a>
-<a id="id-1.5.3.7.4.4" class="indexterm"></a><a id="id-1.5.3.7.4.5" class="indexterm"></a>  This is a <span class="emphasis"><em>compound
-filter</em></span> that accepts other filters as arguments, combining them in various
-Boolean combinations.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="bool-filter"></a>Bool Filter<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/080_Structured_Search/10_compoundfilters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">bool</code> filter is composed of three sections:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+<a id="id-1.5.3.7.4.4" class="indexterm"></a><a id="id-1.5.3.7.4.5" class="indexterm"></a>
+inside the <code class="literal">constant_score</code> query.  This allows us to build
+filters that can have multiple components in boolean combinations.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="bool-filter"></a>Bool Filter<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/080_Structured_Search/10_compoundfilters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Recall that the <code class="literal">bool</code> query is composed of four sections:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
    "bool" : {
       "must" :     [],
       "should" :   [],
       "must_not" : [],
+      "filter":    []
    }
 }</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">must</code>
@@ -777,85 +778,88 @@ Boolean combinations.</p><div class="section"><div class="titlepage"><div><div><
 <code class="literal">should</code>
 </span></dt><dd>
    At least one of these clauses must match. The equivalent of <code class="literal">OR</code>.
-</dd></dl></div><p>And that’s it!<a id="id-1.5.3.7.5.5.1" class="indexterm"></a>
-<a id="id-1.5.3.7.5.5.2" class="indexterm"></a><a id="id-1.5.3.7.5.5.3" class="indexterm"></a>
-<a id="id-1.5.3.7.5.5.4" class="indexterm"></a><a id="id-1.5.3.7.5.5.5" class="indexterm"></a>
-<a id="id-1.5.3.7.5.5.6" class="indexterm"></a> When you need multiple filters, simply place them into the
-different sections of the <code class="literal">bool</code> filter.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Each section of the <code class="literal">bool</code> filter is optional (for example, you can have a <code class="literal">must</code>
-clause and nothing else), and each section can contain a single filter or an
-array of filters.</p></div></div><p>To replicate the preceding SQL example, we will take the two <code class="literal">term</code> filters that
+</dd><dt><span class="term">
+<code class="literal">filter</code>
+</span></dt><dd>
+      Clauses that <span class="emphasis"><em>must</em></span> match, but are run in non-scoring, filtering mode.
+</dd></dl></div><p>In this secondary boolean query, we can ignore the <code class="literal">filter</code> clause: the queries
+are already running in non-scoring mode, so the extra <code class="literal">filter</code> clause is useless.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Each section of the <code class="literal">bool</code> filter is optional (for example, you can have a <code class="literal">must</code>
+clause and nothing else), and each section can contain a single query or an
+array of queries.</p></div></div><p>To replicate the preceding SQL example, we will take the two <code class="literal">term</code> queries that
 we used<a id="id-1.5.3.7.5.7.2" class="indexterm"></a>
-<a id="id-1.5.3.7.5.7.3" class="indexterm"></a><a id="id-1.5.3.7.5.7.4" class="indexterm"></a>
-<a id="id-1.5.3.7.5.7.5" class="indexterm"></a> previously and place them inside the <code class="literal">should</code> clause of a <code class="literal">bool</code>
-filter, and add another clause to deal with the <code class="literal">NOT</code> condition:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_store/products/_search
+<a id="id-1.5.3.7.5.7.3" class="indexterm"></a>
+<a id="id-1.5.3.7.5.7.4" class="indexterm"></a>
+<a id="id-1.5.3.7.5.7.5" class="indexterm"></a> previously and
+place them inside the <code class="literal">should</code> clause of a <code class="literal">bool</code> query, and add another clause
+to deal with the <code class="literal">NOT</code> condition:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_store/products/_search
 {
    "query" : {
-      "filtered" : { <a id="CO44-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "constant_score" : { <a id="CO46-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
          "filter" : {
             "bool" : {
               "should" : [
-                 { "term" : {"price" : 20}}, <a id="CO44-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                 { "term" : {"productID" : "XHDK-A-1293-#fJ3"}} <a id="CO44-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+                 { "term" : {"price" : 20}}, <a id="CO46-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                 { "term" : {"productID" : "XHDK-A-1293-#fJ3"}} <a id="CO46-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
               ],
               "must_not" : {
-                 "term" : {"price" : 30} <a id="CO44-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+                 "term" : {"price" : 30} <a id="CO46-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
               }
            }
          }
       }
    }
-}</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/10_Bool_filter.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Note that we still need to use a <code class="literal">filtered</code> query to wrap everything.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO44-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-These two <code class="literal">term</code> filters are <span class="emphasis"><em>children</em></span> of the <code class="literal">bool</code> filter, and since they
+}</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/10_Bool_filter.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO46-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Note that we still need to use a <code class="literal">constant_score</code> query to wrap everything with its
+<code class="literal">filter</code> clause. This is what enables non-scoring mode
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO46-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO46-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+These two <code class="literal">term</code> queries are <span class="emphasis"><em>children</em></span> of the <code class="literal">bool</code> query, and since they
     are placed inside the <code class="literal">should</code> clause, at least one of them needs to match.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO46-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 If a product has a price of <code class="literal">30</code>, it is automatically excluded because it
     matches a <code class="literal">must_not</code> clause.
-</p></td></tr></table></div><p>Our search results return two hits, each document satisfying a different clause
-in the <code class="literal">bool</code> filter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">"hits" : [
+</p></td></tr></table></div><p>Notice how boolean is placed inside the <code class="literal">constant_score</code>, but the individual term
+queries are just placed in the <code class="literal">should</code> and <code class="literal">must_not</code>.  Because everything is wrapped
+with the <code class="literal">constant_score</code>, the rest of the queries are executing in filtering mode.</p><p>Our search results return two hits, each document satisfying a different clause
+in the <code class="literal">bool</code> query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">"hits" : [
     {
         "_id" :     "1",
         "_score" :  1.0,
         "_source" : {
           "price" :     10,
-          "productID" : "XHDK-A-1293-#fJ3" <a id="CO45-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "productID" : "XHDK-A-1293-#fJ3" <a id="CO47-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         }
     },
     {
         "_id" :     "2",
         "_score" :  1.0,
         "_source" : {
-          "price" :     20, <a id="CO45-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          "price" :     20, <a id="CO47-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
           "productID" : "KDKE-B-9947-#kL5"
         }
     }
-]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO45-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Matches the <code class="literal">term</code> filter for <code class="literal">productID = "XHDK-A-1293-#fJ3"</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO45-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Matches the <code class="literal">term</code> filter for <code class="literal">price = 20</code>
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_nesting_boolean_filters"></a>Nesting Boolean Filters<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/080_Structured_Search/10_compoundfilters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Even though <code class="literal">bool</code> is a compound filter and accepts children filters, it is
-important to understand that <code class="literal">bool</code> is just a filter itself.<a id="id-1.5.3.7.6.2.3" class="indexterm"></a>
-<a id="id-1.5.3.7.6.2.4" class="indexterm"></a>
-<a id="id-1.5.3.7.6.2.5" class="indexterm"></a><a id="id-1.5.3.7.6.2.6" class="indexterm"></a>
-<a id="id-1.5.3.7.6.2.7" class="indexterm"></a>  This means you
-can nest <code class="literal">bool</code> filters inside other <code class="literal">bool</code> filters, giving you the
-ability to make arbitrarily complex Boolean logic.</p><p>Given this SQL statement:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT document
+]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO47-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Matches the <code class="literal">term</code> query for <code class="literal">productID = "XHDK-A-1293-#fJ3"</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO47-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Matches the <code class="literal">term</code> query for <code class="literal">price = 20</code>
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_nesting_boolean_queries"></a>Nesting Boolean Queries<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/080_Structured_Search/10_compoundfilters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can already see how nesting boolean queries together can give rise to more
+sophisticated boolean logic.  If you need to perform more complex operations, you
+can continue nesting boolean queries in any combination, giving rise to
+arbitrarily complex boolean logic.</p><p>For example, if we have this SQL statement:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT document
 FROM   products
 WHERE  productID      = "KDKE-B-9947-#kL5"
   OR (     productID = "JODL-X-1937-#pV7"
        AND price     = 30 )</pre></div><p>We can translate it into a pair of nested <code class="literal">bool</code> filters:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_store/products/_search
 {
    "query" : {
-      "filtered" : {
+      "constant_score" : {
          "filter" : {
             "bool" : {
               "should" : [
-                { "term" : {"productID" : "KDKE-B-9947-#kL5"}}, <a id="CO46-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                { "bool" : { <a id="CO46-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                { "term" : {"productID" : "KDKE-B-9947-#kL5"}}, <a id="CO48-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                { "bool" : { <a id="CO48-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
                   "must" : [
-                    { "term" : {"productID" : "JODL-X-1937-#pV7"}}, <a id="CO46-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-                    { "term" : {"price" : 30}} <a id="CO46-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+                    { "term" : {"productID" : "JODL-X-1937-#pV7"}}, <a id="CO48-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+                    { "term" : {"price" : 30}} <a id="CO48-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
                   ]
                 }}
               ]
@@ -863,11 +867,11 @@ WHERE  productID      = "KDKE-B-9947-#kL5"
          }
       }
    }
-}</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/10_Bool_filter.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO46-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO46-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Because the <code class="literal">term</code> and the <code class="literal">bool</code> are sibling clauses inside the first
-    Boolean <code class="literal">should</code>, at least one of these filters must match for a document
+}</pre></div><div class="sense_widget" data-snippet="snippets/080_Structured_Search/10_Bool_filter.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO48-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO48-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Because the <code class="literal">term</code> and the <code class="literal">bool</code> are sibling clauses inside the
+    Boolean <code class="literal">should</code>, at least one of these queries must match for a document
     to be a hit.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO46-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO46-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO48-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO48-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 These two <code class="literal">term</code> clauses are siblings in a <code class="literal">must</code> clause, so they both
     have to match for a document to be returned as a hit.
 </p></td></tr></table></div><p>The results show us two documents, one matching each of the <code class="literal">should</code> clauses:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">"hits" : [
@@ -876,22 +880,22 @@ These two <code class="literal">term</code> clauses are siblings in a <code clas
         "_score" :  1.0,
         "_source" : {
           "price" :     20,
-          "productID" : "KDKE-B-9947-#kL5" <a id="CO47-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "productID" : "KDKE-B-9947-#kL5" <a id="CO49-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         }
     },
     {
         "_id" :     "3",
         "_score" :  1.0,
         "_source" : {
-          "price" :      30, <a id="CO47-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-          "productID" : "JODL-X-1937-#pV7" <a id="CO47-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+          "price" :      30, <a id="CO49-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          "productID" : "JODL-X-1937-#pV7" <a id="CO49-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
         }
     }
-]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO47-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO49-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This <code class="literal">productID</code> matches the <code class="literal">term</code> in the first <code class="literal">bool</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO47-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO47-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO49-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO49-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 These two fields match the <code class="literal">term</code> filters in the nested <code class="literal">bool</code>.
-</p></td></tr></table></div><p>This was a simple example, but it demonstrates how Boolean filters can be
+</p></td></tr></table></div><p>This was a simple example, but it demonstrates how Boolean queries can be
 used as building blocks to construct complex logical conditions.</p></div></div><div class="navfooter"><span class="prev"><a href="_finding_exact_values.html">
               « 
               Finding Exact Values</a>

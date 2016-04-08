@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Filtered Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide [master]" /><link rel="up" href="_filtering_queries_and_aggregations.html" title="Filtering Queries and Aggregations" /><link rel="prev" href="_filtering_queries_and_aggregations.html" title="Filtering Queries and Aggregations" /><link rel="next" href="_filter_bucket.html" title="Filter Bucket" /><meta name="DC.type" content="Docs/Elasticsearch/Definitive Guide/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Geohash Cell Query</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide [master]" /><link rel="up" href="geohashes.html" title="Geohashes" /><link rel="prev" href="geohash-mapping.html" title="Mapping Geohashes" /><link rel="next" href="geo-aggs.html" title="Geo Aggregations" /><meta name="DC.type" content="Docs/Elasticsearch/Definitive Guide/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -740,46 +740,77 @@
             <!-- start body -->
 <div class="page_header"><b>PLEASE NOTE:</b><br/>We are working on updating this book for the latest version. Some content might be out of date.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch: The Definitive Guide
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="aggregations.html">Aggregations </a></span> » <span class="breadcrumb-link"><a href="_filtering_queries_and_aggregations.html">Filtering Queries and Aggregations</a></span> » <span class="breadcrumb-node">Filtered Query</span></div><div class="navheader"><span class="prev"><a href="_filtering_queries_and_aggregations.html">
+    </a></span> » <span class="breadcrumb-link"><a href="geoloc.html">Geolocation </a></span> » <span class="breadcrumb-link"><a href="geohashes.html">Geohashes</a></span> » <span class="breadcrumb-node">Geohash Cell Query</span></div><div class="navheader"><span class="prev"><a href="geohash-mapping.html">
               « 
-              Filtering Queries and Aggregations</a>
+              Mapping Geohashes</a>
            
         </span><span class="next">
            
-          <a href="_filter_bucket.html">Filter Bucket
+          <a href="geo-aggs.html">Geo Aggregations
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_filtered_query"></a>Filtered Query<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/300_Aggregations/45_filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If we want to find all cars over $10,000 and also calculate the average price
-for those cars,<a id="id-1.7.8.3.2.1" class="indexterm"></a>
-<a id="id-1.7.8.3.2.2" class="indexterm"></a><a id="id-1.7.8.3.2.3" class="indexterm"></a><a id="id-1.7.8.3.2.4" class="indexterm"></a>
-<a id="id-1.7.8.3.2.5" class="indexterm"></a> we can simply use a <code class="literal">filtered</code> query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /cars/transactions/_search
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="geohash-cell-query"></a>Geohash Cell Query<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/320_Geohashes/60_Geohash_cell_filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">geohash_cell</code> query simply translates a <code class="literal">lat/lon</code> location<a id="id-1.8.4.10.2.3" class="indexterm"></a><a id="id-1.8.4.10.2.4" class="indexterm"></a> into a
+geohash with the specified precision and finds all locations that contain
+that geohash—a very efficient query indeed.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">GET /attractions/restaurant/_search
 {
-    "size" : 0,
-    "query" : {
-        "filtered": {
-            "filter": {
-                "range": {
-                    "price": {
-                        "gte": 10000
-                    }
-                }
-            }
+  "query": {
+    "constant_score": {
+      "filter": {
+        "geohash_cell": {
+          "location": {
+            "lat":  40.718,
+            "lon": -73.983
+          },
+          "precision": "2km" <a id="CO237-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         }
-    },
-    "aggs" : {
-        "single_avg_price": {
-            "avg" : { "field" : "price" }
-        }
+      }
     }
-}</pre></div><div class="sense_widget" data-snippet="snippets/300_Aggregations/45_filtering.json"></div><p>Fundamentally, using a <code class="literal">filtered</code> query is no different from using a <code class="literal">match</code>
-query, as we discussed in the previous chapter.  The query (which happens to include
-a filter) returns a certain subset of documents, and the aggregation operates
-on those documents.</p></div><div class="navfooter"><span class="prev"><a href="_filtering_queries_and_aggregations.html">
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO237-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">precision</code> cannot be more precise than that specified in the
+    <code class="literal">geohash_precision</code> mapping.
+</p></td></tr></table></div><p>This query translates the <code class="literal">lat/lon</code> point into a geohash of the appropriate
+length—in this example <code class="literal">dr5rsk</code>—and looks for all locations that contain
+that exact term.</p><p>However, the query as written in the preceding example may not return all restaurants within 5km
+of the specified point.  Remember that a geohash is just a rectangle, and the
+point may fall anywhere within that rectangle.  If the point happens to fall
+near the edge of a geohash cell, the filter may well exclude any
+restaurants in the adjacent cell.</p><p>To fix that, we can tell the query to include the neigboring cells, by
+setting <code class="literal">neighbors</code> to<a id="id-1.8.4.10.7.2" class="indexterm"></a> <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">GET /attractions/restaurant/_search
+{
+  "query": {
+    "constant_score": {
+      "filter": {
+        "geohash_cell": {
+          "location": {
+            "lat":  40.718,
+            "lon": -73.983
+          },
+          "neighbors": true, <a id="CO238-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "precision": "2km"
+        }
+      }
+    }
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO238-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This query will look for the resolved geohash and all surrounding
+    geohashes.
+</p></td></tr></table></div><p>Clearly, looking for a geohash with precision <code class="literal">2km</code> plus all the neighboring
+cells results in quite a large search area.  This query is not built for
+accuracy, but it is very efficient and can be used as a prefiltering step
+before applying a more accurate geo-filter.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Specifying the <code class="literal">precision</code> as a distance can be misleading. A <code class="literal">precision</code>
+of <code class="literal">2km</code> is converted to a geohash of length 6, which actually has dimensions
+of about 1.2km x 0.6km.  You may find it more understandable to specify an
+actual length such as <code class="literal">5</code> or <code class="literal">6</code>.</p></div></div><p>The other advantage that this query has over a <code class="literal">geo_bounding_box</code> query is
+that it supports multiple locations per field.<a id="id-1.8.4.10.12.2" class="indexterm"></a>
+<a id="id-1.8.4.10.12.3" class="indexterm"></a>
+The <code class="literal">lat_lon</code> option that we discussed in <a class="xref" href="geo-bounding-box.html#optimize-bounding-box" title="Optimizing Bounding Boxes">Optimizing Bounding Boxes</a> is efficient,
+but only when there is a single <code class="literal">lat/lon</code> point per field.</p></div><div class="navfooter"><span class="prev"><a href="geohash-mapping.html">
               « 
-              Filtering Queries and Aggregations</a>
+              Mapping Geohashes</a>
            
         </span><span class="next">
            
-          <a href="_filter_bucket.html">Filter Bucket
+          <a href="geo-aggs.html">Geo Aggregations
                »
             </a></span></div>
 <!-- end body -->
