@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Set JVM heap size with ES_HEAP_SIZE</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="system-config.html" title="Important System Configuration" /><link rel="prev" href="setting-system-settings.html" title="Configuring system settings" /><link rel="next" href="setup-configuration-memory.html" title="Disable swapping" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Set JVM heap size via jvm.options</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="system-config.html" title="Important System Configuration" /><link rel="prev" href="setting-system-settings.html" title="Configuring system settings" /><link rel="next" href="setup-configuration-memory.html" title="Disable swapping" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -744,7 +744,7 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="setup.html">Setup Elasticsearch </a></span> » <span class="breadcrumb-link"><a href="system-config.html">Important System Configuration</a></span> » <span class="breadcrumb-node">Set JVM heap size with ES_HEAP_SIZE</span></div><div class="navheader"><span class="prev"><a href="setting-system-settings.html">
+    </a></span> » <span class="breadcrumb-link"><a href="setup.html">Setup Elasticsearch </a></span> » <span class="breadcrumb-link"><a href="system-config.html">Important System Configuration</a></span> » <span class="breadcrumb-node">Set JVM heap size via jvm.options</span></div><div class="navheader"><span class="prev"><a href="setting-system-settings.html">
               « 
               Configuring system settings</a>
            
@@ -752,26 +752,46 @@ version&#39;s documentation here</a>.
            
           <a href="setup-configuration-memory.html">Disable swapping
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="heap-size"></a>Set JVM heap size with ES_HEAP_SIZE<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/sysconfig/heap_size.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In development mode, Elasticsearch tells the JVM to use a heap with a minimum
-size of 256MB and a maximum size of 1GB. When moving to production, it is
-important to configure the `ES_HEAP_SIZE environment variable to ensure that
-Elasticsearch has enough heap available.</p><p>Elasticsearch will assign the entire heap specified in `ES_HEAP_SIZE on startup.</p><p>The value for this setting depends on the amount of RAM available on your server. A good rule of thumb is:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-The more heap available to Elasticsearch, the more memory it can use for
-  caching.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="heap-size"></a>Set JVM heap size via jvm.options<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/sysconfig/heap_size.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In development mode, Elasticsearch tells the JVM to use a heap with a minimum
+size of 256 MB and a maximum size of 1 GB. When moving to production, it is
+important to configure heap size to ensure that Elasticsearch has enough
+heap available.</p><p>Elasticsearch will assign the entire heap specified in <a class="link" href="setting-system-settings.html#sysconfig" title="Sysconfig file">es-java-opts</a>
+via the Xms (minimum heap size) and Xmx (maximum heap size) settings.</p><p>The value for these setting depends on the amount of RAM available on
+your server. Good rules of thumb are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Set the minimum heap size (Xms) and maximum heap size (Xmx) to be
+  equal to each other.
 </li><li class="listitem">
-Set the <code class="literal">ES_HEAP_SIZE</code> to no more than 50% of your RAM, to ensure that there
-  is enough RAM left for kernel file system caches.
+The more heap available to Elasticsearch, the more memory it can use for
+  caching. But note that too much heap can subject you to long garbage
+  collection pauses.
+</li><li class="listitem">
+Set Xmx to no more than 50% of your physical RAM, to ensure that there
+  is enough physical RAM left for kernel file system caches.
 </li><li class="listitem"><p class="simpara">
-Don’t set <code class="literal">ES_HEAP_SIZE</code> to more than about 31GB to ensure that the JVM uses
-  compressed object pointers (compressed-oops). You can verify that you are
-  under the limit by looking for a line in the logs like the following:
-</p><pre class="literallayout">heap size [1.9gb], compressed ordinary object pointers [true]</pre></li></ul></div><p>Here are examples of how to set the ES_HEAP_SIZE:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">ES_HEAP_SIZE=2g    ./bin/elasticsearch <a id="CO8-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-ES_HEAP_SIZE=4000m ./bin/elasticsearch <a id="CO8-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Set the min/max heap size to 2GB.
+Don’t set Xmx to above the cutoff that the JVM uses for compressed
+  object pointers (compressed oops); the exact cutoff varies but is
+  near 32 GB. You can verify that you are under the limit by looking
+  for a line in the logs like the following:
+</p><pre class="literallayout">heap size [1.9gb], compressed ordinary object pointers [true]</pre></li><li class="listitem"><p class="simpara">
+Even better, try to stay below the threshold for zero-based
+  compressed oops; the exact cutoff varies but 26 GB is safe on most
+  systems, but can be as large as 30 GB on some systems. You can verify
+  that you are under the limit by starting Elasticsearch with the JVM
+  options <code class="literal">-XX:+UnlockDiagnosticVMOptions -XX:+PrintCompressedOopsMode</code>
+  and looking for a line like the following:
+</p><pre class="literallayout">heap address: 0x000000011be00000, size: 27648 MB, zero based Compressed Oops</pre><p class="simpara">showing that zero-based compressed oops are enabled instead of</p><pre class="literallayout">heap address: 0x0000000118400000, size: 28672 MB, Compressed Oops with base: 0x00000001183ff000</pre></li></ul></div><p>Here are examples of how to set the heap size via the jvm.options file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">Xms2g <a id="CO8-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+Xmx2g <a id="CO8-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set the minimum heap size to 2g.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Set the min/max heap size to 4,000MB.
-</p></td></tr></table></div><p>When using the Debian or RPM package, ES_HEAP_SIZE can be configured in the
-<a class="link" href="setting-system-settings.html#sysconfig" title="Sysconfig file">system configuration file</a>.</p></div><div class="navfooter"><span class="prev"><a href="setting-system-settings.html">
+Set the maximum heap size to 2g.
+</p></td></tr></table></div><p>It is also possible to set the heap size via an environment variable.
+This can be done by commenting out the <code class="literal">Xms</code> and <code class="literal">Xmx</code> settings
+in the jvm.options file and setting these values via <code class="literal">ES_JAVA_OPTS</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">ES_JAVA_OPTS="-Xms2g -Xmx2g" ./bin/elasticsearch <a id="CO9-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+ES_JAVA_OPTS="-Xmx4000mb -Xmx4000mb" ./bin/elasticsearch <a id="CO9-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set the minimum and maximum heap size to 2 GB.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set the minimum and maximum heap size to 4000 MB.
+</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="setting-system-settings.html">
               « 
               Configuring system settings</a>
            

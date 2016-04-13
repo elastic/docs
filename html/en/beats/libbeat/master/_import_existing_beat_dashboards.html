@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Delaying allocation when a node leaves</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-modules-allocation.html" title="Index Shard Allocation" /><link rel="prev" href="shard-allocation-filtering.html" title="Shard Allocation Filtering" /><link rel="next" href="recovery-prioritization.html" title="Index recovery prioritization" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Import existing Beat dashboards</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Beats Platform Reference [master]" /><link rel="up" href="new-dashboards.html" title="Developer Guide: Creating new Kibana dashboards" /><link rel="prev" href="new-dashboards.html" title="Developer Guide: Creating new Kibana dashboards" /><link rel="next" href="_export_the_beat_dashboards.html" title="Export the Beat dashboards" /><meta name="DC.type" content="Docs/Libbeat/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -742,89 +742,53 @@
 <br/>
 This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
 version&#39;s documentation here</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Beats Platform Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-link"><a href="index-modules-allocation.html">Index Shard Allocation</a></span> » <span class="breadcrumb-node">Delaying allocation when a node leaves</span></div><div class="navheader"><span class="prev"><a href="shard-allocation-filtering.html">
+    </a></span> » <span class="breadcrumb-link"><a href="new-dashboards.html">Developer Guide: Creating new Kibana dashboards</a></span> » <span class="breadcrumb-node">Import existing Beat dashboards</span></div><div class="navheader"><span class="prev"><a href="new-dashboards.html">
               « 
-              Shard Allocation Filtering</a>
+              Developer Guide: Creating new Kibana dashboards</a>
            
         </span><span class="next">
            
-          <a href="recovery-prioritization.html">Index recovery prioritization
+          <a href="_export_the_beat_dashboards.html">Export the Beat dashboards
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="delayed-allocation"></a>Delaying allocation when a node leaves<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When a node leaves the cluster for whatever reason, intentional or otherwise,
-the master reacts by:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Promoting a replica shard to primary to replace any primaries that were on the node.
-</li><li class="listitem">
-Allocating replica shards to replace the missing replicas (assuming there are enough nodes).
-</li><li class="listitem">
-Rebalancing shards evenly across the remaining nodes.
-</li></ul></div><p>These actions are intended to protect the cluster against data loss by
-ensuring that every shard is fully replicated as soon as possible.</p><p>Even though we throttle concurrent recoveries both at the
-<a class="link" href="recovery.html" title="Indices Recovery">node level</a> and at the <a class="link" href="shards-allocation.html" title="Cluster Level Shard Allocation">cluster level</a>, this
-“shard-shuffle” can still put a lot of extra load on the cluster which
-may not be necessary if the missing node is likely to return soon. Imagine
-this scenario:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Node 5 loses network connectivity.
-</li><li class="listitem">
-The master promotes a replica shard to primary for each primary that was on Node 5.
-</li><li class="listitem">
-The master allocates new replicas to other nodes in the cluster.
-</li><li class="listitem">
-Each new replica makes an entire copy of the primary shard across the network.
-</li><li class="listitem">
-More shards are moved to different nodes to rebalance the cluster.
-</li><li class="listitem">
-Node 5 returns after a few minutes.
-</li><li class="listitem">
-The master rebalances the cluster by allocating shards to Node 5.
-</li></ul></div><p>If the master had just waited for a few minutes, then the missing shards could
-have been re-allocated to Node 5 with the minimum of network traffic.  This
-process would be even quicker for idle shards (shards not receiving indexing
-requests) which have been automatically <a class="link" href="indices-synced-flush.html" title="Synced Flush">sync-flushed</a>.</p><p>The allocation of replica shards which become unassigned because a node has
-left can be delayed with the <code class="literal">index.unassigned.node_left.delayed_timeout</code>
-dynamic setting, which defaults to <code class="literal">1m</code>.</p><p>This setting can be updated on a live index (or on all indices):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_all/_settings
-{
-  "settings": {
-    "index.unassigned.node_left.delayed_timeout": "5m"
-  }
-}</pre></div><div class="sense_widget" data-snippet="snippets/delayed-allocation/1.json"></div><p>With delayed allocation enabled, the above scenario changes to look like this:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Node 5 loses network connectivity.
-</li><li class="listitem">
-The master promotes a replica shard to primary for each primary that was on Node 5.
-</li><li class="listitem">
-The master logs a message that allocation of unassigned shards has been delayed, and for how long.
-</li><li class="listitem">
-The cluster remains yellow because there are unassigned replica shards.
-</li><li class="listitem">
-Node 5 returns after a few minutes, before the <code class="literal">timeout</code> expires.
-</li><li class="listitem">
-The missing replicas are re-allocated to Node 5 (and sync-flushed shards recover almost immediately).
-</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This setting will not affect the promotion of replicas to primaries, nor
-will it affect the assignment of replicas that have not been assigned
-previously. In particular, delayed allocation does not come into effect after a full cluster restart.
-Also, in case of a master failover situation, elapsed delay time is forgotten
-(i.e. reset to the full initial delay).</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_cancellation_of_shard_relocation"></a>Cancellation of shard relocation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If delayed allocation times out, the master assigns the missing shards to
-another node which will start recovery.  If the missing node rejoins the
-cluster, and its shards still have the same sync-id as the primary, shard
-relocation will be cancelled and the synced shard will be used for recovery
-instead.</p><p>For this reason, the default <code class="literal">timeout</code> is set to just one minute: even if shard
-relocation begins, cancelling recovery in favour of the synced shard is cheap.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_monitoring_delayed_unassigned_shards"></a>Monitoring delayed unassigned shards<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The number of shards whose allocation has been delayed by this timeout setting
-can be viewed with the <a class="link" href="cluster-health.html" title="Cluster Health">cluster health API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/health <a id="CO273-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO273-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This request will return a <code class="literal">delayed_unassigned_shards</code> value.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_removing_a_node_permanently"></a>Removing a node permanently<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If a node is not going to return and you would like Elasticsearch to allocate
-the missing shards immediately, just update the timeout to zero:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_all/_settings
-{
-  "settings": {
-    "index.unassigned.node_left.delayed_timeout": "0"
-  }
-}</pre></div><div class="sense_widget" data-snippet="snippets/delayed-allocation/2.json"></div><p>You can reset the timeout as soon as the missing shards have started to recover.</p></div></div><div class="navfooter"><span class="prev"><a href="shard-allocation-filtering.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_import_existing_beat_dashboards"></a>Import existing Beat dashboards<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>For Unix systems, you can use the bash script <code class="literal">import_dashboards.sh</code>
+and for Windows you can use the powershell script <code class="literal">import_dashboards.ps1</code> from
+<a class="ulink" href="https://github.com/elastic/beats/tree/master/dev-tools" target="_top">dev-tools</a>.</p><p>The command has the following options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ ./import_dashboards.sh -h
+
+
+Import the dashboards, visualizations and index patterns into Kibana.
+
+The Kibana dashboards together with its dependencies are saved into a
+special index pattern in Elasticsearch (by default .kibana), so you need to
+specify the Elasticsearch URL and optionally an username and password.
+
+Usage:
+  import_dashboards.sh -url http://localhost:9200 -user admin:secret -index .kibana
+
+Options:
+  -h | -help
+    Print the help menu.
+  -d | -dir
+    Local directory where the dashboards, visualizations, searches and index
+    pattern are saved.
+  -l | -url
+    Elasticseacrh URL. By default is http://localhost:9200.
+  -u | -user
+    Username and password for authenticating to Elasticsearch using Basic
+    Authentication. The username and password should be separated by a
+    colon (i.e. admin:secret). By default no username and password are
+    used.
+  -i | -index
+    Kibana index pattern where to save the dashboards, visualizations,
+    index patterns. By default is .kibana.</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_dir"></a>dir<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The input directory with the dashboards together with its dependencies. The default value is current directory.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_url"></a>url<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Elasticsearch URL. The default value is <a class="ulink" href="http://localhost:9200" target="_top">http://localhost:9200</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_user"></a>user<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The username and password for authenticating the connection to Elasticsearch using Basic Authentication. The username and password should be separated by a colon. By default no username and password are used.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_kibana"></a>kibana<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Elasticsearch index pattern where Kibana saved its configuration. The default value is <code class="literal">.kibana</code>.</p><p>To import all the dashboards together with  all the dependencies (visualizations, searches and index patterns), you just
+need to run the following command in the beats repository:</p><p>On Unix systems:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">../dev-tools/import_dashboards.sh -dir etc/kibana</pre></div><p>On Windows systems:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">..\dev-tools\import_dashboards.ps1 -dir .\etc\kibana</pre></div></div></div><div class="navfooter"><span class="prev"><a href="new-dashboards.html">
               « 
-              Shard Allocation Filtering</a>
+              Developer Guide: Creating new Kibana dashboards</a>
            
         </span><span class="next">
            
-          <a href="recovery-prioritization.html">Index recovery prioritization
+          <a href="_export_the_beat_dashboards.html">Export the Beat dashboards
                »
             </a></span></div>
 <!-- end body -->
