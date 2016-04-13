@@ -765,10 +765,8 @@ mapping, <a id="id-1.4.12.8.2.8" class="indexterm"></a>like a database schema, d
 documents of that type may have, <a id="id-1.4.12.8.2.10" class="indexterm"></a>
 <a id="id-1.4.12.8.2.11" class="indexterm"></a>the datatype of each field—such as <code class="literal">string</code>,
 <code class="literal">integer</code>, or <code class="literal">date</code>—and how those fields should be indexed and stored by
-Lucene.</p><p>In <a class="xref" href="document.html" title="What Is a Document?">What Is a Document?</a>, we said that a type is like a table in a relational database.
-While this is a useful way to think about types initially, it is worth
-explaining in more detail exactly what a type is and how they are implemented
-on top of Lucene.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_how_lucene_sees_documents"></a>How Lucene Sees Documents<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/070_Index_Mgmt/25_Mappings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A document in Lucene consists of a simple list of field-value pairs.<a id="id-1.4.12.8.4.2.1" class="indexterm"></a>
+Lucene.</p><p>Types can be useful abstractions for partitioning similar-but-not-identical data.
+But due to how Lucene operates they come with some restrictions.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_how_lucene_sees_documents"></a>How Lucene Sees Documents<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/070_Index_Mgmt/25_Mappings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A document in Lucene consists of a simple list of field-value pairs.<a id="id-1.4.12.8.4.2.1" class="indexterm"></a>
 <a id="id-1.4.12.8.4.2.2" class="indexterm"></a> A field
 must have at least one value, but any field can contain multiple values.
 Similarly, a single string value may be converted into multiple values by the
@@ -777,8 +775,7 @@ dates—all values are just treated as <span class="emphasis"><em>opaque bytes</
 inverted index for the associated field.  Optionally, the original values may
 also be <span class="emphasis"><em>stored</em></span> unchanged so that they can be retrieved later.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_how_types_are_implemented"></a>How Types Are Implemented<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/070_Index_Mgmt/25_Mappings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Elasticsearch types are <a id="id-1.4.12.8.5.2.1" class="indexterm"></a>
 <a id="id-1.4.12.8.5.2.2" class="indexterm"></a>implemented on top of this simple foundation. An index
-may have several types, each with its own mapping, and documents of any of
-these types may be stored in the same index.</p><p>Because Lucene has no concept of document types, the type name of each
+may have several types, and documents of any of these types may be stored in the same index.</p><p>Because Lucene has no concept of document types, the type name of each
 document is stored with the document in a metadata field called <code class="literal">_type</code>.<a id="id-1.4.12.8.5.3.2" class="indexterm"></a> When
 we search for documents of a particular type, Elasticsearch simply uses a
 filter on the <code class="literal">_type</code> field to restrict results to documents of that type.</p><p>Lucene also has no concept of mappings.<a id="id-1.4.12.8.5.4.1" class="indexterm"></a> Mappings are the layer
@@ -789,49 +786,79 @@ by the <code class="literal">whitespace</code> analyzer before being indexed int
 index called <code class="literal">name</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"name": {
     "type":     "string",
     "analyzer": "whitespace"
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_avoiding_type_gotchas"></a>Avoiding Type Gotchas<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/070_Index_Mgmt/25_Mappings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The fact that documents of different types can be added to the same index
-introduces some unexpected<a id="id-1.4.12.8.6.2.1" class="indexterm"></a>
-<a id="id-1.4.12.8.6.2.2" class="indexterm"></a> complications.</p><p>Imagine that we have two types in our index: <code class="literal">blog_en</code> for blog posts in
-English, and <code class="literal">blog_es</code> for blog posts in Spanish.  Both types have a
-<code class="literal">title</code> field, but one type uses the <code class="literal">english</code> analyzer and
-the other type uses the <code class="literal">spanish</code> analyzer.</p><p>The problem is illustrated by the following query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
-{
-    "query": {
-        "match": {
-            "title": "The quick brown fox"
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_avoiding_type_gotchas"></a>Avoiding Type Gotchas<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/070_Index_Mgmt/25_Mappings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This leads to an interesting thought experiment: what happens if you have two
+different types, each with an identically named field but mapped differently
+(e.g. one is a string, the other is a number)?</p><p>Well, the short answer is that bad things happen and Elasticsearch won’t allow you
+to define this mapping at all.  You’d receive an exception when attempting to
+configure the mapping.</p><p>The longer answer is that each Lucene index contains a single, flat schema
+for all fields.  A particular field is either mapped as a string, or a number, but
+not both.  And because types are a mechanism added by Elasticsearch <span class="emphasis"><em>on top</em></span>
+of Lucene (in the form of a metadata <code class="literal">_type</code> field), all types in Elasticsearch
+ultimately share the same mapping.</p><p>Take for example this mapping of two types in the <code class="literal">data</code> index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "data": {
+      "mappings": {
+         "people": {
+            "properties": {
+               "name": {
+                  "type": "string",
+               },
+               "address": {
+                  "type": "string"
+               }
+            }
+         },
+         "transactions": {
+            "properties": {
+               "timestamp": {
+                  "type": "date",
+                  "format": "strict_date_optional_time"
+               },
+               "message": {
+                  "type": "string"
+               }
+            }
+         }
+      }
+   }
+}</pre></div><p>Each type defines two fields (<code class="literal">"name"</code>/<code class="literal">"address"</code> and <code class="literal">"timestamp"</code>/<code class="literal">"message"</code>
+respectively).  It may look like they are independent, but under the covers Lucene
+will create a single mapping which would look something like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "data": {
+      "mappings": {
+        "_type": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "name": {
+          "type": "string"
         }
-    }
-}</pre></div><p>We are searching in the <code class="literal">title</code> field in both types.  The query string needs
-to be analyzed, but which analyzer does it use: <code class="literal">spanish</code> or <code class="literal">english</code>? It
-will use the analyzer for the first <code class="literal">title</code> field that it finds, which
-will be correct for some docs and incorrect for the others.</p><p>We can avoid this problem either by naming the fields differently—for example, <code class="literal">title_en</code> and <code class="literal">title_es</code>—or by explicitly including the type name in the
-field name and querying each field separately:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
-{
-    "query": {
-        "multi_match": { <a id="CO34-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            "query":    "The quick brown fox",
-            "fields": [ "blog_en.title", "blog_es.title" ]
+        "address": {
+          "type": "string"
         }
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO34-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">multi_match</code> query runs a <code class="literal">match</code> query on multiple fields
-    and combines the results.
-</p></td></tr></table></div><p>Our new query uses the <code class="literal">english</code> analyzer for the field <code class="literal">blog_en.title</code> and
-the <code class="literal">spanish</code> analyzer for the field <code class="literal">blog_es.title</code>, and combines the results
-from both fields into an overall relevance score.</p><p>This solution can help when both fields have the same datatype, but consider
-what would happen if you indexed these two documents into the same index:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Type: user
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"> { "login": "john_smith" }</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Type: event
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"> { "login": "2014-06-01" }</pre></div><p>Lucene doesn’t care that one field contains a string and the other field
-contains a date. It will happily index the byte values from both fields.</p><p>However, if we now try to <span class="emphasis"><em>sort</em></span> on the <code class="literal">event.login</code> field, Elasticsearch
-needs to load the values in the <code class="literal">login</code> field into memory. As we said in
-<a class="xref" href="fielddata-intro.html" title="Fielddata">Fielddata</a>, it loads the values for  <span class="emphasis"><em>all documents</em></span> in the index
-regardless of their type.</p><p>It will try to load these values either as a string or as a date, depending on
-which <code class="literal">login</code> field it sees first. This will either produce unexpected results
-or fail outright.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>To ensure that you don’t run into these conflicts, it is advisable to
-ensure that fields with the <span class="emphasis"><em>same name</em></span> are mapped in the <span class="emphasis"><em>same way</em></span> in every
-type in an index.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="custom-analyzers.html">
+        "timestamp": {
+          "type": "long"
+        }
+        "message": {
+          "type": "string"
+        }
+      }
+   }
+}</pre></div><p><span class="emphasis"><em>Note: This is not actually valid mapping syntax, just used for demonstration</em></span></p><p>The mappings are essentially <span class="emphasis"><em>flattened</em></span> into a single, global schema for the
+entire index.  And that’s why two types cannot define conflicting fields:
+Lucene wouldn’t know what to do when the mappings are flattened together.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_type_takeaways"></a>Type Takeaways<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/070_Index_Mgmt/25_Mappings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>So what’s the takeaway from this discussion?  Technically, multiple types
+may live in the same index as long as their fields do not conflict (either because
+the fields are mutually exclusive, or because they share identical fields).</p><p>Practically though, the important lesson is this:  types are useful when you need
+to discriminate between different segments of a single collection. The overall "shape" of the
+data is identical (or nearly so) between the different segments</p><p>Types are not as well suited for <span class="emphasis"><em>entirely different types of data</em></span>.  If your two
+types have mutually exclusive sets of fields, that means half your index is going to
+contain "empty" values (the fields will be <span class="emphasis"><em>sparse</em></span>), which will eventually cause performance
+problems.  In these cases, it’s much better to utilize two independent indices.</p><p>In summary:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong"><strong>Good:</strong></span> <code class="literal">kitchen</code> and <code class="literal">lawn-care</code> types inside the <code class="literal">products</code> index, because
+the two types are essentially the same schema
+</li><li class="listitem">
+<span class="strong"><strong>Bad:</strong></span> <code class="literal">products</code> and <code class="literal">logs</code> types the <code class="literal">data</code> index, because the two types are
+mutually exclusive.  Separate these into their own indices.
+</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="custom-analyzers.html">
               « 
               Custom Analyzers</a>
            

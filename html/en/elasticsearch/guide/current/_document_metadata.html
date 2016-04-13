@@ -773,9 +773,10 @@ elements are as follows:</p><div class="variablelist"><dl class="variablelist"><
 <code class="literal">_id</code>
 </span></dt><dd>
    The unique identifier for the document
-</dd></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_index"></a>_index<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/030_Data/05_Document.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>An <span class="emphasis"><em>index</em></span> is like a database in a relational database; it’s the place
-we store and index related data.<a id="id-1.4.5.13.4.2.2" class="indexterm"></a>
-<a id="id-1.4.5.13.4.2.3" class="indexterm"></a></p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Actually, in Elasticsearch, our data is stored and indexed in <span class="emphasis"><em>shards</em></span>,
+</dd></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_index"></a>_index<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/030_Data/05_Document.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>An <span class="emphasis"><em>index</em></span> is a collection of documents that should be grouped together for a
+common reason.  For example, you may store all your products in a <code class="literal">products</code> index,
+while all your sales transactions go in <code class="literal">sales</code>.  Although it is possible to store
+unrelated data together in a single index, it is often considered an anti-pattern.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Actually, in Elasticsearch, our data is stored and indexed in <span class="emphasis"><em>shards</em></span>,
 while an index is just a logical namespace that groups together one or more
 shards.<a id="id-1.4.5.13.4.3.1.2" class="indexterm"></a>
 <a id="id-1.4.5.13.4.3.1.3" class="indexterm"></a> However, this is an internal detail; our application shouldn’t care
@@ -783,23 +784,18 @@ about shards at all.  As far as our application is concerned, our documents
 live in an <span class="emphasis"><em>index</em></span>. Elasticsearch takes care of the details.</p></div></div><p>We cover how to create and manage indices ourselves in <a class="xref" href="index-management.html" title="Index Management"><em>Index Management</em></a>,
 but for now we will let Elasticsearch create the index for us.  All we have to
 do is choose an index name.  This name must be lowercase, cannot begin with an
-underscore, and cannot contain commas. Let’s use <code class="literal">website</code> as our index name.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_type"></a>_type<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/030_Data/05_Document.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In applications, we use objects to represent <span class="emphasis"><em>things</em></span> such as a user, a blog
-post, a comment, or an email. Each object belongs to a <span class="emphasis"><em>class</em></span> that defines
-the properties or data associated with an object. Objects in the <code class="literal">user</code> class
-may have a name, a gender, an age, and an email address.</p><p>In a relational database, we usually store objects of the same class in the
-same table, because they share the same data structure. For the same reason, in
-Elasticsearch we use the same <span class="emphasis"><em>type</em></span> for <a id="id-1.4.5.13.5.3.2" class="indexterm"></a>
-<a id="id-1.4.5.13.5.3.3" class="indexterm"></a>
-<a id="id-1.4.5.13.5.3.4" class="indexterm"></a>documents that represent the same
-class of <span class="emphasis"><em>thing</em></span>, because they share the same data structure.</p><p>Every <span class="emphasis"><em>type</em></span> has its own <a class="link" href="mapping.html" title="Types and Mappings">mapping</a> or schema <a id="id-1.4.5.13.5.4.3" class="indexterm"></a><a id="id-1.4.5.13.5.4.4" class="indexterm"></a>definition, which
-defines the data structure for documents of that type, much like the columns
-in a database table. Documents of all types can be stored in the same index,
-but the <span class="emphasis"><em>mapping</em></span> for the type tells Elasticsearch how the data in each
-document should be indexed.</p><p>We show how to specify and manage mappings in <a class="xref" href="mapping.html" title="Types and Mappings">Types and Mappings</a>, but for now
-we will rely on Elasticsearch to detect our document’s data structure
-automatically.</p><p>A <code class="literal">_type</code> name can be lowercase or uppercase, but shouldn’t begin with an
-underscore or contain commas.<a id="id-1.4.5.13.5.6.2" class="indexterm"></a>
-<a id="id-1.4.5.13.5.6.3" class="indexterm"></a>  We will use <code class="literal">blog</code> for our type name.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_id"></a>_id<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/030_Data/05_Document.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <span class="emphasis"><em>ID</em></span> is a string that,<a id="id-1.4.5.13.6.2.2" class="indexterm"></a>
+underscore, and cannot contain commas. Let’s use <code class="literal">website</code> as our index name.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_type"></a>_type<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/030_Data/05_Document.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Data may be grouped loosely together in an index, but often there are sub-partitions
+inside that data which may be useful to explicitly define.  For example, all your
+products may go inside a single index.  But you have different categories of products,
+such as "electronics", "kitchen" and "lawn-care".</p><p>The documents all share an identical (or very similar) schema: they have a title,
+description, product code, price.  They just happen to belong to sub-categories
+under the umbrella of "Products".</p><p>Elasticsearch exposes a feature called <span class="emphasis"><em>types</em></span> which allows you to logically
+partition data inside of an index.  Documents in different types may have different
+fields, but it is best if they are highly similar.  We’ll talk more about the restrictions
+and applications of types in <a class="xref" href="mapping.html" title="Types and Mappings">Types and Mappings</a>.</p><p>A <code class="literal">_type</code> name can be lowercase or uppercase, but shouldn’t begin with an
+underscore or period.  It also may not contain commas,<a id="id-1.4.5.13.5.5.2" class="indexterm"></a>
+<a id="id-1.4.5.13.5.5.3" class="indexterm"></a>
+and is limited to a length of 256 characters. We will use <code class="literal">blog</code> for our type name.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_id"></a>_id<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/030_Data/05_Document.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <span class="emphasis"><em>ID</em></span> is a string that,<a id="id-1.4.5.13.6.2.2" class="indexterm"></a>
 <a id="id-1.4.5.13.6.2.3" class="indexterm"></a> when combined with the <code class="literal">_index</code> and <code class="literal">_type</code>,
 uniquely identifies a document in Elasticsearch. When creating a new document,
 you can either provide your own <code class="literal">_id</code> or let Elasticsearch generate one for
