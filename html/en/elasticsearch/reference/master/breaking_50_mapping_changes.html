@@ -785,7 +785,31 @@ When adding a <code class="literal">string</code> field to a new index, the fiel
     }
   }
 }</pre></div><p>This allows to perform full-text search on the original field name and to sort
-and run aggregations on the sub keyword field.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_index_literal_property"></a><code class="literal">index</code> property<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>On all field datatypes (except for the deprecated <code class="literal">string</code> field), the <code class="literal">index</code>
+and run aggregations on the sub keyword field.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_numeric_fields"></a>Numeric fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Numeric fields are now indexed with a completely different data-structure, called
+BKD tree, that is expected to require less disk space and be faster for range
+queries than the previous way that numerics were indexed.</p><p>Term queries will return constant scores now, while they used to return higher
+scores for rare terms due to the contribution of the document frequency, which
+this new BKD structure does not record. If scoring is needed, then it is advised
+to map the numeric fields as <a class="link" href="keyword.html" title="Keyword datatype">`keyword`s</a> too.</p><p>Note that this <a class="link" href="keyword.html" title="Keyword datatype"><code class="literal">keyword</code></a> mapping do not need to replace the numeric
+mapping. For instance if you need both sorting and scoring on your numeric field,
+you could map it both as a number and a <code class="literal">keyword</code> using <a class="xref" href="multi-fields.html" title="fields"><code class="literal">fields</code></a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_index
+{
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "my_number": {
+          "type": "long",
+          "fields": {
+            "keyword": {
+              "type":  "keyword"
+            }
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="sense_widget" data-snippet="snippets/breaking_50_mapping_changes/1.json"></div><p>Also the <code class="literal">precision_step</code> parameter is now irrelevant and will be rejected on
+indices that are created on or after 5.0.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_index_literal_property"></a><code class="literal">index</code> property<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>On all field datatypes (except for the deprecated <code class="literal">string</code> field), the <code class="literal">index</code>
 property now only accepts <code class="literal">true</code>/<code class="literal">false</code> instead of <code class="literal">not_analyzed</code>/<code class="literal">no</code>. The
 <code class="literal">string</code> field still accepts <code class="literal">analyzed</code>/<code class="literal">not_analyzed</code>/<code class="literal">no</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_doc_values_on_unindexed_fields"></a>Doc values on unindexed fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Previously, setting a field to <code class="literal">index:no</code> would also disable doc-values.  Now,
 doc-values are always enabled on numeric and boolean fields unless
