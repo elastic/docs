@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Granting Privileges for Indices &amp; Aliases</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield [2.3]" /><link rel="up" href="configuring-rbac.html" title="Configuring Role-based Access Control" /><link rel="prev" href="deprecated-roles.html" title="Deprecated Role Formats" /><link rel="next" href="mapping-roles.html" title="Mapping Users and Groups to Roles" /><meta name="DC.type" content="Docs/Shield/Reference/2.3" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Granting Privileges for Index Aliases</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield [2.3]" /><link rel="up" href="configuring-rbac.html" title="Role-based Access Control" /><link rel="prev" href="_file_based_roles.html" title="File-based Roles" /><link rel="next" href="mapping-roles.html" title="Mapping Users and Groups to Roles" /><meta name="DC.type" content="Docs/Shield/Reference/2.3" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -750,57 +750,46 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield
       [2.3]
-    </a></span> » <span class="breadcrumb-link"><a href="configuring-rbac.html">Configuring Role-based Access Control</a></span> » <span class="breadcrumb-node">Granting Privileges for Indices &amp; Aliases</span></div><div class="navheader"><span class="prev"><a href="deprecated-roles.html">
+    </a></span> » <span class="breadcrumb-link"><a href="configuring-rbac.html">Role-based Access Control</a></span> » <span class="breadcrumb-node">Granting Privileges for Index Aliases</span></div><div class="navheader"><span class="prev"><a href="_file_based_roles.html">
               « 
-              Deprecated Role Formats</a>
+              File-based Roles</a>
            
         </span><span class="next">
            
           <a href="mapping-roles.html">Mapping Users and Groups to Roles
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="securing-aliases"></a>Granting Privileges for Indices &amp; Aliases</h2></div></div></div><p>Elasticsearch allows to execute operations against <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.3/indices-aliases.html" target="_top">index aliases</a>,
-which are effectively virtual indices. An alias points to one or more indices, holds metadata and potentially a filter.
-Shield treats aliases and indices the same. Privileges for indices actions are granted on specific indices or aliases.
-In order for an indices action to be authorized by Shield, the user that executes it needs to have permissions for that
-action on all the specific indices or aliases that the request relates to.</p><p>Let’s look at an example. Assuming we have an index called <code class="literal">2015</code>, an alias that points to it called <code class="literal">current_year</code>,
-and a user with the following role:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">current_year_read:
-  indices:
-    - names:
-       - '2015'
-      privileges:
-        - read</pre></div><p>The user attempts to retrieve a document from <code class="literal">current_year</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/current_year/logs/1'</pre></div><p>The above request gets rejected, although the user has read permissions on the concrete index that the <code class="literal">current_year</code>
-alias points to. The correct permission would be as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">current_year_read:
-  indices:
-    - names:
-        - 'current_year'
-      privileges:
-        - read</pre></div><h4><a id="_managing_aliases"></a>Managing aliases</h4><p>Unlike creating indices, which requires the <code class="literal">create_index</code> privilege, adding/removing/retrieving aliases requires
-<code class="literal">manage</code> permission. Aliases can be added to an index directly as part of the index creation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XPUT localhost:9200/2015 -d '{
-    "aliases" : {
-        "current_year" : {}
-    }
-}'</pre></div><p>or via the dedicated aliases api if the index already exists:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XPOST 'http://localhost:9200/_aliases' -d '
-{
-    "actions" : [
-        { "add" : { "index" : "2015", "alias" : "current_year" } }
-    ]
-}'</pre></div><p>The above requests both require the <code class="literal">manage</code> privilege on the alias name as well as the targeted index, as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">admin:
-  indices:
-    - names:
-        - '20*'
-        - 'current_year'
-      privileges:
-        - manage</pre></div><p>The index aliases api allows also to delete aliases from existing indices, as follows. The privileges required for such
-a request are the same as above. Both index and alias need the <code class="literal">manage</code> permission.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XPOST 'http://localhost:9200/_aliases' -d '
-{
-    "actions" : [
-        { "delete" : { "index" : "2015", "alias" : "current_year" } }
-    ]
-}'</pre></div><h4><a id="_filtered_aliases"></a>Filtered aliases</h4><p>Aliases can hold a filter, which allows to select a subset of documents that can be accessed out of all the documents that
-the physical index contains. These filters are not always applied and should not be used
-in place of <a class="link" href="setting-up-field-and-document-level-security.html#document-level-security" title="Document Level Security">document level security</a>.</p></div><div class="navfooter"><span class="prev"><a href="deprecated-roles.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="securing-aliases"></a>Granting Privileges for Index Aliases</h2></div></div></div><p>You grant access to <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.3/indices-aliases.html" target="_top">index aliases</a> the
+same way you grant access to particular indexes. To perform an action
+against an index alias, the user must have privileges for that alias.
+Access to aliased indices does not automatically confer access to
+the alias.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Aliases can have a filter that specifies a subset of the documents
+in the physical index. These filters are not always applied and should not
+be used in place of <a class="link" href="setting-up-field-and-document-level-security.html#document-level-security" title="Document Level Security">document level security</a>.</p></div></div><p>For example, if you have index called <code class="literal">2016</code> and an alias that points to it
+called <code class="literal">current_year</code>, to give a user permission to use the alias you could
+assign the following role:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+   "current_year_read": {
+      "cluster":[],
+      "indices":[{
+         "names":["current_year"],
+         "privileges":["read"]}],
+      "run_as":[]
+   }
+}</pre></div><p>Granting read access to the <code class="literal">2016</code> index does <span class="strong"><strong>not</strong></span> enable a user to use the
+<code class="literal">current_year</code> alias.</p><h4><a id="_managing_aliases"></a>Managing Aliases</h4><p>Performing CRUD operations on an index alias requires the <code class="literal">manage</code> privilege on both
+the targeted indices and the alias. Adding an alias when creating an index also
+requires the <code class="literal">create_index</code> privilege.</p><p>For example, the following role would enable a user to create an alias called
+<code class="literal">current_year</code> for the index named <code class="literal">2016</code>  through the
+dedicated aliases API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+   "admin": {
+      "cluster":[],
+      "indices":[{
+         "names":["2016", "current_year"],
+         "privileges":["manage"]}],
+      "run_as":[]
+   }
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="_file_based_roles.html">
               « 
-              Deprecated Role Formats</a>
+              File-based Roles</a>
            
         </span><span class="next">
            

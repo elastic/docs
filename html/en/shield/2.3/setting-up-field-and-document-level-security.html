@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting Up Field and Document Level Security</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield [2.3]" /><link rel="up" href="configuring-rbac.html" title="Configuring Role-based Access Control" /><link rel="prev" href="mapping-roles.html" title="Mapping Users and Groups to Roles" /><link rel="next" href="submitting-requests-for-other-users.html" title="Submitting Requests on Behalf of Other Users" /><meta name="DC.type" content="Docs/Shield/Reference/2.3" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting Up Field and Document Level Security</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield [2.3]" /><link rel="up" href="configuring-rbac.html" title="Role-based Access Control" /><link rel="prev" href="mapping-roles.html" title="Mapping Users and Groups to Roles" /><link rel="next" href="submitting-requests-for-other-users.html" title="Submitting Requests on Behalf of Other Users" /><meta name="DC.type" content="Docs/Shield/Reference/2.3" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -750,7 +750,7 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield
       [2.3]
-    </a></span> » <span class="breadcrumb-link"><a href="configuring-rbac.html">Configuring Role-based Access Control</a></span> » <span class="breadcrumb-node">Setting Up Field and Document Level Security</span></div><div class="navheader"><span class="prev"><a href="mapping-roles.html">
+    </a></span> » <span class="breadcrumb-link"><a href="configuring-rbac.html">Role-based Access Control</a></span> » <span class="breadcrumb-node">Setting Up Field and Document Level Security</span></div><div class="navheader"><span class="prev"><a href="mapping-roles.html">
               « 
               Mapping Users and Groups to Roles</a>
            
@@ -760,103 +760,115 @@
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="setting-up-field-and-document-level-security"></a>Setting Up Field and Document Level Security</h2></div></div></div><p>You can control access to data within an index by adding field and document level security permissions to a role.
 Field level security permissions restrict access to particular fields within a document.
-Document level security permissions restrict access to particular documents within an index.</p><p>Field and document level permissions are specified separately, but a role can define both field and document level permissions.
-Field and document level security permissions can be configured on a per-index basis.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Document and field level security is currently meant to operate with read-only
+Document level security permissions restrict access to particular documents within an index.</p><p>Field and document level permissions are specified separately, but a role can have both field and
+document level permissions. Field and document level security permissions can be configured on a per-index basis.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Document and field level security is currently meant to operate with read-only
 privileged accounts. Users with document and field level security enabled for an index
-should not perform write operations.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_field_level_security"></a>Field Level Security</h3></div></div></div><p>To enable field level security, you specify the fields that each role can access in the <code class="literal">roles.yml</code> file.
-You list the allowed fields with the <code class="literal">fields</code> option. Fields are associated with a particular index or index pattern and
-operate in conjunction with the privileges specified for the indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">&lt;role_name&gt;:
-  indices:
-    - names:
-        - &lt;index_permission_expression_1&gt;
-        - &lt;index_permission_expression_2&gt;
-        - &lt;index_permission_expression_N&gt;
-      privileges:
-        - &lt;privilege_1&gt;
-        - &lt;privilege_2&gt;
-        - &lt;privilege_N&gt;
-      fields:
-        - &lt;allowed_field_1&gt;
-        - &lt;allowed_field_2&gt;
-        - &lt;allowed_field_N&gt;</pre></div><p>To allow access to the <code class="literal">_all</code> meta field, you must explicitly list it as an allowed field. Access to the following meta fields
+should not perform write operations.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="field-level-security"></a>Field Level Security</h3></div></div></div><p>To enable field level security, you specify the fields that each role can access in the role definition.
+You list the allowed fields in the <code class="literal">fields</code> entry. (Omitting the <code class="literal">fields</code> entry disables field-level security.)
+Fields are associated with a particular index or index pattern and operate in conjunction with the privileges
+specified for the indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_shield/role/my_fls_role
+{
+  "indices": [
+    {
+      "names": [ "index1", "index2" ],
+      "privileges": ["read"], <a id="CO16-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "fields": [ "title", "body" ]
+    }
+  ]
+}</pre></div><div class="sense_widget" data-snippet="snippets/setting-up-field-and-document-level-security/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Users with document and field level security enabled for an index
+should not perform write operations.
+</p></td></tr></table></div><p>To allow access to the <code class="literal">_all</code> meta field, you must explicitly list it as an allowed field. Access to the following meta fields
 is always allowed: _id, _type, _parent, _routing, _timestamp, _ttl, _size and _index. If you specify an empty list of fields,
-only these meta fields are accessible.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Omitting the fields entry entirely disables field-level security.</p></div></div><p>For example, the following <code class="literal">customer_care</code> role grants read access to six fields in any index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">customer_care:
-  indices:
-    - names:
-        - '*'
-      privileges:
-        - read
-      fields:
-        - issue_id
-        - description
-        - customer_handle
-        - customer_email
-        - customer_address
-        - customer_phone</pre></div><p>Also wildcard field expressions can be added to the <code class="literal">fields</code> options in the <code class="literal">roles.yml</code> file. For example the following
-example has the same effect as the previous example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">customer_care:
-  indices:
-    - names:
-        - '*'
-      privileges:
-        - read
-      fields:
-        - issue_id
-        - description
-        - 'customer_*'</pre></div><p>If documents are more complex and contain json objects then the fields with dot notion should be used.</p><p>Assume the following document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+only these meta fields are accessible.</p><p>For example, the following <code class="literal">customer_care</code> role grants read access to six fields in any index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_shield/role/customer_care
+{
+  "indices": [
+    {
+      "names": [ "*" ],
+      "privileges": ["read"],
+      "fields": [
+            "issue_id",
+            "description",
+            "customer_handle",
+            "customer_email",
+            "customer_address",
+            "customer_phone"
+      ]
+    }
+  ]
+}</pre></div><div class="sense_widget" data-snippet="snippets/setting-up-field-and-document-level-security/2.json"></div><h5><a id="specifying-field-names"></a>Specifying Field Names in a Role</h5><p>Within the <code class="literal">indices.fields</code> array, you can use wildcards and regular expressions to refer to multiple fields:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Wildcards - by default you can use simple wildcard matching where <code class="literal">*</code> is a
+placeholder for zero or more characters, <code class="literal">?</code> is a  placeholder for a single character
+and <code class="literal">\</code> can be used as an escape character.
+</li><li class="listitem">
+Regular Expressions - to match more complex patterns you can enable regular expressions by wrapping
+the pattern within a pair of forward slashes  (<code class="literal">/</code>). Regular expressions are based on
+Lucene’s regexp automaton syntax. Any pattern starting with <code class="literal">/</code> and not ending with <code class="literal">/</code>
+is considered to be malformed.
+</li></ul></div><p>For example, the following role is the same as the previous role:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_shield/role/customer_care
+{
+  "indices": [
+    {
+      "names": [ "*" ],
+      "privileges": ["read"],
+      "fields": [
+            "issue_id",
+            "description",
+            "customer_*"
+      ]
+    }
+  ]
+}</pre></div><div class="sense_widget" data-snippet="snippets/setting-up-field-and-document-level-security/3.json"></div><p>If the documents in your index are more complex and contain JSON objects, use dot notion to specify the accessible fields.</p><p>For example, if you have the following customer document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
   "customer": {
     "handle": "Jim",
     "email": "jim@mycompany.com",
     "phone": "555-555-5555"
   }
-}</pre></div><p>If only access to the <code class="literal">handle</code> field is allowed then the following role should be setup:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">my_role:
-  indices:
-    - names:
-        - '*'
-      privileges:
-        - read
-      fields:
-        - customer.handle</pre></div><p>If access to the entire <code class="literal">customer</code> object is allowed then the wildcard dot notation can be used to make this easier:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">my_role:
-  indices:
-    - names:
-        - '*'
-      privileges:
-        - read
-      fields:
-        - customer.*</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="document-level-security"></a>Document Level Security</h3></div></div></div><p>Enabling document level security restricts which documents can be accessed from any document based API.
-To enable document level security, you use a query to specify the documents that each role can access in the <code class="literal">roles.yml</code> file.
-You specify the document query with the <code class="literal">query</code> option. The document query is associated with a particular index or index pattern and
-operates in conjunction with the privileges specified for the indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">&lt;role_name&gt;:
-  indices:
-    - names:
-        - &lt;index_permission_expression_1&gt;
-        - &lt;index_permission_expression_2&gt;
-        - &lt;index_permission_expression_N&gt;
-      privileges:
-        - &lt;privilege_1&gt;
-        - &lt;privilege_2&gt;
-        - &lt;privilege_N&gt;
-      query:
-        &lt;query&gt;</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Omitting the <code class="literal">query</code> entry entirely disables document-level security.</p></div></div><p>The <code class="literal">query</code> should follow the same format as if a query was defined in the request body of a search request,
-but here the format is YAML. Any query from the query-dsl can be defined in the <code class="literal">query</code> entry.</p><p>For example, the following <code class="literal">customer_care</code> role grants read access to all indices, but restricts access to documents whose <code class="literal">department_id</code> equals <code class="literal">12</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">customer_care:
-  indices:
-    - names:
-        - '*'
-      privileges:
-        - read
-      query:
-        term:
-         department_id: 12</pre></div><p>Alternatively the query can also be defined in JSON as a string. This makes it easier to define queries that already have
-been defined in the JSON body of search request body elsewhere.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">customer_care:
-  indices:
-    - names:
-        - '*'
-      privileges:
-        - read
-      query: '{"term" : {"department_id" : "12"}}''</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="multiple-roles-dls-fls"></a>Multiple Roles with Document and Field Level Security</h3></div></div></div><p>A user can have many roles and each role can define different permissions on the same index. It is important to note the behavior of
-Document and Field Level security in this scenario.</p><p>Document level security will take into account each role held by the user, and combine each document level security query for a given index
-with an "OR". This means that only one of the role queries must match for a document to be returned. If a role grants access to an index
-without document level security and another grants access with document level security, document level security will not be applied; the
-user with both roles will have access to all of the documents in the index.</p><p>Field level security will take into account each role held by the user and combine all of the fields listed into a single set for each
+}</pre></div><p>To allow access to only the <code class="literal">handle</code> field, specify <code class="literal">customer.handle</code> in the <code class="literal">fields</code> entry:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_shield/role/my_role
+{
+  "indices": [
+    {
+      "names": [ "*" ],
+      "privileges": ["read"],
+      "fields": [ "customer.handle" ]
+    }
+  ]
+}</pre></div><div class="sense_widget" data-snippet="snippets/setting-up-field-and-document-level-security/4.json"></div><p>To allow access to the entire <code class="literal">customer</code> object, you can use a wildcard</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_shield/role/my_role
+{
+  "indices": [
+    {
+      "names": [ "*" ],
+      "privileges": ["read"],
+      "fields": [ "customer.*" ]
+    }
+  ]
+}</pre></div><div class="sense_widget" data-snippet="snippets/setting-up-field-and-document-level-security/5.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="document-level-security"></a>Document Level Security</h3></div></div></div><p>Enabling document level security restricts which documents can be accessed from any document based API.
+You use a query to specify the documents that can be accessed.
+To enable document level security, include a <code class="literal">query</code> entry in the role definition.
+(Omitting  <code class="literal">query</code> entry disables document-level security.)
+The query is associated with a particular index or index pattern and
+operates in conjunction with the privileges specified for the indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_shield/role/my_dls_role
+{
+  "indices": [
+    {
+      "names": [ "index1", "index2" ],
+      "privileges": ["read"], <a id="CO17-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "query": {"term" : {"department_id" : "12"}} <a id="CO17-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    }
+  ]
+}</pre></div><div class="sense_widget" data-snippet="snippets/setting-up-field-and-document-level-security/6.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Users with document and field level security enabled for an index
+should not perform write operations.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Any query from the Elasticsearch query-dsl can be use for the <code class="literal">query</code> entry.
+This query restricts access to only those documents whose <code class="literal">department_id</code> is <code class="literal">12</code>.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="multiple-roles-dls-fls"></a>Multiple Roles with Document and Field Level Security</h3></div></div></div><p>A user can have many roles and each role can define different permissions on the same index. Document and field level
+security take into account each role held by a user and combine permissions as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Document level security combines each document level security query for a particular index with an OR operation.
+This means that a document can be accessed if it matches <span class="emphasis"><em>any</em></span> of the role queries. If one role grants access to an index
+with document level security disabled, and another restricts access to partcular documents in the index, a user with both
+roles can access any document in the index.
+</li></ul></div><p>Field level security will take into account each role held by the user and combine all of the fields listed into a single set for each
 index. If a role grants access to an index without field level security and another grants access with field level security, field level
 security will not be applied; the user with both roles will have access to all of the fields in the documents in the index.</p></div></div><div class="navfooter"><span class="prev"><a href="mapping-roles.html">
               « 
