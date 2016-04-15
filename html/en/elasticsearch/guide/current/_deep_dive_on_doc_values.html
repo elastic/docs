@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Fielddata</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide [master]" /><link rel="up" href="controlling-memory.html" title="Controlling Memory Use and Latency" /><link rel="prev" href="controlling-memory.html" title="Controlling Memory Use and Latency" /><link rel="next" href="aggregations-and-analysis.html" title="Aggregations and Analysis" /><meta name="DC.type" content="Docs/Elasticsearch/Definitive Guide/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Deep Dive on Doc Values</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide [master]" /><link rel="up" href="docvalues-and-fielddata.html" title="Doc Values and Fielddata" /><link rel="prev" href="docvalues.html" title="Doc Values" /><link rel="next" href="aggregations-and-analysis.html" title="Aggregations and Analysis" /><meta name="DC.type" content="Docs/Elasticsearch/Definitive Guide/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -750,89 +750,124 @@
             <!-- start body -->
 <div class="page_header"><b>PLEASE NOTE:</b><br/>We are working on updating this book for the latest version. Some content might be out of date.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch: The Definitive Guide
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="aggregations.html">Aggregations </a></span> » <span class="breadcrumb-link"><a href="controlling-memory.html">Controlling Memory Use and Latency</a></span> » <span class="breadcrumb-node">Fielddata</span></div><div class="navheader"><span class="prev"><a href="controlling-memory.html">
+    </a></span> » <span class="breadcrumb-link"><a href="aggregations.html">Aggregations </a></span> » <span class="breadcrumb-link"><a href="docvalues-and-fielddata.html">Doc Values and Fielddata</a></span> » <span class="breadcrumb-node">Deep Dive on Doc Values</span></div><div class="navheader"><span class="prev"><a href="docvalues.html">
               « 
-              Controlling Memory Use and Latency</a>
+              Doc Values</a>
            
         </span><span class="next">
            
           <a href="aggregations-and-analysis.html">Aggregations and Analysis
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="fielddata"></a>Fielddata<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/300_Aggregations/90_fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Aggregations work via a data structure known as <span class="emphasis"><em>fielddata</em></span> (briefly introduced
-in <a class="xref" href="fielddata-intro.html" title="Fielddata">Fielddata</a>).  <a id="id-1.7.12.2.2.3" class="indexterm"></a><a id="id-1.7.12.2.2.4" class="indexterm"></a>
-<a id="id-1.7.12.2.2.5" class="indexterm"></a>Fielddata is often the largest consumer of memory
-in an Elasticsearch cluster, so it is important to understand how it works.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Fielddata can be loaded on the fly into memory, or built at index time and
-stored on disk.<a id="id-1.7.12.2.3.1.1" class="indexterm"></a>
-<a id="id-1.7.12.2.3.1.2" class="indexterm"></a>  Later, we will talk about on-disk fielddata in
-<a class="xref" href="doc-values.html" title="Doc Values">Doc Values</a>. For now we will focus on in-memory fielddata, as it is
-currently the default mode of operation in Elasticsearch. This may well change
-in a future version.</p></div></div><p>Fielddata exists because inverted indices are efficient only for certain operations.
-The inverted index excels<a id="id-1.7.12.2.4.1" class="indexterm"></a>
-<a id="id-1.7.12.2.4.2" class="indexterm"></a> at finding documents that contain a term.  It does not
-perform well in the opposite direction: determining which terms exist in a single
-document. Aggregations need this secondary access pattern.</p><p>Consider the following inverted index:</p><pre class="literallayout">Term      Doc_1   Doc_2   Doc_3
-------------------------------------
-brown   |   X   |   X   |
-dog     |   X   |       |   X
-dogs    |       |   X   |   X
-fox     |   X   |       |   X
-foxes   |       |   X   |
-in      |       |   X   |
-jumped  |   X   |       |   X
-lazy    |   X   |   X   |
-leap    |       |   X   |
-over    |   X   |   X   |   X
-quick   |   X   |   X   |   X
-summer  |       |   X   |
-the     |   X   |       |   X
-------------------------------------</pre><p>If we want to compile a complete list of terms in any document that mentions
-<code class="literal">brown</code>, we might build a query like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_index/_search
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_deep_dive_on_doc_values"></a>Deep Dive on Doc Values<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/300_Aggregations/93_technical_docvalues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The last section opened by saying doc values are <span class="emphasis"><em>"fast, efficient and memory-friendly"</em></span>.
+Those are some nice marketing buzzwords, but how do doc values actually work?</p><p>Doc values are generated at index-time, alongside the creation of the inverted index.
+That means doc values are generated on a per-segment basis and are immutable, just like
+the inverted index used for search. And, like the inverted index, doc values are serialized
+to disk.  This is important to performance and scalability.</p><p>By serializing a persistent data structure to disk, we can rely on the OS’s file
+system cache to manage memory instead of retaining structures on the JVM heap.
+In situations where the "working set" of data is smaller than the available
+memory, the OS will naturally keep the doc values resident in memory.  This gives
+the same performance profile as on-heap data structures.</p><p>But when your working set is much larger than available memory, the OS will begin
+paging the doc values on/off disk as required.  This will obviously be slower
+than an entirely memory-resident data structure, but it has the advantage of scaling
+well beyond the server’s memory capacity.  If these data structures were
+purely on-heap, the only option is to crash with an OutOfMemory exception (or implement
+a paging scheme just like the OS).</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Because doc values are not managed by the JVM, Elasticsearch servers can be
+configured with a much smaller heap.  This gives more memory to the OS for caching.
+It also has the benefit of letting the JVM’s garbage collector work with a smaller
+heap, which will result in faster and more efficient collection cycles.</p><p>Traditionally, the recommendation has been to dedicate 50% of the machine’s memory
+to the JVM heap.  With the introduction of doc values, this recommendation is starting
+to slide.  Consider giving far less to the heap, perhaps 4-16gb on a 64gb machine,
+instead of the full 32gb previously recommended.</p><p>For a more detailed discussion, see <a class="xref" href="heap-sizing.html" title="Heap: Sizing and Swapping">Heap: Sizing and Swapping</a>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_column_store_compression"></a>Column-store compression<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/300_Aggregations/93_technical_docvalues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>At a high level, doc values are essentially a serialized <span class="emphasis"><em>column-store</em></span>.  As we
+discussed in the last section, column-stores excel at certain operations because
+the data is naturally laid out in a fashion that is amenable to those queries.</p><p>But they also excel at compressing data, particularly numbers.  This is important for both saving space
+on disk <span class="emphasis"><em>and</em></span> for faster access.  Modern CPU’s are many orders of magnitude faster
+than disk drives (although the gap is narrowing quickly with upcoming NVMe drives).  That means
+it is often advantageous to minimize the amount of data that must be read from disk,
+even if it requires extra CPU cycles to decompress.</p><p>To see how it can help compression, take this set of doc values for a numeric field:</p><pre class="literallayout">Doc      Terms
+-----------------------------------------------------------------
+Doc_1 | 100
+Doc_2 | 1000
+Doc_3 | 1500
+Doc_4 | 1200
+Doc_5 | 300
+Doc_6 | 1900
+Doc_7 | 4200
+-----------------------------------------------------------------</pre><p>The column-stride layout means we have a contiguous block of numbers:
+<code class="literal">[100,1000,1500,1200,300,1900,4200]</code>.  Because we know they are all numbers
+(instead of a heterogeneous collection like you’d see in a document or row)
+values can be packed tightly together with uniform offsets.</p><p>Further, there are a variety of compression tricks we can apply to these numbers.
+You’ll notice that each of the above numbers are a multiple of 100.  Doc values
+detect when all the values in a segment share a <span class="emphasis"><em>greatest common divisor</em></span> and use
+that to compress the values further.</p><p>If we save <code class="literal">100</code> as the divisor for this segment, we can divide each number by 100
+to get:  <code class="literal">[1,10,15,12,3,19,42]</code>.  Now that the numbers are smaller, they require
+fewer bits to store and we’ve reduced the size on-disk.</p><p>Doc values use several tricks like this.  In order, the following compression
+schemes are checked:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+If all values are identical (or missing), set a flag and record the value
+</li><li class="listitem">
+If there are fewer than 256 values, a simple table encoding is used
+</li><li class="listitem">
+If there are &gt; 256 values, check to see if there is a common divisor
+</li><li class="listitem">
+If there is no common divisor, encode everything as an offset from the smallest
+value
+</li></ol></div><p>You’ll note that these compression schemes are not "traditional" general purpose
+compression like DEFLATE or LZ4.  Because the structure of column-stores are
+rigid and well-defined, we can achieve higher compression by using specialized
+schemes rather than the more general compression algorithms like LZ4.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You may be thinking <span class="emphasis"><em>"Well that’s great for numbers, but what about strings?"</em></span>
+Strings are encoded similarly, with the help of an ordinal table.  The
+strings are de-duplicated and sorted into a table, assigned an ID, and then those
+ID’s are used as numeric doc values.  Which means strings enjoy many of the same
+compression benefits that numerics do.</p><p>The ordinal table itself has some compression tricks, such as using fixed, variable
+or prefix-encoded strings.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_disabling_doc_values"></a>Disabling Doc Values<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/300_Aggregations/93_technical_docvalues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Doc values are enabled by default for all fields <span class="emphasis"><em>except</em></span> analyzed strings.  That means
+all numerics, geo_points, dates, IPs and <code class="literal">not_analyzed</code> strings.</p><p>Analyzed strings are not able to use doc values at this time; the analysis process
+generates many tokens and does not work efficiently with doc values.  We’ll discuss
+using analyzed strings for aggregations in <a class="xref" href="aggregations-and-analysis.html" title="Aggregations and Analysis">Aggregations and Analysis</a>.</p><p>Because doc values are on by default, you have the option to aggregate and sort
+on most fields in your dataset.  But what if you know you will <span class="emphasis"><em>never</em></span> aggregate,
+sort or script on a certain field?</p><p>While rare, these circumstances do arise and you may wish to disable doc values
+on that particular field.  This will save you some disk space (since the doc values
+are not being serialized to disk anymore) and may increase indexing speed slightly
+(since the doc values don’t need to be generated).</p><p>To disable doc values, set <code class="literal">doc_values: false</code> in the field’s mapping.  For example,
+here we create a new index where doc values are disabled for the <code class="literal">"session_id"</code> field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
-  "query" : {
-    "match" : {
-      "body" : "brown"
-    }
-  },
-  "aggs" : {
-    "popular_terms": {
-      "terms" : {
-        "field" : "body"
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "session_id": {
+          "type":       "string",
+          "index":      "not_analyzed",
+          "doc_values": false <a id="CO216-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        }
       }
     }
   }
-}</pre></div><p>The query portion is easy and efficient.  The inverted index is sorted by
-terms, so first we find <code class="literal">brown</code> in the terms list, and then scan across all the
-columns to see which documents contain <code class="literal">brown</code>.  We can very quickly see that
-<code class="literal">Doc_1</code> and <code class="literal">Doc_2</code> contain the token <code class="literal">brown</code>.</p><p>Then, for the aggregation portion, we need to find all the unique terms in
-<code class="literal">Doc_1</code>  and <code class="literal">Doc_2</code>.<a id="id-1.7.12.2.10.3" class="indexterm"></a>
-<a id="id-1.7.12.2.10.4" class="indexterm"></a>
-<a id="id-1.7.12.2.10.5" class="indexterm"></a>  Trying to do this with the inverted index would be a
-very expensive process: we would have to iterate over every term in the index
-and collect tokens from <code class="literal">Doc_1</code>  and <code class="literal">Doc_2</code> columns.  This would be slow
-and scale poorly: as the number of terms and  documents grows, so would the
-execution time.</p><p>Fielddata addresses this problem by inverting the relationship. While the
-inverted index maps terms to the documents containing the term, fielddata
-maps documents to the terms contained by the document:</p><pre class="literallayout">Doc      Terms
------------------------------------------------------------------
-Doc_1 | brown, dog, fox, jumped, lazy, over, quick, the
-Doc_2 | brown, dogs, foxes, in, lazy, leap, over, quick, summer
-Doc_3 | dog, dogs, fox, jumped, over, quick, the
------------------------------------------------------------------</pre><p>Once the data has been uninverted, it is trivial to collect the unique tokens from
-<code class="literal">Doc_1</code> and <code class="literal">Doc_2</code>.  Go to the rows for each document, collect all the terms, and
-take the union of the two sets.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The fielddata cache is per segment.<a id="id-1.7.12.2.14.1.1" class="indexterm"></a><a id="id-1.7.12.2.14.1.2" class="indexterm"></a>
-<a id="id-1.7.12.2.14.1.3" class="indexterm"></a> In other words, when a new segment becomes
-visible to search, the fielddata cached from old segments remains valid. Only
-the data for the new segment needs to be loaded into memory.</p></div></div><p>Thus, search and aggregations are closely intertwined.  Search finds documents
-by using the inverted index.  Aggregations collect and aggregate values from
-fielddata, which is itself generated from the inverted index.</p><p>The rest of this chapter covers various functionality that either
-decreases fielddata’s memory footprint or increases execution speed.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Fielddata is not just used for aggregations.<a id="id-1.7.12.2.17.1.1" class="indexterm"></a>
-<a id="id-1.7.12.2.17.1.2" class="indexterm"></a>  It is required for any
-operation that needs to look up the value contained in a specific document.
-Besides aggregations, this includes sorting, scripts that access field
-values, parent-child relationships (see <a class="xref" href="parent-child.html" title="Parent-Child Relationship"><em>Parent-Child Relationship</em></a>), and certain types
-of queries or filters, such as the <a class="link" href="geo-distance.html" title="Geo Distance Filter"><code class="literal">geo_distance</code></a> filter.</p></div></div></div><div class="navfooter"><span class="prev"><a href="controlling-memory.html">
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO216-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+By setting <code class="literal">doc_values: false</code>, this field will not be usable in aggregations, sorts
+or scripts
+</p></td></tr></table></div><p>It is possible to configure the inverse relationship too: make a field available
+for aggregations via doc values, but make it unavailable for normal search by disabling
+the inverted index.  For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "customer_token": {
+          "type":       "string",
+          "index":      "not_analyzed",
+          "doc_values": true, <a id="CO217-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "index": "no" <a id="CO217-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        }
+      }
+    }
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO217-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Doc values are enabled to allow aggregations
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO217-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Indexing is disabled, which makes the field unavailable to queries/searches
+</p></td></tr></table></div><p>By setting <code class="literal">doc_values: true</code> and <code class="literal">index: no</code>, we generate a field which can <span class="emphasis"><em>only</em></span>
+be used in aggregations/sorts/scripts.  This is admittedly a very rare requirement,
+but sometimes useful.</p></div></div><div class="navfooter"><span class="prev"><a href="docvalues.html">
               « 
-              Controlling Memory Use and Latency</a>
+              Doc Values</a>
            
         </span><span class="next">
            

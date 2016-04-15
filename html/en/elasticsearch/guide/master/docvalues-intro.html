@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Controlling Memory Use and Latency</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide [master]" /><link rel="up" href="aggregations.html" title="Aggregations" /><link rel="prev" href="_significant_terms_demo.html" title="significant_terms Demo" /><link rel="next" href="fielddata.html" title="Fielddata" /><meta name="DC.type" content="Docs/Elasticsearch/Definitive Guide/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Doc Values Intro</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide [master]" /><link rel="up" href="sorting.html" title="Sorting and Relevance" /><link rel="prev" href="relevance-intro.html" title="What Is Relevance?" /><link rel="next" href="distributed-search.html" title="Distributed Search Execution" /><meta name="DC.type" content="Docs/Elasticsearch/Definitive Guide/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -750,21 +750,53 @@
             <!-- start body -->
 <div class="page_header"><b>PLEASE NOTE:</b><br/>We are working on updating this book for the latest version. Some content might be out of date.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch: The Definitive Guide
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="aggregations.html">Aggregations </a></span> » <span class="breadcrumb-node">Controlling Memory Use and Latency</span></div><div class="navheader"><span class="prev"><a href="_significant_terms_demo.html">
+    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started </a></span> » <span class="breadcrumb-link"><a href="sorting.html">Sorting and Relevance</a></span> » <span class="breadcrumb-node">Doc Values Intro</span></div><div class="navheader"><span class="prev"><a href="relevance-intro.html">
               « 
-              significant_terms Demo</a>
+              What Is Relevance?</a>
            
         </span><span class="next">
            
-          <a href="fielddata.html">Fielddata
+          <a href="distributed-search.html">Distributed Search Execution
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="controlling-memory"></a>Controlling Memory Use and Latency<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/306_Practical_Considerations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div></div><div class="navfooter"><span class="prev"><a href="_significant_terms_demo.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="docvalues-intro"></a>Doc Values Intro<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/056_Sorting/95_Docvalues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Our final topic in this chapter is about an internal aspect of Elasticsearch.
+While we don’t demonstrate any new techniques here, doc values are an
+important topic that we will refer to repeatedly, and is something that you
+should be aware of.<a id="id-1.4.10.6.2.1" class="indexterm"></a></p><p>When you sort on a field, Elasticsearch needs access to the value of that
+field for every document that matches the query.<a id="id-1.4.10.6.3.1" class="indexterm"></a>
+<a id="id-1.4.10.6.3.2" class="indexterm"></a>  The inverted index, which
+performs very well when searching, is not the ideal structure for sorting on
+field values:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+When searching, we need to be able to map a term to a list of documents.
+</li><li class="listitem">
+When sorting, we need to map a document to its terms. In other words, we
+  need to “uninvert” the inverted index.
+</li></ul></div><p>This “uninverted” structure is often called a “column-store” in other systems.
+Essentially, it stores all the values for a single field together in a single
+column of data, which makes it very efficient for operations like sorting.</p><p>In Elasticsearch, this column-store is known as <span class="emphasis"><em>doc values</em></span>, and is enabled
+by default. Doc values are created at index-time: when a field is indexed, Elasticsearch
+adds the tokens to the inverted index for search.  But it also extracts the terms
+and adds them to the columnar doc values.</p><p>Doc values are used in several places in Elasticsearch:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Sorting on a field
+</li><li class="listitem">
+Aggregations on a field
+</li><li class="listitem">
+Certain filters (for example, geolocation filters)
+</li><li class="listitem">
+Scripts that refer to fields
+</li></ul></div><p>Because doc values are serialized to disk, we can leverage the OS to help keep
+access fast.  When the "working set" is smaller than the available memory on a node,
+the OS will naturally keep all the doc values hot in memory, leading to very fast
+access.  When the "working set" is much larger than available memory, the OS will
+naturally start to page doc-values on/off disk without running into the dreaded
+OutOfMemory exception.</p><p>We’ll talk about doc values in much greater depth later.  For now, all you need
+to know is that sorting (and some other operations) happen on a parallel data
+structure which is built at index-time.</p></div><div class="navfooter"><span class="prev"><a href="relevance-intro.html">
               « 
-              significant_terms Demo</a>
+              What Is Relevance?</a>
            
         </span><span class="next">
            
-          <a href="fielddata.html">Fielddata
+          <a href="distributed-search.html">Distributed Search Execution
                »
             </a></span></div>
 <!-- end body -->

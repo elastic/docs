@@ -761,7 +761,7 @@
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="heap-sizing"></a>Heap: Sizing and Swapping<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The default installation of Elasticsearch is configured with a 1 GB heap. <a id="id-1.10.4.11.2.1" class="indexterm"></a>
 <a id="id-1.10.4.11.2.2" class="indexterm"></a><a id="id-1.10.4.11.2.3" class="indexterm"></a>
 <a id="id-1.10.4.11.2.4" class="indexterm"></a> For
-just about every deployment, this number is far too small.  If you are using the
+just about every deployment, this number is usually too small.  If you are using the
 default heap values, your cluster is probably configured incorrectly.</p><p>There are two ways to change the heap size in Elasticsearch.  The easiest is to
 set an environment variable called <code class="literal">ES_HEAP_SIZE</code>.<a id="id-1.10.4.11.3.2" class="indexterm"></a>  When the server process
 starts, it will read this environment variable and set the heap accordingly.
@@ -770,7 +770,7 @@ the process, if that is easier for your setup:</p><div class="pre_wrapper"><pre 
 Ensure that the min (<code class="literal">Xms</code>) and max (<code class="literal">Xmx</code>) sizes are the same to prevent
 the heap from resizing at runtime, a very costly process.
 </p></td></tr></table></div><p>Generally, setting the <code class="literal">ES_HEAP_SIZE</code> environment variable is preferred over setting
-explicit <code class="literal">-Xmx</code> and <code class="literal">-Xms</code> values.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_give_half_your_memory_to_lucene"></a>Give Half Your Memory to Lucene<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A common problem is configuring a heap that is <span class="emphasis"><em>too</em></span> large. <a id="id-1.10.4.11.9.2.2" class="indexterm"></a>
+explicit <code class="literal">-Xmx</code> and <code class="literal">-Xms</code> values.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_give_less_than_half_your_memory_to_lucene"></a>Give (less than) Half Your Memory to Lucene<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A common problem is configuring a heap that is <span class="emphasis"><em>too</em></span> large. <a id="id-1.10.4.11.9.2.2" class="indexterm"></a>
 <a id="id-1.10.4.11.9.2.3" class="indexterm"></a>
 <a id="id-1.10.4.11.9.2.4" class="indexterm"></a> You have a 64 GB
 machine—and by golly, you want to give Elasticsearch all 64 GB of memory.  More
@@ -780,11 +780,15 @@ user of memory that is <span class="emphasis"><em>off heap</em></span>: Lucene.<
 <a id="id-1.10.4.11.9.4.2" class="indexterm"></a>
 Lucene segments are stored in individual files.  Because segments are immutable,
 these files never change.  This makes them very cache friendly, and the underlying
-OS will happily keep hot segments resident in memory for faster access.</p><p>Lucene’s performance relies on this interaction with the OS.  But if you give all
+OS will happily keep hot segments resident in memory for faster access.  These segments
+include both the inverted index (for fulltext search) and doc values (for aggregations).</p><p>Lucene’s performance relies on this interaction with the OS.  But if you give all
 available memory to Elasticsearch’s heap, there won’t be any left over for Lucene.
-This can seriously impact the performance of full-text search.</p><p>The standard recommendation is to give 50% of the available memory to Elasticsearch
+This can seriously impact the performance.</p><p>The standard recommendation is to give 50% of the available memory to Elasticsearch
 heap, while leaving the other 50% free.  It won’t go unused; Lucene will happily
-gobble up whatever is left over.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="compressed_oops"></a>Don’t Cross 32 GB!<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There is another reason to not allocate enormous heaps to Elasticsearch. As it turns<a id="id-1.10.4.11.10.2.1" class="indexterm"></a>
+gobble up whatever is left over.</p><p>If you are not aggregating on analyzed string fields (e.g. you won’t be needing
+<a class="link" href="aggregations-and-analysis.html" title="Aggregations and Analysis">fielddata</a>) you can consider lowering the heap even
+more.  The smaller you can make the heap, the better performance you can expect
+from both Elasticsearch (faster GCs) and Lucene (more memory for caching).</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="compressed_oops"></a>Don’t Cross 32 GB!<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/510_Deployment/50_heap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There is another reason to not allocate enormous heaps to Elasticsearch. As it turns<a id="id-1.10.4.11.10.2.1" class="indexterm"></a>
 <a id="id-1.10.4.11.10.2.2" class="indexterm"></a>
 <a id="id-1.10.4.11.10.2.3" class="indexterm"></a><a id="id-1.10.4.11.10.2.4" class="indexterm"></a>
 out, the HotSpot JVM uses a trick to compress object pointers when heaps are less
@@ -826,12 +830,18 @@ JVM is using compressed OOPs or not.  You’ll see a log message like:</p><div c
 the message will say <code class="literal">[false]</code>.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>I Have a Machine with 1 TB RAM!</strong></p></div></div></div><p>The 32 GB line is fairly important.  So what do you do when your machine has a lot
 of memory?  It is becoming increasingly common to see super-servers with 512–768 GB
 of RAM.</p><p>First, we would recommend avoiding such large machines (see <a class="xref" href="hardware.html" title="Hardware">Hardware</a>).</p><p>But if you already have the machines, you have two practical options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Are you doing mostly full-text search?  Consider giving just under 32 GB to Elasticsearch
+Are you doing mostly full-text search?  Consider giving 4-32 GB to Elasticsearch
 and letting Lucene use the rest of memory via the OS filesystem cache.  All that
 memory will cache segments and lead to blisteringly fast full-text search.
+</li><li class="listitem">
+Are you doing a lot of sorting/aggregations?  Are most of your aggregations on numerics,
+dates, geo_points and <code class="literal">not_analyzed</code> strings?  You’re in luck!  Give Elasticsearch
+somewhere from 4-32 GB of memory and leave the rest for the OS to cache doc values
+in memory.
 </li><li class="listitem"><p class="simpara">
-Are you doing a lot of sorting/aggregations?  You’ll likely want that memory
-in the heap then.  Instead of one node with more than 32 GB of RAM, consider running two or
+Are you doing a lot of sorting/aggregations on analyzed strings (e.g. for word-tags,
+or SigTerms, etc)?  Unfortunately that means you’ll need fielddata, which means you
+need heap space.  Instead of one node with more than 512 GB of RAM, consider running two or
 more nodes on a single machine.  Still adhere to the 50% rule, though.  So if your
 machine has 128 GB of RAM, run two nodes, each with just under 32 GB.  This means that less
 than 64 GB will be used for heaps, and more than 64 GB will be left over for Lucene.
