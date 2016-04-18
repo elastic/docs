@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Indexing Performance Tips</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide [master]" /><link rel="up" href="post_deploy.html" title="Post-Deployment" /><link rel="prev" href="logging.html" title="Logging" /><link rel="next" href="_delaying_shard_allocation.html" title="Delaying Shard Allocation" /><meta name="DC.type" content="Docs/Elasticsearch/Definitive Guide/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Delaying Shard Allocation</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: The Definitive Guide [master]" /><link rel="up" href="post_deploy.html" title="Post-Deployment" /><link rel="prev" href="indexing-performance.html" title="Indexing Performance Tips" /><link rel="next" href="_rolling_restarts.html" title="Rolling Restarts" /><meta name="DC.type" content="Docs/Elasticsearch/Definitive Guide/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -750,154 +750,75 @@
             <!-- start body -->
 <div class="page_header"><b>PLEASE NOTE:</b><br/>We are working on updating this book for the latest version. Some content might be out of date.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch: The Definitive Guide
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="administration.html">Administration, Monitoring, and Deployment </a></span> » <span class="breadcrumb-link"><a href="post_deploy.html">Post-Deployment</a></span> » <span class="breadcrumb-node">Indexing Performance Tips</span></div><div class="navheader"><span class="prev"><a href="logging.html">
+    </a></span> » <span class="breadcrumb-link"><a href="administration.html">Administration, Monitoring, and Deployment </a></span> » <span class="breadcrumb-link"><a href="post_deploy.html">Post-Deployment</a></span> » <span class="breadcrumb-node">Delaying Shard Allocation</span></div><div class="navheader"><span class="prev"><a href="indexing-performance.html">
               « 
-              Logging</a>
+              Indexing Performance Tips</a>
            
         </span><span class="next">
            
-          <a href="_delaying_shard_allocation.html">Delaying Shard Allocation
+          <a href="_rolling_restarts.html">Rolling Restarts
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="indexing-performance"></a>Indexing Performance Tips<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/30_indexing_perf.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you are in an indexing-heavy environment,<a id="id-1.10.5.5.2.1" class="indexterm"></a>
-<a id="id-1.10.5.5.2.2" class="indexterm"></a><a id="id-1.10.5.5.2.3" class="indexterm"></a>
-<a id="id-1.10.5.5.2.4" class="indexterm"></a> such as indexing infrastructure
-logs, you may be willing to sacrifice some search performance for faster indexing
-rates.  In these scenarios, searches tend to be relatively rare and performed
-by people internal to your organization.  They are willing to wait several
-seconds for a search, as opposed to a consumer facing a search that must
-return in milliseconds.</p><p>Because of this unique position, certain trade-offs can be made
-that will increase your indexing performance.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>These Tips Apply Only to Elasticsearch 1.3+</strong></p></div></div></div><p>This book is written for the most recent versions of Elasticsearch, although much
-of the content works on older versions.</p><p>The tips presented in this section, however, are <span class="emphasis"><em>explicitly</em></span> for version 1.3+.  There
-have been multiple performance improvements and bugs fixed that directly impact
-indexing.  In fact, some of these recommendations will <span class="emphasis"><em>reduce</em></span> performance on
-older versions because of the presence of bugs or performance defects.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_test_performance_scientifically"></a>Test Performance Scientifically<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/30_indexing_perf.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Performance testing is always difficult, so try to be as scientific as possible
-in your approach.<a id="id-1.10.5.5.5.2.1" class="indexterm"></a><a id="id-1.10.5.5.5.2.2" class="indexterm"></a>
-<a id="id-1.10.5.5.5.2.3" class="indexterm"></a>
-<a id="id-1.10.5.5.5.2.4" class="indexterm"></a>  Randomly fiddling with knobs and turning on ingestion is not
-a good way to tune performance.  If there are too many <span class="emphasis"><em>causes</em></span>, it is impossible
-to determine which one had the best <span class="emphasis"><em>effect</em></span>. A reasonable approach to testing is as follows:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-Test performance on a single node, with a single shard and no replicas.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_delaying_shard_allocation"></a>Delaying Shard Allocation<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/35_delayed_shard_allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>As discussed way back in <a class="xref" href="_scale_horizontally.html" title="Scale Horizontally">Scale Horizontally</a>, Elasticsearch will automatically
+balance shards between your available nodes, both when new nodes are added and
+when existing nodes leave.</p><p>Theoretically, this is the best thing to do.  We want to recover missing primaries
+by promoting replicas as soon as possible.  We also want to make sure resources
+are balanced evenly across the cluster to prevent hotspots.</p><p>In practice, however, immediately re-balancing can cause more problems than it solves.
+For example, consider this situation:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Node 19 loses connectivity to your network (someone tripped on the power cable)
 </li><li class="listitem">
-Record performance under 100% default settings so that you have a baseline to
-measure against.
+Immediately, the master notices the node departure.  It determines
+what primary shards were on Node 19 and promotes the corresponding replicas around
+the cluster
 </li><li class="listitem">
-Make sure performance tests run for a long time (30+ minutes) so you can
-evaluate long-term performance, not short-term spikes or latencies.  Some events
-(such as segment merging, and GCs) won’t happen right away, so the performance
-profile can change over time.
+After replicas have been promoted to primary, the master begins issuing recovery
+commands to rebuild the now-missing replicas.  Nodes around the cluster fire up
+their NICs and start pumping shard data to each other in an attempt to get back
+to green health status
 </li><li class="listitem">
-Begin making single changes to the baseline defaults.  Test these rigorously,
-and if performance improvement is acceptable, keep the setting and move on to the
-next one.
-</li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_and_sizing_bulk_requests"></a>Using and Sizing Bulk Requests<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/30_indexing_perf.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This should be fairly obvious, but use bulk indexing requests for optimal performance.<a id="id-1.10.5.5.6.2.1" class="indexterm"></a>
-<a id="id-1.10.5.5.6.2.2" class="indexterm"></a>
-<a id="id-1.10.5.5.6.2.3" class="indexterm"></a><a id="id-1.10.5.5.6.2.4" class="indexterm"></a>
-<a id="id-1.10.5.5.6.2.5" class="indexterm"></a>
-Bulk sizing is dependent on your data, analysis, and cluster configuration, but
-a good starting point is 5–15 MB per bulk.  Note that this is physical size.
-Document count is not a good metric for bulk size.  For example, if you are
-indexing 1,000 documents per bulk, keep the following in mind:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-1,000 documents at 1 KB each is 1 MB.
-</li><li class="listitem">
-1,000 documents at 100 KB each is 100 MB.
-</li></ul></div><p>Those are drastically different bulk sizes.  Bulks need to be loaded into memory
-at the coordinating node, so it is the physical size of the bulk that is more
-important than the document count.</p><p>Start with a bulk size around 5–15 MB and slowly increase it until you do not
-see performance gains anymore.  Then start increasing the concurrency of your
-bulk ingestion (multiple threads, and so forth).</p><p>Monitor your nodes with Marvel and/or tools such as <code class="literal">iostat</code>, <code class="literal">top</code>, and <code class="literal">ps</code> to see
-when resources start to bottleneck.  If you start to receive <code class="literal">EsRejectedExecutionException</code>,
-your cluster can no longer keep up: at least one resource has reached capacity. Either reduce concurrency, provide more of the limited resource (such as switching from spinning disks to SSDs), or add more nodes.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When ingesting data, make sure bulk requests are round-robined across all your
-data nodes.  Do not send all requests to a single node, since that single node
-will need to store all the bulks in memory while processing.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_storage"></a>Storage<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/30_indexing_perf.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Disks are usually the bottleneck of any modern server.  Elasticsearch heavily uses disks, and the more throughput your disks can handle, the more stable your nodes will be. Here are some tips for optimizing disk I/O:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Use SSDs.  As mentioned elsewhere, <a id="id-1.10.5.5.7.3.1.1.1" class="indexterm"></a><a id="id-1.10.5.5.7.3.1.1.2" class="indexterm"></a>
-<a id="id-1.10.5.5.7.3.1.1.3" class="indexterm"></a>
-<a id="id-1.10.5.5.7.3.1.1.4" class="indexterm"></a>they are superior to spinning media.
-</li><li class="listitem">
-Use RAID 0.  Striped RAID will increase disk I/O, at the obvious expense of
-potential failure if a drive dies.  Don’t use mirrored or parity RAIDS since
-replicas provide that functionality.
-</li><li class="listitem">
-Alternatively, use multiple drives and allow Elasticsearch to stripe data across
-them via multiple <code class="literal">path.data</code> directories.
-</li><li class="listitem">
-Do not use remote-mounted storage, such as NFS or SMB/CIFS.  The latency introduced
-here is antithetical to performance.
-</li><li class="listitem">
-If you are on EC2, beware of EBS.  Even the SSD-backed EBS options are often slower
-than local instance storage.
-</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="segments-and-merging"></a>Segments and Merging<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/30_indexing_perf.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Segment merging is computationally expensive,<a id="id-1.10.5.5.8.2.1" class="indexterm"></a>
-<a id="id-1.10.5.5.8.2.2" class="indexterm"></a>
-<a id="id-1.10.5.5.8.2.3" class="indexterm"></a><a id="id-1.10.5.5.8.2.4" class="indexterm"></a><a id="id-1.10.5.5.8.2.5" class="indexterm"></a>
-<a id="id-1.10.5.5.8.2.6" class="indexterm"></a> and can eat up a lot of disk I/O.
-Merges are scheduled to operate in the background because they can take a long
-time to finish, especially large segments.  This is normally fine, because the
-rate of large segment merges is relatively rare.</p><p>But sometimes merging falls behind the ingestion rate.  If this happens, Elasticsearch
-will automatically throttle indexing requests to a single thread.  This prevents
-a <span class="emphasis"><em>segment explosion</em></span> problem, in which hundreds of segments are generated before
-they can be merged. Elasticsearch will log <code class="literal">INFO</code>-level messages stating <code class="literal">now
-throttling indexing</code> when it detects merging falling behind indexing.</p><p>Elasticsearch defaults here are conservative: you don’t want search performance
-to be impacted by background merging.  But sometimes (especially on SSD, or logging
-scenarios), the throttle limit is too low.</p><p>The default is 20 MB/s, which is a good setting for spinning disks.  If you have
-SSDs, you might consider increasing this to 100–200 MB/s.  Test to see what works
-for your system:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
+This process will likely trigger a small cascade of shard movement, since the
+cluster is now unbalanced.  Unrelated shards will be moved between hosts to accomplish
+better balancing
+</li></ol></div><p>Meanwhile, the hapless admin who kicked out the power cable plugs it back in.
+Node 19 reboots and rejoins the cluster.  Unfortunately, the node is informed that
+its existing data is now useless; the data being re-allocated elsewhere.
+So Node 19 deletes its local data and begins recovering a different
+set of shards from the cluster (which then causes a new minor re-balancing dance).</p><p>If this all sounds needless and expensive, you’re right.  It is, but <span class="emphasis"><em>only when
+you know the node will be back soon</em></span>.  If Node 19 was truly gone, the above procedure
+is exactly what we want to happen.</p><p>To help address these transient outages, Elasticsearch has the ability to delay
+shard allocation.  This gives your cluster time to see if nodes will rejoin before
+starting the re-balancing dance.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_changing_the_default_delay"></a>Changing the default delay<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/35_delayed_shard_allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default, the cluster will wait one minute to see if the node will rejoin.  If
+the node rejoins before the timer expires, the rejoining node will use its existing
+shards and no shard allocation occurs.</p><p>This default time can be changed either globally, or on a per-index basis, by
+configuring the <code class="literal">delayed_timeout</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_all/_settings <a id="CO309-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 {
-    "persistent" : {
-        "indices.store.throttle.max_bytes_per_sec" : "100mb"
-    }
-}</pre></div><p>If you are doing a bulk import and don’t care about search at all, you can disable
-merge throttling entirely.  This will allow indexing to run as fast as your
-disks will allow:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
-{
-    "transient" : {
-        "indices.store.throttle.type" : "none" <a id="CO308-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO308-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Setting the throttle type to <code class="literal">none</code> disables merge throttling entirely.  When
-you are done importing, set it back to <code class="literal">merge</code> to reenable throttling.
-</p></td></tr></table></div><p>If you are using spinning media instead of SSD, you need to add this to your
-<code class="literal">elasticsearch.yml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">index.merge.scheduler.max_thread_count: 1</pre></div><p>Spinning media has a harder time with concurrent I/O, so we need to decrease
-the number of threads that can concurrently access the disk per index.  This setting
-will allow <code class="literal">max_thread_count + 2</code> threads to operate on the disk at one time,
-so a setting of <code class="literal">1</code> will allow three threads.</p><p>For SSDs, you can ignore this setting.  The default is
-<code class="literal">Math.min(3, Runtime.getRuntime().availableProcessors() / 2)</code>, which works well
-for SSD.</p><p>Finally, you can increase <code class="literal">index.translog.flush_threshold_size</code> from the default
-512 MB to something larger, such as 1 GB.  This allows larger segments to accumulate
-in the translog before a flush occurs.  By letting larger segments build, you
-flush less often, and the larger segments merge less often.  All of this adds up
-to less disk I/O overhead and better indexing rates.  Of course, you will need
-the corresponding amount of heap memory free to accumulate the extra buffering
-space, so keep that in mind when adjusting this setting.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_other"></a>Other<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/30_indexing_perf.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Finally, there are some other considerations to keep in mind:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-If you don’t need near real-time accuracy on your search results, consider
-dropping the <code class="literal">index.refresh_interval</code> of<a id="id-1.10.5.5.9.3.1.1.2" class="indexterm"></a>
-<a id="id-1.10.5.5.9.3.1.1.3" class="indexterm"></a>
-<a id="id-1.10.5.5.9.3.1.1.4" class="indexterm"></a><a id="id-1.10.5.5.9.3.1.1.5" class="indexterm"></a> each index to <code class="literal">30s</code>.  If you are doing
-a large import, you can disable refreshes by setting this value to <code class="literal">-1</code> for the
-duration of the import.  Don’t forget to reenable it when you are finished!
-</li><li class="listitem"><p class="simpara">
-If you are doing a large bulk import, consider disabling replicas by setting
-<code class="literal">index.number_of_replicas: 0</code>.<a id="id-1.10.5.5.9.3.2.1.2" class="indexterm"></a>  When documents are replicated, the entire document
-is sent to the replica node and the indexing process is repeated verbatim.  This
-means each replica will perform the analysis, indexing, and potentially merging
-process.
-</p><p class="simpara">In contrast, if you index with zero replicas and then enable replicas when ingestion
-is finished, the recovery process is essentially a byte-for-byte network transfer.
-This is much more efficient than duplicating the indexing process.</p></li><li class="listitem">
-If you don’t have a natural ID for each document, use Elasticsearch’s auto-ID
-functionality.<a id="id-1.10.5.5.9.3.3.1.1" class="indexterm"></a>
-<a id="id-1.10.5.5.9.3.3.1.2" class="indexterm"></a>  It is optimized to avoid version lookups, since the autogenerated
-ID is unique.
-</li><li class="listitem">
-If you are using your own ID, try to pick an ID that is <a class="ulink" href="http://blog.mikemccandless.com/2014/05/choosing-fast-unique-identifier-uuid.html" target="_top">friendly to Lucene</a>. <a id="id-1.10.5.5.9.3.4.1.2" class="indexterm"></a> Examples include zero-padded
-sequential IDs, UUID-1, and nanotime; these IDs have consistent, sequential
-patterns that compress well.  In contrast, IDs such as UUID-4 are essentially
-random, which offer poor compression and slow down Lucene.
-</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="logging.html">
+  "settings": {
+    "index.unassigned.node_left.delayed_timeout": "5m" <a id="CO309-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO309-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+By using the <code class="literal">_all</code> index name, we can apply this setting to all indices
+in the cluster
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO309-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The default time is changed to 5 minutes
+</p></td></tr></table></div><p>The setting is dynamic and can be changed at runtime.  If you would like shards to
+allocate immediately instead of waiting, you can set <code class="literal">delayed_timeout: 0</code>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Delayed allocation won’t prevent replicas from being promoted to primaries.
+The cluster will still perform promotions as necessary to get the cluster back to
+<code class="literal">yellow</code> status.  The allocation of the now-missing replicas will be the only process
+that is delayed</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_auto_cancellation_of_shard_relocation"></a>Auto-cancellation of shard relocation<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/35_delayed_shard_allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>What happens if the node comes back <span class="emphasis"><em>after</em></span> the timeout expires, but before
+the cluster has finished moving shards around?  In this case, Elasticsearch will
+check to see if the on-disk data matches the current "live" data in the primary shard.
+If the two shards are identical — meaning there have been no new documents, updates
+or deletes — the master will cancel the on-going rebalancing and restore the
+on-disk data.</p><p>This is done since recovery of on-disk data will always be faster
+than transferring over the network, and since we can guarantee the shards are identical,
+the process is a win-win.</p><p>If the shards have diverged (e.g. new documents have been indexed since the node
+went down), the recovery process will continue as normal.  The rejoining node
+will delete it’s local, out-dated shards and obtain a new set.</p></div></div><div class="navfooter"><span class="prev"><a href="indexing-performance.html">
               « 
-              Logging</a>
+              Indexing Performance Tips</a>
            
         </span><span class="next">
            
-          <a href="_delaying_shard_allocation.html">Delaying Shard Allocation
+          <a href="_rolling_restarts.html">Rolling Restarts
                »
             </a></span></div>
 <!-- end body -->
