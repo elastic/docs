@@ -988,18 +988,23 @@ Script type: either <code class="literal">ScriptType.FILE</code>, <code class="l
 Scripting engine
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Parameters as a <code class="literal">Map</code> of <code class="literal">&lt;String, Object&gt;</code>
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-percolator-query"></a>Percolator query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/percolator-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See:
- * <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-percolator-query.html" target="_top">Percolator Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">//This is the query we're registering in the percolator
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-query-percolate-query"></a>Percolate query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-api/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See:
+ * <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-percolate-query.html" target="_top">Percolate Query</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// create an index with a percolator field with the name 'query':
+client.admin().indices().prepareCreate("myIndexName")
+                        .addMapping("query", "query", "type=percolator")
+                        .get();
+
+//This is the query we're registering in the percolator
 QueryBuilder qb = termQuery("content", "amazing");
 
 //Index the query = register it in the percolator
-client.prepareIndex("myIndexName", ".percolator", "myDesignatedQueryName")
+client.prepareIndex("myIndexName", "query", "myDesignatedQueryName")
     .setSource(jsonBuilder()
         .startObject()
             .field("query", qb) // Register the query
         .endObject())
     .setRefresh(true) // Needed when the query shall be available immediately
-    .execute().actionGet();</pre></div><p>This indexes the above term query under the name
+    .get();</pre></div><p>This indexes the above term query under the name
 <span class="strong"><strong>myDesignatedQueryName</strong></span>.</p><p>In order to check a document against the registered queries, use this
 code:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">//Build a document to check against the percolator
 XContentBuilder docBuilder = XContentFactory.jsonBuilder().startObject();
@@ -1009,7 +1014,7 @@ docBuilder.endObject(); //End of the doc field
 docBuilder.endObject(); //End of the JSON root object
 // Percolate, by executing the percolator query in the query dsl:
 SearchResponse response = client().prepareSearch("myIndexName")
-        .setQuery(QueryBuilders.percolatorQuery("myDocumentType", docBuilder.bytes()))
+        .setQuery(QueryBuilders.percolateQuery("query", ""myDocumentType", docBuilder.bytes()))
         .get();
 //Iterate over the results
 for(SearchHit hit : response.getHits()) {
