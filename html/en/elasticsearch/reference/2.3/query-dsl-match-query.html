@@ -1062,7 +1062,7 @@ documents if in the range <code class="literal">[0..1)</code> or absolute if gre
     }
 }</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The <code class="literal">cutoff_frequency</code> option operates on a per-shard-level. This means
 that when trying it out on test indexes with low document numbers you
-should follow the advice in <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/current/relevance-is-broken.html" target="_top">Relevance is broken</a>.</p></div></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="query-dsl-match-query-phrase"></a>phrase<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/query-dsl/match-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">match_phrase</code> query analyzes the text and creates a <code class="literal">phrase</code> query
+should follow the advice in <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/relevance-is-broken.html" target="_top">Relevance is broken</a>.</p></div></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="query-dsl-match-query-phrase"></a>phrase<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/query-dsl/match-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">match_phrase</code> query analyzes the text and creates a <code class="literal">phrase</code> query
 out of the analyzed text. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "match_phrase" : {
         "message" : "this is a test"
@@ -1088,34 +1088,30 @@ definition, or the default search analyzer, for example:</p><div class="pre_wrap
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="query-dsl-match-query-phrase-prefix"></a>match_phrase_prefix<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/query-dsl/match-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">match_phrase_prefix</code> is the same as <code class="literal">match_phrase</code>, except that it
 allows for prefix matches on the last term in the text. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "match_phrase_prefix" : {
-        "message" : "this is a test"
-    }
-}</pre></div><p>Or:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "match" : {
-        "message" : {
-            "query" : "this is a test",
-            "type" : "phrase_prefix"
-        }
+        "message" : "quick brown f"
     }
 }</pre></div><p>It accepts the same parameters as the phrase type. In addition, it also
-accepts a <code class="literal">max_expansions</code> parameter that can control to how many
-prefixes the last term will be expanded. It is highly recommended to set
-it to an acceptable value to control the execution time of the query.
-For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+accepts a <code class="literal">max_expansions</code> parameter (default <code class="literal">50</code>) that can control to how
+many prefixes the last term will be expanded. It is highly recommended to set
+it to an acceptable value to control the execution time of the query. For
+example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "match_phrase_prefix" : {
         "message" : {
-            "query" : "this is a test",
+            "query" : "quick brown f",
             "max_expansions" : 10
         }
     }
-}</pre></div><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Comparison to query_string / field</strong></p></div></div></div><p>The match family of queries does not go through a "query parsing"
-process. It does not support field name prefixes, wildcard characters,
-or other "advanced" features. For this reason, chances of it failing are
-very small / non existent, and it provides an excellent behavior when it
-comes to just analyze and run that text as a query behavior (which is
-usually what a text search box does). Also, the <code class="literal">phrase_prefix</code> type can
-provide a great "as you type" behavior to automatically load search
-results.</p></div></div></div><div class="navfooter"><span class="prev"><a href="full-text-queries.html">
+}</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The <code class="literal">match_phrase_prefix</code> query is a poor-man’s autocomplete.  It is very easy
+to use, which let’s you get started quickly with <span class="emphasis"><em>search-as-you-type</em></span> but it’s
+results, which usually are good enough,  can sometimes be confusing.</p><p>Consider the query string <code class="literal">quick brown f</code>.  This query works by creating a
+phrase query out of <code class="literal">quick</code> and <code class="literal">brown</code> (i.e. the term <code class="literal">quick</code> must exist and
+must be followed by the term <code class="literal">brown</code>).  Then it looks at the sorted term
+dictionary to find the first 50 terms that begin with <code class="literal">f</code>, and
+adds these terms to the phrase query.</p><p>The problem is that the first 50 terms may not include the term <code class="literal">fox</code> so the
+phase <code class="literal">quick brown fox</code> will not be found.  This usually isn’t a problem as
+the user will continue to type more letters until the word they are looking
+for appears.</p><p>For better solutions for <span class="emphasis"><em>search-as-you-type</em></span> see the
+<a class="link" href="search-suggesters-completion.html" title="Completion Suggester">completion suggester</a> and</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="full-text-queries.html">
               « 
               Full text queries</a>
            
