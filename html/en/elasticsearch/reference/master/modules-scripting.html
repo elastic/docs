@@ -1081,14 +1081,12 @@ log(_score * 2) + my_modifier</pre></div><div class="pre_wrapper"><pre class="pr
 }'</pre></div><p>The name of the script is derived from the hierarchy of directories it
 exists under, and the file name without the lang extension. For example,
 a script placed under <code class="literal">config/scripts/group1/group2/test.py</code> will be
-named <code class="literal">group1_group2_test</code>.</p><h3><a id="_indexed_scripts"></a>Indexed Scripts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elasticsearch allows you to store scripts in an internal index known as
-<code class="literal">.scripts</code> and reference them by id. There are REST endpoints to manage
-indexed scripts as follows:</p><p>Requests to the scripts endpoint look like :</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">/_scripts/{lang}/{id}</pre></div><p>Where the <code class="literal">lang</code> part is the language the script is in and the <code class="literal">id</code> part is the id
-of the script. In the <code class="literal">.scripts</code> index the type of the document will be set to the <code class="literal">lang</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST localhost:9200/_scripts/groovy/indexedCalculateScore -d '{
+named <code class="literal">group1_group2_test</code>.</p><h3><a id="modules-scripting-stored-scripts"></a>Stored Scripts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elasticsearch allows you to store scripts in the cluster state.
+There are REST endpoints to manage stored scripts as follows:</p><p>Requests to the scripts endpoint look like :</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">/_scripts/{lang}/{id}</pre></div><p>Where the <code class="literal">lang</code> part is the language the script is in and the <code class="literal">id</code> part is the id
+of the script.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST localhost:9200/_scripts/groovy/calculateScore -d '{
      "script": "log(_score * 2) + my_modifier"
-}'</pre></div><p>This will create a document with id: <code class="literal">indexedCalculateScore</code> and type: <code class="literal">groovy</code> in the
-<code class="literal">.scripts</code> index. The type of the document is the language used by the script.</p><p>This script can be accessed at query time by using the <code class="literal">id</code> script parameter and passing
-the script id:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST localhost:9200/_search -d '{
+}'</pre></div><p>This will store the script under the <code class="literal">calculateScore</code> in the cluster
+state.</p><p>This script can be accessed at query time by using the <code class="literal">id</code> and <code class="literal">lang</code> script parameters:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST localhost:9200/_search -d '{
   "query": {
     "function_score": {
       "query": {
@@ -1100,7 +1098,7 @@ the script id:</p><div class="pre_wrapper"><pre class="programlisting prettyprin
         {
           "script_score": {
             "script": {
-              "id": "indexedCalculateScore",
+              "id": "calculateScore",
               "lang" : "groovy",
               "params": {
                 "my_modifier": 8
@@ -1111,9 +1109,10 @@ the script id:</p><div class="pre_wrapper"><pre class="programlisting prettyprin
       ]
     }
   }
-}'</pre></div><p>The script can be viewed by:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET localhost:9200/_scripts/groovy/indexedCalculateScore</pre></div><p>This is rendered as:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">'{
+}'</pre></div><p>The script can be viewed by:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET localhost:9200/_scripts/groovy/calculateScore</pre></div><p>This is rendered as:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">'{
      "script": "log(_score * 2) + my_modifier"
-}'</pre></div><p>Indexed scripts can be deleted by:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XDELETE localhost:9200/_scripts/groovy/indexedCalculateScore</pre></div><h3><a id="enable-dynamic-scripting"></a>Enabling dynamic scripting<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>We recommend running Elasticsearch behind an application or proxy, which
+}'</pre></div><p>Stored scripts can be deleted by:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XDELETE localhost:9200/_scripts/groovy/calculateScore</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The size of stored scripts is limited to 65535 bytes. This can be changed by setting <code class="literal">script.max_size_in_bytes</code>
+setting to increase that soft limit, but if scripts are really large then alternatives like native scripts should be considered.</p></div></div><h3><a id="enable-dynamic-scripting"></a>Enabling dynamic scripting<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>We recommend running Elasticsearch behind an application or proxy, which
 protects Elasticsearch from the outside world. If users are allowed to run
 inline scripts (even in a search request) or indexed scripts, then they have
 the same access to your box as the user that Elasticsearch is running as. For
@@ -1125,13 +1124,13 @@ your users, then you have to decide whether you trust them enough to run scripts
 on your box or not.</p><p>It is possible to enable scripts based on their source, for
 every script engine, through the following settings that need to be added to the
 <code class="literal">config/elasticsearch.yml</code> file on every node.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">script.inline: true
-script.indexed: true</pre></div><p>While this still allows execution of named scripts provided in the config, or
+script.stored: true</pre></div><p>While this still allows execution of named scripts provided in the config, or
 <span class="emphasis"><em>native</em></span> Java scripts registered through plugins, it also allows users to run
 arbitrary scripts via the API. Instead of sending the name of the file as the
 script, the body of the script can be sent instead or retrieved from the
-<code class="literal">.scripts</code> indexed if previously stored.</p><p>There are three possible configuration values for any of the fine-grained
+cluster state if previously stored.</p><p>There are three possible configuration values for any of the fine-grained
 script settings:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Value </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">false</code></p></td><td align="left" valign="top"><p>scripting is turned off completely, in the context of the setting being set.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">true</code></p></td><td align="left" valign="top"><p>scripting is turned on, in the context of the setting being set.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">sandbox</code></p></td><td align="left" valign="top"><p>scripts may be executed only for languages that are sandboxed</p></td></tr></tbody></table></div><p>The default values are the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">script.inline: sandbox
-script.indexed: sandbox
+script.stored: sandbox
 script.file: true</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Global scripting settings affect the <code class="literal">mustache</code> scripting language.
 <a class="link" href="search-template.html" title="Search Template">Search templates</a> internally use the <code class="literal">mustache</code> language,
 and will still be enabled by default as the <code class="literal">mustache</code> engine is sandboxed,
@@ -1151,11 +1150,11 @@ script.engine.groovy.file.mapping: true
 script.engine.groovy.file.search: true
 script.engine.groovy.file.update: true
 script.engine.groovy.file.plugin: true
-script.engine.groovy.indexed.aggs: true
-script.engine.groovy.indexed.mapping: false
-script.engine.groovy.indexed.search: true
-script.engine.groovy.indexed.update: false
-script.engine.groovy.indexed.plugin: false
+script.engine.groovy.stored.aggs: true
+script.engine.groovy.stored.mapping: false
+script.engine.groovy.stored.search: true
+script.engine.groovy.stored.update: false
+script.engine.groovy.stored.plugin: false
 script.engine.groovy.inline.aggs: true
 script.engine.groovy.inline.mapping: false
 script.engine.groovy.inline.search: false

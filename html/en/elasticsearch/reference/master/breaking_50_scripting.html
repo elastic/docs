@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Sniffing on connection failure</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [2.x]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="sniffing-on-startup.html" title="Sniffing on startup" /><link rel="next" href="sniffing-periodically.html" title="Sniffing periodically" /><meta name="DC.type" content="Docs/Clients/.Net/2.x" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Script related changes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-5.0.html" title="Breaking changes in 5.0" /><link rel="prev" href="breaking_50_aggregations_changes.html" title="Aggregation changes" /><link rel="next" href="api-conventions.html" title="API Conventions" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,122 +990,52 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
-      [2.x]
-    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net </a></span> » <span class="breadcrumb-node">Sniffing on connection failure</span></div><div class="navheader"><span class="prev"><a href="sniffing-on-startup.html">
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-5.0.html">Breaking changes in 5.0</a></span> » <span class="breadcrumb-node">Script related changes</span></div><div class="navheader"><span class="prev"><a href="breaking_50_aggregations_changes.html">
               « 
-              Sniffing on startup</a>
+              Aggregation changes</a>
            
         </span><span class="next">
            
-          <a href="sniffing-periodically.html">Sniffing periodically
+          <a href="api-conventions.html">API Conventions 
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="sniffing-on-connection-failure"></a>Sniffing on connection failure<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/asciidoc/client-concepts/connection-pooling/sniffing/on-connection-failure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Sniffing on connection is enabled by default when using a connection pool that allows reseeding.
-The only IConnectionPool we ship that allows this is the <a class="link" href="connection-pooling.html#sniffing-connection-pool" title="SniffingConnectionPool">SniffingConnectionPool</a>.</p><p>This can be very handy to force a refresh of the pools known healthy node by inspecting Elasticsearch itself.
-A sniff tries to get the nodes by asking each currently known node until one response.</p><p>Here we seed our connection with 5 known nodes 9200-9204 of which we think
-9202, 9203, 9204 are master eligible nodes. Our virtualized cluster will throw once when doing
-a search on 9201. This should a sniff to be kicked off.</p><p>When the call fails on 9201 the sniff succeeds and returns a new cluster of healthy nodes
-this cluster only has 3 nodes and the known masters are 9200 and 9202 but a search on 9201
-still fails once</p><p>After this second failure on 9201 another sniff will be returned a cluster that no
-longer fails but looks completely different (9210-9212) we should be able to handle this</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
-    .Nodes(5)
-    .MasterEligible(9202, 9203, 9204)
-    .ClientCalls(r =&gt; r.SucceedAlways())
-    .ClientCalls(r =&gt; r.OnPort(9201).Fails(Once))
-.Sniff(p =&gt; p.SucceedAlways(Framework.Cluster
-        .Nodes(3)
-        .MasterEligible(9200, 9202)
-        .ClientCalls(r =&gt; r.OnPort(9201).Fails(Once))
-.Sniff(s =&gt; s.SucceedAlways(Framework.Cluster
-            .Nodes(3, 9210)
-            .MasterEligible(9210, 9212)
-            .ClientCalls(r =&gt; r.SucceedAlways())
-            .Sniff(r =&gt; r.SucceedAlways())
-        ))
-    ))
-    .SniffingConnectionPool()
-    .Settings(s =&gt; s.DisablePing().SniffOnStartup(false))
-);</pre></div><p>We assert we do a sniff on our first known master node 9202</p><p>Our pool should now have three nodes</p><p>We assert we do a sniff on the first master node in our updated cluster</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceCalls(
-new ClientCall {
-        { HealthyResponse, 9200 },
-        { pool =&gt;  pool.Nodes.Count.Should().Be(5) }
-    },
-    new ClientCall {
-        { BadResponse, 9201},
-{ SniffOnFail },
-        { SniffSuccess, 9202},
-        { HealthyResponse, 9200},
-{ pool =&gt;  pool.Nodes.Count.Should().Be(3) }
-    },
-    new ClientCall {
-        { BadResponse, 9201},
-{ SniffOnFail },
-        { SniffSuccess, 9200},
-        { HealthyResponse, 9210},
-        { pool =&gt;  pool.Nodes.Count.Should().Be(3) }
-    },
-    new ClientCall { { HealthyResponse, 9211 } },
-    new ClientCall { { HealthyResponse, 9212 } },
-    new ClientCall { { HealthyResponse, 9210 } },
-    new ClientCall { { HealthyResponse, 9211 } },
-    new ClientCall { { HealthyResponse, 9212 } },
-    new ClientCall { { HealthyResponse, 9210 } },
-    new ClientCall { { HealthyResponse, 9211 } },
-    new ClientCall { { HealthyResponse, 9212 } },
-    new ClientCall { { HealthyResponse, 9210 } }
-);</pre></div><p>Here we set up our cluster exactly the same as the previous setup
-Only we enable pinging (default is true) and make the ping fail</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
-    .Nodes(5)
-    .MasterEligible(9202, 9203, 9204)
-    .Ping(r =&gt; r.OnPort(9201).Fails(Once))
-    .Sniff(p =&gt; p.SucceedAlways(Framework.Cluster
-        .Nodes(3)
-        .MasterEligible(9200, 9202)
-        .Ping(r =&gt; r.OnPort(9201).Fails(Once))
-        .Sniff(s =&gt; s.SucceedAlways(Framework.Cluster
-            .Nodes(3, 9210)
-            .MasterEligible(9210, 9211)
-            .Ping(r =&gt; r.SucceedAlways())
-            .Sniff(r =&gt; r.SucceedAlways())
-        ))
-    ))
-    .SniffingConnectionPool()
-    .Settings(s =&gt; s.SniffOnStartup(false))
-);</pre></div><p>We assert we do a sniff on our first known master node 9202</p><p>Our pool should now have three nodes</p><p>We assert we do a sniff on the first master node in our updated cluster</p><p>9210 was already pinged after the sniff returned the new nodes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceCalls(
-    new ClientCall {
-        { PingSuccess, 9200 },
-        { HealthyResponse, 9200 },
-        { pool =&gt;  pool.Nodes.Count.Should().Be(5) }
-    },
-    new ClientCall {
-        { PingFailure, 9201},
-{ SniffOnFail },
-        { SniffSuccess, 9202},
-        { PingSuccess, 9200},
-        { HealthyResponse, 9200},
-{ pool =&gt;  pool.Nodes.Count.Should().Be(3) }
-    },
-    new ClientCall {
-        { PingFailure, 9201},
-{ SniffOnFail },
-        { SniffSuccess, 9200},
-        { PingSuccess, 9210},
-        { HealthyResponse, 9210},
-        { pool =&gt;  pool.Nodes.Count.Should().Be(3) }
-    },
-    new ClientCall { { PingSuccess, 9211 }, { HealthyResponse, 9211 } },
-    new ClientCall { { PingSuccess, 9212 }, { HealthyResponse, 9212 } },
-new ClientCall { { HealthyResponse, 9210 } },
-    new ClientCall { { HealthyResponse, 9211 } },
-    new ClientCall { { HealthyResponse, 9212 } },
-    new ClientCall { { HealthyResponse, 9210 } }
-);</pre></div></div><div class="navfooter"><span class="prev"><a href="sniffing-on-startup.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="breaking_50_scripting"></a>Script related changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_indexed_scripts_and_templates"></a>Indexed scripts and templates<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Indexed scrips and templates have been replaced by <a class="link" href="modules-scripting.html#modules-scripting-stored-scripts" title="Stored Scriptsedit">stored scripts</a>
+which stores the scripts and templates in the cluster state instead of a dedicate <code class="literal">.scripts</code> index.</p><p>For the size of stored scripts there is a soft limit of 65535 bytes. If scripts exceed that size then
+the <code class="literal">script.max_size_in_bytes</code> setting can be added to elasticsearch.yml to change the soft limit to a higher value.
+If scripts are really large, other options like native scripts should be considered.</p><p>Previously indexed scripts in the <code class="literal">.scripts</code> index will not be used any more as
+Elasticsearch will now try to fetch the scripts from the cluster state. Upon upgrading
+to 5.x the <code class="literal">.scripts</code> index will remain to exist, so it can be used by a script to migrate
+the stored scripts from the <code class="literal">.scripts</code> index into the cluster state. The format of the scripts
+hasn’t changed.</p><p>The following Python script can be used to import your indexed scripts into the cluster state
+as stored scripts:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-python">from elasticsearch import Elasticsearch,helpers
+
+es = Elasticsearch([
+        {'host': 'localhost'}
+])
+
+for doc in helpers.scan(es, index=".scripts", preserve_order=True):
+        es.put_script(lang=doc['_type'], id=doc['_id'], body=doc['_source'])</pre></div><p>This script makes use of the official Elasticsearch Python client and
+therefor you need to make sure that your have installed the client in your
+environment. For more information on this please visit the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/index.html" target="_top">elasticsearch-py page</a>.</p><p>After you have moved the scripts via the provided script or otherwise then you can verify with the following
+request if the migration has happened successfully:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/state?filter_path=metadata.stored_scripts</pre></div><p>The response should include all your scripts from the <code class="literal">.scripts</code> index.
+After you have verified that all your scripts have been moved, optionally as a last step,
+you can delete the <code class="literal">.scripts</code> index as Elasticsearch no longer uses it.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_indexed_scripts_java_apis"></a>Indexed scripts Java APIs<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>All the methods related to interacting with indexed scripts have been removed.
+The Java API methods for interacting with stored scripts have been added under <code class="literal">ClusterAdminClient</code> class.
+The sugar methods that used to exist on the indexed scripts API methods don’t exist on the methods for
+stored scripts. The only way to provide scripts is by using <code class="literal">BytesReference</code> implementation, if a string needs to be
+provided the <code class="literal">BytesArray</code> class should be used.</p></div></div><div class="navfooter"><span class="prev"><a href="breaking_50_aggregations_changes.html">
               « 
-              Sniffing on startup</a>
+              Aggregation changes</a>
            
         </span><span class="next">
            
-          <a href="sniffing-periodically.html">Sniffing periodically
+          <a href="api-conventions.html">API Conventions 
                »
             </a></span></div>
 <!-- end body -->
