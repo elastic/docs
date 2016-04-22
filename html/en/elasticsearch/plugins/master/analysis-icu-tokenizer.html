@@ -1022,7 +1022,45 @@ using custom rules to break Myanmar and Khmer text into syllables.</p><div class
       }
     }
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/analysis-icu-tokenizer/1.json"></div></div><div class="navfooter"><span class="prev"><a href="analysis-icu-normalization-charfilter.html">
+}</pre></div><div class="sense_widget" data-snippet="snippets/analysis-icu-tokenizer/1.json"></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_rules_customization"></a>Rules customization<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/analysis-icu.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release.</p></div></div><p>You can customize the <code class="literal">icu-tokenizer</code> behavior by specifying per-script rule files, see the
+<a class="ulink" href="http://userguide.icu-project.org/boundaryanalysis#TOC-RBBI-Rules" target="_top">RBBI rules syntax reference</a>
+for a more detailed explanation.</p><p>To add icu tokenizer rules, set the <code class="literal">rule_files</code> settings, which should contain a comma-separated list of
+<code class="literal">code:rulefile</code> pairs in the following format:
+<a class="ulink" href="http://unicode.org/iso15924/iso15924-codes.html" target="_top">four-letter ISO 15924 script code</a>,
+followed by a colon, then a rule file name. Rule files are placed <code class="literal">ES_HOME/config</code> directory.</p><p>As a demonstration of how the rule files can be used, save the following user file to <code class="literal">$ES_HOME/config/KeywordTokenizer.rbbi</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">.+ {200};</pre></div><p>Then create an analyzer to use this rule file as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT icu_sample
+{
+    "settings": {
+        "index":{
+            "analysis":{
+                "tokenizer" : {
+                    "icu_user_file" : {
+                       "type" : "icu_tokenizer",
+                       "rule_files" : "Latn:KeywordTokenizer.rbbi"
+                    }
+                },
+                "analyzer" : {
+                    "my_analyzer" : {
+                        "type" : "custom",
+                        "tokenizer" : "icu_user_file"
+                    }
+                }
+            }
+        }
+    }
+}
+
+POST icu_sample/_analyze?analyzer=my_analyzer&amp;text=Elasticsearch. Wow!</pre></div><div class="sense_widget" data-snippet="snippets/analysis-icu-tokenizer/2.json"></div><p>The above <code class="literal">analyze</code> request returns the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json"># Result
+{
+   "tokens": [
+      {
+         "token": "Elasticsearch. Wow!",
+         "start_offset": 0,
+         "end_offset": 19,
+         "type": "&lt;ALPHANUM&gt;",
+         "position": 0
+      }
+   ]
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="analysis-icu-normalization-charfilter.html">
               « 
               ICU Normalization Character Filter</a>
            
