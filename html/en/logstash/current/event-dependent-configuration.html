@@ -1049,7 +1049,7 @@ and can be nested.</p><p>The conditional syntax is:</p><div class="pre_wrapper">
 }</pre></div><p>What’s an expression? Comparison tests, boolean logic, and so on!</p><p>You can use the following comparison operators:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 equality: <code class="literal">==</code>,  <code class="literal">!=</code>,  <code class="literal">&lt;</code>,  <code class="literal">&gt;</code>,  <code class="literal">&lt;=</code>, <code class="literal">&gt;=</code>
 </li><li class="listitem">
-regexp: <code class="literal">=~</code>, <code class="literal">!~</code>
+regexp: <code class="literal">=~</code>, <code class="literal">!~</code> (checks a pattern on the right against a string value on the left)
 </li><li class="listitem">
 inclusion: <code class="literal">in</code>, <code class="literal">not in</code>
 </li></ul></div><p>The supported boolean operators are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
@@ -1069,7 +1069,7 @@ you can negate expressions with <code class="literal">!</code>, and you can grou
     ...
     }
   }
-}</pre></div><p>The <code class="literal">in</code> conditional enables you to compare against the value of a field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">filter {
+}</pre></div><p>You can use the <code class="literal">in</code> operator to test whether a field contains a specific string, key, or (for lists) element:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">filter {
   if [foo] in [foobar] {
     mutate { add_tag =&gt; "field in field" }
   }
@@ -1089,12 +1089,19 @@ you can negate expressions with <code class="literal">!</code>, and you can grou
     mutate { add_tag =&gt; "shouldexist" }
   }
 }</pre></div><p>You use the <code class="literal">not in</code> conditional the same way. For example,
-you could use <code class="literal">not in</code> to only route events to elasticsearch
+you could use <code class="literal">not in</code> to only route events to Elasticsearch
 when <code class="literal">grok</code> is successful:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">output {
   if "_grokparsefailure" not in [tags] {
     elasticsearch { ... }
   }
-}</pre></div><p>For more complex examples, see <a class="link" href="config-examples.html#using-conditionals" title="Using Conditionalsedit">Using Conditionals</a>.</p><h4><a id="metadata"></a>The @metadata field<a href="https://github.com/elastic/logstash/edit/master/docs/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In Logstash 1.5 there is a new, special field, called <code class="literal">@metadata</code>.  The contents
+}</pre></div><p>You can check for the existence of a specific field, but there’s currently no way to differentiate between a field that
+doesn’t exist versus a field that’s simply false. The expression <code class="literal">if [foo]</code> returns <code class="literal">false</code> when:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">[foo]</code> doesn’t exist in the event,
+</li><li class="listitem">
+<code class="literal">[foo]</code> exists in the event, but is false, or
+</li><li class="listitem">
+<code class="literal">[foo]</code> exists in the event, but is nil
+</li></ul></div><p>For more complex examples, see <a class="link" href="config-examples.html#using-conditionals" title="Using Conditionalsedit">Using Conditionals</a>.</p><h4><a id="metadata"></a>The @metadata field<a href="https://github.com/elastic/logstash/edit/master/docs/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In Logstash 1.5 and later, there is a special field called <code class="literal">@metadata</code>.  The contents
 of <code class="literal">@metadata</code> will not be part of any of your events at output time, which
 makes it great to use for conditionals, or extending and building event fields
 with field reference and sprintf formatting.</p><p>The following configuration file will yield events from STDIN.  Whatever is
