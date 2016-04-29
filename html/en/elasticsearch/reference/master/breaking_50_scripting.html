@@ -1011,7 +1011,7 @@ If scripts are really large, other options like native scripts should be conside
 Elasticsearch will now try to fetch the scripts from the cluster state. Upon upgrading
 to 5.x the <code class="literal">.scripts</code> index will remain to exist, so it can be used by a script to migrate
 the stored scripts from the <code class="literal">.scripts</code> index into the cluster state. The format of the scripts
-hasn’t changed.</p><p>The following Python script can be used to import your indexed scripts into the cluster state
+hasn’t changed.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_python_migration_script"></a>Python migration script<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The following Python script can be used to import your indexed scripts into the cluster state
 as stored scripts:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-python">from elasticsearch import Elasticsearch,helpers
 
 es = Elasticsearch([
@@ -1020,12 +1020,27 @@ es = Elasticsearch([
 
 for doc in helpers.scan(es, index=".scripts", preserve_order=True):
         es.put_script(lang=doc['_type'], id=doc['_id'], body=doc['_source'])</pre></div><p>This script makes use of the official Elasticsearch Python client and
-therefor you need to make sure that your have installed the client in your
-environment. For more information on this please visit the
-<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/index.html" target="_top">elasticsearch-py page</a>.</p><p>After you have moved the scripts via the provided script or otherwise then you can verify with the following
+therefore you need to make sure that your have installed the client in your
+environment. For more information on this please see
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/index.html" target="_top"><code class="literal">elasticsearch-py</code></a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_perl_migration_script"></a>Perl migration script<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The following Perl script can be used to import your indexed scripts into the cluster state
+as stored scripts:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-perl">use Search::Elasticsearch;
+
+my $es     = Search::Elasticsearch-&gt;new( nodes =&gt; 'localhost:9200');
+my $scroll = $es-&gt;scroll_helper( index =&gt; '.scripts', sort =&gt; '_doc');
+
+while (my $doc = $scroll-&gt;next) {
+  $e-&gt;put_script(
+    lang =&gt; $doc-&gt;{_type},
+    id   =&gt; $doc-&gt;{_id},
+    body =&gt; $doc-&gt;{_source}
+  );
+}</pre></div><p>This script makes use of the official Elasticsearch Perl client and
+therefore you need to make sure that your have installed the client in your
+environment. For more information on this please see
+<a class="ulink" href="https://metacpan.org/pod/Search::Elasticsearch" target="_top"><code class="literal">Search::Elasticsearch</code></a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_verifying_script_migration"></a>Verifying script migration<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>After you have moved the scripts via the provided script or otherwise then you can verify with the following
 request if the migration has happened successfully:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/state?filter_path=metadata.stored_scripts</pre></div><p>The response should include all your scripts from the <code class="literal">.scripts</code> index.
 After you have verified that all your scripts have been moved, optionally as a last step,
-you can delete the <code class="literal">.scripts</code> index as Elasticsearch no longer uses it.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_indexed_scripts_java_apis"></a>Indexed scripts Java APIs<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>All the methods related to interacting with indexed scripts have been removed.
+you can delete the <code class="literal">.scripts</code> index as Elasticsearch no longer uses it.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_indexed_scripts_java_apis"></a>Indexed scripts Java APIs<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/scripting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>All the methods related to interacting with indexed scripts have been removed.
 The Java API methods for interacting with stored scripts have been added under <code class="literal">ClusterAdminClient</code> class.
 The sugar methods that used to exist on the indexed scripts API methods don’t exist on the methods for
 stored scripts. The only way to provide scripts is by using <code class="literal">BytesReference</code> implementation, if a string needs to be
