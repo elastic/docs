@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Round Robin - Skipping Dead Nodes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="round-robin.html" title="Round Robin" /><link rel="next" href="volatile-updates.html" title="Volatile Updates" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,169 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net </a></span> » <span class="breadcrumb-node">Round Robin - Skipping Dead Nodes</span></div><div class="navheader"><span class="prev"><a href="round-robin.html">
+              « 
+              Round Robin</a>
+           
+        </span><span class="next">
+           
+          <a href="volatile-updates.html">Volatile Updates
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="round-robin-skipping-dead-nodes"></a>Round Robin - Skipping Dead Nodes<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/round-robin/skip-dead-nodes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When selecting nodes the connection pool will try and skip all the nodes that are marked dead.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_getnext_2"></a>GetNext<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/round-robin/skip-dead-nodes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>GetNext is implemented in a lock free thread safe fashion, meaning each callee gets returned its own cursor to advance
+over the internal list of nodes. This to guarantee each request that needs to fall over tries all the nodes without
+suffering from noisy neighbours advancing a global cursor.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var seeds = Enumerable.Range(9200, NumberOfNodes).Select(p =&gt; new Node(new Uri("http://localhost:" + p))).ToList();
+
+seeds.First().MarkDead(DateTime.Now.AddDays(1));
+
+var pool = new StaticConnectionPool(seeds, randomize: false);
+
+var node = pool.CreateView().First();
+
+node.Uri.Port.Should().Be(9201);
+
+node = pool.CreateView().First();
+
+node.Uri.Port.Should().Be(9202);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var seeds = Enumerable.Range(9200, NumberOfNodes).Select(p =&gt; new Node(new Uri("http://localhost:" + p))).ToList();
+var pool = new StaticConnectionPool(seeds, randomize: false);
+var node = pool.CreateView().First();
+node.Uri.Port.Should().Be(9200);
+node = pool.CreateView().First();
+node.Uri.Port.Should().Be(9201);
+node = pool.CreateView().First();
+node.Uri.Port.Should().Be(9202);</pre></div><p>After we marked the first node alive again, we expect it to be hit again</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">seeds.First().MarkAlive();
+
+var node = pool.CreateView().First();
+
+node.Uri.Port.Should().Be(9201);
+
+node = pool.CreateView().First();
+
+node.Uri.Port.Should().Be(9202);
+
+node = pool.CreateView().First();
+
+node.Uri.Port.Should().Be(9200);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var dateTimeProvider = new TestableDateTimeProvider();
+
+var seeds = Enumerable.Range(9200, NumberOfNodes).Select(p =&gt; new Node(new Uri("http://localhost:" + p))).ToList();
+
+seeds.First().MarkDead(dateTimeProvider.Now().AddDays(1));
+
+var pool = new StaticConnectionPool(seeds, randomize: false, dateTimeProvider: dateTimeProvider);
+
+var node = pool.CreateView().First();
+
+node.Uri.Port.Should().Be(9201);
+
+node = pool.CreateView().First();
+
+node.Uri.Port.Should().Be(9202);</pre></div><p>If we roll the clock forward two days, the node that was marked dead until tomorrow (or yesterday!) should be resurrected</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">dateTimeProvider.ChangeTime(d =&gt; d.AddDays(2));
+
+var n = pool.CreateView().First();
+
+n.Uri.Port.Should().Be(9201);
+
+n = pool.CreateView().First();
+
+n.Uri.Port.Should().Be(9202);
+
+n = pool.CreateView().First();
+
+n.Uri.Port.Should().Be(9200);
+
+n.IsResurrected.Should().BeTrue();</pre></div><p>A cluster with 2 nodes where the second node fails on ping</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(4)
+    .ClientCalls(p =&gt; p.Succeeds(Always))
+    .ClientCalls(p =&gt; p.OnPort(9201).FailAlways())
+    .ClientCalls(p =&gt; p.OnPort(9203).FailAlways())
+    .StaticConnectionPool()
+    .Settings(p=&gt;p.DisablePing())
+);</pre></div><p>The first call goes to 9200 which succeeds</p><p>The 2nd call does a ping on 9201 because its used for the first time.
+It fails so we wrap over to node 9202</p><p>Finally we assert that the connectionpool has one node that is marked as dead</p><p>The next call goes to 9203 which fails so we should wrap over</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">await audit.TraceCalls(
+new ClientCall {
+        { HealthyResponse, 9200},
+        { pool =&gt; pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(0) }
+    },
+new ClientCall {
+        { BadResponse, 9201},
+        { HealthyResponse, 9202},
+{ pool =&gt;  pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(1) }
+    },
+new ClientCall {
+        { BadResponse, 9203},
+        { HealthyResponse, 9200},
+        { pool =&gt; pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(2) }
+    },
+    new ClientCall {
+        { HealthyResponse, 9202},
+        { pool =&gt; pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(2) }
+    },
+    new ClientCall {
+        { HealthyResponse, 9200},
+        { pool =&gt; pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(2) }
+    },
+    new ClientCall {
+        { HealthyResponse, 9202},
+        { pool =&gt; pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(2) }
+    },
+    new ClientCall {
+        { HealthyResponse, 9200},
+        { pool =&gt; pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(2) }
+    }
+);</pre></div><p>A cluster with 2 nodes where the second node fails on ping</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(4)
+    .ClientCalls(p =&gt; p.Fails(Always))
+    .StaticConnectionPool()
+    .Settings(p=&gt;p.DisablePing())
+);</pre></div><p>All the calls fail</p><p>After all our registered nodes are marked dead we want to sample a single dead node
+each time to quickly see if the cluster is back up. We do not want to retry all 4
+nodes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">await audit.TraceCalls(
+new ClientCall {
+        { BadResponse, 9200},
+        { BadResponse, 9201},
+        { BadResponse, 9202},
+        { BadResponse, 9203},
+        { MaxRetriesReached },
+        { pool =&gt; pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(4) }
+    },
+new ClientCall {
+        { AllNodesDead },
+        { Resurrection, 9201},
+        { BadResponse, 9201},
+        { pool =&gt;  pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(4) }
+    },
+    new ClientCall {
+        { AllNodesDead },
+        { Resurrection, 9202},
+        { BadResponse, 9202},
+        { pool =&gt;  pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(4) }
+    },
+    new ClientCall {
+        { AllNodesDead },
+        { Resurrection, 9203},
+        { BadResponse, 9203},
+        { pool =&gt;  pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(4) }
+    },
+    new ClientCall {
+        { AllNodesDead },
+        { Resurrection, 9200},
+        { BadResponse, 9200},
+        { pool =&gt;  pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(4) }
+    }
+);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="round-robin.html">
+              « 
+              Round Robin</a>
+           
+        </span><span class="next">
+           
+          <a href="volatile-updates.html">Volatile Updates
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Sniffing on startup</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="date-time-providers.html" title="Date time providers" /><link rel="next" href="sniffing-on-connection-failure.html" title="Sniffing on connection failure" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,141 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net </a></span> » <span class="breadcrumb-node">Sniffing on startup</span></div><div class="navheader"><span class="prev"><a href="date-time-providers.html">
+              « 
+              Date time providers</a>
+           
+        </span><span class="next">
+           
+          <a href="sniffing-on-connection-failure.html">Sniffing on connection failure
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="sniffing-on-startup"></a>Sniffing on startup<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/sniffing/on-startup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><a class="link" href="connection-pooling.html" title="Connection Pooling">Connection pools</a> that return true for <code class="literal">SupportsReseeding</code> will sniff on startup by default.</p><p>We can demonstrate this by creating a <span class="emphasis"><em>virtual</em></span> Elasticsearch cluster with NEST’s Test Framework.
+Here we create a 10 node cluster that uses a <a class="link" href="connection-pooling.html#sniffing-connection-pool" title="SniffingConnectionPool">SniffingConnectionPool</a>, setting
+sniff to fail on all nodes <span class="strong"><strong><span class="emphasis"><em>except</em></span></strong></span> 9202</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Sniff(s =&gt; s.Fails(Always))
+    .Sniff(s =&gt; s.OnPort(9202).Succeeds(Always))
+    .SniffingConnectionPool()
+    .AllDefaults()
+);</pre></div><p>When the client call is made, we can see from the audit trail that the pool first tried to sniff on startup,
+with a sniff failure on 9200 and 9201, followed by a sniff success on 9202. A ping and healthy response are made on
+9200</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">await audit.TraceCall(new ClientCall
+ {
+    { SniffOnStartup},
+    { SniffFailure, 9200},
+    { SniffFailure, 9201},
+    { SniffSuccess, 9202},
+    { PingSuccess , 9200},
+    { HealthyResponse, 9200}
+});</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Sniff(s =&gt; s.Fails(Always))
+    .Sniff(s =&gt; s.OnPort(9202).Succeeds(Always, Framework.Cluster.Nodes(8, startFrom: 9204)))
+    .SniffingConnectionPool()
+    .AllDefaults()
+);
+
+await audit.TraceCall(new ClientCall {
+{ SniffOnStartup},
+{ SniffFailure, 9200},
+{ SniffFailure, 9201},
+{ SniffSuccess, 9202},
+{ PingSuccess, 9204},
+{ HealthyResponse, 9204}
+            });</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Sniff(s =&gt; s.Fails(Always))
+    .Sniff(s =&gt; s.OnPort(9209).Succeeds(Always))
+    .SniffingConnectionPool()
+    .AllDefaults()
+);
+
+await audit.TraceCall(new ClientCall {
+{ SniffOnStartup},
+{ SniffFailure, 9200},
+{ SniffFailure, 9201},
+{ SniffFailure, 9202},
+{ SniffFailure, 9203},
+{ SniffFailure, 9204},
+{ SniffFailure, 9205},
+{ SniffFailure, 9206},
+{ SniffFailure, 9207},
+{ SniffFailure, 9208},
+{ SniffSuccess, 9209},
+{ PingSuccess, 9200},
+{ HealthyResponse, 9200}
+            });</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(new[] {
+        new Node(new Uri("http://localhost:9200")) { MasterEligible = false },
+        new Node(new Uri("http://localhost:9201")) { MasterEligible = false },
+        new Node(new Uri("http://localhost:9202")) { MasterEligible = true },
+    })
+    .Sniff(s =&gt; s.Succeeds(Always))
+    .SniffingConnectionPool()
+    .AllDefaults()
+);
+
+await audit.TraceCall(new ClientCall {
+{ SniffOnStartup},
+{ SniffSuccess, 9202},
+{ PingSuccess, 9200},
+{ HealthyResponse, 9200}
+            });</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(new[] {
+        new Node(new Uri("http://localhost:9200")) { MasterEligible = true },
+        new Node(new Uri("http://localhost:9201")) { MasterEligible = true },
+        new Node(new Uri("http://localhost:9202")) { MasterEligible = false },
+    })
+    .Sniff(s =&gt; s.Fails(Always))
+    .Sniff(s =&gt; s.OnPort(9202).Succeeds(Always))
+    .SniffingConnectionPool()
+    .AllDefaults()
+);
+
+await audit.TraceCall(new ClientCall {
+{ SniffOnStartup},
+{ SniffFailure, 9200},
+{ SniffFailure, 9201},
+{ SniffSuccess, 9202},
+{ PingSuccess, 9200},
+{ HealthyResponse, 9200}
+            });</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Sniff(s =&gt; s.Fails(Always))
+    .Sniff(s =&gt; s.OnPort(9202).Succeeds(Always))
+    .SniffingConnectionPool()
+    .AllDefaults()
+);
+await audit.TraceCalls(
+     new ClientCall
+     {
+        { SniffOnStartup},
+        { SniffFailure, 9200},
+        { SniffFailure, 9201},
+        { SniffSuccess, 9202},
+        { PingSuccess , 9200},
+        { HealthyResponse, 9200}
+    },
+    new ClientCall
+    {
+        { PingSuccess, 9201},
+        { HealthyResponse, 9201}
+    }
+);</pre></div></div><div class="navfooter"><span class="prev"><a href="date-time-providers.html">
+              « 
+              Date time providers</a>
+           
+        </span><span class="next">
+           
+          <a href="sniffing-on-connection-failure.html">Sniffing on connection failure
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

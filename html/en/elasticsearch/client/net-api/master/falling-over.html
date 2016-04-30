@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Fail over</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="volatile-updates.html" title="Volatile Updates" /><link rel="next" href="max-retries.html" title="Max Retries" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,81 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net </a></span> » <span class="breadcrumb-node">Fail over</span></div><div class="navheader"><span class="prev"><a href="volatile-updates.html">
+              « 
+              Volatile Updates</a>
+           
+        </span><span class="next">
+           
+          <a href="max-retries.html">Max Retries
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="falling-over"></a>Fail over<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/failover/falling-over.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When using connection pooling and the pool has sufficient nodes a request will be retried if
+the call to a node throws an exception or returns a 502 or 503</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .ClientCalls(r =&gt; r.FailAlways())
+    .ClientCalls(r =&gt; r.OnPort(9201).SucceedAlways())
+    .StaticConnectionPool()
+    .Settings(s =&gt; s.DisablePing())
+);
+audit = await audit.TraceCall(
+    new ClientCall {
+        { BadResponse, 9200 },
+        { HealthyResponse, 9201 },
+    }
+);</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="bad-gateway"></a>502 Bad Gateway<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/failover/falling-over.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Will be treated as an error that requires retrying</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .ClientCalls(r =&gt; r.FailAlways(502))
+    .ClientCalls(r =&gt; r.OnPort(9201).SucceedAlways())
+    .StaticConnectionPool()
+    .Settings(s =&gt; s.DisablePing())
+);
+
+audit = await audit.TraceCall(
+    new ClientCall {
+        { BadResponse, 9200 },
+        { HealthyResponse, 9201 },
+    }
+);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="service-unavailable"></a>503 Service Unavailable<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/failover/falling-over.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Will be treated as an error that requires retrying</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .ClientCalls(r =&gt; r.FailAlways(503))
+    .ClientCalls(r =&gt; r.OnPort(9201).SucceedAlways())
+    .StaticConnectionPool()
+    .Settings(s =&gt; s.DisablePing())
+);
+
+audit = await audit.TraceCall(
+    new ClientCall {
+        { BadResponse, 9200 },
+        { HealthyResponse, 9201 },
+    }
+);</pre></div><p>If a call returns a valid http status code other than 502 or 503, the request won’t be retried.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Different requests may have different status codes that are deemed valid. For example,
+a <span class="strong"><strong>404 Not Found</strong></span> response is a valid status code for an index exists request</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .ClientCalls(r =&gt; r.FailAlways(418))
+    .ClientCalls(r =&gt; r.OnPort(9201).SucceedAlways())
+    .StaticConnectionPool()
+    .Settings(s =&gt; s.DisablePing())
+);
+
+audit = await audit.TraceCall(
+    new ClientCall {
+        { BadResponse, 9200 },
+    }
+);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="volatile-updates.html">
+              « 
+              Volatile Updates</a>
+           
+        </span><span class="next">
+           
+          <a href="max-retries.html">Max Retries
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

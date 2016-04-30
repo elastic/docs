@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Connect Timeouts</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="request-timeouts.html" title="Request Timeouts" /><link rel="next" href="maximum-retries.html" title="Maximum Retries" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,55 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net </a></span> » <span class="breadcrumb-node">Connect Timeouts</span></div><div class="navheader"><span class="prev"><a href="request-timeouts.html">
+              « 
+              Request Timeouts</a>
+           
+        </span><span class="next">
+           
+          <a href="maximum-retries.html">Maximum Retries
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="connect-timeouts"></a>Connect Timeouts<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/request-overrides/request-timeouts-overrides.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Connect timeouts can be overridden on a per request basis. Whilst the underlying <code class="literal">WebRequest</code> (in the case of full CLR)
+and <code class="literal">HttpClient</code> (in the case of Core CLR) cannot distinguish between connect and retry timeouts,
+we use a separate configuration value for ping requests.</p><p>we set up a 10 node cluster with a global time out of 20 seconds.
+Each call on a node takes 10 seconds. So we can only try this call on 2 nodes
+before the max request time out kills the client call.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Ping(p =&gt; p.SucceedAlways().Takes(TimeSpan.FromSeconds(20)))
+    .ClientCalls(r =&gt; r.SucceedAlways())
+    .StaticConnectionPool()
+    .Settings(s =&gt; s.RequestTimeout(TimeSpan.FromSeconds(10)).PingTimeout(TimeSpan.FromSeconds(10)))
+);</pre></div><p>The first call uses the configured global settings, request times out after 10 seconds and ping
+calls always take 20, so we should see a single ping failure</p><p>On the second request we set a request ping timeout override of 2seconds
+We should now see more nodes being tried before the request timeout is hit.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceCalls(
+new ClientCall {
+        { PingFailure, 9200 },
+        { MaxTimeoutReached }
+    },
+new ClientCall(r =&gt; r.PingTimeout(TimeSpan.FromSeconds(2)))
+    {
+        { PingFailure, 9202 },
+        { PingFailure, 9203 },
+        { PingFailure, 9204 },
+        { PingFailure, 9205 },
+        { PingFailure, 9206 },
+        { MaxTimeoutReached }
+    }
+);</pre></div></div><div class="navfooter"><span class="prev"><a href="request-timeouts.html">
+              « 
+              Request Timeouts</a>
+           
+        </span><span class="next">
+           
+          <a href="maximum-retries.html">Maximum Retries
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Unrecoverable exceptions</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="unexpected-exceptions.html" title="Unexpected exceptions" /><link rel="next" href="nest.html" title="Client Concepts - NEST" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,163 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net </a></span> » <span class="breadcrumb-node">Unrecoverable exceptions</span></div><div class="navheader"><span class="prev"><a href="unexpected-exceptions.html">
+              « 
+              Unexpected exceptions</a>
+           
+        </span><span class="next">
+           
+          <a href="nest.html">Client Concepts - NEST 
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="unrecoverable-exceptions"></a>Unrecoverable exceptions<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/exceptions/unrecoverable-exceptions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Unrecoverable exceptions are <span class="emphasis"><em>excepted</em></span> exceptions that are grounds to exit the client pipeline immediately.
+By default, the client won’t throw on any <code class="literal">ElasticsearchClientException</code> but instead return an invalid response which
+can be detected by checking <code class="literal">.IsValid</code> on the response
+You can configure the client to throw using <code class="literal">ThrowExceptions()</code> on <code class="literal">ConnectionSettings</code>. The following test
+both a client that throws and one that returns an invalid response with an <code class="literal">.OriginalException</code> exposed</p><p>The following are recoverable exceptions</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var recoverablExceptions = new[]
+{
+    new PipelineException(PipelineFailure.BadResponse),
+    new PipelineException(PipelineFailure.PingFailure),
+};
+
+recoverablExceptions.Should().OnlyContain(e =&gt; e.Recoverable);</pre></div><p>and the unrecoverable exceptions</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var unrecoverableExceptions = new[]
+{
+    new PipelineException(PipelineFailure.CouldNotStartSniffOnStartup),
+    new PipelineException(PipelineFailure.SniffFailure),
+    new PipelineException(PipelineFailure.Unexpected),
+    new PipelineException(PipelineFailure.BadAuthentication),
+    new PipelineException(PipelineFailure.MaxRetriesReached),
+    new PipelineException(PipelineFailure.MaxTimeoutReached)
+};
+
+unrecoverableExceptions.Should().OnlyContain(e =&gt; !e.Recoverable);</pre></div><p>As an example, let’s set up a 10 node cluster that will always succeed when pinged but
+                        will fail with a 401 response when making client calls</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Ping(r =&gt; r.SucceedAlways())
+    .ClientCalls(r =&gt; r.FailAlways(401))
+    .StaticConnectionPool()
+    .AllDefaults()
+);</pre></div><p>Here we make a client call and determine that the first audit event was a successful ping,
+followed by a bad response as a result of a bad authentication response</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceElasticsearchException(
+    new ClientCall {
+        { AuditEvent.PingSuccess, 9200 },
+        { AuditEvent.BadResponse, 9200 },
+    },
+    (e) =&gt;
+    {
+        e.FailureReason.Should().Be(PipelineFailure.BadAuthentication);
+    }
+);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Ping(r =&gt; r.SucceedAlways())
+    .ClientCalls(r =&gt; r.FailAlways(401).ReturnResponse(ResponseHtml))
+    .StaticConnectionPool()
+    .AllDefaults()
+);
+
+audit = await audit.TraceElasticsearchException(
+    new ClientCall {
+        { AuditEvent.PingSuccess, 9200 },
+        { AuditEvent.BadResponse, 9200 },
+    },
+    (e) =&gt;
+    {
+        e.FailureReason.Should().Be(PipelineFailure.BadAuthentication);
+        e.Response.HttpStatusCode.Should().Be(401);
+        e.Response.ResponseBodyInBytes.Should().BeNull();
+    }
+);
+
+e.FailureReason.Should().Be(PipelineFailure.BadAuthentication);
+
+e.Response.HttpStatusCode.Should().Be(401);
+
+e.Response.ResponseBodyInBytes.Should().BeNull();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Ping(r =&gt; r.SucceedAlways())
+    .ClientCalls(r =&gt; r.FailAlways(401).ReturnResponse(ResponseHtml))
+    .StaticConnectionPool()
+    .Settings(s=&gt;s.DisableDirectStreaming())
+);
+
+audit = await audit.TraceElasticsearchException(
+    new ClientCall {
+        { AuditEvent.PingSuccess, 9200 },
+        { AuditEvent.BadResponse, 9200 },
+    },
+    (e) =&gt;
+    {
+        e.FailureReason.Should().Be(PipelineFailure.BadAuthentication);
+        e.Response.HttpStatusCode.Should().Be(401);
+        e.Response.ResponseBodyInBytes.Should().NotBeNull();
+        var responseString = Encoding.UTF8.GetString(e.Response.ResponseBodyInBytes);
+        responseString.Should().Contain("nginx/");
+        e.DebugInformation.Should().Contain("nginx/");
+    }
+);
+
+e.FailureReason.Should().Be(PipelineFailure.BadAuthentication);
+
+e.Response.HttpStatusCode.Should().Be(401);
+
+e.Response.ResponseBodyInBytes.Should().NotBeNull();
+
+var responseString = Encoding.UTF8.GetString(e.Response.ResponseBodyInBytes);
+
+responseString.Should().Contain("nginx/");
+
+e.DebugInformation.Should().Contain("nginx/");</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Ping(r =&gt; r.SucceedAlways())
+    .ClientCalls(r =&gt; r.FailAlways(401).ReturnResponse(ResponseHtml))
+    .StaticConnectionPool()
+    .Settings(s=&gt;s.DisableDirectStreaming().DefaultIndex("default-index"))
+    .ClientProxiesTo(
+        (c, r) =&gt; c.Get&lt;Project&gt;("1", s=&gt;s.RequestConfiguration(r)),
+        async (c, r) =&gt; await c.GetAsync&lt;Project&gt;("1", s=&gt;s.RequestConfiguration(r)) as IResponse
+    )
+);
+
+audit = await audit.TraceElasticsearchException(
+    new ClientCall {
+        { AuditEvent.PingSuccess, 9200 },
+        { AuditEvent.BadResponse, 9200 },
+    },
+    (e) =&gt;
+    {
+        e.FailureReason.Should().Be(PipelineFailure.BadAuthentication);
+        e.Response.HttpStatusCode.Should().Be(401);
+        e.Response.ResponseBodyInBytes.Should().NotBeNull();
+        var responseString = Encoding.UTF8.GetString(e.Response.ResponseBodyInBytes);
+        responseString.Should().Contain("nginx/");
+        e.DebugInformation.Should().Contain("nginx/");
+    }
+);
+
+e.FailureReason.Should().Be(PipelineFailure.BadAuthentication);
+
+e.Response.HttpStatusCode.Should().Be(401);
+
+e.Response.ResponseBodyInBytes.Should().NotBeNull();
+
+var responseString = Encoding.UTF8.GetString(e.Response.ResponseBodyInBytes);
+
+responseString.Should().Contain("nginx/");
+
+e.DebugInformation.Should().Contain("nginx/");</pre></div></div><div class="navfooter"><span class="prev"><a href="unexpected-exceptions.html">
+              « 
+              Unexpected exceptions</a>
+           
+        </span><span class="next">
+           
+          <a href="nest.html">Client Concepts - NEST 
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

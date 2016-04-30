@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Property Name Inference</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="nest.html" title="Client Concepts - NEST" /><link rel="prev" href="field-inference.html" title="Field Inference" /><link rel="next" href="ids-inference.html" title="Ids Inference" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,62 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="nest.html">Client Concepts - NEST </a></span> » <span class="breadcrumb-node">Property Name Inference</span></div><div class="navheader"><span class="prev"><a href="field-inference.html">
+              « 
+              Field Inference</a>
+           
+        </span><span class="next">
+           
+          <a href="ids-inference.html">Ids Inference
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="property-inference"></a>Property Name Inference<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/high-level/inference/property-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_appending_suffixes_to_a_lambda_expression_body"></a>Appending suffixes to a Lambda expression body<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/high-level/inference/property-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Suffixes can be appended to the body of a lambda expression, useful in cases where
+you have a POCO property mapped as a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/_multi_fields.html" target="_top">multi_field</a>
+and want to use strongly typed access based on the property, yet append a suffix to the
+generated field name in order to access a particular <code class="literal">multi_field</code>.</p><p>The <code class="literal">.Suffix()</code> extension method can be used for this purpose and when serializing expressions suffixed
+in this way, the serialized field name resolves to the last token</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expression&lt;Func&lt;Project, object&gt;&gt; expression = p =&gt; p.Name.Suffix("raw");
+Expect("raw").WhenSerializing&lt;PropertyName&gt;(expression);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_appending_suffixes_to_a_lambda_expression"></a>Appending suffixes to a Lambda expression<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/high-level/inference/property-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Alternatively, suffixes can be applied to a lambda expression directly using
+the <code class="literal">.ApplySuffix()</code> extension method. Again, the serialized field name
+resolves to the last token</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expression&lt;Func&lt;Project, object&gt;&gt; expression = p =&gt; p.Name;
+
+expression = expression.AppendSuffix("raw");
+
+Expect("raw").WhenSerializing&lt;PropertyName&gt;(expression);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_naming_conventions"></a>Naming conventions<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/high-level/inference/property-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Currently, the name of a field cannot contain a <code class="literal">.</code> in Elasticsearch due to the potential for ambiguity with
+a field that is mapped as a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/_multi_fields.html" target="_top">multi_field</a>.</p><p>In these cases, NEST allows the call to go to Elasticsearch, deferring the naming conventions to the server side and,
+in the case of a <code class="literal">.</code> in a field name, a <code class="literal">400 Bad Response</code> is returned with a server error indicating the reason</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var createIndexResponse = _client.CreateIndex("random-" + Guid.NewGuid().ToString().ToLowerInvariant(), c =&gt; c
+    .Mappings(m =&gt; m
+        .Map("type-with-dot", mm =&gt; mm
+            .Properties(p =&gt; p
+                .Text(s =&gt; s
+                    .Name("name-with.dot")
+                )
+            )
+        )
+    )
+);</pre></div><p>The response is not valid</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">createIndexResponse.IsValid.Should().BeFalse();</pre></div><p><code class="literal">DebugInformation</code> provides an audit trail of information to help diagnose the issue</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">createIndexResponse.DebugInformation.Should().NotBeNullOrEmpty();</pre></div><p><code class="literal">ServerError</code> contains information about the response from Elasticsearch</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">createIndexResponse.ServerError.Should().NotBeNull();
+
+createIndexResponse.ServerError.Status.Should().Be(400);
+
+createIndexResponse.ServerError.Error.Should().NotBeNull();
+
+createIndexResponse.ServerError.Error.RootCause.Should().NotBeNullOrEmpty();
+
+var rootCause = createIndexResponse.ServerError.Error.RootCause[0];</pre></div><p>We can see that the underlying reason is a <code class="literal">.</code> in the field name "name-with.dot"</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">rootCause.Reason.Should().Be("Field name [name-with.dot] cannot contain '.'");
+
+rootCause.Type.Should().Be("mapper_parsing_exception");</pre></div></div></div><div class="navfooter"><span class="prev"><a href="field-inference.html">
+              « 
+              Field Inference</a>
+           
+        </span><span class="next">
+           
+          <a href="ids-inference.html">Ids Inference
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Function Score Query Usage</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="query-dsl.html" title="Query DSL" /><link rel="prev" href="simple-query-string-usage.html" title="Simple Query String Usage" /><link rel="next" href="indices-no-match-query-usage.html" title="Indices No Match Query Usage" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,146 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-node">Function Score Query Usage</span></div><div class="navheader"><span class="prev"><a href="simple-query-string-usage.html">
+              « 
+              Simple Query String Usage</a>
+           
+        </span><span class="next">
+           
+          <a href="indices-no-match-query-usage.html">Indices No Match Query Usage
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="function-score-query-usage"></a>Function Score Query Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/query-dsl/compound/function-score/function-score-query-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_fluent_dsl_example_30"></a>Fluent DSL Example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/query-dsl/compound/function-score/function-score-query-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">q
+.FunctionScore(c =&gt; c
+    .Name("named_query")
+    .Boost(1.1)
+    .Query(qq =&gt; qq.MatchAll())
+    .BoostMode(FunctionBoostMode.Multiply)
+    .ScoreMode(FunctionScoreMode.Sum)
+    .MaxBoost(20.0)
+    .MinScore(1.0)
+    .Functions(f =&gt; f
+        .Exponential(b =&gt; b.Field(p =&gt; p.NumberOfCommits).Decay(0.5).Origin(1.0).Scale(0.1).Weight(2.1))
+        .GaussDate(b =&gt; b.Field(p =&gt; p.LastActivity).Origin(DateMath.Now).Decay(0.5).Scale("1d"))
+        .LinearGeoLocation(b =&gt; b.Field(p =&gt; p.Location).Origin(new GeoLocation(70, -70)).Scale(Distance.Miles(1)).MultiValueMode(MultiValueMode.Average))
+        .FieldValueFactor(b =&gt; b.Field("x").Factor(1.1).Missing(0.1).Modifier(FieldValueFactorModifier.Ln))
+        .RandomScore(1337)
+        .RandomScore("randomstring")
+        .Weight(1.0)
+        .ScriptScore(ss =&gt; ss.Script(s =&gt; s.File("x")))
+    )
+)</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_object_initializer_syntax_example_30"></a>Object Initializer Syntax Example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/query-dsl/compound/function-score/function-score-query-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new FunctionScoreQuery()
+{
+    Name = "named_query",
+    Boost = 1.1,
+    Query = new MatchAllQuery { },
+    BoostMode = FunctionBoostMode.Multiply,
+    ScoreMode = FunctionScoreMode.Sum,
+    MaxBoost = 20.0,
+    MinScore = 1.0,
+    Functions = new List&lt;IScoreFunction&gt;
+    {
+        new ExponentialDecayFunction { Origin = 1.0, Decay =    0.5, Field = Field&lt;Project&gt;(p=&gt;p.NumberOfCommits), Scale = 0.1, Weight = 2.1 },
+        new GaussDateDecayFunction { Origin = DateMath.Now, Field = Field&lt;Project&gt;(p=&gt;p.LastActivity), Decay = 0.5, Scale = TimeSpan.FromDays(1) },
+        new LinearGeoDecayFunction { Origin = new GeoLocation(70, -70), Field = Field&lt;Project&gt;(p=&gt;p.Location), Scale = Distance.Miles(1), MultiValueMode = MultiValueMode.Average },
+        new FieldValueFactorFunction
+        {
+            Field = "x", Factor = 1.1,    Missing = 0.1, Modifier = FieldValueFactorModifier.Ln
+        },
+        new RandomScoreFunction { Seed = 1337 },
+        new RandomScoreFunction { Seed = "randomstring" },
+        new WeightFunction { Weight = 1.0},
+        new ScriptScoreFunction { Script = new ScriptQuery { File = "x" } }
+    }
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "function_score": {
+    "_name": "named_query",
+    "boost": 1.1,
+    "boost_mode": "multiply",
+    "functions": [
+      {
+        "exp": {
+          "numberOfCommits": {
+            "origin": 1.0,
+            "scale": 0.1,
+            "decay": 0.5
+          }
+        },
+        "weight": 2.1
+      },
+      {
+        "gauss": {
+          "lastActivity": {
+            "origin": "now",
+            "scale": "1d",
+            "decay": 0.5
+          }
+        }
+      },
+      {
+        "linear": {
+          "location": {
+            "origin": {
+              "lat": 70.0,
+              "lon": -70.0
+            },
+            "scale": "1.0mi"
+          },
+          "multi_value_mode": "avg"
+        }
+      },
+      {
+        "field_value_factor": {
+          "field": "x",
+          "factor": 1.1,
+          "missing": 0.1,
+          "modifier": "ln"
+        }
+      },
+      {
+        "random_score": {
+          "seed": 1337
+        }
+      },
+      {
+        "random_score": {
+          "seed": "randomstring"
+        }
+      },
+      {
+        "weight": 1.0
+      },
+      {
+        "script_score": {
+          "script": {
+            "file": "x"
+          }
+        }
+      }
+    ],
+    "max_boost": 20.0,
+    "min_score": 1.0,
+    "query": {
+      "match_all": {}
+    },
+    "score_mode": "sum"
+  }
+}</pre></div><p>
+</p></div></div><div class="navfooter"><span class="prev"><a href="simple-query-string-usage.html">
+              « 
+              Simple Query String Usage</a>
+           
+        </span><span class="next">
+           
+          <a href="indices-no-match-query-usage.html">Indices No Match Query Usage
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

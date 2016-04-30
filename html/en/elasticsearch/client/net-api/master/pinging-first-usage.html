@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Pinging - First Usage</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="sniffing-role-detection.html" title="Sniffing role detection" /><link rel="next" href="pinging-revival.html" title="Pinging - Revival" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,96 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net </a></span> » <span class="breadcrumb-node">Pinging - First Usage</span></div><div class="navheader"><span class="prev"><a href="sniffing-role-detection.html">
+              « 
+              Sniffing role detection</a>
+           
+        </span><span class="next">
+           
+          <a href="pinging-revival.html">Pinging - Revival
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="pinging-first-usage"></a>Pinging - First Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/pinging/first-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Pinging is enabled by default for the <a class="link" href="connection-pooling.html#static-connection-pool" title="StaticConnectionPool">Static</a>, <a class="link" href="connection-pooling.html#sniffing-connection-pool" title="SniffingConnectionPool">Sniffing</a> and <a class="link" href="connection-pooling.html#sticky-connection-pool" title="StickyConnectionPool">Sticky</a> connection pools.
+This means that the first time a node is used or resurrected, a ping is issued a with a small (configurable) timeout,
+allowing the client to fail and fallover to a healthy node much faster than attempting a request that may be heavier than a ping.</p><p>Here’s an example with a cluster with 2 nodes where the second node fails on ping</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(2)
+    .Ping(p =&gt; p.Succeeds(Always))
+    .Ping(p =&gt; p.OnPort(9201).FailAlways())
+    .StaticConnectionPool()
+    .AllDefaults()
+);</pre></div><p>When making the calls, the first call goes to 9200 which succeeds,
+and the 2nd call does a ping on 9201 because it’s used for the first time.
+The ping fails so we wrap over to node 9200 which we’ve already pinged.</p><p>Finally we assert that the connectionpool has one node that is marked as dead</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">await audit.TraceCalls(
+
+    new ClientCall {
+        { PingSuccess, 9200},
+        { HealthyResponse, 9200},
+        { pool =&gt;
+        {
+            pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(0);
+        } }
+    },
+    new ClientCall {
+        { PingFailure, 9201},
+        { HealthyResponse, 9200},
+        { pool =&gt;  pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(1) }
+    }
+);</pre></div><p>A cluster with 4 nodes where the second and third pings fail</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(4)
+    .Ping(p =&gt; p.SucceedAlways())
+    .Ping(p =&gt; p.OnPort(9201).FailAlways())
+    .Ping(p =&gt; p.OnPort(9202).FailAlways())
+    .StaticConnectionPool()
+    .AllDefaults()
+);</pre></div><p>The first call goes to 9200 which succeeds</p><p>The 2nd call does a ping on 9201 because its used for the first time.
+It fails and so we ping 9202 which also fails. We then ping 9203 because
+we haven’t used it before and it succeeds</p><p>Finally we assert that the connectionpool has two nodes that are marked as dead</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">await audit.TraceCalls(
+new ClientCall {
+        { PingSuccess, 9200},
+        { HealthyResponse, 9200},
+        { pool =&gt;
+        {
+            pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(0);
+        } }
+    },
+new ClientCall {
+        { PingFailure, 9201},
+        { PingFailure, 9202},
+        { PingSuccess, 9203},
+        { HealthyResponse, 9203},
+{ pool =&gt;  pool.Nodes.Where(n=&gt;!n.IsAlive).Should().HaveCount(2) }
+    }
+);</pre></div><p>A healthy cluster of 4 (min master nodes of 3 of course!)</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(4)
+    .Ping(p =&gt; p.SucceedAlways())
+    .StaticConnectionPool()
+    .AllDefaults()
+);
+
+await audit.TraceCalls(
+    new ClientCall { { PingSuccess, 9200}, { HealthyResponse, 9200} },
+    new ClientCall { { PingSuccess, 9201}, { HealthyResponse, 9201} },
+    new ClientCall { { PingSuccess, 9202}, { HealthyResponse, 9202} },
+    new ClientCall { { PingSuccess, 9203}, { HealthyResponse, 9203} },
+    new ClientCall { { HealthyResponse, 9200} },
+    new ClientCall { { HealthyResponse, 9201} },
+    new ClientCall { { HealthyResponse, 9202} },
+    new ClientCall { { HealthyResponse, 9203} },
+    new ClientCall { { HealthyResponse, 9200} }
+);</pre></div></div><div class="navfooter"><span class="prev"><a href="sniffing-role-detection.html">
+              « 
+              Sniffing role detection</a>
+           
+        </span><span class="next">
+           
+          <a href="pinging-revival.html">Pinging - Revival
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

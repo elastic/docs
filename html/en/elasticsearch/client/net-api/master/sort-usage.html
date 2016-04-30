@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Sort Usage</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="search.html" title="Search" /><link rel="prev" href="script-fields-usage.html" title="Script Fields Usage" /><link rel="next" href="source-filtering-usage.html" title="Source Filtering Usage" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,168 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search </a></span> » <span class="breadcrumb-node">Sort Usage</span></div><div class="navheader"><span class="prev"><a href="script-fields-usage.html">
+              « 
+              Script Fields Usage</a>
+           
+        </span><span class="next">
+           
+          <a href="source-filtering-usage.html">Source Filtering Usage
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="sort-usage"></a>Sort Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/search/request/sort-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Allows to add one or more sort on specific fields. Each sort can be reversed as well.
+The sort is defined on a per field level, with special field name for <code class="literal">_score</code> to sort by score.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_fluent_dsl_example_14"></a>Fluent DSL Example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/search/request/sort-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
+.Sort(ss =&gt; ss
+    .Ascending(p =&gt; p.StartedOn)
+    .Descending(p =&gt; p.Name)
+    .Descending(SortSpecialField.Score)
+    .Ascending(SortSpecialField.DocumentIndexOrder)
+    .Field(f =&gt; f
+        .Field(p =&gt; p.LastActivity)
+        .Order(SortOrder.Descending)
+        .MissingLast()
+        .UnmappedType(FieldType.Date)
+        .Mode(SortMode.Average)
+        .NestedPath(p =&gt; p.Tags)
+        .NestedFilter(q =&gt; q.MatchAll())
+    )
+    .GeoDistance(g =&gt; g
+        .Field(p =&gt; p.Location)
+        .DistanceType(GeoDistanceType.Arc)
+        .Order(SortOrder.Ascending)
+        .Unit(DistanceUnit.Centimeters)
+        .Mode(SortMode.Min)
+        .PinTo(new GeoLocation(70, -70), new GeoLocation(-12, 12))
+    )
+    .Script(sc =&gt; sc
+        .Type("number")
+        .Ascending()
+        .Script(script =&gt; script
+            .Inline("doc['numberOfCommits'].value * factor")
+            .Params(p =&gt; p.Add("factor", 1.1))
+        )
+    )
+)</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_object_initializer_syntax_example_14"></a>Object Initializer Syntax Example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/search/request/sort-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
+{
+    Sort = new List&lt;ISort&gt;
+    {
+        new SortField { Field = "startedOn", Order = SortOrder.Ascending },
+        new SortField { Field = "name", Order = SortOrder.Descending },
+        new SortField { Field = "_score", Order = SortOrder.Descending },
+        new SortField { Field = "_doc", Order = SortOrder.Ascending },
+        new SortField
+        {
+            Field = Field&lt;Project&gt;(p=&gt;p.LastActivity),
+            Order = SortOrder.Descending,
+            Missing = "_last",
+            UnmappedType = FieldType.Date,
+            Mode = SortMode.Average,
+            NestedPath = Field&lt;Project&gt;(p=&gt;p.Tags),
+            NestedFilter = new MatchAllQuery(),
+        },
+        new GeoDistanceSort
+        {
+            Field = "location",
+            Order = SortOrder.Ascending,
+            DistanceType = GeoDistanceType.Arc,
+            GeoUnit = DistanceUnit.Centimeters,
+            Mode = SortMode.Min,
+            Points = new [] {new GeoLocation(70, -70), new GeoLocation(-12, 12) }
+        },
+        new ScriptSort
+        {
+            Type = "number",
+            Order = SortOrder.Ascending,
+            Script =  new InlineScript("doc['numberOfCommits'].value * factor")
+            {
+                Params = new Dictionary&lt;string, object&gt;
+                {
+                    { "factor", 1.1 }
+                }
+            }
+        }
+    }
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "sort": [
+    {
+      "startedOn": {
+        "order": "asc"
+      }
+    },
+    {
+      "name": {
+        "order": "desc"
+      }
+    },
+    {
+      "_score": {
+        "order": "desc"
+      }
+    },
+    {
+      "_doc": {
+        "order": "asc"
+      }
+    },
+    {
+      "lastActivity": {
+        "missing": "_last",
+        "order": "desc",
+        "mode": "avg",
+        "nested_filter": {
+          "match_all": {}
+        },
+        "nested_path": "tags",
+        "unmapped_type": "date"
+      }
+    },
+    {
+      "_geo_distance": {
+        "location": [
+          {
+            "lat": 70.0,
+            "lon": -70.0
+          },
+          {
+            "lat": -12.0,
+            "lon": 12.0
+          }
+        ],
+        "order": "asc",
+        "mode": "min",
+        "distance_type": "arc",
+        "unit": "cm"
+      }
+    },
+    {
+      "_script": {
+        "order": "asc",
+        "type": "number",
+        "script": {
+          "params": {
+            "factor": 1.1
+          },
+          "inline": "doc['numberOfCommits'].value * factor"
+        }
+      }
+    }
+  ]
+}</pre></div><p>
+</p></div></div><div class="navfooter"><span class="prev"><a href="script-fields-usage.html">
+              « 
+              Script Fields Usage</a>
+           
+        </span><span class="next">
+           
+          <a href="source-filtering-usage.html">Source Filtering Usage
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

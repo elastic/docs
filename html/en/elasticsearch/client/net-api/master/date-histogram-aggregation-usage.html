@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Date Histogram Aggregation Usage</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="aggregations.html" title="Aggregations" /><link rel="prev" href="children-aggregation-usage.html" title="Children Aggregation Usage" /><link rel="next" href="date-range-aggregation-usage.html" title="Date Range Aggregation Usage" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,132 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="aggregations.html">Aggregations </a></span> » <span class="breadcrumb-node">Date Histogram Aggregation Usage</span></div><div class="navheader"><span class="prev"><a href="children-aggregation-usage.html">
+              « 
+              Children Aggregation Usage</a>
+           
+        </span><span class="next">
+           
+          <a href="date-range-aggregation-usage.html">Date Range Aggregation Usage
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="date-histogram-aggregation-usage"></a>Date Histogram Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/aggregations/bucket/date-histogram/date-histogram-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A multi-bucket aggregation similar to the histogram except it can only be applied on date values.
+From a functionality perspective, this histogram supports the same features as the normal histogram.
+The main difference is that the interval can be specified by date/time expressions.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When specifying a <code class="literal">format</code> <span class="strong"><strong>and</strong></span> <code class="literal">extended_bounds</code>, in order for Elasticsearch to be able to parse
+the serialized <code class="literal">DateTime</code> of <code class="literal">extended_bounds</code> correctly, the <code class="literal">date_optional_time</code> format is included
+as part of the <code class="literal">format</code> value.</p></div></div><p>Be sure to read the Elasticsearch documentation on <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html" target="_top">Date Histogram Aggregation</a>.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_fluent_dsl_example_83"></a>Fluent DSL Example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/aggregations/bucket/date-histogram/date-histogram-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
+.Size(0)
+.Aggregations(aggs =&gt; aggs
+    .DateHistogram("projects_started_per_month", date =&gt; date
+        .Field(p =&gt; p.StartedOn)
+        .Interval(DateInterval.Month)
+        .MinimumDocumentCount(2)
+        .Format("yyyy-MM-dd'T'HH:mm:ss")
+        .ExtendedBounds(FixedDate.AddYears(-1), FixedDate.AddYears(1))
+        .Order(HistogramOrder.CountAscending)
+        .Missing(FixedDate)
+        .Aggregations(childAggs =&gt; childAggs
+            .Nested("project_tags", n =&gt; n
+                .Path(p =&gt; p.Tags)
+                .Aggregations(nestedAggs =&gt; nestedAggs
+                    .Terms("tags", avg =&gt; avg.Field(p =&gt; p.Tags.First().Name))
+                )
+            )
+        )
+    )
+)</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_object_initializer_syntax_example_82"></a>Object Initializer Syntax Example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/aggregations/bucket/date-histogram/date-histogram-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
+{
+    Size = 0,
+    Aggregations = new DateHistogramAggregation("projects_started_per_month")
+    {
+        Field = Field&lt;Project&gt;(p =&gt; p.StartedOn),
+        Interval = DateInterval.Month,
+        MinimumDocumentCount = 2,
+        Format = "yyyy-MM-dd'T'HH:mm:ss",
+        ExtendedBounds = new ExtendedBounds&lt;DateTime&gt;
+        {
+            Minimum = FixedDate.AddYears(-1),
+            Maximum = FixedDate.AddYears(1),
+        },
+        Order = HistogramOrder.CountAscending,
+        Missing = FixedDate,
+        Aggregations = new NestedAggregation("project_tags")
+        {
+            Path = Field&lt;Project&gt;(p =&gt; p.Tags),
+            Aggregations = new TermsAggregation("tags")
+            {
+                Field = Field&lt;Project&gt;(p =&gt; p.Tags.First().Name)
+            }
+        }
+    }
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "size": 0,
+  "aggs": {
+    "projects_started_per_month": {
+      "date_histogram": {
+        "field": "startedOn",
+        "interval": "month",
+        "min_doc_count": 2,
+        "format": "yyyy-MM-dd'T'HH:mm:ss||date_optional_time",
+        "order": {
+          "_count": "asc"
+        },
+        "extended_bounds": {
+          "min": "2014-06-06T12:01:02.123",
+          "max": "2016-06-06T12:01:02.123"
+        },
+        "missing": "2015-06-06T12:01:02.123"
+      },
+      "aggs": {
+        "project_tags": {
+          "nested": {
+            "path": "tags"
+          },
+          "aggs": {
+            "tags": {
+              "terms": {
+                "field": "tags.name"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}</pre></div><p>
+</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_handling_responses_6"></a>Handling responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/aggregations/bucket/date-histogram/date-histogram-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Using the <code class="literal">.Aggs</code> aggregation helper on <code class="literal">ISearchResponse&lt;T&gt;</code>, we can fetch our aggregation results easily
+in the correct type. <a class="link" href="writing-aggregations.html#aggs-vs-aggregations" title="Aggs vs. Aggregations">Be sure to read more about .Aggs vs .Aggregations</a></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.IsValid.Should().BeTrue();
+
+var dateHistogram = response.Aggs.DateHistogram("projects_started_per_month");
+dateHistogram.Should().NotBeNull();
+dateHistogram.Buckets.Should().NotBeNull();
+dateHistogram.Buckets.Count.Should().BeGreaterThan(10);
+
+foreach (var item in dateHistogram.Buckets)
+{
+    item.Date.Should().NotBe(default(DateTime));
+    item.DocCount.Should().BeGreaterThan(0);
+
+    var nested = item.Nested("project_tags");
+    nested.Should().NotBeNull();
+
+    var nestedTerms = nested.Terms("tags");
+    nestedTerms.Buckets.Count.Should().BeGreaterThan(0);
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="children-aggregation-usage.html">
+              « 
+              Children Aggregation Usage</a>
+           
+        </span><span class="next">
+           
+          <a href="date-range-aggregation-usage.html">Date Range Aggregation Usage
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Bool Queries</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="query-dsl.html" title="Query DSL" /><link rel="prev" href="query-dsl.html" title="Query DSL" /><link rel="next" href="bool-dsl-complex-query-usage.html" title="Bool Dsl Complex Query Usage" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,185 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL </a></span> » <span class="breadcrumb-node">Bool Queries</span></div><div class="navheader"><span class="prev"><a href="query-dsl.html">
+              « 
+              Query DSL </a>
+           
+        </span><span class="next">
+           
+          <a href="bool-dsl-complex-query-usage.html">Bool Dsl Complex Query Usage
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="bool-queries"></a>Bool Queries<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Writing boolean queries can grow verbose rather quickly when using the query DSL. For example,
+take a single <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html" target="_top">bool query</a> with only two clauses</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var searchResults = this.Client.Search&lt;Project&gt;(s =&gt; s
+    .Query(q =&gt; q
+        .Bool(b =&gt; b
+            .Should(
+                bs =&gt; bs.Term(p =&gt; p.Name, "x"),
+                bs =&gt; bs.Term(p =&gt; p.Name, "y")
+            )
+        )
+    )
+);</pre></div><p>Now, imagine multiple nested bools; you’ll realise that this quickly becomes an exercise in <span class="emphasis"><em>hadouken indenting</em></span></p><div class="figure"><a id="indent"></a><p class="title"><strong>Figure 2. hadouken indenting</strong></p><div class="figure-contents"><div class="mediaobject"><img src="hadouken-indentation.jpg" alt="hadouken indenting" /></div></div></div><br class="figure-break" /><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_operator_overloading"></a>Operator Overloading<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>For this reason, NEST introduces <span class="strong"><strong>operator overloading</strong></span> so complex bool queries become easier to write.
+The previous example now becomes the following with the fluent API</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var searchResults = this.Client.Search&lt;Project&gt;(s =&gt; s
+    .Query(q =&gt; q.Term(p =&gt; p.Name, "x") || q.Term(p =&gt; p.Name, "y"))
+);</pre></div><p>or, using the object initializer syntax</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">searchResults = this.Client.Search&lt;Project&gt;(new SearchRequest&lt;Project&gt;
+{
+    Query = new TermQuery { Field = "name", Value= "x" }
+        || new TermQuery { Field = Field&lt;Project&gt;(p=&gt;p.Name), Value = "y" }
+});</pre></div><p>A naive implementation of operator overloading would rewrite</p><p><code class="literal">term &amp;&amp; term &amp;&amp; term</code> to</p><pre class="literallayout">bool
+|___must
+   |___term
+       |___bool
+           |___must
+               |___term
+               |___term</pre><p>As you can image this becomes unwieldy quite fast the more complex a query becomes NEST can spot these and
+join them together to become a single bool query</p><pre class="literallayout">bool
+|___must
+   |___term
+   |___term
+   |___term</pre><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; q.Query() &amp;&amp; q.Query() &amp;&amp; q.Query(),
+    Query &amp;&amp; Query &amp;&amp; Query,
+    c =&gt; c.Bool.Must.Should().HaveCount(3)
+    );</pre></div><p>The bool DSL offers also a short hand notation to mark a query as a <code class="literal">must_not</code> using the <code class="literal">!</code> operator</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(q =&gt; !q.Query(), !Query, c =&gt; c.Bool.MustNot.Should().HaveCount(1));</pre></div><p>And to mark a query as a <code class="literal">filter</code> using the <code class="literal">+</code> operator</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(q =&gt; +q.Query(), +Query, c =&gt; c.Bool.Filter.Should().HaveCount(1));</pre></div><p>Both of these can be combined with <code class="literal">&amp;&amp;</code> to form a single bool query</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(q =&gt; !q.Query() &amp;&amp; !q.Query(), !Query &amp;&amp; !Query, c =&gt; c.Bool.MustNot.Should().HaveCount(2));</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(q =&gt; +q.Query() &amp;&amp; +q.Query(), +Query &amp;&amp; +Query, c =&gt; c.Bool.Filter.Should().HaveCount(2));</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_combining_merging_bool_queries"></a>Combining/Merging bool queries<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When combining multiple queries some or all possibly marked as <code class="literal">must_not</code> or <code class="literal">filter</code>, NEST still combines to a single bool query</p><pre class="literallayout">bool
+|___must
+|   |___term
+|   |___term
+|   |___term
+|
+|___must_not
+   |___term</pre><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; q.Query() &amp;&amp; q.Query() &amp;&amp; q.Query() &amp;&amp; !q.Query(),
+    Query &amp;&amp; Query &amp;&amp; Query &amp;&amp; !Query,
+    c=&gt;
+    {
+        c.Bool.Must.Should().HaveCount(3);
+        c.Bool.MustNot.Should().HaveCount(1);
+    });
+
+c.Bool.Must.Should().HaveCount(3);
+
+c.Bool.MustNot.Should().HaveCount(1);</pre></div><p>Even more involved <code class="literal">term &amp;&amp; term &amp;&amp; term &amp;&amp; !term &amp;&amp; +term &amp;&amp; +term</code> still only results in a single <code class="literal">bool</code> query:</p><pre class="literallayout">bool
+|___must
+|   |___term
+|   |___term
+|   |___term
+|
+|___must_not
+|   |___term
+|
+|___filter
+   |___term
+   |___term</pre><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; q.Query() &amp;&amp; q.Query() &amp;&amp; q.Query() &amp;&amp; !q.Query() &amp;&amp; +q.Query() &amp;&amp; +q.Query(),
+    Query &amp;&amp; Query &amp;&amp; Query &amp;&amp; !Query &amp;&amp; +Query &amp;&amp; +Query,
+    c =&gt;
+    {
+        c.Bool.Must.Should().HaveCount(3);
+        c.Bool.MustNot.Should().HaveCount(1);
+        c.Bool.Filter.Should().HaveCount(2);
+    });
+
+c.Bool.Must.Should().HaveCount(3);
+
+c.Bool.MustNot.Should().HaveCount(1);
+
+c.Bool.Filter.Should().HaveCount(2);</pre></div><p>You can still mix and match actual bool queries with the bool DSL e.g
+<code class="literal">bool(must=term, term, term) &amp;&amp; !term</code> would still merge into a single <code class="literal">bool</code> query.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; q.Bool(b =&gt; b.Must(mq =&gt; mq.Query(), mq =&gt; mq.Query(), mq =&gt; mq.Query())) &amp;&amp; !q.Query(),
+    new BoolQuery { Must = new QueryContainer[] { Query, Query, Query } } &amp;&amp; !Query,
+    c =&gt;
+    {
+        c.Bool.Must.Should().HaveCount(3);
+        c.Bool.MustNot.Should().HaveCount(1);
+    });
+
+c.Bool.Must.Should().HaveCount(3);
+
+c.Bool.MustNot.Should().HaveCount(1);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; q.Query() &amp;&amp; (q.Query() || q.Query() || q.Query()),
+    Query &amp;&amp; (Query || Query || Query),
+    c =&gt;
+    {
+        c.Bool.Must.Should().HaveCount(2);
+        var lastClause = c.Bool.Must.Last() as IQueryContainer;
+        lastClause.Should().NotBeNull();
+        lastClause.Bool.Should().NotBeNull();
+        lastClause.Bool.Should.Should().HaveCount(3);
+    });
+
+c.Bool.Must.Should().HaveCount(2);
+
+var lastClause = c.Bool.Must.Last() as IQueryContainer;
+
+lastClause.Should().NotBeNull();
+
+lastClause.Bool.Should().NotBeNull();
+
+lastClause.Bool.Should.Should().HaveCount(3);</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p><span class="strong"><strong>add parentheses to force evaluation order</strong></span></p></div></div><p>Also note that using shoulds as boosting factors can be really powerful so if you need this
+always remember that you can mix and match an actual bool query with the bool dsl.</p><p>There is another subtle situation where NEST will not blindly merge 2 bool queries with only should clauses. Imagine the following:</p><p><code class="literal">bool(should=term1, term2, term3, term4, minimum_should_match=2) || term5 || term6</code></p><p>if NEST identified both sides of the OR operation as only containing <code class="literal">should</code> clauses and it would
+join them together it would give a different meaning to the <code class="literal">minimum_should_match</code> parameter of the first boolean query.
+Rewriting this to a single bool with 5 <code class="literal">should</code> clauses would break because only matching on <code class="literal">term5</code> or <code class="literal">term6</code> should still be a hit.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; q.Bool(b =&gt; b
+        .Should(mq =&gt; mq.Query(), mq =&gt; mq.Query(), mq =&gt; mq.Query(), mq =&gt; mq.Query())
+        .MinimumShouldMatch(2)
+        )
+         || !q.Query() || q.Query(),
+    new BoolQuery
+    {
+        Should = new QueryContainer[] { Query, Query, Query, Query },
+        MinimumShouldMatch = 2
+    } || !Query || Query,
+    c =&gt;
+    {
+        c.Bool.Should.Should().HaveCount(3);
+        var nestedBool = c.Bool.Should.First() as IQueryContainer;
+        nestedBool.Bool.Should.Should().HaveCount(4);
+    });
+
+c.Bool.Should.Should().HaveCount(3);
+
+var nestedBool = c.Bool.Should.First() as IQueryContainer;
+
+nestedBool.Bool.Should.Should().HaveCount(4);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_locked_bool_queries"></a>Locked bool queries<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>NEST will not combine <code class="literal">bool</code> queries if any of the query metadata is set e.g if metadata such as <code class="literal">boost</code> or <code class="literal">name</code> are set,
+NEST will treat these as locked</p><p>Here we demonstrate that two locked <code class="literal">bool</code> queries are not combined</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; q.Bool(b =&gt; b.Name("leftBool").Should(mq =&gt; mq.Query()))
+         || q.Bool(b =&gt; b.Name("rightBool").Should(mq =&gt; mq.Query())),
+    new BoolQuery { Name = "leftBool", Should = new QueryContainer[] { Query } }
+    || new BoolQuery { Name = "rightBool", Should = new QueryContainer[] { Query } },
+    c =&gt; AssertDoesNotJoinOntoLockedBool(c, "leftBool"));</pre></div><p>neither are two <code class="literal">bool</code> queries where either right query is locked</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; q.Bool(b =&gt; b.Should(mq =&gt; mq.Query()))
+         || q.Bool(b =&gt; b.Name("rightBool").Should(mq =&gt; mq.Query())),
+    new BoolQuery { Should = new QueryContainer[] { Query } }
+    || new BoolQuery { Name = "rightBool", Should = new QueryContainer[] { Query } },
+    c =&gt; AssertDoesNotJoinOntoLockedBool(c, "rightBool"));</pre></div><p>or the left query is locked</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; q.Bool(b =&gt; b.Name("leftBool").Should(mq =&gt; mq.Query()))
+         || q.Bool(b =&gt; b.Should(mq =&gt; mq.Query())),
+    new BoolQuery { Name = "leftBool", Should = new QueryContainer[] { Query } }
+    || new BoolQuery { Should = new QueryContainer[] { Query } },
+    c =&gt; AssertDoesNotJoinOntoLockedBool(c, "leftBool"));</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">c.Bool.Should.Should().HaveCount(2);
+
+var nestedBool = c.Bool.Should.Cast&lt;IQueryContainer&gt;().First(b=&gt;!string.IsNullOrEmpty(b.Bool?.Name));
+
+nestedBool.Bool.Should.Should().HaveCount(1);
+
+nestedBool.Bool.Name.Should().Be(firstName);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">assert(fluent.InvokeQuery(new QueryContainerDescriptor&lt;Project&gt;()));
+
+assert((QueryContainer)ois);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl.html">
+              « 
+              Query DSL </a>
+           
+        </span><span class="next">
+           
+          <a href="bool-dsl-complex-query-usage.html">Bool Dsl Complex Query Usage
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Date Math Expressions</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="common-options.html" title="Common Options" /><link rel="prev" href="distance-units.html" title="Distance Units" /><link rel="next" href="search.html" title="Search" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,69 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="common-options.html">Common Options </a></span> » <span class="breadcrumb-node">Date Math Expressions</span></div><div class="navheader"><span class="prev"><a href="distance-units.html">
+              « 
+              Distance Units</a>
+           
+        </span><span class="next">
+           
+          <a href="search.html">Search 
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="date-math-expressions"></a>Date Math Expressions<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The date type supports using date math expression when using it in a query/filter
+Whenever durations need to be specified, eg for a timeout parameter, the duration can be specified</p><p>The expression starts with an "anchor" date, which can be either now or a date string (in the applicable format) ending with <code class="literal">||</code>.
+It can then follow by a math expression, supporting <code class="literal">+</code>, <code class="literal">-</code> and <code class="literal">/</code> (rounding).
+The units supported are</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">y</code> (year)
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
+<code class="literal">M</code> (month)
 </li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<code class="literal">w</code> (week)
+</li><li class="listitem">
+<code class="literal">d</code> (day)
+</li><li class="listitem">
+<code class="literal">h</code> (hour)
+</li><li class="listitem">
+<code class="literal">m</code> (minute)
+</li><li class="listitem">
+<code class="literal">s</code> (second)
+</li></ul></div><p>as a whole number representing time in milliseconds, or as a time value like <code class="literal">2d</code> for 2 days.</p><p>Be sure to read the Elasticsearch documentation on <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math" target="_top">Date Math</a>.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_simple_expressions"></a>Simple Expressions<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You can create simple expressions using any of the static methods on <code class="literal">DateMath</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now").WhenSerializing(Nest.DateMath.Now);
+
+Expect("2015-05-05T00:00:00").WhenSerializing(Nest.DateMath.Anchored(new DateTime(2015,05, 05)));</pre></div><p>strings implicitly convert to <code class="literal">DateMath</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now").WhenSerializing&lt;Nest.DateMath&gt;("now");</pre></div><p>but are lenient to bad math expressions</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var nonsense = "now||*asdaqwe";</pre></div><p>the resulting date math will assume the whole string is the anchor</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect(nonsense).WhenSerializing&lt;Nest.DateMath&gt;(nonsense)
+.Result(dateMath =&gt; ((IDateMath)dateMath)
+        .Anchor.Match(
+            d =&gt; d.Should().NotBe(default(DateTime)),
+            s =&gt; s.Should().Be(nonsense)
+        )
+    );</pre></div><p><code class="literal">DateTime</code> also implicitly convert to simple date math expressions</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var date = new DateTime(2015, 05, 05);</pre></div><p>the anchor will be an actual <code class="literal">DateTime</code>, even after a serialization/deserialization round trip</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("2015-05-05T00:00:00").WhenSerializing&lt;Nest.DateMath&gt;(date)
+.Result(dateMath =&gt; ((IDateMath)dateMath)
+    .    Anchor.Match(
+            d =&gt; d.Should().Be(date),
+            s =&gt; s.Should().BeNull()
+        )
+    );</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_complex_expressions"></a>Complex Expressions<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Ranges can be chained on to simple expressions</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now+1d").WhenSerializing(
+    Nest.DateMath.Now.Add("1d"));</pre></div><p>Including multiple operations</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now+1d-1m").WhenSerializing(
+    Nest.DateMath.Now.Add("1d").Subtract(TimeSpan.FromMinutes(1)));</pre></div><p>A rounding value can be chained to the end of the expression, after which no more ranges can be appended</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now+1d-1m/d").WhenSerializing(
+    Nest.DateMath.Now.Add("1d")
+        .Subtract(TimeSpan.FromMinutes(1))
+        .RoundTo(Nest.TimeUnit.Day));</pre></div><p>When anchoring dates, a <code class="literal">||</code> needs to be appended as clear separator between the anchor and ranges.
+Again, multiple ranges can be chained</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("2015-05-05T00:00:00||+1d-1m").WhenSerializing(
+    Nest.DateMath.Anchored(new DateTime(2015,05,05))
+        .Add("1d")
+        .Subtract(TimeSpan.FromMinutes(1)));</pre></div></div></div><div class="navfooter"><span class="prev"><a href="distance-units.html">
+              « 
+              Distance Units</a>
+           
+        </span><span class="next">
+           
+          <a href="search.html">Search 
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

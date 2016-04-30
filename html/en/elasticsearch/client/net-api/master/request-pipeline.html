@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Request Pipeline</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="connection-pooling.html" title="Connection Pooling" /><link rel="next" href="transports.html" title="Transports" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,132 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net </a></span> » <span class="breadcrumb-node">Request Pipeline</span></div><div class="navheader"><span class="prev"><a href="connection-pooling.html">
+              « 
+              Connection Pooling</a>
+           
+        </span><span class="next">
+           
+          <a href="transports.html">Transports
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="request-pipeline"></a>Request Pipeline<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Every request is executed in the context of a <code class="literal">RequestPipeline</code> when using the
+default <a class="link" href="transports.html" title="Transports">ITransport</a> implementation.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var settings = TestClient.CreateSettings();</pre></div><p>When calling <code class="literal">Request()</code> or <code class="literal">RequestAsync()</code> on an <code class="literal">ITransport</code>,
+the whole coordination of the request is deferred to a new instance in a <code class="literal">using</code> block.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pipeline = new RequestPipeline(
+    settings,
+    DateTimeProvider.Default,
+    new MemoryStreamFactory(),
+    new SearchRequestParameters());
+
+pipeline.GetType().Should().Implement&lt;IDisposable&gt;();</pre></div><p>An <code class="literal">ITransport</code> does not instantiate a <code class="literal">RequestPipeline</code> directly; it uses a pluggable <code class="literal">IRequestPipelineFactory</code>
+to create it</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var requestPipelineFactory = new RequestPipelineFactory();
+
+var requestPipeline = requestPipelineFactory.Create(
+    settings,
+    DateTimeProvider.Default, <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    new MemoryStreamFactory(),
+    new SearchRequestParameters());
+requestPipeline.Should().BeOfType&lt;RequestPipeline&gt;();
+requestPipeline.GetType().Should().Implement&lt;IDisposable&gt;();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+An <a class="link" href="date-time-providers.html" title="Date time providers"><code class="literal">IDateTimeProvider</code> implementation</a>
+</p></td></tr></table></div><p>You can pass your own <code class="literal">IRequestPipeline</code> implementation to the Transport when instantiating a client,
+allowing you to have requests executed on your own custom request pipeline</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var transport = new Transport&lt;ConnectionSettings&gt;(
+    settings,
+    requestPipelineFactory,
+    DateTimeProvider.Default,
+    new MemoryStreamFactory());</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = setupPool(new[] { TestClient.CreateNode(), TestClient.CreateNode(9201) });
+
+var settings = new ConnectionSettings(pool, TestClient.CreateConnection());
+
+settings = settingsSelector?.Invoke(settings) ?? settings;</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_pipeline_behavior"></a>Pipeline Behavior<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sniffing_on_first_usage"></a>Sniffing on First usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var singleNodePipeline = CreatePipeline(uris =&gt; new SingleNodeConnectionPool(uris.First()));
+
+var staticPipeline = CreatePipeline(uris =&gt; new StaticConnectionPool(uris));
+
+var sniffingPipeline = CreatePipeline(uris =&gt; new SniffingConnectionPool(uris));</pre></div><p>Here we have setup three pipelines using three different connection pools. Let’s see how they behave
+on first usage</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">singleNodePipeline.FirstPoolUsageNeedsSniffing.Should().BeFalse();
+
+staticPipeline.FirstPoolUsageNeedsSniffing.Should().BeFalse();
+
+sniffingPipeline.FirstPoolUsageNeedsSniffing.Should().BeTrue();</pre></div><p>We can see that only the cluster that supports reseeding will opt in to <code class="literal">FirstPoolUsageNeedsSniffing()</code>;
+You can however disable reseeding/sniffing on ConnectionSettings</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">sniffingPipeline = CreatePipeline(uris =&gt; new SniffingConnectionPool(uris), s =&gt; s.SniffOnStartup(false));
+
+sniffingPipeline.FirstPoolUsageNeedsSniffing.Should().BeFalse();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sniffing_on_connection_failure"></a>Sniffing on Connection Failure<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var singleNodePipeline = CreatePipeline(uris =&gt; new SingleNodeConnectionPool(uris.First()));
+
+var staticPipeline = CreatePipeline(uris =&gt; new StaticConnectionPool(uris));
+
+var sniffingPipeline = CreatePipeline(uris =&gt; new SniffingConnectionPool(uris));
+
+singleNodePipeline.SniffsOnConnectionFailure.Should().BeFalse();
+
+staticPipeline.SniffsOnConnectionFailure.Should().BeFalse();
+
+sniffingPipeline.SniffsOnConnectionFailure.Should().BeTrue();</pre></div><p>Only the cluster that supports reseeding will opt in to SniffsOnConnectionFailure()
+You can however disable this on ConnectionSettings</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">sniffingPipeline = CreatePipeline(uris =&gt; new SniffingConnectionPool(uris), s =&gt; s.SniffOnConnectionFault(false));
+
+sniffingPipeline.SniffsOnConnectionFailure.Should().BeFalse();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sniffing_on_stale_cluster"></a>Sniffing on Stale cluster<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var dateTime = new TestableDateTimeProvider();
+
+var singleNodePipeline = CreatePipeline(uris =&gt;
+    new SingleNodeConnectionPool(uris.First(), dateTime), dateTimeProvider: dateTime);
+
+var staticPipeline = CreatePipeline(uris =&gt;
+    new StaticConnectionPool(uris, dateTimeProvider: dateTime), dateTimeProvider: dateTime);
+
+var sniffingPipeline = CreatePipeline(uris =&gt;
+    new SniffingConnectionPool(uris, dateTimeProvider: dateTime), dateTimeProvider: dateTime);
+
+singleNodePipeline.SniffsOnStaleCluster.Should().BeFalse();
+
+staticPipeline.SniffsOnStaleCluster.Should().BeFalse();
+
+sniffingPipeline.SniffsOnStaleCluster.Should().BeTrue();
+
+singleNodePipeline.StaleClusterState.Should().BeFalse();
+
+staticPipeline.StaleClusterState.Should().BeFalse();
+
+sniffingPipeline.StaleClusterState.Should().BeFalse();</pre></div><p>go one hour into the future</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">dateTime.ChangeTime(d =&gt; d.Add(TimeSpan.FromHours(2)));</pre></div><p>connection pools that do not support reseeding never go stale</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">singleNodePipeline.StaleClusterState.Should().BeFalse();
+
+staticPipeline.StaleClusterState.Should().BeFalse();</pre></div><p>the sniffing connection pool supports reseeding so the pipeline will signal the state is out of date</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">sniffingPipeline.StaleClusterState.Should().BeTrue();</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_retrying_requests"></a>Retrying requests<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A request pipeline also checks whether the overall time across multiple retries exceeds the request timeout.
+See the <a class="link" href="max-retries.html" title="Max Retries">max retry documentation</a> for more details, here we assert that our request pipeline exposes this propertly</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var dateTime = new TestableDateTimeProvider();
+
+var singleNodePipeline = CreatePipeline(uris =&gt;
+    new SingleNodeConnectionPool(uris.First(), dateTime), dateTimeProvider: dateTime);
+
+var staticPipeline = CreatePipeline(uris =&gt;
+    new StaticConnectionPool(uris, dateTimeProvider: dateTime), dateTimeProvider: dateTime);
+
+var sniffingPipeline = CreatePipeline(uris =&gt;
+    new SniffingConnectionPool(uris, dateTimeProvider: dateTime), dateTimeProvider: dateTime);
+
+singleNodePipeline.IsTakingTooLong.Should().BeFalse();
+
+staticPipeline.IsTakingTooLong.Should().BeFalse();
+
+sniffingPipeline.IsTakingTooLong.Should().BeFalse();</pre></div><p>go one hour into the future</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">dateTime.ChangeTime(d =&gt; d.Add(TimeSpan.FromHours(2)));</pre></div><p>connection pools that do not support reseeding never go stale</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">singleNodePipeline.IsTakingTooLong.Should().BeTrue();
+
+staticPipeline.IsTakingTooLong.Should().BeTrue();</pre></div><p>the sniffing connection pool supports reseeding so the pipeline will signal the state is out of date</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">sniffingPipeline.IsTakingTooLong.Should().BeTrue();</pre></div><p>request pipeline exposes the DateTime it started, here we assert it started 2 hours in the past</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">(dateTime.Now() - singleNodePipeline.StartedOn).Should().BePositive().And.BeCloseTo(TimeSpan.FromHours(2));
+
+(dateTime.Now() - staticPipeline.StartedOn).Should().BePositive().And.BeCloseTo(TimeSpan.FromHours(2));
+
+(dateTime.Now() - sniffingPipeline.StartedOn).Should().BePositive().And.BeCloseTo(TimeSpan.FromHours(2));</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var dateTime = new TestableDateTimeProvider();
+
+var sniffingPipeline = CreatePipeline(uris =&gt;
+    new SniffingConnectionPool(uris, dateTimeProvider: dateTime), dateTimeProvider: dateTime) as RequestPipeline;
+
+sniffingPipeline.SniffPath.Should().Be("_nodes/_all/settings?flat_settings&amp;timeout=2s");</pre></div></div></div><div class="navfooter"><span class="prev"><a href="connection-pooling.html">
+              « 
+              Connection Pooling</a>
+           
+        </span><span class="next">
+           
+          <a href="transports.html">Transports
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

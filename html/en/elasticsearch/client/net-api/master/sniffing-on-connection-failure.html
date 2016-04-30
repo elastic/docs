@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Sniffing on connection failure</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="sniffing-on-startup.html" title="Sniffing on startup" /><link rel="next" href="sniffing-periodically.html" title="Sniffing periodically" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,128 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net </a></span> » <span class="breadcrumb-node">Sniffing on connection failure</span></div><div class="navheader"><span class="prev"><a href="sniffing-on-startup.html">
+              « 
+              Sniffing on startup</a>
+           
+        </span><span class="next">
+           
+          <a href="sniffing-periodically.html">Sniffing periodically
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="sniffing-on-connection-failure"></a>Sniffing on connection failure<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/sniffing/on-connection-failure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Sniffing on connection is enabled by default when using a connection pool that allows reseeding.
+The only IConnectionPool we ship that allows this is the <a class="link" href="connection-pooling.html#sniffing-connection-pool" title="SniffingConnectionPool">SniffingConnectionPool</a>.</p><p>This can be very handy to force a refresh of the pools known healthy node by inspecting Elasticsearch itself.
+A sniff tries to get the nodes by asking each currently known node until one response.</p><p>Here we seed our connection with 5 known nodes 9200-9204 of which we think
+9202, 9203, 9204 are master eligible nodes. Our virtualized cluster will throw once when doing
+a search on 9201. This should a sniff to be kicked off.</p><p>When the call fails on 9201 the sniff succeeds and returns a new cluster of healthy nodes
+this cluster only has 3 nodes and the known masters are 9200 and 9202 but a search on 9201
+still fails once</p><p>After this second failure on 9201 another sniff will be returned a cluster that no
+longer fails but looks completely different (9210-9212) we should be able to handle this</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(5)
+    .MasterEligible(9202, 9203, 9204)
+    .ClientCalls(r =&gt; r.SucceedAlways())
+    .ClientCalls(r =&gt; r.OnPort(9201).Fails(Once))
+.Sniff(p =&gt; p.SucceedAlways(Framework.Cluster
+        .Nodes(3)
+        .MasterEligible(9200, 9202)
+        .ClientCalls(r =&gt; r.OnPort(9201).Fails(Once))
+.Sniff(s =&gt; s.SucceedAlways(Framework.Cluster
+            .Nodes(3, 9210)
+            .MasterEligible(9210, 9212)
+            .ClientCalls(r =&gt; r.SucceedAlways())
+            .Sniff(r =&gt; r.SucceedAlways())
+        ))
+    ))
+    .SniffingConnectionPool()
+    .Settings(s =&gt; s.DisablePing().SniffOnStartup(false))
+);</pre></div><p>We assert we do a sniff on our first known master node 9202</p><p>Our pool should now have three nodes</p><p>We assert we do a sniff on the first master node in our updated cluster</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceCalls(
+new ClientCall {
+        { HealthyResponse, 9200 },
+        { pool =&gt;  pool.Nodes.Count.Should().Be(5) }
+    },
+    new ClientCall {
+        { BadResponse, 9201},
+{ SniffOnFail },
+        { SniffSuccess, 9202},
+        { HealthyResponse, 9200},
+{ pool =&gt;  pool.Nodes.Count.Should().Be(3) }
+    },
+    new ClientCall {
+        { BadResponse, 9201},
+{ SniffOnFail },
+        { SniffSuccess, 9200},
+        { HealthyResponse, 9210},
+        { pool =&gt;  pool.Nodes.Count.Should().Be(3) }
+    },
+    new ClientCall { { HealthyResponse, 9211 } },
+    new ClientCall { { HealthyResponse, 9212 } },
+    new ClientCall { { HealthyResponse, 9210 } },
+    new ClientCall { { HealthyResponse, 9211 } },
+    new ClientCall { { HealthyResponse, 9212 } },
+    new ClientCall { { HealthyResponse, 9210 } },
+    new ClientCall { { HealthyResponse, 9211 } },
+    new ClientCall { { HealthyResponse, 9212 } },
+    new ClientCall { { HealthyResponse, 9210 } }
+);</pre></div><p>Here we set up our cluster exactly the same as the previous setup
+Only we enable pinging (default is true) and make the ping fail</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(5)
+    .MasterEligible(9202, 9203, 9204)
+    .Ping(r =&gt; r.OnPort(9201).Fails(Once))
+    .Sniff(p =&gt; p.SucceedAlways(Framework.Cluster
+        .Nodes(3)
+        .MasterEligible(9200, 9202)
+        .Ping(r =&gt; r.OnPort(9201).Fails(Once))
+        .Sniff(s =&gt; s.SucceedAlways(Framework.Cluster
+            .Nodes(3, 9210)
+            .MasterEligible(9210, 9211)
+            .Ping(r =&gt; r.SucceedAlways())
+            .Sniff(r =&gt; r.SucceedAlways())
+        ))
+    ))
+    .SniffingConnectionPool()
+    .Settings(s =&gt; s.SniffOnStartup(false))
+);</pre></div><p>We assert we do a sniff on our first known master node 9202</p><p>Our pool should now have three nodes</p><p>We assert we do a sniff on the first master node in our updated cluster</p><p>9210 was already pinged after the sniff returned the new nodes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceCalls(
+    new ClientCall {
+        { PingSuccess, 9200 },
+        { HealthyResponse, 9200 },
+        { pool =&gt;  pool.Nodes.Count.Should().Be(5) }
+    },
+    new ClientCall {
+        { PingFailure, 9201},
+{ SniffOnFail },
+        { SniffSuccess, 9202},
+        { PingSuccess, 9200},
+        { HealthyResponse, 9200},
+{ pool =&gt;  pool.Nodes.Count.Should().Be(3) }
+    },
+    new ClientCall {
+        { PingFailure, 9201},
+{ SniffOnFail },
+        { SniffSuccess, 9200},
+        { PingSuccess, 9210},
+        { HealthyResponse, 9210},
+        { pool =&gt;  pool.Nodes.Count.Should().Be(3) }
+    },
+    new ClientCall { { PingSuccess, 9211 }, { HealthyResponse, 9211 } },
+    new ClientCall { { PingSuccess, 9212 }, { HealthyResponse, 9212 } },
+new ClientCall { { HealthyResponse, 9210 } },
+    new ClientCall { { HealthyResponse, 9211 } },
+    new ClientCall { { HealthyResponse, 9212 } },
+    new ClientCall { { HealthyResponse, 9210 } }
+);</pre></div></div><div class="navfooter"><span class="prev"><a href="sniffing-on-startup.html">
+              « 
+              Sniffing on startup</a>
+           
+        </span><span class="next">
+           
+          <a href="sniffing-periodically.html">Sniffing periodically
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>

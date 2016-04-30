@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>.NET API</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="DC.type" content="Docs/" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Unexpected exceptions</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="forcing-nodes.html" title="Forcing nodes" /><link rel="next" href="unrecoverable-exceptions.html" title="Unrecoverable exceptions" /><meta name="DC.type" content="Docs/Clients/.Net/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -990,13 +990,119 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>.NET API</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="master/index.html" target="_top">.NET API: 5.0.0-alpha1</a>
-</li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">.NET API: 2.x (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.x/index.html" target="_top">.NET API: 1.x</a>
-</li></ul></div></div>
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net </a></span> » <span class="breadcrumb-node">Unexpected exceptions</span></div><div class="navheader"><span class="prev"><a href="forcing-nodes.html">
+              « 
+              Forcing nodes</a>
+           
+        </span><span class="next">
+           
+          <a href="unrecoverable-exceptions.html">Unrecoverable exceptions
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="unexpected-exceptions"></a>Unexpected exceptions<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/asciidoc/client-concepts/connection-pooling/exceptions/unexpected-exceptions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When a client call throws an exception that the IConnction can not handle, this exception will bubble
+out the client as an UnexpectedElasticsearchClientException, regardless whether the client is configured to throw or not.
+An IConnection is in charge of knowning what exceptions it can recover from or not. The default IConnection that is based on WebRequest can and
+will recover from WebExceptions but others will be grounds for immediately exiting the pipeline.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .ClientCalls(r =&gt; r.SucceedAlways())
+    .ClientCalls(r =&gt; r.OnPort(9201).FailAlways(new Exception("boom!")))
+    .StaticConnectionPool()
+    .Settings(s =&gt; s.DisablePing())
+);
+audit = await audit.TraceCall(
+    new ClientCall {
+        { AuditEvent.HealthyResponse, 9200 },
+    }
+);
+audit = await audit.TraceUnexpectedException(
+    new ClientCall {
+        { AuditEvent.BadResponse, 9201 },
+    },
+    (e) =&gt;
+    {
+        e.FailureReason.Should().Be(PipelineFailure.Unexpected);
+        e.InnerException.Should().NotBeNull();
+        e.InnerException.Message.Should().Be("boom!");
+    }
+);
+e.FailureReason.Should().Be(PipelineFailure.Unexpected);
+e.InnerException.Should().NotBeNull();
+e.InnerException.Message.Should().Be("boom!");</pre></div><p>Sometimes an unexpected exception happens further down in the pipeline, this is why we
+wrap them inside an UnexpectedElasticsearchClientException so that information about where
+in the pipeline the unexpected exception is not lost, here a call to 9200 fails using a webexception.
+It then falls over to 9201 which throws an hard exception from within IConnection. We assert that we
+can still see the audit trail for the whole coordinated request.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+#if DOTNETCORE
+    .ClientCalls(r =&gt; r.OnPort(9200).FailAlways(new System.Net.Http.HttpRequestException("recover")))
+#else
+    .ClientCalls(r =&gt; r.OnPort(9200).FailAlways(new WebException("recover")))
+#endif
+    .ClientCalls(r =&gt; r.OnPort(9201).FailAlways(new Exception("boom!")))
+    .StaticConnectionPool()
+    .Settings(s =&gt; s.DisablePing())
+);
+
+audit = await audit.TraceUnexpectedException(
+    new ClientCall {
+        { AuditEvent.BadResponse, 9200 },
+        { AuditEvent.BadResponse, 9201 },
+    },
+    (e) =&gt;
+    {
+        e.FailureReason.Should().Be(PipelineFailure.Unexpected);
+        e.InnerException.Should().NotBeNull();
+        e.InnerException.Message.Should().Be("boom!");
+    }
+);
+
+e.FailureReason.Should().Be(PipelineFailure.Unexpected);
+
+e.InnerException.Should().NotBeNull();
+
+e.InnerException.Message.Should().Be("boom!");</pre></div><p>An unexpected hard exception on ping and sniff is something we <span class="strong"><strong>do</strong></span> try to revover from and failover.
+Here pinging nodes on first use is enabled and 9200 throws on ping, we still fallover to 9201’s ping succeeds.
+However the client call on 9201 throws a hard exception we can not recover from</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Ping(r =&gt; r.OnPort(9200).FailAlways(new Exception("ping exception")))
+    .Ping(r =&gt; r.OnPort(9201).SucceedAlways())
+    .ClientCalls(r =&gt; r.OnPort(9201).FailAlways(new Exception("boom!")))
+    .StaticConnectionPool()
+    .AllDefaults()
+);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceUnexpectedException(
+    new ClientCall {
+        { AuditEvent.PingFailure, 9200 },
+        { AuditEvent.PingSuccess, 9201 },
+        { AuditEvent.BadResponse, 9201 },
+    },
+    (e) =&gt;
+    {
+        e.FailureReason.Should().Be(PipelineFailure.Unexpected);
+e.InnerException.Should().NotBeNull();
+        e.InnerException.Message.Should().Be("boom!");
+e.SeenExceptions.Should().NotBeEmpty();
+        var pipelineException = e.SeenExceptions.First();
+        pipelineException.FailureReason.Should().Be(PipelineFailure.PingFailure);
+        pipelineException.InnerException.Message.Should().Be("ping exception");
+var pingException = e.AuditTrail.First(a =&gt; a.Event == AuditEvent.PingFailure).Exception;
+        pingException.Should().NotBeNull();
+        pingException.Message.Should().Be("ping exception");
+
+    }
+);</pre></div></div><div class="navfooter"><span class="prev"><a href="forcing-nodes.html">
+              « 
+              Forcing nodes</a>
+           
+        </span><span class="next">
+           
+          <a href="unrecoverable-exceptions.html">Unrecoverable exceptions
+               »
+            </a></span></div>
 <!-- end body -->
 
             </section>
