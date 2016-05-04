@@ -1222,14 +1222,15 @@ and the only place to look for the ultimate result of the task is in the
 Elasticsearch log file. This will be fixed soon.</p><p><code class="literal">consistency</code> controls how many copies of a shard must respond to each write
 request. <code class="literal">timeout</code> controls how long each write request waits for unavailable
 shards to become available. Both work exactly how they work in the
-<a class="link" href="docs-bulk.html" title="Bulk API">Bulk API</a>.</p><p><code class="literal">requests_per_second</code> can be set to any decimal number (1.4, 6, 1000, etc) and
-throttle the number of requests per second that the reindex issues. The
+<a class="link" href="docs-bulk.html" title="Bulk API">Bulk API</a>.</p><p><code class="literal">requests_per_second</code> can be set to any decimal number (<code class="literal">1.4</code>, <code class="literal">6</code>, <code class="literal">1000</code>, etc)
+and throttles the number of requests per second that the reindex issues. The
 throttling is done waiting between bulk batches so that it can manipulate the
 scroll timeout. The wait time is the difference between the time it took the
 batch to complete and the time <code class="literal">requests_per_second * requests_in_the_batch</code>.
 Since the batch isn’t broken into multiple bulk requests large batch sizes will
 cause Elasticsearch to create many requests and then wait for a while before
-starting the next set. This is "bursty" instead of "smooth".</p><h3><a id="_response_body_2"></a>Response body<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The JSON response looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+starting the next set. This is "bursty" instead of "smooth". The default is
+<code class="literal">unlimited</code> which is also the only non-number value that it accepts.</p><h3><a id="_response_body_2"></a>Response body<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The JSON response looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "took" : 639,
   "updated": 0,
   "created": 123,
@@ -1312,12 +1313,18 @@ with the important addition of the <code class="literal">total</code> field. <co
 of operations that the reindex expects to perform. You can estimate the
 progress by adding the <code class="literal">updated</code>, <code class="literal">created</code>, and <code class="literal">deleted</code> fields. The request
 will finish when their sum is equal to the <code class="literal">total</code> field.
-</p></td></tr></table></div><h3><a id="_reindex_to_change_the_name_of_a_field"></a>Reindex to change the name of a field<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p><code class="literal">_reindex</code> can be used to build a copy of an index with renamed fields. Say you
+</p></td></tr></table></div><h3><a id="docs-reindex-cancel-task-api"></a>Works with the Cancel Task API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Any Reindex can be canceled using the <a class="link" href="tasks.html" title="Task Management API">Task Cancel API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_tasks/{task_id}/_cancel</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/15.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Cancelation should happen quickly but might take a few seconds. The task status
+API above will continue to list the task until it is wakes to cancel itself.</p><h3><a id="docs-reindex-rethrottle"></a>Rethrottling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The value of <code class="literal">requests_per_second</code> can be changed on a running reindex using
+the <code class="literal">_rethrottle</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex/{task_id}/_rethrottle?requests_per_second=unlimited</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/16.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Just like when setting it on the <code class="literal">_reindex</code> API <code class="literal">requests_per_second</code> can be
+either <code class="literal">unlimited</code> to disable throttling or any decimal number like <code class="literal">1.7</code> or
+<code class="literal">12</code> to throttle to that level. Rethrottling that speeds up the query takes
+effect immediately but rethrotting that slows down the query will take effect
+on after completing the current batch. This prevents scroll timeouts.</p><h3><a id="_reindex_to_change_the_name_of_a_field"></a>Reindex to change the name of a field<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p><code class="literal">_reindex</code> can be used to build a copy of an index with renamed fields. Say you
 create an index containing documents that look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/test/1?refresh&amp;pretty
 {
   "text": "words words",
   "flag": "foo"
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/15.json"></div><p>But you don’t like the name <code class="literal">flag</code> and want to replace it with <code class="literal">tag</code>.
+}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/17.json"></div><p>But you don’t like the name <code class="literal">flag</code> and want to replace it with <code class="literal">tag</code>.
 <code class="literal">_reindex</code> can create the other index for you:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex?pretty
 {
   "source": {
@@ -1329,7 +1336,7 @@ create an index containing documents that look like this:</p><div class="pre_wra
   "script": {
     "inline": "ctx._source.tag = ctx._source.remove(\"flag\")"
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/16.json"></div><p>Now you can get the new document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test2/test/1?pretty</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/17.json"></div><p>and it’ll look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/18.json"></div><p>Now you can get the new document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test2/test/1?pretty</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/19.json"></div><p>and it’ll look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "text": "words words",
   "tag": "foo"
 }</pre></div><p>Or you can search by <code class="literal">tag</code> or whatever you want.</p></div><div class="navfooter"><span class="prev"><a href="docs-bulk.html">

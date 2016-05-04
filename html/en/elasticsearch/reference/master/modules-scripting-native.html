@@ -2,7 +2,7 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Miscellaneous cluster settings</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-cluster.html" title="Cluster" /><link rel="prev" href="allocation-filtering.html" title="Shard Allocation Filtering" /><link rel="next" href="modules-discovery.html" title="Discovery" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Native (Java) Scripts</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-scripting-expression.html" title="Lucene Expressions Language" /><link rel="next" href="modules-advanced-scripting.html" title="Advanced text scoring in scripts" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -996,48 +996,83 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-cluster.html">Cluster</a></span> » <span class="breadcrumb-node">Miscellaneous cluster settings</span></div><div class="navheader"><span class="prev"><a href="allocation-filtering.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-scripting.html">Scripting</a></span> » <span class="breadcrumb-node">Native (Java) Scripts</span></div><div class="navheader"><span class="prev"><a href="modules-scripting-expression.html">
               « 
-              Shard Allocation Filtering</a>
+              Lucene Expressions Language</a>
            
         </span><span class="next">
            
-          <a href="modules-discovery.html">Discovery
+          <a href="modules-advanced-scripting.html">Advanced text scoring in scripts
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="misc-cluster"></a>Miscellaneous cluster settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/misc.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cluster-read-only"></a>Metadata<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/misc.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>An entire cluster may be set to read-only with the following <span class="emphasis"><em>dynamic</em></span> setting:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">cluster.blocks.read_only</code>
-</span></dt><dd>
-      Make the whole cluster read only (indices do not accept write
-      operations), metadata is not allowed to be modified (create or delete
-      indices).
-</dd></dl></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Don’t rely on this setting to prevent changes to your cluster. Any
-user with access to the <a class="link" href="cluster-update-settings.html" title="Cluster Update Settings">cluster-update-settings</a>
-API can make the cluster read-write again.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cluster-max-tombstones"></a>Index Tombstones<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/misc.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The cluster state maintains index tombstones to explicitly denote indices that
-have been deleted.  The number of tombstones maintained in the cluster state is
-controlled by the following property, which cannot be updated dynamically:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">cluster.indices.tombstones.size</code>
-</span></dt><dd>
-Index tombstones prevent nodes that are not part of the cluster when a delete
-occurs from joining the cluster and reimporting the index as though the delete
-was never issued. To keep the cluster state from growing huge we only keep the
-last <code class="literal">cluster.indices.tombstones.size</code> deletes, which defaults to 500. You can
-increase it if you expect nodes to be absent from the cluster and miss more
-than 500 deletes. We think that is rare, thus the default. Tombstones don’t take
-up much space, but we also think that a number like 50,000 is probably too big.
-</dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cluster-logger"></a>Logger<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/misc.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The settings which control logging can be updated dynamically with the
-<code class="literal">logger.</code> prefix.  For instance, to increase the logging level of the
-<code class="literal">indices.recovery</code> module to <code class="literal">DEBUG</code>, issue this request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
-{
-  "transient": {
-    "logger.indices.recovery": "DEBUG"
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-native"></a>Native (Java) Scripts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/native.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Sometimes <code class="literal">groovy</code> and <a class="link" href="modules-scripting-expression.html" title="Lucene Expressions Language">expression</a> aren’t enough. For those times you can
+implement a native script.</p><p>The best way to implement a native script is to write a plugin and install it.
+The plugin <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/plugin-authors.html" target="_top">documentation</a> has more information on
+how to write a plugin so that Elasticsearch will properly load it.</p><p>To register the actual script you’ll need to implement <code class="literal">NativeScriptFactory</code>
+to construct the script. The actual script will extend either
+<code class="literal">AbstractExecutableScript</code> or <code class="literal">AbstractSearchScript</code>. The second one is likely
+the most useful and has several helpful subclasses you can extend like
+<code class="literal">AbstractLongSearchScript</code>, <code class="literal">AbstractDoubleSearchScript</code>, and
+<code class="literal">AbstractFloatSearchScript</code>. Finally, your plugin should register the native
+script by declaring the <code class="literal">onModule(ScriptModule)</code> method.</p><p>If you squashed the whole thing into one class it’d look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">public class MyNativeScriptPlugin extends Plugin {
+    @Override
+    public String name() {
+        return "my-native-script";
+    }
+    @Override
+    public String description() {
+        return "my native script that does something great";
+    }
+    public void onModule(ScriptModule scriptModule) {
+        scriptModule.registerScript("my_script", MyNativeScriptFactory.class);
+    }
+
+    public static class MyNativeScriptFactory implements NativeScriptFactory {
+        @Override
+        public ExecutableScript newScript(@Nullable Map&lt;String, Object&gt; params) {
+            return new MyNativeScript();
+        }
+        @Override
+        public boolean needsScores() {
+            return false;
+        }
+    }
+
+    public static class MyNativeScript extends AbstractFloatSearchScript {
+        @Override
+        public float runAsFloat() {
+            float a = (float) source().get("a");
+            float b = (float) source().get("b");
+            return a * b;
+        }
+    }
+}</pre></div><p>You can execute the script by specifying its <code class="literal">lang</code> as <code class="literal">native</code>, and the name
+of the script as the <code class="literal">id</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST localhost:9200/_search -d '{
+  "query": {
+    "function_score": {
+      "query": {
+        "match": {
+          "body": "foo"
+        }
+      },
+      "functions": [
+        {
+          "script_score": {
+            "script": {
+                "id": "my_script",
+                "lang" : "native"
+            }
+          }
+        }
+      ]
+    }
   }
-}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="allocation-filtering.html">
+}'</pre></div></div><div class="navfooter"><span class="prev"><a href="modules-scripting-expression.html">
               « 
-              Shard Allocation Filtering</a>
+              Lucene Expressions Language</a>
            
         </span><span class="next">
            
-          <a href="modules-discovery.html">Discovery
+          <a href="modules-advanced-scripting.html">Advanced text scoring in scripts
                »
             </a></span></div>
 <!-- end body -->
