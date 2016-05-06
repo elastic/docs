@@ -1024,9 +1024,7 @@ Boolean operators: not <code class="literal">!</code>, and <code class="literal"
 Bitwise operators: shift left <code class="literal">&lt;&lt;</code>, shift right <code class="literal">&gt;&gt;</code>, unsigned shift <code class="literal">&gt;&gt;&gt;</code>, and <code class="literal">&amp;</code>, or <code class="literal">|</code>, xor <code class="literal">^</code>, not <code class="literal">~</code>
 </li><li class="listitem">
 Shortcuts for list, map access using the dot <code class="literal">.</code> operator
-</li></ul></div><h2><a id="painless-examples"></a>Painless Examples<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>To illustrate how Painless works, let’s load some hockey stats into an Elasticsearch index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">DELETE /hockey-stats
-
-PUT /hockey-stats/player/_bulk
+</li></ul></div><h2><a id="painless-examples"></a>Painless Examples<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>To illustrate how Painless works, let’s load some hockey stats into an Elasticsearch index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT hockey/player/_bulk?refresh
 {"index":{"_id":1}}
 {"first":"johnny","last":"gaudreau","goals":[9,27,1],"assists":[17,46,0],"gp":[26,82,1]}
 {"index":{"_id":2}}
@@ -1048,7 +1046,7 @@ PUT /hockey-stats/player/_bulk
 {"index":{"_id":10}}
 {"first":"mikael","last":"backlund","goals":[3,15,13],"assists":[6,24,18],"gp":[26,82,82]}
 {"index":{"_id":11}}
-{"first":"joe","last":"colborne","goals":[3,18,13],"assists":[6,20,24],"gp":[26,67,82]}</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/1.json"></div><h3><a id="_accessing_doc_values_from_painless"></a>Accessing Doc Values from Painless<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>All Painless scripts take in a <code class="literal">Map&lt;String,def&gt;</code> of values called <code class="literal">input</code>.  Document values can be accessed through another <code class="literal">Map&lt;String,def&gt;</code> within the <code class="literal">input</code> variable.</p><p>For example, the following script calculates a player’s total goals. This example uses a strongly typed <code class="literal">int</code> and a <code class="literal">for</code> loop.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /hockey-stats/_search
+{"first":"joe","last":"colborne","goals":[3,18,13],"assists":[6,20,24],"gp":[26,67,82]}</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/1.json"></div><h3><a id="_accessing_doc_values_from_painless"></a>Accessing Doc Values from Painless<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>All Painless scripts take in a <code class="literal">Map&lt;String,def&gt;</code> of values called <code class="literal">input</code>.  Document values can be accessed through another <code class="literal">Map&lt;String,def&gt;</code> within the <code class="literal">input</code> variable.</p><p>For example, the following script calculates a player’s total goals. This example uses a strongly typed <code class="literal">int</code> and a <code class="literal">for</code> loop.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
 {
   "query": {
     "function_score": {
@@ -1060,7 +1058,7 @@ PUT /hockey-stats/player/_bulk
       }
     }
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/2.json"></div><p>Alternatively, you could do the same thing using a script field instead of a function score:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /hockey-stats/_search
+}</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/2.json"></div><p>Alternatively, you could do the same thing using a script field instead of a function score:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
 {
   "query": {
     "match_all": {}
@@ -1073,24 +1071,23 @@ PUT /hockey-stats/player/_bulk
       }
     }
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/3.json"></div><p>You must always specify the index of the field value you want, even if there’s only a single item in the field.
-All fields in Elasticsearch are multi-valued and Painless does not provide a <code class="literal">.value</code> shortcut. The following example uses a Painless script to sort the players by their combined first and last names. The names are accessed using
-<code class="literal">input.doc['first'].0</code> and <code class="literal">input.doc['last'].0</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /hockey-stats/_search
+}</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/3.json"></div><p>The following example uses a Painless script to sort the players by their combined first and last names. The names are accessed using
+<code class="literal">input.doc['first'].value</code> and <code class="literal">input.doc['last'].value</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
 {
   "query": {
     "match_all": {}
   },
   "sort": {
     "_script": {
-      "type": "keyword",
+      "type": "string",
       "order": "asc",
       "script": {
         "lang": "painless",
-        "inline": "input.doc['first'].0 + ' ' + input.doc['last'].0"
+        "inline": "input.doc['first'].value + ' ' + input.doc['last'].value"
       }
     }
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/4.json"></div><h3><a id="_updating_fields_with_painless"></a>Updating Fields with Painless<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can also easily update fields. You access the original source for a field as <code class="literal">input.ctx._source.&lt;field-name&gt;</code>.</p><p>First, let’s look at the source data for a player by submitting the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /hockey-stats/_search
+}</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/4.json"></div><h3><a id="_updating_fields_with_painless"></a>Updating Fields with Painless<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can also easily update fields. You access the original source for a field as <code class="literal">input.ctx._source.&lt;field-name&gt;</code>.</p><p>First, let’s look at the source data for a player by submitting the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
 {
   "fields": [
     "_id",
@@ -1101,7 +1098,7 @@ All fields in Elasticsearch are multi-valued and Painless does not provide a <co
       "_id": 1
     }
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/5.json"></div><p>To change player 1’s last name to <code class="literal">hockey</code>, simply set <code class="literal">input.ctx._source.last</code> to the new value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /hockey-stats/player/1/_update
+}</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/5.json"></div><p>To change player 1’s last name to <code class="literal">hockey</code>, simply set <code class="literal">input.ctx._source.last</code> to the new value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/1/_update
 {
   "script": {
     "lang": "painless",
@@ -1111,7 +1108,7 @@ All fields in Elasticsearch are multi-valued and Painless does not provide a <co
     }
   }
 }</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/6.json"></div><p>You can also add fields to a document. For example, this script adds a new field that contains
-the player’s nickname,  <span class="emphasis"><em>hockey</em></span>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /hockey-stats/player/1/_update
+the player’s nickname,  <span class="emphasis"><em>hockey</em></span>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/1/_update
 {
   "script": {
     "lang": "painless",
@@ -1123,7 +1120,7 @@ the player’s nickname,  <span class="emphasis"><em>hockey</em></span>.</p><div
   }
 }</pre></div><div class="sense_widget" data-snippet="snippets/modules-scripting-painless/7.json"></div><h3><a id="_writing_type_safe_scripts_to_improve_performance"></a>Writing Type-Safe Scripts to Improve Performance<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you explicitly specify types, the compiler doesn’t have to perform type lookups at runtime, which can significantly
 improve performance. For example, the following script performs the same first name, last name sort we showed before,
-but it’s fully type-safe.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /hockey-stats/_search
+but it’s fully type-safe.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
 {
   "query": {
     "match_all": {}
@@ -1132,7 +1129,7 @@ but it’s fully type-safe.</p><div class="pre_wrapper"><pre class="programlisti
     "full_name_dynamic": {
       "script": {
         "lang": "painless",
-        "inline": "def first = input.doc['first'].0; def last = input.doc['last'].0; return first + ' ' + last;"
+        "inline": "def first = input.doc['first'].value; def last = input.doc['last'].value; return first + ' ' + last;"
       }
     },
     "full_name_static": {
