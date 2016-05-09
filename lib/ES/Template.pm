@@ -89,9 +89,9 @@ my $Autosense_RE = qr{
          ((?:(?!</pre>).)+?)
          </pre>
          </div>
-         <div \s class="sense_widget" \s data-snippet="
+         <div \s class="(?:console|sense)_widget" \s data-snippet="
         )
-        :AUTOSENSE:
+        :(?:CONSOLE|AUTOSENSE):
     }xs;
 
 #===================================

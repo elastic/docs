@@ -241,6 +241,9 @@
         <xsl:when test="contains(text(),'AUTOSENSE')">
             <div class="sense_widget" data-snippet=":AUTOSENSE:"></div>
         </xsl:when>
+        <xsl:when test="contains(text(),'CONSOLE')">
+            <div class="console_widget" data-snippet=":CONSOLE:"></div>
+        </xsl:when>
         <xsl:when test="contains(text(),'SENSE:')">
             <xsl:variable name="sense_url" select="translate(substring-after(text(),'SENSE:'),' ','')" />
             <div class="sense_widget" data-snippet="snippets/{$sense_url}"></div>
@@ -258,6 +261,9 @@
         <xsl:choose>
         <xsl:when test="contains(text(),'AUTOSENSE')">
             <div class="sense_widget" data-snippet=":AUTOSENSE:"></div>
+        </xsl:when>
+        <xsl:when test="contains(text(),'CONSOLE')">
+            <div class="console_widget" data-snippet=":CONSOLE:"></div>
         </xsl:when>
         <xsl:when test="contains(text(),'SENSE:')">
             <xsl:variable name="sense_url" select="translate(substring-after(text(),'SENSE:'),' ','')" />
