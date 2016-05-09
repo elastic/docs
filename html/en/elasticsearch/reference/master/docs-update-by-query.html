@@ -1007,7 +1007,7 @@ version&#39;s documentation here</a>.
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-update-by-query"></a>Update By Query API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The update-by-query API is new and should still be considered experimental.  The API may change in ways that are not backwards compatible.</p></div></div><p>The simplest usage of <code class="literal">_update_by_query</code> just performs an update on every
 document in the index without changing the source. This is useful to
 <a class="link" href="docs-update-by-query.html#picking-up-a-new-property" title="Pick up a new propertyedit">pick up a new property</a> or some other online
-mapping change. Here is the API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query?conflicts=proceed</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/1.json"></div><p>That will return something like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+mapping change. Here is the API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query?conflicts=proceed</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/1.json"></div><p>That will return something like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "took" : 147,
   "timed_out": false,
   "updated": 120,
@@ -1036,7 +1036,7 @@ pick up an online mapping change and a version conflict simply means that the
 conflicting document was updated between the start of the <code class="literal">_update_by_query</code>
 and the time when it attempted to update the document. This is fine because
 that update will have picked up the online mapping update.</p><p>Back to the API format, you can limit <code class="literal">_update_by_query</code> to a single type. This
-will only update <code class="literal">tweet`s from the `twitter</code> index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/tweet/_update_by_query?conflicts=proceed</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/2.json"></div><p>You can also limit <code class="literal">_update_by_query</code> using the
+will only update <code class="literal">tweet`s from the `twitter</code> index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/tweet/_update_by_query?conflicts=proceed</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/2.json"></div><p>You can also limit <code class="literal">_update_by_query</code> using the
 <a class="link" href="query-dsl.html" title="Query DSL">Query DSL</a>. This will update all documents from the
 <code class="literal">twitter</code> index for the user <code class="literal">kimchy</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query?conflicts=proceed
 {
@@ -1045,7 +1045,7 @@ will only update <code class="literal">tweet`s from the `twitter</code> index:</
       "user": "kimchy"
     }
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The query must be passed as a value to the <code class="literal">query</code> key, in the same
 way as the <a class="link" href="search-search.html" title="Search">Search API</a>. You can also use the <code class="literal">q</code>
 parameter in the same way as the search api.
@@ -1063,7 +1063,7 @@ will increment the <code class="literal">likes</code> field on all of kimchy’s
       "user": "kimchy"
     }
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/4.json"></div><p>Just as in <a class="link" href="docs-update.html" title="Update API">Update API</a> you can set <code class="literal">ctx.op = "noop"</code> if
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/4.json"></div><p>Just as in <a class="link" href="docs-update.html" title="Update API">Update API</a> you can set <code class="literal">ctx.op = "noop"</code> if
 your script decides that it doesn’t have to make any changes. That will cause
 <code class="literal">_update_by_query</code> to omit that document from its updates. Setting <code class="literal">ctx.op</code> to
 anything else is an error. If you want to delete by a query you can use the
@@ -1072,9 +1072,9 @@ other field in <code class="literal">ctx</code> is an error.</p><p>Note that we 
 version conflict to abort the process so we can handle the failure.</p><p>This API doesn’t allow you to move the documents it touches, just modify their
 source. This is intentional! We’ve made no provisions for removing the document
 from its original location.</p><p>It’s also possible to do this whole thing on multiple indexes and multiple
-types at once, just like the search API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter,blog/tweet,post/_update_by_query</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/5.json"></div><p>If you provide <code class="literal">routing</code> then the routing is copied to the scroll query,
-limiting the process to the shards that match that routing value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query?routing=1</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/6.json"></div><p>By default <code class="literal">_update_by_query</code> uses scroll batches of 100. You can change the
-batch size with the <code class="literal">scroll_size</code> URL parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query?scroll_size=1000</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/7.json"></div><p><code class="literal">_update_by_query</code> can also use the <a class="xref" href="ingest.html" title="Ingest Node">Ingest Node </a> feature by
+types at once, just like the search API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter,blog/tweet,post/_update_by_query</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/5.json"></div><p>If you provide <code class="literal">routing</code> then the routing is copied to the scroll query,
+limiting the process to the shards that match that routing value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query?routing=1</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/6.json"></div><p>By default <code class="literal">_update_by_query</code> uses scroll batches of 100. You can change the
+batch size with the <code class="literal">scroll_size</code> URL parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query?scroll_size=1000</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/7.json"></div><p><code class="literal">_update_by_query</code> can also use the <a class="xref" href="ingest.html" title="Ingest Node">Ingest Node </a> feature by
 specifying a <code class="literal">pipeline</code> like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _ingest/pipeline/set-foo
 {
   "description" : "sets foo",
@@ -1085,7 +1085,7 @@ specifying a <code class="literal">pipeline</code> like this:</p><div class="pre
       }
   } ]
 }
-POST twitter/_update_by_query?pipeline=set-foo</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/8.json"></div><h3><a id="_url_parameters"></a>URL Parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In addition to the standard parameters like <code class="literal">pretty</code>, the Update By Query API
+POST twitter/_update_by_query?pipeline=set-foo</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/8.json"></div><h3><a id="_url_parameters"></a>URL Parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In addition to the standard parameters like <code class="literal">pretty</code>, the Update By Query API
 also supports <code class="literal">refresh</code>, <code class="literal">wait_for_completion</code>, <code class="literal">consistency</code>, and <code class="literal">timeout</code>.</p><p>Sending the <code class="literal">refresh</code> will update all shards in the index being updated when
 the request completes. This is different than the Index API’s <code class="literal">refresh</code>
 parameter which causes just the shard that received the new data to be indexed.</p><p>If the request contains <code class="literal">wait_for_completion=false</code> then Elasticsearch will
@@ -1143,7 +1143,7 @@ Array of all indexing failures. If this is non-empty then the request aborted
 because of those failures. See <code class="literal">conflicts</code> for how to prevent version conflicts
 from aborting the operation.
 </dd></dl></div><h3><a id="docs-update-by-query-task-api"></a>Works with the Task API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>While Update By Query is running you can fetch their status using the
-<a class="link" href="tasks.html" title="Task Management API">Task API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks/?pretty&amp;detailed=true&amp;action=*byquery</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/9.json"></div><p>The responses looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+<a class="link" href="tasks.html" title="Task Management API">Task API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks/?pretty&amp;detailed=true&amp;action=*byquery</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/9.json"></div><p>The responses looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "nodes" : {
     "r1A2WoRbTwKZ516z6NEs5A" : {
       "name" : "Tyrannus",
@@ -1182,9 +1182,9 @@ with the important addition of the <code class="literal">total</code> field. <co
 of operations that the reindex expects to perform. You can estimate the
 progress by adding the <code class="literal">updated</code>, <code class="literal">created</code>, and <code class="literal">deleted</code> fields. The request
 will finish when their sum is equal to the <code class="literal">total</code> field.
-</p></td></tr></table></div><h3><a id="docs-update-by-query-cancel-task-api"></a>Works with the Cancel Task API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Any Update By Query can be canceled using the <a class="link" href="tasks.html" title="Task Management API">Task Cancel API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _tasks/taskid:1/_cancel</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/10.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Cancelation should happen quickly but might take a few seconds. The task status
+</p></td></tr></table></div><h3><a id="docs-update-by-query-cancel-task-api"></a>Works with the Cancel Task API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Any Update By Query can be canceled using the <a class="link" href="tasks.html" title="Task Management API">Task Cancel API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _tasks/taskid:1/_cancel</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/10.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Cancelation should happen quickly but might take a few seconds. The task status
 API above will continue to list the task until it is wakes to cancel itself.</p><h3><a id="docs-update-by-query-rethrottle"></a>Rethrottling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The value of <code class="literal">requests_per_second</code> can be changed on a running update by query
-using the <code class="literal">_rethrottle</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _update_by_query/taskid:1/_rethrottle?requests_per_second=unlimited</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/11.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Just like when setting it on the <code class="literal">_update_by_query</code> API <code class="literal">requests_per_second</code>
+using the <code class="literal">_rethrottle</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _update_by_query/taskid:1/_rethrottle?requests_per_second=unlimited</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/11.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Just like when setting it on the <code class="literal">_update_by_query</code> API <code class="literal">requests_per_second</code>
 can be either <code class="literal">unlimited</code> to disable throttling or any decimal number like <code class="literal">1.7</code>
 or <code class="literal">12</code> to throttle to that level. Rethrottling that speeds up the query takes
 effect immediately but rethrotting that slows down the query will take effect
@@ -1217,7 +1217,7 @@ PUT test/_mapping/test   <a id="CO12-2"></a><span><img src="images/icons/callout
     "text": {"type": "text"},
     "flag": {"type": "text", "analyzer": "keyword"}
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/12.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/12.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This means that new fields won’t be indexed, just stored in <code class="literal">_source</code>.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This updates the mapping to add the new <code class="literal">flag</code> field. To pick up the new
@@ -1229,7 +1229,7 @@ field you have to reindex all documents with it.
       "flag": "foo"
     }
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/13.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/13.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "hits" : {
     "total" : 0
   }
@@ -1241,7 +1241,7 @@ POST test/_search?filter_path=hits.total
       "flag": "foo"
     }
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-update-by-query/14.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/14.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "hits" : {
     "total" : 1
   }
