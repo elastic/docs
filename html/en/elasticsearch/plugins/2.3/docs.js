@@ -2,12 +2,15 @@ jQuery(function() {
   // Move rtp container to top right and make visible
   jQuery('#rtpcontainer').prependTo('#guide').show();
 
+  var default_console_url = 'http://localhost:5601/app/console/';
   var default_sense_url = 'http://localhost:5601/app/sense/';
   var default_sense_url_marvel = 'http://localhost:9200/_plugin/marvel/sense/';
+  var console_url = jQuery.cookie('console_url') || default_console_url;
   var sense_url = jQuery.cookie('sense_url') || default_sense_url;
 
   // Enable Sense widget
   init_sense_widgets(sense_url);
+  init_console_widgets(console_url);
 
   function init_sense_widgets(sense_url) {
     var base_url = window.location.href.replace(/\/[^/?]+(?:\?.*)?$/, '/')
@@ -31,6 +34,29 @@ jQuery(function() {
         });
   }
 
+  function init_console_widgets(console_url) {
+    var base_url = window.location.href.replace(/\/[^/?]+(?:\?.*)?$/, '/')
+      .replace(/^http:/, 'https:');
+
+    jQuery('div.console_widget')
+      .each(
+        function() {
+          var div = jQuery(this);
+          var snippet = div.attr('data-snippet');
+          div
+            .html('<a class="console_widget" target="console" '
+              + 'title="Open snippet in Console" '
+              + 'href="'
+              + console_url
+              + '?load_from='
+              + base_url
+              + snippet
+              + '">View in Console</a>'
+              + '<a class="console_settings" title="Configure Console URL">&nbsp;</a>');
+          div.find('a.console_settings').click(console_settings);
+        });
+  }
+
   function sense_settings(e) {
     e.stopPropagation();
     if (jQuery('#sense_settings').length > 0) {
@@ -47,7 +73,9 @@ jQuery(function() {
       + '<button id="reset_url"   type="button">Default Sense URL</button>'
       + '<button id="reset_url_1" type="button">Default Sense v1 URL (Marvel)</button>'
       + '<p>Or install <a href="https://www.elastic.co/guide/en/sense/current/installing.html">'
-      + 'the Sense 2 editor' + '</a>.</p>' + '</form></div>');
+      + 'the Sense 2 editor'
+      + '</a>.</p>'
+      + '</form></div>');
     jQuery('body').prepend(div);
 
     div.find('#save_url').click(function(e) {
@@ -68,6 +96,44 @@ jQuery(function() {
     });
     div.find('#reset_url_1').click(function(e) {
       jQuery('#sense_url').val(default_sense_url_marvel);
+      e.stopPropagation();
+    });
+  }
+
+  function console_settings(e) {
+    e.stopPropagation();
+    if (jQuery('#console_settings').length > 0) {
+      return;
+    }
+
+    var div = jQuery('<div id="console_settings">'
+      + '<form>'
+      + '<label for="console_url">Enter the URL of the Console editor:</label>'
+      + '<input id="console_url" type="text" value="'
+      + console_url
+      + '" />'
+      + '<button id="save_url"    type="button">Save</button>'
+      + '<button id="reset_url"   type="button">Default Console URL</button>'
+      + '<p>Or install <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">'
+      + 'Kibana'
+      + '</a>.</p>'
+      + '</form></div>');
+    jQuery('body').prepend(div);
+
+    div.find('#save_url').click(function(e) {
+      var new_url = jQuery('#console_url').val() || default_console_url;
+      if (new_url === default_console_url) {
+        jQuery.cookie('console_url', '');
+      } else {
+        jQuery.cookie('console_url', new_url);
+      }
+      console_url = new_url;
+      init_console_widgets(console_url);
+      div.remove();
+      e.stopPropagation();
+    });
+    div.find('#reset_url').click(function(e) {
+      jQuery('#console_url').val(default_console_url);
       e.stopPropagation();
     });
   }
@@ -125,7 +191,8 @@ jQuery(function() {
         }).fail(
           function() {
             v_selected.attr('selected', 'selected');
-            alert('This page is not available in the ' + version
+            alert('This page is not available in the '
+              + version
               + ' version of the docs.')
           });
       });
