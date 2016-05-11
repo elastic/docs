@@ -1004,23 +1004,29 @@ version&#39;s documentation here</a>.
            
           <a href="analysis-lang-analyzer.html">Language Analyzers
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="analysis-pattern-analyzer"></a>Pattern Analyzer<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/analyzers/pattern-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>An analyzer of type <code class="literal">pattern</code> that can flexibly separate text into terms
-via a regular expression. Accepts the following settings:</p><p>The following are settings that can be set for a <code class="literal">pattern</code> analyzer
-type:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">lowercase</code>
-</p>
-</td><td valign="top">
-<p>
-Should terms be lowercased or not. Defaults to <code class="literal">true</code>.
-</p>
-</td></tr><tr><td valign="top">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="analysis-pattern-analyzer"></a>Pattern Analyzer<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/analyzers/pattern-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">pattern</code> analyzer uses a regular expression to split the text into terms.
+The regular expression should match the <span class="strong"><strong>token separators</strong></span>  not the tokens
+themselves. The regular expression defaults to <code class="literal">\W+</code> (or all non-word characters).</p><h3><a id="_definition_6"></a>Definition<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/analyzers/pattern-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>It consists of:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Tokenizer
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="analysis-pattern-tokenizer.html" title="Pattern Tokenizer">Pattern Tokenizer</a>
+</li></ul></div></dd><dt><span class="term">
+Token Filters
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="analysis-lowercase-tokenfilter.html" title="Lowercase Token Filter">Lower Case Token Filter</a>
+</li><li class="listitem">
+<a class="link" href="analysis-stop-tokenfilter.html" title="Stop Token Filter">Stop Token Filter</a> (disabled by default)
+</li></ul></div></dd></dl></div><h3><a id="_example_output_6"></a>Example output<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/analyzers/pattern-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _analyze
+{
+  "analyzer": "pattern",
+  "text": "The 2 QUICK Brown-Foxes jumped over the lazy dog's bone."
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-pattern-analyzer/1.json"></div><p>The above sentence would produce the following terms:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">[ the, 2, quick, brown, foxes, jumped, over, the, lazy, dog, s, bone ]</pre></div><h3><a id="_configuration_6"></a>Configuration<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/analyzers/pattern-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">pattern</code> analyzer accepts the following parameters:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">pattern</code>
 </p>
 </td><td valign="top">
 <p>
-The regular expression pattern, defaults to <code class="literal">\W+</code>.
+    A <a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html" target="_top">Java regular expression</a>, defaults to <code class="literal">\W+</code>.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -1028,7 +1034,25 @@ The regular expression pattern, defaults to <code class="literal">\W+</code>.
 </p>
 </td><td valign="top">
 <p>
-The regular expression flags.
+    Java regular expression <a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#field.summary" target="_top">flags</a>.
+    lags should be pipe-separated, eg <code class="literal">"CASE_INSENSITIVE|COMMENTS"</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">lowercase</code>
+</p>
+</td><td valign="top">
+<p>
+    Should terms be lowercased or not. Defaults to <code class="literal">true</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">max_token_length</code>
+</p>
+</td><td valign="top">
+<p>
+    The maximum token length. If a token is seen that exceeds this length then
+    it is split at <code class="literal">max_token_length</code> intervals. Defaults to <code class="literal">255</code>.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -1036,22 +1060,28 @@ The regular expression flags.
 </p>
 </td><td valign="top">
 <p>
-A list of stopwords to initialize the stop filter with.
-                Defaults to an <span class="emphasis"><em>empty</em></span> stopword list Check
-                <a class="link" href="analysis-stop-analyzer.html" title="Stop Analyzer">Stop Analyzer</a> for more details.
+    A pre-defined stop words list like <code class="literal">_english_</code> or an array  containing a
+    list of stop words.  Defaults to <code class="literal">_none_</code>.
 </p>
-</td></tr></tbody></table></div><p><span class="strong"><strong>IMPORTANT</strong></span>: The regular expression should match the <span class="strong"><strong>token separators</strong></span>,
-not the tokens themselves.</p><p>Flags should be pipe-separated, eg <code class="literal">"CASE_INSENSITIVE|COMMENTS"</code>. Check
-<a class="ulink" href="http://download.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#field_summary" target="_top">Java
-Pattern API</a> for more details about <code class="literal">flags</code> options.</p><h4><a id="_pattern_analyzer_examples"></a>Pattern Analyzer Examples<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/analyzers/pattern-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In order to try out these examples, you should delete the <code class="literal">test</code> index
-before running each example.</p><h5><a id="_whitespace_tokenizer"></a>Whitespace tokenizer<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/analyzers/pattern-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">stopwords_path</code>
+</p>
+</td><td valign="top">
+<p>
+    The path to a file containing stop words.
+</p>
+</td></tr></tbody></table></div><p>See the <a class="link" href="analysis-stop-tokenfilter.html" title="Stop Token Filter">Stop Token Filter</a> for more information
+about stop word configuration.</p><h3><a id="_example_configuration_3"></a>Example configuration<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/analyzers/pattern-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In this example, we configure the <code class="literal">pattern</code> analyzer to split email addresses
+on non-word characters or on underscores (<code class="literal">\W|_</code>), and to lower-case the result:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
   "settings": {
     "analysis": {
       "analyzer": {
-        "whitespace": {
-          "type": "pattern",
-          "pattern": "\\s+"
+        "my_email_analyzer": {
+          "type":      "pattern",
+          "pattern":   "\\W|_", <a id="CO231-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "lowercase": true
         }
       }
     }
@@ -1060,28 +1090,14 @@ before running each example.</p><h5><a id="_whitespace_tokenizer"></a>Whitespace
 
 GET _cluster/health?wait_for_status=yellow
 
-GET test/_analyze?analyzer=whitespace&amp;text=foo,bar baz
-# "foo,bar", "baz"</pre></div><div class="console_widget" data-snippet="snippets/analysis-pattern-analyzer/1.json"></div><h5><a id="_non_word_character_tokenizer"></a>Non-word character tokenizer<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/analyzers/pattern-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test
+POST my_index/_analyze
 {
-  "settings": {
-    "analysis": {
-      "analyzer": {
-        "nonword": {
-          "type": "pattern",
-          "pattern": "[^\\w]+" <a id="CO229-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        }
-      }
-    }
-  }
-}
-
-GET _cluster/health?wait_for_status=yellow
-
-GET test/_analyze?analyzer=nonword&amp;text=foo,bar baz
-# "foo,bar baz" becomes "foo", "bar", "baz"
-
-GET test/_analyze?analyzer=nonword&amp;text=type_1-type_4
-# "type_1","type_4"</pre></div><div class="console_widget" data-snippet="snippets/analysis-pattern-analyzer/2.json"></div><h5><a id="_camelcase_tokenizer"></a>CamelCase tokenizer<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/analyzers/pattern-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test?pretty=1
+  "analyzer": "my_email_analyzer",
+  "text": "John_Smith@foo-bar.com"
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-pattern-analyzer/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO231-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The backslashes in the pattern need to be escaped when specifying the
+    pattern as a JSON string.
+</p></td></tr></table></div><p>The above example produces the following terms:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">[ john, smith, foo, bar, com ]</pre></div><h4><a id="_camelcase_tokenizer"></a>CamelCase tokenizer<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/analyzers/pattern-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The following more complicated example splits CamelCase text into tokens:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
   "settings": {
     "analysis": {
@@ -1097,8 +1113,11 @@ GET test/_analyze?analyzer=nonword&amp;text=type_1-type_4
 
 GET _cluster/health?wait_for_status=yellow
 
-GET test/_analyze?analyzer=camel&amp;text=MooseX::FTPClass2_beta
-# "moose","x","ftp","class","2","beta"</pre></div><div class="console_widget" data-snippet="snippets/analysis-pattern-analyzer/3.json"></div><p>The regex above is easier to understand as:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  ([^\p{L}\d]+)                 # swallow non letters and numbers,
+GET my_index/_analyze
+{
+  "analyzer": "camel",
+  "text": "MooseX::FTPClass2_beta"
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-pattern-analyzer/3.json"></div><p>The above example produces the following terms:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">[ moose, x, ftp, class, 2, beta ]</pre></div><p>The regex above is easier to understand as:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  ([^\p{L}\d]+)                 # swallow non letters and numbers,
 | (?&lt;=\D)(?=\d)                 # or non-number followed by number,
 | (?&lt;=\d)(?=\D)                 # or number followed by non-number,
 | (?&lt;=[ \p{L} &amp;&amp; [^\p{Lu}]])    # or lower case
