@@ -1046,14 +1046,14 @@ Shortcuts for list, map access using the dot <code class="literal">.</code> oper
 {"index":{"_id":10}}
 {"first":"mikael","last":"backlund","goals":[3,15,13],"assists":[6,24,18],"gp":[26,82,82]}
 {"index":{"_id":11}}
-{"first":"joe","last":"colborne","goals":[3,18,13],"assists":[6,20,24],"gp":[26,67,82]}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/1.json"></div><h3><a id="_accessing_doc_values_from_painless"></a>Accessing Doc Values from Painless<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>All Painless scripts take in a <code class="literal">Map&lt;String,def&gt;</code> of values called <code class="literal">input</code>.  Document values can be accessed through another <code class="literal">Map&lt;String,def&gt;</code> within the <code class="literal">input</code> variable.</p><p>For example, the following script calculates a player’s total goals. This example uses a strongly typed <code class="literal">int</code> and a <code class="literal">for</code> loop.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
+{"first":"joe","last":"colborne","goals":[3,18,13],"assists":[6,20,24],"gp":[26,67,82]}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/1.json"></div><h3><a id="_accessing_doc_values_from_painless"></a>Accessing Doc Values from Painless<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Document values can be accessed from a <code class="literal">Map&lt;String,def&gt;</code> named <code class="literal">doc</code>.</p><p>For example, the following script calculates a player’s total goals. This example uses a strongly typed <code class="literal">int</code> and a <code class="literal">for</code> loop.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
 {
   "query": {
     "function_score": {
       "script_score": {
         "script": {
           "lang": "painless",
-          "inline": "int total = 0; for (int i = 0; i &lt; input.doc['goals'].size(); ++i) { total += input.doc['goals'][i]; } return total;"
+          "inline": "int total = 0; for (int i = 0; i &lt; doc['goals'].length; ++i) { total += doc['goals'][i]; } return total;"
         }
       }
     }
@@ -1067,12 +1067,12 @@ Shortcuts for list, map access using the dot <code class="literal">.</code> oper
     "total_goals": {
       "script": {
         "lang": "painless",
-        "inline": "int total = 0; for (int i = 0; i &lt; input.doc['goals'].size(); ++i) { total += input.doc['goals'][i]; } return total;"
+        "inline": "int total = 0; for (int i = 0; i &lt; doc['goals'].length; ++i) { total += doc['goals'][i]; } return total;"
       }
     }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/3.json"></div><p>The following example uses a Painless script to sort the players by their combined first and last names. The names are accessed using
-<code class="literal">input.doc['first'].value</code> and <code class="literal">input.doc['last'].value</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
+<code class="literal">doc['first'].value</code> and <code class="literal">doc['last'].value</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
 {
   "query": {
     "match_all": {}
@@ -1083,11 +1083,11 @@ Shortcuts for list, map access using the dot <code class="literal">.</code> oper
       "order": "asc",
       "script": {
         "lang": "painless",
-        "inline": "input.doc['first'].value + ' ' + input.doc['last'].value"
+        "inline": "doc['first'].value + ' ' + doc['last'].value"
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/4.json"></div><h3><a id="_updating_fields_with_painless"></a>Updating Fields with Painless<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can also easily update fields. You access the original source for a field as <code class="literal">input.ctx._source.&lt;field-name&gt;</code>.</p><p>First, let’s look at the source data for a player by submitting the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
+}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/4.json"></div><h3><a id="_updating_fields_with_painless"></a>Updating Fields with Painless<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can also easily update fields. You access the original source for a field as <code class="literal">ctx._source.&lt;field-name&gt;</code>.</p><p>First, let’s look at the source data for a player by submitting the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
 {
   "fields": [
     "_id",
@@ -1098,11 +1098,11 @@ Shortcuts for list, map access using the dot <code class="literal">.</code> oper
       "_id": 1
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/5.json"></div><p>To change player 1’s last name to <code class="literal">hockey</code>, simply set <code class="literal">input.ctx._source.last</code> to the new value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/1/_update
+}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/5.json"></div><p>To change player 1’s last name to <code class="literal">hockey</code>, simply set <code class="literal">ctx._source.last</code> to the new value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/1/_update
 {
   "script": {
     "lang": "painless",
-    "inline": "input.ctx._source.last = input.last",
+    "inline": "ctx._source.last = params.last",
     "params": {
       "last": "hockey"
     }
@@ -1112,7 +1112,7 @@ the player’s nickname,  <span class="emphasis"><em>hockey</em></span>.</p><div
 {
   "script": {
     "lang": "painless",
-    "inline": "input.ctx._source.last = input.last input.ctx._source.nick = input.nick",
+    "inline": "ctx._source.last = params.last ctx._source.nick = params.nick",
     "params": {
       "last": "gaudreau",
       "nick": "hockey"
