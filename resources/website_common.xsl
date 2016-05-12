@@ -39,6 +39,21 @@
     </meta>
   </xsl:template>
 
+  <!--  title element -->
+  <xsl:template name="user.head.title">
+    <xsl:param name="node" select="."/>
+    <xsl:param name="title"/>
+    <xsl:variable name="home" select="/*[1]"/>
+
+    <title>
+      <xsl:copy-of select="$title"/>
+      <xsl:if test="$node != $home">
+        | <xsl:apply-templates select="$home" mode="object.title.markup.textonly"/>
+      </xsl:if>
+      | Elastic
+    </title>
+  </xsl:template>
+
   <!-- Edit me links -->
 
   <xsl:template match="processing-instruction('edit_url')"/>
