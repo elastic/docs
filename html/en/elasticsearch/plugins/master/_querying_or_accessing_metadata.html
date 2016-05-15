@@ -2,10 +2,10 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Copy To feature
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Querying or accessing metadata
         | Elasticsearch Plugins and Integrations [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="mapper-attachments.html" title="Mapper Attachments Plugin" /><link rel="prev" href="mapper-attachments-usage.html" title="Usage" /><link rel="next" href="mapper-attachments-querying-metadata.html" title="Querying or accessing metadata" /><meta name="DC.type" content="Docs/Elasticsearch/Plugins/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="mapper-attachments.html" title="Mapper Attachments Plugin" /><link rel="prev" href="mapper-attachments-usage.html" title="Usage" /><link rel="next" href="mapper-attachments-indexed-characters.html" title="Indexed Characters" /><meta name="DC.type" content="Docs/Elasticsearch/Plugins/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -999,40 +999,76 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="mapper.html">Mapper Plugins</a></span> » <span class="breadcrumb-link"><a href="mapper-attachments.html">Mapper Attachments Plugin</a></span> » <span class="breadcrumb-node">Copy To feature</span></div><div class="navheader"><span class="prev"><a href="mapper-attachments-usage.html">
+    </a></span> » <span class="breadcrumb-link"><a href="mapper.html">Mapper Plugins</a></span> » <span class="breadcrumb-link"><a href="mapper-attachments.html">Mapper Attachments Plugin</a></span> » <span class="breadcrumb-node">Querying or accessing metadata</span></div><div class="navheader"><span class="prev"><a href="mapper-attachments-usage.html">
               « 
               Usage</a>
            
         </span><span class="next">
            
-          <a href="mapper-attachments-querying-metadata.html">Querying or accessing metadata
+          <a href="mapper-attachments-indexed-characters.html">Indexed Characters
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="mapper-attachments-copy-to"></a>Copy To feature<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/mapper-attachments.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you want to use <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/copy-to.html" target="_top">copy_to</a>
-feature, you need to define it on each sub-field you want to copy to another field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test/person/_mapping
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_querying_or_accessing_metadata"></a>Querying or accessing metadata<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/mapper-attachments.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you need to query on metadata fields, use the attachment field name dot the metadata field. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE /test
+PUT /test
+PUT /test/person/_mapping
 {
   "person": {
     "properties": {
       "file": {
         "type": "attachment",
         "fields": {
-          "content": {
+          "content_type": {
             "type": "text",
-            "copy_to": "copy"
+            "store": true
           }
         }
-      },
-      "copy": {
-        "type": "text"
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/mapper-attachments-copy-to/1.json"></div><p>In this example, the extracted content will be copy as well to <code class="literal">copy</code> field.</p></div><div class="navfooter"><span class="prev"><a href="mapper-attachments-usage.html">
+}
+PUT /test/person/1?refresh=true
+{
+  "file": "IkdvZCBTYXZlIHRoZSBRdWVlbiIgKGFsdGVybmF0aXZlbHkgIkdvZCBTYXZlIHRoZSBLaW5nIg=="
+}
+GET /test/person/_search
+{
+  "fields": [ "file.content_type" ],
+  "query": {
+    "match": {
+      "file.content_type": "text plain"
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/_querying_or_accessing_metadata/1.json"></div><p>Will give you:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "took": 2,
+   "timed_out": false,
+   "_shards": {
+      "total": 5,
+      "successful": 5,
+      "failed": 0
+   },
+   "hits": {
+      "total": 1,
+      "max_score": 0.16273327,
+      "hits": [
+         {
+            "_index": "test",
+            "_type": "person",
+            "_id": "1",
+            "_score": 0.16273327,
+            "fields": {
+               "file.content_type": [
+                  "text/plain; charset=ISO-8859-1"
+               ]
+            }
+         }
+      ]
+   }
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="mapper-attachments-usage.html">
               « 
               Usage</a>
            
         </span><span class="next">
            
-          <a href="mapper-attachments-querying-metadata.html">Querying or accessing metadata
+          <a href="mapper-attachments-indexed-characters.html">Indexed Characters
                »
             </a></span></div>
 <!-- end body -->
