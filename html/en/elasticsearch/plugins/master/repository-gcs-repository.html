@@ -2,10 +2,10 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Snapshot/Restore Repository Plugins
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Create a Repository
         | Elasticsearch Plugins and Integrations [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="prev" href="security.html" title="Security Plugins" /><link rel="next" href="repository-azure.html" title="Azure Repository Plugin" /><meta name="DC.type" content="Docs/Elasticsearch/Plugins/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="repository-gcs.html" title="Google Cloud Storage Repository Plugin" /><link rel="prev" href="repository-gcs-usage.html" title="Getting started" /><link rel="next" href="store.html" title="Store Plugins" /><meta name="DC.type" content="Docs/Elasticsearch/Plugins/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -999,41 +999,61 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [master]
-    </a></span> » <span class="breadcrumb-node">Snapshot/Restore Repository Plugins</span></div><div class="navheader"><span class="prev"><a href="security.html">
+    </a></span> » <span class="breadcrumb-link"><a href="repository.html">Snapshot/Restore Repository Plugins</a></span> » <span class="breadcrumb-link"><a href="repository-gcs.html">Google Cloud Storage Repository Plugin</a></span> » <span class="breadcrumb-node">Create a Repository</span></div><div class="navheader"><span class="prev"><a href="repository-gcs-usage.html">
               « 
-              Security Plugins</a>
+              Getting started</a>
            
         </span><span class="next">
            
-          <a href="repository-azure.html">Azure Repository Plugin
+          <a href="store.html">Store Plugins
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="repository"></a>Snapshot/Restore Repository Plugins<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Repository plugins extend the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/modules-snapshots.html" target="_top">Snapshot/Restore</a>
-functionality in Elasticsearch by adding repositories backed by the cloud or
-by distributed file systems:</p><h4><a id="_core_repository_plugins"></a>Core repository plugins<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The core repository plugins are:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<a class="link" href="repository-s3.html" title="S3 Repository Plugin">S3 Repository</a>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="repository-gcs-repository"></a>Create a Repository<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-gcs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Once everything is installed and every node is started, you can create a new repository that
+uses Google Cloud Storage to store snapshots:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT _snapshot/my_gcs_repository
+{
+  "type": "gcs",
+  "settings": {
+    "bucket": "my_bucket",
+    "service_account": "service_account.json"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/repository-gcs-repository/1.json"></div><p>The following settings are supported:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">bucket</code>
 </span></dt><dd>
-The S3 repository plugin adds support for using S3 as a repository.
+    The name of the bucket to be used for snapshots. (Mandatory)
 </dd><dt><span class="term">
-<a class="link" href="repository-azure.html" title="Azure Repository Plugin">Azure Repository</a>
+<code class="literal">service_account</code>
 </span></dt><dd>
-The Azure repository plugin adds support for using Azure as a repository.
+    The service account to use. It can be a relative path to a service account JSON file
+    or the value <code class="literal">_default_</code> that indicate to use built-in Compute Engine service account.
 </dd><dt><span class="term">
-<a class="link" href="repository-hdfs.html" title="Hadoop HDFS Repository Plugin">HDFS Repository</a>
+<code class="literal">base_path</code>
 </span></dt><dd>
-The Hadoop HDFS Repository plugin adds support for using HDFS as a repository.
+    Specifies the path within bucket to repository data. Defaults to
+    the root of the bucket.
 </dd><dt><span class="term">
-<a class="link" href="repository-gcs.html" title="Google Cloud Storage Repository Plugin">Google Cloud Storage Repository</a>
+<code class="literal">chunk_size</code>
 </span></dt><dd>
-The GCS repository plugin adds support for using Google Cloud Storage service as a repository.
-</dd></dl></div><h3><a id="_community_contributed_repository_plugins"></a>Community contributed repository plugins<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following plugin has been contributed by our community:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="https://github.com/wikimedia/search-repository-swift" target="_top">Openstack Swift</a> (by Wikimedia Foundation)
-</li></ul></div></div><div class="navfooter"><span class="prev"><a href="security.html">
+    Big files can be broken down into chunks during snapshotting if needed.
+    The chunk size can be specified in bytes or by using size value notation,
+    i.e. <code class="literal">1g</code>, <code class="literal">10m</code>, <code class="literal">5k</code>. Defaults to <code class="literal">100m</code>.
+</dd><dt><span class="term">
+<code class="literal">compress</code>
+</span></dt><dd>
+    When set to <code class="literal">true</code> metadata files are stored in compressed format. This
+    setting doesn’t affect index files that are already compressed by default.
+    Defaults to <code class="literal">false</code>.
+</dd><dt><span class="term">
+<code class="literal">application_name</code>
+</span></dt><dd>
+    Name used by the plugin when it uses the Google Cloud JSON API. Setting
+    a custom name can be useful to authenticate your cluster when requests
+    statistics are logged in the Google Cloud Platform. Default to <code class="literal">repository-gcs</code>
+</dd></dl></div></div><div class="navfooter"><span class="prev"><a href="repository-gcs-usage.html">
               « 
-              Security Plugins</a>
+              Getting started</a>
            
         </span><span class="next">
            
-          <a href="repository-azure.html">Azure Repository Plugin
+          <a href="store.html">Store Plugins
                »
             </a></span></div>
 <!-- end body -->
