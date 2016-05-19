@@ -1009,10 +1009,27 @@ version&#39;s documentation here</a>.
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-post-filter"></a>Post filter<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/post-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">post_filter</code> is applied to the search <code class="literal">hits</code> at the very end of a search
 request,  after aggregations have already been calculated. Its purpose is
-best explained by example:</p><p>Imagine that you are selling shirts, and the user has specified two filters:
-<code class="literal">color:red</code> and <code class="literal">brand:gucci</code>.  You only want to show them red shirts made by
+best explained by example:</p><p>Imagine that you are selling shirts that have the following properties:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /shirts
+{
+    "mappings": {
+        "item": {
+            "properties": {
+                "brand": { "type": "keyword"},
+                "color": { "type": "keyword"},
+                "model": { "type": "keyword"}
+            }
+        }
+    }
+}
+
+PUT /shirts/item/1?refresh
+{
+    "brand": "gucci",
+    "color": "red",
+    "model": "slim"
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-post-filter/1.json"></div><p>Imagine a user has specified two filters:</p><p><code class="literal">color:red</code> and <code class="literal">brand:gucci</code>.  You only want to show them red shirts made by
 Gucci in the search results.  Normally you would do this with a
-<a class="link" href="query-dsl-bool-query.html" title="Bool Query"><code class="literal">bool</code> query</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET localhost:9200/shirts/_search -d '
+<a class="link" href="query-dsl-bool-query.html" title="Bool Query"><code class="literal">bool</code> query</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /shirts/_search
 {
   "query": {
     "bool": {
@@ -1022,12 +1039,11 @@ Gucci in the search results.  Normally you would do this with a
       ]
     }
   }
-}
-'</pre></div><p>However, you would also like to use <span class="emphasis"><em>faceted navigation</em></span> to display a list of
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-post-filter/2.json"></div><p>However, you would also like to use <span class="emphasis"><em>faceted navigation</em></span> to display a list of
 other options that the user could click on.  Perhaps you have a <code class="literal">model</code> field
 that would allow the user to limit their search results to red Gucci
 <code class="literal">t-shirts</code> or <code class="literal">dress-shirts</code>.</p><p>This can be done with a
-<a class="link" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation"><code class="literal">terms</code> aggregation</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET localhost:9200/shirts/_search -d '
+<a class="link" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation"><code class="literal">terms</code> aggregation</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /shirts/_search
 {
   "query": {
     "bool": {
@@ -1042,20 +1058,19 @@ that would allow the user to limit their search results to red Gucci
       "terms": { "field": "model" } <a id="CO15-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
   }
-}
-'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-post-filter/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Returns the most popular models of red shirts by Gucci.
 </p></td></tr></table></div><p>But perhaps you would also like to tell the user how many Gucci shirts are
 available in <span class="strong"><strong>other colors</strong></span>. If you just add a <code class="literal">terms</code> aggregation on the
 <code class="literal">color</code> field, you will only get back the color <code class="literal">red</code>, because your query
 returns only red shirts by Gucci.</p><p>Instead, you want to include shirts of all colors during aggregation, then
 apply the <code class="literal">colors</code> filter only to the search results.  This is the purpose of
-the <code class="literal">post_filter</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET localhost:9200/shirts/_search -d '
+the <code class="literal">post_filter</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /shirts/_search
 {
   "query": {
     "bool": {
       "filter": {
-        { "term": { "brand": "gucci" }} <a id="CO16-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "term": { "brand": "gucci" } <a id="CO16-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
       }
     }
   },
@@ -1077,8 +1092,7 @@ the <code class="literal">post_filter</code>:</p><div class="pre_wrapper"><pre c
   "post_filter": { <a id="CO16-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
     "term": { "color": "red" }
   }
-}
-'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-post-filter/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The main query now finds all shirts by Gucci, regardless of color.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">colors</code> agg returns popular colors for shirts by Gucci.
