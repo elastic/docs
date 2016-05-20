@@ -1270,12 +1270,11 @@ the search request is used to highlight the hits.</p><h5><a id="_example_3"></a>
   }
 }</pre></div><p>Instead of the query in the search request highlighting the percolator hits, the percolator queries are highlighting
 the document defined in the <code class="literal">percolate</code> query.</p><h4><a id="_how_it_works_under_the_hood"></a>How it Works Under the Hood<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When indexing a document into an index that has the <a class="link" href="percolator.html" title="Percolator type">percolator field type</a> mapping configured, the query
-part of the documents gets parsed into a Lucene query and is kept in memory until that percolator document is removed.
-So, all the active percolator queries are kept in memory.</p><p>At search time, the document specified in the request gets parsed into a Lucene document and is stored in a in-memory
-temporary Lucene index. This in-memory index can just hold this one document and it is optimized for that. Then all the queries
-that are registered to the index that the search request is targeted for, are going to be executed on this single document
-in-memory index. This happens on each shard the search request needs to execute.</p><p>By using <code class="literal">routing</code> or additional queries the amount of percolator queries that need to be executed can be reduced and thus
-the time the search API needs to run can be decreased.</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-script-query.html">
+part of the documents gets parsed into a Lucene query and are stored into the Lucene index. A binary representation
+of the query gets stored, but also the query’s terms are analyzed and stored into an indexed field.</p><p>At search time, the document specified in the request gets parsed into a Lucene document and is stored in a in-memory
+temporary Lucene index. This in-memory index can just hold this one document and it is optimized for that. After this
+a special query is build based on the terms in the in-memory index that select candidate percolator queries based on
+their indexed query terms. These queries are then evaluated by the in-memory index if they actually match.</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-script-query.html">
               « 
               Script Query</a>
            
