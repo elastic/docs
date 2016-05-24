@@ -1012,37 +1012,46 @@ retrieved by a query. This can be useful if, for example, a score
 function is computationally expensive and it is sufficient to compute
 the score on a filtered set of documents.</p><p>To use <code class="literal">function_score</code>, the user has to define a query and one or
 more functions, that compute a new score for each document returned
-by the query.</p><p><code class="literal">function_score</code> can be used with only one function like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"function_score": {
-    "query": {},
-    "boost": "boost for the whole query",
-    "FUNCTION": {}, <a id="CO141-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    "boost_mode":"(multiply|replace|...)"
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO141-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+by the query.</p><p><code class="literal">function_score</code> can be used with only one function like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
+    "query": {
+        "function_score": {
+            "query": {},
+            "boost": "5",
+            "random_score": {}, <a id="CO141-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "boost_mode":"multiply"
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-function-score-query/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO141-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 See <a class="xref" href="query-dsl-function-score-query.html#score-functions">Function Score Query</a> for a list of supported functions.
 </p></td></tr></table></div><p>Furthermore, several functions can be combined. In this case one can
 optionally choose to apply the function only if a document matches a
-given filtering query</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"function_score": {
-    "query": {},
-    "boost": "boost for the whole query",
-    "functions": [
-        {
-            "filter": {},
-            "FUNCTION": {}, <a id="CO142-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            "weight": number
-        },
-        {
-            "FUNCTION": {} <a id="CO142-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-        },
-        {
-            "filter": {},
-            "weight": number
+given filtering query</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
+    "query": {
+        "function_score": {
+          "query": {},
+          "boost": "5", <a id="CO142-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "functions": [
+              {
+                  "filter": {},
+                  "random_score": {}, <a id="CO142-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                  "weight": 23
+              },
+              {
+                  "filter": {},
+                  "weight": 42
+              }
+          ],
+          "max_boost": 42,
+          "score_mode": "max",
+          "boost_mode": "multiply",
+          "min_score" : 42
         }
-    ],
-    "max_boost": number,
-    "score_mode": "(multiply|max|...)",
-    "boost_mode": "(multiply|replace|...)",
-    "min_score" : number
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO142-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO142-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-function-score-query/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO142-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Boost for the whole query.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO142-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 See <a class="xref" href="query-dsl-function-score-query.html#score-functions">Function Score Query</a> for a list of supported functions.
 </p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The scores produced by the filtering query of each function do not matter.</p></div></div><p>If no query is given with a function this is equivalent to specifying
 <code class="literal">"match_all": {}</code></p><p>First, each document is scored by the defined functions. The parameter
@@ -1382,37 +1391,37 @@ This decay function could also be <code class="literal">linear</code> or <code c
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO146-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This decay function could also be <code class="literal">linear</code> or <code class="literal">exp</code>.
 </p></td></tr></table></div><p>Suppose you want to multiply these two functions on the original score,
-the request would look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _search
+the request would look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
 {
-  "query": {
-    "function_score": {
-      "functions": [
-        {
-          "gauss": {
-            "price": {
-              "origin": "0",
-              "scale": "20"
+    "query": {
+        "function_score": {
+          "functions": [
+            {
+              "gauss": {
+                "price": {
+                  "origin": "0",
+                  "scale": "20"
+                }
+              }
+            },
+            {
+              "gauss": {
+                "location": {
+                  "origin": "11, 12",
+                  "scale": "2km"
+                }
+              }
             }
-          }
-        },
-        {
-          "gauss": {
-            "location": {
-              "origin": "11, 12",
-              "scale": "2km"
+          ],
+          "query": {
+            "match": {
+              "properties": "balcony"
             }
-          }
+          },
+          "score_mode": "multiply"
         }
-      ],
-      "query": {
-        "match": {
-          "properties": "balcony"
-        }
-      },
-      "score_mode": "multiply"
     }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-function-score-query/1.json"></div><p>Next, we show how the computed score looks like for each of the three
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-function-score-query/3.json"></div><p>Next, we show how the computed score looks like for each of the three
 possible decay functions.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="gauss-decay"></a>Normal decay, keyword <code class="literal">gauss</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/function-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>When choosing <code class="literal">gauss</code> as the decay function in the above example, the
 contour and surface plot of the multiplier looks like this:</p><div class="informalfigure"><div class="mediaobject"><img src="https://f.cloud.github.com/assets/4320215/768157/cd0e18a6-e898-11e2-9b3c-f0145078bd6f.png" width="700" alt="https://f.cloud.github.com/assets/4320215/768157/cd0e18a6-e898-11e2-9b3c-f0145078bd6f.png" /></div></div><div class="informalfigure"><div class="mediaobject"><img src="https://f.cloud.github.com/assets/4320215/768160/ec43c928-e898-11e2-8e0d-f3c4519dbd89.png" width="700" alt="https://f.cloud.github.com/assets/4320215/768160/ec43c928-e898-11e2-8e0d-f3c4519dbd89.png" /></div></div><p>Suppose your original search results matches three hotels :</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 "Backback Nap"

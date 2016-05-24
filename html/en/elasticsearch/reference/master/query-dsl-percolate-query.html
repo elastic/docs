@@ -1010,25 +1010,25 @@ version&#39;s documentation here</a>.
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-percolate-query"></a>Percolate Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">percolate</code> query can be used to match queries
 stored in an index. The <code class="literal">percolate</code> query itself
 contains the document that will be used as query
-to match with the stored queries.</p><h3><a id="_sample_usage"></a>Sample Usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Create an index with two mappings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT "http://localhost:9200/my-index" -d'
+to match with the stored queries.</p><h3><a id="_sample_usage"></a>Sample Usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Create an index with two mappings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my-index
 {
-  "mappings": {
-    "doctype": {
-      "properties": {
-        "message": {
-          "type": "string"
+    "mappings": {
+        "doctype": {
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "queries": {
+            "properties": {
+                "query": {
+                    "type": "percolator"
+                }
+            }
         }
-      }
-    },
-    "queries": {
-      "properties": {
-        "query": {
-          "type": "percolator"
-        }
-      }
     }
-  }
-}'</pre></div><p>The <code class="literal">doctype</code> mapping is the mapping used to preprocess
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-percolate-query/1.json"></div><p>The <code class="literal">doctype</code> mapping is the mapping used to preprocess
 the document defined in the <code class="literal">percolator</code> query before it
 gets indexed into a temporary index.</p><p>The <code class="literal">queries</code> mapping is the mapping used for indexing
 the query documents. The <code class="literal">query</code> field will hold a json
@@ -1036,13 +1036,15 @@ object that represents an actual Elasticsearch query. The
 <code class="literal">query</code> field has been configured to use the
 <a class="link" href="percolator.html" title="Percolator type">percolator field type</a>. This field type understands
 the query dsl and stored the query in such a way that it
-can be used later on to match documents defined on the <code class="literal">percolate</code> query.</p><p>Register a query in the percolator:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT 'localhost:9200/my-index/queries/1' -d '{
+can be used later on to match documents defined on the <code class="literal">percolate</code> query.</p><p>Register a query in the percolator:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my-index/queries/1
+{
     "query" : {
         "match" : {
             "message" : "bonsai tree"
         }
     }
-}'</pre></div><p>Match a document to the registered percolator queries:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/my-index/_search' -d '{
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-percolate-query/2.json"></div><p>Match a document to the registered percolator queries:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my-index/_search
+{
     "query" : {
         "percolate" : {
             "field" : "query",
@@ -1052,7 +1054,7 @@ can be used later on to match documents defined on the <code class="literal">per
             }
         }
     }
-}'</pre></div><p>The above request will yield the following response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-percolate-query/3.json"></div><p>The above request will yield the following response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "took": 5,
   "timed_out": false,
   "_shards": {
@@ -1156,10 +1158,10 @@ Optionally, the expected version of the document to be fetched.
 </p>
 </td></tr></tbody></table></div><h4><a id="_percolating_an_existing_document"></a>Percolating an Existing Document<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In order to percolate a newly indexed document, the <code class="literal">percolate</code> query can be used. Based on the response
 from an index request, the <code class="literal">_id</code> and other meta information can be used to immediately percolate the newly added
-document.</p><h5><a id="_example_2"></a>Example<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Based on the previous example.</p><p>Index the document we want to percolate:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT "http://localhost:9200/my-index/message/1" -d'
+document.</p><h5><a id="_example_2"></a>Example<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Based on the previous example.</p><p>Index the document we want to percolate:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my-index/message/1
 {
   "message" : "A new bonsai tree in the office"
-}'</pre></div><p>Index response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-percolate-query/4.json"></div><p>Index response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "_index": "my-index",
   "_type": "message",
   "_id": "1",
@@ -1170,7 +1172,7 @@ document.</p><h5><a id="_example_2"></a>Example<a href="https://github.com/elast
     "failed": 0
   },
   "created": true
-}</pre></div><p>Percolating an existing document, using the index response as basis to build to new search request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET "http://localhost:9200/my-index/_search" -d'
+}</pre></div><p>Percolating an existing document, using the index response as basis to build to new search request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my-index/_search
 {
     "query" : {
         "percolate" : {
@@ -1182,27 +1184,27 @@ document.</p><h5><a id="_example_2"></a>Example<a href="https://github.com/elast
             "version" : 1 <a id="CO152-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         }
     }
-}'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO152-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-percolate-query/5.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO152-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The version is optional, but useful in certain cases. We can then ensure that we are try to percolate
 the document we just have indexed. A change may be made after we have indexed, and if that is the
 case the then the search request would fail with a version conflict error.
 </p></td></tr></table></div><p>The search response returned is identical as in the previous example.</p><h4><a id="_percolate_query_and_highlighting"></a>Percolate query and highlighting<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">percolate</code> query is handled in a special way when it comes to highlighting. The queries hits are used
 to highlight the document that is provided in the <code class="literal">percolate</code> query. Whereas with regular highlighting the query in
-the search request is used to highlight the hits.</p><h5><a id="_example_3"></a>Example<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>This example is based on the mapping of the first example.</p><p>Save a query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT "http://localhost:9200/my-index/queries/1" -d'
+the search request is used to highlight the hits.</p><h5><a id="_example_3"></a>Example<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>This example is based on the mapping of the first example.</p><p>Save a query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my-index/queries/1
 {
     "query" : {
         "match" : {
             "message" : "brown fox"
         }
     }
-}'</pre></div><p>Save another query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT "http://localhost:9200/my-index/queries/2" -d'
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-percolate-query/6.json"></div><p>Save another query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my-index/queries/2
 {
     "query" : {
         "match" : {
             "message" : "lazy dog"
         }
     }
-}'</pre></div><p>Execute a search request with the <code class="literal">percolate</code> query and highlighting enabled:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET "http://localhost:9200/my-index/_search" -d'
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-percolate-query/7.json"></div><p>Execute a search request with the <code class="literal">percolate</code> query and highlighting enabled:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my-index/_search
 {
     "query" : {
         "percolate" : {
@@ -1218,7 +1220,7 @@ the search request is used to highlight the hits.</p><h5><a id="_example_3"></a>
         "message": {}
       }
     }
-}'</pre></div><p>This will yield the following response.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-percolate-query/8.json"></div><p>This will yield the following response.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "took": 83,
   "timed_out": false,
   "_shards": {
@@ -1281,14 +1283,15 @@ terms are being extracted and indexed with the percolator query. Unfortunately t
 all queries (for example the <code class="literal">wildcard</code> or <code class="literal">geo_shape</code> query) and as a result of that in certain cases the percolator
 can’t do the selecting optimization (for example if an unsupported query is defined in a required clause of a boolean query
 or the unsupported query is the only query in the percolator document).  These queries are marked by the percolator and
-can be found by running the following search:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET "http://localhost:9200/_search" -d'
+can be found by running the following search:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
 {
   "query": {
     "term" : {
       "query.unknown_query" : ""
     }
   }
-}'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The above example assumes that there is a <code class="literal">query</code> field of type <code class="literal">percolator</code> in the mappings.</p></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-script-query.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-percolate-query/9.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The above example assumes that there is a <code class="literal">query</code> field of type
+<code class="literal">percolator</code> in the mappings.</p></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-script-query.html">
               « 
               Script Query</a>
            
