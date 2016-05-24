@@ -1027,7 +1027,10 @@ topbeat.stats:
   filesystem: true
 
   # cpu usage per core, by default is false
-  cpu_per_core: false</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_topbeat_options"></a>Topbeat Options<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/reference/configuration/topbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can specify the following options in the <code class="literal">topbeat</code> section:</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_period"></a>period<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/reference/configuration/topbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>How often, in seconds, to read system-wide and per-process statistics from your servers. The default is 10.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="procs-option"></a>procs<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/reference/configuration/topbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>A list of regular expressions to match all the processes that need to be monitored. By
+  core: false
+
+  # cpu usage expressed in ticks, by default is false
+  cpu_ticks: false</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_topbeat_options"></a>Topbeat Options<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/reference/configuration/topbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can specify the following options in the <code class="literal">topbeat</code> section:</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_period"></a>period<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/reference/configuration/topbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>How often, in seconds, to read system-wide and per-process statistics from your servers. The default is 10.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="procs-option"></a>procs<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/reference/configuration/topbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>A list of regular expressions to match all the processes that need to be monitored. By
 default, all the running processes are monitored.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_stats"></a>stats<a href="https://github.com/elastic/beats/edit/master/topbeat/docs/reference/configuration/topbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The statistics to collect. You can specify the following settings:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">system</code> to export system-wide statistics, including statistics about
 system load, CPU usage, memory usage, and swap usage.
@@ -1038,25 +1041,75 @@ parent pid, state, pid, CPU usage, and memory usage.
 <code class="literal">filesystem</code> to export file system statistics, including details about the
 mounted disks, such as the total and used disk space, and details about each
 disk, such as the device name and the mounting place.
-</li><li class="listitem"><p class="simpara">
-<code class="literal">cpu_per_core</code> to export the CPU usage per core. By default, this setting is false. It makes sense only if
-<code class="literal">system: true</code> is specified.
-The details are grouped under <code class="literal">cpus</code>. The Beat exports details for each core of the server. For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">    "cpus": {
-      "cpu0": {
-        "user": 373170,
-        "user_p": 0,
-        "nice": 0,
-        "system": 463408,
-        "system_p": 0,
-        "idle": 2904305,
-        "iowait": 0,
-        "irq": 0,
-        "softirq": 0,
-        "steal": 0
-      },
-      ...
-  }</pre></div><p class="simpara">For more information about the exported fields, see <a class="xref" href="exported-fields-system.html" title="System-Wide Statistics Fields">System-Wide Statistics Fields</a>.</p></li></ul></div></div></div></div><div class="navfooter"><span class="prev"><a href="topbeat-configuration-options.html">
+</li><li class="listitem">
+<code class="literal">core</code> to export the CPU usage per core. By default, this setting is false. For each core, there is document created of <code class="literal">type=core</code>.
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  "@timestamp": "2016-05-23T20:15:12.078Z",
+  "beat": {
+    "hostname": "mar.local",
+    "name": "mar.local"
+  },
+  "core": {
+    "id": 3,
+    "idle_p": 0.953,
+    "iowait_p": 0,
+    "irq_p": 0,
+    "nice_p": 0,
+    "softirq_p": 0,
+    "steal_p": 0,
+    "system_p": 0.017,
+    "user_p": 0.03
+  },
+  "type": "core"
+}</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">cpu_ticks</code> to export the CPU usage in ticks. By default, it’s set to false. The following fields are
+ exported: <code class="literal">idle</code>, <code class="literal">iowait</code>, <code class="literal">irq</code>, <code class="literal">nice</code>, <code class="literal">softirq</code>, <code class="literal">steal</code>, <code class="literal">user</code> and <code class="literal">system</code>.
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  "@timestamp": "2016-05-23T20:16:43.286Z",
+  "beat": {
+    "hostname": "mar.local",
+    "name": "mar.local"
+  },
+  "cpu": {
+    "idle": 98724834,
+    "idle_p": 0.9015,
+    "iowait": 0,
+    "iowait_p": 0,
+    "irq": 0,
+    "irq_p": 0,
+    "nice": 0,
+    "nice_p": 0,
+    "softirq": 0,
+    "softirq_p": 0,
+    "steal": 0,
+    "steal_p": 0,
+    "system": 5682346,
+    "system_p": 0.0337,
+    "user": 10161651,
+    "user_p": 0.0647
+  },
+  "load": {
+    "load1": 1.685546875,
+    "load15": 1.958984375,
+    "load5": 1.76953125
+  },
+  "mem": {
+    "actual_free": 5022871552,
+    "actual_used": 12156997632,
+    "actual_used_p": 0.7076,
+    "free": 65003520,
+    "total": 17179869184,
+    "used": 17114865664,
+    "used_p": 0.9962
+  },
+  "swap": {
+    "free": 1460666368,
+    "total": 4294967296,
+    "used": 2834300928,
+    "used_p": 0.6599
+  },
+  "type": "system"
+}</pre></div><p>For more information about the exported fields, see <a class="xref" href="exported-fields-system.html" title="System-Wide Statistics Fields">System-Wide Statistics Fields</a>.</p></div></div></div><div class="navfooter"><span class="prev"><a href="topbeat-configuration-options.html">
               « 
               Configuration Options</a>
            
