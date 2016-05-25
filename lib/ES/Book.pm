@@ -247,9 +247,18 @@ sub _page_header {
 #===================================
     my ( $self, $branch ) = @_;
     return '' unless $self->is_multi_version;
-    return '' if $self->current eq $branch;
 
-    if ( $self->branch_title($branch) lt $self->current ) {
+    my $current = $self->current;
+    return '' if $current eq $branch;
+
+    if ( $current !~ /-\w/ ) {
+        $current .= '-zzzzzz';
+    }
+    if ( $branch !~ /-\w/ ) {
+        $branch .= '-zzzzzz';
+    }
+
+    if ( $branch lt $current ) {
         return <<"HEADER";
 <b>PLEASE NOTE:</b>
 <br/>
