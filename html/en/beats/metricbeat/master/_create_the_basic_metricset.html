@@ -1013,7 +1013,7 @@ Registration of metricseter
 MetricSeter Type definition and setup
 </li><li class="listitem">
 MetricSeter Interface method
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">package {metricset-name}
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">package {metricset}
 
 import (
         "github.com/elastic/beats/libbeat/common"
@@ -1021,23 +1021,33 @@ import (
 )
 
 func init() {
-        if err := helper.Registry.AddMetricSeter("{module-name}", "{metricset-name}", New); err != nil {
-        panic(err)
+        if err := mb.Registry.AddMetricSet("{module}", "{metricset}", New); err != nil {
+                panic(err)
         }
 }
 
-// MetricSet for fetching metrics.
 type MetricSet struct {
         mb.BaseMetricSet
 }
 
-// New is a mb.MetricSetFactory that returns a cpu.MetricSet.
 func New(base mb.BaseMetricSet) (mb.MetricSet, error) {
-        return &amp;MetricSet{base}, nil
+
+        config := struct{}{}
+
+        if err := base.Module().UnpackConfig(&amp;config); err != nil {
+                return nil, err
+        }
+
+        return &amp;MetricSet{
+                BaseMetricSet: base,
+        }, nil
 }
 
 func (m *MetricSet) Fetch() (common.MapStr, error) {
-        event := common.MapStr{"hello": "world"}
+
+        event := common.MapStr{
+                "example": "{metricset} example",
+        }
         return event, nil
 }</pre></div><p>This adds a working metricset do your module which reports the event
 <code class="literal">"hello": "world"</code>.</p><p>The first few lines of the metricset are to define the package name which is
