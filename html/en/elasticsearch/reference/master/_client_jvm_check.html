@@ -2,10 +2,10 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Search and Query DSL changes
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Client JVM check
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="breaking-changes-5.0.html" title="Breaking changes in 5.0" /><link rel="prev" href="breaking-changes-5.0.html" title="Breaking changes in 5.0" /><link rel="next" href="breaking_50_mapping_changes.html" title="Mapping changes" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="bootstrap-checks.html" title="Bootstrap Checks" /><link rel="prev" href="_maximum_map_count_check.html" title="Maximum map count check" /><link rel="next" href="system-config.html" title="Important System Configuration" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -999,155 +999,31 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes </a></span> » <span class="breadcrumb-link"><a href="breaking-changes-5.0.html">Breaking changes in 5.0</a></span> » <span class="breadcrumb-node">Search and Query DSL changes</span></div><div class="navheader"><span class="prev"><a href="breaking-changes-5.0.html">
+    </a></span> » <span class="breadcrumb-link"><a href="setup.html">Setup Elasticsearch </a></span> » <span class="breadcrumb-link"><a href="bootstrap-checks.html">Bootstrap Checks</a></span> » <span class="breadcrumb-node">Client JVM check</span></div><div class="navheader"><span class="prev"><a href="_maximum_map_count_check.html">
               « 
-              Breaking changes in 5.0</a>
+              Maximum map count check</a>
            
         </span><span class="next">
            
-          <a href="breaking_50_mapping_changes.html">Mapping changes
+          <a href="system-config.html">Important System Configuration
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="breaking_50_search_changes"></a>Search and Query DSL changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_search_type_literal"></a><code class="literal">search_type</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_literal_search_type_count_literal_removed"></a><code class="literal">search_type=count</code> removed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">count</code> search type was deprecated since version 2.0.0 and is now removed.
-In order to get the same benefits, you just need to set the value of the <code class="literal">size</code>
-parameter to <code class="literal">0</code>.</p><p>For instance, the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /my_index/_search?search_type=count
-{
-  "aggs": {
-    "my_terms": {
-       "terms": {
-         "field": "foo"
-       }
-     }
-  }
-}</pre></div><p>can be replaced with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /my_index/_search
-{
-  "size": 0,
-  "aggs": {
-    "my_terms": {
-       "terms": {
-         "field": "foo"
-       }
-     }
-  }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_literal_search_type_scan_literal_removed"></a><code class="literal">search_type=scan</code> removed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">scan</code> search type was deprecated since version 2.1.0 and is now removed.
-All benefits from this search type can now be achieved by doing a scroll
-request that sorts documents in <code class="literal">_doc</code> order, for instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /my_index/_search?scroll=2m
-{
-  "sort": [
-    "_doc"
-  ]
-}</pre></div><p>Scroll requests sorted by <code class="literal">_doc</code> have been optimized to more efficiently resume
-from where the previous request stopped, so this will have the same performance
-characteristics as the former <code class="literal">scan</code> search type.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_fields_literal_parameter"></a><code class="literal">fields</code> parameter<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">fields</code> parameter used to try to retrieve field values from stored
-fields, and fall back to extracting from the <code class="literal">_source</code> if a field is not
-marked as stored.  Now, the <code class="literal">fields</code> parameter will only return stored fields — it will no longer extract values from the <code class="literal">_source</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_search_exists_api_removed"></a>search-exists API removed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The search exists api has been removed in favour of using the search api with
-<code class="literal">size</code> set to <code class="literal">0</code> and <code class="literal">terminate_after</code> set to <code class="literal">1</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_deprecated_queries_removed"></a>Deprecated queries removed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following deprecated queries have been removed:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">filtered</code>
-</span></dt><dd>
-Use <code class="literal">bool</code> query instead, which supports <code class="literal">filter</code> clauses too.
-</dd><dt><span class="term">
-<code class="literal">and</code>
-</span></dt><dd>
-Use <code class="literal">must</code> clauses in a <code class="literal">bool</code> query instead.
-</dd><dt><span class="term">
-<code class="literal">or</code>
-</span></dt><dd>
-Use <code class="literal">should</code> clauses in a <code class="literal">bool</code> query instead.
-</dd><dt><span class="term">
-<code class="literal">limit</code>
-</span></dt><dd>
-Use the <code class="literal">terminate_after</code> parameter instead.
-</dd><dt><span class="term">
-<code class="literal">fquery</code>
-</span></dt><dd>
-Is obsolete after filters and queries have been merged.
-</dd><dt><span class="term">
-<code class="literal">query</code>
-</span></dt><dd>
-Is obsolete after filters and queries have been merged.
-</dd><dt><span class="term">
-<code class="literal">query_binary</code>
-</span></dt><dd>
-Was undocumented and has been removed.
-</dd><dt><span class="term">
-<code class="literal">filter_binary</code>
-</span></dt><dd>
-Was undocumented and has been removed.
-</dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_changes_to_queries"></a>Changes to queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Unsupported queries such as term queries on <code class="literal">geo_point</code> fields will now fail
-  rather than returning no hits.
-</li><li class="listitem">
-Removed support for fuzzy queries on numeric, date and ip fields, use range
-  queries instead.
-</li><li class="listitem">
-Removed support for range and prefix queries on <code class="literal">_uid</code> and <code class="literal">_id</code> fields.
-</li><li class="listitem">
-Querying an unindexed field will now fail rather than returning no hits.
-</li><li class="listitem">
-Removed support for the deprecated <code class="literal">min_similarity</code> parameter in <code class="literal">fuzzy
-  query</code>, in favour of <code class="literal">fuzziness</code>.
-</li><li class="listitem">
-Removed support for the deprecated <code class="literal">fuzzy_min_sim</code> parameter in
-  <code class="literal">query_string</code> query, in favour of <code class="literal">fuzziness</code>.
-</li><li class="listitem">
-Removed support for the deprecated <code class="literal">edit_distance</code> parameter in completion
-  suggester, in favour of <code class="literal">fuzziness</code>.
-</li><li class="listitem">
-Removed support for the deprecated <code class="literal">filter</code> and <code class="literal">no_match_filter</code> fields in <code class="literal">indices</code> query,
-in favour of <code class="literal">query</code> and <code class="literal">no_match_query</code>.
-</li><li class="listitem">
-Removed support for the deprecated <code class="literal">filter</code> fields in <code class="literal">nested</code> query, in favour of <code class="literal">query</code>.
-</li><li class="listitem">
-Removed support for the deprecated <code class="literal">minimum_should_match</code> and
-  <code class="literal">disable_coord</code> in <code class="literal">terms</code> query, use <code class="literal">bool</code> query instead. Also removed
-  support for the deprecated <code class="literal">execution</code> parameter.
-</li><li class="listitem">
-Removed support for the top level <code class="literal">filter</code> element in <code class="literal">function_score</code> query, replaced by <code class="literal">query</code>.
-</li><li class="listitem">
-The <code class="literal">collect_payloads</code> parameter of the <code class="literal">span_near</code> query has been deprecated.  Payloads will be loaded when needed.
-</li><li class="listitem">
-The <code class="literal">score_type</code> parameter to the <code class="literal">nested</code> and <code class="literal">has_child</code> queries has been
-  removed in favour of <code class="literal">score_mode</code>.  The <code class="literal">score_mode</code> parameter to <code class="literal">has_parent</code>
-  has been deprecated in favour of the <code class="literal">score</code> boolean parameter.   Also, the
-  <code class="literal">total</code> score mode has been removed in favour of the <code class="literal">sum</code> mode.
-</li><li class="listitem">
-When the <code class="literal">max_children</code> parameter was set to <code class="literal">0</code> on the <code class="literal">has_child</code> query
-  then there was no upper limit on how many child documents were allowed to
-  match. Now, <code class="literal">0</code> really means that zero child documents are allowed. If no
-  upper limit is needed then the <code class="literal">max_children</code> parameter shouldn’t be specified
-  at all.
-</li><li class="listitem">
-The <code class="literal">exists</code> query will now fail if the <code class="literal">_field_names</code> field is disabled.
-</li><li class="listitem">
-The <code class="literal">multi_match</code> query will fail if <code class="literal">fuzziness</code> is used for <code class="literal">cross_fields</code>, <code class="literal">phrase</code> or <code class="literal">phrase_prefix</code> type.
-This parameter was undocumented and silently ignored before for these types of <code class="literal">multi_match</code>.
-</li><li class="listitem">
-Deprecated support for the coerce, normalize, ignore_malformed parameters in GeoPolygonQuery. Use parameter validation_method instead.
-</li><li class="listitem">
-Deprecated support for the coerce, normalize, ignore_malformed parameters in GeoDistanceRangeQuery. Use parameter validation_method instead.
-</li><li class="listitem">
-Deprecated support for the coerce, normalize, ignore_malformed parameters in GeoDistanceQuery. Use parameter validation_method instead.
-</li><li class="listitem">
-Deprecated support for the coerce, normalize, ignore_malformed parameters in GeoBoundingBoxQuery. Use parameter validation_method instead.
-</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_top_level_literal_filter_literal_parameter"></a>Top level <code class="literal">filter</code> parameter<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Removed support for the deprecated top level <code class="literal">filter</code> in the search api,
-replaced by <code class="literal">post_filter</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_highlighters"></a>Highlighters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Removed support for multiple highlighter names, the only supported ones are:
-<code class="literal">plain</code>, <code class="literal">fvh</code> and <code class="literal">postings</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_term_vectors_api"></a>Term vectors API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The term vectors APIs no longer persist unmapped fields in the mappings.</p><p>The <code class="literal">dfs</code> parameter to the term vectors API has been removed completely. Term
-vectors don’t support distributed document frequencies anymore.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sort"></a>Sort<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">reverse</code> parameter has been removed, in favour of explicitly
-specifying the sort order with the <code class="literal">order</code> option.</p><p>The <code class="literal">coerce</code> and <code class="literal">ignore_malformed</code> parameters were deprecated in favour of <code class="literal">validation_method</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_inner_hits"></a>Inner hits<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Top level inner hits syntax has been removed. Inner hits can now only be specified as part of the <code class="literal">nested</code>,
-<code class="literal">has_child</code> and <code class="literal">has_parent</code> queries. Use cases previously only possible with top level inner hits can now be done
-with inner hits defined inside the query dsl.
-</li><li class="listitem">
-Source filtering for inner hits inside nested queries requires full field names instead of relative field names.
-This is now consistent for source filtering on other places in the search API.
-</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_query_profiler"></a>Query Profiler<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In the response for profiling queries, the <code class="literal">query_type</code> has been renamed to <code class="literal">type</code> and <code class="literal">lucene</code> has been renamed to
-<code class="literal">description</code>. These changes have been made so the response format is more friendly to supporting other types of profiling
-in the future.</p></div></div><div class="navfooter"><span class="prev"><a href="breaking-changes-5.0.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_client_jvm_check"></a>Client JVM check<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/bootstrap-checks.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>There are two different JVMs provided by OpenJDK-derived JVMs: the
+client JVM and the server JVM. These JVMs use different compilers for
+producing executable machine code from Java bytecode. The client JVM is
+tuned for startup time and memory footprint while the server JVM is
+tuned for maximizing performance. The difference in performance between
+the two VMs can be substantial. The client JVM check ensures that
+Elasticsearch is not running inside the client JVM. To pass the client
+JVM check, you must start Elasticsearch with the server VM. On modern
+systems and operating systems, the server VM is the
+default. Additionally, Elasticsearch is configured by default to force
+the server VM.</p></div><div class="navfooter"><span class="prev"><a href="_maximum_map_count_check.html">
               « 
-              Breaking changes in 5.0</a>
+              Maximum map count check</a>
            
         </span><span class="next">
            
-          <a href="breaking_50_mapping_changes.html">Mapping changes
+          <a href="system-config.html">Important System Configuration
                »
             </a></span></div>
 <!-- end body -->
