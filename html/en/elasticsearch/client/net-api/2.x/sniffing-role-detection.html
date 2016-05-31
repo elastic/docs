@@ -1032,6 +1032,33 @@ We use this information when selecting a node to perform an API call on.</p><div
 await audit.TraceStartup();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
     .Sniff(s =&gt; s.SucceedAlways()
+        .Succeeds(Always, Framework.Cluster.Nodes(8).StoresNoData(9200, 9201, 9202).HttpDisabled(9201))
+    )
+    .SniffingConnectionPool()
+    .AllDefaults()
+)
+{
+    AssertPoolBeforeCall = (pool) =&gt;
+    {
+        pool.Should().NotBeNull();
+        pool.Nodes.Should().HaveCount(10);
+        pool.Nodes.Where(n =&gt; n.HoldsData).Should().HaveCount(10);
+        pool.Nodes.Where(n =&gt; n.HttpEnabled).Should().HaveCount(10);
+        pool.Nodes.Should().OnlyContain(n =&gt; n.Uri.Host == "localhost");
+    },
+
+    AssertPoolAfterCall = (pool) =&gt;
+    {
+        pool.Should().NotBeNull();
+        pool.Nodes.Should().HaveCount(7, "we filtered the node that stores no data");
+        pool.Nodes.Should().NotContain(n=&gt;n.Uri.Port == 9201);
+        pool.Nodes.Where(n =&gt; n.HoldsData).Should().HaveCount(5);
+    }
+};
+
+await audit.TraceStartup();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Sniff(s =&gt; s.SucceedAlways()
         .Succeeds(Always, Framework.Cluster.Nodes(8).StoresNoData(9200, 9201, 9202).SniffShouldReturnFqdn())
     )
     .SniffingConnectionPool()
