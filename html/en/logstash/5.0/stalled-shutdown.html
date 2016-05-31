@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Stalled Shutdown Detection
         | Reference [5.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference [5.0]" /><link rel="up" href="getting-started-with-logstash.html" title="Getting Started with Logstash" /><link rel="prev" href="advanced-pipeline.html" title="Setting Up an Advanced Logstash Pipeline" /><link rel="next" href="pipeline.html" title="Logstash Processing Pipeline" /><meta name="DC.type" content="Docs/Logstash/Reference/5.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Reference [5.0]" /><link rel="up" href="setup-logstash.html" title="Setting Up and Running Logstash" /><link rel="prev" href="logstash-settings-file.html" title="Settings File" /><link rel="next" href="breaking-changes.html" title="Breaking changes" /><meta name="DC.type" content="Docs/Logstash/Reference/5.0" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -999,15 +999,15 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Reference
       [5.0]
-    </a></span> » <span class="breadcrumb-link"><a href="getting-started-with-logstash.html">Getting Started with Logstash</a></span> » <span class="breadcrumb-node">Stalled Shutdown Detection</span></div><div class="navheader"><span class="prev"><a href="advanced-pipeline.html">
+    </a></span> » <span class="breadcrumb-link"><a href="setup-logstash.html">Setting Up and Running Logstash</a></span> » <span class="breadcrumb-node">Stalled Shutdown Detection</span></div><div class="navheader"><span class="prev"><a href="logstash-settings-file.html">
               « 
-              Setting Up an Advanced Logstash Pipeline</a>
+              Settings File</a>
            
         </span><span class="next">
            
-          <a href="pipeline.html">Logstash Processing Pipeline
+          <a href="breaking-changes.html">Breaking changes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="stalled-shutdown"></a>Stalled Shutdown Detection<a href="https://github.com/elastic/logstash/edit/master/docs/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Shutting down a running Logstash instance involves the following steps:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="stalled-shutdown"></a>Stalled Shutdown Detection<a href="https://github.com/elastic/logstash/edit/master/docs/static/stalled-shutdown.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When you attempt to shut down a running Logstash instance, Logstash performs several steps before it can safely shut down. It must:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Stop all input, filter and output plugins
 </li><li class="listitem">
 Process all in-flight events
@@ -1023,7 +1023,7 @@ A disconnected output plugin that is waiting to reconnect to flush in-flight eve
 </li></ul></div><p>These situations make the duration and success of the shutdown process unpredictable.</p><p>Logstash has a stall detection mechanism that analyzes the behavior of the pipeline and plugins during shutdown.
 This mechanism produces periodic information about the count of inflight events in internal queues and a list of busy
 worker threads.</p><p>To enable Logstash to forcibly terminate in the case of a stalled shutdown, use the <code class="literal">--allow-unsafe-shutdown</code> flag when
-you start Logstash.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="shutdown-stall-example"></a>Stall Detection Example<a href="https://github.com/elastic/logstash/edit/master/docs/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In this example, slow filter execution prevents the pipeline from clean shutdown. By starting Logstash with the
+you start Logstash.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="shutdown-stall-example"></a>Stall Detection Example<a href="https://github.com/elastic/logstash/edit/master/docs/static/stalled-shutdown.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In this example, slow filter execution prevents the pipeline from clean shutdown. By starting Logstash with the
 <code class="literal">--allow-unsafe-shutdown</code> flag, quitting with <span class="strong"><strong>Ctrl+C</strong></span> results in an eventual shutdown that loses 20 events.</p><div class="informalexample"><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% bin/logstash -e 'input { generator { } } filter { ruby { code =&gt; "sleep 10000" } } \
                      output { stdout { codec =&gt; dots } }' -w 1 --allow-unsafe-shutdown
 Default settings used: Filter workers: 1
@@ -1050,13 +1050,13 @@ The shutdown process appears to be stalled due to busy or blocked plugins. Check
  {["LogStash::Filters::Ruby", {"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;15,
  "name"=&gt;"|filterworker.0", "current_call"=&gt;"
  (ruby filter code):1:in `sleep'"}]}}
-Forcefully quitting logstash.. {:level=&gt;:fatal}</pre></div></div><p>When <code class="literal">--allow-unsafe-shutdown</code> isn’t enabled, Logstash continues to run and produce these reports periodically.</p></div></div><div class="navfooter"><span class="prev"><a href="advanced-pipeline.html">
+Forcefully quitting logstash.. {:level=&gt;:fatal}</pre></div></div><p>When <code class="literal">--allow-unsafe-shutdown</code> isn’t enabled, Logstash continues to run and produce these reports periodically.</p></div></div><div class="navfooter"><span class="prev"><a href="logstash-settings-file.html">
               « 
-              Setting Up an Advanced Logstash Pipeline</a>
+              Settings File</a>
            
         </span><span class="next">
            
-          <a href="pipeline.html">Logstash Processing Pipeline
+          <a href="breaking-changes.html">Breaking changes
                »
             </a></span></div>
 <!-- end body -->
