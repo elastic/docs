@@ -2,10 +2,10 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuring Metricbeat
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Event Structure
         | Metricbeat Reference
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference" /><link rel="up" href="index.html" title="Metricbeat Reference" /><link rel="prev" href="key-features.html" title="Key Metricbeat Features" /><link rel="next" href="filtering-data.html" title="Filtering the Exported Data" /><meta name="DC.type" content="Docs/Metricbeat/Reference" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference" /><link rel="up" href="how-metricbeat-works.html" title="How Metricbeat Works" /><link rel="prev" href="how-metricbeat-works.html" title="How Metricbeat Works" /><link rel="next" href="error-event-structure.html" title="Error Event Structure" /><meta name="DC.type" content="Docs/Metricbeat/Reference" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -993,74 +993,60 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="page_header"><b>PLEASE NOTE:</b> These docs are for a pre-GA version of Metricbeat, 5.0.0-alpha3.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference</a></span> » <span class="breadcrumb-node">Configuring Metricbeat</span></div><div class="navheader"><span class="prev"><a href="key-features.html">
+<div class="page_header"><b>PLEASE NOTE:</b> These docs are for a pre-GA version of Metricbeat, 5.0.0-alpha3.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference</a></span> » <span class="breadcrumb-link"><a href="how-metricbeat-works.html">How Metricbeat Works</a></span> » <span class="breadcrumb-node">Event Structure</span></div><div class="navheader"><span class="prev"><a href="how-metricbeat-works.html">
               « 
-              Key Metricbeat Features</a>
+              How Metricbeat Works</a>
            
         </span><span class="next">
            
-          <a href="filtering-data.html">Filtering the Exported Data
+          <a href="error-event-structure.html">Error Event Structure
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="configuring-howto-metricbeat"></a>Configuring Metricbeat<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/configuring-howto.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>After following the <a class="link" href="metricbeat-configuration.html" title="Step 2: Configuring Metricbeat">configuration steps</a> in the
-Getting Started, you might want to fine tune the behavior of Metricbeat.
-This section describes some common use cases for changing configuration options.</p><p>For a complete description of all Metricbeat configuration options, see
-<a class="xref" href="metricbeat-configuration-options.html" title="Configuration Options"><em>Configuration Options</em></a>.</p><h2><a id="_basic_configuration"></a>Basic Configuration<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/configuring-howto.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>A Metricbeat configuration contains a list of modules. Each module contains the following config options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-module: Name of the module to run
-</li><li class="listitem">
-metricsets: List of metricsets of the module which should be executed
-</li><li class="listitem">
-hosts: List of hosts that the metricsets should connected to. For some modules, such as the system module, this is not required. For the details how to define the hosts string for each module, please check the documentation of the module.
-</li><li class="listitem">
-period: How often in seconds the metricsets are executed. If a system is not reachable it will return an error for each period.
-</li><li class="listitem">
-enabled: Modules are enabled (set to <code class="literal">enabled: true</code>) by default. To disable a module, specify <code class="literal">enabled: false</code>.
-</li><li class="listitem">
-fields: Fields is optional. Here you can define additional fields which should be sent with the metricset event
-</li><li class="listitem">
-tags: Tags is optional. Here you can define additional tags which should be sent with the metricset event
-</li><li class="listitem">
-filters: With filters you can reduce the amount of data is sent. For details on the available filter options check (link to filters).
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat:
-  modules:
-    - module: apache
-      metricsets: ["status"]
-      hosts: ["http://127.0.0.1/"]
-      period: 10s
-      enabled: true
-      selectors: []
-      fields:
-        dc: west
-      tags: ["tag"]
-      filters:
-        ....</pre></div><h2><a id="_configuration_combinations"></a>Configuration Combinations<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/configuring-howto.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>This configuration allows you to create different combinations of module, metricsets, period, hosts, and selectors. In the following example, the same hosts is crawled for the <code class="literal">stats</code> information every second as this is critical data, and the full list of metricsets is only fetched every 30 seconds as it is less critical.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat:
-  modules:
-    - module: redis
-      metricsets: ["info"]
-      hosts: ["host1"]
-      period: 1s
-      enabled: true
-      selectors: ["stats"]
-    - module: apache
-      metricsets: ["info"]
-      hosts: ["host1"]
-      period: 30s
-      enabled: true
-      selectors: []</pre></div><p>For a module with multiple metricsets its also possible to run define the module twice and run it in once case with both metricsets and in the second case only with one metricset with a different period:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat:
-  modules:
-    - module: example
-      metricsets: ["set1"]
-      hosts: ["host1"]
-      period: 10s
-    - module: example
-      metricsets: ["set2"]
-      hosts: ["host1"]
-      period: 2m</pre></div></div><div class="navfooter"><span class="prev"><a href="key-features.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="metricbeat-event-structure"></a>Event Structure<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/how-metricbeat-works.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Every event sent by Metricbeat has the same basic structure. It contains the following fields:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="strong"><strong><code class="literal">@timestamp</code></strong></span>
+</span></dt><dd>
+Time when the event was captured
+</dd><dt><span class="term">
+<span class="strong"><strong><code class="literal">beat.hostname</code></strong></span>
+</span></dt><dd>
+Hostname of the server on which the Beat is running
+</dd><dt><span class="term">
+<span class="strong"><strong><code class="literal">beat.name</code></strong></span>
+</span></dt><dd>
+Name given to the Beat
+</dd><dt><span class="term">
+<span class="strong"><strong><code class="literal">metricset</code></strong></span>
+</span></dt><dd>
+Name of the metricset that the data is from
+</dd><dt><span class="term">
+<span class="strong"><strong><code class="literal">module</code></strong></span>
+</span></dt><dd>
+Name of the module that the data is from
+</dd><dt><span class="term">
+<span class="strong"><strong><code class="literal">rtt</code></strong></span>
+</span></dt><dd>
+Round trip time of the request in microseconds
+</dd><dt><span class="term">
+<span class="strong"><strong><code class="literal">type</code></strong></span>
+</span></dt><dd>
+This is always "metricsets"
+</dd></dl></div><p>For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  "@timestamp": "2016-03-18T12:18:57.124Z",
+  "apache-status": {},
+  "beat": {
+    "hostname": "myhostname",
+    "name": "beatname"
+  },
+  "metricset": "status",
+  "module": "apache",
+  "rtt": 1082,
+  "type": "metricsets"
+}</pre></div><p>For more information about the exported fields, see <a class="xref" href="exported-fields.html" title="Exported Fields"><em>Exported Fields</em></a>.</p></div><div class="navfooter"><span class="prev"><a href="how-metricbeat-works.html">
               « 
-              Key Metricbeat Features</a>
+              How Metricbeat Works</a>
            
         </span><span class="next">
            
-          <a href="filtering-data.html">Filtering the Exported Data
+          <a href="error-event-structure.html">Error Event Structure
                »
             </a></span></div>
 <!-- end body -->
