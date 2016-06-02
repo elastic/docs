@@ -1026,24 +1026,12 @@ Prevents write operations to this index while still allowing metadata changes li
 forced to allocate at least one copy of each shard on a specific node in the cluster.</p><p>The <code class="literal">_shrink</code> API is similar to <a class="xref" href="indices-create-index.html" title="Create Index"><em>Create Index</em></a> and accepts <code class="literal">settings</code> and <code class="literal">aliases</code> for the target index.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/logs/_shrink/logs_single_shard' -d '{
     "settings" : {
         "index.codec" : "best_compression", <a id="CO116-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        "index.number_of_replicas" : 0 <a id="CO116-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     }
 }'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO116-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Enables <code class="literal">best_compression</code> codec on the target index
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO116-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Sets the number of replicas on the target index to <code class="literal">0</code> to ensure the cluster is green once the shard initialized
 </p></td></tr></table></div><p>The API call above returns immediately once the target index is created but doesn’t wait
 for the shrink operation to start. Once the target indices primary shard moves to state <code class="literal">initializing</code>
-the shrink operation has started.</p><p>Once the index is shrunk replicas can be set to <code class="literal">1</code> and allocation filtering can be removed.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/logs_single_shard/_settings' -d '{
-    "settings" : {
-        "index.routing.allocation.include._id" : null, <a id="CO117-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        "index.number_of_replicas" : 1 <a id="CO117-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    }
-}'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO117-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Resets the allocation filtering for the new shrunk index to allow replica allocation
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO117-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Bumps the number of replicas to 1
-</p></td></tr></table></div><h3><a id="shrink-index-limitations"></a>Limitations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/shrink-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Indices can only be shrunk into a single shard if they fully the following requirements:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+the shrink operation has started.</p><h3><a id="shrink-index-limitations"></a>Limitations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/shrink-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Indices can only be shrunk into a single shard if they fully the following requirements:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 an instance of all of the indices shards must be allocated on a single node
 </li><li class="listitem">
 the index must not contain more than <code class="literal">2.14 billion</code> documents (<code class="literal">2147483519</code>) in total (sum of all shards)
