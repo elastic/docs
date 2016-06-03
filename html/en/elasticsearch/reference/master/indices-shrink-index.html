@@ -1007,48 +1007,73 @@ version&#39;s documentation here</a>.
            
           <a href="indices-put-mapping.html">Put Mapping
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-shrink-index"></a>Shrink Index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/shrink-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The shrink index API allows to shrink an existing index into a new index with a single shard.
-In order to shrink an index, all its shards must be allocated on a single node in the cluster.
-This is required since the shrink command will copy all shards index files into the target index
-data folder when the primary of the target index is initially allocated.</p><p>When an index is shrunk no write operations should happen to the source index. Elasticsearch will
-enforce the <code class="literal">read-only</code> property when the shrink command is executed. All operations necessary to shrink the
-source index are executed during initial primary recovery. Once the target index primary shard is started the
-shrink operation has successfully finished. To monitor status and progress use <a class="xref" href="cat-recovery.html" title="cat recovery"><em>cat recovery</em></a></p><p>To shrink and index all shards of that index must be allocated on a single node.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/logs/_settings' -d '{
-    "settings" : {
-        "index.routing.allocation.require._name" : "shrink_node_name", <a id="CO115-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        "index.blocks.write" : true <a id="CO115-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    }
-}'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO115-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Forces the relocation of all of the indices shards to the node <code class="literal">shrink_node_name</code>
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-shrink-index"></a>Shrink Index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/shrink-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The shrink index API allows you to shrink an existing index into a new index
+with a single primary shard. Before shrinking, a (primary or replica) copy of
+every shard in the index must be present on the same node.</p><p>Shrinking works as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+First, it creates a new target index with the same definition as the source
+  index, but with a single primary shard.
+</li><li class="listitem">
+Then it hard-links segments from the source index into the target index. (If
+  the file system doesn’t support hard-linking, then all segments are copied
+  into the new index, which is a much more time consuming process.)
+</li><li class="listitem">
+Finally, it recovers the target index as though it were a closed index which
+  had just been re-opened.
+</li></ul></div><h3><a id="_preparing_an_index_for_shrinking"></a>Preparing an index for shrinking<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/shrink-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In order to shrink an index, the index must be marked as read-only, and a
+(primary or replica) copy of every shard in the index must be relocated to the
+same node and have <a class="link" href="cluster-health.html" title="Cluster Health">health</a> <code class="literal">green</code>.</p><p>These two conditions can be achieved with the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_source_index/_settings
+{
+  "settings": {
+    "index.routing.allocation.require._name": "shrink_node_name", <a id="CO115-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "index.blocks.write": true <a id="CO115-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO115-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Forces the relocation of a copy of each shard to the node with name
+    <code class="literal">shrink_node_name</code>.  See <a class="xref" href="shard-allocation-filtering.html" title="Shard Allocation Filtering">Shard Allocation Filtering</a> for more options.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO115-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Prevents write operations to this index while still allowing metadata changes like deleting the index.
-</p></td></tr></table></div><p>The above second curl example shows how an index called <code class="literal">logs</code> can be
-forced to allocate at least one copy of each shard on a specific node in the cluster.</p><p>The <code class="literal">_shrink</code> API is similar to <a class="xref" href="indices-create-index.html" title="Create Index"><em>Create Index</em></a> and accepts <code class="literal">settings</code> and <code class="literal">aliases</code> for the target index.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/logs/_shrink/logs_single_shard' -d '{
-    "settings" : {
-        "index.codec" : "best_compression", <a id="CO116-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    }
-}'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO116-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Enables <code class="literal">best_compression</code> codec on the target index
-</p></td></tr></table></div><p>The API call above returns immediately once the target index is created but doesn’t wait
-for the shrink operation to start. Once the target indices primary shard moves to state <code class="literal">initializing</code>
-the shrink operation has started.</p><h3><a id="shrink-index-limitations"></a>Limitations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/shrink-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Indices can only be shrunk into a single shard if they fully the following requirements:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-an instance of all of the indices shards must be allocated on a single node
-</li><li class="listitem">
-the index must not contain more than <code class="literal">2.14 billion</code> documents (<code class="literal">2147483519</code>) in total (sum of all shards)
-  This is the maximum shard size elasticsearch can support.
-</li><li class="listitem">
-the index must have more than one shard
-</li><li class="listitem">
-the index must be <code class="literal">read-only</code>, ie. have a cluster block set <code class="literal">index.blocks.write=true</code>
-</li><li class="listitem">
+Prevents write operations to this index while still allowing metadata
+    changes like deleting the index.
+</p></td></tr></table></div><p>It can take a while to relocate the source index.  Progress can be tracked
+with the <a class="link" href="cat-recovery.html" title="cat recovery"><code class="literal">_cat recovery</code> API</a>, or the <a class="link" href="cluster-health.html" title="Cluster Health"><code class="literal">cluster health</code> API</a> can be used to wait until all shards have relocated
+with the <code class="literal">wait_for_relocating_shards</code> parameter.</p><h3><a id="_shrinking_an_index"></a>Shrinking an index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/shrink-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To shrink <code class="literal">my_source_index</code> into a new index called <code class="literal">my_target_index</code>, issue
+the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST my_source_index/_shrink/my_target_index</pre></div><p>The above request returns immediately once the target index has been added to
+the cluster state — it doesn’t wait for the shrink operation to start.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Indices can only be shrunk into a single shard if they satisfy the following requirements:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 the target index must not exist
 </li><li class="listitem">
-all <code class="literal">index.analysis.*</code> and <code class="literal">index.similarity.*</code> settings passed to the <code class="literal">_shrink</code> call will be overwritten with the
-  source indices settings.
+The index must have more than one primary shard.
 </li><li class="listitem">
-if the target index can’t be allocated on the shrink node, due to throttling or other allocation deciders,
-  its primary shard will stay <code class="literal">unassigned</code> until it can be allocated on that node
-</li></ul></div></div><div class="navfooter"><span class="prev"><a href="indices-open-close.html">
+The index must not contain more than <code class="literal">2,147,483,519</code> documents in total
+  across all shards as this is the maximum number of docs that can fit into a
+  single shard.
+</li><li class="listitem">
+The node handling the shrink process must have sufficient free disk space to
+  accommodate a second copy of the existing index.
+</li></ul></div></div></div><p>The <code class="literal">_shrink</code> API is similar to the <a class="link" href="indices-create-index.html" title="Create Index"><code class="literal">create index</code> API</a>
+and accepts <code class="literal">settings</code> and <code class="literal">aliases</code> parameters for the target index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST my_source_index/_shrink/my_target_index
+{
+  "settings": {
+    "index.number_of_replicas": 1,
+    "index.codec": "best_compression" <a id="CO116-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  },
+  "aliases": {
+    "my_search_indices": {}
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO116-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Best compression will only take affect when new writes are made to the
+    index, such as when <a class="link" href="indices-forcemerge.html" title="Force Merge">force-merging</a> the shard to a single
+    segment.
+</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Mappings may not be specified in the <code class="literal">_shrink</code> request, and all
+<code class="literal">index.analysis.*</code> and <code class="literal">index.similarity.*</code> settings will be overwritten with
+the settings from the source index.</p></div></div><h3><a id="_monitoring_the_shrink_process"></a>Monitoring the shrink process<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/shrink-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The shrink process can be monitored with the <a class="link" href="cat-recovery.html" title="cat recovery"><code class="literal">_cat recovery</code> API</a>, or the <a class="link" href="cluster-health.html" title="Cluster Health"><code class="literal">cluster health</code> API</a> can be used to wait
+until all primary shards have been allocated by setting the  <code class="literal">wait_for_status</code>
+parameter to <code class="literal">yellow</code>.</p><p>The <code class="literal">_shrink</code> API returns as soon as the target index has been added to the
+cluster state, before any shards have been allocated. At this point, all
+shards are in the state <code class="literal">unassigned</code>. If, for any reason, the target index
+can’t be allocated on the shrink node, its primary shard will remain
+<code class="literal">unassigned</code> until it can be allocated on that node.</p><p>Once the primary shard is allocated, it moves to state <code class="literal">initializing</code>, and the
+shrink process begins. When the shrink operation completes, the shard will
+become <code class="literal">active</code>. At that  point, Elasticsearch will try to allocate any
+replicas and may decide to relocate the primary shard to another node.</p></div><div class="navfooter"><span class="prev"><a href="indices-open-close.html">
               « 
               Open / Close Index API</a>
            
