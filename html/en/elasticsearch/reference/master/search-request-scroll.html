@@ -1091,7 +1091,73 @@ cleared as soon as the scroll is not being used anymore using the
     "scroll_id" : ["c2Nhbjs2OzM0NDg1ODpzRlBLc0FXNlNyNm5JWUc1", "aGVuRmV0Y2g7NTsxOnkxaDZ"]
 }'</pre></div><p>All search contexts can be cleared with the <code class="literal">_all</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XDELETE localhost:9200/_search/scroll/_all</pre></div><p>The <code class="literal">scroll_id</code> can also be passed as a query string parameter or in the request body.
 Multiple scroll IDs can be passed as comma separated values:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XDELETE localhost:9200/_search/scroll \
-     -d 'c2Nhbjs2OzM0NDg1ODpzRlBLc0FXNlNyNm5JWUc1,aGVuRmV0Y2g7NTsxOnkxaDZ'</pre></div></div></div><div class="navfooter"><span class="prev"><a href="search-request-search-type.html">
+     -d 'c2Nhbjs2OzM0NDg1ODpzRlBLc0FXNlNyNm5JWUc1,aGVuRmV0Y2g7NTsxOnkxaDZ'</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sliced_scroll"></a>Sliced Scroll<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/scroll.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For scroll queries that return a lot of documents it is possible to split the scroll in multiple slices which
+can be consumed independently:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/twitter/tweet/_search?scroll=1m' -d '
+{
+    "slice": {
+        "id": 0, <a id="CO20-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "max": 2 <a id="CO20-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    },
+    "query": {
+        "match" : {
+            "title" : "elasticsearch"
+        }
+    }
+}
+'
+
+curl -XGET 'localhost:9200/twitter/tweet/_search?scroll=1m' -d '
+{
+    "slice": {
+        "id": 1,
+        "max": 2
+    },
+    "query": {
+        "match" : {
+            "title" : "elasticsearch"
+        }
+    }
+}
+'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO20-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The id of the slice
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO20-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The maximum number of slices
+</p></td></tr></table></div><p>The result from the first request returned documents that belong to the first slice (id: 0) and the result from the
+second request returned documents that belong to the second slice. Since the maximum number of slices is set to 2
+ the union of the results of the two requests is equivalent to the results of a scroll query without slicing.
+By default the splitting is done on the shards first and then locally on each shard using the _uid field
+with the following formula:
+<code class="literal">slice(doc) = floorMod(hashCode(doc._uid), max)</code>
+For instance if the number of shards is equal to 2 and the user requested 4 slices then the slices 0 and 2 are assigned
+to the first shard and the slices 1 and 3 are assigned to the second shard.</p><p>Each scroll is independent and can be processed in parallel like any scroll request.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If the number of slices is bigger than the number of shards the slice filter is very slow on the first calls, it has a complexity of O(N) and a memory cost equals
+to N bits per slice where N is the total number of documents in the shard.
+After few calls the filter should be cached and subsequent calls should be faster but you should limit the number of
+ sliced query you perform in parallel to avoid the memory explosion.</p></div></div><p>To avoid this cost entirely it is possible to use the <code class="literal">doc_values</code> of another field to do the slicing
+but the user must ensure that the field has the following properties:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The field is numeric.
+</li><li class="listitem">
+<code class="literal">doc_values</code> are enabled on that field
+</li><li class="listitem">
+Every document should contain a single value. If a document has multiple values for the specified field, the first value is used.
+</li><li class="listitem">
+The value for each document should be set once when the document is created and never updated. This ensures that each
+slice gets deterministic results.
+</li><li class="listitem">
+The cardinality of the field should be high. This ensures that each slice gets approximately the same amount of documents.
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/twitter/tweet/_search?scroll=1m' -d '
+{
+    "slice": {
+        "field": "my_random_integer_field",
+        "id": 0,
+        "max": 10
+    },
+    "query": {
+        "match" : {
+            "title" : "elasticsearch"
+        }
+    }
+}
+'</pre></div><p>For append only time-based indices, the <code class="literal">timestamp</code> field can be used safely.</p></div></div><div class="navfooter"><span class="prev"><a href="search-request-search-type.html">
               « 
               Search Type</a>
            
