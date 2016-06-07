@@ -1008,10 +1008,15 @@ version&#39;s documentation here</a>.
           <a href="indices-put-mapping.html">Put Mapping
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-shrink-index"></a>Shrink Index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/shrink-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The shrink index API allows you to shrink an existing index into a new index
-with a single primary shard. Before shrinking, a (primary or replica) copy of
-every shard in the index must be present on the same node.</p><p>Shrinking works as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+with fewer primary shards. The number of primary shards in the target index
+must be a factor of the shards in the source index. For example an index with
+<code class="literal">8</code> primary shards can be shrunk into <code class="literal">4</code>, <code class="literal">2</code> or <code class="literal">1</code> primary shards or an index
+with <code class="literal">15</code> primary shards can be shrunk into <code class="literal">5</code>, <code class="literal">3</code> or <code class="literal">1</code>. If the number
+of shards in the index is a prime number it can only be shrunk into a single
+primary shard. Before shrinking, a (primary or replica) copy of every shard
+in the index must be present on the same node.</p><p>Shrinking works as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 First, it creates a new target index with the same definition as the source
-  index, but with a single primary shard.
+  index, but with a smaller number of primary shards.
 </li><li class="listitem">
 Then it hard-links segments from the source index into the target index. (If
   the file system doesn’t support hard-linking, then all segments are copied
@@ -1037,14 +1042,18 @@ Prevents write operations to this index while still allowing metadata
 with the <a class="link" href="cat-recovery.html" title="cat recovery"><code class="literal">_cat recovery</code> API</a>, or the <a class="link" href="cluster-health.html" title="Cluster Health"><code class="literal">cluster health</code> API</a> can be used to wait until all shards have relocated
 with the <code class="literal">wait_for_relocating_shards</code> parameter.</p><h3><a id="_shrinking_an_index"></a>Shrinking an index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/shrink-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To shrink <code class="literal">my_source_index</code> into a new index called <code class="literal">my_target_index</code>, issue
 the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST my_source_index/_shrink/my_target_index</pre></div><p>The above request returns immediately once the target index has been added to
-the cluster state — it doesn’t wait for the shrink operation to start.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Indices can only be shrunk into a single shard if they satisfy the following requirements:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+the cluster state — it doesn’t wait for the shrink operation to start.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Indices can only be shrunk if they satisfy the following requirements:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 the target index must not exist
 </li><li class="listitem">
-The index must have more than one primary shard.
+The index must have more primary shards than the target index.
+</li><li class="listitem">
+The number of primary shards in the target index must be a factor of the
+  number of primary shards in the source index. must have more primary shards
+   than the target index.
 </li><li class="listitem">
 The index must not contain more than <code class="literal">2,147,483,519</code> documents in total
-  across all shards as this is the maximum number of docs that can fit into a
-  single shard.
+  across all shards that will be shrunk into a single shard on the target index
+  as this is the maximum number of docs that can fit into a single shard.
 </li><li class="listitem">
 The node handling the shrink process must have sufficient free disk space to
   accommodate a second copy of the existing index.
@@ -1053,12 +1062,16 @@ and accepts <code class="literal">settings</code> and <code class="literal">alia
 {
   "settings": {
     "index.number_of_replicas": 1,
-    "index.codec": "best_compression" <a id="CO117-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "index.number_of_shards": 1, <a id="CO117-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "index.codec": "best_compression" <a id="CO117-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
   },
   "aliases": {
     "my_search_indices": {}
   }
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO117-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The number of shards in the target index. This must be a factor of the
+    number of shards in the source index.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO117-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Best compression will only take affect when new writes are made to the
     index, such as when <a class="link" href="indices-forcemerge.html" title="Force Merge">force-merging</a> the shard to a single
     segment.
