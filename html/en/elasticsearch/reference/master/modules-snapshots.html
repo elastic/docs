@@ -1162,25 +1162,32 @@ snapshot and not used by any other snapshots. If the deleted snapshot operation 
 created the snapshotting process will be aborted and all files created as part of the snapshotting process will be
 cleaned. Therefore, the delete snapshot operation can be used to cancel long running snapshot operations that were
 started by mistake.</p><p>A repository can be deleted using the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">DELETE /_snapshot/my_backup</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/10.json"></div><p>When a repository is deleted, Elasticsearch only removes the reference to the location where the repository is storing
-the snapshots. The snapshots themselves are left untouched and in place.</p><h3><a id="_restore"></a>Restore<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A snapshot can be restored using the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /_snapshot/my_backup/snapshot_1/_restore</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/11.json"></div><p>By default, all indices in the snapshot as well as cluster state are restored. It’s possible to select indices that
-should be restored as well as prevent global cluster state from being restored by using <code class="literal">indices</code> and
-<code class="literal">include_global_state</code> options in the restore request body. The list of indices supports
-<a class="link" href="search-search.html#search-multi-index-type" title="Multi-Index, Multi-Typeedit">multi index syntax</a>. The <code class="literal">rename_pattern</code> and <code class="literal">rename_replacement</code> options can be also used to
-rename index on restore using regular expression that supports referencing the original text as explained
+the snapshots. The snapshots themselves are left untouched and in place.</p><h3><a id="_restore"></a>Restore<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A snapshot can be restored using the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /_snapshot/my_backup/snapshot_1/_restore</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/11.json"></div><p>By default, all indices in the snapshot are restored, and the cluster state is
+<span class="strong"><strong>not</strong></span> restored. It’s possible to select indices that should be restored as well
+as to allow the global cluster state from being restored by using <code class="literal">indices</code> and
+<code class="literal">include_global_state</code> options in the restore request body. The list of indices
+supports <a class="link" href="search-search.html#search-multi-index-type" title="Multi-Index, Multi-Typeedit">multi index syntax</a>. The <code class="literal">rename_pattern</code>
+and <code class="literal">rename_replacement</code> options can be also used to rename index on restore
+using regular expression that supports referencing the original text as
+explained
 <a class="ulink" href="http://docs.oracle.com/javase/6/docs/api/java/util/regex/Matcher.html#appendReplacement(java.lang.StringBuffer,%20java.lang.String)" target="_top">here</a>.
-Set <code class="literal">include_aliases</code> to <code class="literal">false</code> to prevent aliases from being restored together with associated indices</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_snapshot/my_backup/snapshot_1/_restore
+Set <code class="literal">include_aliases</code> to <code class="literal">false</code> to prevent aliases from being restored together
+with associated indices</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_snapshot/my_backup/snapshot_1/_restore
 {
   "indices": "index_1,index_2",
   "ignore_unavailable": "true",
-  "include_global_state": false,
+  "include_global_state": true,
   "rename_pattern": "index_(.+)",
   "rename_replacement": "restored_index_$1"
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/12.json"></div><p>The restore operation can be performed on a functioning cluster. However, an existing index can be only restored if it’s
-<a class="link" href="indices-open-close.html" title="Open / Close Index API">closed</a> and has the same number of shards as the index in the snapshot.
-The restore operation automatically opens restored indices if they were closed and creates new indices if they
-didn’t exist in the cluster. If cluster state is restored, the restored templates that don’t currently exist in the
-cluster are added and existing templates with the same name are replaced by the restored templates. The restored
-persistent settings are added to the existing persistent settings.</p><h4><a id="_partial_restore"></a>Partial restore<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default, the entire restore operation will fail if one or more indices participating in the operation don’t have
+}</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/12.json"></div><p>The restore operation can be performed on a functioning cluster. However, an
+existing index can be only restored if it’s <a class="link" href="indices-open-close.html" title="Open / Close Index API">closed</a> and
+has the same number of shards as the index in the snapshot. The restore
+operation automatically opens restored indices if they were closed and creates
+new indices if they didn’t exist in the cluster. If cluster state is restored
+with <code class="literal">include_cluster_state</code> (defaults to <code class="literal">false</code>), the restored templates that
+don’t currently exist in the cluster are added and existing templates with the
+same name are replaced by the restored templates. The restored persistent
+settings are added to the existing persistent settings.</p><h4><a id="_partial_restore"></a>Partial restore<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default, the entire restore operation will fail if one or more indices participating in the operation don’t have
 snapshots of all shards available. It can occur if some shards failed to snapshot for example. It is still possible to
 restore such indices by setting <code class="literal">partial</code> to <code class="literal">true</code>. Please note, that only successfully snapshotted shards will be
 restored in this case and all missing shards will be recreated empty.</p><h4><a id="_changing_index_settings_during_restore"></a>Changing index settings during restore<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/snapshots.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Most of index settings can be overridden during the restore process. For example, the following command will restore
