@@ -2,10 +2,10 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Add special configuration options
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Creating a Metricbeat module
         | Metricbeat Reference
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference" /><link rel="up" href="metricbeat-developer-guide.html" title="Metricbeat Developer Guide" /><link rel="prev" href="_create_the_basic_metricset.html" title="Create the basic metricset" /><link rel="next" href="_connections_to_services.html" title="Connections to Services" /><meta name="DC.type" content="Docs/Metricbeat/Reference" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference" /><link rel="up" href="metricbeat-developer-guide.html" title="Metricbeat Developer Guide" /><link rel="prev" href="_create_a_metricset.html" title="Create a Metricset" /><link rel="next" href="_create_beat_based_on_metricbeat.html" title="Create Beat based on Metricbeat" /><meta name="DC.type" content="Docs/Metricbeat/Reference" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -993,52 +993,52 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="page_header"><b>PLEASE NOTE:</b> These docs are for a pre-GA version of Metricbeat, 5.0.0-alpha3.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference</a></span> » <span class="breadcrumb-link"><a href="metricbeat-developer-guide.html">Metricbeat Developer Guide </a></span> » <span class="breadcrumb-node">Add special configuration options</span></div><div class="navheader"><span class="prev"><a href="_create_the_basic_metricset.html">
+<div class="page_header"><b>PLEASE NOTE:</b> These docs are for a pre-GA version of Metricbeat, 5.0.0-alpha3.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference</a></span> » <span class="breadcrumb-link"><a href="metricbeat-developer-guide.html">Metricbeat Developer Guide </a></span> » <span class="breadcrumb-node">Creating a Metricbeat module</span></div><div class="navheader"><span class="prev"><a href="_create_a_metricset.html">
               « 
-              Create the basic metricset</a>
+              Create a Metricset</a>
            
         </span><span class="next">
            
-          <a href="_connections_to_services.html">Connections to Services
+          <a href="_create_beat_based_on_metricbeat.html">Create Beat based on Metricbeat
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="_add_special_configuration_options"></a>Add special configuration options<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-metricset.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Each metricset can have it’s own configuration variables defined. To make use of
-these variables, the Setup method must be extended. Assuming <code class="literal">password</code> should
-be introduced in the metricset, the <code class="literal">beat.yml</code> would be first extended in the
-following way:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat:
-  modules:
-    - module: {module-name}
-      metricsets: ["{metricset-name}"]
-      password: "test1234"</pre></div><p>To read out the password config in the Setup method, the <code class="literal">ProcessConfig</code> method
-should be used. A config struct must be defined with the value types to be read.
-Second as the values of the struct, default values can be set if needed.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">type MetricSet struct {
-        mb.BaseMetricSet
-        password string
-}
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="_creating_a_metricbeat_module"></a>Creating a Metricbeat module<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-module.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Metricbeat modules are used to group multiple metricsets together and to implement shared functionality
+of the MetricSets. In most cases, no implementation of the module is needed and the default module
+implementation is automatically picked.</p><p>It is important to complete the configuration and documentation files for a module. All these files are in the <code class="literal">_beat</code>
+directory and a default version is generate when using <code class="literal">make create-metricset</code>.</p><h3><a id="_module_files"></a>Module files<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-module.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+config.yml and config.full.yml
+</li><li class="listitem">
+docs.asciidoc
+</li><li class="listitem">
+fields.yml
+</li></ul></div><p>Make sure that after updating any of these files to run <code class="literal">make collect</code> in your beat directory so all
+ generated files will be updated.</p><h4><a id="_config_yml_and_config_full_yml"></a>config.yml and config.full.yml<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-module.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">config.yml</code> contains the basic configuration option and looks as following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: {module}
+  metricsets: ["{metricset}"]
+  enabled: true
+  period: 1s
+  hosts: ["localhost"]</pre></div><p>It contains the module name, your metricset and the default period. In case you have multiple
+metricsets in your module, make sure to extend the metricset array:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">  metricsets: ["{metricset1}", "{metricset2}"]</pre></div><p>The <code class="literal">full.config.yml</code> is optional and by default has the same content as the <code class="literal">config.yml</code>. It is used
+to add and document more advance configuration options which should not part of the minimal
+config file which is shipped by default.</p><h4><a id="_docs_asciidoc"></a>docs.asciidoc<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-module.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">dosc.asciidoc</code> contains the documentation about your module. By default during generation of the
+documentation the default config file will be appended to the docs. Use this file to describe your
+module more in detail and more specific configuration options.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-asciidoc">== {module} Module
 
-func New(base mb.BaseMetricSet) (mb.MetricSet, error) {
-
-        // Unpack additional configuration options.
-        config := struct {
-                Password string `config:"password"`
-        }{
-                Password: "",
-        }
-        err := base.Module().UnpackConfig(&amp;config)
-        if err != nil {
-                return nil, err
-        }
-
-        return &amp;MetricSet{
-                BaseMetricSet: base,
-                password:      Password,
-        }, nil
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="_create_the_basic_metricset.html">
+This is the {module} Module.</pre></div><h4><a id="_fields_yml"></a>fields.yml<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-module.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">fields.yml</code> contains the top level structure of all your metricset. In combination with the fields.yml
+in each metricset it is used to generate the template and the documentation for the fields.</p><p>The default file looks as following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- key: {module}
+  title: "{module}"
+  description: &gt;
+    {module} Module
+  fields:
+    - name: {module}
+      type: group
+      description: &gt;
+      fields:</pre></div><p>Make sure to update at least the description of the module.</p><h3><a id="_testing"></a>Testing<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-module.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>It is a common pattern to use a <code class="literal">testing.go</code> file in the module package to share some testing functionality among
+the metricsets. This file does not have <code class="literal">_test.go</code> in the name as otherwise it would not be compiled for sub packages.</p><p>For example of the <code class="literal">testing.go</code> file is is best to check out the <a class="ulink" href="https://github.com/elastic/beats/tree/master/metricbeat/module/mysql" target="_top">mysql module</a>.</p></div><div class="navfooter"><span class="prev"><a href="_create_a_metricset.html">
               « 
-              Create the basic metricset</a>
+              Create a Metricset</a>
            
         </span><span class="next">
            
-          <a href="_connections_to_services.html">Connections to Services
+          <a href="_create_beat_based_on_metricbeat.html">Create Beat based on Metricbeat
                »
             </a></span></div>
 <!-- end body -->
