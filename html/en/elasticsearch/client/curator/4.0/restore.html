@@ -2,10 +2,10 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>pattern
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Restore
         | Curator Reference [4.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Curator Reference [4.0]" /><link rel="up" href="filters.html" title="Filters" /><link rel="prev" href="filtertype_opened.html" title="opened" /><link rel="next" href="filtertype_space.html" title="space" /><meta name="DC.type" content="Docs/Clients/Curator/4.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Curator Reference [4.0]" /><link rel="up" href="actions.html" title="Actions" /><link rel="prev" href="replicas.html" title="Replicas" /><link rel="next" href="snapshot.html" title="Snapshot" /><meta name="DC.type" content="Docs/Clients/Curator/4.0" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -1014,34 +1014,105 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Curator Reference
       [4.0]
-    </a></span> » <span class="breadcrumb-link"><a href="filters.html">Filters </a></span> » <span class="breadcrumb-node">pattern</span></div><div class="navheader"><span class="prev"><a href="filtertype_opened.html">
+    </a></span> » <span class="breadcrumb-link"><a href="actions.html">Actions </a></span> » <span class="breadcrumb-node">Restore</span></div><div class="navheader"><span class="prev"><a href="replicas.html">
               « 
-              opened</a>
+              Replicas</a>
            
         </span><span class="next">
            
-          <a href="filtertype_space.html">space
+          <a href="snapshot.html">Snapshot
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="filtertype_pattern"></a>pattern<a href="https://github.com/elastic/curator/edit/4.0/docs/asciidoc/filters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">- filtertype: pattern
- kind: prefix
- value: logstash-
- exclude: False</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Empty values and commented lines will result in the default value, if any,
-    being selected.  If a setting is set, but not used by a given
-    <a class="link" href="filtertype.html" title="filtertype">filtertype</a>, it will be ignored.</p></div></div><p>This <a class="link" href="filtertype.html" title="filtertype">filtertype</a> will iterate over the actionable list and match
-indices matching a given pattern.  They will remain in, or be removed from
-the actionable list based on the value of <a class="link" href="fe_exclude.html" title="exclude">exclude</a>.</p><p>Read more about the different settings for this <a class="link" href="filtertype.html" title="filtertype">filtertype</a>:</p><h3><a id="_required_settings_12"></a>Required settings<a href="https://github.com/elastic/curator/edit/4.0/docs/asciidoc/filters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="link" href="fe_kind.html" title="kind">kind</a> (required)
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="restore"></a>Restore<a href="https://github.com/elastic/curator/edit/4.0/docs/asciidoc/actions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">actions:
+  1:
+    action: restore
+    description: &gt;-
+      Restore all indices in the most recent snapshot with state SUCCESS.  Wait
+      for the restore to complete before continuing.  Do not skip the repository
+      filesystem access check.  Use the other options to define the index/shard
+      settings for the restore.
+    options:
+      repository:
+      # Leaving name blank will result in restoring the most recent snapshot by age
+      name:
+      # Leaving indices blank will result in restoring all indices in the snapshot
+      indices:
+      include_aliases: False
+      ignore_unavailable: False
+      include_global_state: True
+      partial: False
+      rename_pattern:
+      rename_replacement:
+      extra_settings:
+      wait_for_completion: True
+      skip_repo_fs_check: False
+      timeout_override:
+      continue_if_exception: False
+      disable_action: False
+    filters:
+    - filtertype: state
+      state: SUCCESS
+      exclude:
+    - filtertype: ...</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Empty values and commented lines will result in the default value, if any,
+    being selected.  If a setting is set, but not used by a given action, it
+    will be ignored.</p></div></div><p>This action will restore indices from the indicated
+<a class="link" href="option_repository.html" title="repository">repository</a>, from the most recent snapshot identified by
+the applied filters, or the snapshot identified by <a class="link" href="option_name.html" title="name">name</a>.</p><p>The other options are usually okay to leave at the defaults, but feel free to
+read about them and change them accordingly.</p><p>The <a class="link" href="option_extra_settings.html" title="extra_settings">extra_settings</a> option allows the addition of extra
+settings, such as index settings and mappings.  An example of how these settings
+can be used to change settings for an index being restored might be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">extra_settings:
+  settings:
+    number_of_shards: 1
+    number_of_replicas: 0
+  mappings:
+    type1 :
+      properties:
+        field1:
+          type: string
+          index: not_analyzed</pre></div><h3><a id="_required_settings_7"></a>Required settings<a href="https://github.com/elastic/curator/edit/4.0/docs/asciidoc/actions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="option_repository.html" title="repository">repository</a> (required)
+</li></ul></div><h3><a id="_optional_settings_10"></a>Optional settings<a href="https://github.com/elastic/curator/edit/4.0/docs/asciidoc/actions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="option_name.html" title="name">name</a> (has no default value)
 </li><li class="listitem">
-<a class="link" href="fe_value.html" title="value">value</a> (required)
-</li></ul></div><h3><a id="_optional_settings_18"></a>Optional settings<a href="https://github.com/elastic/curator/edit/4.0/docs/asciidoc/filters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="link" href="fe_exclude.html" title="exclude">exclude</a> (default is <code class="literal">False</code>)
-</li></ul></div></div><div class="navfooter"><span class="prev"><a href="filtertype_opened.html">
+<a class="link" href="option_include_aliases.html" title="include_aliases">include_aliases</a> (has a default value which can
+    optionally be changed)
+</li><li class="listitem">
+<a class="link" href="option_ignore.html" title="ignore_unavailable">ignore_unavailable</a> (has a default value which can optionally
+    be changed)
+</li><li class="listitem">
+<a class="link" href="option_include_gs.html" title="include_global_state">include_global_state</a> (has a default value which can
+    optionally be changed)
+</li><li class="listitem">
+<a class="link" href="option_partial.html" title="partial">partial</a> (has a default value which can optionally be
+    changed)
+</li><li class="listitem">
+<a class="link" href="option_rename_pattern.html" title="rename_pattern">rename_pattern</a> (has no default value)
+</li><li class="listitem">
+<a class="link" href="option_rename_replacement.html" title="rename_replacement">rename_replacement</a> (has no default value)
+</li><li class="listitem">
+<a class="link" href="option_extra_settings.html" title="extra_settings">extra_settings</a> (has no default value.)
+</li><li class="listitem">
+<a class="link" href="option_wfc.html" title="wait_for_completion">wait_for_completion</a> (has a default value which can optionally
+    be changed)
+</li><li class="listitem">
+<a class="link" href="option_skip_fsck.html" title="skip_repo_fs_check">skip_repo_fs_check</a> (has a default value which can
+    optionally be changed)
+</li><li class="listitem">
+<a class="link" href="option_timeout_override.html" title="timeout_override">timeout_override</a> (can override the default
+    <a class="link" href="configfile.html#timeout" title="timeout">timeout</a>)
+</li><li class="listitem">
+<a class="link" href="option_continue.html" title="continue_if_exception">continue_if_exception</a> (has a default value which can
+    optionally be changed)
+</li><li class="listitem">
+<a class="link" href="option_disable.html" title="disable_action">disable_action</a> (has a default value which can optionally
+    be changed)
+</li></ul></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>See an example of this action in an <a class="link" href="actionfile.html" title="Action File">actionfile</a>
+    <a class="link" href="examples.html#ex_restore" title="restore">here</a>.</p></div></div></div><div class="navfooter"><span class="prev"><a href="replicas.html">
               « 
-              opened</a>
+              Replicas</a>
            
         </span><span class="next">
            
-          <a href="filtertype_space.html">space
+          <a href="snapshot.html">Snapshot
                »
             </a></span></div>
 <!-- end body -->
