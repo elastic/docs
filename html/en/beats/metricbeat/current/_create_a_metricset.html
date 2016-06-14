@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Create a Metricset
         | Metricbeat Reference
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference" /><link rel="up" href="metricbeat-developer-guide.html" title="Metricbeat Developer Guide" /><link rel="prev" href="_overview.html" title="Overview" /><link rel="next" href="_creating_a_metricbeat_module.html" title="Creating a Metricbeat module" /><meta name="DC.type" content="Docs/Metricbeat/Reference" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference" /><link rel="up" href="metricbeat-developer-guide.html" title="Metricbeat Developer Guide" /><link rel="prev" href="_overview.html" title="Overview" /><link rel="next" href="_metricset_details.html" title="MetricSet Details" /><meta name="DC.type" content="Docs/Metricbeat/Reference" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -1049,12 +1049,13 @@
            
         </span><span class="next">
            
-          <a href="_creating_a_metricbeat_module.html">Creating a Metricbeat module
+          <a href="_metricset_details.html">MetricSet Details
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="_create_a_metricset"></a>Create a Metricset<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-metricset.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A Metricset is the part of a Metricbeat module that fetches and structures the
 data from the remote service. Each module can have multiple MetricSets.</p><p>This guide should help you to create your own MetricSet. It will focus on the details
 of the MetricSet creation itself. If you want to create your own beat using Metricbeat
-as a library, have a look here.</p><h2><a id="_create_metricset_files"></a>Create Metricset Files<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-metricset.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Creating a new metricset is simple. Run the command</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">make create-metricset</pre></div><p>inside your beat directory. This will prompt you to enter a module and metricset name. Only use characters <code class="literal">[a-z]</code> here
+as a library, have a look here.</p><p>In general when creating a MetricSet for the first time, it helps before to have a look at the
+implementation of the existing MetricSets as inspiration.</p><h2><a id="_create_metricset_files"></a>Create Metricset Files<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-metricset.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Creating a new metricset is simple. Run the command</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">make create-metricset</pre></div><p>inside your beat directory. This will prompt you to enter a module and metricset name. Only use characters <code class="literal">[a-z]</code> here
 and if required also <code class="literal">_</code>. No other characters are allowed.</p><p>This will create all basic files for your metricset and if the module did not exist yet, it will also add the required
 module files. More details on the module files can be found here (TODO: link to module guide).</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>We will used <code class="literal">{metricset}</code>, <code class="literal">{module}</code>, <code class="literal">{beat}</code> across this guide. It means this part should be replaced by the actual
 name of your metricset, module or beat.</p></div></div><p>The create metricset is already a functioning metricset and can be compiled. To compile your new metricset, run the commands:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">make collect
@@ -1062,6 +1063,7 @@ make</pre></div><p>The first command <code class="literal">make collect</code> w
 will compile your source code and provide your with a binary in the beat folder calle <code class="literal">{beat}</code>. The binary can be run
 in debug mode with</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">./{beat} -e -d "*"</pre></div><h2><a id="_metricset_files"></a>MetricSet Files<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-metricset.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>The MetricSet which was generated with its files can be found under <code class="literal">module/{module}/{metricset}</code>. This directory contains
 the following files:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+{metricset}.go
 </li><li class="listitem">
 _beat/docs.asciidoc
 </li><li class="listitem">
@@ -1090,6 +1092,7 @@ func init() {
 // multiple fetch calls.
 type MetricSet struct {
         mb.BaseMetricSet
+        counter int
 }
 
 // New create a new instance of the MetricSet
@@ -1105,6 +1108,7 @@ func New(base mb.BaseMetricSet) (mb.MetricSet, error) {
 
         return &amp;MetricSet{
                 BaseMetricSet: base,
+                counter:       1,
         }, nil
 }
 
@@ -1114,8 +1118,10 @@ func New(base mb.BaseMetricSet) (mb.MetricSet, error) {
 func (m *MetricSet) Fetch() (common.MapStr, error) {
 
         event := common.MapStr{
-                "example": "{metricset} example",
+                "counter": m.counter,
         }
+        m.counter++
+
         return event, nil
 }</pre></div><p>The <code class="literal">package</code> and <code class="literal">import</code> part are part of the base structure of each Golang file. This part must only be modified if
 more imports are required by the implementation.</p><h4><a id="_initialisation"></a>Initialisation<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-metricset.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The init method registers the MetricSet with the central registry. In Golang the <code class="literal">init()</code> function will be called
@@ -1150,19 +1156,34 @@ defined in the configuration file.</p><p>Fetch must return a <code class="litera
 In case an error happens, an error must be returned which is then sent instead
 to elasticsearch. That means metricbeat always sends an event, also on failure.
 It must made sure, that the error message helps to identify what the actual
-error is.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (m *MetricSet) Fetch() (common.MapStr, error) {
+error is.</p><p>In our example we have a counter which is increment by one for each fetch call.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (m *MetricSet) Fetch() (common.MapStr, error) {
 
         event := common.MapStr{
-                "example": "{metricset} example",
+                "counter": m.counter,
         }
+        m.counter++
+
         return event, nil
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="_overview.html">
+}</pre></div><p>Fetch must return a <code class="literal">common.MapStr</code> which will be translated to the JSON content.
+The JSON output will be identical to the naming and structure you use in
+common.MapStr. More details about MapStr and its functions can be found in the API
+docs <a class="ulink" href="https://godoc.org/github.com/elastic/beats/libbeat/common#MapStr" target="_top">here</a>.</p><h4><a id="_multi_fetching"></a>Multi Fetching<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-metricset.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Metricbeat has two different Fetch interfaces. One is to fetch a single event
+which is shown above. In some cases every fetch returns a list of events. Instead
+of using an array inside a JSON document, we recommend to create a list of events.</p><p>For this kind of data the following interface can be used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">(m *MetricSet) Fetch() ([]common.MapStr, error)</pre></div><p>The only difference to the previous example is that a <code class="literal">[]common.MapStr</code> is returned.
+Metricbeat will send all events with the same timestamp and a unique identifier
+to make it possible to correlate the events.</p><h4><a id="_configuration_file"></a>Configuration File<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-metricset.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The configuration file for a MetricSet is handled by the module. In case there are
+multiple MetricSets in one module, make sure to add all MetricSets to the configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">metricbeat:
+  modules:
+    - module: {module-name}
+      metricsets: ["{metricset1}", "{metricset2}"]</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Make sure to run <code class="literal">make collect</code> every time after you update the config file
+so it is also applied to the global configuration file and the docs.</p></div></div><p>More details on the configuration file can be found here in the module docs.</p><h2><a id="_next_steps"></a>Next Steps<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/create-metricset.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>In the above descriptions the basic steps to create a MetricSet are documented. For more in depth details about MetricSet
+and how to extend your MetricSet further, check the MetricSet details page.</p></div><div class="navfooter"><span class="prev"><a href="_overview.html">
               « 
               Overview</a>
            
         </span><span class="next">
            
-          <a href="_creating_a_metricbeat_module.html">Creating a Metricbeat module
+          <a href="_metricset_details.html">MetricSet Details
                »
             </a></span></div>
 <!-- end body -->

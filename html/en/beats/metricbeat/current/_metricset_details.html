@@ -2,10 +2,10 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Profile API
-        | Elasticsearch Reference [2.3]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>MetricSet Details
+        | Metricbeat Reference
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.3]" /><link rel="up" href="search.html" title="Search APIs" /><link rel="prev" href="search-explain.html" title="Explain API" /><link rel="next" href="_literal_query_literal_section.html" title="query Section" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/2.3" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference" /><link rel="up" href="metricbeat-developer-guide.html" title="Metricbeat Developer Guide" /><link rel="prev" href="_create_a_metricset.html" title="Create a Metricset" /><link rel="next" href="_creating_a_metricbeat_module.html" title="Creating a Metricbeat module" /><meta name="DC.type" content="Docs/Metricbeat/Reference" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -1043,150 +1043,138 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [2.3]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-node">Profile API</span></div><div class="navheader"><span class="prev"><a href="search-explain.html">
+<div class="page_header"><b>PLEASE NOTE:</b> These docs are for a pre-GA version of Metricbeat, 5.0.0-alpha3.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference</a></span> » <span class="breadcrumb-link"><a href="metricbeat-developer-guide.html">Metricbeat Developer Guide </a></span> » <span class="breadcrumb-node">MetricSet Details</span></div><div class="navheader"><span class="prev"><a href="_create_a_metricset.html">
               « 
-              Explain API</a>
+              Create a Metricset</a>
            
         </span><span class="next">
            
-          <a href="_literal_query_literal_section.html"><code class="literal">query</code> Section
+          <a href="_creating_a_metricbeat_module.html">Creating a Metricbeat module
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-profile"></a>Profile API<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release.</p></div></div><p>The Profile API provides detailed timing information about the execution of individual components
-in a query.  It gives the user insight into how queries are executed at a low level so that
-the user can understand why certain queries are slow, and take steps to improve their slow queries.</p><p>The output from the Profile API is <span class="strong"><strong>very</strong></span> verbose, especially for complicated queries executed across
-many shards. Pretty-printing the response is recommended to help understand the output</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The details provided by the Profile API directly expose Lucene class names and concepts, which means
-that complete interpretation of the results require fairly advanced knowledge of Lucene.  This
-page attempts to give a crash-course in how Lucene executes queries so that you can use the Profile API to successfully
-diagnose and debug queries, but it is only an overview.  For complete understanding, please refer
-to Lucene’s documentation and, in places, the code.</p><p>With that said, a complete understanding is often not required to fix a slow query.  It is usually
-sufficient to see that a particular component of a query is slow, and not necessarily understand why
-the <code class="literal">advance</code> phase of that query is the cause, for example.</p></div></div><h3><a id="_usage_3"></a>Usage<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Any <code class="literal">_search</code> request can be profiled by adding a top-level <code class="literal">profile</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/_search' -d '{
-  "profile": true,<a id="CO36-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-  "query" : {
-    "match" : { "message" : "search test" }
-  }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO36-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Setting the top-level <code class="literal">profile</code> parameter to <code class="literal">true</code> will enable profiling
-for the search
-</p></td></tr></table></div><p>This will yield the following result:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "took": 25,
-   "timed_out": false,
-   "_shards": {
-      "total": 1,
-      "successful": 1,
-      "failed": 0
-   },
-   "hits": {
-      "total": 1,
-      "max_score": 1,
-      "hits": [ ... ] <a id="CO37-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-   },
-   "profile": {
-     "shards": [
-        {
-           "id": "[htuC6YnSSSmKFq5UBt0YMA][test][0]",
-           "searches": [
-              {
-                 "query": [
-                    {
-                       "query_type": "BooleanQuery",
-                       "lucene": "message:search message:test",
-                       "time": "15.52889800ms",
-                       "breakdown": {
-                          "score": 0,
-                          "next_doc": 24495,
-                          "match": 0,
-                          "create_weight": 8488388,
-                          "build_scorer": 7016015,
-                          "advance": 0
-                       },
-                       "children": [
-                          {
-                             "query_type": "TermQuery",
-                             "lucene": "message:search",
-                             "time": "4.938855000ms",
-                             "breakdown": {
-                                "score": 0,
-                                "next_doc": 18332,
-                                "match": 0,
-                                "create_weight": 2945570,
-                                "build_scorer": 1974953,
-                                "advance": 0
-                             }
-                          },
-                          {
-                             "query_type": "TermQuery",
-                             "lucene": "message:test",
-                             "time": "0.5016660000ms",
-                             "breakdown": {
-                                "score": 0,
-                                "next_doc": 0,
-                                "match": 0,
-                                "create_weight": 170534,
-                                "build_scorer": 331132,
-                                "advance": 0
-                             }
-                          }
-                       ]
-                    }
-                 ],
-                 "rewrite_time": 185002,
-                 "collector": [
-                    {
-                       "name": "SimpleTopScoreDocCollector",
-                       "reason": "search_top_hits",
-                       "time": "2.206529000ms"
-                    }
-                 ]
-              }
-           ]
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="_metricset_details"></a>MetricSet Details<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This page shares additional details about the creationg of a MetricSet for developers.</p><h3><a id="_add_special_configuration_options"></a>Add special configuration options<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each MetricSet can have it’s own configuration variables defined. To make use of
+these variables, the <code class="literal">New</code> method must be extended. Assuming <code class="literal">password</code> should
+be introduced in the MetricSet, the <code class="literal">beat.yml</code> would be extended in the
+following way:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat.modules:
+- module: {module}
+  metricsets: ["{metricset}"]
+  password: "test1234"</pre></div><p>To read out the password config in the <code class="literal">New</code> method must be used. First a config struct must be defined with
+ the value types to be read. Second as the values of the struct, default values can be set if needed. This config
+ is then passed to the <code class="literal">UnpackConfig</code> method for loading the configuration. For the implementation details see below:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">type MetricSet struct {
+        mb.BaseMetricSet
+        password string
+}
+
+func New(base mb.BaseMetricSet) (mb.MetricSet, error) {
+
+        // Unpack additional configuration options.
+        config := struct {
+                Password string `config:"password"`
+        }{
+                Password: "",
         }
-     ]
-  }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO37-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Search results are returned, but were omitted here for brevity
-</p></td></tr></table></div><p>Even for a simple query, the response is relatively complicated.  Let’s break it down piece-by-piece before moving
-to more complex examples.</p><p>First, the overall structure of the profile response is as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "profile": {
-        "shards": [
-           {
-              "id": "[htuC6YnSSSmKFq5UBt0YMA][test][0]",  <a id="CO38-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-              "searches": [
-                 {
-                    "query": [...],             <a id="CO38-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                    "rewrite_time": 185002,     <a id="CO38-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-                    "collector": [...]          <a id="CO38-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-                 }
-              ]
-           }
-        ]
-     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-A profile is returned for each shard that participated in the response, and is identified
-by a unique ID
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Each profile contains a section which holds details about the query execution
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Each profile has a single time representing the cumulative rewrite time
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Each profile also contains a section about the Lucene Collectors which run the search
-</p></td></tr></table></div><p>Because a search request may be executed against one or more shards in an index, and a search may cover
-one or more indices, the top level element in the profile response is an array of <code class="literal">shard</code> objects.
-Each shard object lists it’s <code class="literal">id</code> which uniquely identifies the shard.  The ID’s format is
-<code class="literal">[nodeID][indexName][shardID]</code>.</p><p>The profile itself may consist of one or more "searches", where a search is a query executed against the underlying
-Lucene index.  Most Search Requests submitted by the user will only execute a single <code class="literal">search</code> against the Lucene index.
-But occasionally multiple searches will be executed, such as including a global aggregation (which needs to execute
-a secondary "match_all" query for the global context).</p><p>Inside each <code class="literal">search</code> object there will be two arrays of profiled information:
-a <code class="literal">query</code> array and a <code class="literal">collector</code> array.  In the future, more sections may be added, such as <code class="literal">suggest</code>, <code class="literal">highlight</code>,
-<code class="literal">aggregations</code>, etc</p><p>There will also be a <code class="literal">rewrite</code> metric showing the total time spent rewriting the query (in nanoseconds).</p></div><div class="navfooter"><span class="prev"><a href="search-explain.html">
+        err := base.Module().UnpackConfig(&amp;config)
+        if err != nil {
+                return nil, err
+        }
+
+        return &amp;MetricSet{
+                BaseMetricSet: base,
+                password:      config.Password,
+        }, nil
+}</pre></div><h3><a id="_timeout_connections_to_services"></a>Timeout Connections to Services<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>As each time the Fetch method is called, it makes a request to the service, it
+is important to handle the connections correctly. It is recommended to setup the
+connections in the New method and persist them in the MetricSet object. This allows
+connections to be reused.</p><p>One very important point is that connections must respect the timeout variable:
+<code class="literal">base.Module().Config().Timeout</code>. After the timeout a request must be ended and an error must
+be returned to make sure the next request can be started on time. By default the
+Timeout is set to Period, so one request gets ended when a new request is made.</p><p>In case of a request must be ended or has an error, it should be make sure to
+return a good error message. This error message is also sent to Elasticesarch in
+index. This makes it possible to not only fetch metrics from the service, but
+also report potential problems / errors with the metricset.</p><h3><a id="_data_transformation"></a>Data Transformation<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In case the data transformation that has to happen in the <code class="literal">Fetch</code> method is
+extensive, we recommend to create a second file called <code class="literal">data.go</code> in the same package
+which contains a function <code class="literal">eventMapping(...)</code>. This is not required but
+currently best practice. This keeps the functionality of the MetricSet and Fetch method separate
+from the data mapping part.</p><h3><a id="_fields_yml"></a>fields.yml<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">fields.yml</code> file is used for different for different purposes:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Creates the elasticsearch template
+</li><li class="listitem">
+Creates the docs Fields Docs for the MetricSet
+</li></ul></div><p>To make the elasticsearch template is correct, it is important to keep this file up-to-date
+the general top level structure for all MetricSets. Normally this one does not have to be modified
+except for the description:</p><p>Here an example for the fields.yml from the MySQL module.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- key: mysql
+  title: "MySQL Status"
+  description: &gt;
+    MySQL server status metrics collected from MySQL
+  short_config: false
+  fields:
+    - name: mysql
+      type: group
+      description: &gt;
+        mysql contains the metrics that were obtained from MySQL
+        query.
+      fields:</pre></div><p>by the MetricSet. As field types, for each each field must have a core data type
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/mapping-types.html#_core_datatypes" target="_top">supported by elasticsearch</a>
+must be used. A very basic file with one group from the MySQL/Status MetricSet looks as following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- name: status
+  type: group
+  description: &gt;
+    `status` contains the metrics that were obtained by the status SQL query.
+  fields:
+    - name: aborted
+      type: group
+      description: &gt;
+        Aborted status fields
+      fields:
+        - name: clients
+          type: integer
+          description: &gt;
+            The number of connections that were aborted because the client died without closing the connection properly.
+
+        - name: connects
+          type: integer
+          description: &gt;
+            The number of failed attempts to connect to the MySQL server.</pre></div><p>As you can see, in case there are nested fields, the type <code class="literal">group</code> has to be used.</p><h3><a id="_testing"></a>Testing<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>It is important to also add tests to your MetricSet. To test a beat there exist three different type of tests:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+unit tests
+</li><li class="listitem">
+integration tests
+</li><li class="listitem">
+system tests
+</li></ul></div><p>When creating a MetricSet we recommend to make use of all three. Unit tests are
+written in Golang and have no dependencies. Integration tests are also written
+in Golang but require the service that is required for the module to be running.
+System-tests for Metricbeat also require the service to be running in most cases and are
+written in Python based on our small python test framework.</p><p>It is recommended to use a combination of the three test types to test your MetricSets as
+each method has its advantage and disadvantages. The unit and integration tests
+can be found in the <code class="literal">_test.go</code> files under modules and metricsets. The system
+tests are under <code class="literal">tests/systems</code>. To get started with your own tests, it is best
+having a look at the existing tests.</p><h4><a id="_add_test_environment"></a>Add test environment<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Integration and system tests need an environment running with the service to
+test. This is done with docker and a docker-compose file. In case you add a
+module which requires a service, you must add this to the virtual environment.
+For this two steps are required:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Update the <code class="literal">docker-compose.yml</code> file with your environment
+</li><li class="listitem">
+Update the <code class="literal">docker-entrypoint.sh</code> script
+</li></ul></div><p>The <code class="literal">docker-compose.yml</code> file is at the root of Metricbeat. Most services have
+existing docker modules and can be added as simple as redis:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">redis:
+  image: redis:3.2.0</pre></div><p>To also allow the beat to access your service, make sure to define the environment
+variables in the docker-compose file and add the link to the container:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">beat:
+  links:
+    - redis
+  environment:
+    - REDIS_HOST=redis
+    - REDIS_PORT=6379</pre></div><p>To make sure the service is running before the tests are started, the
+<code class="literal">docker-entrypoint.sh</code> must be modified to add a check for your service to be
+running. An example for redis looks as following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">waitFor ${REDIS_HOST} ${REDIS_PORT} Redis</pre></div><p>This expects that your service is available as soon as it receives a response from
+the given address and port.</p><h4><a id="_run_tests"></a>Run tests<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To run all the tests, run <code class="literal">make testsuite</code>. To only run unit tests, run <code class="literal">make
+unit-tests</code> or for integration tests <code class="literal">make integration-tests</code>. Be aware that for
+integration and system tests a running docker environment is needed.</p><h2><a id="_documentation"></a>Documentation<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Each module must be documented. The documentation is based on asciidoc and is in
+the file <code class="literal">module/{module}/_beat/docs.asciidoc</code> for the module and in <code class="literal">module/{module}/{metricset}/_beat/docs.asciidoc</code>
+ for the MetricSet. A basic documentation with the config file and an example output is automatically
+ generated. Use this files to document specific configuration options or usage examples.</p></div><div class="navfooter"><span class="prev"><a href="_create_a_metricset.html">
               « 
-              Explain API</a>
+              Create a Metricset</a>
            
         </span><span class="next">
            
-          <a href="_literal_query_literal_section.html"><code class="literal">query</code> Section
+          <a href="_creating_a_metricbeat_module.html">Creating a Metricbeat module
                »
             </a></span></div>
 <!-- end body -->

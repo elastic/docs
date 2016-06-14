@@ -2,10 +2,10 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Profile API
-        | Elasticsearch Reference [2.3]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Metricbeat Developer Guide FAQ
+        | Metricbeat Reference
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.3]" /><link rel="up" href="search.html" title="Search APIs" /><link rel="prev" href="search-explain.html" title="Explain API" /><link rel="next" href="_literal_query_literal_section.html" title="query Section" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/2.3" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference" /><link rel="up" href="metricbeat-developer-guide.html" title="Metricbeat Developer Guide" /><link rel="prev" href="_create_beat_based_on_metricbeat.html" title="Create Beat based on Metricbeat" /><meta name="DC.type" content="Docs/Metricbeat/Reference" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -1043,152 +1043,22 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [2.3]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-node">Profile API</span></div><div class="navheader"><span class="prev"><a href="search-explain.html">
+<div class="page_header"><b>PLEASE NOTE:</b> These docs are for a pre-GA version of Metricbeat, 5.0.0-alpha3.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference</a></span> » <span class="breadcrumb-link"><a href="metricbeat-developer-guide.html">Metricbeat Developer Guide </a></span> » <span class="breadcrumb-node">Metricbeat Developer Guide FAQ</span></div><div class="navheader"><span class="prev"><a href="_create_beat_based_on_metricbeat.html">
               « 
-              Explain API</a>
+              Create Beat based on Metricbeat</a>
            
         </span><span class="next">
            
-          <a href="_literal_query_literal_section.html"><code class="literal">query</code> Section
-               »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-profile"></a>Profile API<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release.</p></div></div><p>The Profile API provides detailed timing information about the execution of individual components
-in a query.  It gives the user insight into how queries are executed at a low level so that
-the user can understand why certain queries are slow, and take steps to improve their slow queries.</p><p>The output from the Profile API is <span class="strong"><strong>very</strong></span> verbose, especially for complicated queries executed across
-many shards. Pretty-printing the response is recommended to help understand the output</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The details provided by the Profile API directly expose Lucene class names and concepts, which means
-that complete interpretation of the results require fairly advanced knowledge of Lucene.  This
-page attempts to give a crash-course in how Lucene executes queries so that you can use the Profile API to successfully
-diagnose and debug queries, but it is only an overview.  For complete understanding, please refer
-to Lucene’s documentation and, in places, the code.</p><p>With that said, a complete understanding is often not required to fix a slow query.  It is usually
-sufficient to see that a particular component of a query is slow, and not necessarily understand why
-the <code class="literal">advance</code> phase of that query is the cause, for example.</p></div></div><h3><a id="_usage_3"></a>Usage<a href="https://github.com/elastic/elasticsearch/edit/2.3/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Any <code class="literal">_search</code> request can be profiled by adding a top-level <code class="literal">profile</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'localhost:9200/_search' -d '{
-  "profile": true,<a id="CO36-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-  "query" : {
-    "match" : { "message" : "search test" }
-  }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO36-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Setting the top-level <code class="literal">profile</code> parameter to <code class="literal">true</code> will enable profiling
-for the search
-</p></td></tr></table></div><p>This will yield the following result:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "took": 25,
-   "timed_out": false,
-   "_shards": {
-      "total": 1,
-      "successful": 1,
-      "failed": 0
-   },
-   "hits": {
-      "total": 1,
-      "max_score": 1,
-      "hits": [ ... ] <a id="CO37-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-   },
-   "profile": {
-     "shards": [
-        {
-           "id": "[htuC6YnSSSmKFq5UBt0YMA][test][0]",
-           "searches": [
-              {
-                 "query": [
-                    {
-                       "query_type": "BooleanQuery",
-                       "lucene": "message:search message:test",
-                       "time": "15.52889800ms",
-                       "breakdown": {
-                          "score": 0,
-                          "next_doc": 24495,
-                          "match": 0,
-                          "create_weight": 8488388,
-                          "build_scorer": 7016015,
-                          "advance": 0
-                       },
-                       "children": [
-                          {
-                             "query_type": "TermQuery",
-                             "lucene": "message:search",
-                             "time": "4.938855000ms",
-                             "breakdown": {
-                                "score": 0,
-                                "next_doc": 18332,
-                                "match": 0,
-                                "create_weight": 2945570,
-                                "build_scorer": 1974953,
-                                "advance": 0
-                             }
-                          },
-                          {
-                             "query_type": "TermQuery",
-                             "lucene": "message:test",
-                             "time": "0.5016660000ms",
-                             "breakdown": {
-                                "score": 0,
-                                "next_doc": 0,
-                                "match": 0,
-                                "create_weight": 170534,
-                                "build_scorer": 331132,
-                                "advance": 0
-                             }
-                          }
-                       ]
-                    }
-                 ],
-                 "rewrite_time": 185002,
-                 "collector": [
-                    {
-                       "name": "SimpleTopScoreDocCollector",
-                       "reason": "search_top_hits",
-                       "time": "2.206529000ms"
-                    }
-                 ]
-              }
-           ]
-        }
-     ]
-  }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO37-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Search results are returned, but were omitted here for brevity
-</p></td></tr></table></div><p>Even for a simple query, the response is relatively complicated.  Let’s break it down piece-by-piece before moving
-to more complex examples.</p><p>First, the overall structure of the profile response is as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "profile": {
-        "shards": [
-           {
-              "id": "[htuC6YnSSSmKFq5UBt0YMA][test][0]",  <a id="CO38-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-              "searches": [
-                 {
-                    "query": [...],             <a id="CO38-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                    "rewrite_time": 185002,     <a id="CO38-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-                    "collector": [...]          <a id="CO38-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-                 }
-              ]
-           }
-        ]
-     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-A profile is returned for each shard that participated in the response, and is identified
-by a unique ID
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Each profile contains a section which holds details about the query execution
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Each profile has a single time representing the cumulative rewrite time
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Each profile also contains a section about the Lucene Collectors which run the search
-</p></td></tr></table></div><p>Because a search request may be executed against one or more shards in an index, and a search may cover
-one or more indices, the top level element in the profile response is an array of <code class="literal">shard</code> objects.
-Each shard object lists it’s <code class="literal">id</code> which uniquely identifies the shard.  The ID’s format is
-<code class="literal">[nodeID][indexName][shardID]</code>.</p><p>The profile itself may consist of one or more "searches", where a search is a query executed against the underlying
-Lucene index.  Most Search Requests submitted by the user will only execute a single <code class="literal">search</code> against the Lucene index.
-But occasionally multiple searches will be executed, such as including a global aggregation (which needs to execute
-a secondary "match_all" query for the global context).</p><p>Inside each <code class="literal">search</code> object there will be two arrays of profiled information:
-a <code class="literal">query</code> array and a <code class="literal">collector</code> array.  In the future, more sections may be added, such as <code class="literal">suggest</code>, <code class="literal">highlight</code>,
-<code class="literal">aggregations</code>, etc</p><p>There will also be a <code class="literal">rewrite</code> metric showing the total time spent rewriting the query (in nanoseconds).</p></div><div class="navfooter"><span class="prev"><a href="search-explain.html">
+          </span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="_metricbeat_developer_guide_faq"></a>Metricbeat Developer Guide FAQ<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This is a list of common questions when creating a MetricSet and the potential answers to it.</p><h3><a id="_metricset_is_not_complie"></a>MetricSet is not Complie<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You are compiling your Beat but the newly created MetricSet is not compiled?</p><p>Make sure that the path to your module and MetricSet are added as an import path either in your <code class="literal">main.go</code>
+file or your <code class="literal">include/list.go</code> file. This can be done manually or by running <code class="literal">make imports</code>.</p><h3><a id="_metricset_is_not_started"></a>MetricSet is not started<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/developer-guide/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The MetricSet is compiled but not started when starting MetricBeat?</p><p>After creating your MetricSet, make sure to run <code class="literal">make collect</code>. This will add the configuration
+of your MetricSet to the default configuration. In case it still does not start, check your
+default configuration file if it is listed there.</p></div><div class="navfooter"><span class="prev"><a href="_create_beat_based_on_metricbeat.html">
               « 
-              Explain API</a>
+              Create Beat based on Metricbeat</a>
            
         </span><span class="next">
            
-          <a href="_literal_query_literal_section.html"><code class="literal">query</code> Section
-               »
-            </a></span></div>
+          </span></div>
 <!-- end body -->
 
             </section>
