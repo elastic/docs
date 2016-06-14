@@ -1294,10 +1294,11 @@ supports <code class="literal">refresh</code>, <code class="literal">wait_for_co
 wrote to be refreshed. This is different than the Index API’s <code class="literal">refresh</code>
 parameter which causes just the shard that received the new data to be indexed.</p><p>If the request contains <code class="literal">wait_for_completion=false</code> then Elasticsearch will
 perform some preflight checks, launch the request, and then return a <code class="literal">task</code>
-which can be used with <a class="link" href="docs-reindex.html#docs-reindex-task-api" title="Works with the Task APIedit">Tasks APIs</a> to cancel or get
-the status of the task. For now, once the request is finished the task is gone
-and the only place to look for the ultimate result of the task is in the
-Elasticsearch log file. This will be fixed soon.</p><p><code class="literal">consistency</code> controls how many copies of a shard must respond to each write
+which can be used with <a class="link" href="docs-reindex.html#docs-reindex-task-api" title="Works with the Task APIedit">Tasks APIs</a>
+to cancel or get the status of the task. Elasticsearch will also create a
+record of this task as a document at <code class="literal">.tasks/task/${taskId}</code>. This is yours
+to keep or remove as you see fit. When you are done with it, delete it so
+Elasticsearch can reclaim the space it uses.</p><p><code class="literal">consistency</code> controls how many copies of a shard must respond to each write
 request. <code class="literal">timeout</code> controls how long each write request waits for unavailable
 shards to become available. Both work exactly how they work in the
 <a class="link" href="docs-bulk.html" title="Bulk API">Bulk API</a>.</p><p><code class="literal">requests_per_second</code> can be set to any decimal number (<code class="literal">1.4</code>, <code class="literal">6</code>, <code class="literal">1000</code>, etc)
@@ -1355,7 +1356,7 @@ Number of milliseconds the request slept to conform to <code class="literal">req
 Array of all indexing failures. If this is non-empty then the request aborted
 because of those failures. See <code class="literal">conflicts</code> for how to prevent version conflicts
 from aborting the operation.
-</dd></dl></div><h3><a id="docs-reindex-task-api"></a>Works with the Task API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>While Reindex is running you can fetch their status using the
+</dd></dl></div><h3><a id="docs-reindex-task-api"></a>Works with the Task API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can fetch the status of all running reindex requests with the
 <a class="link" href="tasks.html" title="Task Management API">Task API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks?detailed=true&amp;actions=*reindex</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/14.json"></div><p>The responses looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "nodes" : {
     "r1A2WoRbTwKZ516z6NEs5A" : {
@@ -1398,9 +1399,14 @@ with the important addition of the <code class="literal">total</code> field. <co
 of operations that the reindex expects to perform. You can estimate the
 progress by adding the <code class="literal">updated</code>, <code class="literal">created</code>, and <code class="literal">deleted</code> fields. The request
 will finish when their sum is equal to the <code class="literal">total</code> field.
-</p></td></tr></table></div><h3><a id="docs-reindex-cancel-task-api"></a>Works with the Cancel Task API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Any Reindex can be canceled using the <a class="link" href="tasks.html" title="Task Management API">Task Cancel API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _tasks/taskid:1/_cancel</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/15.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Cancelation should happen quickly but might take a few seconds. The task status
+</p></td></tr></table></div><p>With the task id you can look up the task directly:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_tasks/taskId:1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/15.json"></div><p>The advantage of this API is that it integrates with <code class="literal">wait_for_completion=false</code>
+to transparently return the status of completed tasks. If the task is completed
+and <code class="literal">wait_for_completion=false</code> was set on it them it’ll come back with a
+<code class="literal">results</code> or an <code class="literal">error</code> field. The cost of this feature is the document that
+<code class="literal">wait_for_completion=false</code> creates at <code class="literal">.tasks/task/${taskId}</code>. It is up to
+you to delete that document.</p><h3><a id="docs-reindex-cancel-task-api"></a>Works with the Cancel Task API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Any Reindex can be canceled using the <a class="link" href="tasks.html" title="Task Management API">Task Cancel API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _tasks/taskid:1/_cancel</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/16.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Cancelation should happen quickly but might take a few seconds. The task status
 API above will continue to list the task until it is wakes to cancel itself.</p><h3><a id="docs-reindex-rethrottle"></a>Rethrottling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The value of <code class="literal">requests_per_second</code> can be changed on a running reindex using
-the <code class="literal">_rethrottle</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex/taskid:1/_rethrottle?requests_per_second=unlimited</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/16.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Just like when setting it on the <code class="literal">_reindex</code> API <code class="literal">requests_per_second</code> can be
+the <code class="literal">_rethrottle</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex/taskid:1/_rethrottle?requests_per_second=unlimited</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/17.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Just like when setting it on the <code class="literal">_reindex</code> API <code class="literal">requests_per_second</code> can be
 either <code class="literal">unlimited</code> to disable throttling or any decimal number like <code class="literal">1.7</code> or
 <code class="literal">12</code> to throttle to that level. Rethrottling that speeds up the query takes
 effect immediately but rethrotting that slows down the query will take effect
@@ -1409,7 +1415,7 @@ create an index containing documents that look like this:</p><div class="pre_wra
 {
   "text": "words words",
   "flag": "foo"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/17.json"></div><p>But you don’t like the name <code class="literal">flag</code> and want to replace it with <code class="literal">tag</code>.
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/18.json"></div><p>But you don’t like the name <code class="literal">flag</code> and want to replace it with <code class="literal">tag</code>.
 <code class="literal">_reindex</code> can create the other index for you:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
   "source": {
@@ -1421,7 +1427,7 @@ create an index containing documents that look like this:</p><div class="pre_wra
   "script": {
     "inline": "ctx._source.tag = ctx._source.remove(\"flag\")"
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/18.json"></div><p>Now you can get the new document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test2/test/1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/19.json"></div><p>and it’ll look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/19.json"></div><p>Now you can get the new document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test2/test/1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/20.json"></div><p>and it’ll look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "found": true,
   "_id": "1",
   "_index": "test2",
