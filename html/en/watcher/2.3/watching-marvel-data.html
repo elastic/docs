@@ -1063,17 +1063,13 @@ you could set up watches to alert on:</p><div class="itemizedlist"><ul class="it
 <a class="link" href="watching-marvel-data.html#watching-cpu-usage" title="Watching CPU Usage">High cpu usage</a>
 </li><li class="listitem">
 <a class="link" href="watching-marvel-data.html#watching-open-file-descriptors" title="Watching Open File Descriptors">High file descriptor usage</a>
-</li><li class="listitem">
-<a class="link" href="watching-marvel-data.html#watching-fielddata" title="Watching Field Data Utilization">High fielddata cache usage</a>
-</li><li class="listitem">
-<a class="link" href="watching-marvel-data.html#watching-nodes" title="Watching for Nodes Joining or Leaving a Cluster">Nodes joining or leaving the cluster</a>
 </li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>These watches query the index where your cluster’s Marvel data is stored.
 If you don’t have Marvel installed, the queries won’t return any results, the conditions
 evaluate to false, and no actions are performed.</p></div></div><h4><a id="watching-cluster-health"></a>Watching Cluster Health</h4><p>This watch checks the cluster health once a minute and takes action if the cluster state has
 been red for the last 60 seconds:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 The watch schedule is set to execute the watch every minute.
 </li><li class="listitem">
-The watch input gets the most recent cluster status from the <code class="literal">.marvel-*</code> indices.
+The watch input gets the most recent cluster status from the <code class="literal">.marvel-es-1-*</code> indices.
 </li><li class="listitem">
 The watch condition checks the cluster status to see if it’s been red for the last 60 seconds.
 </li><li class="listitem">
@@ -1088,45 +1084,31 @@ The watch action is to send an email. (You could also call a <code class="litera
   "input": {
     "search": {
       "request": {
-        "indices": ".marvel-*",
+        "indices": ".marvel-es-1-*",
         "types": "cluster_state",
         "body": {
           "query": {
-            "filtered": {
-              "filter": {
-                "bool": {
-                  "must": [
-                    {
-                      "range": {
-                        "timestamp": {
-                          "gte": "now-2m",
-                          "lte": "now"
-                        }
-                      }
+            "bool": {
+              "filter": [
+                {
+                  "range": {
+                    "timestamp": {
+                      "gte": "now-2m",
+                      "lte": "now"
                     }
-                  ],
-                  "should": [
-                    {
-                      "term": {
-                        "cluster_state.status": "red"
-                      }
-                    },
-                    {
-                      "term": {
-                        "cluster_state.status": "green"
-                      }
-                    },
-                    {
-                      "term": {
-                        "cluster_state.status": "yellow"
-                      }
-                    }
-                  ]
+                  }
+                },
+                {
+                  "terms": {
+                    "cluster_state.status": ["green", "yellow", "red"]
+                  }
                 }
-              }
+              ]
             }
           },
-          "fields": ["timestamp","cluster_state.status"],
+          "_source": [
+            "cluster_state.status"
+          ],
           "sort": [
             {
               "timestamp": {
@@ -1158,7 +1140,7 @@ The watch action is to send an email. (You could also call a <code class="litera
   "throttle_period": "30m", <a id="CO12-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
   "condition": {
     "script": {
-      "inline": "if (ctx.payload.hits.total &lt; 1) return false; def rows = ctx.payload.hits.hits; if (rows[0].fields['cluster_state.status'][0] != 'red') return false; if (ctx.payload.aggregations.minutes.buckets.size() &lt; 12) return false; def last60Seconds = ctx.payload.aggregations.minutes.buckets[-12..-1]; return last60Seconds.every { it.status.buckets.every { s -&gt; s.key == 'red' }}"
+      "inline": "if (ctx.payload.hits.total &lt; 1) return false; def rows = ctx.payload.hits.hits; if (rows[0]._source.cluster_state.status != 'red') return false; if (ctx.payload.aggregations.minutes.buckets.size() &lt; 12) return false; def last60Seconds = ctx.payload.aggregations.minutes.buckets[-12..-1]; return last60Seconds.every { it.status.buckets.every { s -&gt; s.key == 'red' }}"
     }
   },
   "actions": {
@@ -1184,7 +1166,7 @@ Specify the email address you want to notify.
 heap usage for the past 60 seconds.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 The watch schedule is set to execute the watch every minute.
 </li><li class="listitem">
-The watch input gets the average <code class="literal">jvm.mem.heap_used_percent</code> for each node from the <code class="literal">.marvel-*</code> indices.
+The watch input gets the average <code class="literal">jvm.mem.heap_used_percent</code> for each node from the <code class="literal">.marvel-es-1-*</code> indices.
 </li><li class="listitem">
 The watch condition checks to see if any node’s average heap usage is 75% or greater.
 </li><li class="listitem">
@@ -1200,7 +1182,7 @@ The watch action is to send an email. (You could also call a <code class="litera
     "search": {
       "request": {
         "indices": [
-          ".marvel-*"
+          ".marvel-es-1-*"
         ],
         "types" : [
           "node_stats"
@@ -1228,7 +1210,7 @@ The watch action is to send an email. (You could also call a <code class="litera
               "aggs": {
                 "nodes": {
                   "terms": {
-                    "field": "node.name",
+                    "field": "source_node.name",
                     "size": 10,
                     "order": {
                       "memory": "desc"
@@ -1279,7 +1261,7 @@ Specify the email address you want to notify.
 usage for the past 60 seconds.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 The watch schedule is set to execute the watch every minute.
 </li><li class="listitem">
-The watch input gets the average CPU usage for each node from the <code class="literal">.marvel-*</code> indices.
+The watch input gets the average CPU percentage for each node from the <code class="literal">.marvel-es-1-*</code> indices.
 </li><li class="listitem">
 The watch condition checks to see if any node’s average CPU usage is 75% or greater.
 </li><li class="listitem">
@@ -1295,7 +1277,10 @@ The watch action is to send an email. (You could also call a <code class="litera
     "search": {
       "request": {
         "indices": [
-          ".marvel-*"
+          ".marvel-es-1-*"
+        ],
+        "types" : [
+          "node_stats"
         ],
         "body": {
           "size" : 0,
@@ -1303,7 +1288,7 @@ The watch action is to send an email. (You could also call a <code class="litera
             "filtered": {
               "filter": {
                 "range": {
-                  "@timestamp": {
+                  "timestamp": {
                     "gte": "now-2m",
                     "lte": "now"
                   }
@@ -1314,13 +1299,13 @@ The watch action is to send an email. (You could also call a <code class="litera
           "aggs": {
             "minutes": {
               "date_histogram": {
-                "field": "@timestamp",
+                "field": "timestamp",
                 "interval": "minute"
               },
               "aggs": {
                 "nodes": {
                   "terms": {
-                    "field": "node.name.raw",
+                    "field": "source_node.name",
                     "size": 10,
                     "order": {
                       "cpu": "desc"
@@ -1329,7 +1314,7 @@ The watch action is to send an email. (You could also call a <code class="litera
                   "aggs": {
                     "cpu": {
                       "avg": {
-                        "field": "os.cpu.user"
+                        "field": "process.cpu.percent"
                       }
                     }
                   }
@@ -1371,7 +1356,7 @@ Specify the email address you want to notify.
 are using 80% or more of the available file descriptors.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 The watch schedule is set to execute the watch every minute.
 </li><li class="listitem">
-The watch input gets the average number of open file descriptors on each node from the <code class="literal">.marvel-*</code>
+The watch input gets the average number of open file descriptors on each node from the <code class="literal">.marvel-es-1-*</code>
   indices. The input search returns the top ten nodes with the highest average number of open file
   descriptors.
 </li><li class="listitem">
@@ -1394,7 +1379,7 @@ The watch action is to send an email. (You could also call a <code class="litera
     "search": {
       "request": {
         "indices": [
-          ".marvel-*"
+          ".marvel-es-1-*"
         ],
         "types": "node_stats",
         "body": {
@@ -1403,7 +1388,7 @@ The watch action is to send an email. (You could also call a <code class="litera
             "filtered": {
               "filter": {
                 "range": {
-                  "@timestamp": {
+                  "timestamp": {
                     "gte": "now-1m",
                     "lte": "now"
                   }
@@ -1414,13 +1399,13 @@ The watch action is to send an email. (You could also call a <code class="litera
           "aggs": {
             "minutes": {
               "date_histogram": {
-                "field": "@timestamp",
+                "field": "timestamp",
                 "interval": "5s"
               },
               "aggs": {
                 "nodes": {
                   "terms": {
-                    "field": "node.name.raw",
+                    "field": "source_node.name",
                     "size": 10,
                     "order": {
                       "fd": "desc"
@@ -1429,7 +1414,7 @@ The watch action is to send an email. (You could also call a <code class="litera
                   "aggs": {
                     "fd": {
                       "avg": {
-                        "field": "process.open_file_descriptors"
+                        "field": "node_stats.process.open_file_descriptors"
                       }
                     }
                   }
@@ -1465,202 +1450,6 @@ To send email notifications, you must configure at least one email account in
     <code class="literal">elasticsearch.yml</code>. See <a class="link" href="email-services.html" title="Configuring Watcher to Send Email">Configuring Email Services</a> for more
     information.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Specify the email address you want to notify.
-</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This example uses an inline script, which requires you to enable dynamic scripting in
-      Elasticsearch. While this is convenient when you’re experimenting with Watcher, in a
-      production environment we recommend disabling dynamic scripting and using file scripts.</p></div></div><h4><a id="watching-fielddata"></a>Watching Field Data Utilization</h4><p>This watch runs once a minute and takes action if there are nodes that
-are using 80% or more of their field data cache.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-The watch schedule is set to execute the watch every minute.
-</li><li class="listitem">
-The watch input gets the average field data memory usage on each node from the <code class="literal">.marvel-*</code> indices.
-  The input search returns the top ten nodes with the highest average field data usage.
-</li><li class="listitem">
-The watch condition checks the cluster status to see if any node’s average field data usage is 80%
-  or more of the field data cache size.
-</li><li class="listitem">
-The watch action is to send an email. (You could also call a <code class="literal">webhook</code> or store the event.)
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT _watcher/watch/fielddata_utilization
-{
-  "metadata": {
-    "fielddata_cache_size": 100000, <a id="CO16-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    "threshold": 0.8
-  },
-  "trigger": {
-    "schedule": {
-      "interval": "1m"
-    }
-  },
-  "input": {
-    "search": {
-      "request": {
-        "indices": [
-          ".marvel-*"
-        ],
-        "types": "node_stats",
-        "body": {
-          "query": {
-            "size" : 0,
-            "filtered": {
-              "filter": {
-                "range": {
-                  "@timestamp": {
-                    "gte": "now-1m",
-                    "lte": "now"
-                  }
-                }
-              }
-            }
-          },
-          "aggs": {
-            "minutes": {
-              "date_histogram": {
-                "field": "@timestamp",
-                "interval": "5s"
-              },
-              "aggs": {
-                "nodes": {
-                  "terms": {
-                    "field": "node.name.raw",
-                    "size": 10,
-                    "order": {
-                      "fielddata": "desc"
-                    }
-                  },
-                  "aggs": {
-                    "fielddata": {
-                      "avg": {
-                        "field": "indices.fielddata.memory_size_in_bytes"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "throttle_period": "30m", <a id="CO16-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-  "condition": {
-    "script": "if (ctx.payload.aggregations.minutes.buckets.size() == 0) return false; def latest = ctx.payload.aggregations.minutes.buckets[-1]; def node = latest.nodes.buckets[0]; return node &amp;&amp; node.fielddata &amp;&amp; node.fielddata.value &gt;= (ctx.metadata.fielddata_cache_size * ctx.metadata.threshold);"
-  },
-  "actions": {
-    "send_email": { <a id="CO16-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-      "transform": {
-        "script": "def latest = ctx.payload.aggregations.minutes.buckets[-1]; return latest.nodes.buckets.findAll({ return it.fielddata &amp;&amp; it.fielddata.value &gt;= (ctx.metadata.fielddata_cache_size * ctx.metadata.threshold) }).collect({ it.fielddata.percent = Math.round((it.fielddata.value/ctx.metadata.fielddata_cache_size)*100); it });"
-      },
-      "email": {
-        "to": "&lt;username&gt;@&lt;domainname&gt;", <a id="CO16-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-        "subject": "Watcher Notification - NODES WITH 80% FIELDDATA UTILIZATION",
-        "body": "Nodes with 80% FIELDDATA UTILIZATION (above 80%):\n\n{{#ctx.payload._value}}\"{{key}}\" - Fielddata utilization is at {{fielddata.value}} bytes ({{fielddata.percent}}%)\n{{/ctx.payload._value}}"
-      }
-    }
-  }
-}</pre></div><div class="sense_widget" data-snippet="snippets/watching-marvel-data/5.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The size of the field data cache. Set to the actual cache size configured for your nodes.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The throttle period prevents notifications from being sent more than once a minute.
-    You can change the throttle period to receive notifications more or less frequently.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-To send email notifications, you must configure at least one email account in
-    <code class="literal">elasticsearch.yml</code>. See <a class="link" href="email-services.html" title="Configuring Watcher to Send Email">Configuring Email Services</a> for more
-    information.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Specify the email address you want to notify.
-</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This example uses an inline script, which requires you to enable dynamic scripting in
-      Elasticsearch. While this is convenient when you’re experimenting with Watcher, in a
-      production environment we recommend disabling dynamic scripting and using file scripts.</p></div></div><h4><a id="watching-nodes"></a>Watching for Nodes Joining or Leaving a Cluster</h4><p>This watch checks every minute to see if a node has joined or left the cluster:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-The watch schedule is set to execute the watch every minute.
-</li><li class="listitem">
-The watch input searches for <code class="literal">node_left</code> and <code class="literal">node_joined</code> events in the past 60 seconds.
-</li><li class="listitem">
-The watch condition checks to see if there are any search results in the payload. If so,
-  the watch actions are performed.
-</li><li class="listitem">
-The watch action is to send an email. (You could also call a <code class="literal">webhook</code> or store the event.)
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">PUT _watcher/watch/node_event
-{
-  "trigger": {
-    "schedule": {
-      "interval": "60s"
-    }
-  },
-  "input": {
-    "search": {
-      "request": {
-        "indices": [
-          ".marvel-*"
-        ],
-        "search_type": "query_then_fetch",
-        "body": {
-          "query": {
-            "filtered": {
-              "query": {
-                "bool": {
-                  "should": [
-                    {
-                      "match": {
-                        "event": "node_left"
-                      }
-                    },
-                    {
-                      "match": {
-                        "event": "node_joined"
-                      }
-                    }
-                  ]
-                }
-              },
-              "filter": {
-                "range": {
-                  "@timestamp": {
-                    "from": "{{ctx.trigger.scheduled_time}}||-60s",
-                    "to": "{{ctx.trigger.triggered_time}}"
-                  }
-                }
-              }
-            }
-          },
-          "fields": [
-            "event",
-            "message",
-            "cluster_name"
-          ],
-          "sort": [
-            {
-              "@timestamp": {
-                "order": "desc"
-              }
-            }
-          ]
-        }
-      }
-    }
-  },
-  "throttle_period": "60s", <a id="CO17-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-  "condition": {
-    "script": {
-      "inline": "ctx.payload.hits.size() &gt; 0 "
-    }
-  },
-  "actions": {
-    "send_email": { <a id="CO17-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-      "email": {
-        "to": "&lt;username&gt;@&lt;domainname&gt;", <a id="CO17-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-        "subject": "{{ctx.payload.hits.hits.0.fields.event}} the cluster",
-        "body": "{{ctx.payload.hits.hits.0.fields.message}} the cluster {{ctx.payload.hits.hits.0.fields.cluster_name}} "
-      }
-    }
-  }
-}</pre></div><div class="sense_widget" data-snippet="snippets/watching-marvel-data/6.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The throttle period prevents notifications from being sent more than once a minute.
-    You can change the throttle period to receive notifications more or less frequently.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-To send email notifications, you must configure at least one email account in
-    <code class="literal">elasticsearch.yml</code>. See <a class="link" href="email-services.html" title="Configuring Watcher to Send Email">Configuring Email Services</a> for more
-    information.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Specify the email address you want to notify.
 </p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This example uses an inline script, which requires you to enable dynamic scripting in
       Elasticsearch. While this is convenient when you’re experimenting with Watcher, in a
