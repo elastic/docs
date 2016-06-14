@@ -1058,13 +1058,14 @@ version&#39;s documentation here</a>.
           <a href="_querying_or_accessing_metadata.html">Querying or accessing metadata
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="mapper-attachments-usage"></a>Usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/mapper-attachments.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Using the attachment type is simple, in your mapping JSON, simply set a certain JSON element as attachment, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test
-PUT /test/person/_mapping
 {
+  "mappings": {
     "person" : {
-        "properties" : {
-            "my_attachment" : { "type" : "attachment" }
-        }
+      "properties" : {
+        "my_attachment" : { "type" : "attachment" }
+      }
     }
+  }
 }</pre></div><div class="console_widget" data-snippet="snippets/mapper-attachments-usage/1.json"></div><p>In this case, the JSON to index can be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test/person/1
 {
     "my_attachment" : "... base64 encoded attachment ..."
@@ -1094,25 +1095,40 @@ data on the attachment as well (when available).</p><p>The metadata supported ar
 </li><li class="listitem">
 <code class="literal">language</code>
 </li></ul></div><p>They can be queried using the "dot notation", for example: <code class="literal">my_attachment.author</code>.</p><p>Both the meta data and the actual content are simple core type mappers (text, date, …), thus, they can be controlled
-in the mappings. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test/person/_mapping
+in the mappings. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test
 {
-    "person" : {
-        "properties" : {
-            "file" : {
-                "type" : "attachment",
-                "fields" : {
-                    "content" : {"index" : "no"},
-                    "title" : {"store" : "yes"},
-                    "date" : {"store" : "yes"},
-                    "author" : {"analyzer" : "myAnalyzer"},
-                    "keywords" : {"store" : "yes"},
-                    "content_type" : {"store" : "yes"},
-                    "content_length" : {"store" : "yes"},
-                    "language" : {"store" : "yes"}
-                }
-            }
+  "settings": {
+    "index": {
+      "analysis": {
+        "analyzer": {
+          "my_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": ["standard"]
+          }
         }
+      }
     }
+  },
+  "mappings": {
+    "person" : {
+      "properties" : {
+        "file" : {
+          "type" : "attachment",
+          "fields" : {
+            "content" : {"index" : "no"},
+            "title" : {"store" : "yes"},
+            "date" : {"store" : "yes"},
+            "author" : {"analyzer" : "my_analyzer"},
+            "keywords" : {"store" : "yes"},
+            "content_type" : {"store" : "yes"},
+            "content_length" : {"store" : "yes"},
+            "language" : {"store" : "yes"}
+          }
+        }
+      }
+    }
+  }
 }</pre></div><div class="console_widget" data-snippet="snippets/mapper-attachments-usage/4.json"></div><p>In the above example, the actual content indexed is mapped under <code class="literal">fields</code> name <code class="literal">content</code>, and we decide not to index it, so
 it will only be available in the <code class="literal">_all</code> field. The other fields map to their respective metadata names, but there is no
 need to specify the <code class="literal">type</code> (like <code class="literal">text</code> or <code class="literal">date</code>) since it is already known.</p></div><div class="navfooter"><span class="prev"><a href="mapper-attachments-helloworld.html">
