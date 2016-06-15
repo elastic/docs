@@ -32,6 +32,7 @@
 
   <!-- meta elements -->
   <xsl:template name="user.head.content">
+    <meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." />
     <meta name="DC.type">
       <xsl:attribute name="content">
         <xsl:value-of select="$local.book.section.title" />
