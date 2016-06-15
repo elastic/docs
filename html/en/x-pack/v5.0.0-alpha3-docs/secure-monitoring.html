@@ -1062,34 +1062,36 @@ need to configure a user for the monitoring agent and configure the agent to use
 the appropriate credentials when communicating with the monitoring cluster.</p><h4><a id="monitoring-ui-users"></a>Setting Up Monitoring UI Users</h4><p>When X-Pack Security is enabled, Kibana users are prompted to log in when they access
 the UI. To use the Monitoring UI, a user must have access to the Kibana indices
 and permission to read from the monitoring indices.</p><p>You set up Monitoring UI users on the cluster where the monitoring data is being
-stored. To grant all of the necessary permissions, assign the user the <code class="literal">marvel_user</code>
+stored. To grant all of the necessary permissions, assign the user the <code class="literal">monitoring_user</code>
 role and the appropriate role you derived from the <a class="link" href="kibana.html#kibana-user-role"><code class="literal">my_kibana_user</code> user role</a>
 example.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
 If you’re using the <code class="literal">native</code> realm, you can assign roles using the
 <a class="link" href="native-realm.html#managing-native-users" title="Managing Native Users">User Management API</a>. For example, the following
 command creates a user named <code class="literal">jacknich</code> and assigns it the <code class="literal">my_kibana_user</code> and
-<code class="literal">marvel_user</code> roles:
+<code class="literal">monitoring_user</code> roles:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_xpack/security/user/ironman
 {
   "password" : "t0pS3cr3t",
-  "roles" : [ "my_kibana_user", "marvel_user" ]
+  "roles" : [ "my_kibana_user", "monitoring_user" ]
 }</pre></div></li><li class="listitem"><p class="simpara">
 If you are using an LDAP or Active Directory realm, you can either assign roles
 on a per user basis, or assign roles to groups of users. By default, role mappings
 are configured in <a class="link" href="mapping-roles.html" title="Mapping Users and Groups to Roles"><code class="literal">config/x-pack/role_mapping.yml</code></a>. For example,
 the following snippet assigns the user named Jack Nicholson to the <code class="literal">my_kibana_user</code>
-and <code class="literal">marvel_user</code> roles:
+and <code class="literal">monitoring_user</code> roles:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">my_kibana_user:
   - "cn=Jack Nicholson,dc=example,dc=com"
-marvel_user:
-  - "cn=Jack Nicholson,dc=example,dc=com"</pre></div></li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">marvel_user</code> role is defined in the default <code class="literal">CONFDIR/x-pack/roles.yml</code> file.</p></div></div><p>For more information about deriving Kibana user roles, see <a class="link" href="kibana.html#kibana-roles" title="Tip">Kibana and Security</a>.</p><h4><a id="configuring-marvel-agent-security"></a>Configuring Monitoring Agent to Communicate with a -Enabled Monitoring Cluster</h4><p>To configure the monitoring agent to communicate with a secured monitoring cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Configure a user on the monitoring cluster who has the <code class="literal">remote_marvel_agent</code> role,
-which is defined in <code class="literal">CONFDIR/x-pack/roles.yml</code>. For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/x-pack/users useradd agent-user -r remote_marvel_agent -p password</pre></div><p><strong>Remote Monitoring Agent Role. </strong>
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">remote_marvel_agent:
-  cluster: [ "manage_index_templates" ]
+monitoring_user:
+  - "cn=Jack Nicholson,dc=example,dc=com"</pre></div></li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">monitoring_user</code> role is defined in the default <code class="literal">CONFDIR/x-pack/roles.yml</code> file.</p></div></div><p>For more information about deriving Kibana user roles, see <a class="link" href="kibana.html#kibana-roles" title="Tip">Kibana and Security</a>.</p><h4><a id="configuring-monitoring-agent-security"></a>Configuring Monitoring Agent to Communicate with a -Enabled Monitoring Cluster</h4><p>To configure the monitoring agent to communicate with a secured monitoring cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Configure a user on the monitoring cluster who has the <code class="literal">remote_monitoring_agent</code>
+role, which is defined in <code class="literal">CONFDIR/x-pack/roles.yml</code>. For example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/x-pack/users useradd agent-user -r remote_monitoring_agent -p password</pre></div><p><strong>Remote Monitoring Agent Role. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">remote_monitoring_agent:
+  cluster: [ "manage_index_templates", "monitor" ]
   indices:
-    - names: '.marvel-es-*'
+    - names:
+        - '.marvel-es-*'
+        - '.monitoring-*'
       privileges: [ "all" ]</pre></div><p>
 </p></li><li class="listitem"><p class="simpara">
 On each node in the cluster being monitored, configure a Monitoring HTTP exporter
@@ -1101,7 +1103,7 @@ Set the <code class="literal">type</code> to <code class="literal">http</code>.
 Specify the location of the monitoring cluster in the <code class="literal">host</code> setting.
 </li><li class="listitem">
 Provide the agent user credentials with the <code class="literal">username</code> and <code class="literal">password</code> settings.
-</li></ol></div><p class="simpara">For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">marvel.agent.exporters:
+</li></ol></div><p class="simpara">For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">monitoring.agent.exporters:
   id1:
     type: http
     host: ["http://es-mon1:9200", "http://es-mon2:9200"]
@@ -1113,7 +1115,7 @@ Specify the HTTPS protocol when setting the monitoring server host.
 Specify a truststore that contains the CA certificate to use to verify the
    identities of the nodes in the monitoring cluster. You need to set the
    <code class="literal">truststore.path</code> and <code class="literal">truststore.password</code>.
-</li></ol></div><p class="simpara">For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">marvel.agent.exporters:
+</li></ol></div><p class="simpara">For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">monitoring.agent.exporters:
   id1:
     type: http
     host: ["https://es-mon1:9200", "https://es-mon2:9200"]
