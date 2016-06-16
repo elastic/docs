@@ -61,15 +61,15 @@
 
 
 	
-	<link type="text/css" rel="stylesheet" href="https://static-www.elastic.co/static/css/skel.css?q=300" />
-	<link type="text/css" rel="stylesheet" href="https://static-www.elastic.co/static/css/style.css?q=300" />
-	<script src="https://static-www.elastic.co/static/js/skel.min.js?q=300"></script>
+	<link type="text/css" rel="stylesheet" href="https://static-www.elastic.co/static/css/skel.css?q=400" />
+	<link type="text/css" rel="stylesheet" href="https://static-www.elastic.co/static/css/style.css?q=400" />
+	<script src="https://static-www.elastic.co/static/js/skel.min.js?q=400"></script>
 	
-		<script type="text/javascript">form_name = "" ;cdn_url="https://static-www.elastic.co"; cdn_slug = "300"</script>
+		<script type="text/javascript">form_name = "" ;cdn_url="https://static-www.elastic.co"; cdn_slug = "400"</script>
 	
-	<script src="https://static-www.elastic.co/static/js/init.js?q=300"></script>
-	<script src="https://static-www.elastic.co/static/js/jquery.min.js?q=300"></script>
-	<script src="https://static-www.elastic.co/static/js/jquery.cookie.js?q=300"></script>
+	<script src="https://static-www.elastic.co/static/js/init.js?q=400"></script>
+	<script src="https://static-www.elastic.co/static/js/jquery.min.js?q=400"></script>
+	<script src="https://static-www.elastic.co/static/js/jquery.cookie.js?q=400"></script>
 	<script type="text/javascript">
 	// set language based on browser language
 	function languageMatch(locale,localpath){// match browser language with locales language and return value
@@ -1015,15 +1015,15 @@
 	
 	
 		.m-shortcuts li a.m-search {
-			background: url("https://static-www.elastic.co/assets/blt174b13be89ff803c/m-search-icon.png?q=300") no-repeat scroll center center rgba(0, 0, 0, 0);
+			background: url("https://static-www.elastic.co/assets/blt174b13be89ff803c/m-search-icon.png?q=400") no-repeat scroll center center rgba(0, 0, 0, 0);
 			background-size: contain;}
 	
 		.m-shortcuts li a.m-docs {
-			background: url("https://static-www.elastic.co/assets/blt5ba03f594a7d610a/m-guide-icon.png?q=300") no-repeat scroll center center rgba(0, 0, 0, 0);
+			background: url("https://static-www.elastic.co/assets/blt5ba03f594a7d610a/m-guide-icon.png?q=400") no-repeat scroll center center rgba(0, 0, 0, 0);
 			background-size: contain;}
 	
 		.m-shortcuts li a.m-contact {
-			background: url("https://static-www.elastic.co/assets/blt38c3e853c4b1174d/m-contact-icon.png?q=300") no-repeat scroll center center rgba(0, 0, 0, 0);
+			background: url("https://static-www.elastic.co/assets/blt38c3e853c4b1174d/m-contact-icon.png?q=400") no-repeat scroll center center rgba(0, 0, 0, 0);
 			background-size: contain;}
 		
 </style>
@@ -1374,7 +1374,8 @@ index time which contains the values from both fields.  You can aggregate on
 this single field, which will benefit from the global ordinals optimization.
 </dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_collect_mode"></a>Collect mode<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/terms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Deferring calculation of child aggregations</p><p>For fields with many unique terms and a small number of required results it can be more efficient to delay the calculation
 of child aggregations until the top parent-level aggs have been pruned. Ordinarily, all branches of the aggregation tree
-are expanded in one depth-first pass and only then any pruning occurs. In some rare scenarios this can be very wasteful and can hit memory constraints.
+are expanded in one depth-first pass and only then any pruning occurs.
+In some scenarios this can be very wasteful and can hit memory constraints.
 An example problem scenario is querying a movie database for the 10 most popular actors and their 5 most common co-stars:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "aggs" : {
         "actors" : {
@@ -1392,16 +1393,17 @@ An example problem scenario is querying a movie database for the 10 most popular
             }
          }
     }
-}</pre></div><p>Even though the number of movies may be comparatively small and we want only 50 result buckets there is a combinatorial explosion of buckets
-during calculation - a single movie will produce n² buckets where n is the number of actors. The sane option would be to first determine
+}</pre></div><p>Even though the number of actors may be comparatively small and we want only 50 result buckets there is a combinatorial explosion of buckets
+during calculation - a single actor can produce n² buckets where n is the number of actors. The sane option would be to first determine
 the 10 most popular actors and only then examine the top co-stars for these 10 actors. This alternative strategy is what we call the <code class="literal">breadth_first</code> collection
-mode as opposed to the default <code class="literal">depth_first</code> mode:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+mode as opposed to the <code class="literal">depth_first</code> mode.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">breadth_first</code> is the default mode for fields with a cardinality bigger than the requested size or when the cardinality is unknown (numeric fields or scripts for instance).
+It is possible to override the default heuristic and to provide a collect mode directly in the request:</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "aggs" : {
         "actors" : {
              "terms" : {
                  "field" : "actors",
                  "size" : 10,
-                 "collect_mode" : "breadth_first"
+                 "collect_mode" : "breadth_first" <a id="CO87-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
              },
             "aggs" : {
                 "costars" : {
@@ -1413,11 +1415,10 @@ mode as opposed to the default <code class="literal">depth_first</code> mode:</p
             }
          }
     }
-}</pre></div><p>When using <code class="literal">breadth_first</code> mode the set of documents that fall into the uppermost buckets are
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO87-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the possible values are <code class="literal">breadth_first</code> and <code class="literal">depth_first</code>
+</p></td></tr></table></div><p>When using <code class="literal">breadth_first</code> mode the set of documents that fall into the uppermost buckets are
 cached for subsequent replay so there is a memory overhead in doing this which is linear with the number of matching documents.
-In most requests the volume of buckets generated is smaller than the number of documents that fall into them so the default <code class="literal">depth_first</code>
-collection mode is normally the best bet but occasionally the <code class="literal">breadth_first</code> strategy can be significantly more efficient. Currently
-elasticsearch will always use the <code class="literal">depth_first</code> collect_mode unless explicitly instructed to use <code class="literal">breadth_first</code> as in the above example.
 Note that the <code class="literal">order</code> parameter can still be used to refer to data from a child aggregation when using the <code class="literal">breadth_first</code> setting - the parent
 aggregation understands that this child aggregation will need to be called first before any of the other child aggregations.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Nested aggregations such as <code class="literal">top_hits</code> which require access to score information under an aggregation that uses the <code class="literal">breadth_first</code>
 collection mode need to replay the query on the second pass but only for the documents belonging to the top buckets.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="search-aggregations-bucket-terms-aggregation-execution-hint"></a>Execution hint<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/terms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The automated execution optimization is experimental, so this parameter is provided temporarily as a way to override the default behaviour.</p></div></div><p>There are different mechanisms by which terms aggregations can be executed:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
@@ -1439,11 +1440,11 @@ in inner aggregations.</p><div class="pre_wrapper"><pre class="programlisting pr
         "tags" : {
              "terms" : {
                  "field" : "tags",
-                 "execution_hint": "map" <a id="CO87-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                 "execution_hint": "map" <a id="CO88-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
              }
          }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO87-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO88-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 <span class="experimental">
       [<span class="exp_title">experimental</span>]
       <span class="detail">This functionality is experimental and may be changed or removed completely in a future release.</span></span> the possible values are <code class="literal">map</code>, <code class="literal">global_ordinals</code>, <code class="literal">global_ordinals_hash</code> and <code class="literal">global_ordinals_low_cardinality</code>
@@ -1454,11 +1455,11 @@ had a value.</p><div class="pre_wrapper"><pre class="programlisting prettyprint 
         "tags" : {
              "terms" : {
                  "field" : "tags",
-                 "missing": "N/A" <a id="CO88-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                 "missing": "N/A" <a id="CO89-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
              }
          }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO88-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO89-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Documents without a value in the <code class="literal">tags</code> field will fall into the same bucket as documents that have the value <code class="literal">N/A</code>.
 </p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-significantterms-aggregation.html">
               « 
@@ -1565,15 +1566,15 @@ Documents without a value in the <code class="literal">tags</code> field will fa
 
 <style type="text/css">
 	
-		.facebook{background:url("https://static-www.elastic.co/assets/bltda40eebd7c7cae9a/facebook.svg?q=300") no-repeat;}
+		.facebook{background:url("https://static-www.elastic.co/assets/bltda40eebd7c7cae9a/facebook.svg?q=400") no-repeat;}
 	
-		.twitter{background:url("https://static-www.elastic.co/assets/bltfd3b1511512f4632/twitter.svg?q=300") no-repeat;}
+		.twitter{background:url("https://static-www.elastic.co/assets/bltfd3b1511512f4632/twitter.svg?q=400") no-repeat;}
 	
-		.linkedin{background:url("https://static-www.elastic.co/assets/blt6b4f6f8d6b96f814/linkedin.svg?q=300") no-repeat;}
+		.linkedin{background:url("https://static-www.elastic.co/assets/blt6b4f6f8d6b96f814/linkedin.svg?q=400") no-repeat;}
 	
-		.xing{background:url("https://static-www.elastic.co/assets/blta76b2ae2b2f10a98/xing.svg?q=300") no-repeat;}
+		.xing{background:url("https://static-www.elastic.co/assets/blta76b2ae2b2f10a98/xing.svg?q=400") no-repeat;}
 	
-		.youtube{background:url("https://static-www.elastic.co/assets/blt5761648c9581fb53/youtube.svg?q=300") no-repeat;}
+		.youtube{background:url("https://static-www.elastic.co/assets/blt5761648c9581fb53/youtube.svg?q=400") no-repeat;}
 	
 </style>
 
@@ -1598,8 +1599,8 @@ MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", 1398,function(form
    	<script type="text/javascript">
 	var suggestionsUrl = "https://search.elastic.co/suggest";	
 </script>
-<script src="https://static-www.elastic.co/static/js/jquery.autocomplete.js?q=300"></script>
-<script src="https://static-www.elastic.co/static/js/script.js?q=300"></script>
+<script src="https://static-www.elastic.co/static/js/jquery.autocomplete.js?q=400"></script>
+<script src="https://static-www.elastic.co/static/js/script.js?q=400"></script>
 
 
    	
