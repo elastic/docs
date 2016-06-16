@@ -1077,6 +1077,8 @@ Boolean operators: not <code class="literal">!</code>, and <code class="literal"
 Bitwise operators: shift left <code class="literal">&lt;&lt;</code>, shift right <code class="literal">&gt;&gt;</code>, unsigned shift <code class="literal">&gt;&gt;&gt;</code>, and <code class="literal">&amp;</code>, or <code class="literal">|</code>, xor <code class="literal">^</code>, not <code class="literal">~</code>
 </li><li class="listitem">
 Shortcuts for list, map access using the dot <code class="literal">.</code> operator
+</li><li class="listitem">
+Native support for regular expressions with <code class="literal">/pattern/</code>, <code class="literal">=~</code>, and <code class="literal">==~</code>
 </li></ul></div><h2><a id="painless-examples"></a>Painless Examples<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>To illustrate how Painless works, let’s load some hockey stats into an Elasticsearch index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT hockey/player/_bulk?refresh
 {"index":{"_id":1}}
 {"first":"johnny","last":"gaudreau","goals":[9,27,1],"assists":[17,46,0],"gp":[26,82,1]}
@@ -1171,7 +1173,47 @@ the player’s nickname,  <span class="emphasis"><em>hockey</em></span>.</p><div
       "nick": "hockey"
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/7.json"></div><h2><a id="painless-api"></a>Painless API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>The following types are available for use in the Painless language. Most types and methods map directly to their Java equivalents—for more information, see the corresponding <a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/lang/package-summary.html" target="_top">Javadoc</a>.</p><h3><a id="_dynamic_types"></a>Dynamic Types<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/7.json"></div><h3><a id="_regular_expressions_2"></a>Regular expressions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Painless’s native support for regular expressions has syntax constructs:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">/pattern/</code>: Pattern literals create patterns. This is the only way to create
+a pattern in painless.
+</li><li class="listitem">
+<code class="literal">=~</code>: The find operator return a <code class="literal">boolean</code>, <code class="literal">true</code> if a subsequence of the
+text matches, <code class="literal">false</code> otherwise.
+</li><li class="listitem">
+<code class="literal">==~</code>: The match operator returns a <code class="literal">boolean</code>, <code class="literal">true</code> if the text matches,
+<code class="literal">false</code> if it doesn’t.
+</li></ul></div><p>Using the find operator (<code class="literal">=~</code>) you can update all hockey players with "b" in
+their last name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
+{
+  "script": {
+    "lang": "painless",
+    "inline": "if (ctx._source.last =~ /b/) {ctx._source.last += \"matched\"} else {ctx.op = 'noop'}"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/8.json"></div><p>Using the match operator (<code class="literal">==~</code>) you can update all the hockey players who’s
+names start with a consonant and end with a vowel:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
+{
+  "script": {
+    "lang": "painless",
+    "inline": "if (ctx._source.last ==~ /[^aeiou].*[aeiou]/) {ctx._source.last += \"matched\"} else {ctx.op = 'noop'}"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/9.json"></div><p>Or you can use the <code class="literal">Pattern.matcher</code> directory to get a <code class="literal">Matcher</code> instance and
+remove all of the vowels in all of their names:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
+{
+  "script": {
+    "lang": "painless",
+    "inline": "ctx._source.last = /[aeiou]/.matcher(ctx._source.last).replaceAll('')"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/10.json"></div><p>Note: all of the <code class="literal">_update_by_query</code> examples above could really do with a
+<code class="literal">query</code> to limit the data that they pull back. While you <span class="strong"><strong>could</strong></span> use a
+<a class="xref" href="query-dsl-script-query.html" title="Script Query">Script Query</a> it wouldn’t be as efficient as using any other query
+because script queries aren’t able to use the inverted index to limit the
+documents that they have to check.</p><p>The pattern syntax is just
+<a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html" target="_top">Java regular expressions</a>.
+We intentionally don’t allow scripts to call <code class="literal">Pattern.compile</code> to get a new
+pattern on the fly because building a <code class="literal">Pattern</code> is (comparatively) slow.
+Pattern literals (<code class="literal">/apattern/</code>) have fancy constant extraction so no matter
+where they show up in the painless script they are built only when the script
+is first used. It is fairly similar to how <code class="literal">String</code> literals work in Java.</p><h2><a id="painless-api"></a>Painless API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>The following types are available for use in the Painless language. Most types and methods map directly to their Java equivalents—for more information, see the corresponding <a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/lang/package-summary.html" target="_top">Javadoc</a>.</p><h3><a id="_dynamic_types"></a>Dynamic Types<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">def</code> (This type can be used to represent any other type.)
 </li></ul></div><h3><a id="_basic_types"></a>Basic Types<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">void</code>
