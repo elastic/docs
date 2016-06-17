@@ -103,7 +103,9 @@ sub _autosense_snippets {
     $filename =~ s/\.html$//;
 
     my $snippet_dir = $file->parent->subdir('snippets')->subdir($filename);
-    while ( $contents =~ s|$Autosense_RE|${1}snippets/${filename}/${counter}.json| ) {
+    while (
+        $contents =~ s|$Autosense_RE|${1}snippets/${filename}/${counter}.json| )
+    {
         $snippet_dir->mkpath if $counter == 1;
 
         # Remove callouts from snippet
@@ -187,12 +189,12 @@ sub _update_template {
         $content =~ s{<[^<>]+guide_template.css"[^>]+>}{};
 
         # remove visitor count and mod_value
-        $content =~s{<script[^>]+>visitor_count[^>]+>}{};
-        $content =~s{<script[^>]+>mod_value[^>]+>}{};
+        $content =~ s{<script[^>]+>visitor_count[^>]+>}{};
+        $content =~ s{<script[^>]+>mod_value[^>]+>}{};
 
         # remove meta date and DC.title
-        $content =~s{<meta name=.date.[^>]+>}{};
-        $content =~s{<meta name=.DC.title.[^>]+>}{};
+        $content =~ s{<meta name=.date.[^>]+>}{};
+        $content =~ s{<meta name=.DC.title.[^>]+>}{};
 
         # prehead
         $content =~ s{(<head>)}{$1\n<!-- DOCS PREHEAD -->}
@@ -204,14 +206,14 @@ sub _update_template {
 
         # body parts
         $content =~ s{
-            <div \s+ id="pageheader"
+            (<div [^>]+ class="[^"]*\bguide-section\b[^"]*"[^>]*>)
             .+?
-            (<div \s+ id="rtpcontainer")
+            <div [^>]+ id="rtpcontainer" [^>]*>
         }{
-            <!-- DOCS PREBODY -->
-            <!-- DOCS BODY -->
-            <!-- DOCS POSTBODY -->
             $1
+            <!-- DOCS BODY -->
+            </div>
+            <div id="rtpcontainer">
         }xs
             or die "Couldn't add BODY tags\n";
 
@@ -295,7 +297,7 @@ sub _load_template {
         }
         if ($abs) {
             $parts[$i] =~ s{
-                (<(?:script|link)[^>]*)
+                (<(?:script|link|img)[^>]*)
                 (\b(?:src|href)=")/(?=\w)
             }{$1 $2$abs}xg;
         }
