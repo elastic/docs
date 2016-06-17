@@ -1064,35 +1064,70 @@ are returned based on matches in parent documents. In the nested case, documents
 In many cases, it’s very useful to know <span class="emphasis"><em>which</em></span> inner nested objects (in the case of nested) or children/parent
 documents (in the case of parent/child) caused certain information to be returned.
 The inner hits feature can be used for this. This feature returns per search hit in the search response additional
-nested hits that caused a search hit to match in a different scope.</p><p>Inner hits can be used by defining an <code class="literal">inner_hits</code> definition on a <code class="literal">nested</code>, <code class="literal">has_child</code> or <code class="literal">has_parent</code> query and filter.</p><p>See the Elasticsearch documentation on <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/search-request-inner-hits.html" target="_top">Inner hits</a> for more detail.</p><h2><a id="top-level-inner-hits"></a>Top Level Inner Hits<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/search/request/inner-hits-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_fluent_dsl_example_7"></a>Fluent DSL Example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/search/request/inner-hits-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
+nested hits that caused a search hit to match in a different scope.</p><p>Inner hits can be used by defining an <code class="literal">inner_hits</code> definition on a <code class="literal">nested</code>, <code class="literal">has_child</code> or <code class="literal">has_parent</code> query and filter.</p><p>See the Elasticsearch documentation on <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/search-request-inner-hits.html" target="_top">Inner hits</a> for more detail.</p><h2><a id="inner-hits-in-descending-has-child-queries"></a>Inner Hits in descending Has Child Queries<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/search/request/inner-hits-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Inner Hits can be defined on descending <code class="literal">has_child</code> queries to return details of descendent children e.g. children,
+grandchildren, great-grandchildren, etc. In previous versions of Elasticsearch, Top Level Inner Hits would have been
+used to achieve this.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_fluent_dsl_example_7"></a>Fluent DSL Example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/search/request/inner-hits-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
 .Index(Index)
-.InnerHits(ih =&gt; ih
-    .Type&lt;Earl&gt;("earls", g =&gt; g
-        .Size(5)
-        .FielddataFields(p =&gt; p.Name)
-        .InnerHits(iih =&gt; iih
-            .Type&lt;Baron&gt;("barons")
+.Query(q =&gt; q
+    .HasChild&lt;Earl&gt;(child =&gt; child
+        .InnerHits(i =&gt; i
+            .Name("earls")
+            .Size(5)
+            .FielddataFields(p =&gt; p.Name)
+        )
+        .Query(cq =&gt; cq
+            .HasChild&lt;Baron&gt;(grandchild =&gt; grandchild
+                .InnerHits(i =&gt; i
+                    .Name("barons")
+                )
+                .Query(gq =&gt; gq
+                    .MatchAll()
+                )
+            )
         )
     )
 )</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_object_initializer_syntax_example_7"></a>Object Initializer Syntax Example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/search/request/inner-hits-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Duke&gt;(Index, typeof(Duke))
 {
-    InnerHits = new TopLevelInnerHits
+    Query = new HasChildQuery
     {
-        { "earls", new TopLevelInnerHit
+        Type = typeof(Earl),
+        InnerHits = new InnerHits
+        {
+            Name = "earls",
+            Size = 5,
+            FielddataFields = new List&lt;Field&gt; { Infer.Field&lt;Earl&gt;(p =&gt; p.Name) }
+        },
+        Query = new HasChildQuery
+        {
+            Type = typeof(Baron),
+            InnerHits = new InnerHits
             {
-                Type = typeof(Earl),
-                Size = 5,
-                FielddataFields = new Field[] { "name"},
-                InnerHits = new TopLevelInnerHits
-                {
-                    { "barons", new TopLevelInnerHit
-                        {
-                            Type = typeof(Baron)
-                        }
-                    }
-                }
-            }
+                Name = "barons"
+            },
+            Query = new MatchAllQuery()
         }
+    }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_handling_responses_2"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/search/request/inner-hits-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.Hits.Should().NotBeEmpty();
+
+foreach (var hit in response.Hits)
+{
+    hit.InnerHits.Should().NotBeEmpty();
+    hit.InnerHits.Should().ContainKey("earls");
+    var earlHits = hit.InnerHits["earls"].Hits;
+    earlHits.Total.Should().BeGreaterThan(0);
+    earlHits.Hits.Should().NotBeEmpty().And.HaveCount(5);
+    foreach (var earlHit in earlHits.Hits)
+        earlHit.Fields.ValuesOf&lt;string&gt;("name").Should().NotBeEmpty();
+    var earls = earlHits.Documents&lt;Earl&gt;();
+    earls.Should().NotBeEmpty().And.OnlyContain(earl =&gt; !string.IsNullOrWhiteSpace(earl.Name));
+    foreach (var earlHit in earlHits.Hits)
+    {
+        var earl = earlHit.Source.As&lt;Earl&gt;().Name;
+        var baronHits = earlHit.InnerHits["barons"];
+        baronHits.Should().NotBeNull();
+        var baron = baronHits.Documents&lt;Baron&gt;().FirstOrDefault();
+        baron.Should().NotBeNull();
+        baron.Name.Should().NotBeNullOrWhiteSpace();
     }
 }</pre></div><h2><a id="query-inner-hits"></a>Query Inner Hits<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/search/request/inner-hits-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_fluent_dsl_example_8"></a>Fluent DSL Example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/search/request/inner-hits-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
 .Index(Index)
@@ -1118,6 +1153,15 @@ nested hits that caused a search hit to match in a different scope.</p><p>Inner 
         Query = new MatchAllQuery(),
         InnerHits = new InnerHits()
     }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_handling_responses_3"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/search/request/inner-hits-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.Hits.Should().NotBeEmpty();
+
+foreach (var hit in response.Hits)
+{
+    var princes = hit.InnerHits["princes"].Documents&lt;Prince&gt;();
+    princes.Should().NotBeEmpty();
+
+    var foes = hit.InnerHits["foes"].Documents&lt;King&gt;();
+    foes.Should().NotBeEmpty();
 }</pre></div></div></div><div class="navfooter"><span class="prev"><a href="index-boost-usage.html">
               « 
               Index Boost Usage</a>
