@@ -2,10 +2,10 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Translog
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Pre-loading data into the file system cache
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-modules.html" title="Index Modules" /><link rel="prev" href="_pre_loading_data_into_the_file_system_cache.html" title="Pre-loading data into the file system cache" /><link rel="next" href="ingest.html" title="Ingest Node" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-modules-store.html" title="Store" /><link rel="prev" href="index-modules-store.html" title="Store" /><link rel="next" href="index-modules-translog.html" title="Translog" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -1049,65 +1049,50 @@ This page is for an as yet unreleased version of the software. Check out the <a 
 version&#39;s documentation here</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-node">Translog</span></div><div class="navheader"><span class="prev"><a href="_pre_loading_data_into_the_file_system_cache.html">
+    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules </a></span> » <span class="breadcrumb-link"><a href="index-modules-store.html">Store</a></span> » <span class="breadcrumb-node">Pre-loading data into the file system cache</span></div><div class="navheader"><span class="prev"><a href="index-modules-store.html">
               « 
-              Pre-loading data into the file system cache</a>
+              Store</a>
            
         </span><span class="next">
            
-          <a href="ingest.html">Ingest Node 
+          <a href="index-modules-translog.html">Translog
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-translog"></a>Translog<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Changes to Lucene are only persisted to disk during a Lucene commit,
-which is a relatively heavy operation and so cannot be performed after every
-index or delete operation. Changes that happen after one commit and before another
-will be lost in the event of process exit or HW failure.</p><p>To prevent this data loss, each shard has a <span class="emphasis"><em>transaction log</em></span> or write ahead
-log associated with it. Any index or delete operation is written to the
-translog after being processed by the internal Lucene index.</p><p>In the event of a crash, recent transactions can be replayed from the
-transaction log when the shard recovers.</p><p>An Elasticsearch flush is the process of performing a Lucene commit and
-starting a new translog. It is done automatically in the background in order
-to make sure the transaction log doesn’t grow too large, which would make
-replaying its operations take a considerable amount of time during recovery.
-It is also exposed through an API, though its rarely needed to be performed
-manually.</p><h3><a id="_flush_settings"></a>Flush settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following <a class="link" href="indices-update-settings.html" title="Update Indices Settings">dynamically updatable</a> settings
-control how often the in-memory buffer is flushed to disk:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">index.translog.flush_threshold_size</code>
-</span></dt><dd>
-Once the translog hits this size, a flush will happen. Defaults to <code class="literal">512mb</code>.
-</dd></dl></div><h3><a id="_translog_settings_2"></a>Translog settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The data in the transaction log is only persisted to disk when the translog is
-<code class="literal">fsync</code>ed and committed.  In the event of hardware failure, any data written
-since the previous translog commit will be lost.</p><p>By default, Elasticsearch <code class="literal">fsync</code>s and commits the translog every 5 seconds if <code class="literal">index.translog.durability</code> is set
-to <code class="literal">async</code> or if set to <code class="literal">request</code> (default) at the end of every <a class="link" href="docs-index_.html" title="Index API">index</a>, <a class="link" href="docs-delete.html" title="Delete API">delete</a>,
-<a class="link" href="docs-update.html" title="Update API">update</a>, or  <a class="link" href="docs-bulk.html" title="Bulk API">bulk</a> request.  In fact, Elasticsearch
-will only report success of an index, delete, update, or bulk request to the
-client after the transaction log has been successfully <code class="literal">fsync</code>ed and committed
-on the primary and on every allocated replica.</p><p>The following <a class="link" href="indices-update-settings.html" title="Update Indices Settings">dynamically updatable</a> per-index settings
-control the behaviour of the transaction log:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">index.translog.sync_interval</code>
-</span></dt><dd>
-How often the translog is <code class="literal">fsync</code>ed to disk and committed, regardless of
-write operations. Defaults to <code class="literal">5s</code>. Values less than <code class="literal">100ms</code> are not allowed.
-</dd><dt><span class="term">
-<code class="literal">index.translog.durability</code>
-</span></dt><dd><p class="simpara">Whether or not to <code class="literal">fsync</code> and commit the translog after every index, delete,
-update, or bulk request.  This setting accepts the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">request</code>
-</span></dt><dd>
-    (default) <code class="literal">fsync</code> and commit after every request. In the event
-    of hardware failure, all acknowledged writes will already have been
-    committed to disk.
-</dd><dt><span class="term">
-<code class="literal">async</code>
-</span></dt><dd>
-    <code class="literal">fsync</code> and commit in the background every <code class="literal">sync_interval</code>. In
-    the event of hardware failure, all acknowledged writes since the last
-    automatic commit will be discarded.
-</dd></dl></div></dd></dl></div></div><div class="navfooter"><span class="prev"><a href="_pre_loading_data_into_the_file_system_cache.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_pre_loading_data_into_the_file_system_cache"></a>Pre-loading data into the file system cache<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/store.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This is an expert-only setting and may be removed in the future.</p></div></div><p>By default, elasticsearch completely relies on the operating system file system
+cache for caching I/O operations. It is possible to set <code class="literal">index.store.preload</code>
+in order to tell the operating system to load the content of hot index
+files into memory upon opening. This setting accept a comma-separated list of
+files extensions: all files whose extenion is in the list will be pre-loaded
+upon opening. This can be useful to improve search performance of an index,
+especially when the host operating system is restarted, since this causes the
+file system cache to be trashed. However note that this may slow down the
+opening of indices, as they will only become available after data have been
+loaded into physical memory.</p><p>This setting is best-effort only and may not work at all depending on the store
+type and host operating system.</p><p>The <code class="literal">index.store.pre_load</code> is a static setting that can either be set in the
+<code class="literal">config/elasticsearch.yml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">index.store.pre_load: ["nvd", "dvd"]</pre></div><p>or in the index settings at index creation time:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_index
+{
+  "settings": {
+    "index.store.pre_load": ["nvd", "dvd"]
+  }
+}</pre></div><p>The default value is the empty array, which means that nothing will be loaded
+into the file-system cache eagerly. For indices that are actively searched,
+you might want to set it to <code class="literal">["nvd", "dvd"]</code>, which will cause norms and doc
+values to be loaded eagerly into physical memory. These are the two first
+extensions to look at since elasticsearch performs random access on them.</p><p>A wildcard can be used in order to indicate that all files should be preloaded:
+<code class="literal">index.store.pre_load: ["*"]</code>. Note however that it is generally not useful to
+load all files into memory, in particular those for stored fields and term
+vectors, so a better option might be to set it to
+<code class="literal">["nvd", "dvd", "tim", "doc", "dim"]</code>, which will preload norms, doc values,
+terms dictionaries, postings lists and points, which are the most important
+parts of the index for search and aggregations.</p><p>Note that this setting can be dangerous on indices that are larger than the size
+of the main memory of the host, as it would cause the filesystem cache to be
+trashed upon reopens after large merges, which would make indexing and searching
+<span class="emphasis"><em>slower</em></span>.</p></div><div class="navfooter"><span class="prev"><a href="index-modules-store.html">
               « 
-              Pre-loading data into the file system cache</a>
+              Store</a>
            
         </span><span class="next">
            
-          <a href="ingest.html">Ingest Node 
+          <a href="index-modules-translog.html">Translog
                »
             </a></span></div>
 <!-- end body -->
