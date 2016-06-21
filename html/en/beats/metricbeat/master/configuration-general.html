@@ -2,10 +2,10 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Run Options (Optional)
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>General Configuration
         | Metricbeat Reference
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference" /><link rel="up" href="metricbeat-configuration-options.html" title="Configuration Options" /><link rel="prev" href="configuration-logging.html" title="Logging (Optional)" /><link rel="next" href="configuration-filter.html" title="Filter" /><meta name="DC.type" content="Docs/Metricbeat/Reference" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference" /><link rel="up" href="metricbeat-configuration-options.html" title="Configuration Options" /><link rel="prev" href="configuration-metricbeat.html" title="Modules Configuration" /><link rel="next" href="configuration-filter.html" title="Filters Configuration" /><meta name="DC.type" content="Docs/Metricbeat/Reference" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -1043,29 +1043,106 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="page_header"><b>PLEASE NOTE:</b> These docs are for a pre-GA version of Metricbeat, 5.0.0-alpha3.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference</a></span> » <span class="breadcrumb-link"><a href="reference.html">Reference </a></span> » <span class="breadcrumb-link"><a href="metricbeat-configuration-options.html">Configuration Options</a></span> » <span class="breadcrumb-node">Run Options (Optional)</span></div><div class="navheader"><span class="prev"><a href="configuration-logging.html">
+<div class="page_header"><b>PLEASE NOTE:</b> These docs are for a pre-GA version of Metricbeat, 5.0.0-alpha3.</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference</a></span> » <span class="breadcrumb-link"><a href="reference.html">Reference </a></span> » <span class="breadcrumb-link"><a href="metricbeat-configuration-options.html">Configuration Options</a></span> » <span class="breadcrumb-node">General Configuration</span></div><div class="navheader"><span class="prev"><a href="configuration-metricbeat.html">
               « 
-              Logging (Optional)</a>
+              Modules Configuration</a>
            
         </span><span class="next">
            
-          <a href="configuration-filter.html">Filter
+          <a href="configuration-filter.html">Filters Configuration
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-run-options"></a>Run Options (Optional)<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsnconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Beat can drop privileges after creating the sniffing socket.
-Root access is required for opening the socket, but everything else requires no
-privileges. Therefore, it is recommended that you have the Beat switch users after
-the initialization phase. The <code class="literal">uid</code> and <code class="literal">gid</code> settings set the User Id and Group
-Id under which the Beat runs.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>On Linux, Setuid doesn’t change the uid of all threads, so the Go
-         garbage collector will continue to run as root. Also note that process
-         monitoring only works when running as root.</p></div></div><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">runoptions:
-  uid=501
-  gid=501</pre></div></div><div class="navfooter"><span class="prev"><a href="configuration-logging.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-general"></a>General Configuration<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The general section contains configuration options for the Beat and some
+general settings that control its behaviour.</p><p>Here is an example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml"># The name of the shipper that publishes the network data. It can be used to group
+# all the transactions sent by a single shipper in the web interface.
+# If this options is not defined, the hostname is used.
+#name:
+
+# The tags of the shipper are included in their own field with each
+# transaction published. Tags make it easy to group servers by different
+# logical properties.
+tags: ["service-X", "web-tier"]
+
+# Uncomment the following if you want to ignore transactions created
+# by the server on which the shipper is installed. This option is useful
+# to remove duplicates if shippers are installed on multiple servers.
+ignore_outgoing: true
+
+# How often (in seconds) shippers are publishing their IPs to the topology map.
+# The default is 10 seconds.
+refresh_topology_freq: 10
+
+# Expiration time (in seconds) of the IPs published by a shipper to the topology map.
+# All the IPs will be deleted afterwards. Note, that the value must be higher than
+# refresh_topology_freq. The default is 15 seconds.
+topology_expire: 15</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_general_options"></a>General Options<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can specify the following options:</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_name"></a>name<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The name of the Beat. If this option is empty, the <code class="literal">hostname</code> of the server is
+used. The name is included as the <code class="literal">beat.name</code> field in each published transaction. You can
+use the name to group all transactions sent by a single Beat.</p><p>At startup, each Beat can publish its IP, port, and name to Elasticsearch. This information
+is stored in Elasticsearch as a network topology map that maps the IP and port
+of each Beat to the name that you specify here.</p><p>When a Beat receives a new request and response (called a transaction), the Beat can query
+Elasticsearch to see if the network topology includes the IP and port of the source
+and destination servers. If this information is available, the <code class="literal">client_server</code> field in the
+output is set to the name of the Beat running on the source server, and the <code class="literal">server</code> field is set to the
+name of the Beat running on the destination server.</p><p>To use the topology map in Elasticsearch, you must enable Elasticsearch as output and set the
+<code class="literal">save_topology</code> option to true.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">name: "my-shipper"</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_tags_2"></a>tags<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>A list of tags that the Beat includes in the <code class="literal">tags</code> field of each published
+transaction. Tags make it easy to group servers by different logical properties.
+For example, if you have a cluster of web servers, you can add the "webservers"
+tag to the Beat on each server, and then use filters and queries in the Kibana
+web interface to get visualisations for the whole group of servers.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">tags: ["my-service", "hardware", "test"]</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="libbeat-configuration-fields"></a>fields<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Optional fields that you can specify to add additional information to the
+output. Fields can be scalar values, arrays, dictionaries, or any nested
+combination of these. By default, the fields that you specify here will be
+grouped under a <code class="literal">fields</code> sub-dictionary in the output document. To store the
+custom fields as top-level fields, set the <code class="literal">fields_under_root</code> option to true.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">fields: {project: "myproject", instance-id: "574734885120952459"}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_fields_under_root"></a>fields_under_root<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If this option is set to true, the custom <a class="xref" href="configuration-general.html#libbeat-configuration-fields" title="fields">fields</a> are
+stored as top-level fields in the output document instead of being grouped under
+a <code class="literal">fields</code> sub-dictionary. If the custom field names conflict with other field
+names, then the custom fields overwrite the other fields.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">fields_under_root: true
+fields:
+  instance_id: i-10a64379
+  region: us-east-1</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_ignore_outgoing"></a>ignore_outgoing<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If the <code class="literal">ignore_outgoing</code> option is enabled, the Beat ignores all the
+transactions initiated from the server running the Beat.</p><p>This is useful when two Beats publish the same transactions. Because one Beat
+sees the transaction in its outgoing queue and the other sees it in its incoming
+queue, you can end up with duplicate transactions. To remove the duplicates, you
+can enable the <code class="literal">ignore_outgoing</code> option on one of the servers.</p><p>For example, in the following scenario, you see a 3-server architecture
+where a Beat is installed on each server. t1 is the transaction exchanged between
+Server1 and Server2, and t2 is the transaction between Server2 and Server3.</p><p><span class="inlinemediaobject"><img src="./images/option_ignore_outgoing.png" alt="Beats Architecture" /></span></p><p>By default, each transaction is indexed twice because Beat2
+sees both transactions. So you would see the following published transactions
+(when <code class="literal">ignore_outgoing</code> is false):</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Beat1: t1
+</li><li class="listitem">
+Beat2: t1 and t2
+</li><li class="listitem">
+Beat3: t2
+</li></ul></div><p>To avoid duplicates, you can force your Beats to send only the incoming
+transactions and ignore the transactions created by the local server. So you would
+see the following published transactions (when <code class="literal">ignore_outgoing</code> is true):</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Beat1: none
+</li><li class="listitem">
+Beat2: t1
+</li><li class="listitem">
+Beat3: t2
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_refresh_topology_freq"></a>refresh_topology_freq<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The refresh interval of the topology map in
+seconds. In other words, this setting specifies how often each Beat publishes its
+IP addresses to the topology map. The default is 10 seconds.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_topology_expire"></a>topology_expire<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The expiration time for the topology in seconds. This is
+useful in case a Beat stops publishing its IP addresses. The IP addresses
+are removed automatically from the topology map after expiration. The default
+is 15 seconds.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_queue_size"></a>queue_size<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The internal queue size for single events in the processing pipeline. The default
+value is 1000.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_bulk_queue_size"></a>bulk_queue_size<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>(DO NOT TOUCH) The internal queue size for bulk events in the processing pipeline. The default value is 0.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_max_procs"></a>max_procs<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Sets the maximum number of CPUs that can be executing simultaneously. The
+default is the number of logical CPUs available in the system.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_geoip_paths"></a>geoip.paths<a href="https://github.com/elastic/beats/edit/master/metricbeat/docsneralconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p><span class="deprecated">
+      [<span class="version">5.0.0</span>]
+      <span class="detail">Deprecated in 5.0.0. Please use the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/ingest-geoip.html" target="_top">Geoip processor in Ingest Node</a> or the <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-filters-geoip.html" target="_top">Logstash GeoIP filter</a> instead.</span></span></p><p>This configuration option is currently used by Packetbeat only and it will be removed in version 6.0.</p><p>The paths to search for GeoIP databases. The Beat loads the first installed GeoIP database
+that if finds. Then, for each transaction, the Beat exports the GeoIP location of the client.</p><p>The recommended values for geoip.paths are <code class="literal">/usr/share/GeoIP/GeoLiteCity.dat</code>
+and <code class="literal">/usr/local/var/GeoIP/GeoLiteCity.dat</code>.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml"># Configure local GeoIP database support.
+# If no paths are not configured geoip is disabled.
+geoip:
+  paths:
+    - "/usr/share/GeoIP/GeoLiteCity.dat"
+    - "/usr/local/var/GeoIP/GeoLiteCity.dat"</pre></div><p><span class="strong"><strong>Important</strong></span>: For GeoIP support to function correctly, the
+<a class="ulink" href="https://dev.maxmind.com/geoip/legacy/geolite/" target="_top">GeoLite City database</a> is required.</p></div></div></div><div class="navfooter"><span class="prev"><a href="configuration-metricbeat.html">
               « 
-              Logging (Optional)</a>
+              Modules Configuration</a>
            
         </span><span class="next">
            
-          <a href="configuration-filter.html">Filter
+          <a href="configuration-filter.html">Filters Configuration
                »
             </a></span></div>
 <!-- end body -->
