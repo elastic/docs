@@ -393,7 +393,7 @@ jQuery(function() {
   var div = jQuery('div.toc');
   // Fetch toc.html unless there is already a .toc on the page
   if (div.length == 0
-    && jQuery('#guide').children('.article,.book').length == 0) {
+    && jQuery('#guide').find('div.article,div.book').length == 0) {
     var url = location.href.replace(/[^\/]+$/, 'toc.html');
     var toc = jQuery.get(url, {}, function(data) {
       right_col.append(data);
