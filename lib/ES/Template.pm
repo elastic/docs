@@ -208,12 +208,12 @@ sub _update_template {
         $content =~ s{
             (<div [^>]+ class="[^"]*\bguide-section\b[^"]*"[^>]*>)
             .+?
-            <div [^>]+ id="rtpcontainer" [^>]*>
+            (<div [^>]+ id="right_col" [^>]*>)
         }{
             $1
             <!-- DOCS BODY -->
             </div>
-            <div id="rtpcontainer">
+            $2
         }xs
             or die "Couldn't add BODY tags\n";
 

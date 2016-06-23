@@ -155,9 +155,8 @@
 
 jQuery(function() {
   // Move rtp container to top right and make visible
-  var right_col = jQuery('<div id="guide_right_col"></div>').prependTo('#guide');
-  jQuery('#rtpcontainer').appendTo(right_col).show();
-  right_col.append('<div id="this_page"></div>');
+  var right_col = jQuery('#right_col');
+  var this_page = jQuery('<div id="this_page"></div>').appendTo(right_col);
 
   var default_console_url = 'http://localhost:5601/app/console/';
   var default_sense_url = 'http://localhost:5601/app/sense/';
@@ -357,8 +356,8 @@ jQuery(function() {
 
   function init_headers() {
     // Add on-this-page block
-    jQuery('#this_page').append('<h2>On this page</h2>');
-    var ul = jQuery('<ul></ul>').appendTo('#this_page');
+    this_page.append('<h2>On this page</h2>');
+    var ul = jQuery('<ul></ul>').appendTo(this_page);
     var items = 0;
 
     jQuery('#guide a[id]').each(
@@ -379,7 +378,7 @@ jQuery(function() {
         }
       });
     if (items < 2) {
-      jQuery('#this_page').remove();
+      this_page.remove();
     }
   }
 
