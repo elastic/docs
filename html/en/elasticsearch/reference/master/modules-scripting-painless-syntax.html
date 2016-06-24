@@ -2,10 +2,10 @@
 <!DOCTYPE HTML>
 <html lang="en-us">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>How Authentication Works
-        | Shield [2.3]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Painless Syntax
+        | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Shield [2.3]" /><link rel="up" href="setting-up-authentication.html" title="User Authentication" /><link rel="prev" href="setting-up-authentication.html" title="User Authentication" /><link rel="next" href="anonymous-access.html" title="Enabling Anonymous Access" /><meta name="DC.type" content="Docs/Shield/Reference/2.3" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-scripting-painless.html" title="Painless Scripting Language" /><link rel="next" href="modules-scripting-expression.html" title="Lucene Expressions Language" /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   
  	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
@@ -1043,152 +1043,55 @@
 <section id="guide">
 
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Shield
-      [2.3]
-    </a></span> » <span class="breadcrumb-link"><a href="setting-up-authentication.html">User Authentication</a></span> » <span class="breadcrumb-node">How Authentication Works</span></div><div class="navheader"><span class="prev"><a href="setting-up-authentication.html">
+<div class="page_header"><b>PLEASE NOTE:</b>
+<br/>
+This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
+version&#39;s documentation here</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="modules-scripting.html">Scripting</a></span> » <span class="breadcrumb-node">Painless Syntax</span></div><div class="navheader"><span class="prev"><a href="modules-scripting-painless.html">
               « 
-              User Authentication</a>
+              Painless Scripting Language</a>
            
         </span><span class="next">
            
-          <a href="anonymous-access.html">Enabling Anonymous Access 
+          <a href="modules-scripting-expression.html">Lucene Expressions Language
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_how_authentication_works"></a>How Authentication Works</h2></div></div></div><p>A <span class="emphasis"><em>realm</em></span> is used to resolve and authenticate users and their roles. Shield
-supports the following types of realms:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<span class="emphasis"><em>native</em></span>
-</p>
-</td><td valign="top">
-<p>
-A native authentication system built into Shield and available by
-default. See <a class="xref" href="native-realm.html" title="Native User Authentication">Native User Authentication</a>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<span class="emphasis"><em>file</em></span>
-</p>
-</td><td valign="top">
-<p>
-A file based authentication system built into Shield and available by
-default. See <a class="xref" href="file-realm.html" title="File-based User Authentication">File-based User Authentication</a>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<span class="emphasis"><em>LDAP</em></span>
-</p>
-</td><td valign="top">
-<p>
-Authentication via an external Lightweight Directory Protocol.
-See <a class="xref" href="ldap-realm.html" title="LDAP User Authentication">LDAP User Authentication</a>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<span class="emphasis"><em>Active Directory</em></span>
-</p>
-</td><td valign="top">
-<p>
-Authentication via an external Active Directory service.
-See <a class="xref" href="active-directory-realm.html" title="Active Directory User Authentication">Active Directory User Authentication</a>.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<span class="emphasis"><em>PKI</em></span>
-</p>
-</td><td valign="top">
-<p>
-Authentication through the use of trusted X.509 certificates. See
-<a class="xref" href="pki-realm.html" title="PKI User Authentication">PKI User Authentication </a>.
-</p>
-</td></tr></tbody></table></div><p>The <span class="emphasis"><em>native</em></span>, <span class="emphasis"><em>file</em></span>, <span class="emphasis"><em>LDAP</em></span>, and <span class="emphasis"><em>Active Directory</em></span> realms authenticate using
-the username and password authentication tokens.</p><p>Shield also supports custom realms. If you need to integrate with another
-authentication system, you can build a custom realm plugin. For more information,
-see <a class="link" href="custom-realms.html" title="Integrating with Other Authentication Systems">Integrating with Other Authentication Systems</a>.</p><p>Realms live within a <span class="emphasis"><em>realm chain</em></span>. It is essentially a prioritized list of
-configured realms (typically of various types). The order of the list determines
-the order in which the realms will be consulted. During the authentication
-process, Shield will consult and try to authenticate the request one realm at a
-time. Once one of the realms successfully authenticates the request, the
-authentication is considered to be successful and the authenticated user will be
-associated with the request (which will then proceed to the authorization phase).
-If a realm cannot authenticate the request, the next in line realm in the chain
-will be consulted. If all realms in the chain could not authenticate the request,
-the authentication is then considered to be unsuccessful and an authentication
-error will be returned (as HTTP status code <code class="literal">401</code>).</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Shield attempts to authenticate to each configured realm sequentially.
-Some systems (e.g. Active Directory) have a temporary lock-out period after
-several successive failed login attempts. If the same username exists in
-multiple realms, unintentional account lockouts are possible. For more
-information, please see <a class="link" href="troubleshooting.html#trouble-shoot-active-directory" title="Active Directory">here</a>.</p></div></div><p>For example, if <code class="literal">UserA</code> exists in both Active Directory and the file realm, and
-the Active Directory realm is checked first and file is checked second, an
-attempt to authenticate as <code class="literal">UserA</code> in the file realm would first attempt to
-authenticate against Active Directory and fail, before successfully
-authenticating against the file realm. Because authentication is verified on
-each request, the Active Directory realm would be checked - and fail - on each
-request for <code class="literal">UserA</code> in the file realm. In this case, while the Shield request
-completed successfully, the account on Active Directory would have received
-several failed login attempts, and that account may become temporarily locked
-out. Plan the order of your realms accordingly.</p><p>The default realm chain contains the <code class="literal">native</code> and <code class="literal">file</code> realms. To explicitly,
-configure a realm chain, you specify the chain in <code class="literal">elasticsearch.yml</code>. When you
-configure a realm chain, only the realms you specify are used for authentication.
-To use the <code class="literal">native</code> and <code class="literal">file</code> realms, you must include them in the chain.</p><p>The following snippet configures a realm chain that includes the <code class="literal">file</code> and
-<code class="literal">native</code> realms, as well as two LDAP realms and an Active Directory realm.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">shield.authc:
-    realms:
-        native:
-            type: native
-            order: 0
-
-        file:
-            type: file
-            order: 1
-
-        ldap1:
-            type: ldap
-            order: 2
-            enabled: false
-            url: 'url_to_ldap1'
-            ...
-
-        ldap2:
-            type: ldap
-            order: 3
-            url: 'url_to_ldap2'
-            ...
-
-        ad1:
-            type: active_directory
-            order: 4
-            url: 'url_to_ad'</pre></div><p>As can be seen above, each realm has a unique name that identifies it. There are
-three settings that are common to all realms:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">type</code> (required) - Identifies the type of the ream (currently can be <code class="literal">native</code>,
-<code class="literal">file</code>, <code class="literal">ldap</code>, <code class="literal">active_directory</code>, or <code class="literal">pki</code>). The realm type determines what
-other settings the realms should be configured with.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-painless-syntax"></a>Painless Syntax<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The Painless scripting language is new and is still marked as experimental. The syntax or API may be changed in the future in non-backwards compatible ways if required..</p></div></div><h3><a id="painless-types"></a>Variable types<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Painless supports all of <a class="ulink" href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/variables.html" target="_top">Java’s types</a>,
+including array types, but adds some additional built-in types.</p><h4><a id="painless-def"></a>Def<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The dynamic type <code class="literal">def</code> serves as a placeholder for any other type. It adopts the behavior
+of whatever runtime type it represents.</p><h4><a id="painless-strings"></a>String<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>String constants can be declared with single quotes, to avoid escaping horrors with JSON:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">def mystring = 'foo';</pre></div><h4><a id="painless-lists"></a>List<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Lists can be created explicitly (e.g. <code class="literal">new ArrayList()</code>) or initialized similar to Groovy:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">def list = [1,2,3];</pre></div><p>Lists can also be accessed similar to arrays: they support subscript and <code class="literal">.length</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">def list = [1,2,3];
+return list[0]</pre></div><h4><a id="painless-maps"></a>Map<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Maps can be created explicitly (e.g. <code class="literal">new HashMap()</code>) or initialized similar to Groovy:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">def person = ['name': 'Joe', 'age': 63];</pre></div><p>Map keys can also be accessed as properties.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">def person = ['name': 'Joe', 'age': 63];
+person.retired = true;
+return person.name</pre></div><p>Map keys can also be accessed via subscript (for keys containing special characters):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">return map['something-absurd!']</pre></div><h4><a id="painless-pattern"></a>Pattern<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Regular expression constants are directly supported:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">Pattern p = /[aeiou]/</pre></div><p>Patterns can only be created via this mechanism. This ensures fast performance, regular expressions
+are always constants and compiled efficiently a single time.</p><h4><a id="modules-scripting-painless-regex-flags"></a>Pattern flags<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>You can define flags on patterns in Painless by adding characters after the
+trailing <code class="literal">/</code> like <code class="literal">/foo/i</code> or <code class="literal">/foo \w #comment/iUx</code>. Painless exposes all the
+flags from
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html" target="_top">Java’s Pattern class</a>
+using these characters:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><thead><tr><th align="left" valign="top"> Character </th><th align="left" valign="top"> Java Constant </th><th align="left" valign="top"> Example</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">c</code></p></td><td align="left" valign="top"><p>CANON_EQ</p></td><td align="left" valign="top"><p><code class="literal">'å' ==~ /å/c</code> (open in hex editor to see)</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">i</code></p></td><td align="left" valign="top"><p>CASE_INSENSITIVE</p></td><td align="left" valign="top"><p><code class="literal">'A' ==~ /a/i</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">l</code></p></td><td align="left" valign="top"><p>LITERAL</p></td><td align="left" valign="top"><p><code class="literal">'[a]' ==~ /[a]/l</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">m</code></p></td><td align="left" valign="top"><p>MULTILINE</p></td><td align="left" valign="top"><p><code class="literal">'a\nb\nc' =~ /^b$/m</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">s</code></p></td><td align="left" valign="top"><p>DOTALL (aka single line)</p></td><td align="left" valign="top"><p><code class="literal">'a\nb\nc' =~ /.b./s</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">U</code></p></td><td align="left" valign="top"><p>UNICODE_CHARACTER_CLASS</p></td><td align="left" valign="top"><p><code class="literal">'Ɛ' ==~ /\\w/U</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">u</code></p></td><td align="left" valign="top"><p>UNICODE_CASE</p></td><td align="left" valign="top"><p><code class="literal">'Ɛ' ==~ /ɛ/iu</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">x</code></p></td><td align="left" valign="top"><p>COMMENTS (aka extended)</p></td><td align="left" valign="top"><p><code class="literal">'a' ==~ /a #comment/x</code></p></td></tr></tbody></table></div><h3><a id="painless-operators"></a>Operators<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>All of Java’s <a class="ulink" href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html" target="_top">operators</a> are
+supported with the same precedence, promotion, and semantics.</p><p>There are only a few minor differences and add-ons:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">==</code> behaves as Java’s for numeric types, but for non-numeric types acts as <a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html#equals-java.lang.Object-" target="_top"><code class="literal">Object.equals()</code></a>
 </li><li class="listitem">
-<code class="literal">order</code> (optional) - Defines the priority/index of the realm within the realm
-chain. This will determine when the realm will be consulted during
-authentication, with lower order being consulted first.
+<code class="literal">===</code> and <code class="literal">!==</code> support exact reference comparison (e.g. <code class="literal">x === y</code>)
 </li><li class="listitem">
-<code class="literal">enabled</code> (optional) - When set to <code class="literal">false</code> the realm will be disabled and will
-not be added to the realm chain. This is useful for debugging purposes, where
-one can remove a realm from the chain without deleting and losing its
-configuration.
-</li></ul></div><p>The realm types can roughly be categorized to two categories:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">internal</code> - Internal realm types are realms that are internal to
-Elasticsearch and don’t require any communication with external parties - they
-are fully managed by Shield. There can only be a maximum of one configured realm
-per internal realm type. (Currently, the internal realm types are <code class="literal">native</code> and
-<code class="literal">file</code>).
+<code class="literal">=~</code> true if a portion of the text matches a pattern (e.g. <code class="literal">x =~ /b/</code>)
 </li><li class="listitem">
-<code class="literal">external</code> - External realm types are realms that require interaction with
-parties/components external to Elasticsearch, typically, with enterprise level
-identity management systems. Unlike the <code class="literal">internal</code> realms, there can be as many
-<code class="literal">external</code> realms as one would like - each with a unique name and different
-settings. (Currently the only <code class="literal">external</code> realm types that exist are <code class="literal">ldap</code>,
-<code class="literal">active_directory</code>, and <code class="literal">pki</code>).
-</li></ul></div></div><div class="navfooter"><span class="prev"><a href="setting-up-authentication.html">
+<code class="literal">==~</code> true if the entire text matches a pattern (e.g. <code class="literal">x ==~ /[Bb]ob/</code>)
+</li></ul></div><h3><a id="painless-control-flow"></a>Control flow<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Java’s <a class="ulink" href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/flow.html" target="_top">control flow statements</a> are supported, with the exception
+of the <code class="literal">switch</code> statement.</p><h3><a id="painless-functions"></a>Functions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Functions can be declared at the beginning of the script, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">boolean isNegative(def x) { x &lt; 0 }
+...
+if (isNegative(someVar)) {
+  ...
+}</pre></div><h3><a id="painless-lambda-expressions"></a>Lambda expressions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Lambda expressions and method references work the same as <a class="ulink" href="https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html" target="_top">Java’s</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">list.removeIf(item -&gt; item == 2);
+list.removeIf((int item) -&gt; item == 2);
+list.removeIf((int item) -&gt; { item == 2 });
+list.sort((x, y) -&gt; x - y);
+list.sort(Integer::compare);</pre></div><p>Method references to functions within the script can be accomplished using <code class="literal">this</code>, e.g. <code class="literal">list.sort(this::mycompare)</code>.</p></div><div class="navfooter"><span class="prev"><a href="modules-scripting-painless.html">
               « 
-              User Authentication</a>
+              Painless Scripting Language</a>
            
         </span><span class="next">
            
-          <a href="anonymous-access.html">Enabling Anonymous Access 
+          <a href="modules-scripting-expression.html">Lucene Expressions Language
                »
             </a></span></div>
 <!-- end body -->
