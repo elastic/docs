@@ -1,12 +1,168 @@
+/*!
+ * JavaScript Cookie v2.1.1
+ * https://github.com/js-cookie/js-cookie
+ *
+ * Copyright 2006, 2015 Klaus Hartl & Fagner Brack
+ * Released under the MIT license
+ */
+;(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+    define(factory);
+  } else if (typeof exports === 'object') {
+    module.exports = factory();
+  } else {
+    var OldCookies = window.Cookies;
+    var api = window.Cookies = factory();
+    api.noConflict = function () {
+      window.Cookies = OldCookies;
+      return api;
+    };
+  }
+}(function () {
+  function extend () {
+    var i = 0;
+    var result = {};
+    for (; i < arguments.length; i++) {
+      var attributes = arguments[ i ];
+      for (var key in attributes) {
+        result[key] = attributes[key];
+      }
+    }
+    return result;
+  }
+
+  function init (converter) {
+    function api (key, value, attributes) {
+      var result;
+      if (typeof document === 'undefined') {
+        return;
+      }
+
+      // Write
+
+      if (arguments.length > 1) {
+        attributes = extend({
+          path: '/'
+        }, api.defaults, attributes);
+
+        if (typeof attributes.expires === 'number') {
+          var expires = new Date();
+          expires.setMilliseconds(expires.getMilliseconds() + attributes.expires * 864e+5);
+          attributes.expires = expires;
+        }
+
+        try {
+          result = JSON.stringify(value);
+          if (/^[\{\[]/.test(result)) {
+            value = result;
+          }
+        } catch (e) {}
+
+        if (!converter.write) {
+          value = encodeURIComponent(String(value))
+            .replace(/%(23|24|26|2B|3A|3C|3E|3D|2F|3F|40|5B|5D|5E|60|7B|7D|7C)/g, decodeURIComponent);
+        } else {
+          value = converter.write(value, key);
+        }
+
+        key = encodeURIComponent(String(key));
+        key = key.replace(/%(23|24|26|2B|5E|60|7C)/g, decodeURIComponent);
+        key = key.replace(/[\(\)]/g, escape);
+
+        return (document.cookie = [
+          key, '=', value,
+          attributes.expires && '; expires=' + attributes.expires.toUTCString(), // use expires attribute, max-age is not supported by IE
+          attributes.path    && '; path=' + attributes.path,
+          attributes.domain  && '; domain=' + attributes.domain,
+          attributes.secure ? '; secure' : ''
+        ].join(''));
+      }
+
+      // Read
+
+      if (!key) {
+        result = {};
+      }
+
+      // To prevent the for loop in the first place assign an empty array
+      // in case there are no cookies at all. Also prevents odd result when
+      // calling "get()"
+      var cookies = document.cookie ? document.cookie.split('; ') : [];
+      var rdecode = /(%[0-9A-Z]{2})+/g;
+      var i = 0;
+
+      for (; i < cookies.length; i++) {
+        var parts = cookies[i].split('=');
+        var name = parts[0].replace(rdecode, decodeURIComponent);
+        var cookie = parts.slice(1).join('=');
+
+        if (cookie.charAt(0) === '"') {
+          cookie = cookie.slice(1, -1);
+        }
+
+        try {
+          cookie = converter.read ?
+            converter.read(cookie, name) : converter(cookie, name) ||
+            cookie.replace(rdecode, decodeURIComponent);
+
+          if (this.json) {
+            try {
+              cookie = JSON.parse(cookie);
+            } catch (e) {}
+          }
+
+          if (key === name) {
+            result = cookie;
+            break;
+          }
+
+          if (!key) {
+            result[name] = cookie;
+          }
+        } catch (e) {}
+      }
+
+      return result;
+    }
+
+    api.set = api;
+    api.get = function (key) {
+      return api(key);
+    };
+    api.getJSON = function () {
+      return api.apply({
+        json: true
+      }, [].slice.call(arguments));
+    };
+    api.defaults = {};
+
+    api.remove = function (key, attributes) {
+      api(key, '', extend(attributes, {
+        expires: -1
+      }));
+    };
+
+    api.withConverter = init;
+
+    return api;
+  }
+
+  return init(function () {});
+}));
+
+// END jscookie
+
+
 jQuery(function() {
   // Move rtp container to top right and make visible
-  jQuery('#rtpcontainer').prependTo('#guide').show();
+  var right_col = jQuery('#right_col');
+  var this_page = jQuery('<div id="this_page"></div>').appendTo(right_col);
 
   var default_console_url = 'http://localhost:5601/app/console/';
   var default_sense_url = 'http://localhost:5601/app/sense/';
   var default_sense_url_marvel = 'http://localhost:9200/_plugin/marvel/sense/';
-  var console_url = jQuery.cookie('console_url') || default_console_url;
-  var sense_url = jQuery.cookie('sense_url') || default_sense_url;
+  var console_url = Cookies.get('console_url') || default_console_url;
+  var sense_url = Cookies.get('sense_url') || default_sense_url;
 
   // Enable Sense widget
   init_sense_widgets(sense_url);
@@ -81,9 +237,9 @@ jQuery(function() {
     div.find('#save_url').click(function(e) {
       var new_url = jQuery('#sense_url').val() || default_sense_url;
       if (new_url === default_sense_url) {
-        jQuery.cookie('sense_url', '');
+        Cookies.set('sense_url', '');
       } else {
-        jQuery.cookie('sense_url', new_url);
+        Cookies.set('sense_url', new_url, {expires: 365, path: ''});
       }
       sense_url = new_url;
       init_sense_widgets(sense_url);
@@ -123,9 +279,9 @@ jQuery(function() {
     div.find('#save_url').click(function(e) {
       var new_url = jQuery('#console_url').val() || default_console_url;
       if (new_url === default_console_url) {
-        jQuery.cookie('console_url', '');
+        Cookies.set('console_url', '');
       } else {
-        jQuery.cookie('console_url', new_url);
+        Cookies.set('console_url', new_url,{expires: 365, path: ''});
       }
       console_url = new_url;
       init_console_widgets(console_url);
@@ -200,10 +356,9 @@ jQuery(function() {
 
   function init_headers() {
     // Add on-this-page block
-    jQuery('.titlepage').first().after(
-      '<div id="this_page"><h2>On this page</h2><ul></ul></div>');
+    this_page.append('<h2>On this page</h2>');
+    var ul = jQuery('<ul></ul>').appendTo(this_page);
     var items = 0;
-    var ul = jQuery('#this_page ul');
 
     jQuery('#guide a[id]').each(
       function() {
@@ -223,7 +378,7 @@ jQuery(function() {
         }
       });
     if (items < 2) {
-      jQuery('#this_page').remove();
+      this_page.remove();
     }
   }
 
@@ -237,10 +392,10 @@ jQuery(function() {
   var div = jQuery('div.toc');
   // Fetch toc.html unless there is already a .toc on the page
   if (div.length == 0
-    && jQuery('#guide').children('.article,.book').length == 0) {
+    && jQuery('#guide').find('div.article,div.book').length == 0) {
     var url = location.href.replace(/[^\/]+$/, 'toc.html');
     var toc = jQuery.get(url, {}, function(data) {
-      jQuery('.titlepage').first().after(data);
+      right_col.append(data);
       init_toc();
       open_current();
     }).always(init_headers);
@@ -248,3 +403,4 @@ jQuery(function() {
     init_toc();
   }
 });
+
