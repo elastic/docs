@@ -36,7 +36,7 @@ sub build_chunked {
     my $lenient     = $opts{lenient} || '';
     my $edit_url    = $opts{edit_url} || '';
     my $section     = $opts{section_title} || '';
-    my $page_header = $opts{page_header} || '';
+    my $page_header = custom_header($index) || $opts{page_header} || '';
 
     my $output = run(
         'a2x', '-v',
@@ -93,7 +93,7 @@ sub build_single {
     my $edit_url = $opts{edit_url}      || '';
     my $comments = $opts{comments}      || 0;
     my $section  = $opts{section_title} || '';
-    my $page_header = $opts{page_header} || '';
+    my $page_header = custom_header($index) || $opts{page_header} || '';
 
     my $output = run(
         'a2x', '-v',
@@ -185,6 +185,15 @@ sub docinfo {
     $name =~ s/\.[^.]+$//;
     my $docinfo = $index->dir->file("$name-docinfo.xml");
     return -e $docinfo ? ( -a => 'docinfo' ) : ();
+}
+
+#===================================
+sub custom_header {
+#===================================
+    my $index  = shift;
+    my $custom = $index->dir->file('page_header.html');
+    return unless -e $custom;
+    return scalar $custom->slurp( iomode => '<:encoding(UTF-8)' );
 }
 
 #===================================
