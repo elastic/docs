@@ -255,31 +255,31 @@ output {
     stdout { codec =&gt; rubydebug }
   }
 }</pre></div><p>Let’s see what comes out:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">$ bin/logstash -f ../test.conf
-Logstash startup completed
+Pipeline main started
 asdf
 {
-       "message" =&gt; "asdf",
+    "@timestamp" =&gt; 2016-06-30T02:42:51.496Z,
       "@version" =&gt; "1",
-    "@timestamp" =&gt; "2015-03-18T23:09:29.595Z",
           "host" =&gt; "example.com",
-          "show" =&gt; "This data will be in the output"
+          "show" =&gt; "This data will be in the output",
+       "message" =&gt; "asdf"
 }</pre></div><p>The "asdf" typed in became the <code class="literal">message</code> field contents, and the conditional
 successfully evaluated the contents of the <code class="literal">test</code> field nested within the
 <code class="literal">@metadata</code> field.  But the output did not show a field called <code class="literal">@metadata</code>, or
 its contents.</p><p>The <code class="literal">rubydebug</code> codec allows you to reveal the contents of the <code class="literal">@metadata</code> field
 if you add a config flag, <code class="literal">metadata =&gt; true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">    stdout { codec =&gt; rubydebug { metadata =&gt; true } }</pre></div><p>Let’s see what the output looks like with this change:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">$ bin/logstash -f ../test.conf
-Logstash startup completed
+Pipeline main started
 asdf
 {
-       "message" =&gt; "asdf",
-      "@version" =&gt; "1",
-    "@timestamp" =&gt; "2015-03-18T23:10:19.859Z",
-          "host" =&gt; "example.com",
-          "show" =&gt; "This data will be in the output",
+    "@timestamp" =&gt; 2016-06-30T02:46:48.565Z,
      "@metadata" =&gt; {
            "test" =&gt; "Hello",
         "no_show" =&gt; "This data will not be in the output"
-    }
+    },
+      "@version" =&gt; "1",
+          "host" =&gt; "example.com",
+          "show" =&gt; "This data will be in the output",
+       "message" =&gt; "asdf"
 }</pre></div><p>Now you can see the <code class="literal">@metadata</code> field and its sub-fields.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Only the <code class="literal">rubydebug</code> codec allows you to show the contents of the
 <code class="literal">@metadata</code> field.</p></div></div><p>Make use of the <code class="literal">@metadata</code> field any time you need a temporary field but do not
 want it to be in the final output.</p><p>Perhaps one of the most common use cases for this new field is with the <code class="literal">date</code>
@@ -298,13 +298,13 @@ output {
 }</pre></div><p>Notice that this configuration puts the extracted date into the
 <code class="literal">[@metadata][timestamp]</code> field in the <code class="literal">grok</code> filter.  Let’s feed this
 configuration a sample date string and see what comes out:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">$ bin/logstash -f ../test.conf
-Logstash startup completed
+Pipeline main started
 02/Mar/2014:15:36:43 +0100
 {
-       "message" =&gt; "02/Mar/2014:15:36:43 +0100",
+    "@timestamp" =&gt; 2014-03-02T14:36:43.000Z,
       "@version" =&gt; "1",
-    "@timestamp" =&gt; "2014-03-02T14:36:43.000Z",
-          "host" =&gt; "example.com"
+          "host" =&gt; "example.com",
+       "message" =&gt; "02/Mar/2014:15:36:43 +0100"
 }</pre></div><p>That’s it!  No extra fields in the output, and a cleaner config file because you
 do not have to delete a "timestamp" field after conversion in the <code class="literal">date</code> filter.</p><p>Another use case is the CouchDB Changes input plugin (See
 <a class="ulink" href="https://github.com/logstash-plugins/logstash-input-couchdb_changes" target="_top">https://github.com/logstash-plugins/logstash-input-couchdb_changes</a>).

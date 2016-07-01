@@ -153,32 +153,25 @@ A disconnected output plugin that is waiting to reconnect to flush in-flight eve
 This mechanism produces periodic information about the count of inflight events in internal queues and a list of busy
 worker threads.</p><p>To enable Logstash to forcibly terminate in the case of a stalled shutdown, use the <code class="literal">--pipeline.unsafe_shutdown</code> flag when
 you start Logstash.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="shutdown-stall-example"></a>Stall Detection Example<a href="https://github.com/elastic/logstash/edit/master/docs/static/stalled-shutdown.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In this example, slow filter execution prevents the pipeline from clean shutdown. By starting Logstash with the
-<code class="literal">--pipeline.unsafe_shutdown</code> flag, quitting with <span class="strong"><strong>Ctrl+C</strong></span> results in an eventual shutdown that loses 20 events.</p><div class="informalexample"><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">% bin/logstash -e 'input { generator { } } filter { ruby { code =&gt; "sleep 10000" } } \
-                     output { stdout { codec =&gt; dots } }' -w 1 --pipeline.unsafe_shutdown
-Default settings used: Filter workers: 1
-Logstash startup completed
-^CSIGINT received. Shutting down the pipeline. {:level=&gt;:warn}
+<code class="literal">--pipeline.unsafe_shutdown</code> flag, quitting with <span class="strong"><strong>Ctrl+C</strong></span> results in an eventual shutdown that loses 20 events.</p><div class="informalexample"><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -e 'input { generator { } } filter { ruby { code =&gt; "sleep 10000" } }
+  output { stdout { codec =&gt; dots } }' -w 1 --pipeline.unsafe_shutdown
+Pipeline main started
+^CSIGINT received. Shutting down the agent. {:level=&gt;:warn}
+stopping pipeline {:id=&gt;"main", :level=&gt;:warn}
 Received shutdown signal, but pipeline is still waiting for in-flight events
 to be processed. Sending another ^C will force quit Logstash, but this may cause
 data loss. {:level=&gt;:warn}
- {:level=&gt;:warn, "INFLIGHT_EVENT_COUNT"=&gt;{"input_to_filter"=&gt;20, "total"=&gt;20},
- "STALLING_THREADS"=&gt;
- {["LogStash::Filters::Ruby", {"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;15,
- "name"=&gt;"|filterworker.0", "current_call"=&gt;"
- (ruby filter code):1:in `sleep'"}]}}
-The shutdown process appears to be stalled due to busy or blocked plugins. Check
-    the logs for more information.
-{:level=&gt;:error}
- {:level=&gt;:warn, "INFLIGHT_EVENT_COUNT"=&gt;{"input_to_filter"=&gt;20, "total"=&gt;20},
- "STALLING_THREADS"=&gt;
- {["LogStash::Filters::Ruby", {"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;15,
- "name"=&gt;"|filterworker.0", "current_call"=&gt;"
- (ruby filter code):1:in `sleep'"}]}}
- {:level=&gt;:warn, "INFLIGHT_EVENT_COUNT"=&gt;{"input_to_filter"=&gt;20, "total"=&gt;20},
- "STALLING_THREADS"=&gt;
- {["LogStash::Filters::Ruby", {"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;15,
- "name"=&gt;"|filterworker.0", "current_call"=&gt;"
- (ruby filter code):1:in `sleep'"}]}}
+{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
+{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
+"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
+The shutdown process appears to be stalled due to busy or blocked plugins.
+Check the logs for more information. {:level=&gt;:error}
+{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
+{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
+"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
+{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
+{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
+"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
 Forcefully quitting logstash.. {:level=&gt;:fatal}</pre></div></div><p>When <code class="literal">--pipeline.unsafe_shutdown</code> isn’t enabled, Logstash continues to run and produce these reports periodically.</p></div></div><div class="navfooter"><span class="prev"><a href="logstash-settings-file.html">
               « 
               Settings File</a>
