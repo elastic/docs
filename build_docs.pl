@@ -42,8 +42,8 @@ use ES::Template();
 GetOptions(
     $Opts,    #
     'all', 'push',    #
-    'single',  'doc=s',   'out=s', 'toc', 'chunk=i', 'comments',
-    'open',    'web',     'staging',
+    'single', 'doc=s', 'out=s', 'toc', 'chunk=i', 'comments',
+    'open',   'staging',
     'lenient', 'verbose', 'reload_template'
 ) || exit usage();
 
@@ -91,7 +91,7 @@ sub build_local {
 
     my $html = $dir->file('index.html');
 
-    if ( $Opts->{web} ) {
+    if ( $Opts->{open} ) {
         if ( my $pid = fork ) {
 
             # parent
@@ -100,6 +100,8 @@ sub build_local {
             };
             if ( $Opts->{open} ) {
                 sleep 1;
+                say "Opening: " . $html;
+                say "Press Ctrl-C to exit the web server";
                 open_browser('http://localhost:8000/index.html');
             }
 
@@ -114,10 +116,6 @@ sub build_local {
             chdir $dir;
             exec( $http '8000' );
         }
-    }
-    elsif ( $Opts->{open} ) {
-        say "Opening: " . $html;
-        open_browser($html);
     }
     else {
         say "See: $html";
@@ -399,7 +397,6 @@ sub usage {
           --comments        Make // comments visible
 
           --open            Open the docs in a browser once built.
-          --web             Serve the docs via a webserver once built.
           --lenient         Ignore linking errors
           --staging         Use the template from the staging website
           --reload_template Force retrieving the latest web template
