@@ -239,12 +239,17 @@
             </img>
         </div>
         <div class="admon_content">
-          <xsl:if test="$admon.textlabel != 0 or title or info/title">
-            <h4>
-                <xsl:apply-templates select="." mode="object.title.markup"/>
-            </h4>
-          </xsl:if>
-          <xsl:call-template name="anchor"/>
+          <xsl:choose>
+            <xsl:when test="$admon.textlabel != 0 or title or info/title">
+              <h3>
+                  <xsl:apply-templates select="." mode="object.title.markup"/>
+                  <xsl:call-template name="anchor"/>
+              </h3>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:call-template name="anchor"/>
+            </xsl:otherwise>
+          </xsl:choose>
           <xsl:apply-templates/>
         </div>
       </div>
