@@ -137,34 +137,71 @@ version&#39;s documentation here</a>.
           <a href="mapping-date-format.html"><code class="literal">format</code>
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="fielddata"></a><code class="literal">fielddata</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/params/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Most fields are <a class="link" href="mapping-index.html" title="index">indexed</a> by default, which makes them
-searchable. The inverted index allows queries to look up the search term in
-unique sorted list of terms, and from that immediately have access to the list
-of documents that contain the term.</p><p>Sorting, aggregations, and access to field values in scripts requires a
-different data access pattern.  Instead of lookup up the term and finding
-documents, we need to be able to look up the document and find the terms that
-it has in a field.</p><p>Most fields can use index-time, on-disk <a class="link" href="doc-values.html" title="doc_values"><code class="literal">doc_values</code></a> to support
-this type of data access pattern, but <code class="literal">text</code> fields do not support <code class="literal">doc_values</code>.</p><p>Instead, <code class="literal">text</code> strings use a query-time data structure called
+searchable. Sorting, aggregations, and accessing field values in scripts,
+however, requires a different access pattern from search.</p><p>Search needs to answer the question <span class="emphasis"><em>"Which documents contain this term?"</em></span>,
+while sorting and aggregations need to answer a different question: <span class="emphasis"><em>"What is
+the value of this field for <span class="strong"><strong>this</strong></span> document?"</em></span>.</p><p>Most fields can use index-time, on-disk <a class="link" href="doc-values.html" title="doc_values"><code class="literal">doc_values</code></a> for this
+data access pattern, but <a class="link" href="text.html" title="Text datatype"><code class="literal">text</code></a> fields do not support <code class="literal">doc_values</code>.</p><p>Instead, <code class="literal">text</code> fields use a query-time <span class="strong"><strong>in-memory</strong></span> data structure called
 <code class="literal">fielddata</code>.  This data structure is built on demand the first time that a
-field is used for aggregations, sorting, or is accessed in a script.  It is built
-by reading the entire inverted index for each segment from disk, inverting the
-term ↔︎ document relationship, and storing the result in memory, in the
-JVM heap.</p><p>Loading fielddata is an expensive process so it is disabled by default. Also,
-when enabled, once it has been loaded, it remains in memory for the lifetime of
-the segment.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><h3>Fielddata can fill up your heap space</h3><p>Fielddata can consume a lot of heap space, especially when loading high
-cardinality <code class="literal">text</code> fields.  Most of the time, it doesn’t make sense
-to sort or aggregate on <code class="literal">text</code> fields (with the notable exception
-of the
-<a class="link" href="search-aggregations-bucket-significantterms-aggregation.html" title="Significant Terms Aggregation"><code class="literal">significant_terms</code></a>
-aggregation).  Always think about whether a <a class="link" href="keyword.html" title="Keyword datatype"><code class="literal">keyword</code></a> field (which can
-use <code class="literal">doc_values</code>) would be  a better fit for your use case.</p></div></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">fielddata.*</code> settings must have the same settings for fields of the
+field is used for aggregations, sorting, or in a script.  It is built by
+reading the entire inverted index for each segment from disk, inverting the
+term ↔︎ document relationship, and storing the result in memory, in the JVM
+heap.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fielddata_is_disabled_on_literal_text_literal_fields_by_default"></a>Fielddata is disabled on <code class="literal">text</code> fields by default<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/params/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Fielddata can consume a <span class="strong"><strong>lot</strong></span> of heap space, especially when loading high
+cardinality <code class="literal">text</code> fields.  Once fielddata has been loaded into the heap, it
+remains there for the lifetime of the segment. Also, loading fielddata is an
+expensive process which can cause users to experience latency hits.  This is
+why fielddata is disabled by default.</p><p>If you try to sort, aggregate, or access values from a script on a <code class="literal">text</code>
+field, you will see this exception:</p><div class="blockquote"><blockquote class="blockquote"><p>Fielddata is disabled on text fields by default.  Set <code class="literal">fielddata=true</code> on
+[<code class="literal">your_field_name</code>] in order to load  fielddata in memory by uninverting the
+inverted index. Note that this can however use significant memory.</p></blockquote></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="before-enabling-fielddata"></a>Before enabling fielddata<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/params/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Before you enable fielddata, consider why you are using a <code class="literal">text</code> field for
+aggregations, sorting, or in a script.  It usually doesn’t make sense to do
+so.</p><p>A text field is analyzed before indexing so that a value like
+<code class="literal">New York</code> can be found by searching for <code class="literal">new</code> or for <code class="literal">york</code>.  A <code class="literal">terms</code>
+aggregation on this field will return a <code class="literal">new</code> bucket and a <code class="literal">york</code> bucket, when
+you probably want a single bucket called <code class="literal">New York</code>.</p><p>Instead, you should have a <code class="literal">text</code> field for full text searches, and an
+unanalyzed <a class="link" href="keyword.html" title="Keyword datatype"><code class="literal">keyword</code></a> field with <a class="link" href="doc-values.html" title="doc_values"><code class="literal">doc_values</code></a>
+enabled for aggregations, as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "my_field": { <a id="CO203-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "type": "text",
+          "fields": {
+            "keyword": { <a id="CO203-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/fielddata/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO203-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Use the <code class="literal">my_field</code> field for searches.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO203-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Use the <code class="literal">my_field.keyword</code> field for aggregations, sorting, or in scripts.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_enabling_fielddata_on_literal_text_literal_fields"></a>Enabling fielddata on <code class="literal">text</code> fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/params/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can enable fielddata on an existing <code class="literal">text</code> field using the
+<a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a> as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/_mapping/my_type
+{
+  "properties": {
+    "my_field": { <a id="CO204-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "type":     "text",
+      "fielddata": true
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/fielddata/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO204-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The mapping that you specify for <code class="literal">my_field</code> should consist of the existing
+    mapping for that field, plus the <code class="literal">fielddata</code> parameter.
+</p></td></tr></table></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">fielddata.*</code> parameter must have the same settings for fields of the
 same name in the same index.  Its value can be updated on existing fields
 using the <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a>.</p></div></div><div class="sidebar"><a id="global-ordinals"></a><div class="titlepage"><div><div><p class="title"><strong>Global ordinals</strong></p></div></div></div><p>Global ordinals is a data-structure on top of fielddata and doc values, that
 maintains an incremental numbering for each unique term in a lexicographic
 order. Each term has a unique number and the number of term <span class="emphasis"><em>A</em></span> is lower than
-the number of term <span class="emphasis"><em>B</em></span>. Global ordinals are only supported on string fields.</p><p>Fielddata and doc values also have ordinals, which is a unique numbering for all terms
-in a particular segment and field. Global ordinals just build on top of this,
-by providing a mapping between the segment ordinals and the global ordinals,
-the latter being unique across the entire shard.</p><p>Global ordinals are used for features that use segment ordinals, such as
+the number of term <span class="emphasis"><em>B</em></span>. Global ordinals are only supported on <a class="link" href="text.html" title="Text datatype"><code class="literal">text</code></a>
+and <a class="link" href="keyword.html" title="Keyword datatype"><code class="literal">keyword</code></a> fields.</p><p>Fielddata and doc values also have ordinals, which is a unique numbering for
+all terms in a particular segment and field. Global ordinals just build on top
+of this, by providing a mapping between the segment ordinals and the global
+ordinals, the latter being unique across the entire shard.</p><p>Global ordinals are used for features that use segment ordinals, such as
 sorting and the terms aggregation, to improve the execution time. A terms
 aggregation relies purely on global ordinals to perform the aggregation at the
 shard level, then converts global ordinals to the real term only for the final
@@ -172,10 +209,11 @@ reduce phase, which combines results from different shards.</p><p>Global ordinal
 shard</em></span>, while fielddata and doc values ordinals are tied to a single segment.
 which is different than for field data for a specific field which is tied to a
 single segment. For this reason global ordinals need to be entirely rebuilt
-whenever a once new segment becomes visible.</p><p>The loading time of global ordinals depends on the number of terms in a field, but in general
-it is low, since it source field data has already been loaded. The memory overhead of global
-ordinals is a small because it is very efficiently compressed. Eager loading of global ordinals
-can move the loading time from the first search request, to the refresh itself.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="field-data-filtering"></a><code class="literal">fielddata_frequency_filter</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/params/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Fielddata filtering can be used to reduce the number of terms loaded into
+whenever a once new segment becomes visible.</p><p>The loading time of global ordinals depends on the number of terms in a field,
+but in general it is low, since it source field data has already been loaded.
+The memory overhead of global ordinals is a small because it is very
+efficiently compressed. Eager loading of global ordinals can move the loading
+time from the first search request, to the refresh itself.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="field-data-filtering"></a><code class="literal">fielddata_frequency_filter</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/params/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Fielddata filtering can be used to reduce the number of terms loaded into
 memory, and thus reduce memory usage. Terms can be filtered by <span class="emphasis"><em>frequency</em></span>:</p><p>The frequency filter allows you to only load terms whose document frequency falls
 between a <code class="literal">min</code> and <code class="literal">max</code> value, which can be expressed an absolute
 number (when the number is bigger than 1.0) or as a percentage
@@ -199,7 +237,7 @@ number of docs that the segment should contain with <code class="literal">min_se
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/fielddata/1.json"></div></div></div><div class="navfooter"><span class="prev"><a href="enabled.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/fielddata/3.json"></div></div></div><div class="navfooter"><span class="prev"><a href="enabled.html">
               « 
               <code class="literal">enabled</code></a>
            
