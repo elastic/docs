@@ -148,17 +148,66 @@ sub build_all {
             $_->{redirect} );
     }
 
-    my $links = ES::LinkCheck->new($build_dir);
-
-    if ( $links->check ) {
-        say $links->report;
-    }
-    else {
-        die $links->report;
-    }
+    check_links($build_dir);
 
     push_changes($build_dir)
         if $Opts->{push};
+}
+
+#===================================
+sub check_links {
+#===================================
+    my $build_dir    = shift;
+    my $link_checker = ES::LinkCheck->new($build_dir);
+
+    $link_checker->check;
+
+    check_kibana_links( $build_dir, $link_checker );
+    if ( $link_checker->has_bad ) {
+        say $link_checker->report;
+    }
+    else {
+        die $link_checker->report;
+    }
+
+}
+
+#===================================
+sub check_kibana_links {
+#===================================
+    my $build_dir    = shift;
+    my $link_checker = shift;
+    my $branch;
+
+    say "Checking Kibana links";
+
+    my $re = qr|`\$\{baseUrl\}guide/(.+)\$\{urlVersion\}([^#`]+)(?:#([^`*]))?`|;
+
+    my $extractor = sub {
+        my $contents = shift;
+        return sub {
+            while ( $contents =~ m{$re}g ) {
+                return ( $1 . $branch . $2, $3 );
+            }
+            return;
+        };
+
+    };
+
+    my $src_path = 'src/ui/public/documentation_links/documentation_links.js';
+    my $repo     = ES::Repo->get_repo('kibana');
+
+    my @branches = sort map { $_->basename }
+        grep { $_->is_dir } $build_dir->subdir('en/kibana')->children;
+
+    for (@branches) {
+        $branch = $_;
+        next if $branch eq 'current' || $branch =~ /^\d/ && $branch < 5;
+        say "  Branch $branch";
+        $repo->checkout( "link_check", $branch );
+        $link_checker->check_file( $repo->dir->file($src_path),
+            $extractor, "Kibana [$branch]: $src_path" );
+    }
 }
 
 #===================================

@@ -25,7 +25,7 @@ sub check {
     my $self = shift;
     my $dir  = $self->root;
 
-    $dir->recurse(
+    $self->root->recurse(
         callback => sub {
             my $item = shift;
 
@@ -34,47 +34,49 @@ sub check {
                     if $item->basename eq 'images';
                 return;
             }
-            $self->_check_links( $dir, $item )
+            $self->check_file($item)
                 if $item->basename =~ /\.html$/;
         }
     );
-    return !keys %{ $self->bad };
+    return $self->has_bad;
 
 }
 
 #===================================
 sub check_file {
 #===================================
-    my $self = shift;
-    my $file = shift;
-    my $dir  = $self->root;
-
-    $self->_check_links( $dir, $file );
-    return !keys %{ $self->bad };
-
-}
-
-#===================================
-sub _check_links {
-#===================================
-    my ( $self, $dir, $file ) = @_;
+    my ( $self, $file, $extract, $file_descr ) = @_;
+    $extract||=\&_link_extractor;
+    $file_descr ||= "$file";
 
     my $contents = $file->slurp( iomode => '<:encoding(UTF-8)' );
-    my $seen = $self->seen;
+    my $link_it  = $extract->($contents);
+    my $seen     = $self->seen;
 
-    while ( $contents =~ m{$Link_Re}g ) {
-        my $path     = $1;
-        my $fragment = $2;
-        my $dest     = $dir->file($path);
+    while ( my ( $path, $fragment ) = $link_it->() ) {
+
+        my $dest = $self->root->file($path);
         unless ( $self->_file_exists( $dest, $path ) ) {
-            $self->add_bad( $file, $path );
+            $self->add_bad( $file_descr, $path );
             next;
         }
         next unless $fragment;
         unless ( $self->_fragment_exists( $dest, $path, $fragment ) ) {
-            $self->add_bad( $file, "$path#$fragment" );
+            $self->add_bad( $file_descr, "$path#$fragment" );
         }
     }
+}
+
+#===================================
+sub _link_extractor {
+#===================================
+    my $contents = shift;
+    return sub {
+        while ( $contents =~ m{$Link_Re}g ) {
+            return ( $1, $2 );
+        }
+        return;
+    };
 }
 
 #===================================
@@ -130,9 +132,10 @@ sub add_bad {
 }
 
 #===================================
-sub root { shift->{root} }
-sub seen { shift->{seen} }
-sub bad  { shift->{bad} }
+sub root    { shift->{root} }
+sub seen    { shift->{seen} }
+sub bad     { shift->{bad} }
+sub has_bad { !keys %{ shift->bad } }
 #===================================
 
 1
