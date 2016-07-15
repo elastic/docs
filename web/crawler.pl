@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use HTML::Entities qw(decode_entities);
 
-our ( $Base_URL, $Sitemap_Path, $es, $Site_Index );
+our ( $Base_URL, @Sitemap_Paths, $es, $Site_Index );
 
 use FindBin;
 
@@ -21,7 +21,7 @@ use ES::SiteParser;
 
 my $force        = @ARGV && $ARGV[0] =~ /^-f|--force/;
 my $now          = timestamp();
-my $sitemap_urls = get_sitemap( $Base_URL, $Sitemap_Path );
+my $sitemap_urls = get_sitemap( $Base_URL, @Sitemap_Paths );
 my $known_urls   = get_known_urls($Site_Index);
 
 index_changes( $Site_Index, $sitemap_urls, $known_urls );
@@ -87,32 +87,36 @@ sub index_changes {
 #===================================
 sub get_sitemap {
 #===================================
-    my ( $hostname, $path ) = @_;
-    my $sitemap = $hostname . $path;
-    my $xml     = get_url($sitemap);
+    my ( $hostname, @paths ) = @_;
+
     my %entries;
-    my $count = () = ( $xml =~ /<url>/g );
-    die "No <url> elements found in the sitemap ($sitemap)\n"
-        unless $count;
 
-    pos($xml) = index( $xml, '<url>' );
-    while ( $xml =~ m{\G<url>\s*(.+?)\s*</url>\s*}sg ) {
-        my $entry = $1;
-        my %vals;
+    for my $path (@paths) {
+        my $sitemap = $hostname . $path;
+        my $xml     = get_url($sitemap);
+        my $count   = () = ( $xml =~ /<url>/g );
+        die "No <url> elements found in the sitemap ($sitemap)\n"
+            unless $count;
 
-        while ( $entry =~ m{\G<(\w+)>\s*([^<]+?)\s*</\1>\s*}sg ) {
-            $vals{$1} = $2;
+        pos($xml) = index( $xml, '<url>' );
+        while ( $xml =~ m{\G<url>\s*(.+?)\s*</url>\s*}sg ) {
+            my $entry = $1;
+            my %vals;
+
+            while ( $entry =~ m{\G<(\w+)>\s*([^<]+?)\s*</\1>\s*}sg ) {
+                $vals{$1} = $2;
+            }
+
+            my $url = $vals{loc}
+                or die "No <loc> found in: \n$entry\n";
+            $url = URI->new( decode_entities($url) )->path;
+
+            my $lastmod = $vals{lastmod} || $now;
+
+            #        die "URL ($url) already exists in sitemap"
+            #            if $entries{$url};
+            $entries{$url} = $lastmod;
         }
-
-        my $url = $vals{loc}
-            or die "No <loc> found in: \n$entry\n";
-        $url = URI->new( decode_entities($url) )->path;
-
-        my $lastmod = $vals{lastmod} || $now;
-
-        #        die "URL ($url) already exists in sitemap"
-        #            if $entries{$url};
-        $entries{$url} = $lastmod;
     }
 
     #    die "Expecting $count URLs in sitemap ($sitemap) but only found "

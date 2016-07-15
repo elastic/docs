@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our ( $Base_URL, $Sitemap_Path, $es, $Site_Index );
+our ( $Base_URL, $es, $Site_Index );
 
 use FindBin;
 

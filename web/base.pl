@@ -10,14 +10,18 @@ use JSON::XS;
 use Path::Class qw(file);
 our $JSON = JSON::XS->new->utf8->pretty;
 
-our $Site_Index   = 'site';
-our $Docs_Index   = 'docs';
-our $Base_URL     = 'https://www.elastic.co/';
-our $Sitemap_Path = '/sitemap.xml';
-our $Guide_Prefix = '/guide';
-our $Max_Page     = 10;
-our $Page_Size    = 15;
-our $Max_Sections = 10;
+our $Site_Index    = 'site';
+our $Docs_Index    = 'docs';
+our $Base_URL      = 'https://www.elastic.co/';
+our @Sitemap_Paths = (
+    '/sitemap.xml',    '/sitemap-jp.xml',
+    '/sitemap-de.xml', '/sitemap-kr.xml',
+    '/sitemap-fr.xml'
+);
+our $Guide_Prefix         = '/guide';
+our $Max_Page             = 10;
+our $Page_Size            = 15;
+our $Max_Sections         = 10;
 our $Max_Hits_Per_Section = 5;
 
 our $es = Search::Elasticsearch->new( nodes => 'http://localhost:9200' );
