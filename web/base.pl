@@ -14,9 +14,10 @@ our $Site_Index    = 'site';
 our $Docs_Index    = 'docs';
 our $Base_URL      = 'https://www.elastic.co/';
 our @Sitemap_Paths = (
-    '/sitemap.xml',    '/sitemap-jp.xml',
-    '/sitemap-de.xml', '/sitemap-kr.xml',
-    '/sitemap-fr.xml'
+    '/sitemap.xml',
+#    '/sitemap-jp.xml',
+#    '/sitemap-de.xml', '/sitemap-kr.xml',
+#    '/sitemap-fr.xml'
 );
 our $Guide_Prefix         = '/guide';
 our $Max_Page             = 10;
