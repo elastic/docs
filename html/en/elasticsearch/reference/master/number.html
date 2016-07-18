@@ -192,6 +192,14 @@ A single-precision 32-bit IEEE 754 floating point.
 <p>
 A half-precision 16-bit IEEE 754 floating point.
 </p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">scaled_float</code>
+</p>
+</td><td valign="top">
+<p>
+A floating point that is backed by a <code class="literal">long</code> and a fixed scaling factor.
+</p>
 </td></tr></tbody></table></div><p>Below is an example of configuring a mapping with numeric fields:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
   "mappings": {
@@ -202,6 +210,10 @@ A half-precision 16-bit IEEE 754 floating point.
         },
         "time_in_seconds": {
           "type": "float"
+        },
+        "price": {
+          "type": "scaled_float",
+          "scaling_factor": 100
         }
       }
     }
@@ -210,15 +222,22 @@ A half-precision 16-bit IEEE 754 floating point.
 you should pick the smallest type which is enough for your use-case. This will
 help indexing and searching be more efficient. Note however that given that
 storage is optimized based on the actual values that are stored, picking one
-type over another one will have no impact on storage requirements.</p><p>For floating-point types, picking the smallest type that is enough for the
-use-case will still help indexing and searching be more efficient. However,
-given that floating-point data is hard to compress, it might also have a
-significant impact on storage requirements. Here is a table that compares the
-3 floating-point types that are available in order to help make a decision.</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top">Type </th><th align="left" valign="top">Minimum value </th><th align="left" valign="top">Maximum value </th><th align="left" valign="top">Significant bits / digits</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">double</code></p></td><td align="left" valign="top"><p><code class="literal">2<sup>-1074</sup></code></p></td><td align="left" valign="top"><p><code class="literal">(2-2<sup>-52</sup>)·2<sup>1023</sup></code></p></td><td align="left" valign="top"><p><code class="literal">53</code> / <code class="literal">15.95</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">float</code></p></td><td align="left" valign="top"><p><code class="literal">2<sup>-149</sup></code></p></td><td align="left" valign="top"><p><code class="literal">(2-2<sup>-23</sup>)·2<sup>127</sup></code></p></td><td align="left" valign="top"><p><code class="literal">24</code> / <code class="literal">7.22</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">half_float</code></p></td><td align="left" valign="top"><p><code class="literal">2<sup>-24</sup></code></p></td><td align="left" valign="top"><p><code class="literal">65504</code></p></td><td align="left" valign="top"><p><code class="literal">11</code> / <code class="literal">3.31</code></p></td></tr></tbody></table></div><p>When possible, it is often more efficient to store floating-point data into an
-integer using a scaling factor. For instance, it is more efficient to store
-percentages as integers between 0 and 100 than as floating-point numbers between 0
-and 1. Another example would be prices: it will be more efficient to store prices
-as a number of cents, which is an integer, than as a floating-point number.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="number-params"></a>Parameters for numeric fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/numeric.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following parameters are accepted by numeric types:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+type over another one will have no impact on storage requirements.</p><p>For floating-point types, it is often more efficient to store floating-point
+data into an integer using a scaling factor, which is what the <code class="literal">scaled_float</code>
+type does under the hood. For instance, a <code class="literal">price</code> field could be stored in a
+<code class="literal">scaled_float</code> with a <code class="literal">scaling_factor</code> of <code class="literal">100</code>. All APIs would work as if
+the field was stored as a double, but under the hood elasticsearch would be
+working with the number of cents, <code class="literal">price*100</code>, which is an integer. This is
+mostly helpful to save disk space since integers are way easier to compress
+than floating points. <code class="literal">scaled_float</code> is also fine to use in order to trade
+accuracy for disk space. For instance imagine that you are tracking cpu
+utilization as a number between <code class="literal">0</code> and <code class="literal">1</code>. It usually does not matter much
+whether cpu utilization is <code class="literal">12.7%</code> or <code class="literal">13%</code>, so you could use a <code class="literal">scaled_float</code>
+with a <code class="literal">scaling_factor</code> of <code class="literal">100</code> in order to round cpu utilization to the
+closest percent in order to save space.</p><p>If <code class="literal">scaled_float</code> is not a good fit, then you should pick the smallest type
+that is enough for the use-case among the floating-point types: <code class="literal">double</code>,
+<code class="literal">float</code> and <code class="literal">half_float</code>. Here is a table that compares these types in order
+to help make a decision.</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top">Type </th><th align="left" valign="top">Minimum value </th><th align="left" valign="top">Maximum value </th><th align="left" valign="top">Significant bits / digits</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">double</code></p></td><td align="left" valign="top"><p><code class="literal">2<sup>-1074</sup></code></p></td><td align="left" valign="top"><p><code class="literal">(2-2<sup>-52</sup>)·2<sup>1023</sup></code></p></td><td align="left" valign="top"><p><code class="literal">53</code> / <code class="literal">15.95</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">float</code></p></td><td align="left" valign="top"><p><code class="literal">2<sup>-149</sup></code></p></td><td align="left" valign="top"><p><code class="literal">(2-2<sup>-23</sup>)·2<sup>127</sup></code></p></td><td align="left" valign="top"><p><code class="literal">24</code> / <code class="literal">7.22</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">half_float</code></p></td><td align="left" valign="top"><p><code class="literal">2<sup>-24</sup></code></p></td><td align="left" valign="top"><p><code class="literal">65504</code></p></td><td align="left" valign="top"><p><code class="literal">11</code> / <code class="literal">3.31</code></p></td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="number-params"></a>Parameters for numeric fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/numeric.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following parameters are accepted by numeric types:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <a class="link" href="coerce.html" title="coerce"><code class="literal">coerce</code></a>
 </p>
@@ -294,6 +313,20 @@ as a number of cents, which is an integer, than as a floating-point number.</p><
     Whether the field value should be stored and retrievable separately from
     the <a class="link" href="mapping-source-field.html" title="_source field"><code class="literal">_source</code></a> field. Accepts <code class="literal">true</code> or <code class="literal">false</code>
     (default).
+</p>
+</td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="scaled-float-params"></a>Parameters for <code class="literal">scaled_float</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/numeric.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><code class="literal">scaled_float</code> accepts an additional parameter:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">scaling_factor</code>
+</p>
+</td><td valign="top">
+<p>
+    The scaling factor to use when encoding values. Values will be multiplied
+    by this factor at index time and rounded to the closest long value. For
+    instance, a <code class="literal">scaled_float</code> with a <code class="literal">scaling_factor</code> of <code class="literal">10</code> would internally
+    store <code class="literal">2.34</code> as <code class="literal">23</code> and all search-time operations (queries, aggregations,
+    sorting) will behave as if the document had a value of <code class="literal">2.3</code>. High values
+    of <code class="literal">scaling_factor</code> improve accuracy but also increase space requirements.
+    This parameter is required.
 </p>
 </td></tr></tbody></table></div></div></div><div class="navfooter"><span class="prev"><a href="nested.html">
               « 
