@@ -516,26 +516,32 @@ returned in one order when the request is served by the primary, and in
 another order when served by the replica.</p><p>This is known as the <span class="emphasis"><em>bouncing results</em></span> problem: every time the user refreshes
 the page, the results appear in a different order. The problem can be avoided by always using the same shards for the same user,
 which can be done by setting the <code class="literal">preference</code> parameter to an arbitrary string
-like the user’s session ID.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_timeout_2"></a>timeout<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/2.x/060_Distributed_Search/15_Search_options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default, the coordinating node waits<a id="id-1.4.11.9.4.2.1" class="indexterm"></a>
-<a id="id-1.4.11.9.4.2.2" class="indexterm"></a> to receive a response from all shards.
+like the user’s session ID.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_timeout_2"></a>timeout<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/2.x/060_Distributed_Search/15_Search_options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default, shards process all the data they have before returning a response to
+the coordinating node, which will in turn merge these responses to build the
+final response.</p><p>This means that the time it takes to run a search request is the sum of the time
+it takes to process the slowest shard and the time it takes to merge responses.
 If one node is having trouble, it could slow down the response to all search
-requests.</p><p>The <code class="literal">timeout</code> parameter tells<a id="id-1.4.11.9.4.3.2" class="indexterm"></a> the coordinating node how long it should wait
-before giving up and just returning the results that it already has. It can be
-better to return some results than none at all.</p><p>The response to a search request will indicate whether the search timed out and
-how many shards responded successfully:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">    ...
+requests.</p><p>The <code class="literal">timeout</code> parameter tells<a id="id-1.4.11.9.4.4.2" class="indexterm"></a> shards how long they
+are allowed to process data before returning a response to the coordinating
+node. If there was not enough time to process all data, results for this shard
+will be partial, even possibly empty.</p><p>The response to a search request will indicate whether any shards returned a
+partial response with the <code class="literal">timed_out</code> property:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">    ...
     "timed_out":     true,  <a id="CO31-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    "_shards": {
-       "total":      5,
-       "successful": 4,
-       "failed":     1 <a id="CO31-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    },
     ...</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The search request timed out.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-One shard out of five failed to respond in time.
-</p></td></tr></table></div><p>If all copies of a shard fail for other reasons—perhaps because of a
-hardware failure—this will also be reflected in the <code class="literal">_shards</code> section of
-the response.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="search-routing"></a>routing<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/2.x/060_Distributed_Search/15_Search_options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In <a class="xref" href="routing-value.html" title="Routing a Document to a Shard">Routing a Document to a Shard</a>, we explained how a custom <code class="literal">routing</code> parameter<a id="id-1.4.11.9.5.2.3" class="indexterm"></a>
+</p></td></tr></table></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>It’s important to know that the timeout is still a best-effort operation; it’s
+possible for the query to surpass the allotted timeout.  There are two reasons for
+this behavior:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Timeout checks are performed on a per-document basis.  However, some query types
+have a significant amount of work that must be performed <span class="strong"><strong>before</strong></span> documents are evaluated.
+This "setup" phase does not consult the timeout, and so very long setup times can cause
+the overall latency to shoot past the timeout.
+</li><li class="listitem">
+Because the time is once per document, a very long query can execute on a single
+document and it won’t timeout until the next document is evaluated.  This also means
+poorly written scripts (e.g. ones with infinite loops) will be allowed to execute
+forever.
+</li></ol></div></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="search-routing"></a>routing<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/2.x/060_Distributed_Search/15_Search_options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In <a class="xref" href="routing-value.html" title="Routing a Document to a Shard">Routing a Document to a Shard</a>, we explained how a custom <code class="literal">routing</code> parameter<a id="id-1.4.11.9.5.2.3" class="indexterm"></a>
 <a id="id-1.4.11.9.5.2.4" class="indexterm"></a><a id="id-1.4.11.9.5.2.5" class="indexterm"></a> could be
 provided at index time to ensure that all related documents, such as the
 documents belonging to a single user, are stored on a single shard.  At search
