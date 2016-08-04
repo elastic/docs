@@ -516,17 +516,21 @@ types to provide instant feedback relevant to what a user has already
 typed in. Hence, <code class="literal">completion</code> suggester is optimized for speed.
 The suggester uses data structures that enable fast lookups,
 but are costly to build and are stored in-memory.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="completion-suggester-mapping"></a>Mapping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To use this feature, specify a special mapping for this field,
-which indexes the field values for fast completions.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT music/song/_mapping
+which indexes the field values for fast completions.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT music
 {
-  "song" : {
-        "properties" : {
-            ...
-            "suggest" : {
-                "type" : "completion"
+    "mappings": {
+        "song" : {
+            "properties" : {
+                "suggest" : {
+                    "type" : "completion"
+                },
+                "title" : {
+                    "type": "keyword"
+                }
             }
         }
     }
-}</pre></div><p>Mapping supports the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/1.json"></div><p>Mapping supports the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">analyzer</code>
 </span></dt><dd>
     The index analyzer to use, defaults to <code class="literal">simple</code>.
@@ -565,13 +569,13 @@ which indexes the field values for fast completions.</p><div class="pre_wrapper"
 </dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="indexing"></a>Indexing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You index suggestions like any other field. A suggestion is made of an
 <code class="literal">input</code> and an optional <code class="literal">weight</code> attribute. An <code class="literal">input</code> is the expected
 text to be matched by a suggestion query and the <code class="literal">weight</code> determines how
-the suggestions will be scored. Indexing a suggestion is as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT music/song/1?refresh=true
+the suggestions will be scored. Indexing a suggestion is as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT music/song/1?refresh
 {
     "suggest" : {
         "input": [ "Nevermind", "Nirvana" ],
         "weight" : 34
     }
-}</pre></div><p>The following parameters are supported:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/2.json"></div><p>The following parameters are supported:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">input</code>
 </span></dt><dd>
     The input to store, this can be an array of strings or just
@@ -582,7 +586,7 @@ the suggestions will be scored. Indexing a suggestion is as follows:</p><div cla
     A positive integer or a string containing a positive integer,
     which defines a weight and allows you to rank your suggestions.
     This field is optional.
-</dd></dl></div><p>You can index multiple suggestions for a document as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT music/song/1?refresh=true
+</dd></dl></div><p>You can index multiple suggestions for a document as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT music/song/1?refresh
 {
     "suggest" : [
         {
@@ -594,58 +598,55 @@ the suggestions will be scored. Indexing a suggestion is as follows:</p><div cla
             "weight" : 3
         }
     ]
-}</pre></div><p>You can use the following shorthand form. Note that you can not specify
-a weight with suggestion(s).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/3.json"></div><p>You can use the following shorthand form. Note that you can not specify
+a weight with suggestion(s).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT music/song/1?refresh
+{
   "suggest" : [ "Nevermind", "Nirvana" ]
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="querying"></a>Querying<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Suggesting works as usual, except that you have to specify the suggest
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/4.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="querying"></a>Querying<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Suggesting works as usual, except that you have to specify the suggest
 type as <code class="literal">completion</code>. Suggestions are near real-time, which means
 new suggestions can be made visible by <a class="link" href="indices-refresh.html" title="Refresh">refresh</a> and
-documents once deleted are never shown.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_suggest?pretty
+documents once deleted are never shown. This request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_suggest?pretty
 {
     "song-suggest" : {
-        "prefix" : "n",
+        "prefix" : "nir",
         "completion" : {
             "field" : "suggest"
         }
     }
-}
-
-{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/5.json"></div><p>returns this response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "_shards" : {
     "total" : 5,
     "successful" : 5,
     "failed" : 0
   },
   "song-suggest" : [ {
-    "text" : "n",
+    "text" : "nir",
     "offset" : 0,
-    "length" : 1,
+    "length" : 3,
     "options" : [ {
       "text" : "Nirvana",
-      "score" : 34.0
+      "score" : 1.0
     } ]
   } ]
 }</pre></div><p>The configured weight for a suggestion is returned as <code class="literal">score</code>.
 The <code class="literal">text</code> field uses the <code class="literal">input</code> of your indexed suggestion.</p><p>Suggestions are document oriented, you can specify fields to be
 returned as part of suggestion payload. All field types (<code class="literal">string</code>,
 <code class="literal">numeric</code>, <code class="literal">date</code>, etc) are supported.</p><p>For example, if you index a "title" field along with the suggestion
-as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/song
+as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/song?refresh
 {
     "suggest" : "Nirvana",
     "title" : "Nevermind"
-}</pre></div><p>You can get the "title" as part of the suggestion
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/6.json"></div><p>You can get the "title" as part of the suggestion
 payload by specifying it as a <code class="literal">payload</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_suggest?pretty
 {
     "song-suggest" : {
         "prefix" : "n",
         "completion" : {
-            "field" : "suggest"
+            "field" : "suggest",
             "payload" : [ "title" ] <a id="CO31-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         }
     }
-}
-
-{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/7.json"></div><p>returns:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "_shards" : {
     "total" : 5,
     "successful" : 5,
@@ -657,7 +658,7 @@ payload by specifying it as a <code class="literal">payload</code>:</p><div clas
     "length" : 1,
     "options" : [ {
       "text" : "Nirvana",
-      "score" : 34.0,
+      "score" : 1.0,
       "payload" : {
         "title" : [ "Nevermind" ]
       }
@@ -686,7 +687,7 @@ suggestions at the shard level using field data or from doc values.</p></div></d
 you can have a typo in your search and still get results back.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_suggest?pretty
 {
     "song-suggest" : {
-        "prefix" : "n",
+        "prefix" : "nor",
         "completion" : {
             "field" : "suggest",
             "fuzzy" : {
@@ -694,7 +695,7 @@ you can have a typo in your search and still get results back.</p><div class="pr
             }
         }
     }
-}</pre></div><p>Suggestions that share the longest prefix to the query <code class="literal">prefix</code> will
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/8.json"></div><p>Suggestions that share the longest prefix to the query <code class="literal">prefix</code> will
 be scored higher.</p><p>The fuzzy query can take specific fuzzy parameters.
 The following parameters are supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
@@ -752,10 +753,10 @@ you can express a prefix as a regular expression</p><div class="pre_wrapper"><pr
     "song-suggest" : {
         "regex" : "n[ever|i]r",
         "completion" : {
-            "field" : "suggest",
+            "field" : "suggest"
         }
     }
-}</pre></div><p>The regex query can take specific regex parameters.
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/9.json"></div><p>The regex query can take specific regex parameters.
 The following parameters are supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">flags</code>
