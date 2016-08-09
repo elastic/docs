@@ -505,14 +505,14 @@ version&#39;s documentation here</a>.
            
           <a href="plugins-filters-translate.html">translate
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="plugins-filters-throttle"></a>throttle<a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This is a community-maintained plugin!</p></div></div><p>The throttle filter is for throttling the number of events received. The filter
-is configured with a lower bound, the <code class="literal">before_count</code>, and upper bound, the <code class="literal">after_count</code>,
-and a period of time. All events passing through the filter will be counted based on
-a key. As long as the count is less than the <code class="literal">before_count</code> or greater than the
-<code class="literal">after_count</code>, the event will be "throttled" which means the filter will be considered
-successful and any tags or fields will be added.</p><p>For example, if you wanted to throttle events so you only receive an event after 2
-occurrences and you get no more than 3 in 10 minutes, you would use the
-configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">period =&gt; 600
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="plugins-filters-throttle"></a>throttle<a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The throttle filter is for throttling the number of events.  The filter is
+configured with a lower bound, the "before_count", and upper bound, the "after_count",
+and a period of time.  All events passing through the filter will be counted based on
+their key and the event timestamp.  As long as the count is less than the "before_count"
+or greater than the "after_count", the event will be "throttled" which means the filter
+will be considered successful and any tags or fields will be added (or removed).</p><p>The plugin is thread-safe and properly tracks past events.</p><p>For example, if you wanted to throttle events so you only receive an event after 2
+occurrences and you get no more than 3 in 10 minutes, you would use the configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">period =&gt; 600
+max_age =&gt; 1200
 before_count =&gt; 3
 after_count =&gt; 5</pre></div><p>Which would result in:</p><div class="informalexample"><pre class="literallayout">event 1 - throttled (successful filter, period start)
 event 2 - throttled (successful filter)
@@ -529,8 +529,9 @@ event 3 - not throttled
 event 4 - not throttled
 event 5 - not throttled
 event 6 - throttled (successful filter)
-...</pre></div><p>Another example is if you wanted to throttle events so you only receive 1 event per
-hour, you would use the configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">period =&gt; 3600
+...</pre></div><p>Another example is if you wanted to throttle events so you only
+receive 1 event per hour, you would use the configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">period =&gt; 3600
+max_age =&gt; 7200
 before_count =&gt; -1
 after_count =&gt; 1</pre></div><p>Which would result in:</p><div class="informalexample"><pre class="literallayout">event 1 - not throttled (period start)
 event 2 - throttled (successful filter)
@@ -549,19 +550,21 @@ throttled events. This configuration might appear as:</p><div class="pre_wrapper
     before_count =&gt; 3
     after_count =&gt; 5
     period =&gt; 3600
+    max_age =&gt; 7200
     key =&gt; "%{host}%{message}"
     add_tag =&gt; "throttled"
   }
   if "throttled" in [tags] {
     drop { }
   }
-}</pre></div><p>Another case would be to store all events, but only email non-throttled
-events so the op’s inbox isn’t flooded with emails in the event of a system error.
+}</pre></div><p>Another case would be to store all events, but only email non-throttled events
+so the op’s inbox isn’t flooded with emails in the event of a system error.
 This configuration might appear as:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">filter {
   throttle {
     before_count =&gt; 3
     after_count =&gt; 5
     period =&gt; 3600
+    max_age =&gt; 7200
     key =&gt; "%{message}"
     add_tag =&gt; "throttled"
   }
@@ -569,23 +572,40 @@ This configuration might appear as:</p><div class="pre_wrapper"><pre class="prog
 output {
   if "throttled" not in [tags] {
     email {
-        from =&gt; "logstash@mycompany.com"
-        subject =&gt; "Production System Alert"
-        to =&gt; "ops@mycompany.com"
-        via =&gt; "sendmail"
-        body =&gt; "Alert on %{host} from path %{path}:\n\n%{message}"
-        options =&gt; { "location" =&gt; "/usr/sbin/sendmail" }
+      from =&gt; "logstash@mycompany.com"
+      subject =&gt; "Production System Alert"
+      to =&gt; "ops@mycompany.com"
+      via =&gt; "sendmail"
+      body =&gt; "Alert on %{host} from path %{path}:\n\n%{message}"
+      options =&gt; { "location" =&gt; "/usr/sbin/sendmail" }
     }
   }
   elasticsearch_http {
     host =&gt; "localhost"
     port =&gt; "19200"
   }
-}</pre></div><p>The event counts are cleared after the configured period elapses since the
-first instance of the event. That is, all the counts don’t reset at the same
-time but rather the throttle period is per unique key value.</p><p>Mike Pilone (@mikepilone)</p><p> </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_synopsis_141"></a>Synopsis<a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This plugin supports the following configuration options:</p><p>Required configuration options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">throttle {
+}</pre></div><p>When an event is received, the event key is stored in a key_cache.  The key references
+a timeslot_cache.  The event is allocated to a timeslot (created dynamically) based on
+the timestamp of the event.  The timeslot counter is incremented.  When the next event is
+received (same key), within the same "period", it is allocated to the same timeslot.
+The timeslot counter is incremented once again.</p><p>The timeslot expires if the maximum age has been exceeded.  The age is calculated
+based on the latest event timestamp and the max_age configuration option.</p><pre class="literallayout">---[::.. DESIGN ..::]---</pre><p><code class="literal">- [key_cache] -</code>  <code class="literal">-- [timeslot_cache] --</code>
+|               |  | @created: 1439839636 |
+                  | @latest:  1439839836 |
+  [a.b.c]  ⇒     <code class="literal">----------------------</code>
+                  | [1439839636] ⇒ 1    |
+                  | [1439839736] ⇒ 3    |
+                  | [1439839836] ⇒ 2    |
+                  <code class="literal">----------------------</code></p><pre class="literallayout">                  +-- [timeslot_cache] --+
+                  | @created: eeeeeeeeee |
+                  | @latest:  llllllllll |
+  [x.y.z]  =&gt;     +----------------------+
+                  | [0000000060] =&gt; x    |
+                  | [0000000120] =&gt; y    |
+|               |  | [..........] =&gt; N    |
++---------------+  +----------------------+</pre><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_synopsis_141"></a>Synopsis<a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This plugin supports the following configuration options:</p><p>Required configuration options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">throttle {
     key =&gt; ...
-}</pre></div><p>Available configuration options:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Input type</th><th align="left" valign="top">Required</th><th align="left" valign="top">Default value</th></tr></thead><tbody><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-add_field" title="add_field"><code class="literal">add_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">{}</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-add_tag" title="add_tag"><code class="literal">add_tag</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Array">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-after_count" title="after_count"><code class="literal">after_count</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">-1</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-before_count" title="before_count"><code class="literal">before_count</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">-1</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-key" title="key"><code class="literal">key</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>Yes</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-max_counters" title="max_counters"><code class="literal">max_counters</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">100000</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-period" title="period"><code class="literal">period</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">"3600"</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-periodic_flush" title="periodic_flush"><code class="literal">periodic_flush</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">false</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-remove_field" title="remove_field"><code class="literal">remove_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Array">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-remove_tag" title="remove_tag"><code class="literal">remove_tag</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Array">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_details_141"></a>Details<a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p> </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-add_field"></a><code class="literal">add_field</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+}</pre></div><p>Available configuration options:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Input type</th><th align="left" valign="top">Required</th><th align="left" valign="top">Default value</th></tr></thead><tbody><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-add_field" title="add_field"><code class="literal">add_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">{}</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-add_tag" title="add_tag"><code class="literal">add_tag</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Array">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-after_count" title="after_count"><code class="literal">after_count</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">-1</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-before_count" title="before_count"><code class="literal">before_count</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">-1</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-key" title="key"><code class="literal">key</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>Yes</p></td><td align="left" valign="top"><p><code class="literal"></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-max_age" title="max_age"><code class="literal">max_age</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">3600</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-max_counters" title="max_counters"><code class="literal">max_counters</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">100000</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-period" title="period"><code class="literal">period</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">"60"</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-periodic_flush" title="periodic_flush"><code class="literal">periodic_flush</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">true</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-remove_field" title="remove_field"><code class="literal">remove_field</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Array">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr><tr><td align="left" valign="top"><p><a class="xref" href="plugins-filters-throttle.html#plugins-filters-throttle-remove_tag" title="remove_tag"><code class="literal">remove_tag</code></a></p></td><td align="left" valign="top"><p><a class="link" href="configuration-file-structure.html#array" title="Array">array</a></p></td><td align="left" valign="top"><p>No</p></td><td align="left" valign="top"><p><code class="literal"><code class="literal">[]</code></code></p></td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_details_141"></a>Details<a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p> </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-add_field"></a><code class="literal">add_field</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a>
 </li><li class="listitem">
 Default value is <code class="literal">{}</code>
@@ -594,7 +614,7 @@ Field names can be dynamic and include parts of the event using the <code class=
   throttle {
     add_field =&gt; { "foo_%{somefield}" =&gt; "Hello world, from %{host}" }
   }
-}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># You can also add multiple fields at once:
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"> You can also add multiple fields at once:
 filter {
   throttle {
     add_field =&gt; {
@@ -615,7 +635,7 @@ syntax.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting pr
   throttle {
     add_tag =&gt; [ "foo_%{somefield}" ]
   }
-}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># You can also add multiple tags at once:
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"> You can also add multiple tags at once:
 filter {
   throttle {
     add_tag =&gt; [ "foo_%{somefield}", "taggedy_tag"]
@@ -625,45 +645,52 @@ would add a tag <code class="literal">foo_hello</code> (and the second example w
 Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
 </li><li class="listitem">
 Default value is <code class="literal">-1</code>
-</li></ul></div><p>Events greater than this count will be throttled. Setting this value to -1, the
-default, will cause no messages to be throttled based on the upper bound.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-before_count"></a><code class="literal">before_count</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><p>Events greater than this count will be throttled.  Setting this value to -1, the
+default, will cause no events to be throttled based on the upper bound.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-before_count"></a><code class="literal">before_count</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
 </li><li class="listitem">
 Default value is <code class="literal">-1</code>
-</li></ul></div><p>Events less than this count will be throttled. Setting this value to -1, the
-default, will cause no messages to be throttled based on the lower bound.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-key"></a><code class="literal">key</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><p>Events less than this count will be throttled.  Setting this value to -1, the
+default, will cause no events to be throttled based on the lower bound.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-key"></a><code class="literal">key</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 This is a required setting.
 </li><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
 </li><li class="listitem">
 There is no default value for this setting.
-</li></ul></div><p>The name to use in configuration files.
-The key used to identify events. Events with the same key will be throttled
-as a group.  Field substitutions are allowed, so you can combine multiple
-fields.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-max_counters"></a><code class="literal">max_counters</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><p>The key used to identify events.  Events with the same key are grouped together.
+Field substitutions are allowed, so you can combine multiple fields.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-max_age"></a><code class="literal">max_age</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
+</li><li class="listitem">
+Default value is <code class="literal">3600</code>
+</li></ul></div><p>The maximum age of a timeslot.  Higher values allow better tracking of an asynchronous
+flow of events, but require more memory.  As a rule of thumb you should set this value
+to at least twice the period.  Or set this value to period + maximum time offset
+between unordered events with the same key.  Values below the specified period give
+unexpected results if unordered events are processed simultaneously.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-max_counters"></a><code class="literal">max_counters</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
 </li><li class="listitem">
 Default value is <code class="literal">100000</code>
-</li></ul></div><p>The maximum number of counters to store before the oldest counter is purged. Setting
-this value to -1 will prevent an upper bound no constraint on the number of counters
-and they will only be purged after expiration. This configuration value should only
-be used as a memory control mechanism and can cause early counter expiration if the
-value is reached. It is recommended to leave the default value and ensure that your
-key is selected such that it limits the number of counters required (i.e. don’t
-use UUID as the key!)</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-period"></a><code class="literal">period</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><p>The maximum number of counters to store before decreasing the maximum age of a timeslot.
+Setting this value to -1 will prevent an upper bound with no constraint on the
+number of counters.  This configuration value should only be used as a memory
+control mechanism and can cause early counter expiration if the value is reached.
+It is recommended to leave the default value and ensure that your key is selected
+such that it limits the number of counters required (i.e. don’t use UUID as the key).</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-period"></a><code class="literal">period</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
 </li><li class="listitem">
-Default value is <code class="literal">"3600"</code>
-</li></ul></div><p>The period in seconds after the first occurrence of an event until the count is
-reset for the event. This period is tracked per unique key value.  Field
-substitutions are allowed in this value.  They will be evaluated when the <span class="emphasis"><em>first</em></span>
-event for a given key is seen.  This allows you to specify that certain kinds
-of events throttle for a specific period.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-periodic_flush"></a><code class="literal">periodic_flush</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Default value is <code class="literal">"60"</code>
+</li></ul></div><p>The period in seconds after the first occurrence of an event until a new timeslot
+is created.  This period is tracked per unique key and per timeslot.
+Field substitutions are allowed in this value.  This allows you to specify that
+certain kinds of events throttle for a specific period of time.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-periodic_flush"></a><code class="literal">periodic_flush</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a>
 </li><li class="listitem">
-Default value is <code class="literal">false</code>
-</li></ul></div><p>Call the filter flush method at regular interval.
-Optional.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-remove_field"></a><code class="literal">remove_field</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Default value is <code class="literal">true</code>
+</li></ul></div><p>The name to use in configuration files.
+The memory control mechanism automatically ajusts the maximum age
+of a timeslot based on the maximum number of counters.
+Call the filter flush method at regular interval.  It is used by the memory
+control mechanism.  Set to false if you like your VM to go (B)OOM.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-throttle-remove_field"></a><code class="literal">remove_field</code><a href="https://github.com/logstash-plugins/logstash-filter-throttle/edit/master/lib/logstash/filters/throttle.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#array" title="Array">array</a>
 </li><li class="listitem">
 Default value is <code class="literal">[]</code>
@@ -672,7 +699,7 @@ Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang
   throttle {
     remove_field =&gt; [ "foo_%{somefield}" ]
   }
-}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># You can also remove multiple fields at once:
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"> You can also remove multiple fields at once:
 filter {
   throttle {
     remove_field =&gt; [ "foo_%{somefield}", "my_extraneous_field" ]
@@ -689,7 +716,7 @@ syntax.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting pr
   throttle {
     remove_tag =&gt; [ "foo_%{somefield}" ]
   }
-}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># You can also remove multiple tags at once:
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"> You can also remove multiple tags at once:
 filter {
   throttle {
     remove_tag =&gt; [ "foo_%{somefield}", "sad_unwanted_tag"]
