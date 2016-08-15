@@ -531,6 +531,11 @@ want to use each.</p><p>This is the json output for each example</p><p><strong>E
           "max": {
             "field": "confidenceFactor"
           }
+        },
+        "min_per_child": {
+          "min": {
+            "field": "confidenceFactor"
+          }
         }
       }
     }
@@ -543,6 +548,7 @@ It benefits from types that are carried over to sub aggregations</p><div class="
         .Aggregations(childAggs =&gt; childAggs
             .Average("average_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
             .Max("max_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
+            .Min("min_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
         )
     )
 )</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_object_initializer_syntax"></a>Object Initializer syntax<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/writing-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The object initializer syntax (OIS) is a one-to-one mapping with how aggregations
@@ -554,6 +560,7 @@ mapping, being dictionary based in C# means it can grow exponentially in complex
         Aggregations =
             new AverageAggregation("average_per_child", "confidenceFactor")
             &amp;&amp; new MaxAggregation("max_per_child", "confidenceFactor")
+            &amp;&amp; new MinAggregation("min_per_child", "confidenceFactor")
     }
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_terse_object_initializer_dsl"></a>Terse Object Initializer DSL<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/writing-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>For this reason the OIS syntax can be shortened dramatically by using <code class="literal">*Agg</code> related family,
 These allow you to forego introducing intermediary Dictionaries to represent the aggregation DSL.
@@ -564,13 +571,15 @@ It also allows you to combine multiple aggregations using bitwise AND <code clas
         Aggregations =
             new AverageAggregation("average_per_child", Field&lt;CommitActivity&gt;(p =&gt; p.ConfidenceFactor))
             &amp;&amp; new MaxAggregation("max_per_child", Field&lt;CommitActivity&gt;(p =&gt; p.ConfidenceFactor))
+            &amp;&amp; new MinAggregation("min_per_child", Field&lt;CommitActivity&gt;(p =&gt; p.ConfidenceFactor))
     }
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_aggregating_over_a_collection_of_aggregations"></a>Aggregating over a collection of aggregations<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/writing-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>An advanced scenario may involve an existing collection of aggregation functions that should be set as aggregations
 on the request. Using LINQ’s <code class="literal">.Aggregate()</code> method, each function can be applied to the aggregation descriptor
 <code class="literal">childAggs</code> below) in turn, returning the descriptor after each function application.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var aggregations = new List&lt;Func&lt;AggregationContainerDescriptor&lt;CommitActivity&gt;, IAggregationContainer&gt;&gt; <a id="CO21-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 {
     a =&gt; a.Average("average_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor)),
-    a =&gt; a.Max("max_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
+    a =&gt; a.Max("max_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor)),
+    a =&gt; a.Min("min_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
 };
 return s =&gt; s
     .Aggregations(aggs =&gt; aggs
@@ -583,7 +592,17 @@ return s =&gt; s
 a list of aggregation functions to apply
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO21-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Using LINQ’s <code class="literal">Aggregate()</code> function to accumulate/apply all of the aggregation functions
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="aggs-vs-aggregations"></a>Aggs vs. Aggregations<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/writing-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The response exposes both <code class="literal">.Aggregations</code> and <code class="literal">.Aggs</code> properties for handling aggregations. Why two properties you ask?
+</p></td></tr></table></div><p>Combining multipe <code class="literal">AggregationDescriptor</code>'s is also possible using the bitwise <code class="literal">&amp;</code> operator</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_fluent_dsl_example_86"></a>Fluent DSL Example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/writing-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var aggregations = new AggregationContainerDescriptor&lt;CommitActivity&gt;()
+    .Average("average_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
+    .Max("max_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
+    &amp;&amp; new AggregationContainerDescriptor&lt;CommitActivity&gt;()
+        .Min("min_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor));
+return s =&gt; s
+    .Aggregations(aggs =&gt; aggs
+        .Children&lt;CommitActivity&gt;("name_of_child_agg", child =&gt; child
+            .Aggregations(childAggs =&gt; aggregations)
+        )
+    );</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="aggs-vs-aggregations"></a>Aggs vs. Aggregations<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/writing-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The response exposes both <code class="literal">.Aggregations</code> and <code class="literal">.Aggs</code> properties for handling aggregations. Why two properties you ask?
 Well, the former is a dictionary of aggregation names to <code class="literal">IAggregate</code> types, a common interface for
 aggregation responses (termed <span class="emphasis"><em>Aggregates</em></span> in NEST), and the latter is a convenience helper to get the right type
 of aggregation response out of the dictionary based on a key name.</p><p>This is better illustrated with an example</p><p>Let’s imagine we make the following request.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
@@ -592,6 +611,7 @@ of aggregation response out of the dictionary based on a key name.</p><p>This is
         .Aggregations(childAggs =&gt; childAggs
             .Average("average_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
             .Max("max_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
+            .Min("min_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
         )
     )
 )</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_aggs_usage"></a>Aggs usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/writing-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Now, using <code class="literal">.Aggs</code>, we can easily get the <code class="literal">Children</code> aggregation response out and from that,

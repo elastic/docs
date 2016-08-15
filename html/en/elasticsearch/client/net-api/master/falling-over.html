@@ -546,6 +546,19 @@ audit = await audit.TraceCall(
         { BadResponse, 9200 },
         { HealthyResponse, 9201 },
     }
+);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="gateway-timeout"></a>504 Gateway Timeout<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/connection-pooling/failover/falling-over.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Will be treated as an error that requires retrying</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .ClientCalls(r =&gt; r.FailAlways(504))
+    .ClientCalls(r =&gt; r.OnPort(9201).SucceedAlways())
+    .StaticConnectionPool()
+    .Settings(s =&gt; s.DisablePing())
+);
+
+audit = await audit.TraceCall(
+    new ClientCall {
+        { BadResponse, 9200 },
+        { HealthyResponse, 9201 },
+    }
 );</pre></div><p>If a call returns a valid http status code other than 502 or 503, the request won’t be retried.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Different requests may have different status codes that are deemed valid. For example,
 a <span class="strong"><strong>404 Not Found</strong></span> response is a valid status code for an index exists request</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
