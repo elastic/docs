@@ -162,7 +162,7 @@ sub check_links {
 
     $link_checker->check;
 
-    check_kibana_links( $build_dir, $link_checker );
+    # check_kibana_links( $build_dir, $link_checker );
     if ( $link_checker->has_bad ) {
         say $link_checker->report;
     }
