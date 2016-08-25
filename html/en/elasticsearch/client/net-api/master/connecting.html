@@ -584,7 +584,7 @@ These should not be handled as you want to know about them during development.
 </dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_onrequestcompleted"></a>OnRequestCompleted<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You can pass a callback of type <code class="literal">Action&lt;IApiCallDetails&gt;</code> that can eavesdrop every time a response (good or bad) is created.
 If you have complex logging needs this is a good place to add that in.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var counter = 0;
 
-var client = TestClient.GetClient(s =&gt; s.OnRequestCompleted(r =&gt; counter++));
+var client = TestClient.GetInMemoryClient(s =&gt; s.OnRequestCompleted(r =&gt; counter++));
 
 client.RootNodeInfo();
 
@@ -673,18 +673,19 @@ list.ShouldAllBeEquivalentTo(new[]
     "Status: 200\n------------------------------\n"
 });</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Here we use <code class="literal">InMemoryConnection</code>; in reality you would use another type of <code class="literal">IConnection</code> that actually makes a request.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-ssl"></a>Configuring SSL<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>SSL must be configured outside of the client using .NET’s
- <a class="ulink" href="http://msdn.microsoft.com/en-us/library/system.net.servicepointmanager%28v=vs.110%29.aspx" target="_top">ServicePointManager</a>
-class and setting the <a class="ulink" href="http://msdn.microsoft.com/en-us/library/system.net.servicepointmanager.servercertificatevalidationcallback.aspx" target="_top">ServerCertificateValidationCallback</a>
-property.</p><p>The bare minimum to make .NET accept self-signed SSL certs that are not in the Windows CA store would be to have the callback simply return <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, errors) =&gt; true;</pre></div><p>However, this will accept <span class="strong"><strong>all</strong></span> requests from the AppDomain to untrusted SSL sites,
-therefore <span class="strong"><strong>we recommend doing some minimal introspection on the passed in certificate.</strong></span></p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Using <code class="literal">ServicePointManager</code> does not work on <span class="strong"><strong>Core CLR</strong></span> as the request does not go through <code class="literal">ServicePointManager</code>; please file an <a class="ulink" href="https://github.com/elastic/elasticsearch-net/issues" target="_top">issue</a> if you need support for certificate validation on Core CLR.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_overriding_default_json_net_behavior"></a>Overriding default Json.NET behavior<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Overriding the default Json.NET behaviour in NEST is an expert behavior but if you need to get to the nitty gritty, this can be really useful.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-ssl"></a>Configuring SSL<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>SSL can be configured via the <code class="literal">ServerCertificateValidationCallback</code> property on either <code class="literal">ServerPointManager</code> or <code class="literal">HttpClientHandler</code>
+depending on which version of the .NET framework is in use.</p><p>On the full .NET Framework, this must be done outside of the client using .NET’s built-in
+ <a class="ulink" href="http://msdn.microsoft.com/en-us/library/system.net.servicepointmanager%28v=vs.110%29.aspx" target="_top">ServicePointManager</a> class:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, errors) =&gt; true;</pre></div><p>The bare minimum to make .NET accept self-signed SSL certs that are not in the Windows CA store would be to have the callback simply return <code class="literal">true</code>.</p><p>However, this will accept <span class="strong"><strong>all</strong></span> requests from the AppDomain to untrusted SSL sites,
+therefore <span class="strong"><strong>we recommend doing some minimal introspection on the passed in certificate.</strong></span></p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_overriding_default_json_net_behavior"></a>Overriding default Json.NET behavior<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Overriding the default Json.NET behaviour in NEST is an expert behavior but if you need to get to the nitty gritty, this can be really useful.
 First, create a subclass of the <code class="literal">JsonNetSerializer</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyJsonNetSerializer : JsonNetSerializer
 {
     public MyJsonNetSerializer(IConnectionSettingsValues settings) : base(settings) { }
 
     public int CallToModify { get; set; } = 0;
 
+#pragma warning disable CS0672 // Member overrides obsolete member
     protected override void ModifyJsonSerializerSettings(JsonSerializerSettings settings) =&gt; ++CallToModify; <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+#pragma warning restore CS0672 // Member overrides obsolete member
 
     public int CallToContractConverter { get; set; } = 0;
 
@@ -695,7 +696,6 @@ First, create a subclass of the <code class="literal">JsonNetSerializer</code></
             return null;
         }
     };
-
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Override ModifyJsonSerializerSettings if you need access to <code class="literal">JsonSerializerSettings</code>
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
