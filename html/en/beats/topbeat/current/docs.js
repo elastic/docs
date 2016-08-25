@@ -158,6 +158,9 @@ jQuery(function() {
   var right_col = jQuery('#right_col');
   var this_page = jQuery('<div id="this_page"></div>').appendTo(right_col);
 
+  jQuery('.page_header > a[href="../current/index.html"]')
+    .click(function(){get_current_page_in_version('current', function(){})});
+
   var default_console_url = 'http://localhost:5601/app/console/';
   var default_sense_url = 'http://localhost:5601/app/sense/';
   var default_sense_url_marvel = 'http://localhost:9200/_plugin/marvel/sense/';
@@ -294,6 +297,15 @@ jQuery(function() {
     });
   }
 
+  function get_current_page_in_version (version,on_fail) {
+    var url = location.href;
+    var url = location.href.replace(/[^\/]+\/+([^\/]+\.html)/, version
+      + "/$1");
+    jQuery.get(url).done(function() {
+      location.href = url;
+    }).fail(on_fail)
+  }
+
   function init_toc() {
 
     var title = jQuery('#book_title');
@@ -334,24 +346,14 @@ jQuery(function() {
 
     // Setup version selector
     var v_selected = title.find('select option:selected');
-    title.find('select').change(
-      function(e) {
-        var url = location.href;
-        var version = title.find('option:selected').val();
-        var url = location.href.replace(/[^\/]+\/+([^\/]+\.html)/, version
-          + "/$1");
-
-        // If page exists in new version then redirect, otherwise alert
-        jQuery.get(url).done(function() {
-          location.href = url;
-        }).fail(
-          function() {
+    title.find('select').change( function() {
+      get_current_page_in_version(title.find('option:selected').val(), function(){
             v_selected.attr('selected', 'selected');
             alert('This page is not available in the '
               + version
               + ' version of the docs.')
-          });
-      });
+          })
+    });
   }
 
   function init_headers() {
