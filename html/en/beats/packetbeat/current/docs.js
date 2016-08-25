@@ -159,7 +159,7 @@ jQuery(function() {
   var this_page = jQuery('<div id="this_page"></div>').appendTo(right_col);
 
   jQuery('.page_header > a[href="../current/index.html"]')
-    .click(function(){get_current_page_in_version('current', function(){})});
+    .click(function(){get_current_page_in_version('current')});
 
   var default_console_url = 'http://localhost:5601/app/console/';
   var default_sense_url = 'http://localhost:5601/app/sense/';
@@ -297,13 +297,11 @@ jQuery(function() {
     });
   }
 
-  function get_current_page_in_version (version,on_fail) {
+  function get_current_page_in_version (version) {
     var url = location.href;
     var url = location.href.replace(/[^\/]+\/+([^\/]+\.html)/, version
       + "/$1");
-    jQuery.get(url).done(function() {
-      location.href = url;
-    }).fail(on_fail)
+    return jQuery.get(url).done(function() { location.href = url });
   }
 
   function init_toc() {
@@ -347,7 +345,9 @@ jQuery(function() {
     // Setup version selector
     var v_selected = title.find('select option:selected');
     title.find('select').change( function() {
-      get_current_page_in_version(title.find('option:selected').val(), function(){
+      var version = title.find('option:selected').val();
+      get_current_page_in_version(version)
+       .fail( function(){
             v_selected.attr('selected', 'selected');
             alert('This page is not available in the '
               + version
