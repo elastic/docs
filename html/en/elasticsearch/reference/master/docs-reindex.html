@@ -929,7 +929,7 @@ can be either <code class="literal">-1</code> to disable throttling or any decim
 like <code class="literal">1.7</code> or <code class="literal">12</code> to throttle to that level. Rethrottling that speeds up the
 query takes effect immediately but rethrotting that slows down the query will
 take effect on after completing the current batch. This prevents scroll
-timeouts.</p><h3><a id="_reindex_to_change_the_name_of_a_field"></a>Reindex to change the name of a field<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p><code class="literal">_reindex</code> can be used to build a copy of an index with renamed fields. Say you
+timeouts.</p><h3><a id="docs-reindex-change-name"></a>Reindex to change the name of a field<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p><code class="literal">_reindex</code> can be used to build a copy of an index with renamed fields. Say you
 create an index containing documents that look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/test/1?refresh
 {
   "text": "words words",
@@ -956,7 +956,29 @@ create an index containing documents that look like this:</p><div class="pre_wra
     "text": "words words",
     "tag": "foo"
   }
-}</pre></div><p>Or you can search by <code class="literal">tag</code> or whatever you want.</p></div><div class="navfooter"><span class="prev"><a href="docs-bulk.html">
+}</pre></div><p>Or you can search by <code class="literal">tag</code> or whatever you want.</p><h3><a id="_reindex_daily_indices"></a>Reindex daily indices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can use <code class="literal">_reindex</code> in combination with <a class="link" href="modules-scripting-painless.html" title="Painless Scripting Language">Painless</a>
+ to reindex daily indices to apply a new template to the existing documents.</p><p>Assuming you have indices consisting of documents as following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT metricbeat-2016.05.30/beat/1?refresh
+{"system.cpu.idle.pct": 0.908}
+PUT metricbeat-2016.05.31/beat/1?refresh
+{"system.cpu.idle.pct": 0.105}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/22.json"></div><p>The new template for the <code class="literal">metricbeat-*</code> indices is already loaded into elasticsearch
+but it applies only to the newly created indices. Painless can be used to reindex
+the existing documents and apply the new template.</p><p>The script below extracts the date from the index name and creates a new index
+with <code class="literal">-1</code> appended. All data from <code class="literal">metricbeat-2016.05.31</code> will be reindex
+into <code class="literal">metricbeat-2016.05.31-1</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
+{
+  "source": {
+    "index": "metricbeat-*"
+  },
+  "dest": {
+    "index": "metricbeat"
+  },
+  "script": {
+    "lang": "painless",
+    "inline": "ctx._index = 'metricbeat-' + (ctx._index.substring('metricbeat-'.length(), ctx._index.length())) + '-1'"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/23.json"></div><p>All documents from the previous metricbeat indices now can be found in the <code class="literal">*-1</code> indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET metricbeat-2016.05.30-1/beat/1
+GET metricbeat-2016.05.31-1/beat/1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/24.json"></div><p>The previous method can also be used in combination with <a class="link" href="docs-reindex.html#docs-reindex-change-name" title="Reindex to change the name of a fieldedit">change the name of a field</a>
+to only load the existing data into the new index, but also rename fields if needed.</p></div><div class="navfooter"><span class="prev"><a href="docs-bulk.html">
               « 
               Bulk API</a>
            
