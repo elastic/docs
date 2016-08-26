@@ -387,8 +387,9 @@ jQuery(function() {
   // Expand ToC to current page (without #)
   function open_current() {
     var page = location.pathname.match(/[^\/]+$/)[0];
-    jQuery('div.toc a[href="' + page + '"]') //
-    .parentsUntil('ul.toc', 'li.collapsible').addClass('show');
+    var current = jQuery('div.toc a[href="' + page + '"]');
+    current.addClass('current_page');
+    current.parentsUntil('ul.toc', 'li.collapsible').addClass('show');
   }
 
   var div = jQuery('div.toc');
