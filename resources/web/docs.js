@@ -229,35 +229,35 @@ jQuery(function() {
         .replace('$nonComment', nonComment), 'g');
     }
     jQuery('#guide').on('click', 'a.copy_as_curl', function() {
-      var regex = console_regex()
+      var regex = console_regex();
       var consoleText = jQuery(this).parent().prev().text() + '\n';
-      var curlText = ''
+      var curlText = '';
       var match;
       while (match = regex.exec(consoleText)) {
-        var comment = match[1]
-        var method = match[2]
-        var path = match[3]
-        var body = match[4]
+        var comment = match[1];
+        var method = match[2];
+        var path = match[3];
+        var body = match[4];
         if (comment) {
-          curlText += comment + '\n'
+          curlText += comment + '\n';
         } else {
-          path = path.replace(/^\//, '')
-          path += path.includes('?') ? '&pretty' : '?pretty'
-          body = body.replace(/\'/g, '\'"\'"\'')
-          curlText += 'curl -X' + method + " 'localhost:9200/" + path + "'"
+          path = path.replace(/^\//, '');
+          path += path.includes('?') ? '&pretty' : '?pretty';
+          body = body.replace(/\'/g, '\'"\'"\'');
+          curlText += 'curl -X' + method + " 'localhost:9200/" + path + "'";
           if (body) {
-            curlText += " -d'" + body + "'"
+            curlText += " -d'" + body + "'";
           }
-          curlText += '\n'
+          curlText += '\n';
         }
       }
-      var temp = jQuery('<textarea>')
-      jQuery('body').append(temp)
-      temp.val(curlText).select()
+      var temp = jQuery('<textarea>');
+      jQuery('body').append(temp);
+      temp.val(curlText).select();
       var success = document.execCommand('copy');
       temp.remove();
       if (false == success) {
-        console.error("Couldn't automatically copy!")
+        console.error("Couldn't automatically copy!");
         console.error(curlText);
       }
     });
