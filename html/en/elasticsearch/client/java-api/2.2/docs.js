@@ -180,7 +180,8 @@ jQuery(function() {
           var div = jQuery(this);
           var snippet = div.attr('data-snippet');
           div
-            .html('<a class="sense_widget" target="sense" '
+            .html('<a class="sense_widget copy_as_curl">Copy as cURL</a>'
+              + '<a class="sense_widget" target="sense" '
               + 'title="Open snippet in Sense" '
               + 'href="'
               + sense_url
@@ -203,7 +204,8 @@ jQuery(function() {
           var div = jQuery(this);
           var snippet = div.attr('data-snippet');
           div
-            .html('<a class="console_widget" target="console" '
+            .html('<a class="sense_widget copy_as_curl">Copy as cURL</a>'
+              + '<a class="console_widget" target="console" '
               + 'title="Open snippet in Console" '
               + 'href="'
               + console_url
@@ -214,6 +216,51 @@ jQuery(function() {
               + '<a class="console_settings" title="Configure Console URL">&nbsp;</a>');
           div.find('a.console_settings').click(console_settings);
         });
+    function console_regex() {
+      // Port of https://github.com/elastic/elasticsearch/blob/master/buildSrc/src/main/groovy/org/elasticsearch/gradle/doc/RestTestsFromSnippetsTask.groovy#L71-L79
+      var method = '(GET|PUT|POST|HEAD|OPTIONS|DELETE)';
+      var pathAndQuery = '([^\\n]+)';
+      var badBody = 'GET|PUT|POST|HEAD|OPTIONS|DELETE|#';
+      var body = '((?:\\n(?!$badBody)[^\\n]+)+)'.replace('$badBody', badBody);
+      var nonComment = '$method\\s+$pathAndQuery$body?'.replace('$method', method)
+        .replace('$pathAndQuery', pathAndQuery).replace('$body', body);
+      var comment = '(#.+)';
+      return new RegExp('(?:$comment|$nonComment)\\n+'.replace('$comment', comment)
+        .replace('$nonComment', nonComment), 'g');
+    }
+    jQuery('#guide').on('click', 'a.copy_as_curl', function() {
+      var regex = console_regex();
+      var consoleText = jQuery(this).parent().prev().text() + '\n';
+      var curlText = '';
+      var match;
+      while (match = regex.exec(consoleText)) {
+        var comment = match[1];
+        var method = match[2];
+        var path = match[3];
+        var body = match[4];
+        if (comment) {
+          curlText += comment + '\n';
+        } else {
+          path = path.replace(/^\//, '');
+          path += path.includes('?') ? '&pretty' : '?pretty';
+          body = body.replace(/\'/g, '\\u0027');
+          curlText += 'curl -X' + method + " 'localhost:9200/" + path + "'";
+          if (body) {
+            curlText += " -d'" + body + "'";
+          }
+          curlText += '\n';
+        }
+      }
+      var temp = jQuery('<textarea>');
+      jQuery('body').append(temp);
+      temp.val(curlText).select();
+      var success = document.execCommand('copy');
+      temp.remove();
+      if (false == success) {
+        console.error("Couldn't automatically copy!");
+        console.error(curlText);
+      }
+    });
   }
 
   function sense_settings(e) {
@@ -406,4 +453,3 @@ jQuery(function() {
     init_toc();
   }
 });
-
