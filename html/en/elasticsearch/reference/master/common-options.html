@@ -731,7 +731,28 @@ of every segment with this request:</p><div class="pre_wrapper"><pre class="prog
       }
     }
   }
-}</pre></div><p>Note that elasticsearch sometimes returns directly the raw value of a field,
+}</pre></div><p>It is also possible to exclude one or more fields by prefixing the filter with the char <code class="literal">-</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XGET 'localhost:9200/_count?filter_path=-_shards'
+{
+  "count" : 1
+}
+%</pre></div><p>And for more control, both inclusive and exclusive filters can be combined in the same expression. In
+this case, the exclusive filters will be applied first and the result will be filtered again using the
+inclusive filters:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XGET 'localhost:9200/_cluster/state?filter_path=metadata.indices.*.state,-metadata.indices.logs-*'
+{
+  "metadata" : {
+    "indices" : {
+      "index-1" : {
+        "state" : "open"
+      },
+      "index-3" : {
+        "state" : "open"
+      },
+      "index-2" : {
+        "state" : "open"
+      }
+    }
+  }
+}%</pre></div><p>Note that elasticsearch sometimes returns directly the raw value of a field,
 like the <code class="literal">_source</code> field. If you want to filter <code class="literal">_source</code> fields, you should
 consider combining the already existing <code class="literal">_source</code> parameter (see
 <a class="link" href="docs-get.html#get-source-filtering" title="Source filteringedit">Get API</a> for more details) with the <code class="literal">filter_path</code>
