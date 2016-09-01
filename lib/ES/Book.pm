@@ -260,18 +260,16 @@ sub _page_header {
 
     if ( $branch lt $current ) {
         return <<"HEADER";
-<b>PLEASE NOTE:</b>
-<br/>
-This page is for an older version of the software. Check out the <a href="../current/index.html">latest
-version&#39;s documentation here</a>.
+You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
 HEADER
     }
 
     return <<"HEADER";
-<b>PLEASE NOTE:</b>
-<br/>
-This page is for an as yet unreleased version of the software. Check out the <a href="../current/index.html">latest
-version&#39;s documentation here</a>.
+You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
 HEADER
 
 }
