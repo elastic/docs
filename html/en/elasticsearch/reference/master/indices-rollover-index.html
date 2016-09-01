@@ -564,7 +564,9 @@ the new alias.</p><div class="pre_wrapper"><pre class="programlisting prettyprin
   }
 }
 
-POST logs_write/_rollover <a id="CO121-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+# Add &gt; 1000 documents to logs-000001
+
+POST /logs_write/_rollover <a id="CO121-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
 {
   "conditions": {
     "max_age":   "7d",
@@ -577,6 +579,8 @@ If the index pointed to by <code class="literal">logs_write</code> was created 7
     contains 1,000 or more documents, then the <code class="literal">logs-0002</code> index is created
     and the <code class="literal">logs_write</code> alias is updated to point to <code class="literal">logs-000002</code>.
 </p></td></tr></table></div><p>The above request might return the following response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "acknowledged": true,
+  "shards_acknowledged": true,
   "old_index": "logs-000001",
   "new_index": "logs-000002",
   "rolled_over": true, <a id="CO122-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
@@ -591,8 +595,13 @@ If the index pointed to by <code class="literal">logs_write</code> was created 7
 <code class="literal">logs-000001</code> — then the name of the new index will follow the same pattern,
 incrementing the number (<code class="literal">logs-000002</code>). The number is zero-padded with a length
 of 6, regardless of the old index name.</p><p>If the old name doesn’t match this pattern then you must specify the name for
-the new index as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST my_alias/_rollover/my_new_index_name
-{...}</pre></div><h3><a id="_defining_the_new_index"></a>Defining the new index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/rollover-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The settings, mappings, and aliases for the new index are taken from any
+the new index as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /my_alias/_rollover/my_new_index_name
+{
+  "conditions": {
+    "max_age":   "7d",
+    "max_docs":  1000
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/indices-rollover-index/2.json"></div><h3><a id="_defining_the_new_index"></a>Defining the new index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/rollover-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The settings, mappings, and aliases for the new index are taken from any
 matching <a class="link" href="indices-templates.html" title="Index Templates">index templates</a>. Additionally, you can specify
 <code class="literal">settings</code>, <code class="literal">mappings</code>, and <code class="literal">aliases</code> in the body of the request, just like the
 <a class="link" href="indices-create-index.html" title="Create Index">create index</a> API. Values specified in the request
@@ -604,7 +613,7 @@ override any values set in matching index templates. For example, the following
   }
 }
 
-POST logs_write/_rollover
+POST /logs_write/_rollover
 {
   "conditions" : {
     "max_age": "7d",
@@ -613,7 +622,7 @@ POST logs_write/_rollover
   "settings": {
     "index.number_of_shards": 2
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/indices-rollover-index/2.json"></div><h3><a id="_dry_run"></a>Dry run<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/rollover-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The rollover API supports <code class="literal">dry_run</code> mode, where request conditions can be
+}</pre></div><div class="console_widget" data-snippet="snippets/indices-rollover-index/3.json"></div><h3><a id="_dry_run"></a>Dry run<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/rollover-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The rollover API supports <code class="literal">dry_run</code> mode, where request conditions can be
 checked without performing the actual rollover:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /logs-000001
 {
   "aliases": {
@@ -621,13 +630,13 @@ checked without performing the actual rollover:</p><div class="pre_wrapper"><pre
   }
 }
 
-POST logs_write/_rollover?dry_run
+POST /logs_write/_rollover?dry_run
 {
   "conditions" : {
     "max_age": "7d",
     "max_docs": 1000
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/indices-rollover-index/3.json"></div><h3><a id="_wait_for_active_shards_2"></a>Wait For Active Shards<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/rollover-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Because the rollover operation creates a new index to rollover to, the
+}</pre></div><div class="console_widget" data-snippet="snippets/indices-rollover-index/4.json"></div><h3><a id="_wait_for_active_shards_2"></a>Wait For Active Shards<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/rollover-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Because the rollover operation creates a new index to rollover to, the
 <a class="link" href="indices-create-index.html#create-index-wait-for-active-shards" title="Wait For Active Shardsedit">wait for active shards</a> setting on
 index creation applies to the rollover action as well.</p></div><div class="navfooter"><span class="prev"><a href="indices-shrink-index.html">
               « 
