@@ -681,11 +681,24 @@ documents once deleted are never shown. This request:</p><div class="pre_wrapper
       }
     } ]
   } ]
-}</pre></div><p>The configured weight for a suggestion is returned as <code class="literal">_score</code>.
-The <code class="literal">text</code> field uses the <code class="literal">input</code> of your indexed suggestion.
-Suggestions are document oriented, the document source is
-returned in <code class="literal">_source</code>. <a class="link" href="search-request-source-filtering.html" title="Source filtering">source filtering</a>
-parameters are supported for filtering the document source.</p><p>The basic completion suggester query supports the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+}</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p><code class="literal">_source</code> meta-field must be enabled, which is the default
+behavior, to enable returning <code class="literal">_source</code> with suggestions.</p></div></div><p>The configured weight for a suggestion is returned as <code class="literal">_score</code>. The
+<code class="literal">text</code> field uses the <code class="literal">input</code> of your indexed suggestion. Suggestions
+return the full document <code class="literal">_source</code> by default. The size of the <code class="literal">_source</code>
+can impact performance due to disk fetch and network transport overhead.
+For best performance, filter out unnecessary fields from the <code class="literal">_source</code>
+using <a class="link" href="search-request-source-filtering.html" title="Source filtering">source filtering</a> to minimize
+<code class="literal">_source</code> size. The following demonstrates an example completion query
+with source filtering:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_suggest
+{
+    "_source": "completion.*",
+    "song-suggest" : {
+        "prefix" : "nir",
+        "completion" : {
+            "field" : "suggest"
+        }
+    }
+}</pre></div><p>The basic completion suggester query supports the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">field</code>
 </span></dt><dd>
 The name of the field on which to run the query (required).
@@ -693,16 +706,16 @@ The name of the field on which to run the query (required).
 <code class="literal">size</code>
 </span></dt><dd>
 The number of suggestions to return (defaults to <code class="literal">5</code>).
-</dd><dt><span class="term">
-<code class="literal">payload</code>
-</span></dt><dd>
-The name of the field or field name array to be returned
-             as payload (defaults to no fields).
 </dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The completion suggester considers all documents in the index.
 See <a class="xref" href="suggester-context.html" title="Context Suggester">Context Suggester</a> for an explanation of how to query a subset of
-documents instead.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Specifying <code class="literal">payload</code> fields will incur additional search performance
-hit. The <code class="literal">payload</code> fields are retrieved eagerly (single pass) for top
-suggestions at the shard level using field data or from doc values.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="fuzzy"></a>Fuzzy queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The completion suggester also supports fuzzy queries - this means,
+documents instead.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>In case of completion queries spanning more than one shard, the suggest
+is executed in two phases, where the last phase fetches the relevant documents
+from shards, implying executing completion requests against a single shard is
+more performant due to the document fetch overhead when the suggest spans
+multiple shards. To get best performance for completions, it is recommended to
+index completions into a single shard index. In case of high heap usage due to
+shard size, it is still recommended to break index into multiple shards instead
+of optimizing for completion performance.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="fuzzy"></a>Fuzzy queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The completion suggester also supports fuzzy queries - this means,
 you can have a typo in your search and still get results back.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_suggest?pretty
 {
     "song-suggest" : {

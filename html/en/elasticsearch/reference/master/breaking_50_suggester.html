@@ -555,7 +555,8 @@ Not what you want? See the
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="breaking_50_suggester"></a>Suggester changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The completion suggester has undergone a complete rewrite. This means that the
 syntax and data structure for fields of type <code class="literal">completion</code> have changed, as
-have the syntax and response of completion suggester requests.</p><p>For indices created before Elasticsearch 5.0.0, <code class="literal">completion</code> fields and the
+have the syntax and response of completion suggester requests. See
+<a class="link" href="search-suggesters-completion.html" title="Completion Suggester">completion suggester</a> for details.</p><p>For indices created before Elasticsearch 5.0.0, <code class="literal">completion</code> fields and the
 completion suggester will continue to work as they did in Elasticsearch 2.x.
 However, it is not possible to run a completion suggester query across indices
 created in 2.x and indices created in 5.x.</p><p>It is strongly recommended to reindex indices containing 2.x <code class="literal">completion</code>
@@ -563,28 +564,13 @@ fields in 5.x to take advantage of the new features listed below.</p><div class=
 when reindexing.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_completion_suggester_is_near_real_time"></a>Completion suggester is near-real time<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Previously, deleted suggestions could be included in results even
 after refreshing an index. Now, deletions are visible in near-real
 time, i.e. as soon as the index has been refreshed. This applies
-to suggestion entries for both context and completion suggesters.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_completion_suggester_is_document_oriented"></a>Completion suggester is document-oriented<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Suggestions are aware of the document they belong to. This enables
-retrieving any field value from the document. This is exposed
-through the query-time <code class="literal">payload</code> option in <code class="literal">completion</code> and <code class="literal">context</code>
-suggesters:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /my_index/_search
-{
-  "suggest": {
-    "fooSuggestion": {
-       "text": "f"
-       "completion": {
-         "field": "fooSuggest",
-         "payload": ["field1", "field2"]
-       }
-     }
-  }
-}</pre></div><p>Previously, <code class="literal">context</code> and <code class="literal">completion</code> suggesters supported an index-time
+to suggestion entries for both context and completion suggesters.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_completion_suggester_is_document_oriented"></a>Completion suggester is document-oriented<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Suggestions are aware of the document they belong to. Now, associated
+documents (<code class="literal">_source</code>) are returned as part of <code class="literal">completion</code> suggestions.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p><code class="literal">_source</code> meta-field must be enabled, which is the default behavior,
+to enable returning <code class="literal">_source</code> with suggestions.</p></div></div><p>Previously, <code class="literal">context</code> and <code class="literal">completion</code> suggesters supported an index-time
 <code class="literal">payloads</code> option, which was used to store and return metadata with suggestions.
-Now metadata can be stored as a field in the same document as the
-suggestion for enabling retrieval at query-time. The support for
-index-time <code class="literal">payloads</code> has been removed to avoid bloating the in-memory
-index with suggestion metadata. The time that it takes to retrieve payloads
-depends heavily on the size of the <code class="literal">_source</code> field.  The smaller the <code class="literal">_source</code>,
-the faster the retrieval.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_simpler_completion_indexing"></a>Simpler completion indexing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>As suggestions are document-oriented, suggestion metadata (e.g. <code class="literal">output</code>)
+Now metadata can be stored as part of the the same document as the
+suggestion for retrieval at query-time. The support for index-time <code class="literal">payloads</code>
+has been removed to avoid bloating the in-memory index with suggestion metadata.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_simpler_completion_indexing"></a>Simpler completion indexing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_5_0/suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>As suggestions are document-oriented, suggestion metadata (e.g. <code class="literal">output</code>)
 should now be specified as a field in the document. The support for specifying
 <code class="literal">output</code> when indexing suggestion entries has been removed. Now suggestion
 result entry’s <code class="literal">text</code> is always the un-analyzed value of the suggestion’s
