@@ -624,7 +624,89 @@ PUT index/type/1
 <a class="link" href="number.html" title="Numeric datatypes">numeric field</a>. Typically, fields storing identifiers such as an <code class="literal">ISBN</code>
 or any number identifying a record from another database, might benefit from
 being mapped as <a class="link" href="keyword.html" title="Keyword datatype"><code class="literal">keyword</code></a> rather than <code class="literal">integer</code> or <code class="literal">long</code>.</p><h3><a id="_avoid_scripts"></a>Avoid scripts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In general, scripts should be avoided. If they are absolutely needed, you
-should prefer the <code class="literal">painless</code> and <code class="literal">expressions</code> engines.</p><h3><a id="_force_merge_read_only_indices"></a>Force-merge read-only indices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Indices that are read-only would benefit from being
+should prefer the <code class="literal">painless</code> and <code class="literal">expressions</code> engines.</p><h3><a id="_search_rounded_dates"></a>Search rounded dates<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Queries on date fields that use <code class="literal">now</code> are typically not cacheable since the
+range that is being matched changes all the time. However switching to a
+rounded date is often acceptable in terms of user experience, and has the
+benefit of making better use of the query cache.</p><p>For instance the below query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT index/type/1
+{
+  "my_date": "2016-05-11T16:30:55.328Z"
+}
+
+GET index/_search
+{
+  "query": {
+    "constant_score": {
+      "filter": {
+        "range": {
+          "my_date": {
+            "gte": "now-1h",
+            "lte": "now"
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/5.json"></div><p>could be replaced with the following query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET index/_search
+{
+  "query": {
+    "constant_score": {
+      "filter": {
+        "range": {
+          "my_date": {
+            "gte": "now-1h/m",
+            "lte": "now/m"
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/6.json"></div><p>In that case we rounded to the minute, so if the current time is <code class="literal">16:31:29</code>,
+the range query will match everything whose value of the <code class="literal">my_date</code> field is
+between <code class="literal">15:31:00</code> and <code class="literal">16:31:59</code>. And if several users run a query that
+contains this range in the same minute, the query cache could help speed things
+up a bit. The longer the interval that is used for rounding, the more the query
+cache can help, but beware that too aggressive rounding might also hurt user
+experience.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>It might be tempting to split ranges into a large cacheable part and
+smaller not cacheable parts in order to be able to leverage the query cache,
+as shown below:</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET index/_search
+{
+  "query": {
+    "constant_score": {
+      "filter": {
+        "bool": {
+          "should": [
+            {
+              "range": {
+                "my_date": {
+                  "gte": "now-1h",
+                  "lte": "now-1h/m"
+                }
+              }
+            },
+            {
+              "range": {
+                "my_date": {
+                  "gt": "now-1h/m",
+                  "lt": "now/m"
+                }
+              }
+            },
+            {
+              "range": {
+                "my_date": {
+                  "gte": "now/m",
+                  "lte": "now"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/7.json"></div><p>However such practice might make the query run slower in some cases since the
+overhead introduced by the <code class="literal">bool</code> query may defeat the savings from better
+leveraging the query cache.</p><h3><a id="_force_merge_read_only_indices"></a>Force-merge read-only indices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Indices that are read-only would benefit from being
 <a class="link" href="indices-forcemerge.html" title="Force Merge">merged down to a single segment</a>. This is typically the
 case with time-based indices: only the index for the current time frame is
 getting new documents while older indices are read-only.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Don’t force-merge indices that are still being written to — leave
@@ -645,7 +727,7 @@ eagerly at refresh-time by configuring mappings as described below:</p><div clas
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/5.json"></div><h3><a id="_warm_up_the_filesystem_cache"></a>Warm up the filesystem cache<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the machine running elasticsearch is restarted, the filesystem cache will be
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/8.json"></div><h3><a id="_warm_up_the_filesystem_cache"></a>Warm up the filesystem cache<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the machine running elasticsearch is restarted, the filesystem cache will be
 empty, so it will take some time before the operating system loads hot regions
 of the index into memory so that search operations are fast. You can explicitly
 tell the operating system which files should be loaded into memory eagerly
