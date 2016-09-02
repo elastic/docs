@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Generate your Beat
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Config file format
         | Beats Platform Reference [5.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Beats Platform Reference [5.0]" /><link rel="up" href="new-beat.html" title="Developer Guide: Creating a New Beat" /><link rel="prev" href="_overview.html" title="Overview" /><link rel="next" href="beater-interface.html" title="The Beater interface" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Libbeat/Reference/5.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Beats Platform Reference [5.0]" /><link rel="up" href="index.html" title="Beats Platform Reference [5.0]" /><link rel="prev" href="setup-repositories.html" title="Repositories for APT and YUM" /><link rel="next" href="config-file-format-namespacing.html" title="Namespacing" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Libbeat/Reference/5.0" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -545,32 +545,40 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Beats Platform Reference
       [5.0]
-    </a></span> » <span class="breadcrumb-link"><a href="new-beat.html">Developer Guide: Creating a New Beat</a></span> » <span class="breadcrumb-node">Generate your Beat</span></div><div class="navheader"><span class="prev"><a href="_overview.html">
+    </a></span> » <span class="breadcrumb-node">Config file format</span></div><div class="navheader"><span class="prev"><a href="setup-repositories.html">
               « 
-              Overview</a>
+              Repositories for APT and YUM</a>
            
         </span><span class="next">
            
-          <a href="beater-interface.html">The Beater interface
+          <a href="config-file-format-namespacing.html">Namespacing
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_generate_your_beat"></a>Generate your Beat<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newbeat.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To generate your own beat we use the <code class="literal">beat-generator</code>. First you must install
-<a class="ulink" href="https://github.com/audreyr/cookiecutter" target="_top">cookiecutter</a>. Check out the
-<a class="ulink" href="http://cookiecutter.readthedocs.io/en/latest/installation.html" target="_top">installation
-guide</a>. After having installed cookiecutter, we must decide on a name for our beat.
-The name must be one word all lowercase. In our example is Testbeat.</p><p>To create the Beat skeleton, you should download Beats generator package,available in the beats repository.
-Once you installed GoLang, you can download the Beats generator package using
-go get command. Once you run the command, all source files will be downloaded under the $GOPATH/src path.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ go get github.com/elastic/beats</pre></div><p>Now create and move to your own repository under GOPATH, and run cookiecutter with Beat Generator path.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ cd $GOPATH/src/github.com/{user}
-$ cookiecutter $GOPATH/src/github.com/elastic/beats/generate/beat</pre></div><p>Cookiecutter will ask you several questions. For your project_name enter testbeat, for github_user - your github id. The next two question with for beat and beat_path should already be automatically set correct. For the last one your can insert your Firstname Lastname.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">project_name [Examplebeat]: testbeat
-github_name [your-github-name]: {username}
-beat [testbeat]:
-beat_path [github.com/{github id}]:
-full_name [Firstname Lastname]: {Full Name}</pre></div><p>This should now have created a directory <code class="literal">testbeat</code> inside our folder with several files.</p><p>We now have a raw template of the Beat, but still need to fetch the dependencies and setup the git repository.</p></div><div class="navfooter"><span class="prev"><a href="_overview.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="config-file-format"></a>Config file format<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/config-file-format.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Beats config files are based on <a class="ulink" href="http://www.yaml.org" target="_top">YAML</a>, a file format that is
+easier to read and write than other common data formats like XML or JSON.</p><p>In beats all YAML files start with an dictionary, an unordered collection of
+name/value pairs. In addition to dictionaries, YAML also supports lists, numbers,
+strings, and many other data types. All members of the same list or dictionary must
+have the same indentation level.</p><p>Dictionaries are represented by simple <code class="literal">key: value</code> pairs all having the same
+indentation level. The colon after <code class="literal">key</code> must be followed by a space.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">name: John Doe
+age: 34
+country: Canada</pre></div><p>Lists are introduced by dashes `- `. All list members will be lines beginning
+with `- ` at the same indentation level.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- Red
+- Green
+- Blue</pre></div><p>Lists and dictionaries are used in beats to build structured configurations.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat:
+  prospectors:
+    - input_type: log
+      paths:
+        - /var/log/*.log
+      multiline:
+        pattern: '^['
+        match: after</pre></div><p>Lists and dictionaries can also be represented in abbreviated form. Abbreviated
+form is somewhat similar to JSON using <code class="literal">{}</code> for dictionaries and <code class="literal">[]</code> for lists:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">person: {name: "John Doe", age: 34, country: "Canada"}
+colors: ["Red", "Green", "Blue"]</pre></div></div><div class="navfooter"><span class="prev"><a href="setup-repositories.html">
               « 
-              Overview</a>
+              Repositories for APT and YUM</a>
            
         </span><span class="next">
            
-          <a href="beater-interface.html">The Beater interface
+          <a href="config-file-format-namespacing.html">Namespacing
                »
             </a></span></div>
 <!-- end body -->
