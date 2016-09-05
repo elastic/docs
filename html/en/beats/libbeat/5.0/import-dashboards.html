@@ -551,19 +551,21 @@
           <a href="build-dashboards.html">Building your Own Dashboards
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="import-dashboards"></a>Importing Existing Beat Dashboards<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You can use the <code class="literal">import_dashboards</code> script to import all the dashboards and the index pattern for a Beat, including the dependencies such as visualizations and searches.
-The <code class="literal">import_dashboards</code> script is available in the Beat package, under the <code class="literal">scripts</code> directory.</p><p>You can import the dashboards and the index pattern to Elasticsearch running on localhost for a single Beat:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The <code class="literal">import_dashboards</code> script is available under
+<a class="ulink" href="https://github.com/elastic/beats/tree/master/libbeat/dashboards" target="_top">beats/libbeat/dashboards</a>, and it’s copied in each Beat package under the <code class="literal">scripts</code> directory.</p><p>Using the <code class="literal">import_dashboards</code> script, you can import the dashboards and the index pattern to
+Elasticsearch running on localhost for a single Beat (eg. Metricbeat):</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 from a local directory:
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ scripts/import_dashboards -dir etc/kibana</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ ./scripts/import_dashboards -dir kibana/metricbeat</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 from a local zip archive:
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ scripts/import_dashboards -file metricbeat-dashboards-1.0.zip</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ ./scripts/import_dashboards -beat metricbeat -file metricbeat-dashboards-1.1.zip</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 from a zip archive available online:
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ scripts/import_dashboards -url https://github.com/monicasarbu/metricbeat-dashboards/archive/v1.0.zip</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You can make use of the Makefile from the Beat GitHub repository to import the
-dashboards. If Elasticsearch is running on localhost, then you can run the following command from the Beat repository:</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ make import-dashboards</pre></div><p>If Elasticsearch is running on a different host, then you can use the environment <code class="literal">ES_URL</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ ES_URL="http://192.168.3.206:9200" make import-dashboards</pre></div><p>The zip archive can contain dashboards for a single Beat or for multiple Beats.</p><p>If the zip archive contains dashboards for a single Beat (metricbeat-dashboards-1.0.zip), then it must contain a
-directory (metricbeat-dashboards-1.0) of the same name as the zip archive that has the following structure:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell"> dashboard/
- search/
- visualization/
- index-pattern/</pre></div><p>If the zip archive contains dashboards for multiple Beats (beats-dashboards-5.0.0-alpha4.zip), then it must contain a
-directory (beats-dashboards-5.0.0-alpha4) of the same name as the zip archive that has the following structure:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">  metricbeat/
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ scripts/import_dashboards -beat metricbeat -url https://github.com/monicasarbu/metricbeat-dashboards/archive/v1.1.zip</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+NOTE
+</span></dt><dd>
+When running the <code class="literal">import_dashboards</code> from the Beat package, the <code class="literal">-beat</code> option is set automatically to the Beat
+name.
+</dd></dl></div><p>The zip archive contains dashboards for at least one Beat. The index pattern, dashboards, visualizations and searches
+are available in a separate directory for each Beat, having the name of the Beat. For example the official zip archive (beats-dashboards-5.0.0-alpha4) has the following structure:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">  metricbeat/
     dashboard/
     search/
     visualization/
@@ -579,56 +581,62 @@ directory (beats-dashboards-5.0.0-alpha4) of the same name as the zip archive th
     dashboard/
     search/
     visualization/
-    index-pattern/</pre></div><p>If the archive contains dashboards for multiple Beats, you need to use the <code class="literal">-beat</code> option to specify the name of the Beat for which you want to import dashboards.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-from a local zip archive:
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">$ scripts/import_dashboards -beat metricbeat -file beats-dashboards-5.0.0-alpha4.zip</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-from a zip archive available online:
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">$ scripts/import_dashboards -beat metricbeat -url http://download.elastic.co/beats/dashboards/beats-dashboards-5.0.0-alpha4.zip</pre></div><p>If you don’t specify the <code class="literal">-url</code> option, you must specify the <code class="literal">-beat</code> option because the default package imported by the script contains the dashboards for all Beats.</p><p>For example, to import the Metricbeat dashboards together with visualizations,
-searches and the Metricbeat index pattern:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ scripts/import_dashboards -beat metricbeat</pre></div><p>The command has the following options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">Usage: ./import_dashboards [options]
+    index-pattern/</pre></div><p>If you don’t specify the <code class="literal">-url</code> option, then by default it’s set to the official zip archive containing the index
+pattern and the dashboards of the official Beats.</p><p>For development or community Beats it’s easier to run the <code class="literal">import_dashboards</code> script from the <a class="ulink" href="https://github.com/elastic/beats/tree/master/libbeat/dashboards" target="_top">beats/libbeat/dashboards</a> directory. In this case, you need to first compile the script:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ cd beats/libbeat/dashboards
+$ make</pre></div><p>And then you can import the index pattern and the dashboards together with visualizations and searches for a single
+Beat, by passing the <code class="literal">-beat</code> option. If the <code class="literal">-beat</code> option is not specified, by default it imports the dashboards of all
+Beats.</p><p>For example, to import the Metricbeat dashboards together with visualizations,
+searches and the Metricbeat index pattern:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ beats/libbeat/dashboards/import_dashboards -beat metricbeat</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You can make use of the Makefile from the Beat GitHub repository to import the
+dashboards. If Elasticsearch is running on localhost, then you can run the following command from the Beat repository:</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ make import-dashboards</pre></div><p>If Elasticsearch is running on a different host, then you can use the environment <code class="literal">ES_URL</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ ES_URL="http://192.168.3.206:9200" make import-dashboards</pre></div><p>The command has the following options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">./import_dashboards -h
+
+Usage: ./import_dashboards [options]
 
 Kibana dashboards are stored in a special index in Elasticsearch together with the searches, visualizations, and indexes that they use.
 
-You can import the dashboards, visualizations, searches, and the index pattern for any Beat:
+You can import the dashboards, visualizations, searches, and the index pattern for a single Beat (eg. Metricbeat):
   1. from a local directory:
-        ./import_dashboards -dir etc/kibana
-  2. from a local zip archive:
-        ./import_dashboards -beat metricbeat -file beats-dashboards-5.0.0-alpha4.zip
-  3. from a zip archive available online:
-        ./import_dashboards -beat metricbeat -url http://download.elastic.co/beats/dashboards/beats-dashboards-5.0.0-alpha4.zip
+        ./import_dashboards -dir kibana/metricbeat
+  2. from a local zip archive containing dashboards of multiple Beats:
+        ./import_dashboards -beat metricbeat -file beats-dashboards-5.0.0-alpha6.zip
+  3. from the official zip archive available under http://download.elastic.co/beats/dashboards/beats-dashboards-5.0.0-alpha6.zip:
+        ./import_dashboards -beat metricbeat
+  4. from any zip archive available online:
+    ./import_dashboards -beat metricbeat -url https://github.com/monicasarbu/metricbeat-dashboards/archive/1.1.zip
 
-If the archive contains dashboards for multiple Beats, you need to pass the Beat name in -beat option:
-        ./import_dashboards -beat metricbeat -url http://download.elastic.co/beats/dashboards/beats-dashboards-5.0.0-alpha4.zip
-
-To import only the index-pattern for a single Beat, from the same version use:
+To import only the index-pattern for a single Beat (eg. Metricbeat) use:
         ./import_dashboards -only-index -beat metricbeat
+
+To import only the dashboards together with visualizations and searches for a single Beat (eg. Metricbeat) use:
+        ./import_dashboards -only-dashboards -beat metricbeat
 
 Options:
   -beat string
-                Specify the Beat name. Required if the archive contains the dashboards for multiple Beats.
+        The Beat name, in case a zip archive is passed as input (default "packetbeat")
   -dir string
-        Directory containing the subdirectories: dashboard, visualization, search, index-pattern. eg. kibana/
+        Directory containing the subdirectories: dashboard, visualization, search, index-pattern. Example: etc/kibana/
   -es string
         Elasticsearch URL (default "http://127.0.0.1:9200")
   -file string
-        Zip archive file containing the Beats dashboards.
+        Zip archive file containing the Beats dashboards. The archive contains a directory for each Beat.
   -i string
-        Overwrites the Elasticsearch index name. For example you can replace metricbeat-* with custombeat-*
+        The Elasticsearch index name. This overwrites the index name defined in the dashboards and index pattern. Example: metricbeat-*
   -k string
         Kibana index (default ".kibana")
   -only-dashboards
-        Import only dashboards together with visualizations and searches. By default imports both, dashboards and the index-pattern.
+        Import only dashboards together with visualizations and searches. By default import both, dashboards and the index-pattern.
   -only-index
         Import only the index-pattern. By default imports both, dashboards and the index pattern.
   -pass string
-        Password to connect to Elasticsearch
+        Password to connect to Elasticsearch. By default no password is passed.
   -url string
-        URL to the zip archive containing the Beats dashboards (default
-                "https://download.elastic.co/beats/dashboards/beats-dashboards-5.0.0-alpha4.zip")
+        URL to the zip archive containing the Beats dashboards (default "https://download.elastic.co/beats/dashboards/beats-dashboards-5.0.0-alpha6.zip")
   -user string
-        Username to connect to Elasticsearch</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_es"></a>es<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Elasticsearch URL. The default value is <a class="ulink" href="http://localhost:9200" target="_top">http://localhost:9200</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_user"></a>user<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The username for authenticating the connection to Elasticsearch by using Basic Authentication. By default no username and password are used.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_pass"></a>pass<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The password for authenticating the connection to Elasticsearch by using Basic Authentication. By default no username and password are used.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_k"></a>k<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Elasticsearch index pattern where Kibana saves its configuration. The default value is <code class="literal">.kibana</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_i"></a>i<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You should only use this option if you want to change the index pattern name that’s used by default. For example, if the
+        Username to connect to Elasticsearch. By default no username is passed.</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_es"></a>es<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Elasticsearch URL. The default value is <a class="ulink" href="http://localhost:9200" target="_top">http://localhost:9200</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_user"></a>user<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The username for authenticating the connection to Elasticsearch by using Basic Authentication. By default no username and password are used.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_pass"></a>pass<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The password for authenticating the connection to Elasticsearch by using Basic Authentication. By default no username and password are used.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_k"></a>k<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Elasticsearch index pattern where Kibana saves its configuration. The default value is <code class="literal">.kibana</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_i"></a>i<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You should only use this option if you want to change the index pattern name that’s used by default. For example, if the
 default is <code class="literal">metricbeat-*</code>, you can change it to <code class="literal">custombeat-*</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_only_dashboards"></a>only-dashboards<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If specified, then only the dashboards, along with their visualizations and searches, are imported. The index pattern is
 not imported. By default is false.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_only_index"></a>only-index<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If specified, then only the index pattern is imported. The dashboards, along with their visualizations and searches, are not imported. By default is false.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_dir"></a>dir<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Local directory that contains the subdirectories: dashboard, visualization, search and index-pattern. The default value is the current directory.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_file"></a>file<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Local zip archive with the dashboards. The archive can contain Kibana dashboards for a single Beat or for multiple Beats.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_url"></a>url<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Zip archive with the dashboards, available online. The archive can contain Kibana dashboards for a single Beat or for
-multiple Beats.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_beat"></a>beat<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Beat name. Required if the archive contains the dashboards for multiple Beats.</p></div></div><div class="navfooter"><span class="prev"><a href="new-dashboards.html">
+multiple Beats.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_beat"></a>beat<a href="https://github.com/elastic/beats/edit/5.0/libbeat/docs/newdashboards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Beat name, and it’s required when importing from a zip archive. When using the <code class="literal">import_dashboards</code> from the Beat package, this option is set automatically with the name of
+the Beat. When running the script from source, the default value is "", so you need to set this option in order to install the index pattern and
+the dashboards for a single Beat. Otherwise it imports the index pattern and the dashboards for all Beats.</p></div></div><div class="navfooter"><span class="prev"><a href="new-dashboards.html">
               « 
               Developer Guide: Creating New Kibana Dashboards for a Beat</a>
            
