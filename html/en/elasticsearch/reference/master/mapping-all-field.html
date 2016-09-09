@@ -553,31 +553,30 @@ Not what you want? See the
            
           <a href="mapping-field-names-field.html"><code class="literal">_field_names</code> field
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-all-field"></a><code class="literal">_all</code> field<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">_all</code> field is a special <span class="emphasis"><em>catch-all</em></span> field which concatenates the values
-of all of the other fields into one big string, using space as a delimiter, which is then
-<a class="link" href="analysis.html" title="Analysis">analyzed</a> and indexed, but not stored.  This means that it can be
-searched, but not retrieved.</p><p>The <code class="literal">_all</code> field allows you to search for values in documents without knowing
-which field contains the value.  This makes it a useful option when getting
-started with a new dataset. For instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/user/1 <a id="CO175-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="mapping-all-field"></a><code class="literal">_all</code> field<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">_all</code> field is a special <span class="emphasis"><em>catch-all</em></span> field which concatenates the values of
+all of the other string fields into one big string, using space as a delimiter,
+which is then <a class="link" href="analysis.html" title="Analysis">analyzed</a> and indexed, but not stored. This means that
+it can be searched, but not retrieved.</p><p>The <code class="literal">_all</code> field allows you to search for string values in documents without
+knowing which field contains the value. This makes it a useful option when
+getting started with a new dataset. For instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/user/1 <a id="CO175-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 {
   "first_name":    "John",
   "last_name":     "Smith",
-  "date_of_birth": "1970-10-24"
+  "place_of_birth": "New York City"
 }
 
 GET my_index/_search
 {
   "query": {
     "match": {
-      "_all": "john smith 1970"
+      "_all": "john smith new york"
     }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/mapping-all-field/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO175-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">_all</code> field will contain the terms: [ <code class="literal">"john"</code>, <code class="literal">"smith"</code>, <code class="literal">"1970"</code>, <code class="literal">"10"</code>, <code class="literal">"24"</code> ]
-</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h3>All values treated as strings</h3><p>The <code class="literal">date_of_birth</code> field in the above example is recognised as a <code class="literal">date</code> field
-and so will index a single term representing <code class="literal">1970-10-24 00:00:00 UTC</code>. The
-<code class="literal">_all</code> field, however, treats all values as strings, so the date value is
-indexed as the three string terms: <code class="literal">"1970"</code>, <code class="literal">"24"</code>, <code class="literal">"10"</code>.</p><p>It is important to note that the <code class="literal">_all</code> field combines the original values
+The <code class="literal">_all</code> field will contain the terms: [ <code class="literal">"john"</code>, <code class="literal">"smith"</code>, <code class="literal">"new"</code>, <code class="literal">"york"</code>, <code class="literal">"city"</code> ]
+</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h3>Only string values are added to _all</h3><p>If a <code class="literal">date_of_birth</code> field mapped as a date were used, or an <code class="literal">age</code> field that
+was an integer were added, they would not be included in the <code class="literal">_all</code> field, as
+<code class="literal">_all</code> only contains content from <span class="emphasis"><em>string</em></span> fields.</p><p>It is important to note that the <code class="literal">_all</code> field combines the original values
 from each field as a string. It does not combine the <span class="emphasis"><em>terms</em></span> from each field.</p></div></div><p>The <code class="literal">_all</code> field is just a <a class="link" href="text.html" title="Text datatype"><code class="literal">text</code></a> field, and accepts the same
 parameters that  other string fields accept, including <code class="literal">analyzer</code>,
 <code class="literal">term_vectors</code>, <code class="literal">index_options</code>, and <code class="literal">store</code>.</p><p>The <code class="literal">_all</code> field can be useful, especially when exploring new data using
@@ -592,10 +591,10 @@ the <code class="literal">_all</code> field by default, unless another field is 
 {
   "query": {
     "query_string": {
-      "query": "john smith 1970"
+      "query": "john smith new york"
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/mapping-all-field/2.json"></div><p>The same goes for the <code class="literal">?q=</code> parameter in <a class="link" href="search-uri-request.html" title="URI Search">URI search requests</a> (which is rewritten to a <code class="literal">query_string</code> query internally):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _search?q=john+smith+1970</pre></div><p>Other queries, such as the <a class="link" href="query-dsl-match-query.html" title="Match Query"><code class="literal">match</code></a> and
+}</pre></div><div class="console_widget" data-snippet="snippets/mapping-all-field/2.json"></div><p>The same goes for the <code class="literal">?q=</code> parameter in <a class="link" href="search-uri-request.html" title="URI Search">URI search requests</a> (which is rewritten to a <code class="literal">query_string</code> query internally):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _search?q=john+smith+new+york</pre></div><p>Other queries, such as the <a class="link" href="query-dsl-match-query.html" title="Match Query"><code class="literal">match</code></a> and
 <a class="link" href="query-dsl-term-query.html" title="Term Query"><code class="literal">term</code></a> queries require you to specify
 the <code class="literal">_all</code> field explicitly, as per the
 <a class="link" href="mapping-all-field.html" title="_all field">first example</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="disabling-all-field"></a>Disabling the <code class="literal">_all</code> field<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/fields/all-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">_all</code> field can be completely disabled per-type by setting <code class="literal">enabled</code> to
