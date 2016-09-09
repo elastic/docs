@@ -550,19 +550,102 @@
            
           <a href="analysis-uaxurlemail-tokenizer.html">UAX Email URL Tokenizer
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="analysis-pattern-tokenizer"></a>Pattern Tokenizer<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/analysis/tokenizers/pattern-tokenizer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A tokenizer of type <code class="literal">pattern</code> that can flexibly separate text into terms
-via a regular expression. Accepts the following settings:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">pattern</code></p></td><td align="left" valign="top"><p>The regular expression pattern, defaults to <code class="literal">\W+</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">flags</code></p></td><td align="left" valign="top"><p>The regular expression flags.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">group</code></p></td><td align="left" valign="top"><p>Which group to extract into tokens. Defaults to <code class="literal">-1</code> (split).</p></td></tr></tbody></table></div><p><span class="strong"><strong>IMPORTANT</strong></span>: The regular expression should match the <span class="strong"><strong>token separators</strong></span>,
-not the tokens themselves.</p><div class="sidebar"><div class="titlepage"></div><p>Note that you may need to escape <code class="literal">pattern</code> string literal according to
-your client language rules. For example, in many programming languages
-a string literal for <code class="literal">\W+</code> pattern is written as <code class="literal">"\\W+"</code>.
-There is nothing special about <code class="literal">pattern</code> (you may have to escape other
-string literals as well); escaping <code class="literal">pattern</code> is common just because it
-often contains characters that should be escaped.</p></div><p><code class="literal">group</code> set to <code class="literal">-1</code> (the default) is equivalent to "split". Using group
-&gt;= 0 selects the matching group as the token. For example, if you have:</p><pre class="screen">pattern = '([^']+)'
-group   = 0
-input   = aaa 'bbb' 'ccc'</pre><p>the output will be two tokens: <code class="literal">'bbb'</code> and <code class="literal">'ccc'</code> (including the <code class="literal">'</code>
-marks). With the same input but using group=1, the output would be:
-<code class="literal">bbb</code> and <code class="literal">ccc</code> (no <code class="literal">'</code> marks).</p></div><div class="navfooter"><span class="prev"><a href="analysis-whitespace-tokenizer.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="analysis-pattern-tokenizer"></a>Pattern Tokenizer<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/analysis/tokenizers/pattern-tokenizer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">pattern</code> tokenizer uses a regular expression to either split text into
+terms whenever it matches a word separator, or to capture matching text as
+terms.</p><p>The default pattern is <code class="literal">\W+</code>, which splits text whenever it encounters
+non-word characters.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><h3>Beware of Pathological Regular Expressions</h3><p>The pattern tokenizer uses
+<a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html" target="_top">Java Regular Expressions</a>.</p><p>A badly written regular expression could run very slowly or even throw a
+StackOverflowError and cause the node it is running on to exit suddenly.</p><p>Read more about <a class="ulink" href="http://www.regular-expressions.info/catastrophic.html" target="_top">pathological regular expressions and how to avoid them</a>.</p></div></div><h3><a id="_example_output_2"></a>Example output<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/analysis/tokenizers/pattern-tokenizer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _analyze
+{
+  "tokenizer": "pattern",
+  "text": "The foo_bar_size's default is 5."
+}</pre></div><div class="sense_widget" data-snippet="snippets/analysis-pattern-tokenizer/1.json"></div><p>The above sentence would produce the following terms:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">[ The, foo_bar_size, s, default, is, 5 ]</pre></div><h3><a id="_configuration_2"></a>Configuration<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/analysis/tokenizers/pattern-tokenizer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">pattern</code> tokenizer accepts the following parameters:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">pattern</code>
+</p>
+</td><td valign="top">
+<p>
+    A <a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html" target="_top">Java regular expression</a>, defaults to <code class="literal">\W+</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">flags</code>
+</p>
+</td><td valign="top">
+<p>
+    Java regular expression <a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#field.summary" target="_top">flags</a>.
+    lags should be pipe-separated, eg <code class="literal">"CASE_INSENSITIVE|COMMENTS"</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">group</code>
+</p>
+</td><td valign="top">
+<p>
+    Which capture group to extract as tokens.  Defaults to <code class="literal">-1</code> (split).
+</p>
+</td></tr></tbody></table></div><h3><a id="_example_configuration_2"></a>Example configuration<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/analysis/tokenizers/pattern-tokenizer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In this example, we configure the <code class="literal">pattern</code> tokenizer to break text into
+tokens when it encounters commas:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "my_tokenizer"
+        }
+      },
+      "tokenizer": {
+        "my_tokenizer": {
+          "type": "pattern",
+          "pattern": ","
+        }
+      }
+    }
+  }
+}
+
+POST my_index/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "comma,separated,values"
+}</pre></div><div class="sense_widget" data-snippet="snippets/analysis-pattern-tokenizer/2.json"></div><p>The above example produces the following terms:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">[ comma, separated, values ]</pre></div><p>In the next example, we configure the <code class="literal">pattern</code> tokenizer to capture values
+enclosed in double quotes (ignoring embedded escaped quotes <code class="literal">\"</code>).  The regex
+itself looks like this:</p><pre class="literallayout">"((?:\\"|[^"]|\\")*)"</pre><p>And reads as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+A literal <code class="literal">"</code>
+</li><li class="listitem"><p class="simpara">
+Start capturing:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+A literal <code class="literal">\"</code> OR any character except <code class="literal">"</code>
+</li><li class="listitem">
+Repeat until no more characters match
+</li></ul></div></li><li class="listitem">
+A literal closing <code class="literal">"</code>
+</li></ul></div><p>When the pattern is specified in JSON, the <code class="literal">"</code> and <code class="literal">\</code> characters need to be
+escaped, so the pattern ends up looking like:</p><pre class="literallayout">\"((?:\\\\\"|[^\"]|\\\\\")+)\"</pre><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "my_tokenizer"
+        }
+      },
+      "tokenizer": {
+        "my_tokenizer": {
+          "type": "pattern",
+          "pattern": "\"((?:\\\\\"|[^\"]|\\\\\")+)\"",
+          "group": 1
+        }
+      }
+    }
+  }
+}
+
+POST my_index/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "\"value\", \"value with embedded \\\" quote\""
+}</pre></div><div class="sense_widget" data-snippet="snippets/analysis-pattern-tokenizer/3.json"></div><p>The above example produces the following two terms:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text">[ value, value with embedded \" quote ]</pre></div></div><div class="navfooter"><span class="prev"><a href="analysis-whitespace-tokenizer.html">
               « 
               Whitespace Tokenizer</a>
            
