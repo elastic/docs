@@ -722,20 +722,28 @@ Here we use <code class="literal">InMemoryConnection</code>; in reality you woul
 </p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-ssl"></a>Configuring SSL<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>SSL can be configured via the <code class="literal">ServerCertificateValidationCallback</code> property on either <code class="literal">ServerPointManager</code> or <code class="literal">HttpClientHandler</code>
 depending on which version of the .NET framework is in use.</p><p>On the full .NET Framework, this must be done outside of the client using .NET’s built-in
  <a class="ulink" href="http://msdn.microsoft.com/en-us/library/system.net.servicepointmanager%28v=vs.110%29.aspx" target="_top">ServicePointManager</a> class:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, errors) =&gt; true;</pre></div><p>The bare minimum to make .NET accept self-signed SSL certs that are not in the Windows CA store would be to have the callback simply return <code class="literal">true</code>.</p><p>However, this will accept <span class="strong"><strong>all</strong></span> requests from the AppDomain to untrusted SSL sites,
-therefore <span class="strong"><strong>we recommend doing some minimal introspection on the passed in certificate.</strong></span></p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_overriding_default_json_net_behavior"></a>Overriding default Json.NET behavior<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Overriding the default Json.NET behaviour in NEST is an expert behavior but if you need to get to the nitty gritty, this can be really useful.
-First, create a subclass of the <code class="literal">JsonNetSerializer</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyJsonNetSerializer : JsonNetSerializer
+therefore <span class="strong"><strong>we recommend doing some minimal introspection on the passed in certificate.</strong></span></p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_overriding_json_net_settings"></a>Overriding Json.NET settings<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Overriding the default Json.NET behaviour in NEST is an expert behavior but if you need to get to the nitty gritty, this can be really useful.</p><p>The easiest way is to create an instance of <code class="literal">SerializerFactory</code> that allows you to register a modification callback
+in the constructor</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+
+var connectionSettings = new ConnectionSettings(
+    pool,
+    new HttpConnection(),
+    new SerializerFactory((jsonSettings, nestSettings) =&gt; jsonSettings.PreserveReferencesHandling = PreserveReferencesHandling.All));
+
+var client = new ElasticClient(connectionSettings);</pre></div><p>A more involved and explicit way would be to implement your own JsonNetSerializer subclass.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>this is subject to change in the next major release. NEST relies heavily on stateful deserializers (that have access to the original
+request) for specialized features such a covariant search results. This requirement leaks into this abstraction.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyJsonNetSerializer : JsonNetSerializer
 {
-    public MyJsonNetSerializer(IConnectionSettingsValues settings) : base(settings) { }
+    public MyJsonNetSerializer(IConnectionSettingsValues settings)
+        : base(settings, (s, csv) =&gt; s.PreserveReferencesHandling = PreserveReferencesHandling.All) <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    {
+        OverwriteDefaultSerializers((s, cvs) =&gt; s.PreserveReferencesHandling = PreserveReferencesHandling.All); <a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    }
 
     public int CallToModify { get; set; } = 0;
 
-#pragma warning disable CS0672 // Member overrides obsolete member
-    protected override void ModifyJsonSerializerSettings(JsonSerializerSettings settings) =&gt; ++CallToModify; <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-#pragma warning restore CS0672 // Member overrides obsolete member
-
     public int CallToContractConverter { get; set; } = 0;
 
-    protected override IList&lt;Func&lt;Type, JsonConverter&gt;&gt; ContractConverters =&gt; new List&lt;Func&lt;Type, JsonConverter&gt;&gt; <a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    protected override IList&lt;Func&lt;Type, JsonConverter&gt;&gt; ContractConverters =&gt; new List&lt;Func&lt;Type, JsonConverter&gt;&gt; <a id="CO5-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
     {
         t =&gt; {
             CallToContractConverter++;
@@ -743,8 +751,10 @@ First, create a subclass of the <code class="literal">JsonNetSerializer</code></
         }
     };
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Override ModifyJsonSerializerSettings if you need access to <code class="literal">JsonSerializerSettings</code>
+Call this constructor if you only need access to <code class="literal">JsonSerializerSettings</code> without local state (properties on MyJsonNetSerializer)
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Call OverwriteDefaultSerializers if you need access to <code class="literal">JsonSerializerSettings</code> with local state
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 You can inject contract resolved converters by implementing the ContractConverters property. This can be much faster then registering them on <code class="literal">JsonSerializerSettings.Converters</code>
 </p></td></tr></table></div><p>You can then register a factory on <code class="literal">ConnectionSettings</code> to create an instance of your subclass instead.
 This is <span class="strong"><strong><span class="emphasis"><em>called once per instance</em></span></strong></span> of ConnectionSettings.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var connectionPool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
