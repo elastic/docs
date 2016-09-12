@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Monitoring the Host Machine
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>haproxy stat MetricSet
         | Metricbeat Reference [5.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference [5.0]" /><link rel="up" href="_running_metricbeat_in_a_container.html" title="Running Metricbeat in a Container" /><link rel="prev" href="_running_metricbeat_in_a_container.html" title="Running Metricbeat in a Container" /><link rel="next" href="_monitoring_a_service_in_another_container.html" title="Monitoring a Service in Another Container" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Metricbeat/Reference/5.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference [5.0]" /><link rel="up" href="metricbeat-module-haproxy.html" title="haproxy Module" /><link rel="prev" href="metricbeat-module-haproxy.html" title="haproxy Module" /><link rel="next" href="metricbeat-metricset-haproxy-stat.html" title="haproxy stat MetricSet" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Metricbeat/Reference/5.0" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -543,53 +543,80 @@
 <div class="page_header"><b>PLEASE NOTE:</b> These docs are for a pre-GA version of Metricbeat.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference
       [5.0]
-    </a></span> » <span class="breadcrumb-link"><a href="configuring-howto-metricbeat.html">Configuring Metricbeat </a></span> » <span class="breadcrumb-link"><a href="_running_metricbeat_in_a_container.html">Running Metricbeat in a Container</a></span> » <span class="breadcrumb-node">Monitoring the Host Machine</span></div><div class="navheader"><span class="prev"><a href="_running_metricbeat_in_a_container.html">
+    </a></span> » <span class="breadcrumb-link"><a href="metricbeat-modules.html">Modules </a></span> » <span class="breadcrumb-link"><a href="metricbeat-module-haproxy.html">haproxy Module</a></span> » <span class="breadcrumb-node">haproxy stat MetricSet</span></div><div class="navheader"><span class="prev"><a href="metricbeat-module-haproxy.html">
               « 
-              Running Metricbeat in a Container</a>
+              haproxy Module</a>
            
         </span><span class="next">
            
-          <a href="_monitoring_a_service_in_another_container.html">Monitoring a Service in Another Container
+          <a href="metricbeat-metricset-haproxy-stat.html">haproxy stat MetricSet
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_monitoring_the_host_machine"></a>Monitoring the Host Machine<a href="https://github.com/elastic/beats/edit/5.0/metricbeat/docs/metricbeat-in-a-container.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This first example highlights the changes required to make the system module
-work properly inside of a container. This enables Metricbeat to monitor the
-host machine from within the container.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">---
-sudo docker run \
-  --volume=/proc:/hostfs/proc:ro \ <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-  --volume=/sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro \ <a id="CO1-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-  --volume=/:/hostfs:ro \ <a id="CO1-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-  --net=host <a id="CO1-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-  my/metricbeat:latest -system.hostfs=/hostfs
----</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Metricbeat’s system module collects much of its data through the Linux proc
-filesystem which is normally located at <code class="literal">/proc</code>. Due to the fact that containers
-are isolated as much as possible from the host, the data inside of the
-containers <code class="literal">/proc</code> is different than the host’s <code class="literal">/proc</code>. To account for this you
-can mount the host’s <code class="literal">/proc</code> filesystem inside of the container and tell
-Metricbeat to look inside the <code class="literal">/hostfs</code> directory when looking for <code class="literal">/proc</code> by
-using the <code class="literal">-system.hostfs=/hostfs</code> CLI flag.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-If you have enabled cgroup reporting (an experimental feature) from the
-system process metricset then you need to mount the host’s cgroup mountpoints
-within the container. They need to be mounted inside the directory specified by
-the <code class="literal">-system.hostfs</code> CLI flag.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-If you want to be able to monitor filesystems from the host using the
-system filesystem metricset then those filesystems need to be mounted inside
-of the container. They can be mounted at any location.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The system network metricset uses data from <code class="literal">/proc/net/dev</code>, or
-<code class="literal">/hostfs/proc/net/dev</code> when using <code class="literal">-system.hostfs=/hostfs</code>, and the only way
-to make this file contain the host’s network devices is to use the <code class="literal">--net=host</code>
-flag. This is due to Linux namespacing, simply bind mounting the host’s <code class="literal">/proc</code>
-to <code class="literal">/hostfs/proc</code> is not sufficient.
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="_running_metricbeat_in_a_container.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="metricbeat-metricset-haproxy-info"></a>haproxy stat MetricSet<a href="https://github.com/elastic/beats/edit/5.0/metricbeat/docsle/haproxy/info/_meta/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This is the info metricset of the module haproxy.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fields_3"></a>Fields<a href="https://github.com/elastic/beats/edit/5.0/metricbeat/docs/modules/haproxy/info.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For a description of each field in the metricset, see the
+<a class="link" href="exported-fields-haproxy.html" title="haproxy Fields">exported fields</a> section.</p><p>Here is an example document generated by this metricset:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+    "@timestamp": "2016-08-13T19:44:21.036Z",
+    "beat": {
+        "hostname": "beathost",
+        "name": "beathost"
+    },
+    "haproxy": {
+        "info": {
+            "compress_bps_in": 0,
+            "compress_bps_out": 0,
+            "compress_bps_rate_limit": 0,
+            "conn_rate": 0,
+            "conn_rate_limit": 0,
+            "cum_conns": 67,
+            "cum_req": 67,
+            "cum_ssl_conns": 0,
+            "curr_conns": 0,
+            "curr_ssl_conns": 0,
+            "hard_max_conn": 4000,
+            "idle_pct": 100,
+            "max_conn": 4000,
+            "max_conn_rate": 5,
+            "max_pipes": 0,
+            "max_sess_rate": 5,
+            "max_sock": 8033,
+            "max_ssl_conns": 0,
+            "max_ssl_rate": 0,
+            "max_zlib_mem_usage": 0,
+            "mem_max_mb": 0,
+            "nb_proc": 1,
+            "pid": 53858,
+            "pipes_free": 0,
+            "pipes_used": 0,
+            "process_num": 1,
+            "run_queue": 2,
+            "sess_rate": 0,
+            "sess_rate_limit": 0,
+            "ssl_babckend_key_rate": 0,
+            "ssl_backend_max_key_rate": 0,
+            "ssl_cache_misses": 0,
+            "ssl_cached_lookups": 0,
+            "ssl_frontend_key_rate": 0,
+            "ssl_frontend_max_key_rate": 0,
+            "ssl_frontend_session_reuse_pct": 0,
+            "ssl_rate": 0,
+            "ssl_rate_limit": 0,
+            "tasks": 7,
+            "ulimit_n": 8033,
+            "uptime_sec": 13700,
+            "zlib_mem_usage": 0
+        }
+    },
+    "metricset": {
+        "module": "haproxy",
+        "name": "info",
+        "rtt": 707
+    },
+    "type": "metricsets"
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="metricbeat-module-haproxy.html">
               « 
-              Running Metricbeat in a Container</a>
+              haproxy Module</a>
            
         </span><span class="next">
            
-          <a href="_monitoring_a_service_in_another_container.html">Monitoring a Service in Another Container
+          <a href="metricbeat-metricset-haproxy-stat.html">haproxy stat MetricSet
                »
             </a></span></div>
 <!-- end body -->
