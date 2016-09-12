@@ -555,7 +555,7 @@ Not what you want? See the
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_configuration"></a>Configuration<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Almost every aspect of the client is configurable.  Most users will only need to configure a few parameters to suit
 their needs, but it is possible to completely replace much of the internals if required.</p><p>Custom configuration is accomplished before the client is instantiated, through the ClientBuilder helper object.
-We’ll walk through all the configuration options and show sample code to replace the various components.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_host_configuration"></a>Host Configuration<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The most common configuration is telling the client about your cluster: how many nodes, their addresses and ports.  If
+We’ll walk through all the configuration options and show sample code to replace the various components.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_inline_host_configuration"></a>Inline Host Configuration<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The most common configuration is telling the client about your cluster: how many nodes, their addresses and ports.  If
 no hosts are specified, the client will attempt to connect to <code class="literal">localhost:9200</code>.</p><p>This behavior can be changed by using the <code class="literal">setHosts()</code> method on <code class="literal">ClientBuilder</code>.  The method accepts an array of values,
 each entry corresponding to one node in your cluster.  The format of the host can vary, depending on your needs (ip vs
 hostname, port, ssl, etc)</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$hosts = [
@@ -579,7 +579,30 @@ individually:</p><div class="pre_wrapper"><pre class="programlisting prettyprint
 ];
 $clientBuilder = ClientBuilder::create();   // Instantiate a new ClientBuilder
 $clientBuilder-&gt;setHosts($hosts);           // Set the hosts
-$client = $clientBuilder-&gt;build();          // Build the client object</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_authorization_and_encryption"></a>Authorization and Encryption<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>For details about HTTP Authorization and SSL encryption, please see <a class="ulink" href="_security.html" target="_top">Authorization and SSL</a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_set_retries"></a>Set retries<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>By default, the client will retry <code class="literal">n</code> times, where <code class="literal">n = number of nodes</code> in your cluster.  A retry is only performed
+$client = $clientBuilder-&gt;build();          // Build the client object</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_extended_host_configuration"></a>Extended Host Configuration<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The client also supports an <span class="emphasis"><em>extended</em></span> host configuration syntax.  The inline configuration method relies on PHP’s
+<code class="literal">filter_var()</code> and <code class="literal">parse_url()</code> methods to validate and extract the components of a URL.  Unfortunately, these built-in
+methods run into problems with certain edge-cases.  For example, <code class="literal">filter_var()</code> will not accept URL’s that have underscores
+(which are questionably legal, depending on how you interpret the RFCs).  Similarly, <code class="literal">parse_url()</code> will choke if a
+Basic Auth’s password contains special characters such as a pound sign (<code class="literal">#</code>) or question-marks (<code class="literal">?</code>).</p><p>For this reason, the client supports an extended host syntax which provides greater control over host initialization.
+None of the components are validated, so edge-cases like underscores domain names will not cause problems.</p><p>The extended syntax is an array of parameters for each host:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$hosts = [
+    // This is effectively equal to: "https://username:password!#$?*abc@foo.com:9200/"
+    [
+        'host' =&gt; 'foo.com',
+        'port' =&gt; '9200',
+        'scheme' =&gt; 'https',
+        'user' =&gt; 'username',
+        'password' =&gt; 'password!#$?*abc'
+    ],
+
+    // This is equal to "http://localhost:9200/"
+    [
+        'host' =&gt; 'localhost',    // Only host is required
+    ]
+];
+$client = ClientBuilder::create()           // Instantiate a new ClientBuilder
+                    -&gt;setHosts($hosts)      // Set the hosts
+                    -&gt;build();              // Build the client object</pre></div><p>Only the <code class="literal">host</code> parameter is required for each configured host.  If not provided, the default port is <code class="literal">9200</code>.  The default
+scheme is <code class="literal">http</code>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_authorization_and_encryption"></a>Authorization and Encryption<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>For details about HTTP Authorization and SSL encryption, please see <a class="ulink" href="_security.html" target="_top">Authorization and SSL</a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_set_retries"></a>Set retries<a href="https://github.com/elastic/elasticsearch-php/edit/master/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>By default, the client will retry <code class="literal">n</code> times, where <code class="literal">n = number of nodes</code> in your cluster.  A retry is only performed
 if the operation results in a "hard" exception: connection refusal, connection timeout, DNS lookup timeout, etc.  4xx and
 5xx errors are not considered retry’able events, since the node returns an operational response.</p><p>If you would like to disable retries, or change the number, you can do so with the <code class="literal">setRetries()</code> method:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-php">$client = ClientBuilder::create()
                     -&gt;setRetries(2)
