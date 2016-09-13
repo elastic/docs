@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Step 5: Starting Filebeat
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Changes to the Output Fields
         | Filebeat Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Filebeat Reference [master]" /><link rel="up" href="filebeat-getting-started.html" title="Getting Started With Filebeat" /><link rel="prev" href="filebeat-template.html" title="Step 4: Loading the Index Template in Elasticsearch" /><link rel="next" href="_step_6_loading_the_kibana_index_pattern.html" title="Step 6: Loading the Kibana Index Pattern" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Filebeat/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Filebeat Reference [master]" /><link rel="up" href="migrating-from-logstash-forwarder.html" title="Migrating from Logstash Forwarder to Filebeat" /><link rel="prev" href="migration-changed-cli.html" title="Changes to Command Line Options" /><link rel="next" href="migration-other-changes.html" title="Other Changes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Filebeat/Reference/master" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -545,21 +545,47 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Filebeat Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="filebeat-getting-started.html">Getting Started With Filebeat</a></span> » <span class="breadcrumb-node">Step 5: Starting Filebeat</span></div><div class="navheader"><span class="prev"><a href="filebeat-template.html">
+    </a></span> » <span class="breadcrumb-link"><a href="migrating-from-logstash-forwarder.html">Migrating from Logstash Forwarder to Filebeat </a></span> » <span class="breadcrumb-node">Changes to the Output Fields</span></div><div class="navheader"><span class="prev"><a href="migration-changed-cli.html">
               « 
-              Step 4: Loading the Index Template in Elasticsearch</a>
+              Changes to Command Line Options</a>
            
         </span><span class="next">
            
-          <a href="_step_6_loading_the_kibana_index_pattern.html">Step 6: Loading the Kibana Index Pattern
+          <a href="migration-other-changes.html">Other Changes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_step_5_starting_filebeat"></a>Step 5: Starting Filebeat<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Start Filebeat by issuing the appropriate command for your platform.</p><p><span class="strong"><strong>deb:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">sudo /etc/init.d/filebeat start</pre></div><p><span class="strong"><strong>rpm:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">sudo /etc/init.d/filebeat start</pre></div><p><span class="strong"><strong>mac:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">sudo ./filebeat -e -c filebeat.yml -d "publish"</pre></div><p><span class="strong"><strong>win:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">PS C:\Program Files\Filebeat&gt; Start-Service filebeat</pre></div><p>By default, Windows log files are stored in <code class="literal">C:\ProgramData\filebeat\Logs</code>.</p><p>Filebeat is now ready to send log files to your defined output.</p></div><div class="navfooter"><span class="prev"><a href="filebeat-template.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="migration-changed-fields"></a>Changes to the Output Fields<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In the default configuration, Filebeat structures its output documents a little
+differently from the Logstash Forwarder. This section discusses the differences
+and the options you have in case you want compatibility with the Logstash
+Forwarder.</p><h3><a id="_custom_fields_are_grouped_under_a_fields_dictionary"></a>Custom Fields are Grouped Under a "fields" Dictionary<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The custom fields (added from the configuration file) are set as top-level
+fields in Logstash Forwarder but are grouped together under a <code class="literal">fields</code>
+dictionary in Filebeat. If you need the old behavior during the migration phase,
+you can use the <a class="xref" href="configuration-filebeat-options.html#fields-under-root" title="fields_under_root">fields_under_root</a> configuration option:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.prospectors:
+- input_type: log
+  paths:
+    - /var/log/*.log
+  document_type: syslog
+  fields:
+    service: test01
+  fields_under_root: true</pre></div><h3><a id="_filebeat_uses_beat_hostname_for_sending_the_hostname_of_the_server"></a>Filebeat uses "beat.hostname" for Sending the Hostname of the Server<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>While the Logstash Forwarder sends the hostname of the server it’s running on in
+the <code class="literal">host</code> field, Filebeat uses the <code class="literal">beat.hostname</code> field for the same purpose.
+Because <code class="literal">host</code> is commonly used in the Logstash plugin ecosystem, the Beats
+input plugin automatically copies <code class="literal">beat.hostname</code> into <code class="literal">host</code>.</p><h3><a id="_the_file_field_was_renamed_to_source"></a>The "file" Field Was Renamed to "source"<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">file</code> field was renamed to <code class="literal">source</code>. If you rely on this field being
+named <code class="literal">file</code>, you can rename it by using the mutate filter in Logstash. For
+example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-plain">filter {
+    mutate {
+        rename =&gt; {
+            "source" =&gt; "file"
+        }
+    }
+}</pre></div><h3><a id="_the_line_field_was_removed"></a>The "line" Field Was Removed<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">line</code> field was removed. This field wasn’t correct after restarts, and
+making it correct would have resulted in a performance penalty. We recommend
+using the <code class="literal">offset</code> field instead.</p></div><div class="navfooter"><span class="prev"><a href="migration-changed-cli.html">
               « 
-              Step 4: Loading the Index Template in Elasticsearch</a>
+              Changes to Command Line Options</a>
            
         </span><span class="next">
            
-          <a href="_step_6_loading_the_kibana_index_pattern.html">Step 6: Loading the Kibana Index Pattern
+          <a href="migration-other-changes.html">Other Changes
                »
             </a></span></div>
 <!-- end body -->

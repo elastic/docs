@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Reduce Registry File Size
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Migrating to the Beats Input Plugin for Logstash
         | Filebeat Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Filebeat Reference [master]" /><link rel="up" href="troubleshooting.html" title="Troubleshooting" /><link rel="prev" href="_reduce_open_file_handlers.html" title="Reduce open file handlers" /><link rel="next" href="inode-reuse-issue.html" title="Inode Reuse Issue" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Filebeat/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Filebeat Reference [master]" /><link rel="up" href="migrating-from-logstash-forwarder.html" title="Migrating from Logstash Forwarder to Filebeat" /><link rel="prev" href="migrating-from-logstash-forwarder.html" title="Migrating from Logstash Forwarder to Filebeat" /><link rel="next" href="migration-registry-file.html" title="Updating the Registry File" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Filebeat/Reference/master" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -545,21 +545,34 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Filebeat Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="troubleshooting.html">Troubleshooting </a></span> » <span class="breadcrumb-node">Reduce Registry File Size</span></div><div class="navheader"><span class="prev"><a href="_reduce_open_file_handlers.html">
+    </a></span> » <span class="breadcrumb-link"><a href="migrating-from-logstash-forwarder.html">Migrating from Logstash Forwarder to Filebeat </a></span> » <span class="breadcrumb-node">Migrating to the Beats Input Plugin for Logstash</span></div><div class="navheader"><span class="prev"><a href="migrating-from-logstash-forwarder.html">
               « 
-              Reduce open file handlers</a>
+              Migrating from Logstash Forwarder to Filebeat </a>
            
         </span><span class="next">
            
-          <a href="inode-reuse-issue.html">Inode Reuse Issue
+          <a href="migration-registry-file.html">Updating the Registry File
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="reduce-registry-size"></a>Reduce Registry File Size<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/troubleshooting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Filebeat keeps all states of the files and persists the states on disk in the <code class="literal">registry_file</code>. The states are used to continue file reading at a previous position in case filebeat is restarted. In case every day a large amount of new files is constantly produced, the registry file grows over time. To reduce the size of the registry file, there are two configuration variables: <code class="literal">clean_removed</code> and <code class="literal">close_inactive</code>.</p><p>In case old files are not touched anymore and fall under <code class="literal">ignore_older</code>, it is recommended to use <code class="literal">clean_inactive</code>. If on the other size old files get removed from disk <code class="literal">clean_removed</code> can be used.</p></div><div class="navfooter"><span class="prev"><a href="_reduce_open_file_handlers.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="migration-input-plugin"></a>Migrating to the Beats Input Plugin for Logstash<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Filebeat requires the <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-beats.html" target="_top">Beats input plugin for Logstash</a>.
+For information about getting started with this plugin, see <a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/master/logstash-installation.html#logstash-setup" target="_top">Setting up Logstash</a>.</p><p>In both the 1.5.x and 2.x versions of Logstash, this plugin can be loaded in
+parallel with the
+<a class="ulink" href="https://github.com/logstash-plugins/logstash-input-lumberjack" target="_top">Lumberjack</a>
+plugin used by the Logstash Forwarder.</p><p>If you have a large number of servers that you want to migrate from
+Logstash Forwarder to Filebeat, we recommend that you keep the Lumberjack plugin and load the
+Beats input plugin on the same Logstash instances, but set up the Beats input plugin to use a different port. After you have migrated
+all the machines to Filebeat, you can remove the Lumberjack plugin.</p><p>We realize that opening additional ports may not be feasible in your organization. Another option for phased migration
+to Filebeat is to ship data from Logstash Forwarder directly to the Beats input plugin.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>This data shipping path is only supported for migrating to Filebeat and will no longer be supported when Logstash Forwarder reaches <a class="ulink" href="https://www.elastic.co/support/eol" target="_top">End of Life</a>.</p></div></div><p>What’s required?</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The <a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-beats.html" target="_top">Beats input plugin for Logstash</a>
+version 2.2.8 or later.
+</li><li class="listitem">
+SSL must be explicitly enabled in the Beats input plugin (<code class="literal">ssl =&gt; true</code>) because SSL is on by default with Logstash Forwarder. The SSL/TLS configs should be the same for both the Logstash Forwarder and Filebeat instances.
+</li></ul></div></div><div class="navfooter"><span class="prev"><a href="migrating-from-logstash-forwarder.html">
               « 
-              Reduce open file handlers</a>
+              Migrating from Logstash Forwarder to Filebeat </a>
            
         </span><span class="next">
            
-          <a href="inode-reuse-issue.html">Inode Reuse Issue
+          <a href="migration-registry-file.html">Updating the Registry File
                »
             </a></span></div>
 <!-- end body -->
