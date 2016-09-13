@@ -707,6 +707,10 @@ used as the <a class="link" href="security-migration.html#index-expression-keys"
 </li><li class="listitem">
 Support for comma-separated values and single values has been removed
 in favor of collections or arrays.
+</li><li class="listitem">
+Syntax for field level security has changed. Instead of providing a list of allowed <code class="literal">fields</code>, the allowed fields are now inside an
+object <code class="literal">field_security</code>. The new syntax allows to also define exceptions.
+See <a class="link" href="field-and-document-access-control.html#field-level-security" title="Field Level Security">field-level-security</a> for more details.
 </li></ul></div><p>The following role shows how to specify multiple cluster and index
 permissions using collections.</p><p><strong>Using collection notation to define roles. </strong>
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">get_user: <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
@@ -728,9 +732,13 @@ permissions using collections.</p><p><strong>Using collection notation to define
       query:
         term:
           department_id: 12
-      fields:
-        - name
-        - email</pre></div><p>
+      field_security:
+        grant:
+          - name
+          - email
+          - contact.*
+        except:
+          - contact.mobile</pre></div><p>
 </p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The name of the role is <code class="literal">get_user</code>
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
@@ -743,7 +751,7 @@ The first set of indices permissions contained in this role. This permission
 The second set of indices permissions contained in this role. This permission
     applies to the <code class="literal">user_index</code> index, grants <code class="literal">monitor</code> and <code class="literal">read</code> privileges,
     limits the visible documents to those matching the <code class="literal">query</code> and limits the
-    visible fields inside of the documents to <code class="literal">name</code> and <code class="literal">email</code>.
+    visible fields inside of the documents to <code class="literal">name</code> and <code class="literal">email</code> and all contact fields except for contact.mobile.
 </p></td></tr></table></div><p>You can also use arrays to specify multiple cluster and index permissions.
 The following role uses the array notation to define the same role as in the
 previous example.</p><p><strong>Using array notation to define roles. </strong>
@@ -757,8 +765,10 @@ previous example.</p><p><strong>Using array notation to define roles. </strong>
       query:
         term:
           department_id: 12
-      fields: [ name, email ]</pre></div><p>
-</p><p>Values for <code class="literal">cluster</code>, <code class="literal">privileges</code>, and <code class="literal">fields</code> must be specified as a collection
+      field_security:
+        grant: [ name, email, contact.* ]
+        except: [ contact.mobile ]</pre></div><p>
+</p><p>Values for <code class="literal">cluster</code>, <code class="literal">privileges</code>, and the entries in <code class="literal">fields_security</code> must be specified as a collection
 or array even if there’s only one value. You can specify a single value for the
 <code class="literal">names</code> field.</p><p><a id="index-expression-keys"></a>If you have roles that use an index name or expression as a key, you’ll
 need to update them. For example, the following role definitions
@@ -786,7 +796,8 @@ get_user:
   indices:
     'events_index,results':
        - privileges: read, write, create_index
-       - fields: fieldA, fieldB</pre></div><p>You can rewrite this role using either collections or arrays.</p><p><strong>Specifying multiple values with a collection. </strong>
+       - field_security:
+         - grant: fieldA, fieldB</pre></div><p>You can rewrite this role using either collections or arrays.</p><p><strong>Specifying multiple values with a collection. </strong>
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">get_user:
   cluster:
     - monitor
@@ -799,16 +810,18 @@ get_user:
         - read
         - write
         - create_index
-      fields:
-        - fieldA
-        - fieldB</pre></div><p>
+      field_security:
+        grant:
+          - fieldA
+          - fieldB</pre></div><p>
 </p><p><strong>Specifying multiple values with an array. </strong>
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">get_user:
   cluster: [ 'monitor', 'manage' ]
   indices:
     - names: [ 'events_index', 'results' ]
       privileges: [ 'read', 'write', 'create_index' ]
-      fields: [ 'fieldA', 'fieldB' ]</pre></div><p>
+      field_security:
+        grant: [ 'fieldA', 'fieldB' ]</pre></div><p>
 </p><p>If you have roles that specify single values for <code class="literal">cluster</code>, <code class="literal">privileges</code>,
 and <code class="literal">fields</code>, you need to rewrite them to use the collection or array notation.
 For example, the following role definition is no longer valid.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml"># Unsupported role format: single values
@@ -817,7 +830,8 @@ get_user:
   indices:
     'events_index':
        - privileges: read
-       - fields: fieldA</pre></div><p>You can rewrite this role using collections or arrays (or a combination of
+         field_security:
+           grant: fieldA</pre></div><p>You can rewrite this role using collections or arrays (or a combination of
 the two). Note that the <code class="literal">names</code> field still accepts a single value.</p><p><strong>Specifying multiple values with collections and arrays. </strong>
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">get_user:
   cluster:
@@ -826,7 +840,8 @@ the two). Note that the <code class="literal">names</code> field still accepts a
     - names: 'events_index'
       privileges:
         - read
-      fields: [ 'fieldA' ]</pre></div><p>
+      field_security:
+        grant: [ 'fieldA' ]</pre></div><p>
 </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_removed_privileges"></a>Removed Privileges</h3></div></div></div><p>A few of the <a class="link" href="security-privileges.html" title="Security Privileges">privileges</a> that were available in Shield 2.x
 are no longer available in X-Pack. The following tables list the privileges that
 have been removed and their suggested replacements.</p><div class="table"><a id="id-1.4.2.9.3"></a><p class="title"><strong>Table 1. Cluster Privileges</strong></p><div class="table-contents"><table summary="Cluster Privileges" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top"> Removed Privilege </th><th align="left" valign="top"> Replacement Privilege</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">manage_shield</code></p></td><td align="left" valign="top"><p><code class="literal">manage_security</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">manage_watcher</code></p></td><td align="left" valign="top"><p><code class="literal">manage</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">monitor_watcher</code></p></td><td align="left" valign="top"><p><code class="literal">monitor</code></p></td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><a id="id-1.4.2.9.4"></a><p class="title"><strong>Table 2. Indices Privileges</strong></p><div class="table-contents"><table summary="Indices Privileges" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top"> Removed Privilege </th><th align="left" valign="top"> Replacement Privilege</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">get</code></p></td><td align="left" valign="top"><p><code class="literal">read</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">search</code></p></td><td align="left" valign="top"><p><code class="literal">read</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">suggest</code></p></td><td align="left" valign="top"><p><code class="literal">read</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">crud</code></p></td><td align="left" valign="top"><p><code class="literal">read</code>,<code class="literal">write</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">data_access</code></p></td><td align="left" valign="top"><p><code class="literal">read</code>,<code class="literal">write</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">manage_aliases</code></p></td><td align="left" valign="top"><p><code class="literal">manage</code></p></td></tr></tbody></table></div></div><br class="table-break" /></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_field_level_security_and_the_percolator"></a>Field level security and the percolator</h3></div></div></div><p>The percolator has been refactored and now requires a <code class="literal">percolator</code> field in the mapping.

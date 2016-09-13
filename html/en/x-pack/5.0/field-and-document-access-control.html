@@ -568,7 +568,7 @@ restrictions. Conversely, <code class="literal">role_b</code> limits access to a
 in <code class="literal">index1</code>, but doesn’t specify any field restrictions. If you assign a user
 both roles, <code class="literal">role_a</code> gives the user access to all documents and <code class="literal">role_b</code> gives
 the user access to all fields.</p><p>If you need to restrict access to both documents and fields, consider splitting
-documents by index instead.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_field_level_security"></a>Field Level Security</h3></div></div></div><p>To enable field level security, you specify the fields that each role can access
+documents by index instead.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="field-level-security"></a>Field Level Security</h3></div></div></div><p>To enable field level security, you specify the fields that each role can access
 as part of the indices permissions in a role definition. This binds field level
 security to a well defined set of indices (and potentially a set of
 <a class="link" href="field-and-document-access-control.html#document-level-security" title="Document Level Security">documents</a>).</p><p>The following role definition grants read access only to the <code class="literal">category</code>,
@@ -577,7 +577,9 @@ security to a well defined set of indices (and potentially a set of
     {
       "names": [ "events-*" ],
       "privileges": [ "read" ],
-      "fields": [ "category", "@timestamp", "message" ]
+      "field_security" : {
+        "grant" : [ "category", "@timestamp", "message" ]
+      }
     }
   ]
 }</pre></div><p>To allow access to the <code class="literal">_all</code> meta field, you must explicitly list it as an
@@ -589,7 +591,9 @@ example grants read access to all fields starting with <code class="literal">eve
     {
       "names" : [ "*" ],
       "privileges" : [ "read" ],
-      "fields" : [ "event_*" ]
+      "field_security" : {
+        "grant" : [ "event_*" ]
+      }
     }
   ]
 }</pre></div><p>Use the dot notations to refer to nested fields in more complex documents. For
@@ -604,7 +608,9 @@ example, assuming the following document:</p><div class="pre_wrapper"><pre class
     {
       "names" : [ "*" ],
       "privileges" : [ "read" ],
-      "fields" : [ "customer.handle" ]
+      "field_security" : {
+        "grant" : [ "customer.handle" ]
+      }
     }
   ]
 }</pre></div><p>This is where wildcard support shines. For example, use <code class="literal">customer.*</code> to only
@@ -613,10 +619,80 @@ enable read access to the <code class="literal">customer</code> data:</p><div cl
     {
       "names" : [ "*" ],
       "privileges" : [ "read" ],
-      "fields" : [ "customer.*" ]
+      "field_security" : {
+        "grant" : [ "customer.*" ]
+      }
     }
   ]
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="document-level-security"></a>Document Level Security</h3></div></div></div><p>Document level security restricts the documents that users have read access to.
+}</pre></div><p>Similar to granting field permissions the permission to access fields can be denied with the following syntax:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "indices" : [
+    {
+      "names" : [ "*" ],
+      "privileges" : [ "read" ],
+      "field_security" : {
+        "grant" : [ "*"],
+        "except": [ "customer.handle" ]
+      }
+    }
+  ]
+}</pre></div><p>The following rules apply:</p><p>Absence of "field_security" in a role is equivalent to * access.
+Denied fields may only be provided if permission has been granted explicitly to other fields. The exceptions given must be a subset of the
+fields that permissions have been granted to.
+Denied and granted fields defined implies access to all granted fields except those which match the pattern in denied fields. Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "indices" : [
+    {
+      "names" : [ "*" ],
+      "privileges" : [ "read" ],
+      "field_security" : {
+        "except": [ "customer.handle" ],
+        "grant" : [ "customer.*" ]
+      }
+    }
+  ]
+}</pre></div><p>In the above example all fields with the prefix "customer." are allowed except for "customer.handle".</p><p>An empty array for grant (eg. "grant" : []) means that no fields are granted access to.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_field_level_security_and_roles"></a>Field Level Security and Roles</h4></div></div></div><p>When a user has several roles that specify field level permissions then the resulting field level permissions per index are the union
+of the individual role permissions.
+For example if these two roles are merged:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  // role 1
+  ...
+  "indices" : [
+    {
+      "names" : [ "*" ],
+      "privileges" : [ "read" ],
+      "field_security" : {
+        "grant": [ "a.*" ],
+        "except" : [ "a.b*" ]
+      }
+    }
+  ]
+}
+
+{
+  // role 2
+  ...
+  "indices" : [
+    {
+      "names" : [ "*" ],
+      "privileges" : [ "read" ],
+      "field_security" : {
+        "grant": [ "a.b*" ],
+        "except" : [ "a.b.c*" ]
+      }
+    }
+  ]
+}</pre></div><p>Then the resulting permission would be equal to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  // role 1 + role 2
+  ...
+  "indices" : [
+    {
+      "names" : [ "*" ],
+      "privileges" : [ "read" ],
+      "field_security" : {
+        "grant": [ "a.*" ],
+        "except" : [ "a.b.c*" ]
+      }
+    }
+  ]
+}</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="document-level-security"></a>Document Level Security</h3></div></div></div><p>Document level security restricts the documents that users have read access to.
 To enable document level security, you specify a query that matches all the
 accessible documents as part of the indices permissions within a role definition.
 This binds document level security to a well defined set of indices.</p><p>Enabling document level security restricts which documents can be accessed from any document based read API.
