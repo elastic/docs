@@ -561,10 +561,12 @@ operation). It uses versioning to make sure no updates have happened
 during the "get" and "reindex".</p><p>Note, this operation still means full reindex of the document, it just
 removes some network roundtrips and reduces chances of version conflicts
 between the get and the index. The <code class="literal">_source</code> field needs to be enabled
-for this feature to work.</p><p>For example, lets index a simple doc:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/type1/1 -d '{
+for this feature to work.</p><p>For example, lets index a simple doc:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test/type1/1
+{
     "counter" : 1,
     "tags" : ["red"]
-}'</pre></div><h3><a id="_scripted_updates"></a>Scripted updates<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Now, we can execute a script that would increment the counter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update/1.json"></div><h3><a id="_scripted_updates"></a>Scripted updates<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Now, we can execute a script that would increment the counter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/type1/1/_update
+{
     "script" : {
         "inline": "ctx._source.counter += params.count",
         "lang": "painless",
@@ -572,8 +574,9 @@ for this feature to work.</p><p>For example, lets index a simple doc:</p><div cl
             "count" : 4
         }
     }
-}'</pre></div><p>We can add a tag to the list of tags (note, if the tag exists, it
-will still add it, since its a list):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update/2.json"></div><p>We can add a tag to the list of tags (note, if the tag exists, it
+will still add it, since its a list):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/type1/1/_update
+{
     "script" : {
         "inline": "ctx._source.tags.add(params.tag)",
         "lang": "painless",
@@ -581,49 +584,63 @@ will still add it, since its a list):</p><div class="pre_wrapper"><pre class="pr
             "tag" : "blue"
         }
     }
-}'</pre></div><p>In addition to <code class="literal">_source</code>, the following variables are available through
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update/3.json"></div><p>In addition to <code class="literal">_source</code>, the following variables are available through
 the <code class="literal">ctx</code> map: <code class="literal">_index</code>, <code class="literal">_type</code>, <code class="literal">_id</code>, <code class="literal">_version</code>, <code class="literal">_routing</code>,
-<code class="literal">_parent</code>.</p><p>We can also add a new field to the document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
-    "script" : "ctx._source.name_of_new_field = \"value_of_new_field\""
-}'</pre></div><p>Or remove a field from the document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
-    "script" : "ctx._source.remove(\"name_of_field\")"
-}'</pre></div><p>And, we can even change the operation that is executed.  This example deletes
-the doc if the <code class="literal">tags</code> field contain <code class="literal">blue</code>, otherwise it does nothing
-(<code class="literal">noop</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+<code class="literal">_parent</code>.</p><p>We can also add a new field to the document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/type1/1/_update
+{
+    "script" : "ctx._source.new_field = \"value_of_new_field\""
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update/4.json"></div><p>Or remove a field from the document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/type1/1/_update
+{
+    "script" : "ctx._source.remove(\"new_field\")"
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update/5.json"></div><p>And, we can even change the operation that is executed.  This example deletes
+the doc if the <code class="literal">tags</code> field contain <code class="literal">green</code>, otherwise it does nothing
+(<code class="literal">noop</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/type1/1/_update
+{
     "script" : {
-        "inline": "ctx._source.tags.contains(params.tag) ? ctx.op = \"delete\" : ctx.op = \"none\"",
+        "inline": "if (ctx._source.tags.contains(params.tag)) { ctx.op = \"delete\" } else { ctx.op = \"none\" }",
         "lang": "painless",
         "params" : {
-            "tag" : "blue"
+            "tag" : "green"
         }
     }
-}'</pre></div><h3><a id="_updates_with_a_partial_document"></a>Updates with a partial document<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update API also support passing a partial document,
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update/6.json"></div><h3><a id="_updates_with_a_partial_document"></a>Updates with a partial document<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update API also support passing a partial document,
 which will be merged into the existing document (simple recursive merge,
 inner merging of objects, replacing core "keys/values" and arrays). For
-example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/type1/1/_update
+{
     "doc" : {
         "name" : "new_name"
     }
-}'</pre></div><p>If both <code class="literal">doc</code> and <code class="literal">script</code> are specified, then <code class="literal">doc</code> is ignored. Best is
-to put your field pairs of the partial document in the script itself.</p><h3><a id="_detecting_noop_updates"></a>Detecting noop updates<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If <code class="literal">doc</code> is specified its value is merged with the existing <code class="literal">_source</code>. By
-default the document is only reindexed if the new <code class="literal">_source</code> field differs from
-the old. Setting <code class="literal">detect_noop</code> to <code class="literal">false</code> will cause Elasticsearch to always
-update the document even if it hasn’t changed. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update/7.json"></div><p>If both <code class="literal">doc</code> and <code class="literal">script</code> are specified, then <code class="literal">doc</code> is ignored. Best is
+to put your field pairs of the partial document in the script itself.</p><h3><a id="_detecting_noop_updates"></a>Detecting noop updates<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If <code class="literal">doc</code> is specified its value is merged with the existing <code class="literal">_source</code>.
+By default updates that don’t change anything detect that they don’t change anything and return "result": "noop" like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/type1/1/_update
+{
     "doc" : {
         "name" : "new_name"
-    },
-    "detect_noop": false
-}'</pre></div><p>If <code class="literal">name</code> was <code class="literal">new_name</code> before the request was sent then the entire update
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update/8.json"></div><p>If <code class="literal">name</code> was <code class="literal">new_name</code> before the request was sent then the entire update
 request is ignored. The <code class="literal">result</code> element in the response returns <code class="literal">noop</code> if
 the request was ignored.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "_shards": {
+        "total": 0,
+        "successful": 0,
+        "failed": 0
+   },
    "_index": "test",
    "_type": "type1",
    "_id": "1",
-   "_version": 1,
+   "_version": 6,
    "result": noop
-}</pre></div><h3><a id="upserts"></a>Upserts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the document does not already exist, the contents of the <code class="literal">upsert</code> element
+}</pre></div><p>You can disable this behavior by setting "detect_noop": false like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/type1/1/_update
+{
+    "doc" : {
+        "name" : "new_name"
+    },
+    "detect_noop": true
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update/9.json"></div><h3><a id="upserts"></a>Upserts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the document does not already exist, the contents of the <code class="literal">upsert</code> element
 will be inserted as a new document.  If the document does exist, then the
-<code class="literal">script</code> will be executed instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+<code class="literal">script</code> will be executed instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/type1/1/_update
+{
     "script" : {
         "inline": "ctx._source.counter += params.count",
         "lang": "painless",
@@ -634,9 +651,10 @@ will be inserted as a new document.  If the document does exist, then the
     "upsert" : {
         "counter" : 1
     }
-}'</pre></div><h4><a id="_literal_scripted_upsert_literal"></a><code class="literal">scripted_upsert</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If you would like your script to run regardless of whether the document exists
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update/10.json"></div><h4><a id="_literal_scripted_upsert_literal"></a><code class="literal">scripted_upsert</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If you would like your script to run regardless of whether the document exists
 or not — i.e. the script handles initializing the document instead of the
-<code class="literal">upsert</code> element — then set <code class="literal">scripted_upsert</code> to <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/sessions/session/dh3sgudg8gsrgl/_update' -d '{
+<code class="literal">upsert</code> element — then set <code class="literal">scripted_upsert</code> to <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST sessions/session/dh3sgudg8gsrgl/_update
+{
     "scripted_upsert":true,
     "script" : {
         "id": "my_web_session_summariser",
@@ -649,14 +667,15 @@ or not — i.e. the script handles initializing the document instead of the
         }
     },
     "upsert" : {}
-}'</pre></div><h4><a id="_literal_doc_as_upsert_literal"></a><code class="literal">doc_as_upsert</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Instead of sending a partial <code class="literal">doc</code> plus an <code class="literal">upsert</code> doc, setting
+}</pre></div><h4><a id="_literal_doc_as_upsert_literal"></a><code class="literal">doc_as_upsert</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Instead of sending a partial <code class="literal">doc</code> plus an <code class="literal">upsert</code> doc, setting
 <code class="literal">doc_as_upsert</code> to <code class="literal">true</code> will use the contents of <code class="literal">doc</code> as the <code class="literal">upsert</code>
-value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST test/type1/1/_update
+{
     "doc" : {
         "name" : "new_name"
     },
     "doc_as_upsert" : true
-}'</pre></div><h3><a id="_parameters_2"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update operation supports the following query-string parameters:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update/11.json"></div><h3><a id="_parameters_2"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The update operation supports the following query-string parameters:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">retry_on_conflict</code>
 </p>
@@ -717,12 +736,13 @@ Control when the changes made by this request are visible to search. See
 </p>
 </td></tr><tr><td valign="top">
 <p>
-<code class="literal">fields</code>
+<code class="literal">_source</code>
 </p>
 </td><td valign="top">
 <p>
-Return the relevant fields from the updated document. Specify <code class="literal">_source</code> to
-return the full updated source.
+Allows to control if and how the updated source should be returned in the response.
+By default the updated source is not returned.
+See <a class="link" href="search-request-source-filtering.html" title="Source filtering"><code class="literal">source filtering</code></a> for details.
 </p>
 </td></tr><tr><td valign="top">
 <p>

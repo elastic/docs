@@ -575,19 +575,66 @@ rate of the index (when data will become visible for search). If a document
 has been updated but is not yet refreshed, the get API will issue a refresh
 call in-place to make the document visible. This will also make other documents
 changed since the last refresh visible. In order to disable realtime GET,
-one can set the <code class="literal">realtime</code> parameter to <code class="literal">false</code>.</p><p>When getting a document, one can specify <code class="literal">fields</code> to fetch from it. They
-will, when possible, be fetched as stored fields (fields mapped as
-<a class="link" href="mapping-store.html" title="store">stored</a> in the mapping).</p><h3><a id="type"></a>Optional Type<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/get.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The get API allows for <code class="literal">_type</code> to be optional. Set it to <code class="literal">_all</code> in order
+one can set the <code class="literal">realtime</code> parameter to <code class="literal">false</code>.</p><h3><a id="type"></a>Optional Type<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/get.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The get API allows for <code class="literal">_type</code> to be optional. Set it to <code class="literal">_all</code> in order
 to fetch the first document matching the id across all types.</p><h3><a id="get-source-filtering"></a>Source filtering<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/get.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default, the get operation returns the contents of the <code class="literal">_source</code> field unless
-you have used the <code class="literal">fields</code> parameter or if the <code class="literal">_source</code> field is disabled.
+you have used the <code class="literal">stored_fields</code> parameter or if the <code class="literal">_source</code> field is disabled.
 You can turn off <code class="literal">_source</code> retrieval by using the <code class="literal">_source</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/twitter/tweet/1?_source=false'</pre></div><p>If you only need one or two fields from the complete <code class="literal">_source</code>, you can use the <code class="literal">_source_include</code>
 &amp; <code class="literal">_source_exclude</code> parameters to include or filter out that parts you need. This can be especially helpful
 with large documents where partial retrieval can save on network overhead. Both parameters take a comma separated list
-of fields or wildcard expressions. Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/twitter/tweet/1?_source_include=*.id&amp;_source_exclude=entities'</pre></div><p>If you only want to specify includes, you can use a shorter notation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/twitter/tweet/1?_source=*.id,retweeted'</pre></div><h3><a id="get-fields"></a>Fields<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/get.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The get operation allows specifying a set of stored fields that will be
-returned by passing the <code class="literal">fields</code> parameter. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/twitter/tweet/1?fields=title,content'</pre></div><p>For backward compatibility, if the requested fields are not stored, they will be fetched
-from the <code class="literal">_source</code> (parsed and extracted). This functionality has been replaced by the
-<a class="link" href="docs-get.html#get-source-filtering" title="Source filteringedit">source filtering</a> parameter.</p><p>Field values fetched from the document it self are always returned as an array. Metadata fields like <code class="literal">_routing</code> and
-<code class="literal">_parent</code> fields are never returned as an array.</p><p>Also only leaf fields can be returned via the <code class="literal">field</code> option. So object fields can’t be returned and such requests
+of fields or wildcard expressions. Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/twitter/tweet/1?_source_include=*.id&amp;_source_exclude=entities'</pre></div><p>If you only want to specify includes, you can use a shorter notation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/twitter/tweet/1?_source=*.id,retweeted'</pre></div><h3><a id="get-stored-fields"></a>Stored Fields<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/get.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The get operation allows specifying a set of stored fields that will be
+returned by passing the <code class="literal">stored_fields</code> parameter.
+If the requested fields are not stored, they will be ignored.
+Consider for instance the following mapping:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter
+{
+   "mappings": {
+      "tweet": {
+         "properties": {
+            "counter": {
+               "type": "integer",
+               "store": false
+            },
+            "tags": {
+               "type": "keyword",
+               "store": true
+            }
+         }
+      }
+   }
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-get/1.json"></div><p>Now we can add a document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter/tweet/1
+{
+    "counter" : 1,
+    "tags" : ["red"]
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-get/2.json"></div><div class="orderedlist"><ol class="orderedlist" type="i"><li class="listitem">
+and try to retrieve it:
+</li></ol></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/tweet/1?stored_fields=tags,counter</pre></div><div class="console_widget" data-snippet="snippets/docs-get/3.json"></div><p>The result of the above get operation is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "_index": "twitter",
+   "_type": "tweet",
+   "_id": "1",
+   "_version": 1,
+   "found": true,
+   "fields": {
+      "tags": [
+         "red"
+      ]
+   }
+}</pre></div><p>Field values fetched from the document it self are always returned as an array.
+Since the <code class="literal">counter</code> field is not stored the get request simply ignores it when trying to get the <code class="literal">stored_fields.</code></p><p>It is also possible to retrieve metadata fields like <code class="literal">_routing</code> and <code class="literal">_parent</code> fields:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter/tweet/2?routing=user1
+{
+    "counter" : 1,
+    "tags" : ["white"]
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-get/4.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/tweet/2?routing=user1&amp;stored_fields=tags,counter</pre></div><div class="console_widget" data-snippet="snippets/docs-get/5.json"></div><p>The result of the above get operation is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "_index": "twitter",
+   "_type": "tweet",
+   "_id": "2",
+   "_version": 1,
+   "_routing": "user1",
+   "found": true,
+   "fields": {
+      "tags": [
+         "white"
+      ]
+   }
+}</pre></div><p>Also only leaf fields can be returned via the <code class="literal">stored_field</code> option. So object fields can’t be returned and such requests
 will fail.</p><h3><a id="generated-fields"></a>Generated fields<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/get.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If no refresh occurred between indexing and refresh, GET will access the transaction log to fetch the document. However, some fields are generated only when indexing.
 If you try to access a field that is only generated when indexing, you will get an exception (default). You can choose to ignore field that are generated if the transaction log is accessed by setting <code class="literal">ignore_errors_on_generated_fields=true</code>.</p><h3><a id="_source"></a>Getting the _source directly<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/get.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Use the <code class="literal">/{index}/{type}/{id}/_source</code> endpoint to get
 just the <code class="literal">_source</code> field of the document,
