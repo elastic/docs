@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Stalled Shutdown Detection
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Logging
         | Logstash Reference [5.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [5.x]" /><link rel="up" href="setup-logstash.html" title="Setting Up and Running Logstash" /><link rel="prev" href="logging.html" title="Logging" /><link rel="next" href="breaking-changes.html" title="Breaking changes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Logstash/Reference/5.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [5.x]" /><link rel="up" href="setup-logstash.html" title="Setting Up and Running Logstash" /><link rel="prev" href="command-line-flags.html" title="Command-Line Flags" /><link rel="next" href="stalled-shutdown.html" title="Stalled Shutdown Detection" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Logstash/Reference/5.x" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -545,57 +545,51 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Logstash Reference
       [5.x]
-    </a></span> » <span class="breadcrumb-link"><a href="setup-logstash.html">Setting Up and Running Logstash</a></span> » <span class="breadcrumb-node">Stalled Shutdown Detection</span></div><div class="navheader"><span class="prev"><a href="logging.html">
+    </a></span> » <span class="breadcrumb-link"><a href="setup-logstash.html">Setting Up and Running Logstash</a></span> » <span class="breadcrumb-node">Logging</span></div><div class="navheader"><span class="prev"><a href="command-line-flags.html">
               « 
-              Logging</a>
+              Command-Line Flags</a>
            
         </span><span class="next">
            
-          <a href="breaking-changes.html">Breaking changes
+          <a href="stalled-shutdown.html">Stalled Shutdown Detection
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="stalled-shutdown"></a>Stalled Shutdown Detection<a href="https://github.com/elastic/logstash/edit/master/docs/static/stalled-shutdown.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When you attempt to shut down a running Logstash instance, Logstash performs several steps before it can safely shut down. It must:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Stop all input, filter and output plugins
-</li><li class="listitem">
-Process all in-flight events
-</li><li class="listitem">
-Terminate the Logstash process
-</li></ul></div><p>The following conditions affect the shutdown process:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-An input plugin receiving data at a slow pace.
-</li><li class="listitem">
-A slow filter, like a Ruby filter executing <code class="literal">sleep(10000)</code> or an Elasticsearch filter that is executing a very heavy
-query.
-</li><li class="listitem">
-A disconnected output plugin that is waiting to reconnect to flush in-flight events.
-</li></ul></div><p>These situations make the duration and success of the shutdown process unpredictable.</p><p>Logstash has a stall detection mechanism that analyzes the behavior of the pipeline and plugins during shutdown.
-This mechanism produces periodic information about the count of inflight events in internal queues and a list of busy
-worker threads.</p><p>To enable Logstash to forcibly terminate in the case of a stalled shutdown, use the <code class="literal">--pipeline.unsafe_shutdown</code> flag when
-you start Logstash.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="shutdown-stall-example"></a>Stall Detection Example<a href="https://github.com/elastic/logstash/edit/master/docs/static/stalled-shutdown.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In this example, slow filter execution prevents the pipeline from clean shutdown. By starting Logstash with the
-<code class="literal">--pipeline.unsafe_shutdown</code> flag, quitting with <span class="strong"><strong>Ctrl+C</strong></span> results in an eventual shutdown that loses 20 events.</p><div class="informalexample"><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -e 'input { generator { } } filter { ruby { code =&gt; "sleep 10000" } }
-  output { stdout { codec =&gt; dots } }' -w 1 --pipeline.unsafe_shutdown
-Pipeline main started
-^CSIGINT received. Shutting down the agent. {:level=&gt;:warn}
-stopping pipeline {:id=&gt;"main", :level=&gt;:warn}
-Received shutdown signal, but pipeline is still waiting for in-flight events
-to be processed. Sending another ^C will force quit Logstash, but this may cause
-data loss. {:level=&gt;:warn}
-{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
-{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
-"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
-The shutdown process appears to be stalled due to busy or blocked plugins.
-Check the logs for more information. {:level=&gt;:error}
-{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
-{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
-"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
-{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
-{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
-"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
-Forcefully quitting logstash.. {:level=&gt;:fatal}</pre></div></div><p>When <code class="literal">--pipeline.unsafe_shutdown</code> isn’t enabled, Logstash continues to run and produce these reports periodically.</p></div></div><div class="navfooter"><span class="prev"><a href="logging.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="logging"></a>Logging<a href="https://github.com/elastic/logstash/edit/master/docs/static/logging.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Logstash emits internal logs during its operation, which are placed in <code class="literal">LS_HOME/logs</code>. The default logging level is <code class="literal">INFO</code>.
+Logstash’s logging framework is based on <a class="ulink" href="http://logging.apache.org/log4j/2.x/" target="_top">Log4j2 framework</a>, and many of its functionality
+are exposed directly to users.</p><p>When debugging problems, particularly problems with plugins, it can be helpful to increase the logging level to <code class="literal">DEBUG</code>
+to emit more verbose messages. Previously, you could only set a log level which applied to the entire Logstash product.
+Starting with 5.0, you can configure logging for a particular subsystem in Logstash. For example, if you are
+debugging issues with Elasticsearch Output, you can increase log levels just for that component. This way
+you can reduce noise due to excessive logging and focus on the problem area effectively.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_log_file_location"></a>Log file location<a href="https://github.com/elastic/logstash/edit/master/docs/static/logging.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can specify the log file location using <code class="literal">--path.logs</code> setting.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_log4j2_configuration"></a>Log4j2 Configuration<a href="https://github.com/elastic/logstash/edit/master/docs/static/logging.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Logstash ships with a <code class="literal">log4j2.properties</code> file with out of the box settings. Users can modify this file directly to change the
+rotation policy, type and other <a class="ulink" href="https://logging.apache.org/log4j/2.x/manual/configuration.html#Loggers" target="_top">log4j2 configuration</a>.
+Any change made to this file is only effective after a process restart.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_logging_apis"></a>Logging APIs<a href="https://github.com/elastic/logstash/edit/master/docs/static/logging.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You could modify the <code class="literal">log4j2.properties</code> file and restart your Logstash, but that is both tedious and leads to unnecessary
+downtime. Instead, you can dynamically update logging levels through the settings API. These settings are effective
+immediately and do not need a restart. To do so, take the subsystem/module you are interested in and prepend
+<code class="literal">logger.</code> to it. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_node/settings
+{
+    "logger.logstash.outputs.elasticsearch" : "DEBUG"
+}</pre></div><p>While this setting is in effect, Logstash will begin to emit DEBUG-level logs for <span class="emphasis"><em>all</em></span> the Elasticsearch outputs
+specified in your configuration. Please note this new setting is transient and will not survive a restart.</p><p>To retrieve a list of logging subsystems available at runtime, you can do a <code class="literal">GET</code> request to <code class="literal">_node/logging</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_node/logging?pretty</pre></div><p>Example response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+...
+"loggers" : {
+   "logstash.registry" : "WARN",
+   "logstash.instrument.periodicpoller.os" : "WARN",
+   "logstash.instrument.collector" : "WARN",
+   "logstash.runner" : "WARN",
+   "logstash.inputs.stdin" : "WARN",
+   "logstash.outputs.stdout" : "WARN",
+   "logstash.agent" : "WARN",
+   "logstash.api.service" : "WARN",
+   "logstash.instrument.periodicpoller.jvm" : "WARN",
+   "logstash.pipeline" : "WARN",
+   "logstash.codecs.line" : "WARN"
+   }
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="command-line-flags.html">
               « 
-              Logging</a>
+              Command-Line Flags</a>
            
         </span><span class="next">
            
-          <a href="breaking-changes.html">Breaking changes
+          <a href="stalled-shutdown.html">Stalled Shutdown Detection
                »
             </a></span></div>
 <!-- end body -->
