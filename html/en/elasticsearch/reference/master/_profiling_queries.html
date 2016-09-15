@@ -562,23 +562,23 @@ sufficient to see that a particular component of a query is slow, and not necess
 the <code class="literal">advance</code> phase of that query is the cause, for example.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_query_literal_section"></a><code class="literal">query</code> Section<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">query</code> section contains detailed timing of the query tree executed by Lucene on a particular shard.
 The overall structure of this query tree will resemble your original Elasticsearch query, but may be slightly
 (or sometimes very) different.  It will also use similar but not always identical naming.  Using our previous
-<code class="literal">term</code> query example, let’s analyze the <code class="literal">query</code> section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"query": [
+<code class="literal">match</code> query example, let’s analyze the <code class="literal">query</code> section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"query": [
     {
        "type": "BooleanQuery",
-       "description": "message:search message:test",
-       "time": "15.52889800ms",
+       "description": "message:message message:number",
+       "time": "1.873811000ms",
        "breakdown": {...},               <a id="CO40-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
        "children": [
           {
              "type": "TermQuery",
-             "description": "message:search",
-             "time": "4.938855000ms",
+             "description": "message:message",
+             "time": "0.3919430000ms",
              "breakdown": {...}
           },
           {
              "type": "TermQuery",
-             "description": "message:test",
-             "time": "0.5016660000ms",
+             "description": "message:number",
+             "time": "0.2106820000ms",
              "breakdown": {...}
           }
        ]
@@ -594,18 +594,18 @@ of all children.</p><p>The <code class="literal">"breakdown"</code> field will g
 that in a moment.  Finally, the <code class="literal">"children"</code> array lists any sub-queries that may be present.  Because we searched for two
 values ("search test"), our BooleanQuery holds two children TermQueries.  They have identical information (type, time,
 breakdown, etc).  Children are allowed to have their own children.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_timing_breakdown"></a>Timing Breakdown<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">"breakdown"</code> component lists detailed timing statistics about low-level Lucene execution:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"breakdown": {
-    "score": 5014,
-    "score_count": 1,
-    "build_scorer": 1689333,
-    "build_scorer_count": 1,
-    "match": 0,
-    "match_count": 0,
-    "create_weight": 166587,
-    "create_weight_count": 1,
-    "next_doc": 5542,
-    "next_doc_count": 2,
-    "advance": 0,
-    "advance_count": 0
+   "score": 51306,
+   "score_count": 4,
+   "build_scorer": 2935582,
+   "build_scorer_count": 1,
+   "match": 0,
+   "match_count": 0,
+   "create_weight": 919297,
+   "create_weight_count": 1,
+   "next_doc": 53876,
+   "next_doc_count": 5,
+   "advance": 0,
+   "advance_count": 0
 }</pre></div><p>Timings are listed in wall-clock nanoseconds and are not normalized at all.  All caveats about the overall
 <code class="literal">"time"</code> apply here.  The intention of the breakdown is to give you a feel for A) what machinery in Lucene is
 actually eating time, and B) the magnitude of differences in times between the various components.  Like the overall time,
@@ -707,7 +707,7 @@ filters, etc.</p><p>Looking at the previous example:</p><div class="pre_wrapper"
     {
        "name": "SimpleTopScoreDocCollector",
        "reason": "search_top_hits",
-       "time": "2.206529000ms"
+       "time": "0.06989100000ms"
     }
 ]</pre></div><p>We see a single collector named <code class="literal">SimpleTopScoreDocCollector</code>.  This is the default "scoring and sorting" Collector
 used by Elasticsearch.  The <code class="literal">"reason"</code> field attempts to give a plain english description of the class name.  The
@@ -838,7 +838,7 @@ value is cumulative and contains the total time for all queries being rewritten.
       "my_field": "foo"
     }
   }
-}</pre></div><p>This example has:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+}</pre></div><div class="console_widget" data-snippet="snippets/_profiling_queries/1.json"></div><p>This example has:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 A query
 </li><li class="listitem">
 A scoped aggregation
@@ -869,7 +869,7 @@ A post_filter
                               "create_weight_count": 1,
                               "build_scorer": 377872,
                               "build_scorer_count": 1,
-                              "advance": 0
+                              "advance": 0,
                               "advance_count": 0
                            }
                         },
@@ -888,7 +888,7 @@ A post_filter
                               "create_weight_count": 1,
                               "build_scorer": 112551,
                               "build_scorer_count": 1,
-                              "advance": 0
+                              "advance": 0,
                               "advance_count": 0
                            }
                         }
@@ -938,7 +938,7 @@ A post_filter
                               "create_weight_count": 1,
                               "build_scorer": 38310,
                               "build_scorer_count": 1,
-                              "advance": 0
+                              "advance": 0,
                               "advance_count": 0
                            }
                         }
