@@ -552,10 +552,10 @@
           <a href="configuring-howto-metricbeat.html">Configuring Metricbeat 
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="running-in-container"></a>Running Metricbeat in a Container<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-in-a-container.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Elastic does not provide any official container images for Metricbeat. The
-examples on this page assume you are using your own Metricbeat container image.</p><p>Metricbeat can be executed in a container and when doing so there are some
-important things to be aware of if you want to monitor the host machine or other
+examples on this page assume you are using your own Metricbeat container image.</p><p>When executing Metricbeat in a container, there are some important
+things to be aware of if you want to monitor the host machine or other
 containers. Let’s walk-through some examples using Docker as our container
-orchestration tool.</p><h3><a id="monitoring-host"></a>Monitoring the Host Machine<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-in-a-container.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This first example highlights the changes required to make the system module
+orchestration tool.</p><h3><a id="monitoring-host"></a>Monitoring the Host Machine<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-in-a-container.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This example highlights the changes required to make the system module
 work properly inside of a container. This enables Metricbeat to monitor the
 host machine from within the container.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">---
 sudo docker run \
@@ -565,27 +565,27 @@ sudo docker run \
   --net=host <a id="CO2-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
   my/metricbeat:latest -system.hostfs=/hostfs
 ---</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Metricbeat’s system module collects much of its data through the Linux proc
-filesystem which is normally located at <code class="literal">/proc</code>. Due to the fact that containers
+Metricbeat’s <a class="link" href="metricbeat-module-system.html" title="System Module">system module</a> collects much of its data through the Linux proc
+filesystem, which is normally located at <code class="literal">/proc</code>. Because containers
 are isolated as much as possible from the host, the data inside of the
-containers <code class="literal">/proc</code> is different than the host’s <code class="literal">/proc</code>. To account for this you
+container’s <code class="literal">/proc</code> is different than the host’s <code class="literal">/proc</code>. To account for this, you
 can mount the host’s <code class="literal">/proc</code> filesystem inside of the container and tell
 Metricbeat to look inside the <code class="literal">/hostfs</code> directory when looking for <code class="literal">/proc</code> by
 using the <code class="literal">-system.hostfs=/hostfs</code> CLI flag.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 If you have enabled cgroup reporting (an experimental feature) from the
-system process metricset then you need to mount the host’s cgroup mountpoints
+<a class="link" href="metricbeat-metricset-system-process.html" title="System Process Metricset">system process metricset</a>, then you need to mount the host’s cgroup mountpoints
 within the container. They need to be mounted inside the directory specified by
 the <code class="literal">-system.hostfs</code> CLI flag.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-If you want to be able to monitor filesystems from the host using the
-system filesystem metricset then those filesystems need to be mounted inside
+If you want to be able to monitor filesystems from the host by using the
+<a class="link" href="metricbeat-metricset-system-filesystem.html" title="System Filesystem Metricset">system filesystem metricset</a>, then those filesystems need to be mounted inside
 of the container. They can be mounted at any location.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The system network metricset uses data from <code class="literal">/proc/net/dev</code>, or
-<code class="literal">/hostfs/proc/net/dev</code> when using <code class="literal">-system.hostfs=/hostfs</code>, and the only way
+The <a class="link" href="metricbeat-metricset-system-network.html" title="System Network Metricset">system network metricset</a> uses data from <code class="literal">/proc/net/dev</code>, or
+<code class="literal">/hostfs/proc/net/dev</code> when using <code class="literal">-system.hostfs=/hostfs</code>. The only way
 to make this file contain the host’s network devices is to use the <code class="literal">--net=host</code>
-flag. This is due to Linux namespacing, simply bind mounting the host’s <code class="literal">/proc</code>
+flag. This is due to Linux namespacing; simply bind mounting the host’s <code class="literal">/proc</code>
 to <code class="literal">/hostfs/proc</code> is not sufficient.
 </p></td></tr></table></div><h3><a id="monitoring-service"></a>Monitoring a Service in Another Container<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-in-a-container.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Next let’s look at an example of monitoring a containerized service from a
 Metricbeat container.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">---
@@ -595,11 +595,11 @@ sudo docker run \
   my/metricbeat:latest
 ---</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Linking the containers enables Metricbeat access the exposed ports of the
-mysql container and it makes the hostname <code class="literal">mysql</code> resolvable to Metricbeat.
+mysql container, and it makes the hostname <code class="literal">mysql</code> resolvable to Metricbeat.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 If you do not want to hardcode certain values into your Metricbeat
-configuration then you can pass them into the container either as environment
-variables or as command line flags to Metricbeat (see the <code class="literal">-E</code> CLI flag).
+configuration, then you can pass them into the container either as environment
+variables or as command line flags to Metricbeat (see the <code class="literal">-E</code> CLI flag in <a class="xref" href="command-line-options.html" title="Command Line Options">Command Line Options</a>).
 </p></td></tr></table></div><p>The mysql module configuration would look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">---
 metricbeat.modules:
 - module: mysql
@@ -610,8 +610,8 @@ metricbeat.modules:
 ---</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">mysql</code> hostname will resolve to the <code class="literal">some-mysql</code> container’s address.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">MYSQL_PASSWORD</code> variable will be evaluated at startup. If a variable
-is not set this will lead to an error at startup.
+The <code class="literal">MYSQL_PASSWORD</code> variable will be evaluated at startup. If the variable
+is not set, this will lead to an error at startup.
 </p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="key-features.html">
               « 
               Key Metricbeat Features</a>
