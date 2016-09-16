@@ -564,9 +564,17 @@ send email notifications.
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @     WARNING: plugin requires additional permissions     @
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+* java.lang.RuntimePermission accessClassInPackage.com.sun.activation.registries
 * java.lang.RuntimePermission getClassLoader
 * java.lang.RuntimePermission setContextClassLoader
 * java.lang.RuntimePermission setFactory
+* java.security.SecurityPermission createPolicy.JavaPolicy
+* java.security.SecurityPermission getPolicy
+* java.security.SecurityPermission putProviderProperty.BC
+* java.security.SecurityPermission setPolicy
+* java.util.PropertyPermission * read,write
+* java.util.PropertyPermission sun.nio.ch.bugLevel write
+* javax.net.ssl.SSLPermission setHostnameVerifier
 See http://docs.oracle.com/javase/8/docs/technotes/guides/security/permissions.html
 for descriptions of what these permissions allow and the associated risks.
 
@@ -596,22 +604,22 @@ in <code class="literal">/etc/elasticsearch</code>. (For the complete list of de
 <code class="literal">bin/plugin install</code> from the <code class="literal">/usr/share/elasticsearch</code> directory with superuser
 permissions:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">cd /usr/share/elasticsearch
 sudo bin/elasticsearch-plugin install x-pack</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If the configuration files are not in <code class="literal">/etc/elasticsearch</code> you need to
-      specify the location of the configuration files by including <code class="literal">-Des.path.conf</code>.</p></div></div><h3><a id="xpack-installing-offline"></a>Installing X-Pack on Offline Machines</h3><p>Elasticsearch’s <code class="literal">bin/elasticsearch-plugin</code> script requires direct Internet access
+      specify the location of the configuration files by including <code class="literal">-Des.path.conf</code>.</p></div></div><h3><a id="xpack-installing-offline"></a>Installing X-Pack on Offline Machines</h3><p>The <code class="literal">bin/elasticsearch-plugin</code> install script requires direct Internet access
 to download and install X-Pack. If your server doesn’t have Internet access, you
-can manually download and install X-Pack.</p><p>To install X-Pack on a machine that doesn’t have Internet access:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Manually download the X-Pack binaries:
-</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+can manually download and install X-Pack.</p><p>To install X-Pack on a machine that doesn’t have Internet access:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Manually download the X-Pack zip file:
 <a class="ulink" href="https://download.elasticsearch.org/packs/x-pack/x-pack-5.0.0-alpha5.zip" target="_top">
 <code class="literal">https://download.elasticsearch.org/packs/x-pack/x-pack-5.0.0-alpha5.zip</code></a>
 (<a class="ulink" href="https://download.elasticsearch.org/packs/x-pack/x-pack-5.0.0-alpha5.zip.sha1" target="_top">sha1</a>)
-</li></ul></div></li><li class="listitem">
+</li><li class="listitem">
 Transfer the zip file to a temporary directory on the offline machine. (Do NOT
-put the zip file in the Elasticsearch plugins directory.)
+put the file in the Elasticsearch plugins directory.)
 </li><li class="listitem"><p class="simpara">
-Run <code class="literal">bin/elasticsearch-plugin</code> to install X-Pack on Elasticsearch. For example:
+Run <code class="literal">bin/elasticsearch-plugin install</code> from the Elasticsearch install directory
+and specify the location of the X-Pack zip file. For example:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/elasticsearch-plugin install file:///path/to/file/x-pack-5.0.0-alpha5.zip</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You must specify an absolute path to the zip file after the <code class="literal">file://</code> protocol.</p></div></div></li><li class="listitem"><p class="simpara">
-Run <code class="literal">bin/kibana-plugin</code> to install X-Pack on Kibana (use the same zip bundle
-you installed in Elasticsearch). For example:
+Run <code class="literal">bin/kibana-plugin install</code> from the Kibana install directory and
+plugins are included in the same zip file.) For example:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/kibana-plugin install file:///path/to/file/xpack-5.0.0-alpha5.zip</pre></div></li></ol></div><h3><a id="xpack-enabling"></a>Enabling and Disabling X-Pack Features</h3><p>By default, all X-Pack features are enabled. You can explicitly enable or
 disable X-Pack features in <code class="literal">elasticsearch.yml</code> and <code class="literal">kibana.yml</code>:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top"> Setting                           </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">xpack.security.enabled</code></p></td><td align="left" valign="top"><p>Set to <code class="literal">false</code> to disable X-Pack Security.
 Configure in both <code class="literal">elasticsearch.yml</code> and <code class="literal">kibana.yml</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">xpack.monitoring.enabled</code></p></td><td align="left" valign="top"><p>Set to <code class="literal">false</code> to disable X-Pack Monitoring.
@@ -621,24 +629,28 @@ Configure in <code class="literal">elasticsearch.yml</code> only.</p></td></tr><
 Configure in <code class="literal">kibana.yml</code> only.</p></td></tr></tbody></table></div><h3><a id="xpack-upgrading"></a>Upgrading X-Pack</h3><p>To upgrade X-Pack:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 Stop Elasticsearch.
 </li><li class="listitem"><p class="simpara">
-Uninstall X-Pack:
+Uninstall X-Pack from Elasticsearch:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">bin/elasticsearch-plugin remove x-pack</pre></div></li><li class="listitem"><p class="simpara">
 Install the new version of X-Pack.
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch-plugin install x-pack</pre></div></li><li class="listitem">
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch-plugin install x-pack</pre></div></li><li class="listitem"><p class="simpara">
 Restart Elasticsearch.
-</li></ol></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If you’re upgrading a production cluster, perform a
+</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If you’re upgrading a production cluster, perform a
             <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.0/rolling-upgrades.html" target="_top">rolling upgrade</a> to ensure recovery is
             as quick as possible. Rolling upgrades are supported when upgrading
             to a new minor version. A full cluster restart is required when
-            upgrading to a new major version.</p></div></div><h3><a id="xpack-uninstalling"></a>Uninstalling X-Pack</h3><p>To uninstall X-Pack:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-Shut down Elasticsearch.
+            upgrading to a new major version.</p></div></div></li><li class="listitem"><p class="simpara">
+Uninstall X-Pack from Kibana:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">bin/kibana-plugin remove x-pack</pre></div></li><li class="listitem">
+Restart Kibana.
+</li></ol></div><h3><a id="xpack-uninstalling"></a>Uninstalling X-Pack</h3><p>To uninstall X-Pack:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Stop Elasticsearch.
 </li><li class="listitem"><p class="simpara">
 Remove X-Pack from Elasticsearch:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch-plugin remove x-pack</pre></div></li><li class="listitem"><p class="simpara">
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch-plugin remove x-pack</pre></div></li><li class="listitem">
+Restart Elasticsearch.
+</li><li class="listitem"><p class="simpara">
 Remove X-Pack from Kibana:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/kibana-plugin remove x-pack</pre></div></li><li class="listitem">
-Restart Elasticsearch.
-</li><li class="listitem">
 Restart Kibana.
 </li></ol></div></div><div class="navfooter"><span class="prev"><a href="xpack-introduction.html">
               « 
