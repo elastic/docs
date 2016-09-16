@@ -567,7 +567,7 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
     .Fields(
         fs =&gt; fs
             .Field(p =&gt; p.Name.Suffix("standard"))
-            .Type(HighlighterType.Plain)
+            .Type("plain")
             .ForceSource()
             .FragmentSize(150)
             .NumberOfFragments(3)
@@ -622,7 +622,7 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
             },
             { "leadDeveloper.firstName", new HighlightField
                 {
-                    Type = HighlighterType.Fvh,
+                    Type = "fvh",
                     PreTags = new[] { "&lt;name&gt;"},
                     PostTags = new[] { "&lt;/name&gt;"},
                     HighlightQuery = new MatchQuery
@@ -708,29 +708,29 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
 }</pre></div><p>
 </p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_handling_responses"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/search/request/highlighting-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 
-foreach (var highlightsByDocumentId in response.Highlights)
+foreach (var highlightsInEachHit in response.Hits.Select(d=&gt;d.Highlights))
 {
-    foreach (var highlightHit in highlightsByDocumentId.Value)
+    foreach (var highlightField in highlightsInEachHit)
     {
-        if (highlightHit.Key == "name.standard")
+        if (highlightField.Key == "name.standard")
         {
-            foreach (var highlight in highlightHit.Value.Highlights)
+            foreach (var highlight in highlightField.Value.Highlights)
             {
                 highlight.Should().Contain("&lt;tag1&gt;");
                 highlight.Should().Contain("&lt;/tag1&gt;");
             }
         }
-        else if (highlightHit.Key == "leadDeveloper.firstName")
+        else if (highlightField.Key == "leadDeveloper.firstName")
         {
-            foreach (var highlight in highlightHit.Value.Highlights)
+            foreach (var highlight in highlightField.Value.Highlights)
             {
                 highlight.Should().Contain("&lt;name&gt;");
                 highlight.Should().Contain("&lt;/name&gt;");
             }
         }
-        else if (highlightHit.Key == "state.offsets")
+        else if (highlightField.Key == "state.offsets")
         {
-            foreach (var highlight in highlightHit.Value.Highlights)
+            foreach (var highlight in highlightField.Value.Highlights)
             {
                 highlight.Should().Contain("&lt;state&gt;");
                 highlight.Should().Contain("&lt;/state&gt;");
@@ -738,7 +738,7 @@ foreach (var highlightsByDocumentId in response.Highlights)
         }
         else
         {
-            Assert.True(false, $"highlights contains unexpected key {highlightHit.Key}");
+            Assert.True(false, $"highlights contains unexpected key {highlightField.Key}");
         }
     }
 }</pre></div></div></div><div class="navfooter"><span class="prev"><a href="from-and-size-usage.html">
