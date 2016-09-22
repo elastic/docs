@@ -442,7 +442,7 @@ sub usage {
                             a chunking into a file per chapter
           --toc             Include a TOC at the beginning of the page.
           --out dest/dir/   Defaults to ./html_docs.
-          --chunk=1         Also chunk sections into separate files
+          --chunk 1         Also chunk sections into separate files
           --comments        Make // comments visible
 
           --open            Open the docs in a browser once built.
