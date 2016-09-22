@@ -569,26 +569,31 @@ You can specify multiple indices as a comma-separated list or
 use an index pattern to match multiple indices:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.collection.indices: logstash-*, index1, test2</pre></div><p>You can prepend <code class="literal">+</code> or <code class="literal">-</code> to explicitly include or exclude index
 names or patterns. For example, to include all indices that
 start with <code class="literal">test</code> except <code class="literal">test3</code>, you could specify <code class="literal">+test*,-test3</code>.</p><h3><a id="monitoring-cluster"></a>Setting up a Separate Monitoring Cluster</h3><p>To store monitoring data in a separate cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Set up the Elasticsearch cluster you want to use for monitoring and start
-Elasticsearch. For example, you might set up a two host cluster with the nodes
-<code class="literal">es-mon-1</code> and <code class="literal">es-mon-2</code>. You do not need to install X-Pack on the nodes in the
-monitoring cluster, only on the production nodes you’ll be monitoring. You can
-configure security on your monitoring cluster to protect your monitoring data.
-For information about how to set up security, see <a class="link" href="security-getting-started.html" title="Getting Started with Security">Getting Started with Security</a>.
-</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>To monitor an Elasticsearch 5.0 cluster, you must run Elasticsearch
-5.0 on the monitoring cluster.</p></div></div></li><li class="listitem"><p class="simpara">
+Set up the Elasticsearch cluster you want to use for monitoring,
+install X-Pack, and start Elasticsearch. For example, you might set
+up a two host cluster with the nodes <code class="literal">es-mon-1</code> and <code class="literal">es-mon-2</code>.
+</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To monitor an Elasticsearch 5.0 cluster, you must run Elasticsearch
+5.0 on the monitoring cluster. While installing X-Pack on the monitoring
+cluster is not absolutely required, it is strongly recommended.</p></div></div></li><li class="listitem">
+<a class="link" href="installing-xpack.html" title="Installing X-Pack">Install X-Pack</a> on the nodes in your production cluster.
+</li><li class="listitem"><p class="simpara">
 Configure the nodes in your production cluster to send metrics to your
 monitoring cluster by configuring an HTTP exporter in the
 <code class="literal">xpack.monitoring.exporters</code> settings in <code class="literal">elasticsearch.yml</code>:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
   id1:
     type: http
-    host: ["http://es-mon-1:9200", "http://es-mon2:9200"]</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If Security is enabled on the monitoring cluster, you must also configure
-credentials for the agent. If SSL is enabled, you must specify the trusted certificates
-that will be used to verify the identity of the nodes in the monitoring cluster. For more
-information, see <a class="link" href="secure-monitoring.html" title="Monitoring Secured Clusters">Using Monitoring with Security Enabled</a>.</p></div></div></li><li class="listitem">
-<a class="link" href="installing-xpack.html" title="Installing X-Pack">Install X-Pack</a> on the nodes in your production cluster.
-</li><li class="listitem"><p class="simpara">
+    host: ["http://es-mon-1:9200", "http://es-mon2:9200"] <a id="CO30-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    auth.username: elastic <a id="CO30-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    auth.password: changeme</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+If SSL/TLS is enabled on the monitoring cluster, you must
+connect through HTTPS and specify the trusted certificates
+that will be used to verify the identity of the nodes in the
+monitoring cluster. For more information, see <a class="link" href="secure-monitoring.html" title="Monitoring and Security">Monitoring and Security</a>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+If X-Pack Security is disabled on the monitoring cluster, you can
+omit <code class="literal">auth.username</code> and <code class="literal">auth.password</code>.
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
 Restart Elasticsearch on the nodes in your production cluster
 </p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>You may want to temporarily <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.0/modules-cluster.html" target="_top">disable shard
 allocation</a> before you restart your nodes to avoid unnecessary shard
@@ -598,22 +603,24 @@ reallocation during the install process.</p></div></div></li><li class="listitem
 Configure Kibana to connect to your monitoring cluster by setting the <code class="literal">xpack.monitoring.elasticsearch</code>
 properties in the <code class="literal">kibana.yml</code> configuration file.
 </p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
-The minimum configuration for connecting Kibana to a monitoring cluster is to set the <code class="literal">url</code> property. For example:
+Set the <code class="literal">url</code> property to point to your monitoring cluster. For example:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.url: "http://es-mon-1:9200"</pre></div></li><li class="listitem"><p class="simpara">
-If Security is enabled on the monitoring cluster, you must also
-configure the credentials for the connection.
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.username: "kibana"
+Configure credentials for Kibana to use to connect to the
+monitoring cluster. (If X-Pack Security is disabled on the monitoring
+cluster, you can omit the credentials.)
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.username: "kibana-monitor"
 xpack.monitoring.elasticsearch.password: "changeme"</pre></div></li><li class="listitem"><p class="simpara">
 If SSL is enabled on the monitoring cluster, you must configure the SSL
 properties. These properties have the same options as Kibana’s primary
 connection to Elasticsearch. For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.ssl.ca: "/path/to/ca/file"</pre></div></li></ol></div></li></ol></div><p>See the <code class="literal">elasticsearch.ssl</code> properties in
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.ssl.ca: "/path/to/ca/file"</pre></div><p class="simpara">For more information, see the <code class="literal">elasticsearch.ssl</code> properties in
 <a class="ulink" href="https://www.elastic.co/guide/en/kibana/5.0/kibana-server-properties.html" target="_top">Setting
-Kibana Server Properties</a>.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Kibana Server Properties</a>.</p></li></ol></div></li><li class="listitem">
 Start Kibana by running <code class="literal">bin/kibana</code>.
 </li><li class="listitem"><p class="simpara">
-To verify your Monitoring installation, point your web browser at your Kibana host, click the App Switcher icon in the Kibana menu bar, and select Monitoring.
-</p><p class="simpara">monitoring-app-switcher.jpg["Kibana App Switcher",link="images/monitoring-app-switcher.jpg"]</p><p class="simpara">You should see a list of the clusters you are monitoring.</p><p class="simpara">monitoring-clusters.jpg["Cluster Overview",link="images/monitoring-clusters.jpg"]</p></li></ol></div><h3><a id="http-exporter-reference"></a>HTTP Exporter</h3><p>As described in the <a class="link" href="configuring-monitoring.html#monitoring-cluster" title="Setting up a Separate Monitoring Cluster">Setting Up a Separate Monitoring Cluster</a> section, monitoring data
+To verify your X-Pack Monitoring installation, point your web browser at your Kibana
+host, and select Monitoring from the side bar.
+</p><p class="simpara"><span class="inlinemediaobject"><img src="images/monitoring/monitoring.jpg" alt="Monitoring" /></span></p></li></ol></div><h3><a id="http-exporter-reference"></a>HTTP Exporter</h3><p>As described in the <a class="link" href="configuring-monitoring.html#monitoring-cluster" title="Setting up a Separate Monitoring Cluster">Setting Up a Separate Monitoring Cluster</a> section, monitoring data
 will default to sending data to the local cluster where it’s running. In production scenarios,
 the best solution is to use an <code class="literal">http</code> exporter like the one shown in the
 <a class="link" href="configuring-monitoring.html#monitoring-cluster" title="Setting up a Separate Monitoring Cluster">monitoring cluster example</a> from that page.</p><p>Unlike the default, <code class="literal">local</code> exporter, which exclusively communicates with the local cluster,
@@ -624,50 +631,50 @@ then the <code class="literal">local</code> exporter will be used.</p><p>Also un
 necessitates a few optional settings. A complete list of available options is shown here, but
 it is unlikely that you will need to touch most settings! All settings are described in the
 <a class="link" href="monitoring-settings.html#http-exporter-settings" title="HTTP Exporter Settings">Monitoring Settings page</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
-  my_local: <a id="CO30-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  my_local: <a id="CO31-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     type: local
-  my_remote: <a id="CO30-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  my_remote: <a id="CO31-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     type: http
-    host: [ "10.1.2.3", ... ] <a id="CO30-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-    auth: <a id="CO30-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    host: [ "10.1.2.3", ... ] <a id="CO31-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    auth: <a id="CO31-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
       username: my_username
       password: changeme
     connection:
       timeout: 6s
       read_timeout: 60s
-    ssl: ... <a id="CO30-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+    ssl: ... <a id="CO31-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
     proxy:
-      base_path: /some/base/path <a id="CO30-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
-    headers: <a id="CO30-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
+      base_path: /some/base/path <a id="CO31-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+    headers: <a id="CO31-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
       My-Proxy-Header: abc123
       My-Other-Thing: [ def456, ... ]
-    index.name.time_format: YYYY-MM <a id="CO30-8"></a><span><img src="images/icons/callouts/8.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+    index.name.time_format: YYYY-MM <a id="CO31-8"></a><span><img src="images/icons/callouts/8.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 A <code class="literal">local</code> exporter defined explicitly whose arbitrary name is <code class="literal">my_local</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 An <code class="literal">http</code> exporter defined whose arbitrary name is <code class="literal">my_remote</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 <code class="literal">host</code> is a required setting for <code class="literal">http</code> exporters, which can take a few
     different forms as described in the table below.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 User authentication for those using X-Pack Security or some other
     form of user authentication protecting the cluster.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 See below for all TLS / SSL settings. If not supplied, the default
     node-level TLS / SSL settings will be used.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Optional base path to prefix any outgoing request with in order to
     work with proxies.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Arbitrary key/value pairs to define as headers to send with every request.
     The array-based key/value format sends one header per value.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-8"><span><img src="images/icons/callouts/8.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-8"><span><img src="images/icons/callouts/8.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 A mechanism for changing the date suffix used by default.
 </p></td></tr></table></div><h3><a id="tribe-config"></a>Configuring a Tribe Node to Work with Monitoring</h3><p>If you connect to a cluster through a
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-tribe.html" target="_top">tribe node</a>,
 to monitor the cluster you need to install the Monitoring agent on the tribe
-node as well as the nodes in the cluster. If the cluster is secured, you also
-need to install and configure Security on the tribe node. For more information,
-see <a class="link" href="tribe-node-configuring.html" title="Tribe Nodes Security">Using Tribe Nodes with Secured Clusters</a>.</p><p>To exclude the tribe node from the monitoring data, set <code class="literal">xpack.monitoring.enabled: false</code>
+node as well as the nodes in the cluster. If security is enabled on the cluster
+being monitored, you also need to install and configure Security on the tribe
+node. For more information, see <a class="link" href="tribe-node-configuring.html" title="Tribe Nodes and Security">Tribe Nodes and Security</a>.</p><p>To exclude the tribe node from the monitoring data, set <code class="literal">xpack.monitoring.enabled: false</code>
 in the tribe node’s  <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.name: tribe
 xpack.monitoring.enabled: false
 
@@ -683,13 +690,13 @@ tribe:
     cluster.name: cluster1
     discovery.zen.ping.unicast.hosts: ["cluster1-node1:9300", "cluster1-node2:9300"]
     xpack.monitoring
-      enabled: true <a id="CO31-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      enabled: true <a id="CO32-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
       exporters:
         id1:
-          type: http <a id="CO31-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-          host: ["monitoringhost:9200"]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+          type: http <a id="CO32-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          host: ["monitoringhost:9200"]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO32-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Enable data collection from the tribe node.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO32-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Export data via HTTP to the monitoring cluster.
 </p></td></tr></table></div><p>When you enable data collection from the tribe node, it is included in both the node count and node list.
 Note that tribe nodes only support the http exporter—data from a tribe node must be sent to an external
