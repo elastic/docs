@@ -161,10 +161,10 @@ jQuery(function() {
   jQuery('.page_header > a[href="../current/index.html"]')
     .click(function(){get_current_page_in_version('current')});
 
-  var default_console_url = 'http://localhost:5601/app/console/';
+  var default_console_url = 'http://localhost:5601/app/kibana#/dev_tools/console';
   var default_sense_url = 'http://localhost:5601/app/sense/';
   var default_sense_url_marvel = 'http://localhost:9200/_plugin/marvel/sense/';
-  var console_url = Cookies.get('console_url') || default_console_url;
+  var console_url = Cookies.get('dev_console_url') || default_console_url;
   var sense_url = Cookies.get('sense_url') || default_sense_url;
 
   // Enable Sense widget
