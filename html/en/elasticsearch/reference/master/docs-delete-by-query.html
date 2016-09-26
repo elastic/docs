@@ -740,7 +740,49 @@ can be either <code class="literal">-1</code> to disable throttling or any decim
 like <code class="literal">1.7</code> or <code class="literal">12</code> to throttle to that level. Rethrottling that speeds up the
 query takes effect immediately but rethrotting that slows down the query will
 take effect on after completing the current batch. This prevents scroll
-timeouts.</p></div><div class="navfooter"><span class="prev"><a href="docs-delete.html">
+timeouts.</p><h3><a id="_manually_slicing"></a>Manually slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/delete-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Delete-by-query supports <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> allowing you to manually parallelize
+the process relatively easily:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_delete_by_query
+{
+  "slice": {
+    "id": 0,
+    "max": 2
+  },
+  "query": {
+    "range": {
+      "likes": {
+        "lt": 10
+      }
+    }
+  }
+}
+POST twitter/_delete_by_query
+{
+  "slice": {
+    "id": 1,
+    "max": 2
+  },
+  "query": {
+    "range": {
+      "likes": {
+        "lt": 10
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-delete-by-query/10.json"></div><p>Which you can verify works with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _refresh
+POST twitter/_search?size=0&amp;filter_path=hits.total
+{
+  "query": {
+    "range": {
+      "likes": {
+        "lt": 10
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-delete-by-query/11.json"></div><p>Which results in a sensible <code class="literal">total</code> like this one:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "hits": {
+    "total": 0
+  }
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="docs-delete.html">
               « 
               Delete API</a>
            

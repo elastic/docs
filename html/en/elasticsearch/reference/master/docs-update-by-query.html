@@ -769,7 +769,32 @@ can be either <code class="literal">-1</code> to disable throttling or any decim
 like <code class="literal">1.7</code> or <code class="literal">12</code> to throttle to that level. Rethrottling that speeds up the
 query takes effect immediately but rethrotting that slows down the query will
 take effect on after completing the current batch. This prevents scroll
-timeouts.</p><h3><a id="picking-up-a-new-property"></a>Pick up a new property<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Say you created an index without dynamic mapping, filled it with data, and then
+timeouts.</p><h3><a id="_manually_slicing_2"></a>Manually slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Update-by-query supports <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> allowing you to manually parallelize
+the process relatively easily:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query
+{
+  "slice": {
+    "id": 0,
+    "max": 2
+  },
+  "script": {
+    "inline": "ctx._source['extra'] = 'test'"
+  }
+}
+POST twitter/_update_by_query
+{
+  "slice": {
+    "id": 1,
+    "max": 2
+  },
+  "script": {
+    "inline": "ctx._source['extra'] = 'test'"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/13.json"></div><p>Which you can verify works with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _refresh
+POST twitter/_search?size=0&amp;q=extra:test&amp;filter_path=hits.total</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/14.json"></div><p>Which results in a sensible <code class="literal">total</code> like this one:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "hits": {
+    "total": 120
+  }
+}</pre></div><h3><a id="picking-up-a-new-property"></a>Pick up a new property<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Say you created an index without dynamic mapping, filled it with data, and then
 added a mapping value to pick up more fields from the data:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test
 {
   "mappings": {
@@ -798,7 +823,7 @@ PUT test/_mapping/test   <a id="CO15-2"></a><span><img src="images/icons/callout
     "text": {"type": "text"},
     "flag": {"type": "text", "analyzer": "keyword"}
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/13.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/15.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This means that new fields won’t be indexed, just stored in <code class="literal">_source</code>.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This updates the mapping to add the new <code class="literal">flag</code> field. To pick up the new
@@ -810,7 +835,7 @@ field you have to reindex all documents with it.
       "flag": "foo"
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/14.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/16.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "hits" : {
     "total" : 0
   }
@@ -822,7 +847,7 @@ POST test/_search?filter_path=hits.total
       "flag": "foo"
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/15.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-update-by-query/17.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "hits" : {
     "total" : 1
   }
