@@ -589,7 +589,15 @@ to stderr: UTC format is used for the timestamp: <code class="literal">2015/11/1
 geolite.go:52: WARN log-message</code>. The format includes the UTC timestamp with
 the milliseconds, then the name of the caller that sent the log entry followed
 by the logging level. This option should be used mainly for debugging.
-</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="configuration-path.html">
+</li></ul></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_shutdown_timeout"></a>shutdown_timeout<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/reference/configuration/filebeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p><code class="literal">shutdown_timeout</code> defines how long filebeat waits on shutdown for the publisher to finish.</p><p>In case the defined output is blocked and does not confirm all events, filebeat keeps resending the events
+before the confirmation is persisted to disk in the registrar. Waiting on the output to acknowledge all events
+can take seconds or much longer depending on the state of the output. To still be able to shutdown filebeat, filebeat
+does not wait for the confirmation of all events on shutdown. This means the state for events which were sent but
+not acked yet, will not be persisted to disk. This can lead to the issue that some events are sent again on starting
+filebeat afterwards as the events ended up at the receiving end but filebeat was already stopped when the acked arrived.</p><p>With <code class="literal">shutdown_timeout</code> a timeout can be defined what the maximum time should be that filebeat waits for the complete
+sending of all events in the pipeline. Should all events be acked before <code class="literal">shutdown_timeout</code> is reached, filebeat will
+already shutdown. The right value for <code class="literal">shutdown_timeout</code> heavily depends on the environment in which filebeat is running
+and the current state of the output.</p><p>By default this is disable and filebeat shuts down without waiting for the completion of sending events.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.shutdown_timeout: 5s</pre></div></div></div></div><div class="navfooter"><span class="prev"><a href="configuration-path.html">
               « 
               Paths Configuration</a>
            
