@@ -5,7 +5,7 @@ use warnings;
 use v5.10;
 
 use File::Copy::Recursive qw(fcopy rcopy);
-use Capture::Tiny qw(capture tee);
+use Capture::Tiny qw(capture_merged tee_merged);
 use Encode qw(decode_utf8);
 use Path::Class qw(dir);
 
@@ -29,14 +29,13 @@ sub build_chunked {
 #===================================
     my ( $index, $dest, %opts ) = @_;
 
-    my $chunk   = $opts{chunk}   || 0;
-    my $version = $opts{version} || 'test build';
-    my $build   = $dest->parent->subdir( '_build_' . $version );
-    $build->mkpath;
-    my $multi    = $opts{multi}         || 0;
-    my $lenient  = $opts{lenient}       || '';
-    my $edit_url = $opts{edit_url}      || '';
-    my $section  = $opts{section_title} || '';
+    my $chunk       = $opts{chunk} || 0;
+    my $build       = $dest->parent;
+    my $version     = $opts{version} || 'test build';
+    my $multi       = $opts{multi} || 0;
+    my $lenient     = $opts{lenient} || '';
+    my $edit_url    = $opts{edit_url} || '';
+    my $section     = $opts{section_title} || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
 
     my $output = run(
@@ -232,17 +231,16 @@ HTML
 sub run (@) {
 #===================================
     my @args = @_;
-    my ( $out, $err, $ok );
-
+    my ( $out, $ok );
     if ( $Opts->{verbose} ) {
         say "Running: @args";
-        ( $out, $err, $ok ) = tee { system(@args) == 0 };
+        ( $out, $ok ) = tee_merged { system(@args) == 0 };
     }
     else {
-        ( $out, $err, $ok ) = capture { system(@args) == 0 };
+        ( $out, $ok ) = capture_merged { system(@args) == 0 };
     }
 
-    die "Error executing: @args\n$out\n---\n$err"
+    die "Error executing: @args\n$out"
         unless $ok;
 
     return $out;

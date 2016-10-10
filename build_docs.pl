@@ -9,7 +9,6 @@ our @Old_ARGV = @ARGV;
 
 use Cwd;
 use FindBin;
-use Data::Dumper;
 
 BEGIN {
     $Old_Pwd = Cwd::cwd();
@@ -32,7 +31,6 @@ use Getopt::Long;
 use YAML qw(LoadFile);
 use Path::Class qw(dir file);
 use Browser::Open qw(open_browser);
-use Parallel::ForkManager;
 
 use ES::BranchTracker();
 use ES::Repo();
@@ -206,7 +204,7 @@ sub check_kibana_links {
         $branch = $_;
         next if $branch eq 'current' || $branch =~ /^\d/ && $branch < 5;
         say "  Branch $branch";
-        $repo->checkout( $branch );
+        $repo->checkout( "link_check", $branch );
         $link_checker->check_file( $repo->dir->file($src_path),
             $extractor, "Kibana [$branch]: $src_path" );
     }
@@ -319,13 +317,7 @@ sub init_repos {
         or die "Missing <paths.branch_tracker> in config";
 
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
-    my $pm = Parallel::ForkManager->new(10);
-    $pm->set_waitpid_blocking_sleep(0.1);
-    $pm->run_on_finish(
-        sub {
-            if ( $_[1] ) { kill -9, $pm->running_procs(); exit $_[1] }
-        }
-    );
+
     for my $name (@repo_names) {
         my $repo = ES::Repo->new(
             name    => $name,
@@ -333,11 +325,8 @@ sub init_repos {
             tracker => $tracker,
             %{ $conf->{$name} }
         );
-        $pm->start($name) and next;
         $repo->update_from_remote();
-        $pm->finish;
     }
-    $pm->wait_all_children;
 
     for my $dir ( $repos_dir->children ) {
         next unless $dir->is_dir;
