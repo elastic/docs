@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Force Merge
-        | Elasticsearch Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Reindex to upgrade
+        | Elasticsearch Reference [5.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-refresh.html" title="Refresh" /><link rel="next" href="cat.html" title="cat APIs" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="setup-upgrade.html" title="Upgrading Elasticsearch" /><link rel="prev" href="restart-upgrade.html" title="Full cluster restart upgrade" /><link rel="next" href="stopping-elasticsearch.html" title="Stopping Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/5.x" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -544,62 +544,82 @@
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [master]
-    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs </a></span> » <span class="breadcrumb-node">Force Merge</span></div><div class="navheader"><span class="prev"><a href="indices-refresh.html">
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="setup.html">Setup Elasticsearch </a></span> » <span class="breadcrumb-link"><a href="setup-upgrade.html">Upgrading Elasticsearch</a></span> » <span class="breadcrumb-node">Reindex to upgrade</span></div><div class="navheader"><span class="prev"><a href="restart-upgrade.html">
               « 
-              Refresh</a>
+              Full cluster restart upgrade</a>
            
         </span><span class="next">
            
-          <a href="cat.html">cat APIs 
+          <a href="stopping-elasticsearch.html">Stopping Elasticsearch
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-forcemerge"></a>Force Merge<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/forcemerge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The force merge API allows to force merging of one or more indices through an
-API. The merge relates to the number of segments a Lucene index holds within
-each shard. The force merge operation allows to reduce the number of segments by
-merging them.</p><p>This call will block until the merge is complete. If the http connection is
-lost, the request will continue in the background, and any new requests will
-block until the previous force merge is complete.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /twitter/_forcemerge</pre></div><div class="console_widget" data-snippet="snippets/indices-forcemerge/1.json"></div><h3><a id="forcemerge-parameters"></a>Request Parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/forcemerge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The force merge API accepts the following request parameters:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">max_num_segments</code>
-</p>
-</td><td valign="top">
-<p>
-The number of segments to merge to. To fully
-merge the index, set it to <code class="literal">1</code>. Defaults to simply checking if a
-merge needs to execute, and if so, executes it.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">only_expunge_deletes</code>
-</p>
-</td><td valign="top">
-<p>
-Should the merge process only expunge segments with
-deletes in it. In Lucene, a document is not deleted from a segment, just marked
-as deleted. During a merge process of segments, a new segment is created that
-does not have those deletes. This flag allows to only merge segments that have
-deletes. Defaults to <code class="literal">false</code>.  Note that this won’t override the
-<code class="literal">index.merge.policy.expunge_deletes_allowed</code> threshold.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">flush</code>
-</p>
-</td><td valign="top">
-<p>
-Should a flush be performed after the forced merge. Defaults to
-<code class="literal">true</code>.
-</p>
-</td></tr></tbody></table></div><h3><a id="forcemerge-multi-index"></a>Multi Index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/forcemerge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The force merge API can be applied to more than one index with a single call, or
-even on <code class="literal">_all</code> the indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /kimchy,elasticsearch/_forcemerge
-
-POST /_forcemerge</pre></div><div class="console_widget" data-snippet="snippets/indices-forcemerge/2.json"></div></div><div class="navfooter"><span class="prev"><a href="indices-refresh.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="reindex-upgrade"></a>Reindex to upgrade<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/setup/reindex_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch is able to use indices created in the previous major version
+only.  For instance, Elasticsearch 5.x can use indices created in
+Elasticsearch 2.x, but not those created in Elasticsearch 1.x or before.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Elasticsearch 5.x nodes will fail to start in the presence of too old indices.</p></div></div><p>If you are running an Elasticsearch 2.x cluster which contains indices that
+were created before 2.x, you will either need to delete those old indices or
+to reindex them before upgrading to 5.x.  See <a class="xref" href="reindex-upgrade.html#reindex-upgrade-inplace" title="Reindex in place">Reindex in place</a>.</p><p>If you are running an Elasticsearch 1.x cluster, you have two options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+First upgrade to Elasticsearch 2.4.x, reindex the old indices, then upgrade
+  to 5.x. See <a class="xref" href="reindex-upgrade.html#reindex-upgrade-inplace" title="Reindex in place">Reindex in place</a>.
+</li><li class="listitem">
+Create a new 5.x cluster and use reindex-from-remote to import indices
+  directly from the 1.x cluster. See <a class="xref" href="reindex-upgrade.html#reindex-upgrade-remote" title="Upgrading with reindex-from-remote">Upgrading with reindex-from-remote</a>.
+</li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="reindex-upgrade-inplace"></a>Reindex in place<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/setup/reindex_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The easiest way to reindex old (1.x) indices in place is to use the
+<a class="ulink" href="https://github.com/elastic/elasticsearch-migration/tree/2.x" target="_top">Elasticsearch
+Migration Plugin</a>.  You will need to upgrade to Elasticsearch 2.3.x or 2.4.x
+first.</p><p>The reindex utility provided in the migration plugin does the following:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Creates a new index with the Elasticsearch version appended to the old index
+  name (e.g. <code class="literal">my_index-2.4.1</code>), copying the mappings and settings from the old
+  index.  Refresh is disabled on the new index and the number of replicas is
+  set to <code class="literal">0</code> for efficient reindexing.
+</li><li class="listitem">
+Sets the old index to read only to ensure that no data is written to the
+  old index.
+</li><li class="listitem">
+Reindexes all documents from the old index to the new index.
+</li><li class="listitem">
+Resets the <code class="literal">refresh_interval</code> and <code class="literal">number_of_replicas</code> to the values
+  used in the old index, and waits for the index to become green.
+</li><li class="listitem">
+Adds any aliases that existed on the old index to the new index.
+</li><li class="listitem">
+Deletes the old index.
+</li><li class="listitem">
+Adds an alias to the new index with the old index name, e.g. alias
+  <code class="literal">my_index</code> points to index <code class="literal">my_index-2.4.1</code>.
+</li></ul></div><p>At the end of this process, you will have a new 2.x index which can be used
+by an Elasticsearch 5.x cluster.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="reindex-upgrade-remote"></a>Upgrading with reindex-from-remote<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/setup/reindex_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you are running a 1.x cluster and would like to migrate directly to 5.x
+without first migrating to 2.x, you can do so using
+<a class="link" href="docs-reindex.html#reindex-from-remote" title="Reindex from Remoteedit">reindex-from-remote</a>.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Elasticsearch includes backwards compatibility code that allows indices from
+the previous major version to be upgraded to the current major version.  By
+moving directly from Elasticsearch 1.x to 5.x, you will have to solve any
+backwards compatibility issues yourself.</p></div></div><p>You will need to set up a 5.x cluster alongside your existing 1.x cluster.
+The 5.x cluster needs to have access to the REST API of the 1.x cluster.</p><p>For each 1.x index that you want to transfer to the 5.x cluster, you will need
+to:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Create a new index in 5.x with the appropriate mappings and settings.  Set
+  the <code class="literal">refresh_interval</code> to <code class="literal">-1</code> and set <code class="literal">number_of_replicas</code> to <code class="literal">0</code> for
+  faster reindexing.
+</li><li class="listitem">
+Use <a class="link" href="docs-reindex.html#reindex-from-remote" title="Reindex from Remoteedit">reindex-from-remote</a> to pull documents from the
+  1.x index into the new 5.x index.
+</li><li class="listitem">
+If you run the reindex job in the background (with <code class="literal">wait_for_completion</code> set
+  to <code class="literal">false</code>), the reindex request will return a <code class="literal">task_id</code> which can be used to
+  monitor progress of the reindex job in the <a class="link" href="tasks.html" title="Task Management API">task API</a>:
+  <code class="literal">GET _tasks/TASK_ID</code>.
+</li><li class="listitem">
+Once reindex has completed, set the <code class="literal">refresh_interval</code> and
+  <code class="literal">number_of_replicas</code> to the desired values (the defaults are <code class="literal">30s</code> and <code class="literal">1</code>
+  respectively).
+</li><li class="listitem">
+Once the new index has finished replication, you can delete the old index.
+</li></ul></div><p>The 5.x cluster can start out small, and you can gradually move nodes from the
+1.x cluster to the 5.x cluster as you migrate indices across.</p></div></div><div class="navfooter"><span class="prev"><a href="restart-upgrade.html">
               « 
-              Refresh</a>
+              Full cluster restart upgrade</a>
            
         </span><span class="next">
            
-          <a href="cat.html">cat APIs 
+          <a href="stopping-elasticsearch.html">Stopping Elasticsearch
                »
             </a></span></div>
 <!-- end body -->
