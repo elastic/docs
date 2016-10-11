@@ -553,33 +553,64 @@ Not what you want? See the
            
           <a href="upgrading-logstash.html">Upgrading Logstash
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="breaking-changes"></a>Breaking changes<a href="https://github.com/elastic/logstash/edit/master/docs/static/breaking-changes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p></p><p><span class="strong"><strong>Application Settings:</strong></span> Introduced a new way to configure application settings for Logstash through a settings.yml file. This file
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="breaking-changes"></a>Breaking changes<a href="https://github.com/elastic/logstash/edit/master/docs/static/breaking-changes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p></p><h3><a id="_changes_in_logstash_core"></a>Changes in Logstash Core<a href="https://github.com/elastic/logstash/edit/master/docs/static/breaking-changes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong"><strong>Application Settings:</strong></span> Introduced a new way to configure application settings for Logstash through a settings.yml file. This file
 is typically located in <code class="literal">LS_HOME/config</code>, or <code class="literal">/etc/logstash</code> when installed via packages. Logstash will not be able
 to start without this file, so please make sure to pass in <code class="literal">--path.settings</code> if you are starting Logstash manually
-after installing it via a package (RPM, DEB).</p><p><span class="strong"><strong>Release Packages:</strong></span> When Logstash is installed via DEB, RPM packages, it uses <code class="literal">/usr/share/logstash</code> and <code class="literal">/var/lib/logstash</code> to install binaries and config files
-respectively. Previously it used to install in <code class="literal">/opt</code> directory. This change was done to make the user experience
-consistent with other Elastic products. Full directory layout is described in <a class="xref" href="dir-layout.html" title="Logstash Directory Layout">Logstash Directory Layout</a>.</p><p><span class="strong"><strong>Command Line Interface:</strong></span> Most of the long form <a class="link" href="command-line-flags.html" title="Command-Line Flags">options</a> have been renamed
-to adhere to the yml dot notation to be used in the settings file. Short form options have not been changed.</p><p><span class="strong"><strong>Plugin Manager Renamed:</strong></span> <code class="literal">bin/plugin</code> has been renamed to <code class="literal">bin/logstash-plugin</code>. This change was to mainly prevent <code class="literal">PATH</code> being polluted when
+after installing it via a package (RPM, DEB).
+</li><li class="listitem">
+<span class="strong"><strong>Release Packages:</strong></span> When Logstash is installed via DEB, RPM packages, it uses <code class="literal">/usr/share/logstash</code> and <code class="literal">/var/lib/logstash</code> to install binaries.
+Previously it used to install in <code class="literal">/opt/logstash</code> directory. This change was done to make the user experience
+consistent with other Elastic products. Full directory layout is described in <a class="xref" href="dir-layout.html" title="Logstash Directory Layout">Logstash Directory Layout</a>.
+</li><li class="listitem">
+<span class="strong"><strong>Default Logging Level:</strong></span> Changed the default log severity level to INFO instead of WARN to match Elasticsearch. Existing logs
+(in core and plugins) were too noisy at INFO level, so we had to audit log messages and switch some of them to DEBUG
+level.
+</li><li class="listitem">
+<span class="strong"><strong>Command Line Interface:</strong></span> Most of the long form <a class="link" href="command-line-flags.html" title="Command-Line Flags">options</a> have been renamed
+to adhere to the yml dot notation to be used in the settings file. Short form options have not been changed.
+</li><li class="listitem">
+<span class="strong"><strong>Plugin Manager Renamed:</strong></span> <code class="literal">bin/plugin</code> has been renamed to <code class="literal">bin/logstash-plugin</code>. This change was to mainly prevent <code class="literal">PATH</code> being polluted when
 other components of the Elastic stack are installed on the same instance. Also, this provides a foundation
-for future change which will allow Elastic Stack packs to be installed via this script.</p><p><span class="strong"><strong>Kafka Input/Output Configuration Changes:</strong></span> This release added support for the new 0.9 consumer/producer API which supports security features introduced by Kafka.
+for future change which will allow Elastic Stack packs to be installed via this script.
+</li></ul></div><h3><a id="_breaking_changes_in_plugins"></a>Breaking Changes in Plugins<a href="https://github.com/elastic/logstash/edit/master/docs/static/breaking-changes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+<span class="strong"><strong>Elasticsearch Output Index Template:</strong></span> The index template for 5.0 has been changed to reflect  <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.0/breaking_50_mapping_changes.html" target="_top">Elasticsearch’s mapping changes</a>. Most
+importantly, the subfield for string multi-fields has changed from <code class="literal">.raw</code> to <code class="literal">.keyword</code> to match Elasticsearch’s default
+behavior. The impact of this change to various user groups is detailed below:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+New Logstash 5.0 and Elasticsearch 5.0 users - subfields use <code class="literal">.keyword</code> from the outset. In Kibana, you can use
+<code class="literal">field.keyword</code> to perform aggregations.
+</li><li class="listitem">
+Existing users with custom templates - most of you won’t be impacted because you use a custom template.
+</li><li class="listitem">
+Existing users with default template - Logstash does not force you to upgrade templates if one already exists. If you
+intend to move to the new template and want to use <code class="literal">.keyword</code>, you’ll have to reindex existing data. Elasticsearch’s
+ <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html" target="_top">reindexing API</a> can help move your data from using <code class="literal">.raw</code> subfields to <code class="literal">.keyword</code>.
+</li></ul></div></li><li class="listitem">
+<span class="strong"><strong>Kafka Input/Output Configuration Changes:</strong></span> This release added support for the new 0.10 consumer/producer API which supports security features introduced by Kafka.
 A few Configuration options were renamed to make it consistent with Kafka consumer and producer settings.
-Also, this plugin version will not work with Kafka 0.8 broker.</p><p>Please see the following specific plugin documentation for new configuration options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Also, this plugin version will not work with Kafka 0.8 broker.
+</li></ul></div><p>Please see the following specific plugin documentation for new configuration options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <a class="link" href="plugins-inputs-kafka.html" title="kafka">Kafka Input</a>
 </li><li class="listitem">
 <a class="link" href="plugins-outputs-kafka.html" title="kafka">Kafka Output</a>
-</li></ul></div><p><span class="strong"><strong>Ruby Filter and Custom Plugin Developers:</strong></span> With the migration to the Java Event (<a class="ulink" href="https://github.com/elastic/logstash/issues/4191" target="_top">Issue 4191</a>), we have changed
-how you can access internal data. The Event object no longer returns a reference to the data. Instead, it returns a
-copy. This might change how you do manipulation of your data, especially when working with nested hashes.
-When working with nested hashes, it’s recommended that you use the <code class="literal">fieldref</code> syntax instead of using multiple brackets.
-Also note that we have introduced new Getter/Setter APIs for accessing information in the Event object.</p><p><span class="strong"><strong>Examples:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">filter {
+</li><li class="listitem">
+<span class="strong"><strong>File Input:</strong></span> SinceDB file is now saved in <code class="literal">&lt;path.data&gt;/plugins/inputs/file</code> location, not user’s home. If you have manually specified <code class="literal">sincedb_path</code>
+configuration, this change will not affect you. If you are moving from 2.x to 5.x, and would like to use the existing SinceDB file, it
+has to be copied over to <code class="literal">path.data</code> manually to use the save state.
+</li></ul></div><h3><a id="_ruby_filter_and_custom_plugin_developers"></a>Ruby Filter and Custom Plugin Developers<a href="https://github.com/elastic/logstash/edit/master/docs/static/breaking-changes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>With the migration to the new <a class="xref" href="event-api.html" title="Event API"><em>Event API</em></a>, we have changed how you can access internal data compared to previous release.
+The Event object no longer returns a reference to the data. Instead, it returns a copy. This might change how you do manipulation of
+your data, especially when working with nested hashes. When working with nested hashes, it’s recommended that you
+use the <code class="literal">fieldref</code> syntax instead of using multiple brackets. Also note that we have introduced new Getter/Setter APIs
+for accessing information in the Event object. Refer <a class="xref" href="event-api.html" title="Event API"><em>Event API</em></a> for details.</p><p><span class="strong"><strong>Examples:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">filter {
   ruby {
-    codec =&gt; "event.set('uuid', event.get('uuid').gsub(/b/, ''))" # instead of using event['uuid'].gsub!(/b/, '')
+    codec =&gt; "event.set('[product][price]', 10)"
   }
-}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">filter {
+}</pre></div><p>Instead of:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">filter {
   ruby {
-    codec =&gt; "event.set('[product][price]', 10)" # instead of using event['product']['price'] = 10
+    codec =&gt; "event['product']['price'] = 10"
   }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="stalled-shutdown.html">
+}</pre></div><p>The above syntax is not supported, and will produce an error at run-time.</p></div><div class="navfooter"><span class="prev"><a href="stalled-shutdown.html">
               « 
               Stalled Shutdown Detection</a>
            
@@ -714,6 +745,12 @@ Also note that we have introduced new Getter/Setter APIs for accessing informati
                 
                   
                     <li><a href="/blog">Blog</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="https://cloud-status.elastic.co">Cloud Status</a></li>
                   
                 
               
