@@ -674,15 +674,32 @@ full, it will abort the request.</p><div class="pre_wrapper"><pre class="program
         type: fixed
         size: 30
         queue_size: 1000</pre></div><h3><a id="processors"></a>Processors setting<a href="https://github.com/elastic/elasticsearch/edit/1.7/docs/reference/modules/threadpool.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The number of processors is automatically detected, and the thread pool
-settings are automatically set based on it. Sometimes, the number of processors
-are wrongly detected, in such cases, the number of processors can be
-explicitly set using the <code class="literal">processors</code> setting.  The example below sets
-the number of processors to 4, which means that the default search thread pool size
-is 4 x 3 = 12.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">processors: 4</pre></div><p>This setting is important when running multiple node instances on a single
-bare-metal machine.  Each node will detect that it has the full number of
-processors.  But in reality, they are sharing processors on the single machine.
-In other words, it is advised to lower the <code class="literal">processors</code> setting accordingly.  For example,
-on a 24 core machine and running 3 nodes, set processors to 8.</p><p>In order to check the number of processors detected, use the nodes info
+settings are automatically set based on it. In some cases it can be
+useful to override the number of detected processors. This can be done
+by explicitly setting the <code class="literal">processors</code> setting.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">processors: 4</pre></div><p>There are a few use-cases for explicitly overriding the <code class="literal">processors</code>
+setting:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+If you are running multiple instances of Elasticsearch on the same
+host but want Elasticsearch to size its thread pools as if it only has a
+fraction of the CPU, you should override the <code class="literal">processors</code> setting to the
+desired fraction (e.g., if you’re running two instances of Elasticsearch
+on a 16-core machine, set <code class="literal">processors</code> to 8). Note that this is an
+expert-level use-case and there’s a lot more involved than just setting
+the <code class="literal">processors</code> setting as there are other considerations like changing
+the number of garbage collector threads, pinning processes to cores,
+etc.
+</li><li class="listitem">
+The number of processors is by default bounded to 32. This means that
+on systems that have more than 32 processors, Elasticsearch will size
+its thread pools as if there are only 32 processors present. This
+limitation was added to avoid creating too many threads on systems that
+have not properly adjusted the <code class="literal">ulimit</code> for max number of processes. In
+cases where you’ve adjusted the <code class="literal">ulimit</code> appropriately, you can override
+this bound by explicitly setting the <code class="literal">processors</code> setting.
+</li><li class="listitem">
+Sometimes the number of processors is wrongly detected and in such
+cases explicitly setting the <code class="literal">processors</code> setting will workaround such
+issues.
+</li></ol></div><p>In order to check the number of processors detected, use the nodes info
 API with the <code class="literal">os</code> flag.</p></div><div class="navfooter"><span class="prev"><a href="modules-advanced-scripting.html">
               « 
               Text scoring in scripts</a>
