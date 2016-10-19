@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Event Dependent Configuration
-        | Logstash Reference [2.4]
+        | Logstash Reference [5.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [2.4]" /><link rel="up" href="configuration.html" title="Configuring Logstash" /><link rel="prev" href="configuration-file-structure.html" title="Structure of a Config File" /><link rel="next" href="environment-variables.html" title="Using Environment Variables in the Configuration" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Logstash/Reference/2.4" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [5.0]" /><link rel="up" href="configuration.html" title="Configuring Logstash" /><link rel="prev" href="configuration-file-structure.html" title="Structure of a Config File" /><link rel="next" href="environment-variables.html" title="Using Environment Variables in the Configuration" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Logstash/Reference/5.0" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -550,7 +550,7 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Logstash Reference
-      [2.4]
+      [5.0]
     </a></span> » <span class="breadcrumb-link"><a href="configuration.html">Configuring Logstash</a></span> » <span class="breadcrumb-node">Event Dependent Configuration</span></div><div class="navheader"><span class="prev"><a href="configuration-file-structure.html">
               « 
               Structure of a Config File</a>
@@ -591,8 +591,8 @@ apache logs by status code:</p><div class="pre_wrapper"><pre class="programlisti
   statsd {
     increment =&gt; "apache.%{[response][status]}"
   }
-}</pre></div><p>You can also format times using this sprintf format. Instead of specifying a field name, use the <code class="literal">+FORMAT</code> syntax where <code class="literal">FORMAT</code> is a <a class="ulink" href="http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html" target="_top">time format</a>.</p><p>For example, if you want to use the file output to write to logs based on the
-hour and the <span class="emphasis"><em>type</em></span> field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">output {
+}</pre></div><p>Similarly, you can convert the timestamp in the <code class="literal">@timestamp</code> field into a string. Instead of specifying a field name inside the curly braces, use the <code class="literal">+FORMAT</code> syntax where <code class="literal">FORMAT</code> is a <a class="ulink" href="http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html" target="_top">time format</a>.</p><p>For example, if you want to use the file output to write to logs based on the
+event’s date and hour and the <code class="literal">type</code> field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">output {
   file {
     path =&gt; "/var/log/%{type}.%{+yyyy.MM.dd.HH}"
   }
@@ -659,7 +659,7 @@ doesn’t exist versus a field that’s simply false. The expression <code class
 </li><li class="listitem">
 <code class="literal">[foo]</code> exists in the event, but is false, or
 </li><li class="listitem">
-<code class="literal">[foo]</code> exists in the event, but is nil
+<code class="literal">[foo]</code> exists in the event, but is null
 </li></ul></div><p>For more complex examples, see <a class="link" href="config-examples.html#using-conditionals" title="Using Conditionalsedit">Using Conditionals</a>.</p><h4><a id="metadata"></a>The @metadata field<a href="https://github.com/elastic/logstash/edit/master/docs/static/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In Logstash 1.5 and later, there is a special field called <code class="literal">@metadata</code>.  The contents
 of <code class="literal">@metadata</code> will not be part of any of your events at output time, which
 makes it great to use for conditionals, or extending and building event fields
@@ -678,33 +678,31 @@ output {
     stdout { codec =&gt; rubydebug }
   }
 }</pre></div><p>Let’s see what comes out:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">$ bin/logstash -f ../test.conf
-Settings: Default pipeline workers: 8
 Pipeline main started
 asdf
 {
-       "message" =&gt; "asdf",
+    "@timestamp" =&gt; 2016-06-30T02:42:51.496Z,
       "@version" =&gt; "1",
-    "@timestamp" =&gt; "2016-06-30T02:08:03.148Z",
           "host" =&gt; "example.com",
-          "show" =&gt; "This data will be in the output"
+          "show" =&gt; "This data will be in the output",
+       "message" =&gt; "asdf"
 }</pre></div><p>The "asdf" typed in became the <code class="literal">message</code> field contents, and the conditional
 successfully evaluated the contents of the <code class="literal">test</code> field nested within the
 <code class="literal">@metadata</code> field.  But the output did not show a field called <code class="literal">@metadata</code>, or
 its contents.</p><p>The <code class="literal">rubydebug</code> codec allows you to reveal the contents of the <code class="literal">@metadata</code> field
 if you add a config flag, <code class="literal">metadata =&gt; true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">    stdout { codec =&gt; rubydebug { metadata =&gt; true } }</pre></div><p>Let’s see what the output looks like with this change:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">$ bin/logstash -f ../test.conf
-Settings: Default pipeline workers: 8
 Pipeline main started
 asdf
 {
-       "message" =&gt; "asdf",
-      "@version" =&gt; "1",
-    "@timestamp" =&gt; "2016-06-30T02:10:25.044Z",
-          "host" =&gt; "example.com",
-          "show" =&gt; "This data will be in the output",
+    "@timestamp" =&gt; 2016-06-30T02:46:48.565Z,
      "@metadata" =&gt; {
            "test" =&gt; "Hello",
         "no_show" =&gt; "This data will not be in the output"
-    }
+    },
+      "@version" =&gt; "1",
+          "host" =&gt; "example.com",
+          "show" =&gt; "This data will be in the output",
+       "message" =&gt; "asdf"
 }</pre></div><p>Now you can see the <code class="literal">@metadata</code> field and its sub-fields.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Only the <code class="literal">rubydebug</code> codec allows you to show the contents of the
 <code class="literal">@metadata</code> field.</p></div></div><p>Make use of the <code class="literal">@metadata</code> field any time you need a temporary field but do not
 want it to be in the final output.</p><p>Perhaps one of the most common use cases for this new field is with the <code class="literal">date</code>
@@ -723,13 +721,13 @@ output {
 }</pre></div><p>Notice that this configuration puts the extracted date into the
 <code class="literal">[@metadata][timestamp]</code> field in the <code class="literal">grok</code> filter.  Let’s feed this
 configuration a sample date string and see what comes out:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">$ bin/logstash -f ../test.conf
-Settings: Default pipeline workers: 8
 Pipeline main started
+02/Mar/2014:15:36:43 +0100
 {
-       "message" =&gt; "02/Mar/2014:15:36:43 +0100",
+    "@timestamp" =&gt; 2014-03-02T14:36:43.000Z,
       "@version" =&gt; "1",
-    "@timestamp" =&gt; "2014-03-02T14:36:43.000Z",
-          "host" =&gt; "example.com"
+          "host" =&gt; "example.com",
+       "message" =&gt; "02/Mar/2014:15:36:43 +0100"
 }</pre></div><p>That’s it!  No extra fields in the output, and a cleaner config file because you
 do not have to delete a "timestamp" field after conversion in the <code class="literal">date</code> filter.</p><p>Another use case is the CouchDB Changes input plugin (See
 <a class="ulink" href="https://github.com/logstash-plugins/logstash-input-couchdb_changes" target="_top">https://github.com/logstash-plugins/logstash-input-couchdb_changes</a>).

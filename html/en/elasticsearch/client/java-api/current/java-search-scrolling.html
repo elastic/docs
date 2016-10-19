@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using scrolls in Java
-        | Java API [2.4]
+        | Java API [5.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [2.4]" /><link rel="up" href="java-search.html" title="Search API" /><link rel="prev" href="java-search.html" title="Search API" /><link rel="next" href="java-search-msearch.html" title="MultiSearch API" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/Java/2.4" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java API [5.0]" /><link rel="up" href="java-search.html" title="Search API" /><link rel="prev" href="java-search.html" title="Search API" /><link rel="next" href="java-search-msearch.html" title="MultiSearch API" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/Java/5.0" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -550,7 +550,7 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Java API
-      [2.4]
+      [5.0]
     </a></span> » <span class="breadcrumb-link"><a href="java-search.html">Search API</a></span> » <span class="breadcrumb-node">Using scrolls in Java</span></div><div class="navheader"><span class="prev"><a href="java-search.html">
               « 
               Search API</a>
@@ -559,28 +559,24 @@
            
           <a href="java-search-msearch.html">MultiSearch API
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-search-scrolling"></a>Using scrolls in Java<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/java-api/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Read the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/2.4/search-request-scroll.html" target="_top">scroll documentation</a>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-search-scrolling"></a>Using scrolls in Java<a href="https://github.com/elastic/elasticsearch/edit/5.0/docs/java-api/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Read the <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.0/search-request-scroll.html" target="_top">scroll documentation</a>
 first!</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import static org.elasticsearch.index.query.QueryBuilders.*;
 
 QueryBuilder qb = termQuery("multi", "test");
 
 SearchResponse scrollResp = client.prepareSearch(test)
-        .addSort(SortParseElement.DOC_FIELD_NAME, SortOrder.ASC)
+        .addSort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
         .setScroll(new TimeValue(60000))
         .setQuery(qb)
         .setSize(100).execute().actionGet(); //100 hits per shard will be returned for each scroll
 //Scroll until no hits are returned
-while (true) {
-
+do {
     for (SearchHit hit : scrollResp.getHits().getHits()) {
         //Handle the hit...
     }
+
     scrollResp = client.prepareSearchScroll(scrollResp.getScrollId()).setScroll(new TimeValue(60000)).execute().actionGet();
-    //Break condition: No hits are returned
-    if (scrollResp.getHits().getHits().length == 0) {
-        break;
-    }
-}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The size-parameter is per shard, so if you run a query against multiple indices (leading to many shards being involved in the query) the result might be more documents per execution of the scroll than you would expect!</p></div></div></div><div class="navfooter"><span class="prev"><a href="java-search.html">
+} while(scrollResp.getHits().getHits().length != 0); // Zero hits mark the end of the scroll and the while loop.</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The size-parameter is per shard, so if you run a query against multiple indices (leading to many shards being involved in the query) the result might be more documents per execution of the scroll than you would expect!</p></div></div></div><div class="navfooter"><span class="prev"><a href="java-search.html">
               « 
               Search API</a>
            

@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>norms
-        | Elasticsearch Reference [2.4]
+        | Elasticsearch Reference [5.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [2.4]" /><link rel="up" href="mapping-params.html" title="Mapping parameters" /><link rel="prev" href="multi-fields.html" title="fields" /><link rel="next" href="null-value.html" title="null_value" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/2.4" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.0]" /><link rel="up" href="mapping-params.html" title="Mapping parameters" /><link rel="prev" href="multi-fields.html" title="fields" /><link rel="next" href="null-value.html" title="null_value" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/5.0" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -550,7 +550,7 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [2.4]
+      [5.0]
     </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping </a></span> » <span class="breadcrumb-link"><a href="mapping-params.html">Mapping parameters</a></span> » <span class="breadcrumb-node"><code class="literal">norms</code></span></div><div class="navheader"><span class="prev"><a href="multi-fields.html">
               « 
               <code class="literal">fields</code></a>
@@ -559,45 +559,28 @@
            
           <a href="null-value.html"><code class="literal">null_value</code>
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="norms"></a><code class="literal">norms</code><a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/mapping/params/norms.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Norms store various normalization factors — a number to represent the
-relative field length and the <a class="link" href="index-boost.html" title="boost">index time <code class="literal">boost</code></a> setting — that are later used at query time in order to compute the score of a document
-relatively to a query.</p><p>Although useful for scoring, norms also require quite a lot of memory
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="norms"></a><code class="literal">norms</code><a href="https://github.com/elastic/elasticsearch/edit/5.0/docs/reference/mapping/params/norms.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Norms store various normalization factors that are later used at query time
+in order to compute the score of a document relatively to a query.</p><p>Although useful for scoring, norms also require quite a lot of disk
 (typically in the order of one byte per document per field in your index, even
 for documents that don’t have this specific field). As a consequence, if you
 don’t need scoring on a specific field, you should disable norms on that
 field. In  particular, this is the case for fields that are used solely for
-filtering or aggregations.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">norms.enabled</code> setting must have the same setting for fields of the
+filtering or aggregations.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">norms</code> setting must have the same setting for fields of the
 same name in the same index.  Norms can be disabled on existing fields using
 the <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a>.</p></div></div><p>Norms can be disabled (but not reenabled) after the fact, using the
 <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a> like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/_mapping/my_type
 {
   "properties": {
     "title": {
-      "type": "string",
-      "norms": {
-        "enabled": false
-      }
+      "type": "text",
+      "norms": false
     }
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/norms/1.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Norms will not be removed instantly, but will be removed as old segments
+}</pre></div><div class="console_widget" data-snippet="snippets/norms/1.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Norms will not be removed instantly, but will be removed as old segments
 are merged into new segments as you continue indexing new documents. Any score
 computation on a field that has had norms removed might return inconsistent
 results since some documents won’t have norms anymore while other documents
-might still have norms.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_lazy_loading_of_norms"></a>Lazy loading of norms<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/mapping/params/norms.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Norms can be loaded into memory eagerly (<code class="literal">eager</code>), whenever a new segment
-comes online, or they can loaded lazily (<code class="literal">lazy</code>, default), only when the field
-is queried.</p><p>Eager loading can be configured as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/_mapping/my_type
-{
-  "properties": {
-    "title": {
-      "type": "string",
-      "norms": {
-        "loading": "eager"
-      }
-    }
-  }
-}</pre></div><div class="sense_widget" data-snippet="snippets/norms/2.json"></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">norms.loading</code> setting must have the same setting for fields of the
-same name in the same index.  Its value can be updated on existing fields
-using the <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a>.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="multi-fields.html">
+might still have norms.</p></div></div></div><div class="navfooter"><span class="prev"><a href="multi-fields.html">
               « 
               <code class="literal">fields</code></a>
            
