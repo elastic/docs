@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Dealing with JSON Arrays and Objects in PHP
-        | Elasticsearch-PHP [2.0]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Community Integrations
+        | Elasticsearch-PHP [5.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [2.0]" /><link rel="up" href="index.html" title="Elasticsearch-PHP [2.0]" /><link rel="prev" href="_future_mode.html" title="Future Mode" /><link rel="next" href="_index_management_operations.html" title="Index Management Operations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/PHP/2.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch-PHP [5.0]" /><link rel="up" href="index.html" title="Elasticsearch-PHP [5.0]" /><link rel="prev" href="_community_dsls.html" title="Community DSLs" /><link rel="next" href="ElasticsearchPHP_Endpoints.html" title="Reference - Endpoints" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/PHP/5.0" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -556,127 +556,49 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch-PHP
-      [2.0]
-    </a></span> » <span class="breadcrumb-node">Dealing with JSON Arrays and Objects in PHP</span></div><div class="navheader"><span class="prev"><a href="_future_mode.html">
+      [5.0]
+    </a></span> » <span class="breadcrumb-node">Community Integrations</span></div><div class="navheader"><span class="prev"><a href="_community_dsls.html">
               « 
-              Future Mode</a>
+              Community DSLs</a>
            
         </span><span class="next">
            
-          <a href="_index_management_operations.html">Index Management Operations
+          <a href="ElasticsearchPHP_Endpoints.html">Reference - Endpoints
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_dealing_with_json_arrays_and_objects_in_php"></a>Dealing with JSON Arrays and Objects in PHP<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>A common source of confusion with the client revolves around JSON arrays and objects, and how to specify them in PHP.
-In particular, problems are caused by empty objects and arrays of objects.  This page will show you some common patterns
-used in Elasticsearch JSON API, and how to convert that to a PHP representation</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_empty_objects"></a>Empty Objects<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Elasticsearch API uses empty JSON objects in several locations, and this can cause problems for PHP.  Unlike other
-languages, PHP does not have a "short" notation for empty objects and so many developers are unaware how to specify
-an empty object.</p><p>Consider adding a Highlight to a query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-    "query" : {
-        "match" : {
-            "content" : "quick brown fox"
-        }
-    },
-    "highlight" : {
-        "fields" : {
-            "content" : {} <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        }
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This empty JSON object is what causes problems.
-</p></td></tr></table></div><p>The problem is that PHP will automatically convert <code class="literal">"content" : {}</code> into <code class="literal">"content" : []</code>, which is no longer valid
-Elasticsearch DSL.  We need to tell PHP that the empty object is explicitly an object, not an array.  To define this
-query in PHP, you would do:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">$params['body'] = array(
-    'query' =&gt; array(
-        'match' =&gt; array(
-            'content' =&gt; 'quick brown fox'
-        )
-    ),
-    'highlight' =&gt; array(
-        'fields' =&gt; array(
-            'content' =&gt; new \stdClass() <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        )
-    )
-);
-$results = $client-&gt;search($params);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-We use the generic PHP stdClass object to represent an empty object.  The JSON will now encode correctly.
-</p></td></tr></table></div><p>By using an explicit stdClass object, we can force the <code class="literal">json_encode</code> parser to correctly output an empty object, instead
-of an empty array.  Sadly, this verbose solution is the only way to accomplish the goal in PHP…there is no "short"
-version of an empty object.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_arrays_of_objects"></a>Arrays of Objects<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Another common pattern in Elasticsearch DSL is an array of objects.  For example, consider adding a sort to your query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-    "query" : {
-        "match" : { "content" : "quick brown fox" }
-    },
-    "sort" : [  <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        {"time" : {"order" : "desc"}},
-        {"popularity" : {"order" : "desc"}}
-    ]
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-"sort" contains an array of JSON objects
-</p></td></tr></table></div><p>This arrangement is <span class="strong"><strong>very</strong></span> common, but the construction in PHP can be tricky since it requires nesting arrays.  The
-verbosity of PHP tends to obscure what is actually going on.  To construct an array of objects, you actually need
-an array of arrays:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">$params['body'] = array(
-    'query' =&gt; array(
-        'match' =&gt; array(
-            'content' =&gt; 'quick brown fox'
-        )
-    ),
-    'sort' =&gt; array(    <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        array('time' =&gt; array('order' =&gt; 'desc')),  <a id="CO6-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-        array('popularity' =&gt; array('order' =&gt; 'desc')) <a id="CO6-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-    )
-);
-$results = $client-&gt;search($params);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This array encodes the <code class="literal">"sort" : []</code> array
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This array encodes the <code class="literal">{"time" : {"order" : "desc"}}</code> object
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This array encodes the <code class="literal">{"popularity" : {"order" : "desc"}}</code> object
-</p></td></tr></table></div><p>If you are on PHP 5.4+, I would strongly encourage you to use the short array syntax.  It makes these nested arrays
-much simpler to read:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">$params['body'] = [
-    'query' =&gt; [
-        'match' =&gt; [
-            'content' =&gt; 'quick brown fox'
-        ]
-    ],
-    'sort' =&gt; [
-        ['time' =&gt; ['order' =&gt; 'desc']],
-        ['popularity' =&gt; ['order' =&gt; 'desc']]
-    ]
-];
-$results = $client-&gt;search($params);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_arrays_of_empty_objects"></a>Arrays of empty objects<a href="https://github.com/elastic/elasticsearch-php/edit/2.0/docs/php_json_objects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Occasionally, you’ll encounter DSL that requires both of the previous patterns.  The function score query is a good
-example, it sometimes requires an array of objects, and some of those objects might be empty JSON objects.</p><p>Given this query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-   "query":{
-      "function_score":{
-         "functions":[
-            {
-               "random_score":{}
-            }
-         ],
-         "boost_mode":"replace"
-      }
-   }
-}</pre></div><p>We can build it using the following PHP code:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">$params['body'] = array(
-    'query' =&gt; array(
-        'function_score' =&gt; array(
-            'functions' =&gt; array(  <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                array(  <a id="CO7-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                    'random_score' =&gt; new \stdClass() <a id="CO7-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-                )
-            )
-        )
-    )
-);
-$results = $client-&gt;search($params);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This encodes the array of objects: <code class="literal">"functions" : []</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This encodes an object inside the array: <code class="literal">{ "random_score": {} }</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This encodes the empty JSON object: <code class="literal">"random_score": {}</code>
-</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="_future_mode.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_community_integrations"></a>Community Integrations<a href="https://github.com/elastic/elasticsearch-php/edit/5.0/docs/community.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_symfony"></a>Symfony<a href="https://github.com/elastic/elasticsearch-php/edit/5.0/docs/community.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_ongr_elasticsearch_bundle"></a>ONGR Elasticsearch Bundle<a href="https://github.com/elastic/elasticsearch-php/edit/5.0/docs/community.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><a class="ulink" href="https://github.com/ongr-io/ElasticsearchBundle" target="_top">Link: ONGR Elasticsearch Bundle</a></p><div class="blockquote"><table border="0" class="blockquote" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p>Elasticsearch Bundle was created in order to serve the need for professional elasticsearch
+integration with enterprise level Symfony 2 systems. This bundle is:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Supported by ONGR.io development team.
+</li><li class="listitem">
+Uses the official elasticsearch-php client.
+</li><li class="listitem">
+Ensures full integration with Symfony 2 framework.
+</li></ul></div><p>Technical goodies:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Provides nestable and DSL query builder to be executed by type repository services.
+</li><li class="listitem">
+Uses Doctrine-like document / entities document-object mapping using annotations.
+</li><li class="listitem">
+Query results iterators are provided for your convenience.
+</li><li class="listitem">
+Registers console commands for index and types management and data import / export.
+</li><li class="listitem">
+Designed in an extensible way for all your custom needs.
+</li></ul></div></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">
+ONGR Elasticsearch Bundle
+</span></td></tr></table></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_drupal"></a>Drupal<a href="https://github.com/elastic/elasticsearch-php/edit/5.0/docs/community.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_elasticsearch_connector"></a>Elasticsearch Connector<a href="https://github.com/elastic/elasticsearch-php/edit/5.0/docs/community.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><a class="ulink" href="https://www.drupal.org/project/elasticsearch_connector" target="_top">Link: Elasticsearch Connector</a></p><div class="blockquote"><table border="0" class="blockquote" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p>Elasticsearch Connector is a set of modules designed to build a full Elasticsearch eco system in Drupal.</p></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">
+Elasticsearch Connector
+</span></td></tr></table></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_laravel"></a>Laravel<a href="https://github.com/elastic/elasticsearch-php/edit/5.0/docs/community.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_shift31_laravel_elasticsearch"></a>shift31/Laravel-Elasticsearch<a href="https://github.com/elastic/elasticsearch-php/edit/5.0/docs/community.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><a class="ulink" href="https://github.com/shift31/laravel-elasticsearch" target="_top">Link: shift31/Laravel-Elasticsearch</a></p><div class="blockquote"><table border="0" class="blockquote" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p>This is a Laravel (4+) Service Provider for the official Elasticsearch low-level client.</p></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">
+Laravel-Elasticsearch
+</span></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_cviebrock_laravel_elasticsearch"></a>cviebrock/Laravel-Elasticsearch<a href="https://github.com/elastic/elasticsearch-php/edit/5.0/docs/community.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><a class="ulink" href="https://github.com/cviebrock/laravel-elasticsearch" target="_top">Link: cviebrock/Laravel-Elasticsearch</a></p><div class="blockquote"><table border="0" class="blockquote" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p>An easy way to use the official Elastic Search client in your Laravel applications.</p></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">
+Laravel-Elasticsearch
+</span></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_plastic"></a>Plastic<a href="https://github.com/elastic/elasticsearch-php/edit/5.0/docs/community.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><a class="ulink" href="https://github.com/sleimanx2/plastic" target="_top">Link: Plastic</a></p><div class="blockquote"><table border="0" class="blockquote" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p>Plastic is an Elasticsearch ODM and mapper for Laravel. It renders the developer experience more enjoyable while using Elasticsearch, by providing a fluent syntax for mapping, querying, and storing eloquent models.</p></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">
+Plastic
+</span></td></tr></table></div></div></div></div><div class="navfooter"><span class="prev"><a href="_community_dsls.html">
               « 
-              Future Mode</a>
+              Community DSLs</a>
            
         </span><span class="next">
            
-          <a href="_index_management_operations.html">Index Management Operations
+          <a href="ElasticsearchPHP_Endpoints.html">Reference - Endpoints
                »
             </a></span></div>
 <!-- end body -->
