@@ -568,6 +568,7 @@
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-paths"></a>Indices paths<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/client-concepts/high-level/inference/indices-paths.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Some APIs in Elasticsearch take one or many index name or a special <code class="literal">_all</code> marker to send the request to all the indices
 In NEST, this is encoded using <code class="literal">Indices</code>.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_implicit_conversion_2"></a>Implicit Conversion<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/client-concepts/high-level/inference/indices-paths.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Several types implicitly convert to <code class="literal">Indices</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Nest.Indices singleIndexFromString = "name";
 Nest.Indices multipleIndicesFromString = "name1, name2";
+Nest.Indices multipleIndicesFromStringArray = new [] { "name1", "name2" };
 Nest.Indices allFromString = "_all";
 Nest.Indices allWithOthersFromString = "_all, name2";
 singleIndexFromString.Match(
@@ -585,6 +586,10 @@ allFromString.Match(
 allWithOthersFromString.Match(
     all =&gt; all.Should().NotBeNull(),
     many =&gt; many.Indices.Should().BeNull()
+);
+multipleIndicesFromStringArray.Match(
+    all =&gt; all.Should().BeNull(),
+    many =&gt; many.Indices.Should().HaveCount(2).And.Contain("name2")
 );</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="nest-indices"></a>Using Nest.Indices<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/client-concepts/high-level/inference/indices-paths.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To ease creating <code class="literal">IndexName</code> or <code class="literal">Indices</code> from expressions, there is a static <code class="literal">Nest.Indices</code> class you can use</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_specifying_a_single_index"></a>Specifying a single index<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/client-concepts/high-level/inference/indices-paths.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A single index can be specified using a CLR type or a string</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var client = TestClient.Default;
 
 var singleString = Index("name1"); <a id="CO13-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
@@ -617,7 +622,15 @@ ISearchRequest manyTypedRequest = new SearchDescriptor&lt;Project&gt;().Index(ma
 
 ((IUrlParameter)manyStringRequest.Index).GetString(this.Client.ConnectionSettings).Should().Be("name1,name2");
 
-((IUrlParameter)manyTypedRequest.Index).GetString(this.Client.ConnectionSettings).Should().Be("project,devs"); <a id="CO14-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+((IUrlParameter)manyTypedRequest.Index).GetString(this.Client.ConnectionSettings).Should().Be("project,devs"); <a id="CO14-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+
+manyStringRequest = new SearchDescriptor&lt;Project&gt;().Index(new[] { "name1", "name2" });
+
+((IUrlParameter)manyStringRequest.Index).GetString(this.Client.ConnectionSettings).Should().Be("name1,name2");
+
+manyStringRequest = new SearchDescriptor&lt;Project&gt;().Type(new[] { "name1", "name2" });
+
+((IUrlParameter)manyStringRequest.Type).GetString(this.Client.ConnectionSettings).Should().Be("name1,name2");</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 specifying multiple indices using strings
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 specifying multiple indices using types
