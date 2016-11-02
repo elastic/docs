@@ -243,9 +243,9 @@ jQuery(function() {
         } else {
           path = path.replace(/^\//, '');
           path += path.includes('?') ? '&pretty' : '?pretty';
-          body = body.replace(/\'/g, '\\u0027');
           curlText += 'curl -X' + method + " 'localhost:9200/" + path + "'";
           if (body) {
+            body = body.replace(/\'/g, '\\u0027');
             curlText += " -d'" + body + "'";
           }
           curlText += '\n';
