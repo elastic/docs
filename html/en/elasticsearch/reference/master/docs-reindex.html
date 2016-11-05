@@ -1002,7 +1002,7 @@ create an index containing documents that look like this:</p><div class="pre_wra
     "text": "words words",
     "tag": "foo"
   }
-}</pre></div><p>Or you can search by <code class="literal">tag</code> or whatever you want.</p><h3><a id="_manually_slicing_3"></a>Manually slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Reindex supports <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> allowing you to manually parallelize the
+}</pre></div><p>Or you can search by <code class="literal">tag</code> or whatever you want.</p><h4><a id="docs-reindex-manual-slice"></a>Manual slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Reindex supports <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a>, allowing you to manually parallelize the
 process relatively easily:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
   "source": {
@@ -1033,11 +1033,60 @@ POST new_twitter/_search?size=0&amp;filter_path=hits.total</pre></div><div class
   "hits": {
     "total": 120
   }
-}</pre></div><h3><a id="_reindex_daily_indices"></a>Reindex daily indices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can use <code class="literal">_reindex</code> in combination with <a class="link" href="modules-scripting-painless.html" title="Painless Scripting Language">Painless</a>
+}</pre></div><h3><a id="docs-reindex-automatic-slice"></a>Automatic slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can also let reindex automatically parallelize using <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> to
+slice on <code class="literal">_uid</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex?slices=5&amp;refresh
+{
+  "source": {
+    "index": "twitter"
+  },
+  "dest": {
+    "index": "new_twitter"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/25.json"></div><p>Which you also can verify works with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST new_twitter/_search?size=0&amp;filter_path=hits.total</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/26.json"></div><p>Which results in a sensible <code class="literal">total</code> like this one:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "hits": {
+    "total": 120
+  }
+}</pre></div><p>Adding <code class="literal">slices</code> to <code class="literal">_reindex</code> just automates the manual process used in the
+section above, creating sub-requests which means it has some quirks:
+* You can see these requests in the <a class="link" href="docs-reindex.html#docs-reindex-task-api" title="Works with the Task APIedit">Tasks APIs</a>. These
+sub-requests are "child" tasks of the task for the request with <code class="literal">slices</code>.
+* Fetching the status of the task for the request with <code class="literal">slices</code> only contains
+the status of completed slices.
+* These sub-requests are individually addressable for things like cancellation
+and rethrottling.
+* Rethrottling the request with <code class="literal">slices</code> will rethrottle the unfinished
+sub-request proportionally.
+* Canceling the request with <code class="literal">slices</code> will cancel each sub-request.
+* Due to the nature of <code class="literal">slices</code> each sub-request won’t get a perfectly even
+portion of the documents. All documents will be addressed, but some slices may
+be larger than others. Expect larger slices to have a more even distribution.
+* Parameters like <code class="literal">requests_per_second</code> and <code class="literal">size</code> on a request with <code class="literal">slices</code>
+are distributed proportionally to each sub-request. Combine that with the point
+above about distribution being uneven and you should conclude that the using
+<code class="literal">size</code> with <code class="literal">slices</code> might not result in exactly <code class="literal">size</code> documents being
+`_reindex`ed.
+* Each sub-requests gets a slightly different snapshot of the source index
+though these are all taken at approximately the same time.</p><h3><a id="docs-reindex-picking-slices"></a>Picking the number of slices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>At this point we have a few recommendations around the number of <code class="literal">slices</code> to
+use (the <code class="literal">max</code> parameter in the slice API if manually parallelizing):</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Don’t use large numbers. <code class="literal">500</code> creates fairly massive CPU thrash.
+</li><li class="listitem">
+It is more efficient from a query performance standpoint to use some multiple
+of the number of shards in the source index.
+</li><li class="listitem">
+Using exactly as many shards as are in the source index is the most efficient
+from a query performance standpoint.
+</li><li class="listitem">
+Indexing performance should scale linearly across available resources with
+the number of <code class="literal">slices</code>.
+</li><li class="listitem">
+Whether indexing or query performance dominates that process depends on lots
+of factors like the documents being reindexed and the cluster doing the
+reindexing.
+</li></ul></div><h3><a id="_reindex_daily_indices"></a>Reindex daily indices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can use <code class="literal">_reindex</code> in combination with <a class="link" href="modules-scripting-painless.html" title="Painless Scripting Language">Painless</a>
  to reindex daily indices to apply a new template to the existing documents.</p><p>Assuming you have indices consisting of documents as following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT metricbeat-2016.05.30/beat/1?refresh
 {"system.cpu.idle.pct": 0.908}
 PUT metricbeat-2016.05.31/beat/1?refresh
-{"system.cpu.idle.pct": 0.105}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/25.json"></div><p>The new template for the <code class="literal">metricbeat-*</code> indices is already loaded into elasticsearch
+{"system.cpu.idle.pct": 0.105}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/27.json"></div><p>The new template for the <code class="literal">metricbeat-*</code> indices is already loaded into elasticsearch
 but it applies only to the newly created indices. Painless can be used to reindex
 the existing documents and apply the new template.</p><p>The script below extracts the date from the index name and creates a new index
 with <code class="literal">-1</code> appended. All data from <code class="literal">metricbeat-2016.05.31</code> will be reindex
@@ -1053,8 +1102,8 @@ into <code class="literal">metricbeat-2016.05.31-1</code>.</p><div class="pre_wr
     "lang": "painless",
     "inline": "ctx._index = 'metricbeat-' + (ctx._index.substring('metricbeat-'.length(), ctx._index.length())) + '-1'"
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/26.json"></div><p>All documents from the previous metricbeat indices now can be found in the <code class="literal">*-1</code> indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET metricbeat-2016.05.30-1/beat/1
-GET metricbeat-2016.05.31-1/beat/1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/27.json"></div><p>The previous method can also be used in combination with <a class="link" href="docs-reindex.html#docs-reindex-change-name" title="Reindex to change the name of a fieldedit">change the name of a field</a>
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/28.json"></div><p>All documents from the previous metricbeat indices now can be found in the <code class="literal">*-1</code> indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET metricbeat-2016.05.30-1/beat/1
+GET metricbeat-2016.05.31-1/beat/1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/29.json"></div><p>The previous method can also be used in combination with <a class="link" href="docs-reindex.html#docs-reindex-change-name" title="Reindex to change the name of a fieldedit">change the name of a field</a>
 to only load the existing data into the new index, but also rename fields if needed.</p></div><div class="navfooter"><span class="prev"><a href="docs-bulk.html">
               « 
               Bulk API</a>
