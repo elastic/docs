@@ -701,17 +701,49 @@ behavior, to enable returning <code class="literal">_source</code> with suggesti
 <code class="literal">text</code> field uses the <code class="literal">input</code> of your indexed suggestion. Suggestions
 return the full document <code class="literal">_source</code> by default. The size of the <code class="literal">_source</code>
 can impact performance due to disk fetch and network transport overhead.
-For best performance, filter out unnecessary fields from the <code class="literal">_source</code>
+To save some network overhead, filter out unnecessary fields from the <code class="literal">_source</code>
 using <a class="link" href="search-request-source-filtering.html" title="Source filtering">source filtering</a> to minimize
-<code class="literal">_source</code> size. The following demonstrates an example completion query
-with source filtering:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_suggest
+<code class="literal">_source</code> size. Note that the _suggest endpoint doesn’t support source
+filtering but using suggest on the <code class="literal">_search</code> endpoint does:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_search?size=0
 {
-    "_source": "completion.*",
-    "song-suggest" : {
-        "prefix" : "nir",
-        "completion" : {
-            "field" : "suggest"
+    "_source": "suggest",
+    "suggest": {
+        "song-suggest" : {
+            "prefix" : "nir",
+            "completion" : {
+                "field" : "suggest"
+            }
         }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/6.json"></div><p>Which should look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "took": 6,
+    "timed_out": false,
+    "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+    },
+    "hits": {
+        "total" : 0,
+        "max_score" : 0.0,
+        "hits" : []
+    },
+    "suggest": {
+        "song-suggest" : [ {
+            "text" : "nir",
+            "offset" : 0,
+            "length" : 3,
+            "options" : [ {
+                "text" : "Nirvana",
+                "_index": "music",
+                "_type": "song",
+                "_id": "1",
+                "_score": 1.0,
+                "_source": {
+                    "suggest": ["Nevermind", "Nirvana"]
+                }
+            } ]
+        } ]
     }
 }</pre></div><p>The basic completion suggester query supports the following parameters:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">field</code>
@@ -742,7 +774,7 @@ you can have a typo in your search and still get results back.</p><div class="pr
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/6.json"></div><p>Suggestions that share the longest prefix to the query <code class="literal">prefix</code> will
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/7.json"></div><p>Suggestions that share the longest prefix to the query <code class="literal">prefix</code> will
 be scored higher.</p><p>The fuzzy query can take specific fuzzy parameters.
 The following parameters are supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
@@ -803,7 +835,7 @@ you can express a prefix as a regular expression</p><div class="pre_wrapper"><pr
             "field" : "suggest"
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/7.json"></div><p>The regex query can take specific regex parameters.
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/8.json"></div><p>The regex query can take specific regex parameters.
 The following parameters are supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">flags</code>
