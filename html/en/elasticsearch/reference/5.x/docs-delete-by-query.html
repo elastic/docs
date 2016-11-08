@@ -755,7 +755,7 @@ can be either <code class="literal">-1</code> to disable throttling or any decim
 like <code class="literal">1.7</code> or <code class="literal">12</code> to throttle to that level. Rethrottling that speeds up the
 query takes effect immediately but rethrotting that slows down the query will
 take effect on after completing the current batch. This prevents scroll
-timeouts.</p><h3><a id="_manually_slicing"></a>Manually slicing<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/delete-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Delete-by-query supports <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> allowing you to manually parallelize
+timeouts.</p><h3><a id="docs-delete-by-query-manual-slice"></a>Manually slicing<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/delete-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Delete-by-query supports <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> allowing you to manually parallelize
 the process relatively easily:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_delete_by_query
 {
   "slice": {
@@ -797,7 +797,67 @@ POST twitter/_search?size=0&amp;filter_path=hits.total
   "hits": {
     "total": 0
   }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="docs-delete.html">
+}</pre></div><h3><a id="docs-delete-by-query-automatic-slice"></a>Automatic slicing<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/delete-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can also let delete-by-query automatically parallelize using
+<a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> to slice on <code class="literal">_uid</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_delete_by_query?refresh&amp;slices=5
+{
+  "query": {
+    "range": {
+      "likes": {
+        "lt": 10
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-delete-by-query/12.json"></div><p>Which you also can verify works with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_search?size=0&amp;filter_path=hits.total
+{
+  "query": {
+    "range": {
+      "likes": {
+        "lt": 10
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-delete-by-query/13.json"></div><p>Which results in a sensible <code class="literal">total</code> like this one:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "hits": {
+    "total": 0
+  }
+}</pre></div><p>Adding <code class="literal">slices</code> to <code class="literal">_delete_by_query</code> just automates the manual process used in
+the section above, creating sub-requests which means it has some quirks:
+* You can see these requests in the
+<a class="link" href="docs-delete-by-query.html#docs-delete-by-query-task-api" title="Works with the Task APIedit">Tasks APIs</a>. These sub-requests are "child"
+tasks of the task for the request with <code class="literal">slices</code>.
+* Fetching the status of the task for the request with <code class="literal">slices</code> only contains
+the status of completed slices.
+* These sub-requests are individually addressable for things like cancellation
+and rethrottling.
+* Rethrottling the request with <code class="literal">slices</code> will rethrottle the unfinished
+sub-request proportionally.
+* Canceling the request with <code class="literal">slices</code> will cancel each sub-request.
+* Due to the nature of <code class="literal">slices</code> each sub-request won’t get a perfectly even
+portion of the documents. All documents will be addressed, but some slices may
+be larger than others. Expect larger slices to have a more even distribution.
+* Parameters like <code class="literal">requests_per_second</code> and <code class="literal">size</code> on a request with <code class="literal">slices</code>
+are distributed proportionally to each sub-request. Combine that with the point
+above about distribution being uneven and you should conclude that the using
+<code class="literal">size</code> with <code class="literal">slices</code> might not result in exactly <code class="literal">size</code> documents being
+`_delete_by_query`ed.
+* Each sub-requests gets a slightly different snapshot of the source index
+though these are all taken at approximately the same time.</p><h3><a id="docs-delete-by-query-picking-slices"></a>Picking the number of slices<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/delete-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>At this point we have a few recommendations around the number of <code class="literal">slices</code> to
+use (the <code class="literal">max</code> parameter in the slice API if manually parallelizing):</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Don’t use large numbers. <code class="literal">500</code> creates fairly massive CPU thrash.
+</li><li class="listitem">
+It is more efficient from a query performance standpoint to use some multiple
+of the number of shards in the source index.
+</li><li class="listitem">
+Using exactly as many shards as are in the source index is the most efficient
+from a query performance standpoint.
+</li><li class="listitem">
+Indexing performance should scale linearly across available resources with
+the number of <code class="literal">slices</code>.
+</li><li class="listitem">
+Whether indexing or query performance dominates that process depends on lots
+of factors like the documents being reindexed and the cluster doing the
+reindexing.
+</li></ul></div></div><div class="navfooter"><span class="prev"><a href="docs-delete.html">
               « 
               Delete API</a>
            
