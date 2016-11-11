@@ -9,6 +9,7 @@ our @Old_ARGV = @ARGV;
 
 use Cwd;
 use FindBin;
+use Data::Dumper;
 
 BEGIN {
     $Old_Pwd = Cwd::cwd();
@@ -22,6 +23,7 @@ die "$0 already running\n" if Proc::PID::File->running( dir => '.run' );
 use ES::Util qw(
     run $Opts
     build_chunked build_single
+    proc_man
     sha_for
     timestamp
     write_html_redirect
@@ -42,8 +44,8 @@ use ES::Template();
 GetOptions(
     $Opts,    #
     'all', 'push',    #
-    'single', 'doc=s', 'out=s', 'toc', 'chunk=i', 'comments',
-    'open',   'staging',
+    'single',  'doc=s',   'out=s', 'toc', 'chunk=i', 'comments',
+    'open',    'staging', 'procs=i',
     'lenient', 'verbose', 'reload_template'
 ) || exit usage();
 
@@ -204,7 +206,7 @@ sub check_kibana_links {
         $branch = $_;
         next if $branch eq 'current' || $branch =~ /^\d/ && $branch < 5;
         say "  Branch $branch";
-        $repo->checkout( "link_check", $branch );
+        $repo->checkout($branch);
         $link_checker->check_file( $repo->dir->file($src_path),
             $extractor, "Kibana [$branch]: $src_path" );
     }
@@ -317,7 +319,7 @@ sub init_repos {
         or die "Missing <paths.branch_tracker> in config";
 
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
-
+    my $pm = proc_man($Opts->{procs} * 3 );
     for my $name (@repo_names) {
         my $repo = ES::Repo->new(
             name    => $name,
@@ -325,8 +327,11 @@ sub init_repos {
             tracker => $tracker,
             %{ $conf->{$name} }
         );
+        $pm->start($name) and next;
         $repo->update_from_remote();
+        $pm->finish;
     }
+    $pm->wait_all_children;
 
     for my $dir ( $repos_dir->children ) {
         next unless $dir->is_dir;
@@ -449,6 +454,7 @@ sub usage {
           --lenient         Ignore linking errors
           --staging         Use the template from the staging website
           --reload_template Force retrieving the latest web template
+          --procs           Number of processes to run in parallel, defaults to 3
           --verbose
 
         WARNING: Anything in the `out` dir will be deleted!

@@ -131,18 +131,27 @@ sub _local_branches {
 #===================================
 sub checkout {
 #===================================
-    my $self = shift;
-    my ( $path, $branch ) = @_;
-
-    my $tracker = $self->tracker_branch(@_);
+    my ( $self, $branch ) = @_;
 
     local $ENV{GIT_DIR}       = $self->git_dir;
     local $ENV{GIT_WORK_TREE} = $self->dir;
 
     run qw( git reset --hard );
     run qw( git clean --force -d);
-    run qw( git checkout --force -B _build_docs ), "origin/$branch";
+    run qw( git checkout --force -B), $branch, "origin/$branch";
     return 1;
+}
+
+#===================================
+sub local_clone {
+#===================================
+    my ( $self, $branch ) = @_;
+
+    my $temp = Path::Class::tempdir( CLEANUP => 1 );
+    $self->checkout($branch);
+    run qw( git clone), $self->dir, $temp;
+    return $temp;
+
 }
 
 #===================================
@@ -179,8 +188,7 @@ sub mark_done {
     local $ENV{GIT_DIR}       = $self->git_dir;
     local $ENV{GIT_WORK_TREE} = $self->dir;
 
-    run qw( git checkout -B), $tracker_branch, "refs/remotes/origin/$branch";
-    run qw( git branch -D _build_docs);
+    run qw( git branch --force), $tracker_branch, "refs/remotes/origin/$branch";
 
     $self->tracker->set_sha_for_branch( $self->name, $tracker_branch,
         sha_for($tracker_branch) );

@@ -4,7 +4,8 @@ use strict;
 use warnings;
 use v5.10;
 use Data::Dumper qw(Dumper);
-use ES::Util qw(run build_chunked build_single write_html_redirect);
+use ES::Util
+    qw(run build_chunked build_single proc_man write_html_redirect $Opts);
 use Path::Class();
 use ES::Repo();
 use File::Copy::Recursive qw(fcopy rcopy);
@@ -84,16 +85,22 @@ sub build {
     my $dir = $self->dir;
     $dir->mkpath;
 
-    my $title = $self->title;
+    my $title    = $self->title;
+    my $src_path = $self->src_path;
+
+    my $pm = proc_man(
+        $Opts->{procs},
+        sub {
+            my ( $pid, $error, $branch ) = @_;
+            $self->repo->mark_done( $src_path, $branch );
+        }
+    );
 
     for my $branch ( @{ $self->branches } ) {
-
-        say " - Branch: $branch";
-        $self->_build_book($branch);
+        $self->_build_book( $branch, $pm );
 
         my $branch_title = $self->branch_title($branch);
         if ( $branch eq $self->current ) {
-            $self->_copy_branch_to_current($branch);
             $toc->add_entry(
                 {   title => "$title: $branch_title (current)",
                     url   => "current/index.html"
@@ -108,13 +115,13 @@ sub build {
                 }
             );
         }
-
     }
-
+    $pm->wait_all_children();
+    $self->_copy_branch_to_current( $self->current );
     $self->remove_old_branches;
 
     if ( $self->is_multi_version ) {
-        say " - Writing versions TOC";
+        say "   - Writing versions TOC";
         $toc->write($dir);
         return {
             title => "$title [" . $self->branch_title( $self->current ) . "\\]",
@@ -124,7 +131,7 @@ sub build {
         };
     }
 
-    say " - Writing redirect to current branch";
+    say "   - Writing redirect to current branch";
     write_html_redirect( $dir, "current/index.html" );
 
     return {
@@ -136,7 +143,7 @@ sub build {
 #===================================
 sub _build_book {
 #===================================
-    my ( $self, $branch ) = @_;
+    my ( $self, $branch, $pm ) = @_;
 
     my $branch_dir    = $self->dir->subdir($branch);
     my $repo          = $self->repo;
@@ -146,20 +153,20 @@ sub _build_book {
     my $edit_url      = $repo->edit_url( $branch, $index );
     my $section_title = $self->section_title($branch);
 
-    return say "   - Reusing existing"
-        if -e $branch_dir
+    return
+           if -e $branch_dir
         && !$template->md5_changed($branch_dir)
         && !$repo->has_changed( $src_path, $branch );
 
-    say "   - Building";
-    $repo->checkout( $src_path, $branch );
-
+    my $checkout = $repo->local_clone($branch);
+    $pm->start($branch) and return;
+    say " - Branch: $branch - Building...";
     eval {
         if ( $self->single ) {
             $branch_dir->rmtree;
             $branch_dir->mkpath;
             build_single(
-                $repo->dir->file($index),
+                $checkout->file($index),
                 $branch_dir,
                 version       => $branch,
                 edit_url      => $edit_url,
@@ -172,7 +179,7 @@ sub _build_book {
         }
         else {
             build_chunked(
-                $repo->dir->file($index),
+                $checkout->file($index),
                 $branch_dir,
                 version       => $branch,
                 edit_url      => $edit_url,
@@ -184,9 +191,10 @@ sub _build_book {
             );
             $self->_add_title_to_toc( $branch, $branch_dir );
         }
-        $repo->mark_done( $src_path, $branch );
+        say " - Branch: $branch - Finished";
+
         1;
-    } && return;
+    } && $pm->finish;
 
     my $error = $@;
     die "\nERROR building "
@@ -227,7 +235,7 @@ sub _copy_branch_to_current {
 #===================================
     my ( $self, $branch ) = @_;
 
-    say "   - Copying to current";
+    say "   - Copying $branch to current";
 
     my $branch_dir  = $self->dir->subdir($branch);
     my $current_dir = $self->dir->subdir('current');

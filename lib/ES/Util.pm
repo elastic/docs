@@ -5,9 +5,10 @@ use warnings;
 use v5.10;
 
 use File::Copy::Recursive qw(fcopy rcopy);
-use Capture::Tiny qw(capture_merged tee_merged);
+use Capture::Tiny qw(capture tee);
 use Encode qw(decode_utf8);
 use Path::Class qw(dir);
+use Parallel::ForkManager();
 
 binmode( STDOUT, ':encoding(utf8)' );
 
@@ -16,26 +17,28 @@ our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
     run $Opts
     build_chunked build_single
+    proc_man
     get_url
     sha_for
     timestamp
     write_html_redirect
 );
 
-our $Opts = {};
+our $Opts = { procs => 3 };
 
 #===================================
 sub build_chunked {
 #===================================
     my ( $index, $dest, %opts ) = @_;
 
-    my $chunk       = $opts{chunk} || 0;
-    my $build       = $dest->parent;
-    my $version     = $opts{version} || 'test build';
-    my $multi       = $opts{multi} || 0;
-    my $lenient     = $opts{lenient} || '';
-    my $edit_url    = $opts{edit_url} || '';
-    my $section     = $opts{section_title} || '';
+    my $chunk   = $opts{chunk}   || 0;
+    my $version = $opts{version} || 'test build';
+    my $build = Path::Class::tempdir( CLEANUP => 1 );
+    $build->mkpath;
+    my $multi    = $opts{multi}         || 0;
+    my $lenient  = $opts{lenient}       || '';
+    my $edit_url = $opts{edit_url}      || '';
+    my $section  = $opts{section_title} || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
 
     my $output = run(
@@ -76,8 +79,7 @@ sub build_chunked {
     finish_build( $index->parent, $chunk_dir );
     extract_toc_from_index($chunk_dir);
     $dest->rmtree;
-    rename $chunk_dir, $dest
-        or die "Couldn't move <$chunk_dir> to <$dest>: $!";
+    run( 'mv', $chunk_dir, $dest );
 }
 
 #===================================
@@ -231,16 +233,17 @@ HTML
 sub run (@) {
 #===================================
     my @args = @_;
-    my ( $out, $ok );
+    my ( $out, $err, $ok );
+
     if ( $Opts->{verbose} ) {
         say "Running: @args";
-        ( $out, $ok ) = tee_merged { system(@args) == 0 };
+        ( $out, $err, $ok ) = tee { system(@args) == 0 };
     }
     else {
-        ( $out, $ok ) = capture_merged { system(@args) == 0 };
+        ( $out, $err, $ok ) = capture { system(@args) == 0 };
     }
 
-    die "Error executing: @args\n$out"
+    die "Error executing: @args\n$out\n---\n$err"
         unless $ok;
 
     return $out;
@@ -259,6 +262,26 @@ sub get_url {
         && return $res;
 
     die "URL ($url) failed with $@\n";
+}
+
+#===================================
+sub proc_man {
+#===================================
+    my ( $procs, $finish ) = @_;
+    my $pm = Parallel::ForkManager->new($procs);
+    $pm->set_waitpid_blocking_sleep(0.1);
+    $pm->run_on_finish(
+        sub {
+            if ( $_[1] ) {
+                kill -9, $pm->running_procs();
+                kill 9,  $pm->running_procs();
+                exit $_[1];
+            }
+            $finish->(@_) if $finish;
+        }
+    );
+    return $pm;
+
 }
 
 #===================================
