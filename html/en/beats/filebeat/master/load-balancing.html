@@ -578,7 +578,7 @@ outputs. The Kafka output handles load balancing internally.</p><p>Filebeat can 
 </p><p class="simpara">By default, when you configure Filebeat to send events to multiple hosts
 (<code class="literal">loadbalance: true</code>), Filebeat will send the events to one host after
 another. This mode requires the least memory and CPU usage. This is not
-true load balancing in the sense that Filebeat does account for the load
+true load balancing in the sense that Filebeat doesn’t account for the load
 being processed by each host.</p><p class="simpara">The load balancer also supports multiple workers per host. The default is
 <code class="literal">worker: 1</code>. If you increase the number of workers, additional network
 connections will be used.  The total number of workers participating
@@ -592,8 +592,10 @@ output.logstash:
   worker: 2</pre></div><p class="simpara">In this example, there are 4 workers participating in load balancing.</p></li><li class="listitem"><p class="simpara">
 <span class="strong"><strong>Send events to <code class="literal">N</code> hosts in lock-step:</strong></span>
 </p><p class="simpara">You can configure Filebeat to send events to <code class="literal">N</code> hosts in lock-step by setting
-<code class="literal">spool_size = N * bulk_max_size</code>. This mode requires more memory and CPU usage
-than the previous mode.</p><p class="simpara">Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.prospectors:
+<code class="literal">spool_size = N * bulk_max_size</code>. In lock-step mode, the batch collected by the
+spooler is split up into smaller batches of size <code class="literal">bulk_max_size</code>. These smaller
+batches are load balanced between available connections. Filebeat waits for all
+sub-batches to be published before it retrieves another batch from the spooler.</p><p class="simpara">This mode requires more memory and CPU usage than the previous mode.</p><p class="simpara">Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.prospectors:
 - input_type: log
   paths:
     - /var/log/*.log
