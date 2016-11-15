@@ -568,34 +568,33 @@ Not what you want? See the
            
           <a href="search-aggregations-metrics-stats-aggregation.html">Stats Aggregation
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-metrics-scripted-metric-aggregation"></a>Scripted Metric Aggregation<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release.</p></div></div><p>A metric aggregation that executes using scripts to provide a metric output.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-metrics-scripted-metric-aggregation"></a>Scripted Metric Aggregation<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release.</p></div></div><p>A metric aggregation that executes using scripts to provide a metric output.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST ledger/_search?size=0
+{
     "query" : {
         "match_all" : {}
     },
     "aggs": {
         "profit": {
             "scripted_metric": {
-                "init_script" : "_agg['transactions'] = []",
-                "map_script" : "if (doc['type'].value == \"sale\") { _agg.transactions.add(doc['amount'].value) } else { _agg.transactions.add(-1 * doc['amount'].value) }", <a id="CO60-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                "combine_script" : "profit = 0; for (t in _agg.transactions) { profit += t }; return profit",
-                "reduce_script" : "profit = 0; for (a in _aggs) { profit += a }; return profit"
+                "init_script" : "params._agg.transactions = []",
+                "map_script" : "params._agg.transactions.add(doc.type.value == 'sale' ? doc.amount.value : -1 * doc.amount.value)", <a id="CO60-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                "combine_script" : "double profit = 0; for (t in params._agg.transactions) { profit += t } return profit",
+                "reduce_script" : "double profit = 0; for (a in params._aggs) { profit += a } return profit"
             }
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO60-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-scripted-metric-aggregation/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO60-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 <code class="literal">map_script</code> is the only required  parameter
 </p></td></tr></table></div><p>The above aggregation demonstrates how one would use the script aggregation compute the total profit from sale and cost transactions.</p><p>The response for the above aggregation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "took": 218,
     ...
-
     "aggregations": {
         "profit": {
-            "value": 170
+            "value": 240.0
         }
    }
-}</pre></div><p>The above example can also be specified using file scripts as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "query" : {
-        "match_all" : {}
-    },
+}</pre></div><p>The above example can also be specified using file scripts as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST ledger/_search?size=0
+{
     "aggs": {
         "profit": {
             "scripted_metric": {
@@ -609,16 +608,20 @@ Not what you want? See the
                     "file": "my_combine_script"
                 },
                 "params": {
-                    "field": "amount" <a id="CO61-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    "field": "amount", <a id="CO61-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    "_agg": {}        <a id="CO61-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
                 },
                 "reduce_script" : {
                     "file": "my_reduce_script"
-                },
+                }
             }
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO61-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-script parameters for init, map and combine scripts must be specified in a global <code class="literal">params</code> object so that it can be share between the scripts
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-scripted-metric-aggregation/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO61-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+script parameters for <code class="literal">init</code>, <code class="literal">map</code> and <code class="literal">combine</code> scripts must be specified
+in a global <code class="literal">params</code> object so that it can be share between the scripts.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO61-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+if you specify script parameters then you must specify <code class="literal">"_agg": {}</code>.
 </p></td></tr></table></div><p>For more details on specifying scripts see <a class="link" href="modules-scripting.html" title="Scripting">script documentation</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_allowed_return_types"></a>Allowed return types<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Whilst and valid script object can be used within a single script. the scripts must return or store in the <code class="literal">_agg</code> object only the following types:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 primitive types
 </li><li class="listitem">
@@ -651,33 +654,15 @@ Executed once on the coordinating node after all shards have returned their resu
                     variable <code class="literal">_aggs</code> which is an array of the result of the combine_script on each shard. If a reduce_script is not provided
                     the reduce phase will return the <code class="literal">_aggs</code> variable.
 </p><p class="simpara">In the above example, the <code class="literal">reduce_script</code> iterates through the <code class="literal">profit</code> returned by each shard summing the values before returning the
-final combined profit which will be returned in the response of the aggregation.</p></dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_worked_example"></a>Worked Example<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Imagine a situation where you index the following documents into and index with 2 shards:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">$ curl -XPUT 'http://localhost:9200/transactions/stock/1' -d '
-{
-    "type": "sale",
-    "amount": 80
-}
-'
-
-$ curl -XPUT 'http://localhost:9200/transactions/stock/2' -d '
-{
-    "type": "cost",
-    "amount": 10
-}
-'
-
-$ curl -XPUT 'http://localhost:9200/transactions/stock/3' -d '
-{
-    "type": "cost",
-    "amount": 30
-}
-'
-
-$ curl -XPUT 'http://localhost:9200/transactions/stock/4' -d '
-{
-    "type": "sale",
-    "amount": 130
-}
-'</pre></div><p>Lets say that documents 1 and 3 end up on shard A and documents 2 and 4 end up on shard B. The following is a breakdown of what the aggregation result is
+final combined profit which will be returned in the response of the aggregation.</p></dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_worked_example"></a>Worked Example<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Imagine a situation where you index the following documents into and index with 2 shards:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /transactions/stock/_bulk?refresh
+{"index":{"_id":1}}
+{"type": "sale","amount": 80}
+{"index":{"_id":2}}
+{"type": "cost","amount": 10}
+{"index":{"_id":2}}
+{"type": "cost","amount": 30}
+{"index":{"_id":2}}
+{"type": "sale","amount": 130}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-scripted-metric-aggregation/3.json"></div><p>Lets say that documents 1 and 3 end up on shard A and documents 2 and 4 end up on shard B. The following is a breakdown of what the aggregation result is
 at each stage of the example above.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_before_init_script"></a>Before init_script<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>No params object was specified so the default params object is used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"params" : {
     "_agg" : {}
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_after_init_script"></a>After init_script<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>This is run once on each shard before any document collection is performed, and so we will have a copy on each shard:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
