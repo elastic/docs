@@ -615,7 +615,73 @@ Here is an example of a pipeline specifying custom pattern definitions:</p><div 
       }
     }
   ]
-}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="foreach-processor.html">
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="trace-match"></a>Providing Multiple Match Patterns<a href="https://github.com/elastic/elasticsearch/edit/5.0/docs/reference/ingest/ingest-node.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Sometimes one pattern is not enough to capture the potential structure of a field. Let’s assume we
+want to match all messages that contain your favorite pet breeds of either cats or dogs. One way to accomplish
+this is to provide two distinct patterns that can be matched, instead of one really complicated expression capturing
+the same <code class="literal">or</code> behavior.</p><p>Here is an example of such a configuration executed against the simulate API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _ingest/pipeline/_simulate
+{
+  "pipeline": {
+  "description" : "parse multiple patterns",
+  "processors": [
+    {
+      "grok": {
+        "field": "message",
+        "patterns": ["%{FAVORITE_DOG:pet}", "%{FAVORITE_CAT:pet}"],
+        "pattern_definitions" : {
+          "FAVORITE_DOG" : "beagle",
+          "FAVORITE_CAT" : "burmese"
+        }
+      }
+    }
+  ]
+},
+"docs":[
+  {
+    "_source": {
+      "message": "I love burmese cats!"
+    }
+  }
+  ]
+}</pre></div><div class="console_widget" data-snippet="snippets/grok-processor/1.json"></div><p>response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "docs": [
+    {
+      "doc": {
+        "_type": "_type",
+        "_index": "_index",
+        "_id": "_id",
+        "_source": {
+          "message": "I love burmese cats!",
+          "pet": "burmese"
+        },
+        "_ingest": {
+          "timestamp": "2016-11-08T19:43:03.850+0000"
+        }
+      }
+    }
+  ]
+}</pre></div><p>Both patterns will set the field <code class="literal">pet</code> with the appropriate match, but what if we want to trace which of our
+patterns matched and populated our fields? We can do this with the <code class="literal">trace_match</code> parameter. Here is the output of
+that same pipeline, but with <code class="literal">"trace_match": true</code> configured:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "docs": [
+    {
+      "doc": {
+        "_type": "_type",
+        "_index": "_index",
+        "_id": "_id",
+        "_source": {
+          "message": "I love burmese cats!",
+          "pet": "burmese"
+        },
+        "_ingest": {
+          "_grok_match_index": "1",
+          "timestamp": "2016-11-08T19:43:03.850+0000"
+        }
+      }
+    }
+  ]
+}</pre></div><p>In the above response, you can see that the index of the pattern that matched was <code class="literal">"1"</code>. This is to say that it was the
+second (index starts at zero) pattern in <code class="literal">patterns</code> to match.</p><p>This trace metadata enables debugging which of the patterns matched. This information is stored in the ingest
+metadata and will not be indexed.</p></div></div><div class="navfooter"><span class="prev"><a href="foreach-processor.html">
               « 
               Foreach Processor</a>
            
