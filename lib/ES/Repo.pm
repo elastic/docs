@@ -150,7 +150,7 @@ sub local_clone {
 #===================================
     my ( $self, $branch ) = @_;
 
-    my $temp = Path::Class::tempdir( CLEANUP => 1, dir => $self->temp_dir );
+    my $temp = Path::Class::tempdir( CLEANUP => 1, DIR => $self->temp_dir );
     $self->checkout($branch);
     run qw( git clone), $self->dir, $temp;
     return $temp;

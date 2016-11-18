@@ -307,12 +307,11 @@ sub init_repos {
     my $repos_dir = $Conf->{paths}{repos}
         or die "Missing <paths.repos> in config";
 
-    $repos_dir = dir($repos_dir);
+    $repos_dir = dir($repos_dir)->absolute;
     $repos_dir->mkpath;
 
     my $temp_dir = $repos_dir->subdir('.temp');
     $temp_dir->rmtree;
-    $temp_dir->mkpath;
 
     my $conf = $Conf->{repos}
         or die "Missing <repos> in config";
@@ -345,6 +344,7 @@ sub init_repos {
         say "Removing old repo <$basename>";
         $dir->rmtree;
     }
+    $temp_dir->mkpath;
 }
 
 #===================================
