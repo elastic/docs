@@ -16,8 +16,10 @@ sub new {
     my ( $class, %args ) = @_;
 
     my $name = $args{name} or die "No <name> specified";
-    my $dir  = $args{dir}  or die "No <dir> specified for repo <$name>";
     my $url  = $args{url}  or die "No <url> specified for repo <$name>";
+    my $dir  = $args{dir}  or die "No <dir> specified for repo <$name>";
+    my $temp_dir = $args{temp_dir}
+        or die "No <temp_dir> specified for repo <$name>";
 
     my $current = $args{current}
         or die "No <current> branch specified for repo <$name>";
@@ -35,6 +37,7 @@ sub new {
         name     => $name,
         dir      => $dir->subdir($name),
         git_dir  => $dir->subdir( $name, '.git' ),
+        temp_dir => $temp_dir,
         url      => $url,
         current  => $current,
         branches => $branches,
@@ -147,7 +150,7 @@ sub local_clone {
 #===================================
     my ( $self, $branch ) = @_;
 
-    my $temp = Path::Class::tempdir( CLEANUP => 1 );
+    my $temp = Path::Class::tempdir( CLEANUP => 1, dir => $self->temp_dir );
     $self->checkout($branch);
     run qw( git clone), $self->dir, $temp;
     return $temp;
@@ -292,6 +295,7 @@ sub all_repo_branches {
 sub name     { shift->{name} }
 sub dir      { shift->{dir} }
 sub git_dir  { shift->{git_dir} }
+sub temp_dir { shift->{temp_dir} }
 sub url      { shift->{url} }
 sub current  { shift->{current} }
 sub branches { shift->{branches} }

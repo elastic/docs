@@ -310,6 +310,10 @@ sub init_repos {
     $repos_dir = dir($repos_dir);
     $repos_dir->mkpath;
 
+    my $temp_dir = $repos_dir->subdir('.temp');
+    $temp_dir->rmtree;
+    $temp_dir->mkpath;
+
     my $conf = $Conf->{repos}
         or die "Missing <repos> in config";
 
@@ -324,6 +328,7 @@ sub init_repos {
         my $repo = ES::Repo->new(
             name    => $name,
             dir     => $repos_dir,
+            temp_dir => $temp_dir,
             tracker => $tracker,
             %{ $conf->{$name} }
         );
