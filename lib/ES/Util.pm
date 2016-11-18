@@ -31,16 +31,15 @@ sub build_chunked {
 #===================================
     my ( $index, $dest, %opts ) = @_;
 
-    my $chunk   = $opts{chunk}   || 0;
-    my $version = $opts{version} || 'test build';
-    my $build = Path::Class::tempdir( CLEANUP => 1 );
-    $build->mkpath;
+    my $chunk    = $opts{chunk}         || 0;
+    my $version  = $opts{version}       || 'test build';
     my $multi    = $opts{multi}         || 0;
     my $lenient  = $opts{lenient}       || '';
     my $edit_url = $opts{edit_url}      || '';
     my $section  = $opts{section_title} || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
-
+    $dest->rmtree;
+    $dest->mkpath;
     my $output = run(
         'a2x', '-v',
         '--icons',
@@ -49,7 +48,7 @@ sub build_chunked {
         '-a'              => 'showcomments=1',
         '--xsl-file'      => 'resources/website_chunked.xsl',
         '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
-        '--destination-dir=' . $build,
+        '--destination-dir=' . $dest,
         ( $lenient ? '-L' : () ),
         docinfo($index),
         xsltopts(
@@ -73,13 +72,15 @@ sub build_chunked {
             : die join "\n", @warn;
     }
 
-    my ($chunk_dir) = grep { -d and /\.chunked$/ } $build->children
-        or die "Couldn't find chunk dir in <$build>";
+    my ($chunk_dir) = grep { -d and /\.chunked$/ } $dest->children
+        or die "Couldn't find chunk dir in <$dest>";
 
     finish_build( $index->parent, $chunk_dir );
     extract_toc_from_index($chunk_dir);
-    $dest->rmtree;
-    run( 'mv', $chunk_dir, $dest );
+    for ( $chunk_dir->children ) {
+        run( 'mv', $_, $dest );
+    }
+    $chunk_dir->rmtree;
 }
 
 #===================================
