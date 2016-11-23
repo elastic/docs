@@ -1036,10 +1036,45 @@ one edit allowed
 <code class="literal">&gt;5</code>
 </span></dt><dd>
 two edits allowed
-</dd></dl></div><p class="simpara"><code class="literal">AUTO</code> should generally be the preferred value for <code class="literal">fuzziness</code>.</p></dd></dl></div><h3><a id="_result_casing"></a>Result Casing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>All REST APIs accept the <code class="literal">case</code> parameter. When set to <code class="literal">camelCase</code>, all
-field names in the result will be returned in camel casing, otherwise,
-underscore casing will be used. Note, this does not apply to the source
-document indexed.</p><h3><a id="_request_body_in_query_string"></a>Request body in query string<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For libraries that don’t accept a request body for non-POST requests,
+</dd></dl></div><p class="simpara"><code class="literal">AUTO</code> should generally be the preferred value for <code class="literal">fuzziness</code>.</p></dd></dl></div><h3><a id="common-options-error-options"></a>Enabling stack traces<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default when a request returns an error Elasticsearch doesn’t include the
+stack trace of the error. You can enable that behavior by setting the
+<code class="literal">error_trace</code> url parameter to <code class="literal">true</code>. For example, by default when you send an
+invalid <code class="literal">size</code> parameter to the <code class="literal">_search</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /twitter/_search?size=surprise_me</pre></div><div class="console_widget" data-snippet="snippets/common-options/9.json"></div><p>The response looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "error" : {
+    "root_cause" : [
+      {
+        "type" : "illegal_argument_exception",
+        "reason" : "Failed to parse int parameter [size] with value [surprise_me]"
+      }
+    ],
+    "type" : "illegal_argument_exception",
+    "reason" : "Failed to parse int parameter [size] with value [surprise_me]",
+    "caused_by" : {
+      "type" : "number_format_exception",
+      "reason" : "For input string: \"surprise_me\""
+    }
+  },
+  "status" : 400
+}</pre></div><p>But if you set <code class="literal">error_trace=true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /twitter/_search?size=surprise_me&amp;error_trace=true</pre></div><div class="console_widget" data-snippet="snippets/common-options/10.json"></div><p>The response looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "error": {
+    "root_cause": [
+      {
+        "type": "illegal_argument_exception",
+        "reason": "Failed to parse int parameter [size] with value [surprise_me]",
+        "stack_trace": "Failed to parse int parameter [size] with value [surprise_me]]; nested: IllegalArgumentException..."
+      }
+    ],
+    "type": "illegal_argument_exception",
+    "reason": "Failed to parse int parameter [size] with value [surprise_me]",
+    "stack_trace": "java.lang.IllegalArgumentException: Failed to parse int parameter [size] with value [surprise_me]\n    at org.elasticsearch.rest.RestRequest.paramAsInt(RestRequest.java:175)...",
+    "caused_by": {
+      "type": "number_format_exception",
+      "reason": "For input string: \"surprise_me\"",
+      "stack_trace": "java.lang.NumberFormatException: For input string: \"surprise_me\"\n    at java.lang.NumberFormatException.forInputString(NumberFormatException.java:65)..."
+    }
+  },
+  "status": 400
+}</pre></div><h3><a id="_request_body_in_query_string"></a>Request body in query string<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For libraries that don’t accept a request body for non-POST requests,
 you can pass the request body as the <code class="literal">source</code> query string parameter
 instead.</p></div><div class="navfooter"><span class="prev"><a href="date-math-index-names.html">
               « 
