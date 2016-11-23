@@ -164,7 +164,7 @@ sub check_links {
 
     $link_checker->check;
 
-    # check_kibana_links( $build_dir, $link_checker );
+    check_kibana_links( $build_dir, $link_checker );
     if ( $link_checker->has_bad ) {
         say $link_checker->report;
     }
@@ -204,7 +204,7 @@ sub check_kibana_links {
 
     for (@branches) {
         $branch = $_;
-        next if $branch eq 'current' || $branch =~ /^\d/ && $branch < 5;
+        next if $branch eq 'current' || $branch =~ /^\d/ && $branch lt 5;
         say "  Branch $branch";
         $repo->checkout($branch);
         $link_checker->check_file( $repo->dir->file($src_path),
