@@ -839,7 +839,8 @@ tie-breaker in ascending alphabetical order to prevent non-deterministic orderin
         }
     }
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_filtering_values_2"></a>Filtering Values<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/bucket/terms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It is possible to filter the values for which buckets will be created. This can be done using the <code class="literal">include</code> and
-<code class="literal">exclude</code> parameters which are based on regular expression strings or arrays of exact values.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+<code class="literal">exclude</code> parameters which are based on regular expression strings or arrays of exact values. Additionally,
+<code class="literal">include</code> clauses can filter using <code class="literal">partition</code> expressions.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_filtering_values_with_regular_expressions"></a>Filtering Values with regular expressions<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/bucket/terms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "aggs" : {
         "tags" : {
             "terms" : {
@@ -852,7 +853,7 @@ tie-breaker in ascending alphabetical order to prevent non-deterministic orderin
 }</pre></div><p>In the above example, buckets will be created for all the tags that has the word <code class="literal">sport</code> in them, except those starting
 with <code class="literal">water_</code> (so the tag <code class="literal">water_sports</code> will no be aggregated). The <code class="literal">include</code> regular expression will determine what
 values are "allowed" to be aggregated, while the <code class="literal">exclude</code> determines the values that should not be aggregated. When
-both are defined, the <code class="literal">exclude</code> has precedence, meaning, the <code class="literal">include</code> is evaluated first and only then the <code class="literal">exclude</code>.</p><p>The syntax is the same as <a class="link" href="query-dsl-regexp-query.html#regexp-syntax" title="Regular expression syntax">regexp queries</a>.</p><p>For matching based on exact values the <code class="literal">include</code> and <code class="literal">exclude</code> parameters can simply take an array of
+both are defined, the <code class="literal">exclude</code> has precedence, meaning, the <code class="literal">include</code> is evaluated first and only then the <code class="literal">exclude</code>.</p><p>The syntax is the same as <a class="link" href="query-dsl-regexp-query.html#regexp-syntax" title="Regular expression syntax">regexp queries</a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_filtering_values_with_exact_values"></a>Filtering Values with exact values<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/bucket/terms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>For matching based on exact values the <code class="literal">include</code> and <code class="literal">exclude</code> parameters can simply take an array of
 strings that represent the terms as they are found in the index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "aggs" : {
         "JapaneseCars" : {
@@ -868,7 +869,55 @@ strings that represent the terms as they are found in the index:</p><div class="
              }
          }
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multi_field_terms_aggregation"></a>Multi-field terms aggregation<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/bucket/terms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">terms</code> aggregation does not support collecting terms from multiple fields
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_filtering_values_with_partitions"></a>Filtering Values with partitions<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/bucket/terms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Sometimes there are too many unique terms to process in a single request/response pair so
+it can be useful to break the analysis up into multiple requests.
+This can be achieved by grouping the field’s values into a number of partitions at query-time and processing
+only one partition in each request.
+Consider this request which is looking for accounts that have not logged any access recently:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   "size": 0,
+   "aggs": {
+      "expired_sessions": {
+         "terms": {
+            "field": "account_id",
+            "include": {
+               "partition": 0,
+               "num_partitions": 20
+            },
+            "size": 10000,
+            "order": {
+               "last_access": "asc"
+            }
+         },
+         "aggs": {
+            "last_access": {
+               "max": {
+                  "field": "access_date"
+               }
+            }
+         }
+      }
+   }
+}</pre></div><p>This request is finding the last logged access date for a subset of customer accounts because we
+might want to expire some customer accounts who haven’t been seen for a long while.
+The <code class="literal">num_partitions</code> setting has requested that the unique account_ids are organized evenly into twenty
+partitions (0 to 19). and the <code class="literal">partition</code> setting in this request filters to only consider account_ids falling
+into partition 0. Subsequent requests should ask for partitions 1 then 2 etc to complete the expired-account analysis.</p><p>Note that the <code class="literal">size</code> setting for the number of results returned needs to be tuned with the <code class="literal">num_partitions</code>.
+For this particular account-expiration example the process for balancing values for <code class="literal">size</code> and <code class="literal">num_partitions</code> would be as follows:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Use the <code class="literal">cardinality</code> aggregation to estimate the total number of unique account_id values
+</li><li class="listitem">
+Pick a value for <code class="literal">num_partitions</code> to break the number from 1) up into more manageable chunks
+</li><li class="listitem">
+Pick a <code class="literal">size</code> value for the number of responses we want from each partition
+</li><li class="listitem">
+Run a test request
+</li></ol></div><p>If we have a circuit-breaker error we are trying to do too much in one request and must increase <code class="literal">num_partitions</code>.
+If the request was successful but the last account ID in the date-sorted test response was still an account we might want to
+expire then we may be missing accounts of interest and have set our numbers too low. We must either</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+increase the <code class="literal">size</code> parameter to return more results per partition (could be heavy on memory) or
+</li><li class="listitem">
+increase the <code class="literal">num_partitions</code> to consider less accounts per request (could increase overall processing time as we need to make more requests)
+</li></ul></div><p>Ultimately this is a balancing act between managing the elasticsearch resources required to process a single request and the volume
+of requests that the client application must issue to complete a task.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multi_field_terms_aggregation"></a>Multi-field terms aggregation<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/bucket/terms-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">terms</code> aggregation does not support collecting terms from multiple fields
 in the same document.  The reason is that the <code class="literal">terms</code> agg doesn’t collect the
 string term values themselves, but rather uses
 <a class="link" href="search-aggregations-bucket-terms-aggregation.html#search-aggregations-bucket-terms-aggregation-execution-hint" title="Execution hint">global ordinals</a>
