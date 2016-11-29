@@ -691,7 +691,19 @@ This will copy 10000 documents from <code class="literal">twitter</code> into <c
   "dest": {
     "index": "new_twitter"
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/9.json"></div><p>Like <code class="literal">_update_by_query</code>, <code class="literal">_reindex</code> supports a script that modifies the
+}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/9.json"></div><p>The <code class="literal">source</code> section supports all the elements that are supported in a
+<a class="link" href="search-request-body.html" title="Request Body Search">search request</a>. For instance only a subset of the
+fields from the original documents can be reindexed using source filtering
+as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
+{
+  "source": {
+    "index": "twitter",
+    "_source": ["user", "tweet"]
+  },
+  "dest": {
+    "index": "new_twitter"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/10.json"></div><p>Like <code class="literal">_update_by_query</code>, <code class="literal">_reindex</code> supports a script that modifies the
 document. Unlike <code class="literal">_update_by_query</code>, the script is allowed to modify the
 document’s metadata. This example bumps the version of the source document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex
 {
@@ -705,7 +717,7 @@ document’s metadata. This example bumps the version of the source document:</p
   "script": {
     "inline": "if (ctx._source.foo == 'bar') {ctx._version++; ctx._source.remove('foo')}"
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/10.json"></div><p>Think of the possibilities! Just be careful! With great power…. You can
+}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/11.json"></div><p>Think of the possibilities! Just be careful! With great power…. You can
 change:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">_id</code>
 </li><li class="listitem">
@@ -757,7 +769,7 @@ routing set to <code class="literal">cat</code>.</p><div class="pre_wrapper"><pr
     "index": "dest",
     "routing": "=cat"
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/11.json"></div><p>By default <code class="literal">_reindex</code> uses scroll batches of 1000. You can change the
+}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/12.json"></div><p>By default <code class="literal">_reindex</code> uses scroll batches of 1000. You can change the
 batch size with the <code class="literal">size</code> field in the <code class="literal">source</code> element:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
   "source": {
@@ -767,7 +779,7 @@ batch size with the <code class="literal">size</code> field in the <code class="
   "dest": {
     "index": "dest",
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/12.json"></div><h3><a id="_url_parameters_2"></a>URL Parameters<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In addition to the standard parameters like <code class="literal">pretty</code>, the Reindex API also
+}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/13.json"></div><h3><a id="_url_parameters_2"></a>URL Parameters<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In addition to the standard parameters like <code class="literal">pretty</code>, the Reindex API also
 supports <code class="literal">refresh</code>, <code class="literal">wait_for_completion</code>, <code class="literal">consistency</code>, <code class="literal">timeout</code>, and
 <code class="literal">requests_per_second</code>.</p><p>Sending the <code class="literal">refresh</code> url parameter will cause all indexes to which the request
 wrote to be refreshed. This is different than the Index API’s <code class="literal">refresh</code>
@@ -831,7 +843,7 @@ Array of all indexing failures. If this is non-empty then the request aborted
 because of those failures. See <code class="literal">conflicts</code> for how to prevent version conflicts
 from aborting the operation.
 </dd></dl></div><h3><a id="docs-reindex-task-api"></a>Works with the Task API<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>While Reindex is running you can fetch their status using the
-<a class="link" href="tasks.html" title="Task Management API">Task API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_tasks/?pretty&amp;detailed=true&amp;actions=*reindex</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/13.json"></div><p>The responses looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+<a class="link" href="tasks.html" title="Task Management API">Task API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_tasks/?pretty&amp;detailed=true&amp;actions=*reindex</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/14.json"></div><p>The responses looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "nodes" : {
     "r1A2WoRbTwKZ516z6NEs5A" : {
       "name" : "Tyrannus",
@@ -870,9 +882,9 @@ with the important addition of the <code class="literal">total</code> field. <co
 of operations that the reindex expects to perform. You can estimate the
 progress by adding the <code class="literal">updated</code>, <code class="literal">created</code>, and <code class="literal">deleted</code> fields. The request
 will finish when their sum is equal to the <code class="literal">total</code> field.
-</p></td></tr></table></div><h3><a id="docs-reindex-cancel-task-api"></a>Works with the Cancel Task API<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Any Reindex can be canceled using the <a class="link" href="tasks.html" title="Task Management API">Task Cancel API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_tasks/{task_id}/_cancel</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/14.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Cancelation should happen quickly but might take a few seconds. The task status
+</p></td></tr></table></div><h3><a id="docs-reindex-cancel-task-api"></a>Works with the Cancel Task API<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Any Reindex can be canceled using the <a class="link" href="tasks.html" title="Task Management API">Task Cancel API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_tasks/{task_id}/_cancel</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/15.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Cancelation should happen quickly but might take a few seconds. The task status
 API above will continue to list the task until it is wakes to cancel itself.</p><h3><a id="docs-reindex-rethrottle"></a>Rethrottling<a href="https://github.com/elastic/elasticsearch/edit/2.4/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The value of <code class="literal">requests_per_second</code> can be changed on a running reindex using
-the <code class="literal">_rethrottle</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex/{task_id}/_rethrottle?requests_per_second=unlimited</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/15.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Just like when setting it on the <code class="literal">_reindex</code> API <code class="literal">requests_per_second</code> can be
+the <code class="literal">_rethrottle</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_reindex/{task_id}/_rethrottle?requests_per_second=unlimited</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/16.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Just like when setting it on the <code class="literal">_reindex</code> API <code class="literal">requests_per_second</code> can be
 either <code class="literal">unlimited</code> to disable throttling or any decimal number like <code class="literal">1.7</code> or
 <code class="literal">12</code> to throttle to that level. Rethrottling that speeds up the query takes
 effect immediately but rethrotting that slows down the query will take effect
@@ -881,7 +893,7 @@ create an index containing documents that look like this:</p><div class="pre_wra
 {
   "text": "words words",
   "flag": "foo"
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/16.json"></div><p>But you don’t like the name <code class="literal">flag</code> and want to replace it with <code class="literal">tag</code>.
+}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/17.json"></div><p>But you don’t like the name <code class="literal">flag</code> and want to replace it with <code class="literal">tag</code>.
 <code class="literal">_reindex</code> can create the other index for you:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex?pretty
 {
   "source": {
@@ -893,7 +905,7 @@ create an index containing documents that look like this:</p><div class="pre_wra
   "script": {
     "inline": "ctx._source.tag = ctx._source.remove(\"flag\")"
   }
-}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/17.json"></div><p>Now you can get the new document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test2/test/1?pretty</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/18.json"></div><p>and it’ll look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/18.json"></div><p>Now you can get the new document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test2/test/1?pretty</pre></div><div class="sense_widget" data-snippet="snippets/docs-reindex/19.json"></div><p>and it’ll look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "text": "words words",
   "tag": "foo"
 }</pre></div><p>Or you can search by <code class="literal">tag</code> or whatever you want.</p></div><div class="navfooter"><span class="prev"><a href="docs-bulk.html">
