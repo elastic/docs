@@ -619,10 +619,28 @@ rule matches, the <code class="literal">index</code> field will be used.</p><p>R
       when.contains:
         message: "ERR"</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_pipeline"></a>pipeline<a href="https://github.com/elastic/beats/edit/master/packetbeat/docstputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>A format string value that specifies the ingest node pipeline to write events to.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.elasticsearch:
   hosts: ["http://localhost:9200"]
-  pipeline: my_pipeline_id</pre></div><p>For more information, see <a class="xref" href="configuring-ingest-node.html" title="Configuring Packetbeat to Use Ingest Node"><em>Configuring Packetbeat to Use Ingest Node</em></a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_pipelines"></a>pipelines<a href="https://github.com/elastic/beats/edit/master/packetbeat/docstputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Array of pipeline selector configurations supporting conditionals, format string
-based field access and name mappings. The first rule matching will be used to
-set the <code class="literal">pipeline</code> for the event to be published. If <code class="literal">pipelines</code> is missing or no
-rule matches, the <code class="literal">pipeline</code> field will be used.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_template"></a>template<a href="https://github.com/elastic/beats/edit/master/packetbeat/docstputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/indices-templates.html" target="_top">index
+  pipeline: my_pipeline_id</pre></div><p>For more information, see <a class="xref" href="configuring-ingest-node.html" title="Configuring Packetbeat to Use Ingest Node"><em>Configuring Packetbeat to Use Ingest Node</em></a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_pipelines"></a>pipelines<a href="https://github.com/elastic/beats/edit/master/packetbeat/docstputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Similar to the <code class="literal">indices</code> array, this is an array of pipeline selector
+configurations supporting conditionals, format string based field access
+and name mappings. The first rule matching will be used to set the
+<code class="literal">pipeline</code> for the event to be published. If <code class="literal">pipelines</code> is missing or
+no rule matches, the <code class="literal">pipeline</code> field will be used.</p><p>Example elasticsearch output with <code class="literal">pipelines</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.prospectors:
+- paths: ["/var/log/app/normal/*.log"]
+  fields:
+    type: "normal"
+- paths: ["/var/log/app/critical/*.log"]
+  fields:
+    type: "critical"
+
+output.elasticsearch:
+  hosts: ["http://localhost:9200"]
+  index: "filebeat-%{+yyyy.MM.dd}"
+  pipelines:
+    - pipeline: critical_pipeline
+      when.equals:
+        type: "critical"
+    - pipeline: normal_pipeline
+      when.equals:
+        type: "normal"</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_template"></a>template<a href="https://github.com/elastic/beats/edit/master/packetbeat/docstputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/current/indices-templates.html" target="_top">index
 template</a> to use for setting mappings in Elasticsearch. By default, template loading is
 enabled.</p><p>You can adjust the following settings to load your own template or overwrite an existing one:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <span class="strong"><strong><code class="literal">enabled</code></strong></span>
