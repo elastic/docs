@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Getting Started with Watcher
         | X-Pack for the Elastic Stack
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack" /><link rel="up" href="xpack-alerting.html" title="Alerting on Cluster and Index Events" /><link rel="prev" href="xpack-alerting.html" title="Alerting on Cluster and Index Events" /><link rel="next" href="watch-log-data.html" title="Watch Log Data for Errors" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack" /><link rel="up" href="xpack-alerting.html" title="Alerting on Cluster and Index Events" /><link rel="prev" href="xpack-alerting.html" title="Alerting on Cluster and Index Events" /><link rel="next" href="how-watcher-works.html" title="How Watcher Works" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -560,36 +560,147 @@
            
         </span><span class="next">
            
-          <a href="watch-log-data.html">Watch Log Data for Errors
+          <a href="how-watcher-works.html">How Watcher Works
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="watcher-getting-started"></a>Getting Started with Watcher</h2></div></div></div><p>This getting started guide walks you through setting up alerting and creating
-your first watches, and introduces the building blocks you’ll use to create
-custom watches.</p><p>To get started with alerting and notification:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-<a class="link" href="installing-xpack.html" title="Installing X-Pack">Install X-Pack</a> on each node in your cluster.
-</li><li class="listitem"><p class="simpara">
-Start Elasticsearch.
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch</pre></div></li><li class="listitem"><p class="simpara">
-Verify that Watcher is enabled, by calling the <a class="link" href="watcher-api-stats.html" title="Stats API">Watcher Stats API</a>:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _xpack/watcher/stats</pre></div><p class="simpara">You haven’t set up any watches yet, so the <code class="literal">watch_count</code> is zero and the
-<code class="literal">execution_thread_pool</code> queue is empty:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "watcher_state" : "started",
-  "watch_count" : 0,
-  "execution_thread_pool" : {
-    "queue_size" : 0,
-    "max_size" : 0
-  },
-  "manually_stopped" : false
-}</pre></div></li></ol></div><p>Ready to start building watches? Choose one of the following scenarios:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="link" href="watch-log-data.html" title="Watch Log Data for Errors">Watch Log Data for Errors</a>
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="watcher-getting-started"></a>Getting Started with Watcher</h2></div></div></div><p>Watcher is automatically enabled when you <a class="link" href="installing-xpack.html" title="Installing X-Pack">install X-Pack</a> into Elasticsearch and Kibana.</p><p><a id="watch-log-data"></a>To set up a watch to start sending alerts:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="watcher-getting-started.html#log-add-input" title="Schedule the Watch and Define an Input">Schedule the watch and define an input</a>.
 </li><li class="listitem">
-<a class="link" href="watch-cluster-status.html" title="Watch Your Cluster Health">Watch Your Cluster Health</a>
+<a class="link" href="watcher-getting-started.html#log-add-condition" title="Add a Condition">Add a condition</a> that checks to see if an alert
+needs to be sent.
+</li><li class="listitem">
+<a class="link" href="watcher-getting-started.html#log-take-action" title="Configure an Action">Configure an action</a> to send an alert when the
+condition is met.
+</li></ul></div><h3><a id="log-add-input"></a>Schedule the Watch and Define an Input</h3><p>A watch <a class="link" href="trigger-schedule.html" title="Schedule Trigger">schedule</a> controls how often a watch is triggered.
+The watch <a class="link" href="input.html" title="Inputs">input</a> gets the data that you want to evaluate.</p><p>To periodically search log data and load the results into the
+watch, you could use an <a class="link" href="trigger-schedule.html#schedule-interval" title="Interval Schedule">interval</a> schedule and a
+<a class="link" href="input-search.html" title="Search Input">search</a> input. For example, the following Watch searches
+the <code class="literal">logs</code> index for errors every 10 seconds:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/watcher/watch/log_error_watch
+{
+  "trigger" : {
+    "schedule" : { "interval" : "10s" } <a id="CO30-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  },
+  "input" : {
+    "search" : {
+      "request" : {
+        "indices" : [ "logs" ],
+        "body" : {
+          "query" : {
+            "match" : { "message": "error" }
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/watcher-getting-started/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Schedules are typically configured to run less frequently. This example sets
+    the interval to 10 seconds so you can easily see the watches being triggered.
+    Since this watch runs so frequently, don’t forget to <a class="link" href="watcher-getting-started.html#log-delete" title="Delete the Watch">delete the watch</a>
+    when you’re done experimenting.
+</p></td></tr></table></div><p>If you check the watch history you’ll see that the watch is being triggered every
+10 seconds. However, the search isn’t returning any results so nothing is loaded
+into the watch payload.</p><p>For example, the following request retrieves the last ten watch executions (watch
+records) from the watch history:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET .watcher-history*/_search?pretty
+{
+  "sort" : [
+    { "result.execution_time" : "desc" }
+  ]
+}</pre></div><div class="console_widget" data-snippet="snippets/watcher-getting-started/2.json"></div><h3><a id="log-add-condition"></a>Add a Condition</h3><p>A <a class="link" href="condition.html" title="Conditions">condition</a> evaluates the data you’ve loaded into the watch and
+determines if any action is required. Now that you’ve loaded log errors into
+the watch, you can define a condition that checks to see if any errors were
+found.</p><p>For example, the following compare condition simply checks to see if the
+search input returned any hits.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/watcher/watch/log_error_watch
+{
+  "trigger" : { "schedule" : { "interval" : "10s" }},
+  "input" : {
+    "search" : {
+      "request" : {
+        "indices" : [ "logs" ],
+        "body" : {
+          "query" : {
+            "match" : { "message": "error" }
+          }
+        }
+      }
+    }
+  },
+  "condition" : {
+    "compare" : { "ctx.payload.hits.total" : { "gt" : 0 }} <a id="CO31-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/watcher-getting-started/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <a class="link" href="condition-compare.html" title="Compare Condition">compare</a> condition lets you easily compare against
+    values in the execution context.
+</p></td></tr></table></div><p>For this compare condition to evaluate to <code class="literal">true</code>, you need to add an event
+to the <code class="literal">logs</code> index that contains an error. For example, the following request
+adds a 404 error to the <code class="literal">logs</code> index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST logs/event
+{
+    "timestamp" : "2015-05-17T18:12:07.613Z",
+    "request" : "GET index.html",
+    "status_code" : 404,
+    "message" : "Error: File not found"
+}</pre></div><div class="console_widget" data-snippet="snippets/watcher-getting-started/4.json"></div><p>Once you add this event, the next time the watch executes its condition will
+evaluate to <code class="literal">true</code>. The condition result is recorded as part of the
+<code class="literal">watch_record</code> each time the watch executes, so you can verify whether or
+not the condition was met by searching the watch history:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">XGET .watcher-history*/_search?pretty
+{
+  "query" : {
+    "bool" : {
+      "must" : [
+        { "match" : { "result.condition.met" : true }},
+        { "range" : { "result.execution_time" : { "from" : "now-10s" }}}
+      ]
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/watcher-getting-started/5.json"></div><h3><a id="log-take-action"></a>Configure an Action</h3><p>Recording watch records in the watch history is nice, but the real power of
+Watcher is being able to do something when the watch condition is met. A
+watch’s <a class="link" href="actions.html" title="Actions">actions</a>  define what to do when the watch condition
+evaluates to <code class="literal">true</code>. You can send emails, call third-party webhooks, write
+documents to an Elasticsearch index, or log messages to the standard
+Elasticsearch log files.</p><p>For example, the following action writes a message to the Elasticsearch
+log when an error is detected.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/watcher/watch/log_error_watch
+{
+  "trigger" : { "schedule" : { "interval" : "10s" }},
+  "input" : {
+    "search" : {
+      "request" : {
+        "indices" : [ "logs" ],
+        "body" : {
+          "query" : {
+            "match" : { "message": "error" }
+          }
+        }
+      }
+    }
+  },
+  "condition" : {
+    "compare" : { "ctx.payload.hits.total" : { "gt" : 0 }}
+  },
+  "actions" : {
+    "log_error" : {
+      "logging" : {
+        "text" : "Found {{ctx.payload.hits.total}} errors in the logs"
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/watcher-getting-started/6.json"></div><h3><a id="log-delete"></a>Delete the Watch</h3><p>Since the <code class="literal">log_error_watch</code> is configured to run every 10 seconds, make sure you
+delete it when you’re done experimenting. Otherwise, the noise from this sample
+watch will make it hard to see what else is going on in your watch history and
+log file.</p><p>To remove the watch, use the <a class="link" href="watcher-api-delete-watch.html" title="Delete Watch API">DELETE watch</a> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE _xpack/watcher/watch/log_error_watch</pre></div><div class="console_widget" data-snippet="snippets/watcher-getting-started/7.json"></div><h3><a id="next-steps"></a>Where to Go Next</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+See <a class="link" href="how-watcher-works.html" title="How Watcher Works">How Watcher Works</a> for more information about the
+anatomy of a watch and the watch lifecycle.
+</li><li class="listitem">
+See <a class="link" href="example-watches.html" title="Example Watches">Example Watches</a> for more examples of setting up
+a watch.
+</li><li class="listitem">
+See the <a class="ulink" href="https://github.com/elastic/examples/tree/master/Alerting" target="_top">Example
+Watches</a> in the Elastic Examples repo for additional sample watches you can use
+as a starting point for building custom watches.
 </li></ul></div></div><div class="navfooter"><span class="prev"><a href="xpack-alerting.html">
               « 
               Alerting on Cluster and Index Events </a>
            
         </span><span class="next">
            
-          <a href="watch-log-data.html">Watch Log Data for Errors
+          <a href="how-watcher-works.html">How Watcher Works
                »
             </a></span></div>
 <!-- end body -->
