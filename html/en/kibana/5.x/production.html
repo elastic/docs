@@ -601,20 +601,21 @@ protocol when you configure the Elasticsearch URL in <code class="literal">kiban
 <code class="literal">kibana.yml</code> to specify the location of the PEM file. Setting the <code class="literal">ca</code> property lets you  leave the <code class="literal">verify_ssl</code> option enabled.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-text"># If you need to provide a CA certificate for your Elasticsearch instance, put
 # the path of the pem file here.
 ca: /path/to/your/ca/cacert.pem</pre></div><h3><a id="load-balancing"></a>Load Balancing Across Multiple Elasticsearch Nodes<a href="https://github.com/elastic/kibana/edit/5.x/docs/setup/production.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you have multiple nodes in your Elasticsearch cluster, the easiest way to distribute Kibana requests
-across the nodes is to run an Elasticsearch <span class="emphasis"><em>client</em></span> node on the same machine as Kibana.
-Elasticsearch client nodes are essentially smart load balancers that are part of the cluster. They
+across the nodes is to run an Elasticsearch <span class="emphasis"><em>Coordinating only</em></span> node on the same machine as Kibana.
+Elasticsearch Coordinating only nodes are essentially smart load balancers that are part of the cluster. They
 process incoming HTTP requests, redirect operations to the other nodes in the cluster as needed, and
 gather and return the results. For more information, see
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.x/modules-node.html" target="_top">Node</a> in the Elasticsearch reference.</p><p>To use a local client node to load balance Kibana requests:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 Install Elasticsearch on the same machine as Kibana.
 </li><li class="listitem"><p class="simpara">
-Configure the node as a client node. In <code class="literal">elasticsearch.yml</code>, set both <code class="literal">node.data</code> and <code class="literal">node.master</code> to <code class="literal">false</code>:
-</p><pre class="screen"># 3. You want this node to be neither master nor data node, but
+Configure the node as a Coordinating only node. In <code class="literal">elasticsearch.yml</code>, set <code class="literal">node.data</code>, <code class="literal">node.master</code> and <code class="literal">node.ingest</code> to <code class="literal">false</code>:
+</p><pre class="screen"># 3. You want this node to be neither master nor data node nor ingest node, but
 #    to act as a "search load balancer" (fetching data from nodes,
 #    aggregating results, etc.)
 #
 node.master: false
-node.data: false</pre></li><li class="listitem"><p class="simpara">
+node.data: false
+node.ingest: false</pre></li><li class="listitem"><p class="simpara">
 Configure the client node to join your Elasticsearch cluster. In <code class="literal">elasticsearch.yml</code>, set the <code class="literal">cluster.name</code> to the
 name of your cluster.
 </p><pre class="screen">cluster.name: "my_cluster"</pre></li><li class="listitem"><p class="simpara">
