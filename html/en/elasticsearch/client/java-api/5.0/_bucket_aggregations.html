@@ -579,8 +579,9 @@ agg.getDocCount(); // Doc count</pre></div></div></div><div class="section"><div
 <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.0/search-aggregations-bucket-filters-aggregation.html" target="_top">Filters Aggregation</a>
 with Java API.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_prepare_aggregation_request_16"></a>Prepare aggregation request<a href="https://github.com/elastic/elasticsearch/edit/5.0/docs/java-api/aggregations/bucket/filters-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Here is an example on how to create the aggregation request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AggregationBuilder aggregation =
     AggregationBuilders
-        .filters("agg", new KeyedFilter("men", QueryBuilders.termQuery("gender", "male")),
-            new KeyedFilter("women", QueryBuilders.termQuery("gender", "female")));</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_use_aggregation_response_16"></a>Use aggregation response<a href="https://github.com/elastic/elasticsearch/edit/5.0/docs/java-api/aggregations/bucket/filters-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Import Aggregation definition classes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.search.aggregations.bucket.filters.Filters;</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// sr is here your SearchResponse object
+        .filters("agg",
+            new FiltersAggregator.KeyedFilter("men", QueryBuilders.termQuery("gender", "male")),
+            new FiltersAggregator.KeyedFilter("women", QueryBuilders.termQuery("gender", "female")));</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_use_aggregation_response_16"></a>Use aggregation response<a href="https://github.com/elastic/elasticsearch/edit/5.0/docs/java-api/aggregations/bucket/filters-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Import Aggregation definition classes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.search.aggregations.bucket.filters.Filters;</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// sr is here your SearchResponse object
 Filters agg = sr.getAggregations().get("agg");
 
 // For each entry
@@ -602,7 +603,7 @@ agg.getDocCount(); // Doc count</pre></div></div></div><div class="section"><div
 <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.0/search-aggregations-bucket-reverse-nested-aggregation.html" target="_top">Reverse Nested Aggregation</a>
 with Java API.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_prepare_aggregation_request_19"></a>Prepare aggregation request<a href="https://github.com/elastic/elasticsearch/edit/5.0/docs/java-api/aggregations/bucket/reverse-nested-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Here is an example on how to create the aggregation request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AggregationBuilder aggregation =
     AggregationBuilders
-        .nested("agg").path("resellers")
+        .nested("agg", "resellers")
         .subAggregation(
                 AggregationBuilders
                         .terms("name").field("resellers.name")
@@ -622,7 +623,7 @@ for (Terms.Bucket bucket : name.getBuckets()) {
 <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.0/search-aggregations-bucket-children-aggregation.html" target="_top">Children Aggregation</a>
 with Java API.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_prepare_aggregation_request_20"></a>Prepare aggregation request<a href="https://github.com/elastic/elasticsearch/edit/5.0/docs/java-api/aggregations/bucket/children-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Here is an example on how to create the aggregation request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AggregationBuilder aggregation =
     AggregationBuilders
-        .children("agg", "reseller"); <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+        .children("agg", "reseller"); <a id="CO10-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 <code class="literal">"agg"</code> is the name of the aggregation and <code class="literal">"reseller"</code> is the child type
 </li></ol></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_use_aggregation_response_20"></a>Use aggregation response<a href="https://github.com/elastic/elasticsearch/edit/5.0/docs/java-api/aggregations/bucket/children-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Import Aggregation definition classes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.search.aggregations.bucket.children.Children;</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// sr is here your SearchResponse object
 Children agg = sr.getAggregations().get("agg");
@@ -750,7 +751,7 @@ Histogram agg = sr.getAggregations().get("agg");
 
 // For each entry
 for (Histogram.Bucket entry : agg.getBuckets()) {
-    Long key = (Long) entry.getKey();       // Key
+    Number key = (Number) entry.getKey();   // Key
     long docCount = entry.getDocCount();    // Doc count
 
     logger.info("key [{}], doc_count [{}]", key, docCount);
@@ -760,11 +761,11 @@ with Java API.</p><div class="section"><div class="titlepage"><div><div><h4 clas
         AggregationBuilders
                 .dateHistogram("agg")
                 .field("dateOfBirth")
-                .interval(DateHistogramInterval.YEAR);</pre></div><p>Or if you want to set an interval of 10 days:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AggregationBuilder aggregation =
+                .dateHistogramInterval(DateHistogramInterval.YEAR);</pre></div><p>Or if you want to set an interval of 10 days:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AggregationBuilder aggregation =
         AggregationBuilders
                 .dateHistogram("agg")
                 .field("dateOfBirth")
-                .interval(DateHistogramInterval.days(10));</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_use_aggregation_response_27"></a>Use aggregation response<a href="https://github.com/elastic/elasticsearch/edit/5.0/docs/java-api/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Import Aggregation definition classes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// sr is here your SearchResponse object
+                .dateHistogramInterval(DateHistogramInterval.days(10));</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_use_aggregation_response_27"></a>Use aggregation response<a href="https://github.com/elastic/elasticsearch/edit/5.0/docs/java-api/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Import Aggregation definition classes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// sr is here your SearchResponse object
 Histogram agg = sr.getAggregations().get("agg");
 
 // For each entry
