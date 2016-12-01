@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Architecture
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Log in and Create Your First Cluster
         | Elastic Cloud Enterprise Reference [1.0.0-alpha4]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Enterprise Reference [1.0.0-alpha4]" /><link rel="up" href="ece-overview.html" title="What Is Elastic Cloud Enterprise?" /><link rel="prev" href="ece-overview.html" title="What Is Elastic Cloud Enterprise?" /><link rel="next" href="ece-glossary.html" title="Basic Terms" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/CloudEnterprise/Reference/1.0.0-alpha4" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Enterprise Reference [1.0.0-alpha4]" /><link rel="up" href="ece-getting-started.html" title="Getting Started" /><link rel="prev" href="ece-installing.html" title="Install Elastic Cloud Enterprise" /><link rel="next" href="ece-explore-ui.html" title="Next Steps" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/CloudEnterprise/Reference/1.0.0-alpha4" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -557,45 +557,83 @@
 <div class="page_header">Take Elastic Cloud Enterprise for a spin through our Pioneer Program! Interested to hear more? Ping us on the <a href="https://info.elastic.co/cloud-enterprise">Elastic Cloud Enterprise info page</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elastic Cloud Enterprise Reference
       [1.0.0-alpha4]
-    </a></span> » <span class="breadcrumb-link"><a href="ece-overview.html">What Is Elastic Cloud Enterprise? </a></span> » <span class="breadcrumb-node">Architecture</span></div><div class="navheader"><span class="prev"><a href="ece-overview.html">
+    </a></span> » <span class="breadcrumb-link"><a href="ece-getting-started.html">Getting Started </a></span> » <span class="breadcrumb-node">Log in and Create Your First Cluster</span></div><div class="navheader"><span class="prev"><a href="ece-installing.html">
               « 
-              What Is Elastic Cloud Enterprise? </a>
+              Install Elastic Cloud Enterprise</a>
            
         </span><span class="next">
            
-          <a href="ece-glossary.html">Basic Terms
+          <a href="ece-explore-ui.html">Next Steps
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="_architecture"></a>Architecture</h2></div></div></div><p>Elastic Cloud Enterprise shares most of its codebase with Elastic Cloud. The key tenets of the architecture are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Service-oriented architecture
-</li><li class="listitem">
-Containerization using Docker
-</li><li class="listitem">
-Cluster state coordination using ZooKeeper
-</li><li class="listitem">
-Easy access through the Cloud UI
-</li></ul></div><h3><a id="_service_oriented_architecture"></a>Service-Oriented Architecture</h3><p>An Elastic Cloud Enterprise installation consists of a number of core services. This service-oriented architecture lets you:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Scale the platform easily. Different services can have different reliability and performance requirements, as each service can be scaled separately.
-</li><li class="listitem">
-Access services via API, easing operational management and enabling changes and improvements to one service without affecting all the other services.
-</li><li class="listitem">
-Deploy each service independently in its own Docker container. Combined with fine-grained permissions to read and write application state, your whole installation is more secure. Even if a service is compromised, the damage is contained within a single container plus part of the application state.
-</li></ul></div><div class="figure"><a id="img-ece-architecture"></a><p class="title"><strong>Figure 1. The core services of Elastic Cloud Enterprise</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/ece-architecture.png" alt="The core services of Elastic Cloud Enterprise" /></div></div></div><br class="figure-break" /><p><span class="strong"><strong>Proxies</strong></span></p><p>Proxies handle user requests, mapping cluster IDs that are passed in request URLs for the container to the actual cluster nodes. The association of cluster IDs to a container is stored in ZooKeeper, cached by the proxies. In the event of ZooKeeper downtime, the platform can still service the requests to existing clusters by using the cache.</p><p>Proxies are intelligent: if you have a highly available cluster, so that your nodes are spread across two or three availability zones, proxies keep track of the state and availability of zones. If one of the zones goes down, then the proxy handling your user request will not route any requests there.</p><p>Proxies help with no-downtime scaling and upgrades. Before performing an upgrade, a snapshot is taken, and then new nodes with a new configuration or a new quota are spun up. The data is migrated to the new nodes using standard Elasticsearch features. When the migration is complete, a proxy switches the traffic to the new nodes and disconnects the old ones.</p><p>Note that you should put your own load balancer in front the proxies to make sure that the system remains available, even if one of the proxies goes down.</p><p><span class="strong"><strong>Allocators</strong></span></p><p>Allocators let you scale the Elastic Cloud Enterprise installation. They run on all the machines that you want to host Elasticsearch and Kibana nodes on. Containers with Elasticsearch cluster nodes are then run on the machines managed by allocators.</p><p>Allocators advertise the resources of the underlying host machine in ZooKeeper. They control the lifecycle of cluster nodes by:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Creating new containers and starting Elasticsearch nodes when requested
-</li><li class="listitem">
-Restarting a node if it becomes unresponsive
-</li><li class="listitem">
-Removing a node if it is no longer needed
-</li></ul></div><p>Using Docker containers guarantees shares of resources for the underlying clusters, which mitigates the <span class="emphasis"><em>noisy neighbor effect</em></span> where one busy cluster can overwhelm the entire host.</p><p><span class="strong"><strong>Constructor</strong></span></p><p>Allocators are agents—they manage containers and Elasticsearch nodes—but they can respond only to explicit requests. Allocators need a service to direct and tell them what to do, which is provided by the constructor. The constructor monitors new requests from the Cloud UI administration console, determines what needs to be changed and writes the changes to ZooKeeper nodes which are monitored by the allocators. Its job is also to assign cluster nodes to proper allocators.</p><p>If you select a cluster plan with high availability, the constructor will place cluster nodes within different availability zones to ensure that the cluster can survive any downtime of a whole zone. You can designate these availability zones when you install Elastic Cloud Enterprise. Additionally, the constructor maximizes the utilization of underlying allocators to reduce the need to spin up extra hardware for new clusters.</p><h3><a id="_containerization_using_docker"></a>Containerization Using Docker</h3><p>Services are deployed as Docker containers, which simplifies the operational effort and makes it easy to provision similar environments for development and staging. Each cluster node is run within a Docker container to make sure that all of the nodes have access to a guaranteed share of host resources.</p><p>Containerization also improves security. On the assumption that any cluster can be compromised, containers are given no access to the platform. The same is true for the services: each service can read or write only those parts of the system state that are relevant to it. Even if some services are compromised, the attacker won’t get hold of the keys to the rest of them and will not compromise the whole platform.</p><p><span class="strong"><strong>Stunnel</strong></span></p><p>Docker containers communicate securely with one another using stunnel (rather than Transport Layer Security, which not all services or components support natively). Tunneling all traffic between containers makes sure that it is not possible to eavesdrop, even when someone else has access to the underlying cloud or network infrastructure.</p><h3><a id="_cluster_state_coordination_using_zookeeper"></a>Cluster State Coordination Using ZooKeeper</h3><p>ZooKeeper stores the state of the Elastic Cloud Enterprise installation and the state of all clusters running in Elastic Cloud Enterprise. It is also the event bus coordinating all the other services.</p><p><a class="ulink" href="http://zookeeper.apache.org/" target="_top">ZooKeeper</a> is a distributed, strongly consistent data store. It offers a file system-like structure, where each node is both a folder with subordinate items and a file that holds data. These nodes are called znodes to differentiate them from the physical nodes that ZooKeeper runs on.</p><p>ZooKeeper is designed to remain consistent even in the event of network partitions: a write operation is rejected unless it can be confirmed by a majority of ZooKeeper servers, and write operations are linear. You can set watches on znodes so that ZooKeeper can serve as an event bus where one service can notify another by writing to an observed znode. Znodes can have associated access control lists (ACLs) which provide fine-grained access to the system state for various services. For example, the constructor can write cluster plans, but allocators can only read them.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_easy_access_through_the_cloud_ui"></a>Easy Access Through the Cloud UI</h2></div></div></div><p>The Cloud user interface provides web-based access and API support to manage and monitor your clusters. It consists of:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-An administrative section, which can be used to monitor the overall health of the platform and managed clusters
-</li><li class="listitem">
-An end user section, which your users can use to provision and configure their clusters
-</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="ece-overview.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="ece-provisioning"></a>Log in and Create Your First Cluster</h2></div></div></div><p>Now that you have run the installation script to install Elastic Cloud Enterprise on your first host and on any additional hosts that you want to use, you are ready to provision your first cluster in the Cloud UI.</p><h3><a id="ece-login"></a>Log into the Cloud UI</h3><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The instructions shown here access the Cloud UI over HTTP without using SSL. Access through the HTTPS protocol is available, but requires that you download and trust a certificate. How you work with certificates is different for each operating system.</p></div></div><p>Use the credentials and URL provided to you at the end of the installation process to log into the Cloud UI.</p><p>To access the Cloud UI in a web browser:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Navigate to the IP address or the DNS host name of the initial coordinator node, replacing <code class="literal">INITIAL_COORDINATOR_IP_OR_DNS_NAME</code> with the correct value for your installation:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">http://INITIAL_COORDINATOR_IP_OR_DNS_NAME:12400</pre></div></li><li class="listitem">
+Log in as user <code class="literal">root</code> with <a class="link" href="ece-retrieve-password.html" title="Retrieve the Password for the root User">the password you retrieved from the <code class="literal">bootstrap-secrets.json</code> file</a>.
+</li></ol></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+If this is your first time logging in, you must agree to the Elastic Early Access Software License Agreement to continue.
+</li></ol></div><p>The Cloud UI front page displays the available clusters and some important information about them, such as cluster health status, the Elasticsearch version used, the number of nodes in the cluster, and node capacity:</p><div class="informalfigure"><div class="mediaobject"><img src="images/cluster-overview.png" alt="images/cluster-overview.png" /></div></div><p>If this is your first visit to the Cloud UI, there is one initial cluster defined, which is the <code class="literal">admin-console-elasticsearch</code> cluster that backs the Cloud UI itself. We’ll explore more aspects of the Cloud UI soon, but for now, go ahead and create your first Elasticsearch cluster.</p><h3><a id="ece-create-cluster"></a>Create Your First Cluster</h3><p>An Elasticsearch cluster consists of one or more nodes that are working together to share their data and workload. A cluster can provisioned with as many nodes as the available resources can support, as long as there is at least one allocator with some spare capacity.</p><p>To create your first cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+<a class="link" href="ece-provisioning.html#ece-login" title="Log into the Cloud UI">Log into the Cloud UI</a>, if you aren’t logged in already.
+</li><li class="listitem"><p class="simpara">
+On the <span class="strong"><strong>Clusters</strong></span> page, click <span class="strong"><strong>Create cluster</strong></span>.
+</p></li></ol></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Specify how you want your Elasticsearch cluster to be configured, including:
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Cluster name
+</span></dt><dd>
+Specifies a name for your cluster. If left blank, a cluster ID is generated.
+</dd><dt><span class="term">
+Fault tolerance
+</span></dt><dd>
+Selects the level of fault tolerance. On a production system, create a cluster with at least two availability zones, three for mission-critical deployments. If you installed Elastic Cloud Enterprise on only a single host, you will only be able to specify single-zone deployments without fault tolerance. This is fine for a first test cluster, but not recommended for production systems. If you do not see an option for two or three availability zones, you might need to need to <a class="link" href="ece-add-capacity.html" title="Scale Out Your Installation">add some capacity</a> first.
+</dd><dt><span class="term">
+Node capacity
+</span></dt><dd>
+Specifies the amount of memory and storage assigned to each node, in a fixed ratio. The cluster size you use depends on how much data you have and what queries you plan to run, but you can always <a class="link" href="ece-change-cluster.html#ece-resize-cluster" title="Resize Your Cluster">resize your cluster</a> later on. Currently, half of the memory is assigned to the JVM heap. For example, on a cluster with 32 GB RAM, 16 GB are allotted to heap.
+</dd><dt><span class="term">
+Node Count
+</span></dt><dd>
+Specifies the number of nodes to provision in each availability zone. Adding more nodes lets you scale out horizontally by adding more processing capacity to your cluster.
+</dd><dt><span class="term">
+Dedicated master-eligible nodes
+</span></dt><dd>
+When you create a cluster, you can also specify to use dedicated <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-node.html#master-node" target="_top">master-eligible nodes</a>, one per availability zone. These master nodes are responsible for lightweight cluster-wide actions such as creating or deleting an index, tracking which nodes are part of the cluster, and deciding which shards to allocate to which nodes. By default, each node is a master-eligible node and a data node. In larger clusters, such as production clusters, it’s a good practice to split the roles. Creating dedicated master nodes ensures that your master node is stable and not handling search or indexing work.
+</dd><dt><span class="term">
+Elasticsearch version
+</span></dt><dd>
+Selects the version of Elasticsearch to deploy. Elasticsearch versions are denoted as <code class="literal">X.Y.Z</code>, where <code class="literal">X</code> is the major version, <code class="literal">Y</code> is the minor version, and <code class="literal">Z</code> is the patch level or maintenance release. You can upgrade Elasticsearch versions for an existing cluster later on.
+</dd><dt><span class="term">
+Plugins
+</span></dt><dd>
+Lists the official plugins available for the selected Elasticsearch version that you can add. Plugins you add from this list have been tested to work with your version of Elasticsearch and are upgraded for you whenever you upgrade your version of Elasticsearch.
+</dd><dt><span class="term">
+Scripting
+</span></dt><dd>
+Restricts how Elasticsearch can run scripts. Script are useful for implementing additional fetures, such as flexible ranking, filtering, faceting, and more. It is important to restrict how scripts run, as scripts can enable arbitrary code execution.
+</dd><dt><span class="term">
+Default number of shards
+</span></dt><dd>
+Sets the number of primary shards that an index should have. The default is 1. Before your change the number of shards, take a look at  <a class="ulink" href="https://www.elastic.co/blog/found-sizing-elasticsearch/" target="_top">Sizing Elasticsearch</a>.
+</dd><dt><span class="term">
+Automatic index creation
+</span></dt><dd>
+Enables or disables automatic index creation, if you index a document to an index that does not exist.
+</dd><dt><span class="term">
+Deletion requires name
+</span></dt><dd>
+Enables requiring an explicit name or allows wildcards for destructive actions like deleting an index.
+</dd></dl></div></li><li class="listitem"><p class="simpara">
+Click <span class="strong"><strong>Create Cluster</strong></span>. Cluster provisioning takes a few seconds.
+</p></li><li class="listitem">
+Copy down the auto-generated password for the <code class="literal">elastic</code> user. You will need to use this password when connecting to your Elasticsearch cluster or to log into Kibana, for example.
+</li><li class="listitem"><p class="simpara">
+After provisioning completes, the <span class="strong"><strong>Clusters</strong></span> page shows your new cluster. Congratulations! You have just provisioned your first Elastic Cloud Enterprise cluster.
+</p><div class="informalfigure"><a id="ece-first-cluster-image"></a><div class="mediaobject"><img src="images/my-first-cluster.png" alt="A first cluster created in Elastic Cloud Enterprise" /></div></div></li></ol></div></div><div class="navfooter"><span class="prev"><a href="ece-installing.html">
               « 
-              What Is Elastic Cloud Enterprise? </a>
+              Install Elastic Cloud Enterprise</a>
            
         </span><span class="next">
            
-          <a href="ece-glossary.html">Basic Terms
+          <a href="ece-explore-ui.html">Next Steps
                »
             </a></span></div>
 <!-- end body -->
