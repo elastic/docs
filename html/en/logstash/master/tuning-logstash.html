@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Stalled Shutdown Detection
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Tuning and Profiling Logstash Performance
         | Logstash Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [master]" /><link rel="up" href="setup-logstash.html" title="Setting Up and Running Logstash" /><link rel="prev" href="logging.html" title="Logging" /><link rel="next" href="breaking-changes.html" title="Breaking changes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Logstash/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [master]" /><link rel="up" href="performance-tuning.html" title="Performance Tuning" /><link rel="prev" href="performance-troubleshooting.html" title="Performance Troubleshooting Guide" /><link rel="next" href="monitoring.html" title="Monitoring APIs" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Logstash/Reference/master" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -559,57 +559,44 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Logstash Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="setup-logstash.html">Setting Up and Running Logstash</a></span> » <span class="breadcrumb-node">Stalled Shutdown Detection</span></div><div class="navheader"><span class="prev"><a href="logging.html">
+    </a></span> » <span class="breadcrumb-link"><a href="performance-tuning.html">Performance Tuning</a></span> » <span class="breadcrumb-node">Tuning and Profiling Logstash Performance</span></div><div class="navheader"><span class="prev"><a href="performance-troubleshooting.html">
               « 
-              Logging</a>
+              Performance Troubleshooting Guide</a>
            
         </span><span class="next">
            
-          <a href="breaking-changes.html">Breaking changes
+          <a href="monitoring.html">Monitoring APIs
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="stalled-shutdown"></a>Stalled Shutdown Detection<a href="https://github.com/elastic/logstash/edit/master/docs/static/stalled-shutdown.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When you attempt to shut down a running Logstash instance, Logstash performs several steps before it can safely shut down. It must:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Stop all input, filter and output plugins
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="tuning-logstash"></a>Tuning and Profiling Logstash Performance<a href="https://github.com/elastic/logstash/edit/master/docs/static/performance-checklist.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Logstash defaults are chosen to provide fast, safe performance for most
+users. However if you notice performance issues, you may need to modify
+some of the defaults. Logstash provides the following configurable options
+for tuning pipeline performance: <code class="literal">pipeline.workers</code>, <code class="literal">pipeline.batch.size</code>, and <code class="literal">pipeline.batch.delay</code>. For more information about setting these options, see <a class="xref" href="logstash-settings-file.html" title="Settings File">Settings File</a>.</p><p>Make sure you’ve read the <a class="xref" href="performance-troubleshooting.html" title="Performance Troubleshooting Guide">Performance Troubleshooting Guide</a> before modifying these options.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The <code class="literal">pipeline.workers</code> setting determines how many threads to run for filter and output processing. If you find that events are backing up, or that the CPU is not saturated, consider increasing the value of this parameter to make better use of available processing power. Good results can even be found increasing this number past the number of available processors as these threads may spend significant time in an I/O wait state when writing to external systems. Legal values for this parameter are positive integers.
 </li><li class="listitem">
-Process all in-flight events
+The <code class="literal">pipeline.batch.size</code> setting defines the maximum number of events an individual worker thread collects before attempting to execute filters and outputs. Larger batch sizes are generally more efficient, but increase memory overhead. Some hardware configurations require you to increase JVM heap size by setting the <code class="literal">LS_HEAP_SIZE</code> variable to avoid performance degradation with this option. Values of this parameter in excess of the optimum range cause performance degradation due to frequent garbage collection or JVM crashes related to out-of-memory exceptions. Output plugins can process each batch as a logical unit. The Elasticsearch output, for example, issues <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html" target="_top">bulk requests</a> for each batch received. Tuning the <code class="literal">pipeline.batch.size</code> setting adjusts the size of bulk requests sent to Elasticsearch.
 </li><li class="listitem">
-Terminate the Logstash process
-</li></ul></div><p>The following conditions affect the shutdown process:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-An input plugin receiving data at a slow pace.
+The <code class="literal">pipeline.batch.delay</code> setting rarely needs to be tuned. This setting adjusts the latency of the Logstash pipeline. Pipeline batch delay is the maximum amount of time in milliseconds that Logstash waits for new messages after receiving an event in the current pipeline worker thread. After this time elapses, Logstash begins to execute filters and outputs.The maximum time that Logstash waits between receiving an event and processing that event in a filter is the product of the <code class="literal">pipeline.batch.delay</code> and  <code class="literal">pipeline.batch.size</code> settings.
+</li></ul></div><h4><a id="_notes_on_pipeline_configuration_and_performance"></a>Notes on Pipeline Configuration and Performance<a href="https://github.com/elastic/logstash/edit/master/docs/static/performance-checklist.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If you plan to modify the default pipeline settings, take into account the
+following suggestions:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The total number of inflight events is determined by the product of the  <code class="literal">pipeline.workers</code> and <code class="literal">pipeline.batch.size</code> settings. This product is referred to as the <span class="emphasis"><em>inflight count</em></span>.  Keep the value of the inflight count in mind as you adjust the <code class="literal">pipeline.workers</code> and <code class="literal">pipeline.batch.size</code> settings. Pipelines that intermittently receive large events at irregular intervals require sufficient memory to handle these spikes. Configure the <code class="literal">LS_HEAP_SIZE</code> variable accordingly.
 </li><li class="listitem">
-A slow filter, like a Ruby filter executing <code class="literal">sleep(10000)</code> or an Elasticsearch filter that is executing a very heavy
-query.
+Measure each change to make sure it increases, rather than decreases, performance.
 </li><li class="listitem">
-A disconnected output plugin that is waiting to reconnect to flush in-flight events.
-</li></ul></div><p>These situations make the duration and success of the shutdown process unpredictable.</p><p>Logstash has a stall detection mechanism that analyzes the behavior of the pipeline and plugins during shutdown.
-This mechanism produces periodic information about the count of inflight events in internal queues and a list of busy
-worker threads.</p><p>To enable Logstash to forcibly terminate in the case of a stalled shutdown, use the <code class="literal">--pipeline.unsafe_shutdown</code> flag when
-you start Logstash.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="shutdown-stall-example"></a>Stall Detection Example<a href="https://github.com/elastic/logstash/edit/master/docs/static/stalled-shutdown.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In this example, slow filter execution prevents the pipeline from clean shutdown. By starting Logstash with the
-<code class="literal">--pipeline.unsafe_shutdown</code> flag, quitting with <span class="strong"><strong>Ctrl+C</strong></span> results in an eventual shutdown that loses 20 events.</p><div class="informalexample"><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -e 'input { generator { } } filter { ruby { code =&gt; "sleep 10000" } }
-  output { stdout { codec =&gt; dots } }' -w 1 --pipeline.unsafe_shutdown
-Pipeline main started
-^CSIGINT received. Shutting down the agent. {:level=&gt;:warn}
-stopping pipeline {:id=&gt;"main", :level=&gt;:warn}
-Received shutdown signal, but pipeline is still waiting for in-flight events
-to be processed. Sending another ^C will force quit Logstash, but this may cause
-data loss. {:level=&gt;:warn}
-{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
-{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
-"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
-The shutdown process appears to be stalled due to busy or blocked plugins.
-Check the logs for more information. {:level=&gt;:error}
-{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
-{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
-"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
-{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
-{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
-"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
-Forcefully quitting logstash.. {:level=&gt;:fatal}</pre></div></div><p>When <code class="literal">--pipeline.unsafe_shutdown</code> isn’t enabled, Logstash continues to run and produce these reports periodically.</p></div></div><div class="navfooter"><span class="prev"><a href="logging.html">
+Ensure that you leave enough memory available to cope with a sudden increase in event size. For example, an application that generates exceptions that are represented as large blobs of text.
+</li><li class="listitem">
+The number of workers may be set higher than the number of CPU cores since outputs often spend idle time in I/O wait conditions.
+</li><li class="listitem">
+Threads in Java have names and you can use the <code class="literal">jstack</code>, <code class="literal">top</code>, and the VisualVM graphical tools to figure out which resources a given thread uses.
+</li><li class="listitem">
+On Linux platforms, Logstash labels all the threads it can with something descriptive. For example, inputs show up as <code class="literal">[base]&lt;inputname</code>, filter/output workers show up as <code class="literal">[base]&gt;workerN</code>, where N is an integer.  Where possible, other threads are also labeled to help you identify their purpose.
+</li></ul></div><h4><a id="profiling-the-heap"></a>Profiling the Heap<a href="https://github.com/elastic/logstash/edit/master/docs/static/performance-checklist.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When tuning Logstash you may have to adjust the heap size. You can use the <a class="ulink" href="https://visualvm.java.net/" target="_top">VisualVM</a> tool to profile the heap. The <span class="strong"><strong>Monitor</strong></span> pane in particular is useful for checking whether your heap allocation is sufficient for the current workload. The screenshots below show sample <span class="strong"><strong>Monitor</strong></span> panes. The first pane examines a Logstash instance configured with too many inflight events. The second pane examines a Logstash instance configured with an appropriate amount of inflight events. Note that the specific batch sizes used here are most likely not applicable to your specific workload, as the memory demands of Logstash vary in large part based on the type of messages you are sending.</p><div class="informalfigure"><div class="mediaobject"><img src="static/images/pipeline_overload.png" alt="static/images/pipeline_overload.png" /></div></div><div class="informalfigure"><div class="mediaobject"><img src="static/images/pipeline_correct_load.png" alt="static/images/pipeline_correct_load.png" /></div></div><p>In the first example we see that the CPU isn’t being used very efficiently. In fact, the JVM is often times having to stop the VM for “full GCs”. Full garbage collections are a common symptom of excessive memory pressure. This is visible in the spiky pattern on the CPU chart. In the more efficiently configured example, the GC graph pattern is more smooth, and the CPU is used in a more uniform manner. You can also see that there is ample headroom between the allocated heap size, and the maximum allowed, giving the JVM GC a lot of room to work with.</p><p>Examining the in-depth GC statistics with a tool similar to the excellent <a class="ulink" href="https://visualvm.java.net/plugins.html" target="_top">VisualGC</a> plugin shows that the over-allocated VM spends very little time in the efficient Eden GC, compared to the time spent in the more resource-intensive Old Gen “Full” GCs.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>As long as the GC pattern is acceptable, heap sizes that occasionally increase to the maximum are acceptable. Such heap size spikes happen in response to a burst of large events passing through the pipeline. In general practice, maintain a gap between the used amount of heap memory and the maximum.
+This document is not a comprehensive guide to JVM GC tuning. Read the official <a class="ulink" href="http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/gc01/index.html" target="_top">Oracle guide</a> for more information on the topic. We also recommend reading <a class="ulink" href="http://www.semicomplete.com/blog/geekery/debugging-java-performance.html" target="_top">Debugging Java Performance</a>.</p></div></div></div><div class="navfooter"><span class="prev"><a href="performance-troubleshooting.html">
               « 
-              Logging</a>
+              Performance Troubleshooting Guide</a>
            
         </span><span class="next">
            
-          <a href="breaking-changes.html">Breaking changes
+          <a href="monitoring.html">Monitoring APIs
                »
             </a></span></div>
 <!-- end body -->
