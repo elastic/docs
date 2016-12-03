@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Stalled Shutdown Detection
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Persistent Queues
         | Logstash Reference [5.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [5.x]" /><link rel="up" href="setup-logstash.html" title="Setting Up and Running Logstash" /><link rel="prev" href="logging.html" title="Logging" /><link rel="next" href="breaking-changes.html" title="Breaking changes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Logstash/Reference/5.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [5.x]" /><link rel="up" href="setup-logstash.html" title="Setting Up and Running Logstash" /><link rel="prev" href="logging.html" title="Logging" /><link rel="next" href="shutdown.html" title="Shutting Down Logstash" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Logstash/Reference/5.x" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -559,57 +559,111 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Logstash Reference
       [5.x]
-    </a></span> » <span class="breadcrumb-link"><a href="setup-logstash.html">Setting Up and Running Logstash</a></span> » <span class="breadcrumb-node">Stalled Shutdown Detection</span></div><div class="navheader"><span class="prev"><a href="logging.html">
+    </a></span> » <span class="breadcrumb-link"><a href="setup-logstash.html">Setting Up and Running Logstash</a></span> » <span class="breadcrumb-node">Persistent Queues</span></div><div class="navheader"><span class="prev"><a href="logging.html">
               « 
               Logging</a>
            
         </span><span class="next">
            
-          <a href="breaking-changes.html">Breaking changes
+          <a href="shutdown.html">Shutting Down Logstash
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="stalled-shutdown"></a>Stalled Shutdown Detection<a href="https://github.com/elastic/logstash/edit/master/docs/static/stalled-shutdown.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When you attempt to shut down a running Logstash instance, Logstash performs several steps before it can safely shut down. It must:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Stop all input, filter and output plugins
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="persistent-queues"></a>Persistent Queues<a href="https://github.com/elastic/logstash/edit/master/docs/static/persistent-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. It should be deployed in production at your own risk.</p></div></div><p>By default, Logstash uses in-memory bounded queues between pipeline stages
+(input → filter and filter → output) to buffer events. The size of these
+in-memory queues is fixed and not configurable. If Logstash terminates unsafely,
+either as the result of a software failure or the user forcing an unsafe
+shutdown, it’s possible to lose queued events.</p><p>To prevent event loss in these scenarios, you can configure Logstash to use
+persistent queues. With persistent queues enabled, Logstash persists buffered
+events to disk instead of storing them in memory.</p><p>Persistent queues are also useful for Logstash deployments that require high
+throughput and resiliency. Instead of deploying and managing a message
+broker, such as Redis, RabbitMQ, or Apache Kafka, to handle a mismatch in
+cadence between the shipping stage and the relatively expensive processing
+stage, you can enable persistent queues to buffer events on disk. The queue size
+is variable and configurable, which means that you have more control over
+managing situations that can result in back pressure to the source. See <a class="xref" href="persistent-queues.html#backpressure-persistent-queues" title="Handling Back Pressure">Handling Back Pressure</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="persistent-queues-advantages"></a>Advantages of Persistent Queues<a href="https://github.com/elastic/logstash/edit/master/docs/static/persistent-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Using persistent queues:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Provides protection from losing in-flight messages when the Logstash process is shut down or the machine is restarted.
 </li><li class="listitem">
-Process all in-flight events
+Handles the surge of events without having to use an external queueing mechanism like Redis or Kafka.
 </li><li class="listitem">
-Terminate the Logstash process
-</li></ul></div><p>The following conditions affect the shutdown process:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-An input plugin receiving data at a slow pace.
+Provides an at-least-once message delivery guarantee. If Logstash is restarted
+while events are in-flight, Logstash will attempt to deliver messages stored
+in the persistent queue until delivery succeeds at least once. In other words,
+messages stored in the persistent queue may be duplicated, but not lost.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="persistent-queues-limitations"></a>Limitations of Persistent Queues<a href="https://github.com/elastic/logstash/edit/master/docs/static/persistent-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The current implementation of persistent queues has the following limitations:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+This version does not enable full end-to-end resiliency, except for messages
+sent to the <a class="link" href="plugins-inputs-beats.html" title="beats">beats</a> input. For other inputs, Logstash
+only acknowledges delivery of messages in the filter and output stages, and not
+all the way back to the input or source.
 </li><li class="listitem">
-A slow filter, like a Ruby filter executing <code class="literal">sleep(10000)</code> or an Elasticsearch filter that is executing a very heavy
-query.
+It does not handle permanent disk or machine failures. The data persisted to disk is not replicated, so it is still a single point of failure.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="persistent-queues-architecture"></a>How Persistent Queues Work<a href="https://github.com/elastic/logstash/edit/master/docs/static/persistent-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The persistent queue sits between the input and filter stages in the same
+process:</p><p>input → persistent queue → filter + output</p><p>The input stage reads data from the configured data source and writes events to
+the persistent queue for processing. As events pass through the pipeline,
+Logstash pulls a batch of events from the persistent queue for processing them
+in the filter and output stages. As events are processed, Logstash uses a
+checkpoint file to track which events are successfully acknowledged (ACKed) as
+processed by Logstash. An event is recorded as ACKed in the checkpoint file if
+the event is successfully sent to the last output stage in the pipeline;
+Logstash does not wait for the output to acknowledge delivery.</p><p>During a normal, controlled shutdown (<span class="strong"><strong>CTRL+C</strong></span>), Logstash finishes
+processing the current in-flight events (that is, the events being processed by
+the filter and output stages, not the queued events), finalizes the ACKing
+of these events, and then terminates the Logstash process. Upon restart,
+Logstash uses the checkpoint file to pick up where it left off in the persistent
+queue and processes the events in the backlog.</p><p>If Logstash crashes or experiences an uncontrolled shutdown, any in-flight
+events are left as unACKed in the persistent queue. Upon restart, Logstash will
+replay the events from its history, potentially leading to duplicate data being
+written to the output.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="configuring-persistent-queues"></a>Configuring Persistent Queues<a href="https://github.com/elastic/logstash/edit/master/docs/static/persistent-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To configure persistent queues, you can specify the following options in the
+Logstash <a class="link" href="logstash-settings-file.html" title="Settings File">settings file</a>:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">queue.type</code>: Specify <code class="literal">persisted</code> to enable persistent queues. By default, persistent queues are disabled (<code class="literal">queue.type: memory</code>).
 </li><li class="listitem">
-A disconnected output plugin that is waiting to reconnect to flush in-flight events.
-</li></ul></div><p>These situations make the duration and success of the shutdown process unpredictable.</p><p>Logstash has a stall detection mechanism that analyzes the behavior of the pipeline and plugins during shutdown.
-This mechanism produces periodic information about the count of inflight events in internal queues and a list of busy
-worker threads.</p><p>To enable Logstash to forcibly terminate in the case of a stalled shutdown, use the <code class="literal">--pipeline.unsafe_shutdown</code> flag when
-you start Logstash.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="shutdown-stall-example"></a>Stall Detection Example<a href="https://github.com/elastic/logstash/edit/master/docs/static/stalled-shutdown.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In this example, slow filter execution prevents the pipeline from clean shutdown. By starting Logstash with the
-<code class="literal">--pipeline.unsafe_shutdown</code> flag, quitting with <span class="strong"><strong>Ctrl+C</strong></span> results in an eventual shutdown that loses 20 events.</p><div class="informalexample"><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash -e 'input { generator { } } filter { ruby { code =&gt; "sleep 10000" } }
-  output { stdout { codec =&gt; dots } }' -w 1 --pipeline.unsafe_shutdown
-Pipeline main started
-^CSIGINT received. Shutting down the agent. {:level=&gt;:warn}
-stopping pipeline {:id=&gt;"main", :level=&gt;:warn}
-Received shutdown signal, but pipeline is still waiting for in-flight events
-to be processed. Sending another ^C will force quit Logstash, but this may cause
-data loss. {:level=&gt;:warn}
-{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
-{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
-"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
-The shutdown process appears to be stalled due to busy or blocked plugins.
-Check the logs for more information. {:level=&gt;:error}
-{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
-{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
-"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
-{"inflight_count"=&gt;125, "stalling_thread_info"=&gt;{["LogStash::Filters::Ruby",
-{"code"=&gt;"sleep 10000"}]=&gt;[{"thread_id"=&gt;19, "name"=&gt;"[main]&gt;worker0",
-"current_call"=&gt;"(ruby filter code):1:in `sleep'"}]}} {:level=&gt;:warn}
-Forcefully quitting logstash.. {:level=&gt;:fatal}</pre></div></div><p>When <code class="literal">--pipeline.unsafe_shutdown</code> isn’t enabled, Logstash continues to run and produce these reports periodically.</p></div></div><div class="navfooter"><span class="prev"><a href="logging.html">
+<code class="literal">path.queue</code>: The directory path where the data files will be stored. By default, the files are stored in <code class="literal">path.data/queue</code>.
+</li><li class="listitem">
+<code class="literal">queue.page_capacity</code>: The size of the page data file. The queue data consists of append-only data files separated into pages. The default size is 250mb.
+</li><li class="listitem">
+<code class="literal">queue.max_events</code>:  The maximum number of unread events that are allowed in the queue. The default is 0 (unlimited).
+</li><li class="listitem">
+<code class="literal">queue.max_bytes</code>: The total capacity of the queue in number of bytes. The
+default is 1024mb (1gb). Make sure the capacity of your disk drive is greater
+than the value you specify here. If both <code class="literal">queue.max_events</code> and
+<code class="literal">queue.max_bytes</code> are specified, Logstash uses whichever criteria is reached
+first.
+</li></ul></div><p>You can also specify options that control when the checkpoint file gets updated (<code class="literal">queue.checkpoint.acks</code>, <code class="literal">queue.checkpoint.writes</code>, and
+<code class="literal">queue.checkpoint.interval</code>). See <a class="xref" href="persistent-queues.html#durability-persistent-queues" title="Controlling Durability">Controlling Durability</a>.</p><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">queue.type: persisted
+queue.max_bytes: 4gb</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="backpressure-persistent-queues"></a>Handling Back Pressure<a href="https://github.com/elastic/logstash/edit/master/docs/static/persistent-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Logstash has a built-in mechanism that exerts back pressure on the data flow
+when the queue is full. This mechanism helps Logstash control the rate of data
+flow at the input stage without overwhelming downstream stages and outputs like
+Elasticsearch.</p><p>You can control when back pressure happens by using the <code class="literal">queue.max_bytes</code>
+setting to configure the capacity of the queue on disk. The following example
+sets the total capacity of the queue to 8gb:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">queue.type: persisted
+queue.max_bytes: 8gb</pre></div><p>With these settings specified, Logstash will buffer unACKed events on disk until
+the size of the queue reaches 8gb. When the queue is full of unACKed events, and
+the size limit has been reached, Logstash will no longer accept new events.</p><p>Each input handles back pressure independently. For example, when the
+<a class="link" href="plugins-inputs-beats.html" title="beats">beats</a> input encounters back pressure, it no longer
+accepts new connections and waits until the persistent queue has space to accept
+more events. After the filter and output stages finish processing existing
+events in the queue and ACKs them, Logstash automatically starts accepting new
+events.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="durability-persistent-queues"></a>Controlling Durability<a href="https://github.com/elastic/logstash/edit/master/docs/static/persistent-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When the persistent queue feature is enabled, Logstash will store events on
+disk. The persistent queue exposes the trade-off between performance and
+durability by providing the following configuration options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">queue.checkpoint.writes</code>: The number of writes to the queue to trigger an
+fsync to disk. This configuration controls the durability from the producer
+side. Keep in mind that a disk flush is a relatively heavy operation that will
+affect throughput if performed after every write. For instance, if you want to
+ensure that all messages in Logstash’s queue are durable, you can set
+<code class="literal">queue.checkpoint.writes: 1</code>. However, this setting can severely impact
+performance.
+</li><li class="listitem">
+<code class="literal">queue.checkpoint.acks</code>: The number of ACKs to the queue to trigger an fsync to disk. This configuration controls the durability from the consumer side.
+</li></ul></div><p>The process of checkpointing is atomic, which means any update to the file is
+saved if successful.</p><p>If Logstash is terminated, or if there is a hardware level failure, any data
+that is buffered in the persistent queue, but not yet checkpointed, is lost.
+To avoid this possibility, you can set <code class="literal">queue.checkpoint.writes: 1</code>, but keep in
+mind that this setting can severely impact performance.</p></div></div><div class="navfooter"><span class="prev"><a href="logging.html">
               « 
               Logging</a>
            
         </span><span class="next">
            
-          <a href="breaking-changes.html">Breaking changes
+          <a href="shutdown.html">Shutting Down Logstash
                »
             </a></span></div>
 <!-- end body -->
