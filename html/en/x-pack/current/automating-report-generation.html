@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Automating Report Generation
-        | X-Pack for the Elastic Stack [5.0]
+        | X-Pack for the Elastic Stack [5.1]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [5.0]" /><link rel="up" href="xpack-reporting.html" title="Reporting from Kibana" /><link rel="prev" href="reporting-getting-started.html" title="Getting Started" /><link rel="next" href="configuring-reporting.html" title="Configuring Reporting" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/5.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [5.1]" /><link rel="up" href="xpack-reporting.html" title="Reporting from Kibana" /><link rel="prev" href="reporting-getting-started.html" title="Getting Started" /><link rel="next" href="configuring-reporting.html" title="Configuring Reporting" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/5.1" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -555,7 +555,7 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">X-Pack for the Elastic Stack
-      [5.0]
+      [5.1]
     </a></span> » <span class="breadcrumb-link"><a href="xpack-reporting.html">Reporting from Kibana </a></span> » <span class="breadcrumb-node">Automating Report Generation</span></div><div class="navheader"><span class="prev"><a href="reporting-getting-started.html">
               « 
               Getting Started</a>
@@ -574,15 +574,19 @@ within 30 seconds. If you are generating reports that contain complex
 visualizations or your machine is slow or under constant heavy load, it
 might take longer than 30 seconds to generate a report. You can increase
 the timeout by setting <code class="literal">xpack.reporting.queue.timeout</code> in <code class="literal">kibana.yml</code>.</p></div></div><p>You request reports through three X-Pack reporting endpoints:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Dashboard Reports:  <code class="literal">/api/reporting/generate/dashboard/&lt;dashboard-id&gt;&amp;sync</code>
+Dashboard Reports:  <code class="literal">/api/reporting/generate/dashboard/&lt;dashboard-id&gt;</code>
 </li><li class="listitem">
-Visualization Reports:  <code class="literal">/api/reporting/generate/visualization/&lt;visualization-id&gt;&amp;sync</code>
+Visualization Reports:  <code class="literal">/api/reporting/generate/visualization/&lt;visualization-id&gt;</code>
 </li><li class="listitem">
-Saved Search Reports: <code class="literal">/api/reporting/generate/search/&lt;saved-search-id&gt;&amp;sync</code>
-</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">&amp;sync</code> parameter is required to retrieve a PDF of the report. If you
-omit it, X-Pack reporting returns a JSON structure that only contains the report
-metadata.</p></div></div><p>To specify the time period you want to include in the report, you use the <code class="literal">_g</code>
-parameter in the request. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">http://0.0.0.0:5601/api/reporting/generate/dashboard/error-monitoring?_g=(time:(from:now-1d%2Fd,mode:quick,to:now-1d%2Fd))&amp;sync</pre></div><p>You can get the URL for a particular report from Kibana:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Saved Search Reports: <code class="literal">/api/reporting/generate/search/&lt;saved-search-id&gt;</code>
+</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The response from this request with be JSON, and will contain a <code class="literal">path</code> property
+with a URL to use to download the generated report. When requesting that path,
+you will get a 503 response if it’s not completed yet. In this case, retry after the
+number of seconds in the <code class="literal">Retry-After</code> header in the response until you get the PDF.</p></div></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Previously there was a <code class="literal">&amp;sync</code> parameter appended to generation URLs which would hold
+the request open until the document was fully generated.  Existing use of the <code class="literal">&amp;sync</code> parameter,
+in Watcher for example, will continue to be supported, but will log a deprecation warning.
+Support for the <code class="literal">&amp;sync</code> parameter will be removed in the next major version.</p></div></div><p>To specify the time period you want to include in the report, you use the <code class="literal">_g</code>
+parameter in the request. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">http://0.0.0.0:5601/api/reporting/generate/dashboard/error-monitoring?_g=(time:(from:now-1d%2Fd,mode:quick,to:now-1d%2Fd))</pre></div><p>You can get the URL for a particular report from Kibana:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 Load the saved object.
 </li><li class="listitem">
 Click <span class="strong"><strong>Reporting</strong></span> in the Kibana toolbar.
@@ -590,7 +594,7 @@ Click <span class="strong"><strong>Reporting</strong></span> in the Kibana toolb
 Copy the displayed <span class="strong"><strong>Generation URL</strong></span>.
 </li></ol></div><p>To configure a watch to email reports, you use the
 <a class="ulink" href="https://www.elastic.co/guide/en/watcher/current/actions.html#configuring-email-attachments" target="_top">
-<code class="literal">http</code> attachment type</a> in an <code class="literal">email</code> action.</p><p>For example, the following watch generates a report that contains the
+<code class="literal">reporting</code> attachment type</a> in an <code class="literal">email</code> action.</p><p>For example, the following watch generates a report that contains the
 <span class="strong"><strong>Error Monitoring</strong></span> dashboard and emails the report every hour:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/watcher/watch/error_report
 {
   "trigger" : {
@@ -599,41 +603,41 @@ Copy the displayed <span class="strong"><strong>Generation URL</strong></span>.
     }
   },
   "actions" : {
-  "email_admin" : { <a id="CO64-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    "email": {
-      "to": "'Recipient Name &lt;recipient@example.com&gt;'",
-      "subject": "Error Monitoring Report",
-      "attachments" : {
-        "error_report.pdf" : {
-          "http" : {
-            "content_type" : "application/pdf",
-            "request" : {
-              "method": "POST", <a id="CO64-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-              "headers": {
-                "kbn-xsrf": "reporting"
-              },
-              "read_timeout": "300s", <a id="CO64-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-              "url": "http://0.0.0.0:5601/api/reporting/generate/dashboard/Error-Monitoring?_g=(time:(from:now-1d%2Fd,mode:quick,to:now))&amp;sync" <a id="CO64-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    "email_admin" : { <a id="CO65-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "email": {
+        "to": "'Recipient Name &lt;recipient@example.com&gt;'",
+        "subject": "Error Monitoring Report",
+        "attachments" : {
+          "error_report.pdf" : {
+            "reporting" : {
+              "url": "http://0.0.0.0:5601/api/reporting/generate/dashboard/Error-Monitoring?_g=(time:(from:now-1d%2Fd,mode:quick,to:now))", <a id="CO65-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+              "retries":6, <a id="CO65-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+              "interval":"1s", <a id="CO65-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+              "auth":{ <a id="CO65-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+                "basic":{
+                  "username":"elastic",
+                  "password":"changeme"
+                }
+              }
             }
           }
         }
       }
     }
   }
- }
-}</pre></div><div class="console_widget" data-snippet="snippets/automating-report-generation/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO64-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/automating-report-generation/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO65-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 You must <a class="ulink" href="https://www.elastic.co/guide/en/watcher/current/email-services.html#email-account" target="_top">
 configure at least one email account</a> to enable Watcher to send email.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO64-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Requests to the Reporting endpoints must use POST and include the
-<code class="literal">kbn-xsrf</code> header.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO64-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Increase the <code class="literal">read_timeout</code> to give X-Pack reporting enough time to generate the
-report.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO64-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO65-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This is an example Generation URL. You can copy and paste the URL for any
 report from the Kibana UI.
-</p></td></tr></table></div><p>For more information about configuring watches, see <a class="link" href="how-watcher-works.html" title="How Watcher Works">How Watches Work</a>.</p></div><div class="navfooter"><span class="prev"><a href="reporting-getting-started.html">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO65-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Optional, default is 40
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO65-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Optional, default is 15s
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO65-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Provide user credentials for a user with permission to access Kibana and X-Pack reporting.
+</p></td></tr></table></div><p>For more information about configuring watches, see <a class="link" href="how-watcher-works.html" title="How Watcher Works">How Watcher Works</a>.</p></div><div class="navfooter"><span class="prev"><a href="reporting-getting-started.html">
               « 
               Getting Started</a>
            
