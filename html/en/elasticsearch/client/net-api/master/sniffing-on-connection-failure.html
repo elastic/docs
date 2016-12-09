@@ -666,6 +666,33 @@ new ClientCall { { HealthyResponse, 9210 } },
     new ClientCall { { HealthyResponse, 9211 } },
     new ClientCall { { HealthyResponse, 9212 } },
     new ClientCall { { HealthyResponse, 9210 } }
+);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+        .Nodes(2)
+        .MasterEligible(9200)
+        .Ping(r =&gt; r.OnPort(9200).Fails(Once))
+        .Sniff(p =&gt; p.SucceedAlways(Framework.Cluster
+                .Nodes(10)
+                .MasterEligible(9200, 9202, 9201)
+                .PublishAddress("10.0.12.1")
+        ))
+        .SniffingConnectionPool()
+        .Settings(s =&gt; s.SniffOnStartup(false))
+);
+Action&lt;Audit, string, int&gt; hostAssert = (a, host, expectedPort) =&gt;
+{
+    a.Node.Uri.Host.Should().Be(host);
+    a.Node.Uri.Port.Should().Be(expectedPort);
+};
+a.Node.Uri.Host.Should().Be(host);
+a.Node.Uri.Port.Should().Be(expectedPort);</pre></div><p>Our pool should now have three nodes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceCalls(
+    new ClientCall {
+        { PingFailure, a =&gt; hostAssert(a, "localhost", 9200)},
+        { SniffOnFail },
+        { SniffSuccess, a =&gt; hostAssert(a, "localhost", 9200)},
+        { PingSuccess, a =&gt; hostAssert(a, "10.0.12.1", 9200)},
+        { HealthyResponse,  a =&gt; hostAssert(a, "10.0.12.1", 9200)},
+{ pool =&gt;  pool.Nodes.Count.Should().Be(10) }
+    }
 );</pre></div></div><div class="navfooter"><span class="prev"><a href="sniffing-on-startup.html">
               « 
               Sniffing on startup</a>
