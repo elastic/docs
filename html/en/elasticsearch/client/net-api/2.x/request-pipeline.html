@@ -591,7 +591,11 @@ allowing you to have requests executed on your own custom request pipeline</p><d
     settings,
     requestPipelineFactory,
     DateTimeProvider.Default,
-    new MemoryStreamFactory());</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_pipeline_behavior"></a>Pipeline Behavior<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sniffing_on_first_usage"></a>Sniffing on First usage<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var singleNodePipeline = CreatePipeline(uris =&gt; new SingleNodeConnectionPool(uris.First()));
+    new MemoryStreamFactory());</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = setupPool(new[] { TestClient.CreateUri(), TestClient.CreateUri(9201) });
+
+var settings = new ConnectionSettings(pool, connection ?? new InMemoryConnection());
+
+settings = settingsSelector?.Invoke(settings) ?? settings;</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_pipeline_behavior"></a>Pipeline Behavior<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sniffing_on_first_usage"></a>Sniffing on First usage<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var singleNodePipeline = CreatePipeline(uris =&gt; new SingleNodeConnectionPool(uris.First()));
 
 var staticPipeline = CreatePipeline(uris =&gt; new StaticConnectionPool(uris));
 
@@ -606,52 +610,52 @@ You can however disable reseeding/sniffing on ConnectionSettings</p><div class="
 sniffingPipeline.FirstPoolUsageNeedsSniffing.Should().BeFalse();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_wait_for_first_sniff"></a>Wait for first Sniff<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>All threads wait for the sniff on startup to finish, waiting the request timeout period. A
  <a class="ulink" href="https://msdn.microsoft.com/en-us/library/system.threading.semaphoreslim(v=vs.110).aspx" target="_top"><code class="literal">SemaphoreSlim</code></a>
 is used to block threads until the sniff finishes and waiting threads release the <code class="literal">SemaphoreSlim</code> appropriately.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var response = new
+{
+    cluster_name = "elasticsearch",
+    nodes = new
+    {
+        node1 = new
+        {
+            name = "Node Name 1",
+            transport_address = "127.0.0.1:9300",
+            host = "127.0.0.1",
+            ip = "127.0.01",
+            version = "5.0.0-alpha3",
+            build = "e455fd0",
+            http_address = "127.0.0.1:9200",
+            settings = new JObject
             {
-                cluster_name = "elasticsearch",
-                nodes = new
-                {
-                    node1 = new
-                    {
-                        name = "Node Name 1",
-                        transport_address = "127.0.0.1:9300",
-                        host = "127.0.0.1",
-                        ip = "127.0.01",
-                        version = "5.0.0-alpha3",
-                        build = "e455fd0",
-                        http_address = "127.0.0.1:9200",
-                        settings = new JObject
-                        {
-                            {"client.type", "node"},
-                            {"cluster.name", "elasticsearch"},
-                            {"config.ignore_system_properties", "true"},
-                            {"name", "Node Name 1"},
-                            {"path.home", "c:\\elasticsearch\\elasticsearch"},
-                            {"path.logs", "c:/ elasticsearch/logs"}
-                        }
-                    }
-                }
-            };
+                {"client.type", "node"},
+                {"cluster.name", "elasticsearch"},
+                {"config.ignore_system_properties", "true"},
+                {"name", "Node Name 1"},
+                {"path.home", "c:\\elasticsearch\\elasticsearch"},
+                {"path.logs", "c:/ elasticsearch/logs"}
+            }
+        }
+    }
+};
 
 var responseBody = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(response));
 
 var inMemoryConnection = new WaitingInMemoryConnection(
-                TimeSpan.FromSeconds(1),
-                responseBody);
+    TimeSpan.FromSeconds(1),
+    responseBody);
 
 var sniffingPipeline = CreatePipeline(
-                uris =&gt; new SniffingConnectionPool(uris),
-                connection: inMemoryConnection,
-                settingsSelector: s =&gt; s.RequestTimeout(TimeSpan.FromSeconds(2)));
+    uris =&gt; new SniffingConnectionPool(uris),
+    connection: inMemoryConnection,
+    settingsSelector: s =&gt; s.RequestTimeout(TimeSpan.FromSeconds(2)));
 
 var semaphoreSlim = new SemaphoreSlim(1, 1);</pre></div><p>start three tasks that will initiate a sniff on startup. The first task will successfully
 sniff on startup with the remaining two waiting tasks exiting without exception and releasing
-the <code class="literal">SemaphoreSlim</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var task1 = Task.Run(() =&gt; sniffingPipeline.FirstPoolUsage(semaphoreSlim));
+the <code class="literal">SemaphoreSlim</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var task1 = System.Threading.Tasks.Task.Run(() =&gt; sniffingPipeline.FirstPoolUsage(semaphoreSlim));
 
-var task2 = Task.Run(() =&gt; sniffingPipeline.FirstPoolUsage(semaphoreSlim));
+var task2 = System.Threading.Tasks.Task.Run(() =&gt; sniffingPipeline.FirstPoolUsage(semaphoreSlim));
 
-var task3 = Task.Run(() =&gt; sniffingPipeline.FirstPoolUsage(semaphoreSlim));
+var task3 = System.Threading.Tasks.Task.Run(() =&gt; sniffingPipeline.FirstPoolUsage(semaphoreSlim));
 
-var exception = Record.Exception(() =&gt; Task.WaitAll(task1, task2, task3));
+var exception = Record.Exception(() =&gt; System.Threading.Tasks.Task.WaitAll(task1, task2, task3));
 
 exception.Should().BeNull();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sniffing_on_connection_failure"></a>Sniffing on Connection Failure<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/building-blocks/request-pipelines.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var singleNodePipeline = CreatePipeline(uris =&gt; new SingleNodeConnectionPool(uris.First()));
 
