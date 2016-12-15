@@ -569,8 +569,10 @@ Not what you want? See the
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-suggesters"></a>Suggesters<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/search/suggesters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The suggest feature suggests similar looking terms based on a provided
 text by using a suggester. Parts of the suggest feature are still under
-development.</p><p>The suggest request part is either defined alongside the query part in a
-<code class="literal">_search</code> request or via the REST <code class="literal">_suggest</code> endpoint.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_search
+development.</p><p>The suggest request part is defined alongside the query part in a <code class="literal">_search</code>
+request.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p><code class="literal">_suggest</code> endpoint has been deprecated in favour of using suggest via
+<code class="literal">_search</code> endpoint. In 5.0, the <code class="literal">_search</code> endpoint has been optimized for
+suggest only search requests.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_search
 {
   "query" : {
     "match": {
@@ -585,75 +587,74 @@ development.</p><p>The suggest request part is either defined alongside the quer
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters/1.json"></div><p>Suggest requests executed against the <code class="literal">_suggest</code> endpoint should omit
-the surrounding <code class="literal">suggest</code> element which is only used if the suggest
-request is part of a search.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _suggest
-{
-  "my-suggestion" : {
-    "text" : "tring out Elasticsearch",
-    "term" : {
-      "field" : "message"
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters/2.json"></div><p>Several suggestions can be specified per request. Each suggestion is
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters/1.json"></div><p>Several suggestions can be specified per request. Each suggestion is
 identified with an arbitrary name. In the example below two suggestions
 are requested. Both <code class="literal">my-suggest-1</code> and <code class="literal">my-suggest-2</code> suggestions use
-the <code class="literal">term</code> suggester, but have a different <code class="literal">text</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _suggest
+the <code class="literal">term</code> suggester, but have a different <code class="literal">text</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _search
 {
-  "my-suggest-1" : {
-    "text" : "tring out Elasticsearch",
-    "term" : {
-      "field" : "message"
-    }
-  },
-  "my-suggest-2" : {
-    "text" : "kmichy",
-    "term" : {
-      "field" : "user"
+  "suggest": {
+    "my-suggest-1" : {
+      "text" : "tring out Elasticsearch",
+      "term" : {
+        "field" : "message"
+      }
+    },
+    "my-suggest-2" : {
+      "text" : "kmichy",
+      "term" : {
+        "field" : "user"
+      }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters/3.json"></div><p>The below suggest response example includes the suggestion response for
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters/2.json"></div><p>The below suggest response example includes the suggestion response for
 <code class="literal">my-suggest-1</code> and <code class="literal">my-suggest-2</code>. Each suggestion part contains
 entries. Each entry is effectively a token from the suggest text and
 contains the suggestion entry text, the original start offset and length
 in the suggest text and if found an arbitrary number of options.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "_shards": ...
-  "my-suggest-1": [ {
-    "text": "tring",
-    "offset": 0,
-    "length": 5,
-    "options": [ {"text": "trying", "score": 0.8, "freq": 1 } ]
-  }, {
-    "text": "out",
-    "offset": 6,
-    "length": 3,
-    "options": []
-  }, {
-    "text": "elasticsearch",
-    "offset": 10,
-    "length": 13,
-    "options": []
-  } ],
-  "my-suggest-2": ...
+  "hits": ...
+  "took": 2,
+  "timed_out": false,
+  "suggest": {
+    "my-suggest-1": [ {
+      "text": "tring",
+      "offset": 0,
+      "length": 5,
+      "options": [ {"text": "trying", "score": 0.8, "freq": 1 } ]
+    }, {
+      "text": "out",
+      "offset": 6,
+      "length": 3,
+      "options": []
+    }, {
+      "text": "elasticsearch",
+      "offset": 10,
+      "length": 13,
+      "options": []
+    } ],
+    "my-suggest-2": ...
+  }
 }</pre></div><p>Each options array contains an option object that includes the
 suggested text, its document frequency and score compared to the suggest
 entry text. The meaning of the score depends on the used suggester. The
 term suggester’s score is based on the edit distance.</p><h3><a id="global-suggest"></a>Global suggest text<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/search/suggesters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To avoid repetition of the suggest text, it is possible to define a
 global text. In the example below the suggest text is defined globally
-and applies to the <code class="literal">my-suggest-1</code> and <code class="literal">my-suggest-2</code> suggestions.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _suggest
+and applies to the <code class="literal">my-suggest-1</code> and <code class="literal">my-suggest-2</code> suggestions.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _search
 {
-  "text" : "tring out Elasticsearch",
-  "my-suggest-1" : {
-    "term" : {
-      "field" : "message"
-    }
-  },
-  "my-suggest-2" : {
-    "term" : {
-      "field" : "user"
+  "suggest": {
+    "text" : "tring out Elasticsearch",
+    "my-suggest-1" : {
+      "term" : {
+        "field" : "message"
+      }
+    },
+    "my-suggest-2" : {
+       "term" : {
+        "field" : "user"
+       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters/4.json"></div><p>The suggest text can in the above example also be specified as
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters/3.json"></div><p>The suggest text can in the above example also be specified as
 suggestion specific option. The suggest text specified on suggestion
 level override the suggest text on the global level.</p></div><div class="navfooter"><span class="prev"><a href="search-shards.html">
               « 
