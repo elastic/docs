@@ -68,7 +68,7 @@ sub main {
                 if $result->{errors};
         }
 
-        $es->indices->forcemerge( index => $index, max_num_segments => 1 );
+        $es->indices->optimize( index => $index, max_num_segments => 1 );
         1;
     } or do {
         my $error = $@;
