@@ -23,6 +23,7 @@ die "$0 already running\n" if Proc::PID::File->running( dir => '.run' );
 use ES::Util qw(
     run $Opts
     build_chunked build_single
+    git_creds
     proc_man
     sha_for
     timestamp
@@ -108,7 +109,7 @@ sub build_local {
             }
 
             wait;
-            print "\nExiting\n";
+            say "\nExiting";
             exit;
         }
         else {
@@ -127,6 +128,11 @@ sub build_local {
 #===================================
 sub build_all {
 #===================================
+    say "Checking GitHub username and password";
+
+    ensure_creds_cache_enabled() || enable_creds_cache() || exit;
+    check_github_authed();
+
     init_repos();
 
     my $build_dir = $Conf->{paths}{build}
@@ -322,7 +328,7 @@ sub init_repos {
         or die "Missing <paths.branch_tracker> in config";
 
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
-    my $pm = proc_man($Opts->{procs} * 3 );
+    my $pm = proc_man( $Opts->{procs} * 3 );
     for my $name (@repo_names) {
         my $repo = ES::Repo->new(
             name    => $name,
@@ -400,6 +406,61 @@ sub init_env {
 }
 
 #===================================
+sub check_github_authed {
+#===================================
+    my $creds = git_creds( 'fill', 'url=https://github.com' );
+    if ( $creds =~ /username=\w+/ && $creds =~ /password=\S+/ ) {
+        git_creds( 'approve', $creds );
+        return;
+    }
+    die "Username and password for GitHub required to continue\n";
+}
+
+#===================================
+sub ensure_creds_cache_enabled {
+#===================================
+    local $ENV{GIT_TERMINAL_PROMPT} = 0;
+
+    # test if credential store enabled
+    git_creds( 'approve', "url=https://foo.com\nusername=foo\npassword=bar" );
+    my $creds = git_creds( 'fill', 'url=https://foo.com' );
+
+    if ( $creds =~ /password=bar/ ) {
+        git_creds( 'reject', 'url=https://foo.com' );
+        return 1;
+    }
+    return 0;
+}
+
+#===================================
+sub enable_creds_cache {
+#===================================
+    say <<"INFO";
+
+** GitHub doesn't have a credentials store enabled **
+
+I can enable the credentials-cache for you, which will cache
+your username and password for 24 hours.
+INFO
+
+    $|++;
+
+    print "Enter 'y' if you would like to proceed: ";
+    my $yes = <>;
+    if ( $yes && $yes =~ /\s*y/i ) {
+        say "Enabling credentials cache";
+        run( qw(git config --global --add credential.helper),
+            "cache --timeout 86400" );
+        return 1;
+    }
+    else {
+        say "Credentials cache not enabled";
+        return 0;
+    }
+
+}
+
+#===================================
 sub checkout_staging_or_master {
 #===================================
     my $current = eval { run qw(git symbolic-ref --short HEAD) } || 'DETACHED';
@@ -435,6 +496,7 @@ sub restart {
     # reexecute script in case it has changed
     my $bin = file($0)->absolute($Old_Pwd);
     say "Restarting";
+    chdir $Old_Pwd;
     exec( $^X, $bin, @Old_ARGV );
 }
 
