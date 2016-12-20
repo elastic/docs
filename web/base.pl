@@ -26,8 +26,7 @@ our $Max_Sections         = 10;
 our $Max_Hits_Per_Section = 5;
 
 our $es = Search::Elasticsearch->new(
-    nodes  => 'http://localhost:9200',
-    client => '2_0::Direct'
+    nodes => 'http://localhost:9200'
 );
 
 #===================================
