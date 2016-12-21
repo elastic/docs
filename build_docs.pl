@@ -331,6 +331,7 @@ sub init_repos {
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
     my $pm = proc_man( $Opts->{procs} * 3 );
     for my $name (@repo_names) {
+        # Include --user name in URL if specified
         my $url = $conf->{$name}{url};
         if ( $Opts->{user} ) {
             $url = URI->new($url);
@@ -349,6 +350,7 @@ sub init_repos {
             $repo->update_from_remote();
             1;
         } or do {
+            # If creds are invalid, explcitily reject them to try to clear the cache
             my $error = $@;
             if ( $error =~ /Invalid username or password/ ) {
                 revoke_github_creds();
@@ -435,6 +437,7 @@ sub check_github_authed {
 
     my $creds = git_creds( 'fill', $fill );
 
+    # restart after filling in the creds so that ^C or dieing later doesn't reset creds
     if ( $creds =~ /password=\S+/ ) {
         git_creds( 'approve', $creds );
         restart();
