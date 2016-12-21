@@ -634,7 +634,23 @@ accepted values are single event IDs to include (e.g. 4624), a range of event
 IDs to include (e.g. 4700-4800), and single event IDs to exclude (e.g. -4735).
 <span class="strong"><strong>This option is only available on operating systems supporting the Windows Event Log API (Microsoft Windows Vista and newer).</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">winlogbeat.event_logs:
   - name: Security
-    event_id: 4624, 4625, 4700-4800, -4735</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_event_logs_level"></a>event_logs.level<a href="https://github.com/elastic/beats/edit/5.1/winlogbeat/docs/reference/configuration/winlogbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>A list of event levels to include. The value is a comma-separated list of
+    event_id: 4624, 4625, 4700-4800, -4735</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>If you specify more that 22 event IDs to include or 22 event IDs to exclude,
+Windows will prevent Winlogbeat from reading the event log because it limits the
+number of conditions that can be used in an event log query. If this occurs a similar
+warning as shown below will be logged by Winlogbeat, and it will continue
+processing data from other event logs. For more information, see
+<a class="ulink" href="https://support.microsoft.com/en-us/kb/970453" target="_top">https://support.microsoft.com/en-us/kb/970453</a>.</p><p><code class="literal">WARN EventLog[Application] Open() error. No events will be read from this
+source. The specified query is invalid.</code></p><p>If you have more than 22 event IDs, you can workaround this Windows limitation
+by using a drop_event[drop-event] processor to do the filtering after
+Winlogbeat has received the events from Windows. The filter shown below is
+equivalent to <code class="literal">event_id: 903, 1024, 4624</code> but can be expanded beyond 22
+event IDs.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">processors:
+- drop_event.when.and:
+    - equals.log_name: Security
+    - not.or:
+        - equals.event_id: 903
+        - equals.event_id: 1024
+        - equals.event_id: 4624</pre></div></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_event_logs_level"></a>event_logs.level<a href="https://github.com/elastic/beats/edit/5.1/winlogbeat/docs/reference/configuration/winlogbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>A list of event levels to include. The value is a comma-separated list of
 levels. <span class="strong"><strong>This option is only available on operating systems supporting the Windows Event Log API (Microsoft Windows Vista and newer).</strong></span></p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Level</th><th align="left" valign="top">Value</th></tr></thead><tbody><tr><td align="left" valign="top"><p>critical, crit</p></td><td align="left" valign="top"><p>1</p></td></tr><tr><td align="left" valign="top"><p>error, err</p></td><td align="left" valign="top"><p>2</p></td></tr><tr><td align="left" valign="top"><p>warning, warn</p></td><td align="left" valign="top"><p>3</p></td></tr><tr><td align="left" valign="top"><p>information, info</p></td><td align="left" valign="top"><p>0 or 4</p></td></tr><tr><td align="left" valign="top"><p>verbose</p></td><td align="left" valign="top"><p>5</p></td></tr></tbody></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">winlogbeat.event_logs:
   - name: Security
     level: critical, error, warning</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_event_logs_provider"></a>event_logs.provider<a href="https://github.com/elastic/beats/edit/5.1/winlogbeat/docs/reference/configuration/winlogbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>A list of providers (source names) to include. The value is a YAML list.
