@@ -10,6 +10,7 @@ our @Old_ARGV = @ARGV;
 use Cwd;
 use FindBin;
 use Data::Dumper;
+use URI();
 
 BEGIN {
     $Old_Pwd = Cwd::cwd();
@@ -45,8 +46,8 @@ use ES::Template();
 GetOptions(
     $Opts,    #
     'all', 'push',    #
-    'single',  'doc=s',   'out=s', 'toc', 'chunk=i', 'comments',
-    'open',    'staging', 'procs=i',
+    'single',  'doc=s',   'out=s',   'toc', 'chunk=i', 'comments',
+    'open',    'staging', 'procs=i', 'user=s',
     'lenient', 'verbose', 'reload_template'
 ) || exit usage();
 
@@ -330,15 +331,30 @@ sub init_repos {
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
     my $pm = proc_man( $Opts->{procs} * 3 );
     for my $name (@repo_names) {
+        my $url = $conf->{$name}{url};
+        if ( $Opts->{user} ) {
+            $url = URI->new($url);
+            $url->userinfo( $Opts->{user} );
+        }
         my $repo = ES::Repo->new(
-            name    => $name,
-            dir     => $repos_dir,
+            name     => $name,
+            dir      => $repos_dir,
             temp_dir => $temp_dir,
-            tracker => $tracker,
-            %{ $conf->{$name} }
+            tracker  => $tracker,
+            %{ $conf->{$name} },
+            url => $url
         );
         $pm->start($name) and next;
-        $repo->update_from_remote();
+        eval {
+            $repo->update_from_remote();
+            1;
+        } or do {
+            my $error = $@;
+            if ( $error =~ /Invalid username or password/ ) {
+                revoke_github_creds();
+            }
+            die $error;
+        };
         $pm->finish;
     }
     $pm->wait_all_children;
@@ -408,12 +424,43 @@ sub init_env {
 #===================================
 sub check_github_authed {
 #===================================
-    my $creds = git_creds( 'fill', 'url=https://github.com' );
-    if ( $creds =~ /username=\w+/ && $creds =~ /password=\S+/ ) {
+    my $fill = _github_creds_fill();
+
+    {
+        local $ENV{GIT_TERMINAL_PROMPT} = 0;
+        my $creds = git_creds( 'fill', $fill );
+        return if $creds =~ /password=\S+/;
+
+    }
+
+    my $creds = git_creds( 'fill', $fill );
+
+    if ( $creds =~ /password=\S+/ ) {
         git_creds( 'approve', $creds );
-        return;
+        restart();
     }
     die "Username and password for GitHub required to continue\n";
+}
+
+#===================================
+sub revoke_github_creds {
+#===================================
+    my $fill = _github_creds_fill();
+    {
+        local $ENV{GIT_TERMINAL_PROMPT} = 0;
+        my $creds = git_creds( 'fill', $fill );
+        return unless $creds =~ /password=\S+/;
+    }
+
+    my $creds = git_creds( 'reject', $fill );
+}
+
+#===================================
+sub _github_creds_fill {
+#===================================
+    return $Opts->{user}
+        ? "url=https://" . $Opts->{user} . '@github.com'
+        : 'url=https://github.com';
 }
 
 #===================================
@@ -522,6 +569,7 @@ sub usage {
           --staging         Use the template from the staging website
           --reload_template Force retrieving the latest web template
           --procs           Number of processes to run in parallel, defaults to 3
+          --user            Specify which GitHub user to use, if not your own
           --verbose
 
         WARNING: Anything in the `out` dir will be deleted!
