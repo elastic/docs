@@ -78,6 +78,8 @@ sub build_chunked {
 
     finish_build( $index->parent, $chunk_dir );
     extract_toc_from_index($chunk_dir);
+    $dest->rmtree;
+    $dest->mkpath;
     for ( $chunk_dir->children ) {
         run( 'mv', $_, $dest );
     }
