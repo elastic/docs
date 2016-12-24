@@ -10,7 +10,6 @@ our @Old_ARGV = @ARGV;
 use Cwd;
 use FindBin;
 use Data::Dumper;
-use URI();
 
 BEGIN {
     $Old_Pwd = Cwd::cwd();
@@ -19,6 +18,7 @@ BEGIN {
 
 use lib 'lib';
 use Proc::PID::File;
+use URI();
 die "$0 already running\n" if Proc::PID::File->running( dir => '.run' );
 
 use ES::Util qw(
@@ -45,7 +45,7 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push',    #
+    'all', 'push', 'update!',    #
     'single',  'doc=s',   'out=s',   'toc', 'chunk=i', 'comments',
     'open',    'staging', 'procs=i', 'user=s',
     'lenient', 'verbose', 'reload_template'
@@ -54,6 +54,7 @@ GetOptions(
 our $Conf = LoadFile('conf.yaml');
 
 checkout_staging_or_master();
+update_self() if $Opts->{update};
 init_env();
 
 my $template_urls
@@ -331,6 +332,7 @@ sub init_repos {
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
     my $pm = proc_man( $Opts->{procs} * 3 );
     for my $name (@repo_names) {
+
         # Include --user name in URL if specified
         my $url = $conf->{$name}{url};
         if ( $Opts->{user} ) {
@@ -350,7 +352,8 @@ sub init_repos {
             $repo->update_from_remote();
             1;
         } or do {
-            # If creds are invalid, explcitily reject them to try to clear the cache
+
+        # If creds are invalid, explcitily reject them to try to clear the cache
             my $error = $@;
             if ( $error =~ /Invalid username or password/ ) {
                 revoke_github_creds();
@@ -437,7 +440,7 @@ sub check_github_authed {
 
     my $creds = git_creds( 'fill', $fill );
 
-    # restart after filling in the creds so that ^C or dieing later doesn't reset creds
+# restart after filling in the creds so that ^C or dieing later doesn't reset creds
     if ( $creds =~ /password=\S+/ ) {
         git_creds( 'approve', $creds );
         restart();
@@ -541,6 +544,24 @@ sub checkout_staging_or_master {
 }
 
 #===================================
+sub update_self {
+#===================================
+    say "Updating docs checkout";
+    my $current = eval { run qw(git symbolic-ref --short HEAD) } || 'DETACHED';
+    chomp $current;
+    my $remote
+        = eval { run qw(git rev-parse --abbrev-ref --symbolic-full-name @{u}) }
+        || die
+        "Couldn't update branch <$current> as it is not tracking an upstream branch\n";
+    chomp $remote;
+    run qw(git fetch);
+    run qw(git clean -df);
+    run qw(git reset --hard ), $remote;
+    push @Old_ARGV, "--noupdate";
+    restart();
+}
+
+#===================================
 sub restart {
 #===================================
     # reexecute script in case it has changed
@@ -566,14 +587,8 @@ sub usage {
           --out dest/dir/   Defaults to ./html_docs.
           --chunk 1         Also chunk sections into separate files
           --comments        Make // comments visible
-
           --open            Open the docs in a browser once built.
           --lenient         Ignore linking errors
-          --staging         Use the template from the staging website
-          --reload_template Force retrieving the latest web template
-          --procs           Number of processes to run in parallel, defaults to 3
-          --user            Specify which GitHub user to use, if not your own
-          --verbose
 
         WARNING: Anything in the `out` dir will be deleted!
 
@@ -585,6 +600,13 @@ sub usage {
           --push            Commit the updated docs and push to origin
           --staging         Use the template from the staging website
                             and push to the staging branch
+          --user            Specify which GitHub user to use, if not your own
+
+    General Opts:
+          --staging         Use the template from the staging website
+          --reload_template Force retrieving the latest web template
+          --procs           Number of processes to run in parallel, defaults to 3
+          --update          Update the docs checkout (losing any changes!)         
           --verbose
 
 USAGE
