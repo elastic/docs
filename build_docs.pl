@@ -18,8 +18,8 @@ BEGIN {
 
 use lib 'lib';
 use Proc::PID::File;
-use URI();
-die "$0 already running\n" if Proc::PID::File->running( dir => '.run' );
+die "$0 already running\n"
+    if Proc::PID::File->running( dir => '.run' );
 
 use ES::Util qw(
     run $Opts
@@ -333,19 +333,13 @@ sub init_repos {
     my $pm = proc_man( $Opts->{procs} * 3 );
     for my $name (@repo_names) {
 
-        # Include --user name in URL if specified
-        my $url = $conf->{$name}{url};
-        if ( $Opts->{user} ) {
-            $url = URI->new($url);
-            $url->userinfo( $Opts->{user} );
-        }
         my $repo = ES::Repo->new(
             name     => $name,
             dir      => $repos_dir,
             temp_dir => $temp_dir,
             tracker  => $tracker,
-            %{ $conf->{$name} },
-            url => $url
+            user     => $Opts->{user},
+            %{ $conf->{$name} }
         );
         $pm->start($name) and next;
         eval {

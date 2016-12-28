@@ -5,6 +5,7 @@ use warnings;
 use v5.10;
 
 use Path::Class();
+use URI();
 use Encode qw(decode_utf8);
 use ES::Util qw(run sha_for);
 
@@ -17,7 +18,12 @@ sub new {
 
     my $name = $args{name} or die "No <name> specified";
     my $url  = $args{url}  or die "No <url> specified for repo <$name>";
-    my $dir  = $args{dir}  or die "No <dir> specified for repo <$name>";
+    if ( my $user = $args{user} ) {
+        $url = URI->new($url);
+        $url->userinfo($user);
+    }
+
+    my $dir = $args{dir} or die "No <dir> specified for repo <$name>";
     my $temp_dir = $args{temp_dir}
         or die "No <temp_dir> specified for repo <$name>";
 
