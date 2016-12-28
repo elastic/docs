@@ -214,8 +214,8 @@ sub check_kibana_links {
         $branch = $_;
         next if $branch eq 'current' || $branch =~ /^\d/ && $branch lt 5;
         say "  Branch $branch";
-        $repo->checkout($branch);
-        $link_checker->check_file( $repo->dir->file($src_path),
+        my $temp = $repo->local_clone($branch);
+        $link_checker->check_file( $temp->file($src_path),
             $extractor, "Kibana [$branch]: $src_path" );
     }
 }
@@ -321,6 +321,8 @@ sub init_repos {
     my $temp_dir = $repos_dir->subdir('.temp');
     $temp_dir->rmtree;
 
+    my %child_dirs = map { $_ => 1 } $repos_dir->children;
+
     my $conf = $Conf->{repos}
         or die "Missing <repos> in config";
 
@@ -341,6 +343,8 @@ sub init_repos {
             user     => $Opts->{user},
             %{ $conf->{$name} }
         );
+        delete $child_dirs{ $repo->git_dir->absolute };
+
         $pm->start($name) and next;
         eval {
             $repo->update_from_remote();
@@ -358,11 +362,10 @@ sub init_repos {
     }
     $pm->wait_all_children;
 
-    for my $dir ( $repos_dir->children ) {
-        next unless $dir->is_dir;
-        my $basename = $dir->basename;
-        next if $conf->{$basename};
-        say "Removing old repo <$basename>";
+    for ( keys %child_dirs ) {
+        my $dir = dir($_);
+        next unless -d $dir;
+        say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
     $temp_dir->mkpath;
