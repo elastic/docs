@@ -132,7 +132,7 @@ sub build_all {
 #===================================
     say "Checking GitHub username and password";
 
-    ensure_creds_cache_enabled() || enable_creds_cache() || exit;
+    ensure_creds_cache_enabled() || enable_creds_cache() || exit(1);
     check_github_authed();
 
     init_repos();

@@ -250,12 +250,12 @@ sub _fetch_template {
     print "Username: ";
     my $user = <STDIN>;
     chomp $user;
-    exit unless $user;
+    exit(1) unless $user;
 
     print "Password: ";
     my $pass = <STDIN>;
     chomp $pass;
-    exit unless $pass;
+    exit(1) unless $pass;
 
     $self->_add_creds_for_url("$user:$pass");
     return $self->_fetch_template;
