@@ -10,7 +10,7 @@ use FindBin;
 
 BEGIN {
     chdir "$FindBin::RealBin/..";
-    do "web/base.pl" or die $!;
+    do "web/base.pl" or die $@;
 }
 
 use Proc::PID::File;
@@ -52,7 +52,9 @@ sub index_changes {
             next;
         };
 
-        my $doc = ES::SiteParser->new()->parse($html)->output;
+        my $parser = ES::SiteParser->new();
+        $parser->parse($html);
+        my $doc = $parser->output;
         $doc->{published_at} = $new->{$url};
         $doc->{title} =~ s/\s*\|\s*Elastic\s*$//;
 
@@ -77,6 +79,7 @@ sub index_changes {
 
         $doc->{tags}       = \@tags;
         $doc->{is_current} = \1;
+        $doc->{url}        = $url;
 
         $bulk->index( { id => $url, source => $doc } );
     }
@@ -132,11 +135,11 @@ sub get_known_urls {
     my $index = shift;
     my %urls;
     my $scroll = $es->scroll_helper(
-        index       => $index,
-        type        => 'doc',
-        size        => 100,
-        search_type => 'scan',
-        _source     => 'published_at'
+        index   => $index,
+        type    => 'doc',
+        size    => 1000,
+        sort    => '_doc',
+        _source => 'published_at'
     );
     while ( my $hit = $scroll->next ) {
         $urls{ $hit->{_id} } = $hit->{_source}{published_at};

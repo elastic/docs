@@ -1,22 +1,48 @@
 {
   "settings": {
     "number_of_shards": 1,
-    "similarity.default.type": "BM25",
     "analysis": {
       "analyzer": {
+        "plain": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "synonyms"
+          ]
+        },
+        "stemmed": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "synonyms",
+            "asciifolding",
+            "english"
+          ],
+          "char_filter": [
+            "punct_to_spaces"
+          ]
+        },
         "autocomplete": {
           "tokenizer": "standard",
           "filter": [
             "lowercase",
+            "synonyms",
             "asciifolding",
             "autocomplete"
+          ],
+          "char_filter": [
+            "punct_to_spaces"
           ]
         },
         "autocomplete_search": {
           "tokenizer": "standard",
           "filter": [
             "lowercase",
+            "synonyms",
             "asciifolding"
+          ],
+          "char_filter": [
+            "punct_to_spaces"
           ]
         },
         "shingles": {
@@ -25,6 +51,7 @@
             "lowercase",
             "stop",
             "asciifolding",
+            "english",
             "shingles"
           ]
         },
@@ -41,14 +68,15 @@
           "min_gram": 1,
           "max_gram": 20
         },
+        "english": {
+          "type": "stemmer",
+          "name": "english"
+        },
         "shingles": {
           "type": "shingle",
-          "output_unigrams": false,
-          "output_unigrams_if_no_shingles": true,
+          "output_unigrams": true,
           "min_shingle_size": 2,
-          "max_shingle_size": 2,
-          "token_separator": "",
-          "filler_token": " "
+          "max_shingle_size": 2
         },
         "sections": {
           "type": "pattern_capture",
@@ -58,6 +86,19 @@
             "^([^/]+/[^/]+/)",
             "^([^/]+/[^/]+/[^/]+/)"
           ]
+        },
+        "synonyms": {
+          "type": "synonym",
+          "synonyms": [
+            "indices => indexes"
+          ]
+        }
+      },
+      "char_filter": {
+        "punct_to_spaces": {
+          "type": "pattern_replace",
+          "pattern": "[-_:. ]",
+          "replacement": " "
         }
       }
     }
@@ -68,74 +109,144 @@
         "is_current": {
           "type": "boolean"
         },
-        "title": {
-          "type": "string",
-          "analyzer": "standard",
-          "fields": {
-            "autocomplete": {
-              "type": "string",
-              "analyzer": "autocomplete",
-              "search_analyzer": "autocomplete_search"
-            },
-            "shingles": {
-              "type": "string",
-              "analyzer": "shingles"
-            },
-            "stemmed": {
-              "type": "string",
-              "analyzer": "english"
-            },
-            "raw": {
-              "type": "string",
-              "index": "not_analyzed"
-            }
-          }
+        "url": {
+          "type": "keyword"
         },
-        "content": {
-          "type": "string",
-          "analyzer": "standard",
-          "index_options": "offsets",
-          "fields": {
-            "autocomplete": {
-              "type": "string",
-              "search_analyzer": "autocomplete_search",
-              "analyzer": "autocomplete"
-            },
-            "shingles": {
-              "type": "string",
-              "analyzer": "shingles"
-            },
-            "stemmed": {
-              "type": "string",
-              "analyzer": "english",
-              "index_options": "offsets"
-            }
-          }
+        "breadcrumbs": {
+          "type": "keyword"
         },
         "published_at": {
           "type": "date",
           "format": "dateOptionalTime"
         },
-        "section": {
-          "type": "string",
-          "analyzer": "sections",
-          "search_analyzer": "keyword",
+        "title": {
+          "type": "text",
+          "analyzer": "plain",
           "fields": {
             "autocomplete": {
-              "type": "string",
+              "type": "text",
               "analyzer": "autocomplete",
               "search_analyzer": "autocomplete_search"
+            },
+            "shingles": {
+              "type": "text",
+              "analyzer": "shingles"
+            },
+            "stemmed": {
+              "type": "text",
+              "analyzer": "stemmed"
+            }
+          }
+        },
+        "part_titles": {
+          "type": "text",
+          "analyzer": "plain",
+          "fields": {
+            "autocomplete": {
+              "type": "text",
+              "analyzer": "autocomplete",
+              "search_analyzer": "autocomplete_search"
+            },
+            "shingles": {
+              "type": "text",
+              "analyzer": "shingles"
+            },
+            "stemmed": {
+              "type": "text",
+              "analyzer": "stemmed"
+            }
+          }
+        },
+        "content": {
+          "type": "text",
+          "analyzer": "plain",
+          "fields": {
+            "autocomplete": {
+              "type": "text",
+              "analyzer": "autocomplete",
+              "search_analyzer": "autocomplete_search"
+            },
+            "shingles": {
+              "type": "text",
+              "analyzer": "shingles"
+            },
+            "stemmed": {
+              "type": "text",
+              "analyzer": "stemmed",
+              "index_options": "offsets"
+            }
+          }
+        },
+        "part": {
+          "type": "nested",
+          "properties": {
+            "id": {
+              "type": "keyword"
+            },
+            "title": {
+              "type": "text",
+              "analyzer": "plain",
+              "copy_to": "part_titles",
+              "fields": {
+                "autocomplete": {
+                  "type": "text",
+                  "analyzer": "autocomplete",
+                  "search_analyzer": "autocomplete_search"
+                },
+                "shingles": {
+                  "type": "text",
+                  "analyzer": "shingles"
+                },
+                "stemmed": {
+                  "type": "text",
+                  "analyzer": "stemmed"
+                }
+              }
+            },
+            "content": {
+              "type": "text",
+              "analyzer": "plain",
+              "copy_to": "content",
+              "fields": {
+                "autocomplete": {
+                  "type": "text",
+                  "analyzer": "autocomplete",
+                  "search_analyzer": "autocomplete_search",
+                  "index_options": "offsets"
+                },
+                "shingles": {
+                  "type": "text",
+                  "analyzer": "shingles"
+                },
+                "stemmed": {
+                  "type": "text",
+                  "analyzer": "stemmed",
+                  "index_options": "offsets"
+                }
+              }
+            }
+          }
+        },
+        "section": {
+          "type": "text",
+          "analyzer": "sections",
+          "search_analyzer": "keyword",
+          "fielddata": true,
+          "fields": {
+            "autocomplete": {
+              "type": "text",
+              "analyzer": "autocomplete",
+              "search_analyzer": "standard"
             }
           }
         },
         "tags": {
-          "type": "string",
-          "index": "not_analyzed",
+          "type": "keyword",
           "fields": {
             "autocomplete": {
-              "type": "string",
+              "type": "text",
               "analyzer": "autocomplete",
-              "search_analyzer": "autocomplete_search"
+              "search_analyzer": "standard"
             }
           }
         }

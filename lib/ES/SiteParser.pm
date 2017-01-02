@@ -10,16 +10,8 @@ sub new {
     shift()->SUPER::new(
         api_version     => 3,
         ignore_elements => [ 'script', 'style' ],
-        report_tags     => [
-            "article", "aside",      "blockquote", "br",
-            "caption", "dd",         "div",        "dl",
-            "dt",      "figcaption", "h1",         "h2",
-            "h3",      "h4",         "h5",         "h6",
-            "header",  "li",         "meta",       "output",
-            "p",       "pre",        "section",    "textarea",
-            "th",      "title"
-        ],
-        handlers => {
+        report_tags     => [ "div", "meta", "title", "span", "a" ],
+        handlers        => {
             text           => [ \&text,      'self, dtext' ],
             start          => [ \&start,     'self, tagname, attr' ],
             end            => [ \&end,       'self, tagname' ],
@@ -39,21 +31,24 @@ sub start_doc {
     $self->{stack}   = [];
     $self->{tags}    = [];
     $self->{section} = '';
-    $self->{dest}    = 'ignore';
 }
 
 #===================================
 sub text {
 #===================================
     my ( $self, $text ) = @_;
-    return if $self->{dest} eq 'ignore';
+    return unless @{ $self->{stack} };
+
+    my $dest = $self->{stack}[-1][0];
+    return if $dest eq 'ignore';
     return unless $text =~ /\S/;
+
     $text =~ s/\s+/ /g;
     $text =~ s/^ //;
     $text =~ s/ $//;
     $text =~ s/\x{2019}/'/g;
-    push @{ $self->{ $self->{dest} } }, $text;
 
+    push @{ $self->{$dest} }, $text;
 }
 
 #===================================
@@ -79,36 +74,53 @@ sub start {
                 $self->{published_at} = $content || undef;
             }
         }
-        $self->{dest} = 'ignore';
+        return;
     }
 
     if ( $tag eq 'title' ) {
-        return $self->{dest} = @{ $self->{title} } ? 'ignore' : 'title';
+        return $self->new_stack( 'title', $tag );
     }
+
+    my $id    = $attr->{id}    || '';
+    my $class = $attr->{class} || '';
+
+    return $self->new_stack( 'ignore', $tag )
+        if $tag eq 'span' && $class eq "blog-date"
+        || $tag eq 'a' && $class eq 'label-releases';
+
     if ( $tag eq 'div' ) {
-        my $id = $attr->{id} || '';
-        return $self->{dest} = 'content'
-            if $self->{dest} eq 'ignore' and $id eq 'content';
-        $self->{dest} = 'ignore' if $id eq 'footer-wrapper';
+        if ( $class eq 'main-container' ) {
+            return $self->new_stack('content');
+        }
+        $self->eof
+            if $id eq 'footer-subscribe'
+            || $id eq 'parsely-root'
+            || $class eq 'blog-sidebar-section';
     }
-    return if $self->{dest} eq 'ignore';
-    push @{ $self->{stack} }, $tag;
 
 }
+
+#===================================
+sub new_stack { push @{ shift()->{stack} }, [ shift(), [@_] ] }
+#===================================
 
 #===================================
 sub end {
 #===================================
     my ( $self, $tag ) = @_;
-    return if $self->{dest} eq 'ignore';
-    return $self->{dest} = 'ignore'
-        if $tag eq 'title';
-    my $stack = $self->{stack};
-    while ( my $old = pop @$stack ) {
+    my $current = $self->{stack}[-1] || return;
+
+    if ( $current->[0] eq 'title' ) {
+        return pop @{ $self->{stack} } if $tag eq 'title';
+    }
+
+    return unless $current->[0] eq 'ignore';
+    while ( my $old = pop @{ $current->[-1] } ) {
         last if $old eq $tag;
     }
-    my $dest = $self->{ $self->{dest} };
-    push @$dest, "\n" if @$dest and $dest->[-1] ne "\n";
+    if ( @{ $current->[-1] } == 0 ) {
+        pop @{ $self->{stack} };
+    }
 }
 
 #===================================

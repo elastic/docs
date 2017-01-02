@@ -48,14 +48,21 @@ sub comment {
 sub text {
 #===================================
     my ( $self, $text ) = @_;
-    return unless $self->{stack} && @{ $self->{sections} };
+    return unless $self->{stack};
+
     my $dest = $self->{stack}[-1][0];
     return if $dest eq 'ignore';
     return unless $text =~ /\S/;
+
     $text =~ s/\s+/ /g;
     $text =~ s/^ //;
     $text =~ s/ $//;
     $text =~ s/\x{2019}/'/g;
+
+    if ( $dest eq 'breadcrumbs' ) {
+        push @{ $self->{breadcrumbs} }, $text;
+    }
+    return unless @{ $self->{sections} };
     push @{ $self->{sections}[-1]{$dest} }, $text;
 }
 
@@ -82,18 +89,24 @@ sub start {
         return;
     }
 
+    if ( $tag eq 'div' ) {
+        return $self->new_stack('breadcrumbs')
+            if $class eq 'breadcrumbs';
+
+        return $self->new_stack( 'ignore', $tag )
+            if $class =~ 'navheader'
+            || $class eq 'navfooter'
+            || $class eq 'toc';
+    }
+
     return $self->new_stack( 'ignore', $tag )
-        if ($tag eq 'div'
-        and $class eq 'breadcrumbs'
-        || $class eq 'navheader'
-        || $class eq 'navfooter'
-        || $class eq 'toc' )
-        || ( $tag eq 'a' and $class eq 'sense_widget' );
+        if $tag eq 'a' and $class =~ /(console|sense)_widget/;
 
     if ( $tag =~ /^h\d/ ) {
         $self->new_stack('title');
         $self->new_section;
     }
+
 }
 
 #===================================
@@ -108,10 +121,16 @@ sub end {
     return unless $self->{stack};
     my $current = $self->{stack}[-1];
 
+    if ( $current->[0] eq 'breadcrumbs' ) {
+        pop @{ $self->{stack} } if $tag eq 'div';
+        return;
+    }
+
     if ( $current->[0] eq 'title' ) {
         pop @{ $self->{stack} } if $tag =~ /^h\d/;
         return;
     }
+    
     return unless $current->[0] eq 'ignore';
     while ( my $old = pop @{ $current->[-1] } ) {
         last if $old eq $tag;
@@ -125,6 +144,8 @@ sub end {
 sub output {
 #===================================
     my $self = shift;
+
+    my $breadcrumbs = join " ", @{ $self->{breadcrumbs} || [] };
     my @sections;
     for my $section ( @{ $self->{sections} } ) {
         my $title = join( " ", @{ $section->{title} } );
@@ -142,7 +163,7 @@ sub output {
         }
     }
     $sections[0]{id} = '';
-    return \@sections;
+    return { sections => \@sections, breadcrumbs => $breadcrumbs };
 }
 
 1;

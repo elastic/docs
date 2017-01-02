@@ -9,7 +9,7 @@ use FindBin;
 
 BEGIN {
     chdir "$FindBin::RealBin/..";
-    do "web/base.pl" or die $!;
+    do "web/base.pl" or die $@;
 }
 
 use Proc::PID::File;

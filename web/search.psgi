@@ -17,7 +17,7 @@ use FindBin;
 
 BEGIN {
     chdir "$FindBin::RealBin/..";
-    do "web/base.pl" or die $!;
+    do "web/base.pl" or die $@;
 }
 
 our $JSON = JSON::XS->new->utf8;
@@ -72,45 +72,7 @@ sub search {
         size => $Page_Size,
     };
 
-    _add_query(
-        $request, $q,
-        {   'title'   => 0,
-            'content' => 3
-        }
-    );
-
-    if ( my $section = _section_filter($q) ) {
-        $request->{post_filter} = $section;
-    }
-
-    my %aggs = ();
-    my $docs = $q->{docs};
-
-    if ( $docs->{version} ) {
-        $aggs{other_versions} = _sibling_sections($q);
-        $aggs{other_books}    = _parent_sections($q);
-    }
-    elsif ( $docs->{book} ) {
-        $aggs{other_books} = _sibling_sections($q);
-    }
-    elsif ( $docs->{product} ) {
-        $aggs{books}          = _child_sections($q);
-        $aggs{other_products} = _sibling_sections($q);
-    }
-    else {
-        if ( $q->{section} ) {
-            $aggs{other_sections} = _sibling_sections($q);
-        }
-        else {
-            $aggs{sections} = _sibling_sections($q);
-        }
-        if ( $q->{section} =~ m{/$} ) {
-            $aggs{products} = _child_sections($q);
-        }
-        $aggs{top_tags} = _top_tags($q);
-
-    }
-    $request->{aggs} = \%aggs;
+    _add_search_query( $request, $q );
 
     # return _as_json( 200, $request );
     return _run_request($request);
@@ -126,66 +88,36 @@ sub suggest {
         size => $Page_Size,
     };
 
-    _add_query( $request, $q, { 'title' => 0 } );
-
-    push @{ $request->{query}{bool}{filter} }, _section_filter($q);
-
-    _add_top_hits( $request, $q );
-
-    if ( $q->{section} !~ m{/$} ) {
-        $request->{aggs}{top_tags} = _top_tags($q);
-    }
+    _add_suggest_query( $request, $q);
 
     #   return _as_json(200,$request);
     return _run_request($request);
 }
 
 #===================================
-sub _add_query {
+sub _add_search_query {
 #===================================
-    my ( $request, $q, $fields ) = @_;
+    my ( $request, $q ) = @_;
 
     my ( @filter, @must, @should );
-    my @source = qw(section tags);
 
-    push @filter, { term => { is_current => \1 } }
-        unless $q->{docs}{version};
+    $request->{query} = {
+        bool => {
+            must   => \@must,
+            should => \@should,
+            filter => \@filter
+        }
+    };
+    $request->{_source} = [qw(section tags url title breadcrumbs)];
 
-    push @filter, _tags_filter($q);
+    push @filter, (
+        _section_filter($q),    #
+        _tags_filter($q),       #
+        _current_filter($q)
+    );
 
-    if ( my $text = $q->{q} ) {
-        push @must,
-            {
-            multi_match => {
-                type                 => 'cross_fields',
-                query                => $text,
-                minimum_should_match => "0<100% 2<80%",
-                fields               => [
-                    'tags.autocomplete',
-                    'section.autocomplete',
-                    map {"$_.autocomplete"} keys %$fields
-                ]
-            },
-            };
-        push @should,
-            {
-            multi_match => {
-                type   => 'cross_fields',
-                query  => $text,
-                fields => [ map { ( $_, "$_.shingles" ) } keys %$fields ]
-            },
-            };
-        $request->{sort} = [
-            '_score',
-            {   "published_at" => {
-                    order         => 'desc',
-                    missing       => '_last',
-                    unmapped_type => 'date'
-                }
-            }
-        ];
-    }
-    else {
+    my $text = $q->{q};
+    unless ($text) {
         push @filter, { exists => { field => 'published_at' } };
         $request->{sort} = [
             {   "published_at" => {
@@ -195,10 +127,114 @@ sub _add_query {
                 }
             }
         ];
-
+        return $request;
     }
 
-    $request->{highlight} = _highlight(%$fields);
+    push @must,
+        {
+        "multi_match" => {
+            "fields" => [
+                "title.stemmed^3", "part_titles.stemmed^1.5",
+                "content.stemmed"
+            ],
+            "minimum_should_match" => "80%",
+            "query"                => $text,
+            "type"                 => "best_fields",
+            "tie_breaker"          => 0.2
+        }
+        };
+
+    push @should,
+        {
+        "dis_max" => {
+            "boost"       => 2,
+            "tie_breaker" => 0.3,
+            "queries"     => [
+                {   "multi_match" => {
+                        "query"  => $text,
+                        "type"   => "most_fields",
+                        "boost"  => 1.5,
+                        "fields" => [ "title^1.5", "title.shingles", ]
+                    }
+                },
+                {   "multi_match" => {
+                        "query" => $text,
+                        "type"  => "most_fields",
+                        "boost" => 1.2,
+                        "fields" =>
+                            [ "part_titles^1.5", "part_titles.shingles" ]
+                    }
+                },
+                {   "multi_match" => {
+                        "query"  => $text,
+                        "type"   => "most_fields",
+                        "fields" => [ "content^1.5", "content.shingles" ]
+                    }
+                }
+            ]
+        }
+        };
+
+    push @should,
+        {
+        "nested" => {
+            "score_mode" => "none",
+            "path"       => "part",
+            "inner_hits" => {
+                "size"      => 3,
+                "_source"   => { "includes" => [ "part.id", "part.title" ] },
+                "highlight" => _highlight("part.content.stemmed")
+            },
+            "query" => {
+                "dis_max" => {
+                    "tie_breaker" => 0.3,
+                    "queries"     => [
+                        {   "multi_match" => {
+                                "query"  => $text,
+                                "type"   => "most_fields",
+                                "boost"  => 1.5,
+                                "fields" => [
+                                    "part.title^1.5",
+                                    "part.title.stemmed",
+                                    "part.title.shingles",
+                                ]
+                            }
+                        },
+                        {   "multi_match" => {
+                                "query"  => $text,
+                                "type"   => "most_fields",
+                                "fields" => [
+                                    "part.content^1.5",
+                                    "part.content.stemmed",
+                                    "part.content.shingles",
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+        };
+
+    $request->{sort} = [
+        '_score',
+        {   "published_at" => {
+                order         => 'desc',
+                missing       => '_last',
+                unmapped_type => 'date'
+            }
+        }
+    ];
+    $request->{highlight} = _highlight('content.stemmed');
+}
+
+
+#===================================
+sub _add_suggest_query {
+#===================================
+    my ( $request, $q ) = @_;
+
+    my ( @filter, @must, @should );
 
     $request->{query} = {
         bool => {
@@ -207,8 +243,130 @@ sub _add_query {
             filter => \@filter
         }
     };
-    $request->{_source} = \@source;
+    $request->{_source} = [qw(url title breadcrumbs)];
 
+    push @filter, (
+        _section_filter($q),    #
+        _tags_filter($q),       #
+        _current_filter($q)
+    );
+
+    my $text = $q->{q};
+    unless ($text) {
+        push @filter, { exists => { field => 'published_at' } };
+        $request->{sort} = [
+            {   "published_at" => {
+                    order         => 'desc',
+                    missing       => '_last',
+                    unmapped_type => 'date'
+                }
+            }
+        ];
+        return $request;
+    }
+
+    push @must,
+        {
+        "multi_match" => {
+            "fields" => [
+                "title.autocomplete^3", "part_titles.autocomplete^1.5",
+                "content.autocomplete"
+            ],
+            "minimum_should_match" => "80%",
+            "query"                => $text,
+            "type"                 => "best_fields",
+            "tie_breaker"          => 0.2
+        }
+        };
+
+    push @should,
+        {
+        "dis_max" => {
+            "boost"       => 2,
+            "tie_breaker" => 0.3,
+            "queries"     => [
+                {   "multi_match" => {
+                        "query"  => $text,
+                        "type"   => "most_fields",
+                        "boost"  => 1.5,
+                        "fields" => [ "title^1.5", "title.shingles" ]
+                    }
+                },
+                {   "multi_match" => {
+                        "query" => $text,
+                        "type"  => "most_fields",
+                        "boost" => 1.2,
+                        "fields" =>
+                            [ "part_titles^1.5", "part_titles.shingles" ]
+                    }
+                },
+                {   "multi_match" => {
+                        "query"  => $text,
+                        "type"   => "most_fields",
+                        "fields" => [ "content^1.5", "content.shingles" ]
+                    }
+                }
+            ]
+        }
+        };
+
+    push @should,
+        {
+        "nested" => {
+            "score_mode" => "none",
+            "path"       => "part",
+            "inner_hits" => {
+                "size"      => 3,
+                "_source"   => { "includes" => [ "part.id", "part.title" ] }
+            },
+            "query" => {
+                "dis_max" => {
+                    "tie_breaker" => 0.3,
+                    "queries"     => [
+                        {   "multi_match" => {
+                                "query"  => $text,
+                                "type"   => "most_fields",
+                                "boost"  => 1.5,
+                                "fields" => [
+                                    "part.title^1.5",
+                                    "part.title.autocomplete",
+                                    "part.title.shingles",
+                                ]
+                            }
+                        },
+                        {   "multi_match" => {
+                                "query"  => $text,
+                                "type"   => "most_fields",
+                                "fields" => [
+                                    "part.content^1.5",
+                                    "part.content.autocomplete",
+                                    "part.content.shingles",
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+        };
+
+    $request->{sort} = [
+        '_score',
+        {   "published_at" => {
+                order         => 'desc',
+                missing       => '_last',
+                unmapped_type => 'date'
+            }
+        }
+    ];
+}
+
+#===================================
+sub _current_filter {
+#===================================
+    my $q = shift;
+    return if $q->{docs}{version};
+    return { term => { is_current => \1 } };
 }
 
 #===================================
@@ -216,16 +374,6 @@ sub _section_filter {
 #===================================
     my $q = shift;
     my $section = $q->{section} or return;
-    return { term => { section => $section } };
-}
-
-#===================================
-sub _parent_section_filter {
-#===================================
-    my $q = shift;
-    my $section = $q->{section} or return;
-    $section =~ s{[^/]+/?$}{};
-    return unless $section;
     return { term => { section => $section } };
 }
 
@@ -243,134 +391,62 @@ sub _tags_filter {
 #===================================
 sub _highlight {
 #===================================
-    my %fields    = @_;
-    my %highlight = (
-        pre_tags      => ['[[['],
-        post_tags     => [']]]'],
-        no_match_size => 300,
-    );
-    for ( keys %fields ) {
-        $highlight{fields}{"$_.autocomplete"}{number_of_fragments}
-            = $fields{$_};
+    my $field = shift;
+    return {
+        "type"                => "postings",
+        "number_of_fragments" => 4,
+        "no_match_size"       => 300,
+        "fragment_size"       => 300,
+        pre_tags              => ['[[['],
+        post_tags             => [']]]'],
+        "fields"              => { $field => {} }
+    };
+}
+
+
+#===================================
+sub _explain {
+#===================================
+    my $results = shift;
+    for ( @{ $results->{hits}{hits} } ) {
+        _explain_hit($_);
     }
-    return \%highlight;
 }
 
 #===================================
-sub _add_top_hits {
+sub _explain_hit {
 #===================================
-    my ( $request, $q ) = @_;
+    my $hit = shift;
 
-    my $section = $q->{section};
-    my $include;
-    if ( !$section ) {
-        $include = '[^/]*/?';
-    }
-    elsif ( $section =~ m{/$} ) {
-        if ( @{ $q->{tags} } ) {
-            $include
-                = $section . "(" . join( '|', @{ $q->{tags} } ) . ')/[^/]+/?';
-        }
-        else {
-            $include = $section . '[^/]+/?';
-        }
-    }
-    else {
-        return;
-    }
+    my $explain = $hit->{_explanation}
+        || return;
 
-    $request->{size} = 0;
-    $request->{aggs}{per_section} = {
-        terms => {
-            field   => 'section',
-            size    => $Max_Sections,
-            order   => { max_score => 'desc' },
-            include => $include
-        },
-        aggs => {
-            top_hits => {
-                top_hits => {
-                    sort      => delete $request->{sort},
-                    _source   => delete $request->{_source},
-                    highlight => delete $request->{highlight},
-                    size      => $Max_Hits_Per_Section,
-                }
-            },
-            max_score => {
-                max =>
-                    { script => { inline => '_score', lang => 'expression' } }
+    my @text = sprintf "Doc: [%s|%s|%s], Shard: [%s|%s]:\n",
+        map { defined $_ ? $_ : 'undef' }
+        @{$hit}{qw(_index _type _id _node _shard)};
+
+    my $indent = 0;
+    my @stack  = [$explain];
+    while (@stack) {
+        my @current = @{ shift @stack };
+        while ( my $next = shift @current ) {
+            my $spaces = ( ' ' x $indent ) . ' - ';
+            my $desc   = $next->{description};
+            if ( $desc =~ /^score/ ) {
+                delete $next->{details};
+            }
+            $desc =~ s/\n//g;
+            push @text, sprintf "%-100s | % 9.4f\n", $spaces . $desc,
+                $next->{value};
+            if ( my $details = $next->{details} ) {
+                unshift @stack, [@current];
+                @current = @{$details};
+                $indent += 2;
             }
         }
-    };
-}
-
-#===================================
-sub _top_tags {
-#===================================
-    my $q = shift;
-    return {
-        terms => {
-            field   => 'tags',
-            exclude => $q->{tags},
-            size    => 100,
-        },
-    };
-}
-
-#===================================
-sub _top_sections {
-#===================================
-    my $q       = shift;
-    my $section = $q->{section};
-
-    return {
-        terms => {
-            field   => 'section',
-            exclude => [ $q->{section} ],
-            size    => 100,
-        },
-    };
-}
-
-#===================================
-sub _sibling_sections {
-#===================================
-    my $q      = shift;
-    my $parent = $q->{section};
-    $parent =~ s{[^/]+/?$}{};
-    return _section_agg( $parent, $q->{section} );
-}
-
-#===================================
-sub _parent_sections {
-#===================================
-    my $q      = shift;
-    my $parent = $q->{section};
-    $parent =~ s{[^/]+/?$}{};
-    my $grand_parent = $parent;
-    $grand_parent =~ s{[^/]+//?$}{};
-    return _section_agg( $grand_parent, $parent );
-}
-#===================================
-sub _child_sections {
-#===================================
-    my $q       = shift;
-    my $section = $q->{section};
-    return _section_agg( $section, $section );
-}
-
-#===================================
-sub _section_agg {
-#===================================
-    my ( $include, $exclude ) = @_;
-    return {
-        terms => {
-            field   => 'section',
-            include => $include . '[^/]+/?',
-            exclude => $exclude,
-            size    => 100,
-        },
-    };
+        $indent -= 2;
+    }
+    $hit->{_explanation} = \@text;
 }
 
 #===================================
@@ -380,15 +456,19 @@ sub _run_request {
     my $result  = eval {
         $es->search(
             index         => _indices(),
-            request_cache => 'true',
             preference    => '_local',
-            body          => $request
+            body          => $request,
+
+            explain => 'false'
         );
     }
         || do { warn $@; return _as_json( 200, {} ) };
 
     my $last_page = int( $result->{hits}{total} / $Page_Size ) + 1;
     $last_page = $Max_Page if $last_page > $Max_Page;
+
+    _explain($result);
+     #return _as_json( 200, $result );
 
     my %response = (
         total_hits   => $result->{hits}{total},
@@ -398,7 +478,6 @@ sub _run_request {
         aggs         => _format_aggs($result)
     );
 
-    #return _as_json( 200, $result );
     return _as_json( 200, \%response );
 }
 
@@ -412,42 +491,44 @@ sub _indices {
 sub _format_hits {
 #===================================
     my $result = shift;
-    my @hits;
-    if ( my $sections = delete $result->{aggregations}{per_section} ) {
-        for my $section ( @{ $sections->{buckets} } ) {
-            for my $hit ( @{ $section->{top_hits}{hits}{hits} } ) {
-                $hit = _format_hit($hit);
-                $hit->{section} = $section->{key};
-                push @hits, $hit;
-            }
-        }
-
-        # add back as "sections" agg for doc counts
-        $result->{aggregations}{sections} ||= $sections;
-    }
-    else {
-        push @hits, map { _format_hit($_) } @{ $result->{hits}{hits} };
-    }
-    return \@hits;
+    return [ map { _format_hit($_) } @{ $result->{hits}{hits} } ];
 }
 
 #===================================
 sub _format_hit {
 #===================================
-    my $hit    = shift;
+    my $hit = shift;
+    _explain( $hit->{inner_hits}{part} );
+    my $inner  = $hit->{inner_hits}{part}{hits}{hits};
     my %result = (
-        url     => $hit->{_id},
-        section => $hit->{_source}{section},
-        tags    => $hit->{_source}{tags}
+        url          => $hit->{_id},
+        section      => $hit->{_source}{section},
+        tags         => $hit->{_source}{tags},
+        page_title   => $hit->{_source}{title},
+        breadcrumbs  => $hit->{_source}{breadcrumbs},
+        _score       => $hit->{_score},
+        _explanation => $hit->{_explanation},
+        _format_inner_hit( shift @$inner ),
+        other => [ map { +{ _format_inner_hit($_) } } @$inner ],
     );
+    $result{content}
+        ||= _format_highlights( $hit->{highlight}{"content.stemmed"} );
 
-    for my $field (qw(title content)) {
-        my $highlight
-            = _format_highlights( $hit->{highlight}{"$field.autocomplete"} )
-            || next;
-        $result{$field} = $highlight;
-    }
     return \%result;
+}
+
+#===================================
+sub _format_inner_hit {
+#===================================
+    my $hit = shift;
+    return (
+        title => $hit->{_source}{part}{title},
+        id    => $hit->{_source}{part}{id},
+
+        #  _explanation => $hit->{_explanation},
+        content =>
+            _format_highlights( $hit->{highlight}{"part.content.stemmed"} )
+    );
 }
 
 #===================================
@@ -477,6 +558,16 @@ sub _format_highlights {
         $snippet =~ s/\[{3}/<em>/g;
         $snippet =~ s!\]{3}!</em>!g;
         $snippet =~ s/\s*\.\s*$//;
+        if ( length $snippet > 300 ) {
+            my $words = 10;
+            while ( my $length = length $snippet > 300 ) {
+                $snippet =~ s/(?:[.]{3})?(\w+\W+){$words,10}/.../;
+                $words-- if $length == length $snippet;
+            }
+            $snippet =~ s/(?:[.]{3}\s*)+/... /g;
+            $snippet =~ s/^\s*[.]{3}\s*//;
+            $snippet =~ s/\s*[.]{3}\s*$//;
+        }
         push @snippets, $snippet;
     }
     return join " ... ", @snippets

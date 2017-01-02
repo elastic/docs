@@ -15,9 +15,10 @@ our $Docs_Index    = 'docs';
 our $Base_URL      = 'https://www.elastic.co/';
 our @Sitemap_Paths = (
     '/sitemap.xml',
-#    '/sitemap-jp.xml',
-#    '/sitemap-de.xml', '/sitemap-kr.xml',
-#    '/sitemap-fr.xml'
+
+    #    '/sitemap-jp.xml',
+    #    '/sitemap-de.xml', '/sitemap-kr.xml',
+    #    '/sitemap-fr.xml'
 );
 our $Guide_Prefix         = '/guide';
 our $Max_Page             = 10;
@@ -26,8 +27,9 @@ our $Max_Sections         = 10;
 our $Max_Hits_Per_Section = 5;
 
 our $es = Search::Elasticsearch->new(
-    nodes  => 'http://localhost:9200',
-    client => '2_0::Direct'
+    nodes           => 'http://localhost:9200',
+    client          => '5_0::Direct',
+    request_timeout => 1000
 );
 
 #===================================
@@ -54,11 +56,11 @@ sub switch_alias {
     my @old = keys %$aliases;
 
     for (@old) {
-        push @actions, { remove => { alias => $alias, index => $_ } };
+        push @actions, { remove_index => { index => $_ } };
     }
 
     $es->indices->update_aliases( body => { actions => \@actions } );
-    $es->indices->delete( index => \@old ) if @old;
     print "Switched alias <$alias> to <$index>\n";
 }
 
+1

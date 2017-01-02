@@ -9,7 +9,7 @@ use FindBin;
 
 BEGIN {
     chdir "$FindBin::RealBin/..";
-    do "web/base.pl" or die $!;
+    do "web/base.pl" or die $@;
 }
 
 use Proc::PID::File;
@@ -68,7 +68,7 @@ sub main {
                 if $result->{errors};
         }
 
-        $es->indices->optimize( index => $index, max_num_segments => 1 );
+        $es->indices->forcemerge( index => $index, max_num_segments => 1 );
         1;
     } or do {
         my $error = $@;
@@ -117,18 +117,17 @@ sub index_docs {
             for my $page ( _load_file( $file, $single ) ) {
 
                 # single-page books don't have their titles detected
-                my $title = $page->{title} || $book_title;
+                $page->{title} ||= $book_title;
+                $page->{breadcrumbs} ||= $book_title;
 
                 $bulk->index(
-                    {   _id     => $url . $page->{id},
+                    {   _id     => $url,
                         _source => {
-                            title          => $title,
-                            content        => $page->{text},
-                            url            => $url . $page->{id},
-                            tags           => $product,
-                            section        => $section,
-                            is_current     => $is_current,
-                            is_sub_section => $page->{main} ? \0 : \1
+                            %$page,
+                            url        => $url,
+                            tags       => $product,
+                            section    => $section,
+                            is_current => $is_current,
                         }
                     }
                 );
@@ -145,18 +144,24 @@ sub _load_file {
     my $content = $file->slurp( iomode => '<:encoding(UTF-8)' );
     my $parser = ES::DocsParser->new;
     $parser->parse($content);
-    my $sections = $parser->output;
+    my $output   = $parser->output;
+    my $sections = $output->{sections};
 
-    my $page_title = $single ? '' : $sections->[0]{title};
-    my $page_text = $sections->[0]{text};
-    shift @$sections;
-
-    for my $section (@$sections) {
-        $page_text .= "\n\n" . $section->{title} . "\n\n" . $section->{text};
-        $section->{title} .= " » $page_title" unless $single;
+    my %page = ( part => [] );
+    unless ($single) {
+        $page{title}       = $sections->[0]{title};
+        $page{breadcrumbs} = $output->{breadcrumbs};
     }
-    return ( { title => $page_title, text => $page_text, id => '', main => 1 },
-        @$sections );
+    for my $section (@$sections) {
+        next unless $section->{text};
+        push @{ $page{part} },
+            {
+            title   => $section->{title},
+            content => $section->{text},
+            id      => $section->{id}
+            };
+    }
+    return \%page;
 }
 
 #===================================

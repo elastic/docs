@@ -11,7 +11,7 @@ use FindBin;
 
 BEGIN {
     chdir "$FindBin::RealBin/..";
-    do "web/base.pl" or die $!;
+    do "web/base.pl" or die $@;
 }
 
 use Proc::PID::File;
@@ -32,8 +32,8 @@ my $index = create_index($alias);
 
 print "Reindexing from ($source) to ($index)\n";
 
-my $bulk = $es->bulk_helper( index => $index, verbose => 1 );
-$bulk->reindex( source => { index => $source } );
+$es->reindex(
+    body => { source => { index => $source }, dest => { index => $index } } );
 
 print "\n";
 switch_alias( $alias, $index );
