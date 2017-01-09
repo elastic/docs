@@ -147,7 +147,13 @@ sub has_changed {
 
     return if $old eq $new;
 
-    return !!run qw(git diff --shortstat), $old, $new, '--', $path;
+    my $changed;
+    eval {
+        $changed = !!run qw(git diff --shortstat), $old, $new, '--', $path;
+        1;
+    }
+        || do { $changed = 1 };
+    return $changed;
 }
 
 #===================================
