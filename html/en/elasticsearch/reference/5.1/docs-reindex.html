@@ -838,7 +838,7 @@ you are likely to find. This should allow you to upgrade from any version of
 Elasticsearch to the current version by reindexing from a cluster of the old
 version.</p><p>To enable queries sent to older versions of Elasticsearch the <code class="literal">query</code> parameter
 is sent directly to the remote host without validation or modification.</p><p>Reindexing from a remote server uses an on-heap buffer that defaults to a
-maximum size of 100mb. If the remote index includes very large documents you’ll
+maximum size of 200mb. If the remote index includes very large documents you’ll
 need to use a smaller batch size. The example below sets the batch size <code class="literal">10</code>
 which is very, very small.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
@@ -1055,34 +1055,26 @@ slice on <code class="literal">_uid</code>:</p><div class="pre_wrapper"><pre cla
     "total": 120
   }
 }</pre></div><p>Adding <code class="literal">slices</code> to <code class="literal">_reindex</code> just automates the manual process used in the
-section above, creating sub-requests which means it has some quirks:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-You can see these requests in the <a class="link" href="docs-reindex.html#docs-reindex-task-api" title="Works with the Task APIedit">Tasks APIs</a>. These
+section above, creating sub-requests which means it has some quirks:
+* You can see these requests in the <a class="link" href="docs-reindex.html#docs-reindex-task-api" title="Works with the Task APIedit">Tasks APIs</a>. These
 sub-requests are "child" tasks of the task for the request with <code class="literal">slices</code>.
-</li><li class="listitem">
-Fetching the status of the task for the request with <code class="literal">slices</code> only contains
+* Fetching the status of the task for the request with <code class="literal">slices</code> only contains
 the status of completed slices.
-</li><li class="listitem">
-These sub-requests are individually addressable for things like cancellation
+* These sub-requests are individually addressable for things like cancellation
 and rethrottling.
-</li><li class="listitem">
-Rethrottling the request with <code class="literal">slices</code> will rethrottle the unfinished
+* Rethrottling the request with <code class="literal">slices</code> will rethrottle the unfinished
 sub-request proportionally.
-</li><li class="listitem">
-Canceling the request with <code class="literal">slices</code> will cancel each sub-request.
-</li><li class="listitem">
-Due to the nature of <code class="literal">slices</code> each sub-request won’t get a perfectly even
+* Canceling the request with <code class="literal">slices</code> will cancel each sub-request.
+* Due to the nature of <code class="literal">slices</code> each sub-request won’t get a perfectly even
 portion of the documents. All documents will be addressed, but some slices may
 be larger than others. Expect larger slices to have a more even distribution.
-</li><li class="listitem">
-Parameters like <code class="literal">requests_per_second</code> and <code class="literal">size</code> on a request with <code class="literal">slices</code>
+* Parameters like <code class="literal">requests_per_second</code> and <code class="literal">size</code> on a request with <code class="literal">slices</code>
 are distributed proportionally to each sub-request. Combine that with the point
 above about distribution being uneven and you should conclude that the using
 <code class="literal">size</code> with <code class="literal">slices</code> might not result in exactly <code class="literal">size</code> documents being
 `_reindex`ed.
-</li><li class="listitem">
-Each sub-requests gets a slightly different snapshot of the source index
-though these are all taken at approximately the same time.
-</li></ul></div><h3><a id="docs-reindex-picking-slices"></a>Picking the number of slices<a href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>At this point we have a few recommendations around the number of <code class="literal">slices</code> to
+* Each sub-requests gets a slightly different snapshot of the source index
+though these are all taken at approximately the same time.</p><h3><a id="docs-reindex-picking-slices"></a>Picking the number of slices<a href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>At this point we have a few recommendations around the number of <code class="literal">slices</code> to
 use (the <code class="literal">max</code> parameter in the slice API if manually parallelizing):</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Don’t use large numbers. <code class="literal">500</code> creates fairly massive CPU thrash.
 </li><li class="listitem">
