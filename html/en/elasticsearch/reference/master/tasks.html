@@ -610,13 +610,46 @@ Retrieves all cluster-related tasks running on nodes <code class="literal">nodeI
 This will return a 404 if the task isn’t found.
 </p></td></tr></table></div><p>Or to retrieve all children of a particular task:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks?parent_task_id=parentTaskId:1 <a id="CO132-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="console_widget" data-snippet="snippets/tasks/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO132-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This won’t return a 404 if the parent isn’t found.
-</p></td></tr></table></div><p>The task API can be also used to wait for completion of a particular task. The following call will
-block for 10 seconds or until the task with id <code class="literal">oTUltX4IQMOUUVeiohTt8A:12345</code> is completed.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks/oTUltX4IQMOUUVeiohTt8A:12345?wait_for_completion=true&amp;timeout=10s</pre></div><div class="console_widget" data-snippet="snippets/tasks/4.json"></div><p>You can also wait for all tasks for certain action types to finish. This
-command will wait for all <code class="literal">reindex</code> tasks to finish:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks?actions=*reindex&amp;wait_for_completion=true&amp;timeout=10s</pre></div><div class="console_widget" data-snippet="snippets/tasks/5.json"></div><p>Tasks can be also listed using _cat version of the list tasks command, which accepts the same arguments
-as the standard list tasks command.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cat/tasks</pre></div><div class="console_widget" data-snippet="snippets/tasks/6.json"></div><h3><a id="task-cancellation"></a>Task Cancellation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cluster/tasks.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If a long-running task supports cancellation, it can be cancelled by the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _tasks/task_id:1/_cancel</pre></div><div class="console_widget" data-snippet="snippets/tasks/7.json"></div><p>The task cancellation command supports the same task selection parameters as the list tasks command, so multiple tasks
+</p></td></tr></table></div><p>You can also use the <code class="literal">detailed</code> request parameter to get more information about
+the running tasks. This is useful for telling one task from another but is more
+costly to execute. For example, fetching all searches using the <code class="literal">detailed</code>
+request parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks?actions=*search&amp;detailed</pre></div><div class="console_widget" data-snippet="snippets/tasks/4.json"></div><p>might look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "nodes" : {
+    "oTUltX4IQMOUUVeiohTt8A" : {
+      "name" : "H5dfFeA",
+      "transport_address" : "127.0.0.1:9300",
+      "host" : "127.0.0.1",
+      "ip" : "127.0.0.1:9300",
+      "tasks" : {
+        "oTUltX4IQMOUUVeiohTt8A:464" : {
+          "node" : "oTUltX4IQMOUUVeiohTt8A",
+          "id" : 464,
+          "type" : "transport",
+          "action" : "indices:data/read/search",
+          "description" : "indices[test], types[test], search_type[QUERY_THEN_FETCH], source[{\"query\":...}]",
+          "start_time_in_millis" : 1483478610008,
+          "running_time_in_nanos" : 13991383,
+          "cancellable" : true
+        }
+      }
+    }
+  }
+}</pre></div><p>The new <code class="literal">description</code> field contains human readable text that identifies the
+particular request that the task is performing such as identifying the search
+request being performed by a search task like the example above. Other kinds of
+task have have different descriptions, like <a class="link" href="docs-reindex.html" title="Reindex API"><code class="literal">_reindex</code></a> which
+has the search and the destination, or <a class="link" href="docs-bulk.html" title="Bulk API"><code class="literal">_bulk</code></a> which just has the
+number of requests and the destination indices. Many requests will only have an
+empty description because more detailed information about the request is not
+easily available or particularly helpful in identifying the request.</p><p>The task API can also be used to wait for completion of a particular task. The
+following call will block for 10 seconds or until the task with id
+<code class="literal">oTUltX4IQMOUUVeiohTt8A:12345</code> is completed.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks/oTUltX4IQMOUUVeiohTt8A:12345?wait_for_completion=true&amp;timeout=10s</pre></div><div class="console_widget" data-snippet="snippets/tasks/5.json"></div><p>You can also wait for all tasks for certain action types to finish. This
+command will wait for all <code class="literal">reindex</code> tasks to finish:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks?actions=*reindex&amp;wait_for_completion=true&amp;timeout=10s</pre></div><div class="console_widget" data-snippet="snippets/tasks/6.json"></div><p>Tasks can be also listed using _cat version of the list tasks command, which
+accepts the same arguments as the standard list tasks command.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cat/tasks
+GET _cat/tasks?detailed</pre></div><div class="console_widget" data-snippet="snippets/tasks/7.json"></div><h3><a id="task-cancellation"></a>Task Cancellation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cluster/tasks.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If a long-running task supports cancellation, it can be cancelled by the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _tasks/task_id:1/_cancel</pre></div><div class="console_widget" data-snippet="snippets/tasks/8.json"></div><p>The task cancellation command supports the same task selection parameters as the list tasks command, so multiple tasks
 can be cancelled at the same time. For example, the following command will cancel all reindex tasks running on the
-nodes <code class="literal">nodeId1</code> and <code class="literal">nodeId2</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _tasks/_cancel?nodes=nodeId1,nodeId2&amp;actions=*reindex</pre></div><div class="console_widget" data-snippet="snippets/tasks/8.json"></div><h3><a id="_task_grouping"></a>Task Grouping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cluster/tasks.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The task lists returned by task API commands can be grouped either by nodes (default) or by parent tasks using the <code class="literal">group_by</code> parameter.
-The following command will change the grouping to parent tasks:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks?group_by=parents</pre></div><div class="console_widget" data-snippet="snippets/tasks/9.json"></div></div><div class="navfooter"><span class="prev"><a href="cluster-nodes-info.html">
+nodes <code class="literal">nodeId1</code> and <code class="literal">nodeId2</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _tasks/_cancel?nodes=nodeId1,nodeId2&amp;actions=*reindex</pre></div><div class="console_widget" data-snippet="snippets/tasks/9.json"></div><h3><a id="_task_grouping"></a>Task Grouping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cluster/tasks.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The task lists returned by task API commands can be grouped either by nodes (default) or by parent tasks using the <code class="literal">group_by</code> parameter.
+The following command will change the grouping to parent tasks:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks?group_by=parents</pre></div><div class="console_widget" data-snippet="snippets/tasks/10.json"></div></div><div class="navfooter"><span class="prev"><a href="cluster-nodes-info.html">
               « 
               Nodes Info</a>
            
