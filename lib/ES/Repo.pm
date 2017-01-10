@@ -105,7 +105,7 @@ sub _try_to_fetch {
         run qw(git remote set-url origin), $url;
     }
     say " - Fetching: " . $self->name;
-    run qw(git fetch --prune);
+    run qw(git fetch --prune origin +refs/heads/*:refs/heads/*);
     return 1;
 }
 
