@@ -16,7 +16,7 @@ require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
     run $Opts
-    build_chunked build_single
+    build_chunked build_single build_pdf
     proc_man
     get_url
     git_creds
@@ -142,6 +142,47 @@ sub build_single {
 
     finish_build( $index->parent, $dest );
 
+}
+
+#===================================
+sub build_pdf {
+#===================================
+    my ( $index, $dest, %opts ) = @_;
+
+    my $version   = $opts{version}   || 'test build';
+    my $lenient   = $opts{lenient}   || '';
+    my $toc_level = $opts{toc_level} || 7;
+
+    my $output = run(
+        'a2x', '-v',
+        '--icons',
+        '-d' => 'book',
+        '-f' => 'pdf',
+        '--fop',
+        '--icons-dir=./resources/asciidoc-8.6.8/images/icons/',
+        '--xsl-file'      => 'resources/fo.xsl',
+        '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
+        '--destination-dir=' . $dest,
+        ( $lenient ? '-L' : () ),
+        docinfo($index),
+        xsltopts(
+            "img.src.path"       => $index->parent->absolute . '/',
+            "toc.max.depth"      => $toc_level,
+            "local.book.version" => $version,
+            "local.root_dir"     => $index->dir->absolute,
+        ),
+        $index
+    );
+
+    my @output = split "\n", $output;
+    my @error = grep {/SEVERE|ERROR/} @output;
+    if ( @error && !$lenient ) {
+        die join "\n", @error;
+    }
+    else {
+        my @warn = grep {/WARNING|SEVERE|ERROR/} @output;
+        warn join "\n", @warn;
+    }
 }
 
 #===================================

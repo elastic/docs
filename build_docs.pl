@@ -23,7 +23,7 @@ die "$0 already running\n"
 
 use ES::Util qw(
     run $Opts
-    build_chunked build_single
+    build_chunked build_single build_pdf
     git_creds
     proc_man
     sha_for
@@ -46,7 +46,7 @@ use ES::Template();
 GetOptions(
     $Opts,    #
     'all', 'push', 'update!',    #
-    'single',  'doc=s',   'out=s',   'toc', 'chunk=i', 'comments',
+    'single', 'pdf', 'doc=s',   'out=s',   'toc', 'chunk=i', 'comments',
     'open',    'staging', 'procs=i', 'user=s',
     'lenient', 'verbose', 'reload_template'
 ) || exit usage();
@@ -79,6 +79,8 @@ sub build_local {
 
     my $index = file($doc)->absolute($Old_Pwd);
     die "File <$doc> doesn't exist" unless -f $index;
+
+    return build_local_pdf($index) if $Opts->{pdf};
 
     say "Building HTML from $doc";
 
@@ -127,6 +129,25 @@ sub build_local {
     }
 }
 
+#===================================
+sub build_local_pdf {
+#===================================
+    my $index = shift;
+    my $dir = dir( $Opts->{out} || './' )->absolute($Old_Pwd);
+
+    build_pdf( $index, $dir, %$Opts );
+    say "Done";
+    my $pdf = $index->basename;
+    $pdf =~ s/\.[^.]+$/.pdf/;
+    $pdf = $dir->file($pdf);
+    if ( $Opts->{open} ) {
+        say "Opening: $pdf";
+        open_browser($pdf);
+    }
+    else {
+        say "See: $pdf";
+    }
+}
 #===================================
 sub build_all {
 #===================================
@@ -580,6 +601,7 @@ sub usage {
         Opts:
           --single          Generate a single HTML page, instead of
                             a chunking into a file per chapter
+          --pdf             Generate a PDF file instead of HTML
           --toc             Include a TOC at the beginning of the page.
           --out dest/dir/   Defaults to ./html_docs.
           --chunk 1         Also chunk sections into separate files
