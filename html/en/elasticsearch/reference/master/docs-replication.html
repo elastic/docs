@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Step 4: Loading the Index Template in Elasticsearch
-        | Filebeat Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Reading and Writing documents
+        | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Filebeat Reference [master]" /><link rel="up" href="filebeat-getting-started.html" title="Getting Started With Filebeat" /><link rel="prev" href="config-filebeat-logstash.html" title="Step 3: Configuring Filebeat to Use Logstash" /><link rel="next" href="filebeat-starting.html" title="Step 5: Starting Filebeat" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Filebeat/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs.html" title="Document APIs" /><link rel="next" href="docs-index_.html" title="Index API" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -557,46 +557,125 @@
 <div class="page_header">You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Filebeat Reference
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="filebeat-getting-started.html">Getting Started With Filebeat</a></span> » <span class="breadcrumb-node">Step 4: Loading the Index Template in Elasticsearch</span></div><div class="navheader"><span class="prev"><a href="config-filebeat-logstash.html">
+    </a></span> » <span class="breadcrumb-link"><a href="docs.html">Document APIs </a></span> » <span class="breadcrumb-node">Reading and Writing documents</span></div><div class="navheader"><span class="prev"><a href="docs.html">
               « 
-              Step 3: Configuring Filebeat to Use Logstash</a>
+              Document APIs </a>
            
         </span><span class="next">
            
-          <a href="filebeat-starting.html">Step 5: Starting Filebeat
+          <a href="docs-index_.html">Index API
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="filebeat-template"></a>Step 4: Loading the Index Template in Elasticsearch<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In Elasticsearch, <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/indices-templates.html" target="_top">index
-templates</a> are used to define settings and mappings that determine how fields should be analyzed.</p><p>The recommended index template file for Filebeat is installed by the Filebeat packages. If you accept
-the default configuration for template loading in the <code class="literal">filebeat.yml</code> config file,
-Filebeat loads the template automatically after successfully connecting to Elasticsearch. If the template
-already exists, it’s not overwritten unless you configure Filebeat to do so.</p><p>If you want to disable automatic template loading, or you want to load your own template,
-you can change the settings for template loading in the Filebeat configuration file. If you
-choose to disable automatic template loading, you need to load the template manually.
-For more information, see:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="xref" href="filebeat-template.html#load-template-auto" title="Configuring Template Loading">Configuring Template Loading</a> - supported for Elasticsearch output only
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-replication"></a>Reading and Writing documents<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/data-replication.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><h3><a id="_introduction"></a>Introduction<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/data-replication.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each index in Elasticsearch is <a class="link" href="_basic_concepts.html#getting-started-shards-and-replicas" title="Shards &amp; Replicasedit">divided into shards</a>
+and each shard can have multiple copies. These copies are known as a <span class="emphasis"><em>replication group</em></span> and must be kept in sync when documents
+are added or removed. If we fail to do so, reading from one copy will result in very different results than reading from another.
+The process of keeping the shard copies in sync and serving reads from them is what we call the <span class="emphasis"><em>data replication model</em></span>.</p><p>Elasticsearch’s data replication model is based on the <span class="emphasis"><em>primary-backup model</em></span> and is described very well in the
+<a class="ulink" href="https://www.microsoft.com/en-us/research/publication/pacifica-replication-in-log-based-distributed-storage-systems/" target="_top">PacificA paper</a> of
+Microsoft Research. That model is based on having a single copy from the replication group that acts as the primary shard.
+The other copies are called <span class="emphasis"><em>replica shards</em></span>. The primary serves as the main entry point for all indexing operations. It is in charge of
+validating them and making sure they are correct. Once an index operation has been accepted by the primary, the primary is also
+responsible for replicating the operation to the other copies.</p><p>This purpose of this section is to give a high level overview of the Elasticsearch replication model and discuss the implications
+it has for various interactions between write and read operations.</p><h3><a id="_basic_write_model"></a>Basic write model<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/data-replication.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Every indexing operation in Elasticsearch is first resolved to a replication group using <a class="link" href="docs-index_.html#index-routing" title="Routingedit">routing</a>,
+typically based on the document ID. Once the replication group has been determined,
+the operation is forwarded internally to the current <span class="emphasis"><em>primary shard</em></span> of the group. The primary shard is responsible
+for validating the operation and forwarding it to the other replicas. Since replicas can be offline, the primary
+is not required to replicate to all replicas. Instead, Elasticsearch maintains a list of shard copies that should
+receive the operation. This list is called the <span class="emphasis"><em>in-sync copies</em></span> and is maintained by the master node. As the name implies,
+these are the set of "good" shard copies that are guaranteed to have processed all of the index and delete operations that
+have been acknowledged to the user. The primary is responsible for maintaining this invariant and thus has to replicate all
+operations to each copy in this set.</p><p>The primary shard follows this basic flow:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Validate incoming operation and reject it if structurally invalid (Example: have an object field where a number is expected)
 </li><li class="listitem">
-<a class="xref" href="filebeat-template.html#load-template-manually" title="Loading the Template Manually">Loading the Template Manually</a> - required for Logstash output
-</li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="load-template-auto"></a>Configuring Template Loading<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default, Filebeat automatically loads the recommended template file, <code class="literal">filebeat.template.json</code>,
-if Elasticsearch output is enabled. You can configure filebeat to load a different template
-by adjusting the <code class="literal">template.name</code> and <code class="literal">template.path</code> options in <code class="literal">filebeat.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.elasticsearch:
-  hosts: ["localhost:9200"]
-  template.name: "filebeat"
-  template.path: "filebeat.template.json"
-  template.overwrite: false</pre></div><p>By default, if a template already exists in the index, it is not overwritten. To overwrite an existing
-template, set <code class="literal">template.overwrite: true</code> in the configuration file.</p><p>To disable automatic template loading, comment out the template part under the Elasticsearch output.</p><p>The options for auto loading the template are not supported if you are using the
-Logstash output.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="load-template-manually"></a>Loading the Template Manually<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you disable automatic template loading, you need to run the following command to load the template:</p><p><span class="strong"><strong>deb or rpm:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPUT 'http://localhost:9200/_template/filebeat' -d@/etc/filebeat/filebeat.template.json</pre></div><p><span class="strong"><strong>mac:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">cd filebeat-6.0.0-alpha1-darwin
-curl -XPUT 'http://localhost:9200/_template/filebeat' -d@filebeat.template.json</pre></div><p><span class="strong"><strong>win:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">PS C:\Program Files\Filebeat&gt; Invoke-WebRequest -Method Put -InFile filebeat.template.json -Uri http://localhost:9200/_template/filebeat?pretty</pre></div><p>where <code class="literal">localhost:9200</code> is the IP and port where Elasticsearch is listening.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you’ve already used Filebeat to index data into Elasticsearch,
-the index may contain old documents. After you load the index template,
-you can delete the old documents from filebeat-* to force Kibana to look
-at the newest documents. Use this command:</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XDELETE 'http://localhost:9200/filebeat-*'</pre></div></div></div><div class="navfooter"><span class="prev"><a href="config-filebeat-logstash.html">
+Execute the operation locally i.e. indexing or deleting the relevant document. This will also validate the content of fields
+   and reject if needed (Example: a keyword value is too long for indexing in Lucene).
+</li><li class="listitem">
+Forward the operation to each replica in the current in-sync copies set. If there are multiple replicas, this is done in parallel.
+</li><li class="listitem">
+Once all replicas have successfully performed the operation and responded to the primary, the primary acknowledges the successful
+   completion of the request to the client.
+</li></ol></div><h4><a id="_failure_handling"></a>Failure handling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/data-replication.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Many things can go wrong during indexing — disks can get corrupted, nodes can be disconnected from each other, or some
+configuration mistake could cause an operation to fail on a replica despite it being successful on the primary. These
+are infrequent but the primary has to respond to them.</p><p>In the case that the primary itself fails, the node hosting the primary will send a message to the master about it. The indexing
+operation will wait (up to 1 minute, by <a class="link" href="index-modules.html#dynamic-index-settings" title="Dynamic index settingsedit">default</a>) for the master to promote one of the replicas to be a
+new primary. The operation will then be forwarded to the new primary for processing. Note that the master also monitors the
+health of the nodes and may decide to proactively demote a primary. This typically happens when the node holding the primary
+is isolated from the cluster by a networking issue. See <a class="link" href="docs-replication.html#demoted-primary">here</a> for more details.</p><p>Once the operation has been successfully performed on the primary, the primary has to deal with potential failures
+when executing it on the replica shards. This may be caused by an actual failure on the replica or due to a network
+issue preventing the operation from reaching the replica (or preventing the replica from responding). All of these
+share the same end result: a replica which is part of the in-sync replica set misses an operation that is about to
+be acknowledged. In order to avoid violating the invariant, the primary sends a message to the master requesting
+that the problematic shard be removed from the in-sync replica set. Only once removal of the shard has been acknowledged
+by the master does the primary acknowledge the operation. Note that the master will also instruct another node to start
+building a new shard copy in order to restore the system to a healthy state.</p><p><a id="demoted-primary"></a>While forwarding an operation to the replicas, the primary will use the replicas to validate that it is still the
+active primary. If the primary has been isolated due to a network partition (or a long GC) it may continue to process
+incoming indexing operations before realising that it has been demoted. Operations that come from a stale primary
+will be rejected by the replicas. When the primary receives a response from the replica rejecting its request because
+it is no longer the primary then it will reach out to the master and will learn that it has been replaced. The
+operation is then routed to the new primary.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>What happens if there are no replicas?</strong></p></div></div></div><p>This is a valid scenario that can happen due to index configuration or simply
+because all the replicas have failed. In that case the primary is processing operations without any external validation,
+which may seem problematic. On the other hand, the primary cannot fail other shards on its own but request the master to do
+so on its behalf. This means that the master knows that the primary is the only single good copy. We are therefore guaranteed
+that the master will not promote any other (out-of-date) shard copy to be a  new primary and that any operation indexed
+into the primary will not be lost. Of course, since at that point we are running with only single copy of the data, physical hardware
+issues can cause data loss. See <a class="xref" href="docs-index_.html#index-wait-for-active-shards" title="Wait For Active Shardsedit">the section called “Wait For Active Shards<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for some mitigation options.</p></div><h3><a id="_basic_read_model"></a>Basic read model<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/data-replication.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Reads in Elasticsearch can be very lightweight lookups by ID or a heavy search request with complex aggregations that
+take non-trivial CPU power. One of the beauties of the primary-backup model is that it keeps all shard copies identical
+(with the exception of in-flight operations). As such, a single in-sync copy is sufficient to serve read requests.</p><p>When a read request is received by a node, that node is responsible for forwarding it to the nodes that hold the relevant shards,
+collating the responses, and responding to the client. We call that node the <span class="emphasis"><em>coordinating node</em></span> for that request. The basic flow
+is as follows:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Resolve the read requests to the relevant shards. Note that since most searches will be sent to one or more indices,
+   they typically need to read from multiple shards, each representing a different subset of the data.
+</li><li class="listitem">
+Select an active copy of each relevant shard, from the shard replication group. This can be either the primary or
+   a replica. By default, Elasticsearch will simply round robin between the shard copies.
+</li><li class="listitem">
+Send shard level read requests to the selected copies.
+</li><li class="listitem">
+Combine the results and respond. Note that in the case of get by ID look up, only one shard is relevant and this step can be skipped.
+</li></ol></div><h4><a id="_failure_handling_2"></a>Failure handling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/data-replication.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When a shard fails to respond to a read request, the coordinating node will select another copy from the same replication group
+and send the shard level search request to that copy instead. Repetitive failures can result in no shard copies being available.
+In some cases, such as <code class="literal">_search</code>, Elasticsearch will prefer to respond fast, albeit with partial results, instead of waiting
+for the issue to be resolved (partial results are indicated in the <code class="literal">_shards</code> header of the response).</p><h3><a id="_a_few_simple_implications"></a>A few simple implications<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/data-replication.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each of these basic flows determines how Elasticsearch behaves as a system for both reads and writes. Furthermore, since read
+and write requests can be executed concurrently, these two basic flows interact with each other. This has a few inherent implications:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Efficient reads
+</span></dt><dd>
+Under normal operation each read operation is performed once for each relevant replication group.
+   Only under failure conditions do multiple copies of the same shard execute the same search.
+</dd><dt><span class="term">
+Read unacknowledged
+</span></dt><dd>
+Since the primary first indexes locally and then replicates the request, it is possible for a
+  concurrent read to already see the change before it has been acknowledged.
+</dd><dt><span class="term">
+Two copies by default
+</span></dt><dd>
+This model can be fault tolerant while maintaining only two copies of the data. This is in contrast to
+  quorum-based system where the minimum number of copies for fault tolerance is 3.
+</dd></dl></div><h3><a id="_failures"></a>Failures<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/data-replication.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Under failures, the following is possible:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+A single shard can slow down indexing
+</span></dt><dd>
+Because the primary waits for all replicas in the in-sync copies set during each operation,
+  a single slow shard can slow down the entire replication group. This is the price we pay for the read efficiency mentioned above.
+  Of course a single slow shard will also slow down unlucky searches that have been routed to it.
+</dd><dt><span class="term">
+Dirty reads
+</span></dt><dd>
+An isolated primary can expose writes that will not be acknowledged. This is caused by the fact that an isolated
+  primary will only realize that it is isolated once it sends requests to its replicas or when reaching out to the master.
+  At that point the operation is already indexed into the primary and can be read by a concurrent read. Elasticsearch mitigates
+  this risk by pinging the master every second (by default) and rejecting indexing operations if no master is known.
+</dd></dl></div><h3><a id="_the_tip_of_the_iceberg"></a>The Tip of the Iceberg<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/data-replication.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This document provides a high level overview of how Elasticsearch deals with data. Of course, there is much much more
+going on under the hood. Things like primary terms, cluster state publishing and master election all play a role in
+keeping this system behaving correctly. This document also doesn’t cover known and important
+bugs (both closed and open). We recognize that <a class="ulink" href="https://github.com/elastic/elasticsearch/issues?q=label%3Aresiliency" target="_top">GitHub is hard to keep up with</a>.
+To help people stay on top of those and we maintain a dedicated <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/resiliency/current/index.html" target="_top">resiliency page</a>
+on our website. We strongly advise reading it.</p></div><div class="navfooter"><span class="prev"><a href="docs.html">
               « 
-              Step 3: Configuring Filebeat to Use Logstash</a>
+              Document APIs </a>
            
         </span><span class="next">
            
-          <a href="filebeat-starting.html">Step 5: Starting Filebeat
+          <a href="docs-index_.html">Index API
                »
             </a></span></div>
 <!-- end body -->
