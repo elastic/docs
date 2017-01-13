@@ -246,6 +246,7 @@ jQuery(function() {
           curlText += 'curl -X' + method + " 'localhost:9200/" + path + "'";
           if (body) {
             body = body.replace(/\'/g, '\\u0027');
+            body = body.replace(/\s*$/,"\n");
             curlText += " -d'" + body + "'";
           }
           curlText += '\n';
