@@ -262,7 +262,7 @@
         <xsl:when test="contains(text(),'AUTOSENSE')">
             <div class="sense_widget" data-snippet=":AUTOSENSE:"></div>
         </xsl:when>
-        <xsl:when test="contains(text(),'CONSOLE') and not(contains(text(),'NOTCONSOLE'))">
+        <xsl:when test="contains(text(),'CONSOLE') and not(contains(text(),'NOCONSOLE'))">
             <div class="console_widget" data-snippet=":CONSOLE:"></div>
         </xsl:when>
         <xsl:when test="contains(text(),'SENSE:')">
@@ -283,7 +283,7 @@
         <xsl:when test="contains(text(),'AUTOSENSE')">
             <div class="sense_widget" data-snippet=":AUTOSENSE:"></div>
         </xsl:when>
-        <xsl:when test="contains(text(),'CONSOLE')">
+        <xsl:when test="contains(text(),'CONSOLE') and not(contains(text(),'NOCONSOLE'))">
             <div class="console_widget" data-snippet=":CONSOLE:"></div>
         </xsl:when>
         <xsl:when test="contains(text(),'SENSE:')">
