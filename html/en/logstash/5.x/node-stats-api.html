@@ -569,15 +569,16 @@ Not what you want? See the
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="node-stats-api"></a>Node Stats API<a href="https://github.com/elastic/logstash/edit/master/docs/static/monitoring-apis.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.</p></div></div><p>The node stats API retrieves runtime stats about Logstash.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_node/stats/&lt;types&gt;</pre></div><p>Where <code class="literal">&lt;types&gt;</code> is optional and specifies the types of stats you want to return.</p><p>By default, all stats are returned. You can limit the info that’s returned by combining any of the following types in a comma-separated list:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
-<code class="literal">jvm</code>
+<a class="link" href="node-stats-api.html#jvm-stats" title="JVM Stats"><code class="literal">jvm</code></a>
 </p>
 </td><td valign="top">
 <p>
-Gets JVM stats, including stats about threads, memory usage, and garbage collectors.
+Gets JVM stats, including stats about threads, memory usage, garbage collectors,
+and uptime.
 </p>
 </td></tr><tr><td valign="top">
 <p>
-<code class="literal">process</code>
+<a class="link" href="node-stats-api.html#process-stats" title="Process Stats"><code class="literal">process</code></a>
 </p>
 </td><td valign="top">
 <p>
@@ -585,51 +586,60 @@ Gets process stats, including stats about file descriptors, memory consumption, 
 </p>
 </td></tr><tr><td valign="top">
 <p>
-<code class="literal">mem</code>
-</p>
-</td><td valign="top">
-<p>
-Gets memory usage stats.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">pipeline</code>
+<a class="link" href="node-stats-api.html#pipeline-stats" title="Pipeline Stats"><code class="literal">pipeline</code></a>
 </p>
 </td><td valign="top">
 <p>
 Gets runtime stats about the Logstash pipeline.
 </p>
-</td></tr></tbody></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_jvm_stats"></a>JVM Stats<a href="https://github.com/elastic/logstash/edit/master/docs/static/monitoring-apis.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following request returns a JSON document containing JVM stats:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_node/stats/jvm</pre></div><p>Example response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="node-stats-api.html#reload-stats" title="Reload Stats"><code class="literal">reloads</code></a>
+</p>
+</td><td valign="top">
+<p>
+Gets runtime stats about config reload successes and failures.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="node-stats-api.html#os-stats" title="OS Stats"><code class="literal">os</code></a>
+</p>
+</td><td valign="top">
+<p>
+Gets runtime stats about cgroups when Logstash is running in a container.
+</p>
+</td></tr></tbody></table></div><p>See <a class="link" href="monitoring.html#monitoring-common-options" title="Common Optionsedit">Common Options</a> for a list of options that can be applied to all
+Logstash monitoring APIs.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="jvm-stats"></a>JVM Stats<a href="https://github.com/elastic/logstash/edit/master/docs/static/monitoring-apis.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following request returns a JSON document containing JVM stats:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_node/stats/jvm</pre></div><p>Example response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "jvm": {
     "threads": {
-      "count": 33,
-      "peak_count": 34
+      "count": 35,
+      "peak_count": 36
     },
     "mem": {
-      "heap_used_in_bytes": 276974824,
-      "heap_used_percent": 13,
+      "heap_used_in_bytes": 318691184,
+      "heap_used_percent": 15,
       "heap_committed_in_bytes": 519045120,
       "heap_max_in_bytes": 2075918336,
-      "non_heap_used_in_bytes": 182122272,
-      "non_heap_committed_in_bytes": 193372160,
+      "non_heap_used_in_bytes": 189382304,
+      "non_heap_committed_in_bytes": 200728576,
       "pools": {
         "survivor": {
           "peak_used_in_bytes": 8912896,
-          "used_in_bytes": 11182152,
+          "used_in_bytes": 9538656,
           "peak_max_in_bytes": 35782656,
           "max_in_bytes": 71565312,
           "committed_in_bytes": 17825792
         },
         "old": {
-          "peak_used_in_bytes": 111736080,
-          "used_in_bytes": 171282544,
+          "peak_used_in_bytes": 106946320,
+          "used_in_bytes": 181913072,
           "peak_max_in_bytes": 715849728,
           "max_in_bytes": 1431699456,
           "committed_in_bytes": 357957632
         },
         "young": {
           "peak_used_in_bytes": 71630848,
-          "used_in_bytes": 94510128,
+          "used_in_bytes": 127239456,
           "peak_max_in_bytes": 286326784,
           "max_in_bytes": 572653568,
           "committed_in_bytes": 143261696
@@ -639,71 +649,86 @@ Gets runtime stats about the Logstash pipeline.
     "gc": {
       "collectors": {
         "old": {
-          "collection_time_in_millis": 48,
+          "collection_time_in_millis": 58,
           "collection_count": 2
         },
         "young": {
-          "collection_time_in_millis": 316,
-          "collection_count": 23
+          "collection_time_in_millis": 338,
+          "collection_count": 26
         }
       }
-    }
-  }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_process_stats"></a>Process Stats<a href="https://github.com/elastic/logstash/edit/master/docs/static/monitoring-apis.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following request returns a JSON document containing process stats:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_node/stats/process</pre></div><p>Example response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    },
+    "uptime_in_millis": 382701
+  }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="process-stats"></a>Process Stats<a href="https://github.com/elastic/logstash/edit/master/docs/static/monitoring-apis.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following request returns a JSON document containing process stats:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_node/stats/process</pre></div><p>Example response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "process": {
-    "open_file_descriptors": 60,
-    "peak_open_file_descriptors": 65,
+    "open_file_descriptors": 164,
+    "peak_open_file_descriptors": 166,
     "max_file_descriptors": 10240,
     "mem": {
-      "total_virtual_in_bytes": 5364461568
+      "total_virtual_in_bytes": 5399474176
     },
     "cpu": {
-      "total_in_millis": 101294404000,
-      "percent": 0
+      "total_in_millis": 72810537000,
+      "percent": 0,
+      "load_average": {
+        "1m": 2.41943359375
+      }
     }
-  }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="pipeline-stats"></a>Pipeline Stats<a href="https://github.com/elastic/logstash/edit/master/docs/static/monitoring-apis.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following request returns a JSON document containing pipeline stats, including the number of events that were
-input, filtered, or output by the pipeline. The request also returns stats for each configured input, filter, or
-output stage, and info about whether config reload (if configured) failed or succeeded.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_node/stats/pipeline</pre></div><p>Example response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="pipeline-stats"></a>Pipeline Stats<a href="https://github.com/elastic/logstash/edit/master/docs/static/monitoring-apis.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following request returns a JSON document containing pipeline stats,
+including:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+the number of events that were input, filtered, or output by the pipeline
+</li><li class="listitem">
+stats for each configured input, filter, or output stage
+</li><li class="listitem">
+info about config reload successes and failures
+(when <a class="link" href="reloading-config.html" title="Reloading the Config File">config reload</a> is enabled)
+</li><li class="listitem">
+info about the persistent queue (when
+<a class="link" href="persistent-queues.html" title="Persistent Queues">persistent queues</a> are enabled)
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_node/stats/pipeline</pre></div><p>Example response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "pipeline": {
     "events": {
-      "duration_in_millis": 7863504,
-      "in": 100,
-      "filtered": 100,
-      "out": 100
+      "duration_in_millis": 6304989,
+      "in": 200,
+      "filtered": 200,
+      "out": 200
     },
     "plugins": {
       "inputs": [],
       "filters": [
         {
-          "id": "grok_20e5cb7f7c9e712ef9750edf94aefb465e3e361b-2",
+          "id": "4e3d4bed6ba821ebb47f4752bb757b04a754d736-2",
           "events": {
-            "duration_in_millis": 48,
-            "in": 100,
-            "out": 100
+            "duration_in_millis": 113,
+            "in": 200,
+            "out": 200
           },
-          "matches": 100,
+          "matches": 200,
           "patterns_per_field": {
             "message": 1
           },
           "name": "grok"
         },
         {
-          "id": "geoip_20e5cb7f7c9e712ef9750edf94aefb465e3e361b-3",
+          "id": "4e3d4bed6ba821ebb47f4752bb757b04a754d736-3",
           "events": {
-            "duration_in_millis": 141,
-            "in": 100,
-            "out": 100
+            "duration_in_millis": 526,
+            "in": 200,
+            "out": 200
           },
           "name": "geoip"
         }
       ],
       "outputs": [
         {
-          "id": "20e5cb7f7c9e712ef9750edf94aefb465e3e361b-4",
+          "id": "4e3d4bed6ba821ebb47f4752bb757b04a754d736-4",
           "events": {
-            "in": 100,
-            "out": 100
+            "duration_in_millis": 2312,
+            "in": 200,
+            "out": 200
           },
-          "name": "elasticsearch"
+          "name": "stdout"
         }
       ]
     },
@@ -713,9 +738,48 @@ output stage, and info about whether config reload (if configured) failed or suc
       "last_success_timestamp": null,
       "last_failure_timestamp": null,
       "failures": 0
+    },
+    "queue": {
+      "events": 26,
+      "type": "persisted",
+      "capacity": {
+        "page_capacity_in_bytes": 262144000,
+        "max_queue_size_in_bytes": 4294967296,
+        "max_unread_events": 0
+      },
+      "data": {
+        "path": "/path/to/data/queue",
+        "free_space_in_bytes": 123027787776,
+        "storage_type": "hfs"
+      }
     }
-  }</pre></div><p>See <a class="link" href="monitoring.html#monitoring-common-options" title="Common Optionsedit">Common Options</a> for a list of options that can be applied to all
-Logstash monitoring APIs.</p></div></div><div class="navfooter"><span class="prev"><a href="plugins-api.html">
+  }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="reload-stats"></a>Reload Stats<a href="https://github.com/elastic/logstash/edit/master/docs/static/monitoring-apis.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following request returns a JSON document that shows info about config reload successes and failures.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_node/stats/reloads</pre></div><p>Example response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "reloads": {
+    "successes": 0,
+    "failures": 0
+  }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="os-stats"></a>OS Stats<a href="https://github.com/elastic/logstash/edit/master/docs/static/monitoring-apis.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When Logstash is running in a container, the following request returns a JSON document that
+contains cgroup information to give you a more accurate view of CPU load, including whether
+the container is being throttled.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_node/stats/os</pre></div><p>Example response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "os" : {
+    "cgroup" : {
+      "cpuacct" : {
+        "control_group" : "/elastic1",
+        "usage_nanos" : 378477588075
+                },
+      "cpu" : {
+        "control_group" : "/elastic1",
+        "cfs_period_micros" : 1000000,
+        "cfs_quota_micros" : 800000,
+        "stat" : {
+          "number_of_elapsed_periods" : 4157,
+          "number_of_times_throttled" : 460,
+          "time_throttled_nanos" : 581617440755
+        }
+      }
+    }
+  }</pre></div></div></div><div class="navfooter"><span class="prev"><a href="plugins-api.html">
               « 
               Plugins Info API</a>
            
