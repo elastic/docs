@@ -46,8 +46,8 @@ use ES::Template();
 GetOptions(
     $Opts,    #
     'all', 'push', 'update!',    #
-    'single', 'pdf', 'doc=s',   'out=s',   'toc', 'chunk=i', 'comments',
-    'open',    'staging', 'procs=i', 'user=s', 'lang=s',
+    'single', 'pdf',     'doc=s',   'out=s',  'toc', 'chunk=i', 'comments',
+    'open',   'staging', 'procs=i', 'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template'
 ) || exit usage();
 
@@ -179,6 +179,7 @@ sub build_all {
             $_->{redirect} );
     }
 
+    say "Checking links";
     check_links($build_dir);
 
     push_changes($build_dir)
