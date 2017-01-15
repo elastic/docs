@@ -56,6 +56,8 @@ sub new {
     my $tags = $args{tags}
         or die "No <tags> specified for book <$title>";
 
+    my $lang = $args{lang} || 'en';
+
     bless {
         title         => $title,
         dir           => $dir->subdir($prefix),
@@ -71,6 +73,7 @@ sub new {
         branch_titles => \%branch_titles,
         current       => $current,
         tags          => $tags,
+        lang          => $lang
     }, $class;
 }
 
@@ -152,6 +155,7 @@ sub _build_book {
     my $index         = $self->index;
     my $edit_url      = $repo->edit_url( $branch, $index );
     my $section_title = $self->section_title($branch);
+    my $lang          = $self->lang;
 
     return
            if -e $branch_dir
@@ -170,6 +174,7 @@ sub _build_book {
                 $branch_dir,
                 version       => $branch,
                 edit_url      => $edit_url,
+                lang          => $lang,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
@@ -183,6 +188,7 @@ sub _build_book {
                 $branch_dir,
                 version       => $branch,
                 edit_url      => $edit_url,
+                lang          => $lang,
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
@@ -326,6 +332,7 @@ sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
 sub is_multi_version { @{ shift->branches } > 1 }
 sub tags             { shift->{tags} }
+sub lang             { shift->{lang} }
 #===================================
 
 1;

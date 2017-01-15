@@ -47,7 +47,7 @@ GetOptions(
     $Opts,    #
     'all', 'push', 'update!',    #
     'single', 'pdf', 'doc=s',   'out=s',   'toc', 'chunk=i', 'comments',
-    'open',    'staging', 'procs=i', 'user=s',
+    'open',    'staging', 'procs=i', 'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template'
 ) || exit usage();
 
@@ -608,6 +608,7 @@ sub usage {
           --comments        Make // comments visible
           --open            Open the docs in a browser once built.
           --lenient         Ignore linking errors
+          --lang            Defaults to 'en'
 
         WARNING: Anything in the `out` dir will be deleted!
 
@@ -625,7 +626,7 @@ sub usage {
           --staging         Use the template from the staging website
           --reload_template Force retrieving the latest web template
           --procs           Number of processes to run in parallel, defaults to 3
-          --update          Update the docs checkout (losing any changes!)         
+          --update          Update the docs checkout (losing any changes!)
           --verbose
 
 USAGE
