@@ -77,7 +77,19 @@
         </xsl:choose>
     </xsl:variable>
     <xsl:if test="$edit_url != ''">
-        <a href="{$edit_url}" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>
+        <xsl:variable name="title">
+          <xsl:call-template name="gentext.template">
+            <xsl:with-param name="context" select="'edit-me'"/>
+            <xsl:with-param name="name" select="'edit-me-title'"/>
+          </xsl:call-template>
+        </xsl:variable>
+        <xsl:variable name="text">
+          <xsl:call-template name="gentext.template">
+            <xsl:with-param name="context" select="'edit-me'"/>
+            <xsl:with-param name="name" select="'edit-me-text'"/>
+          </xsl:call-template>
+        </xsl:variable>
+        <a href="{$edit_url}" class="edit_me" title="{$title}" rel="nofollow"><xsl:value-of select="$text" /></a>
     </xsl:if>
   </xsl:template>
 
@@ -132,6 +144,10 @@
         <l:template name="part"    text="%t"/>
         <l:template name="chapter" text="%t"/>
         <l:template name="section" text="%t"/>
+      </l:context>
+      <l:context name="edit-me">
+        <l:template name="edit-me-title" text="Edit this page on GitHub" />
+        <l:template name="edit-me-text" text="edit" />
       </l:context>
     </l:l10n>
   </l:i18n>
