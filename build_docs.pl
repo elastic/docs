@@ -259,7 +259,7 @@ sub build_entries {
             my $base_dir = $entry->{base_dir} || '';
             my $section_toc = build_entries(
                 $build->subdir($base_dir), $temp_dir,
-                ES::Toc->new($title),      @$sections
+                ES::Toc->new($title, $entry->{lang} ), @$sections
             );
             if ($base_dir) {
                 $section_toc->write( $build->subdir($base_dir) );
