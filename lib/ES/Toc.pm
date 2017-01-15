@@ -8,9 +8,11 @@ use ES::Util qw(build_single);
 #===================================
 sub new {
 #===================================
-    my ( $class, $title ) = @_;
+    my ( $class, $title, $lang ) = @_;
+    $lang ||= 'en';
     bless {
         title   => $title,
+        lang    => $lang,
         entries => []
     }, $class;
 }
@@ -34,7 +36,7 @@ sub write {
     my $adoc_file = $dir->file('index.asciidoc');
     $adoc_file->spew( iomode => '>:utf8', $adoc );
 
-    build_single( $adoc_file, $dir, type => 'article' );
+    build_single( $adoc_file, $dir, type => 'article', lang => $self->lang );
     $adoc_file->remove;
 }
 
@@ -93,6 +95,7 @@ sub _toc {
 
 #===================================
 sub title   { shift->{title} }
+sub lang    { shift->{lang} }
 sub entries { @{ shift->{entries} } }
 #===================================
 1;
