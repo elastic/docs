@@ -1,6 +1,8 @@
 <xsl:stylesheet version="1.0"
                xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
+  <xsl:import href="website-l10n.xsl"/>
+
   <!-- github repo info -->
   <xsl:param name="local.root" select="0" />
   <xsl:param name="local.repo" select="0" />
@@ -32,7 +34,14 @@
 
   <!-- meta elements -->
   <xsl:template name="user.head.content">
-    <meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." />
+    <xsl:variable name="meta-description">
+      <xsl:call-template name="gentext.template">
+        <xsl:with-param name="context" select="'meta'"/>
+        <xsl:with-param name="name" select="'meta-description'"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <meta name="description" content="{$meta-description}" />
     <meta name="DC.type">
       <xsl:attribute name="content">
         <xsl:value-of select="$local.book.section.title" />
@@ -94,6 +103,7 @@
   </xsl:template>
 
   <xsl:template match="ulink[@role='edit_me']" mode="no.anchor.mode" />
+
  <!--  head title element with version -->
 
     <xsl:template name="user.header.content">
@@ -110,47 +120,6 @@
           </p>
         </xsl:if>
     </xsl:template>
-
-  <!-- remove part/chapter/section titles -->
-  <xsl:param name="local.l10n.xml" select="document('')"/>
-  <l:i18n xmlns:l="http://docbook.sourceforge.net/xmlns/l10n/1.0">
-    <l:l10n language="en">
-      <l:context name="title">
-        <l:template name="part"    text="%t"/>
-        <l:template name="chapter" text="%t"/>
-        <l:template name="section" text="%t"/>
-      </l:context>
-      <l:context name="title-unnumbered">
-        <l:template name="part"    text="%t"/>
-        <l:template name="chapter" text="%t"/>
-        <l:template name="section" text="%t"/>
-      </l:context>
-      <l:context name="title-numbered">
-        <l:template name="part"    text="%t"/>
-        <l:template name="chapter" text="%t"/>
-        <l:template name="section" text="%t"/>
-      </l:context>
-      <l:context name="xref">
-        <l:template name="part"    text="%t"/>
-        <l:template name="chapter" text="%t"/>
-        <l:template name="section" text="%t"/>
-      </l:context>
-      <l:context name="xref-number">
-        <l:template name="part"    text="%t"/>
-        <l:template name="chapter" text="%t"/>
-        <l:template name="section" text="%t"/>
-      </l:context>
-      <l:context name="xref-number-and-title">
-        <l:template name="part"    text="%t"/>
-        <l:template name="chapter" text="%t"/>
-        <l:template name="section" text="%t"/>
-      </l:context>
-      <l:context name="edit-me">
-        <l:template name="edit-me-title" text="Edit this page on GitHub" />
-        <l:template name="edit-me-text" text="edit" />
-      </l:context>
-    </l:l10n>
-  </l:i18n>
 
   <!-- add prettyprint classes to code blocks -->
   <xsl:template match="programlisting" mode="common.html.attributes">
@@ -182,40 +151,78 @@
   </xsl:template>
 
   <!-- added and deprecated markup -->
-  <xsl:template match="phrase[@revisionflag='added']">
-    <span class="added">
+  <xsl:template match="phrase[@revisionflag]">
+    <xsl:variable name="classname">
+      <xsl:choose>
+        <xsl:when test="attribute::revisionflag='added'">added</xsl:when>
+        <xsl:when test="attribute::revisionflag='changed'">coming</xsl:when>
+        <xsl:when test="attribute::revisionflag='deleted'">deprecated</xsl:when>
+      </xsl:choose>
+    </xsl:variable>
+    <span class="{$classname}">
       [<span class="version"><xsl:value-of select="attribute::revision" /></span>]
       <span class="detail">
+        <xsl:call-template name="revision-text" />
         <xsl:apply-templates />
       </span>
     </span>
   </xsl:template>
 
-  <xsl:template match="phrase[@revisionflag='changed']">
-    <span class="coming">
-      [<span class="version"><xsl:value-of select="attribute::revision" /></span>]
+  <!--  Sentence for Added/Coming/Deprecated in ... -->
+  <xsl:template name="revision-text">
+    <xsl:variable name="type">
+      <xsl:choose>
+        <xsl:when test="attribute::revisionflag='added'">added</xsl:when>
+        <xsl:when test="attribute::revisionflag='changed'">coming</xsl:when>
+        <xsl:when test="attribute::revisionflag='deleted'">deprecated</xsl:when>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:call-template name="gentext.template">
+      <xsl:with-param name="context" select="'annotation'"/>
+      <xsl:with-param name="name" select="$type"/>
+    </xsl:call-template>
+    <xsl:value-of select="attribute::revision" />
+    <xsl:call-template name="gentext.template">
+      <xsl:with-param name="context" select="'annotation'"/>
+      <xsl:with-param name="name" select="'sentence-separator'"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <!-- Inline experimental/beta -->
+  <xsl:template match="phrase[@role='experimental']|phrase[@role='beta']">
+    <xsl:variable name="classname" select="attribute::role" />
+    <span class="{$classname}">
+      [<span class="{$classname}_title">
+        <xsl:call-template name="experimental-beta-title" />
+      </span>]
       <span class="detail">
-        <xsl:apply-templates />
+        <xsl:call-template name="experimental-beta-text" />
       </span>
     </span>
   </xsl:template>
 
-  <xsl:template match="phrase[@revisionflag='deleted']">
-    <span class="deprecated">
-      [<span class="version"><xsl:value-of select="attribute::revision" /></span>]
-      <span class="detail">
-        <xsl:apply-templates />
-      </span>
-    </span>
+  <xsl:template name="experimental-beta-title">
+    <xsl:call-template name="gentext.template">
+      <xsl:with-param name="context" select="'annotation'"/>
+      <xsl:with-param name="name" select="attribute::role"/>
+    </xsl:call-template>
   </xsl:template>
 
-  <xsl:template match="phrase[@role='experimental']">
-    <span class="experimental">
-      [<span class="exp_title">experimental</span>]
-      <span class="detail">
-        <xsl:apply-templates />
-      </span>
-    </span>
+  <xsl:template name="experimental-beta-text">
+    <xsl:variable name="text">
+      <xsl:apply-templates />
+    </xsl:variable>
+    <xsl:choose>
+        <xsl:when test="normalize-space($text) != ''">
+            <xsl:value-of select="$text" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:call-template name="gentext.template">
+            <xsl:with-param name="context" select="'annotation'"/>
+            <xsl:with-param name="name" select="concat(attribute::role,'-text')"/>
+          </xsl:call-template>
+        </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
 
   <!-- Don't display in ToC -->
@@ -226,7 +233,8 @@
                       |section[@role='exclude']
                       |sect1[@role='exclude']"  mode="toc" />
 
-    <xsl:template name="graphical.admonition">
+  <!--  Annotations NOTE/WARNING/etc -->
+  <xsl:template name="graphical.admonition">
       <xsl:variable name="admon.type">
         <xsl:choose>
           <xsl:when test="local-name(.)='note'">Note</xsl:when>
@@ -256,19 +264,77 @@
         </div>
         <div class="admon_content">
           <xsl:choose>
-            <xsl:when test="$admon.textlabel != 0 or title or info/title">
-              <h3>
-                  <xsl:apply-templates select="." mode="object.title.markup"/>
-                  <xsl:call-template name="anchor"/>
-              </h3>
+            <xsl:when test="attribute::revisionflag != ''">
+              <xsl:call-template name="graphical.admonition.revision.content" />
+            </xsl:when>
+            <xsl:when test="attribute::role = 'experimental' or attribute::role = 'beta'">
+              <xsl:call-template name="graphical.admonition.experimental.content" />
             </xsl:when>
             <xsl:otherwise>
-                <xsl:call-template name="anchor"/>
+              <xsl:call-template name="graphical.admonition.standard.content" />
             </xsl:otherwise>
           </xsl:choose>
-          <xsl:apply-templates/>
         </div>
       </div>
+    </xsl:template>
+
+    <!-- Block added/coming/deprecated -->
+    <xsl:template name="graphical.admonition.revision.content">
+      <xsl:variable name="revision_text">
+        <xsl:call-template name="revision-text" />
+      </xsl:variable>
+      <xsl:variable name="content">
+        <xsl:apply-templates/>
+      </xsl:variable>
+      <xsl:choose>
+        <xsl:when test="normalize-space($content) = ''">
+            <p>
+              <xsl:value-of select="$revision_text" />
+            </p>
+        </xsl:when>
+        <xsl:otherwise>
+            <h3>
+              <xsl:value-of select="$revision_text" />
+            </h3>
+            <xsl:value-of select="$content" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:template>
+
+    <!-- Block experimental/beta -->
+    <xsl:template name="graphical.admonition.experimental.content">
+      <xsl:variable name="content">
+        <xsl:apply-templates />
+      </xsl:variable>
+      <xsl:choose>
+        <xsl:when test="normalize-space($content) = ''">
+            <p>
+              <xsl:call-template name="gentext.template">
+                <xsl:with-param name="context" select="'annotation'"/>
+                <xsl:with-param name="name" select="concat(attribute::role,'-text')"/>
+              </xsl:call-template>
+            </p>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:value-of select="$content" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:template>
+
+    <!--  Standard admonition content -->
+    <xsl:template name="graphical.admonition.standard.content">
+      <xsl:choose>
+        <xsl:when test="$admon.textlabel != 0 or title or info/title">
+          <h3>
+            <xsl:apply-templates select="." mode="object.title.markup"/>
+            <xsl:call-template name="anchor"/>
+          </h3>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:call-template name="anchor"/>
+        </xsl:otherwise>
+      </xsl:choose>
+      <xsl:apply-templates/>
     </xsl:template>
 
     <!-- Sense widget -->
