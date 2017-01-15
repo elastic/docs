@@ -156,9 +156,11 @@ sub build_pdf {
     my $version   = $opts{version}   || 'test build';
     my $lenient   = $opts{lenient}   || '';
     my $toc_level = $opts{toc_level} || 7;
+    my $lang      = $opts{lang}      || 'en';
 
     my $output = run(
         'a2x', '-v',
+        '-a' => "lang=$lang",
         '--icons',
         '-d' => 'book',
         '-f' => 'pdf',
