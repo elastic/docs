@@ -46,8 +46,8 @@ use ES::Template();
 GetOptions(
     $Opts,    #
     'all', 'push', 'update!',    #
-    'single', 'pdf',     'doc=s',   'out=s', 'toc', 'chunk=i', 'comments',
-    'open',   'staging', 'procs=i', 'user=s',
+    'single', 'pdf', 'doc=s',   'out=s',   'toc', 'chunk=i', 'comments',
+    'open',    'staging', 'procs=i', 'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template'
 ) || exit usage();
 
@@ -613,6 +613,7 @@ sub usage {
           --comments        Make // comments visible
           --open            Open the docs in a browser once built.
           --lenient         Ignore linking errors
+          --lang            Defaults to 'en'
 
         WARNING: Anything in the `out` dir will be deleted!
 

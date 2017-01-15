@@ -25,7 +25,7 @@ our @EXPORT_OK = qw(
     write_html_redirect
 );
 
-our $Opts = { procs => 3 };
+our $Opts = { procs => 3, lang => 'en' };
 
 #===================================
 sub build_chunked {
@@ -37,6 +37,7 @@ sub build_chunked {
     my $multi    = $opts{multi}         || 0;
     my $lenient  = $opts{lenient}       || '';
     my $edit_url = $opts{edit_url}      || '';
+    my $lang     = $opts{lang}          || 'en';
     my $section  = $opts{section_title} || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
     $dest->rmtree;
@@ -47,6 +48,7 @@ sub build_chunked {
         '-d'              => 'book',
         '-f'              => 'chunked',
         '-a'              => 'showcomments=1',
+        '-a'              => "lang=$lang",
         '--xsl-file'      => 'resources/website_chunked.xsl',
         '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
         '--destination-dir=' . $dest,
@@ -95,6 +97,7 @@ sub build_single {
     my $version  = $opts{version}       || 'test build';
     my $multi    = $opts{multi}         || 0;
     my $edit_url = $opts{edit_url}      || '';
+    my $lang     = $opts{lang}          || 'en';
     my $comments = $opts{comments}      || 0;
     my $section  = $opts{section_title} || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
@@ -105,6 +108,7 @@ sub build_single {
         '-f'              => 'xhtml',
         '-d'              => $type,
         '-a'              => 'showcomments=1',
+        '-a'              => "lang=$lang",
         '--xsl-file'      => 'resources/website.xsl',
         '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
         '--destination-dir=' . $dest,
