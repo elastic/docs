@@ -154,16 +154,41 @@
 
 
 jQuery(function() {
+
+  var lang = jQuery('section#guide[lang]').attr('lang') || 'en';
+  var Strings;
+  if (lang === 'en') {
+    Strings = {
+      "Configure Console URL" : "Configure Console URL",
+      "Configure Sense URL" : "Configure Sense URL",
+      "Copy as cURL" : "Copy as cURL",
+      "Couldn't automatically copy!" : "Couldn't automatically copy!",
+      "Default Console URL" : "Default Console URL",
+      "Default Sense URL" : "Default Sense URL",
+      "Enter the URL of the Console editor:" : "Enter the URL of the Console editor:",
+      "Enter the URL of the Sense editor:" : "Enter the URL of the Sense editor:",
+      "On this page" : "On this page",
+      "Open snippet in Console" : "Open snippet in Console",
+      "Open snippet in Sense" : "Open snippet in Sense",
+      "Or install Kibana" : 'Or install <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>.',
+      "Or install Sense2" : 'Or install <a href="https://www.elastic.co/guide/en/sense/current/installing.html">the Sense 2 editor</a>.',
+      "Save" : "Save",
+      "This page is not available in the docs for version:" : "This page is not available in the docs for version:",
+      "View in Sense" : "View in Sense",
+      "View in Console" : "View in Console"
+    };
+  }
+
   // Move rtp container to top right and make visible
   var right_col = jQuery('#right_col');
   var this_page = jQuery('<div id="this_page"></div>').appendTo(right_col);
 
-  jQuery('.page_header > a[href="../current/index.html"]')
-    .click(function(){get_current_page_in_version('current')});
+  jQuery('.page_header > a[href="../current/index.html"]').click(function() {
+    get_current_page_in_version('current')
+  });
 
   var default_console_url = 'http://localhost:5601/app/kibana#/dev_tools/console';
   var default_sense_url = 'http://localhost:5601/app/sense/';
-  var default_sense_url_marvel = 'http://localhost:9200/_plugin/marvel/sense/';
   var console_url = Cookies.get('dev_console_url') || default_console_url;
   var sense_url = Cookies.get('sense_url') || default_sense_url;
 
@@ -174,59 +199,74 @@ jQuery(function() {
   function init_sense_widgets(sense_url) {
     var base_url = window.location.href.replace(/\/[^/?]+(?:\?.*)?$/, '/')
       .replace(/^http:/, 'https:');
-    jQuery('div.sense_widget')
-      .each(
-        function() {
-          var div = jQuery(this);
-          var snippet = div.attr('data-snippet');
-          div
-            .html('<a class="sense_widget copy_as_curl">Copy as cURL</a>'
-              + '<a class="sense_widget" target="sense" '
-              + 'title="Open snippet in Sense" '
-              + 'href="'
-              + sense_url
-              + '?load_from='
-              + base_url
-              + snippet
-              + '">View in Sense</a>'
-              + '<a class="sense_settings" title="Configure Sense URL">&nbsp;</a>');
-          div.find('a.sense_settings').click(sense_settings);
-        });
+    jQuery('div.sense_widget').each(
+      function() {
+        var div = jQuery(this);
+        var snippet = div.attr('data-snippet');
+        div.html('<a class="sense_widget copy_as_curl">'
+          + Strings['Copy as cURL']
+          + '</a>'
+          + '<a class="sense_widget" target="sense" '
+          + 'title="'
+          + Strings['Open snippet in Sense']
+          + '" '
+          + 'href="'
+          + sense_url
+          + '?load_from='
+          + base_url
+          + snippet
+          + '">'
+          + Strings['View in Sense']
+          + '</a>'
+          + '<a class="sense_settings" title="'
+          + Strings['Configure Sense URL']
+          + '">&nbsp;</a>');
+        div.find('a.sense_settings').click(sense_settings);
+      });
   }
 
   function init_console_widgets(console_url) {
     var base_url = window.location.href.replace(/\/[^/?]+(?:\?.*)?$/, '/')
       .replace(/^http:/, 'https:');
 
-    jQuery('div.console_widget')
-      .each(
-        function() {
-          var div = jQuery(this);
-          var snippet = div.attr('data-snippet');
-          div
-            .html('<a class="sense_widget copy_as_curl">Copy as cURL</a>'
-              + '<a class="console_widget" target="console" '
-              + 'title="Open snippet in Console" '
-              + 'href="'
-              + console_url
-              + '?load_from='
-              + base_url
-              + snippet
-              + '">View in Console</a>'
-              + '<a class="console_settings" title="Configure Console URL">&nbsp;</a>');
-          div.find('a.console_settings').click(console_settings);
-        });
+    jQuery('div.console_widget').each(
+      function() {
+        var div = jQuery(this);
+        var snippet = div.attr('data-snippet');
+        div.html('<a class="sense_widget copy_as_curl">'
+          + Strings['Copy as cURL']
+          + '</a>'
+          + '<a class="console_widget" target="console" '
+          + 'title="'
+          + Strings['Open snippet in Console']
+          + '" '
+          + 'href="'
+          + console_url
+          + '?load_from='
+          + base_url
+          + snippet
+          + '">'
+          + Strings['View in Console']
+          + '</a>'
+          + '<a class="console_settings" title="'
+          + Strings['Configure Console URL']
+          + '">&nbsp;</a>');
+        div.find('a.console_settings').click(console_settings);
+      });
     function console_regex() {
-      // Port of https://github.com/elastic/elasticsearch/blob/master/buildSrc/src/main/groovy/org/elasticsearch/gradle/doc/RestTestsFromSnippetsTask.groovy#L71-L79
+      // Port of
+      // https://github.com/elastic/elasticsearch/blob/master/buildSrc/src/main/groovy/org/elasticsearch/gradle/doc/RestTestsFromSnippetsTask.groovy#L71-L79
       var method = '(GET|PUT|POST|HEAD|OPTIONS|DELETE)';
       var pathAndQuery = '([^\\n]+)';
       var badBody = 'GET|PUT|POST|HEAD|OPTIONS|DELETE|#';
       var body = '((?:\\n(?!$badBody)[^\\n]+)+)'.replace('$badBody', badBody);
-      var nonComment = '$method\\s+$pathAndQuery$body?'.replace('$method', method)
-        .replace('$pathAndQuery', pathAndQuery).replace('$body', body);
+      var nonComment = '$method\\s+$pathAndQuery$body?'.replace(
+        '$method',
+        method).replace('$pathAndQuery', pathAndQuery).replace('$body', body);
       var comment = '(#.+)';
-      return new RegExp('(?:$comment|$nonComment)\\n+'.replace('$comment', comment)
-        .replace('$nonComment', nonComment), 'g');
+      return new RegExp('(?:$comment|$nonComment)\\n+'.replace(
+        '$comment',
+        comment).replace('$nonComment', nonComment), 'g');
     }
     jQuery('#guide').on('click', 'a.copy_as_curl', function() {
       var regex = console_regex();
@@ -259,7 +299,7 @@ jQuery(function() {
       var success = document.execCommand('copy');
       temp.remove();
       if (false == success) {
-        console.error("Couldn't automatically copy!");
+        console.error(Strings["Couldn't automatically copy!"]);
         console.error(curlText);
       }
     });
@@ -273,16 +313,21 @@ jQuery(function() {
 
     var div = jQuery('<div id="sense_settings">'
       + '<form>'
-      + '<label for="sense_url">Enter the URL of the Sense editor:</label>'
+      + '<label for="sense_url">'
+      + Strings['Enter the URL of the Sense editor:']
+      + '</label>'
       + '<input id="sense_url" type="text" value="'
       + sense_url
       + '" />'
-      + '<button id="save_url"    type="button">Save</button>'
-      + '<button id="reset_url"   type="button">Default Sense URL</button>'
-      + '<button id="reset_url_1" type="button">Default Sense v1 URL (Marvel)</button>'
-      + '<p>Or install <a href="https://www.elastic.co/guide/en/sense/current/installing.html">'
-      + 'the Sense 2 editor'
-      + '</a>.</p>'
+      + '<button id="save_url"    type="button">'
+      + Strings['Save']
+      + '</button>'
+      + '<button id="reset_url"   type="button">'
+      + Strings['Default Sense URL']
+      + '</button>'
+      + '<p>'
+      + Strings['Or install Sense2']
+      + '</p>'
       + '</form></div>');
     jQuery('body').prepend(div);
 
@@ -291,7 +336,10 @@ jQuery(function() {
       if (new_url === default_sense_url) {
         Cookies.set('sense_url', '');
       } else {
-        Cookies.set('sense_url', new_url, {expires: 365, path: ''});
+        Cookies.set('sense_url', new_url, {
+          expires : 365,
+          path : ''
+        });
       }
       sense_url = new_url;
       init_sense_widgets(sense_url);
@@ -300,10 +348,6 @@ jQuery(function() {
     });
     div.find('#reset_url').click(function(e) {
       jQuery('#sense_url').val(default_sense_url);
-      e.stopPropagation();
-    });
-    div.find('#reset_url_1').click(function(e) {
-      jQuery('#sense_url').val(default_sense_url_marvel);
       e.stopPropagation();
     });
   }
@@ -316,15 +360,21 @@ jQuery(function() {
 
     var div = jQuery('<div id="console_settings">'
       + '<form>'
-      + '<label for="console_url">Enter the URL of the Console editor:</label>'
+      + '<label for="console_url">'
+      + Strings['Enter the URL of the Console editor:']
+      + '</label>'
       + '<input id="console_url" type="text" value="'
       + console_url
       + '" />'
-      + '<button id="save_url"    type="button">Save</button>'
-      + '<button id="reset_url"   type="button">Default Console URL</button>'
-      + '<p>Or install <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">'
-      + 'Kibana'
-      + '</a>.</p>'
+      + '<button id="save_url"    type="button">'
+      + Strings['Save']
+      + '</button>'
+      + '<button id="reset_url"   type="button">'
+      + Strings['Default Console URL']
+      + '</button>'
+      + '<p>'
+      + Strings['Or install Kibana']
+      + '</p>'
       + '</form></div>');
     jQuery('body').prepend(div);
 
@@ -333,7 +383,10 @@ jQuery(function() {
       if (new_url === default_console_url) {
         Cookies.set('console_url', '');
       } else {
-        Cookies.set('console_url', new_url,{expires: 365, path: ''});
+        Cookies.set('console_url', new_url, {
+          expires : 365,
+          path : ''
+        });
       }
       console_url = new_url;
       init_console_widgets(console_url);
@@ -346,11 +399,12 @@ jQuery(function() {
     });
   }
 
-  function get_current_page_in_version (version) {
+  function get_current_page_in_version(version) {
     var url = location.href;
-    var url = location.href.replace(/[^\/]+\/+([^\/]+\.html)/, version
-      + "/$1");
-    return jQuery.get(url).done(function() { location.href = url });
+    var url = location.href.replace(/[^\/]+\/+([^\/]+\.html)/, version + "/$1");
+    return jQuery.get(url).done(function() {
+      location.href = url
+    });
   }
 
   function init_toc() {
@@ -393,21 +447,24 @@ jQuery(function() {
 
     // Setup version selector
     var v_selected = title.find('select option:selected');
-    title.find('select').change( function() {
-      var version = title.find('option:selected').val();
-      get_current_page_in_version(version)
-       .fail( function(){
-            v_selected.attr('selected', 'selected');
-            alert('This page is not available in the '
-              + version
-              + ' version of the docs.')
-          })
-    });
+    title
+      .find('select')
+      .change(
+        function() {
+          var version = title.find('option:selected').val();
+          get_current_page_in_version(version)
+            .fail(
+              function() {
+                v_selected.attr('selected', 'selected');
+                alert(Strings['This page is not available in the docs for version:']
+                  + version)
+              })
+        });
   }
 
   function init_headers() {
     // Add on-this-page block
-    this_page.append('<h2>On this page</h2>');
+    this_page.append('<h2>' + Strings['On this page'] + '</h2>');
     var ul = jQuery('<ul></ul>').appendTo(this_page);
     var items = 0;
 
