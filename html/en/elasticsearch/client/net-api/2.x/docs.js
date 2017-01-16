@@ -241,7 +241,7 @@ jQuery(function() {
         if (comment) {
           curlText += comment + '\n';
         } else {
-          path = path.replace(/^\//, '');
+          path = path.replace(/^\//, '').replace(/\s+$/,'');
           path += path.includes('?') ? '&pretty' : '?pretty';
           curlText += 'curl -X' + method + " 'localhost:9200/" + path + "'";
           if (body) {
