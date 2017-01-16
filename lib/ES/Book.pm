@@ -23,6 +23,18 @@ You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
+    },
+    zh => {
+        old => <<"HEADER",
+You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        new => <<"HEADER"
+You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
         }
 
 );
