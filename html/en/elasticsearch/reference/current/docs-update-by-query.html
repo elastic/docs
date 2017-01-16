@@ -816,27 +816,35 @@ POST twitter/_search?size=0&amp;q=extra:test&amp;filter_path=hits.total</pre></d
     "total": 120
   }
 }</pre></div><p>Adding <code class="literal">slices</code> to <code class="literal">_update_by_query</code> just automates the manual process used in
-the section above, creating sub-requests which means it has some quirks:
-* You can see these requests in the
+the section above, creating sub-requests which means it has some quirks:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+You can see these requests in the
 <a class="link" href="docs-update-by-query.html#docs-update-by-query-task-api" title="Works with the Task APIedit">Tasks APIs</a>. These sub-requests are "child"
 tasks of the task for the request with <code class="literal">slices</code>.
-* Fetching the status of the task for the request with <code class="literal">slices</code> only contains
+</li><li class="listitem">
+Fetching the status of the task for the request with <code class="literal">slices</code> only contains
 the status of completed slices.
-* These sub-requests are individually addressable for things like cancellation
+</li><li class="listitem">
+These sub-requests are individually addressable for things like cancellation
 and rethrottling.
-* Rethrottling the request with <code class="literal">slices</code> will rethrottle the unfinished
+</li><li class="listitem">
+Rethrottling the request with <code class="literal">slices</code> will rethrottle the unfinished
 sub-request proportionally.
-* Canceling the request with <code class="literal">slices</code> will cancel each sub-request.
-* Due to the nature of <code class="literal">slices</code> each sub-request won’t get a perfectly even
+</li><li class="listitem">
+Canceling the request with <code class="literal">slices</code> will cancel each sub-request.
+</li><li class="listitem">
+Due to the nature of <code class="literal">slices</code> each sub-request won’t get a perfectly even
 portion of the documents. All documents will be addressed, but some slices may
 be larger than others. Expect larger slices to have a more even distribution.
-* Parameters like <code class="literal">requests_per_second</code> and <code class="literal">size</code> on a request with <code class="literal">slices</code>
+</li><li class="listitem">
+Parameters like <code class="literal">requests_per_second</code> and <code class="literal">size</code> on a request with <code class="literal">slices</code>
 are distributed proportionally to each sub-request. Combine that with the point
 above about distribution being uneven and you should conclude that the using
 <code class="literal">size</code> with <code class="literal">slices</code> might not result in exactly <code class="literal">size</code> documents being
 `_update_by_query`ed.
-* Each sub-requests gets a slightly different snapshot of the source index
-though these are all taken at approximately the same time.</p><h3><a id="docs-update-by-query-picking-slices"></a>Picking the number of slices<a href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>At this point we have a few recommendations around the number of <code class="literal">slices</code> to
+</li><li class="listitem">
+Each sub-requests gets a slightly different snapshot of the source index
+though these are all taken at approximately the same time.
+</li></ul></div><h3><a id="docs-update-by-query-picking-slices"></a>Picking the number of slices<a href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>At this point we have a few recommendations around the number of <code class="literal">slices</code> to
 use (the <code class="literal">max</code> parameter in the slice API if manually parallelizing):</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Don’t use large numbers. <code class="literal">500</code> creates fairly massive CPU thrash.
 </li><li class="listitem">
