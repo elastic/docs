@@ -11,6 +11,22 @@ use ES::Source();
 use File::Copy::Recursive qw(fcopy rcopy);
 use ES::Toc();
 
+our %Page_Header = (
+    en => {
+        old => <<"HEADER",
+You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        new => <<"HEADER"
+You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        }
+
+);
+
 #===================================
 sub new {
 #===================================
@@ -276,19 +292,18 @@ sub _page_header {
         $branch .= '-zzzzzz';
     }
 
-    if ( $branch lt $current ) {
-        return <<"HEADER";
-You are looking at documentation for an older release.
-Not what you want? See the
-<a href="../current/index.html">current release documentation</a>.
-HEADER
-    }
+    return $self->_page_header_text( $branch lt $current ? 'old' : 'new' );
+}
 
-    return <<"HEADER";
-You are looking at preliminary documentation for a future release.
-Not what you want? See the
-<a href="../current/index.html">current release documentation</a>.
-HEADER
+#===================================
+sub _page_header_text {
+#===================================
+    my ( $self, $phrase ) = @_;
+    $phrase ||= '';
+    return $Page_Header{ $self->lang }{$phrase}
+        || die "No page header available for lang: "
+        . $self->lang
+        . " and phrase: $phrase";
 
 }
 
