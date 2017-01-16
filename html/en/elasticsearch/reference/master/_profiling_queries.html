@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Profiling Queries
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-profile.html" title="Profile API" /><link rel="prev" href="search-profile.html" title="Profile API" /><link rel="next" href="_profiling_aggregations.html" title="Profiling Aggregations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-profile.html" title="Profile API" /><link rel="prev" href="_human_readable_output_2.html" title="Human readable output" /><link rel="next" href="_profiling_aggregations.html" title="Profiling Aggregations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -559,9 +559,9 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-link"><a href="search-profile.html">Profile API</a></span> » <span class="breadcrumb-node">Profiling Queries</span></div><div class="navheader"><span class="prev"><a href="search-profile.html">
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs </a></span> » <span class="breadcrumb-link"><a href="search-profile.html">Profile API</a></span> » <span class="breadcrumb-node">Profiling Queries</span></div><div class="navheader"><span class="prev"><a href="_human_readable_output_2.html">
               « 
-              Profile API</a>
+              Human readable output</a>
            
         </span><span class="next">
            
@@ -580,19 +580,19 @@ The overall structure of this query tree will resemble your original Elasticsear
     {
        "type": "BooleanQuery",
        "description": "message:message message:number",
-       "time": "1.873811000ms",
+       "time_in_nanos": "1873811",
        "breakdown": {...},               <a id="CO37-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
        "children": [
           {
              "type": "TermQuery",
              "description": "message:message",
-             "time": "0.3919430000ms",
+             "time_in_nanos": "391943",
              "breakdown": {...}
           },
           {
              "type": "TermQuery",
              "description": "message:number",
-             "time": "0.2106820000ms",
+             "time_in_nanos": "210682",
              "breakdown": {...}
           }
        ]
@@ -603,7 +603,7 @@ The breakdown timings are omitted for simplicity
 clauses (both holding a TermQuery).  The <code class="literal">"type"</code> field displays the Lucene class name, and often aligns with
 the equivalent name in Elasticsearch.  The <code class="literal">"description"</code> field displays the Lucene explanation text for the query, and
 is made available to help differentiating between parts of your query (e.g. both <code class="literal">"message:search"</code> and <code class="literal">"message:test"</code>
-are TermQuery’s and would appear identical otherwise.</p><p>The <code class="literal">"time"</code> field shows that this query took ~15ms for the entire BooleanQuery to execute.  The recorded time is inclusive
+are TermQuery’s and would appear identical otherwise.</p><p>The <code class="literal">"time_in_nanos"</code> field shows that this query took ~1.8ms for the entire BooleanQuery to execute.  The recorded time is inclusive
 of all children.</p><p>The <code class="literal">"breakdown"</code> field will give detailed stats about how the time was spent, we’ll look at
 that in a moment.  Finally, the <code class="literal">"children"</code> array lists any sub-queries that may be present.  Because we searched for two
 values ("search test"), our BooleanQuery holds two children TermQueries.  They have identical information (type, time,
@@ -621,7 +621,7 @@ breakdown, etc).  Children are allowed to have their own children.</p><div class
    "advance": 0,
    "advance_count": 0
 }</pre></div><p>Timings are listed in wall-clock nanoseconds and are not normalized at all.  All caveats about the overall
-<code class="literal">"time"</code> apply here.  The intention of the breakdown is to give you a feel for A) what machinery in Lucene is
+<code class="literal">"time_in_nanos"</code> apply here.  The intention of the breakdown is to give you a feel for A) what machinery in Lucene is
 actually eating time, and B) the magnitude of differences in times between the various components.  Like the overall time,
 the breakdown is inclusive of all children times.</p><p>The meaning of the stats are as follows:</p><h4><a id="_all_parameters_3"></a>All parameters:<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
@@ -721,18 +721,18 @@ filters, etc.</p><p>Looking at the previous example:</p><div class="pre_wrapper"
    {
       "name": "CancellableCollector",
       "reason": "search_cancelled",
-      "time": "0.3043110000ms",
+      "time_in_nanos": "304311",
       "children": [
         {
           "name": "SimpleTopScoreDocCollector",
           "reason": "search_top_hits",
-          "time": "0.03227300000ms"
+          "time_in_nanos": "32273"
         }
       ]
    }
 ]</pre></div><p>We see a single collector named <code class="literal">SimpleTopScoreDocCollector</code> wrapped into <code class="literal">CancellableCollector</code>. <code class="literal">SimpleTopScoreDocCollector</code> is the default "scoring and sorting"
 <code class="literal">Collector</code> used by Elasticsearch.  The <code class="literal">"reason"</code> field attempts to give a plain english description of the class name.  The
-<code class="literal">"time"</code> is similar to the time in the Query tree: a wall-clock time inclusive of all children.  Similarly, <code class="literal">children</code> lists
+<code class="literal">"time_in_nanos"</code> is similar to the time in the Query tree: a wall-clock time inclusive of all children.  Similarly, <code class="literal">children</code> lists
 all sub-collectors. The <code class="literal">CancellableCollector</code> that wraps <code class="literal">SimpleTopScoreDocCollector</code> is used by elasticsearch to detect if the current
 search was cancelled and stop collecting documents as soon as it occurs.</p><p>It should be noted that Collector times are <span class="strong"><strong>independent</strong></span> from the Query times.  They are calculated, combined
 and normalized independently!  Due to the nature of Lucene’s execution, it is impossible to "merge" the times
@@ -879,7 +879,7 @@ A post_filter
                         {
                            "type": "TermQuery",
                            "description": "my_field:foo",
-                           "time": "0.4094560000ms",
+                           "time_in_nanos": "409456",
                            "breakdown": {
                               "score": 0,
                               "score_count": 1,
@@ -898,7 +898,7 @@ A post_filter
                         {
                            "type": "TermQuery",
                            "description": "message:search",
-                           "time": "0.3037020000ms",
+                           "time_in_nanos": "303702",
                            "breakdown": {
                               "score": 0,
                               "score_count": 1,
@@ -920,24 +920,24 @@ A post_filter
                         {
                            "name": "MultiCollector",
                            "reason": "search_multi",
-                           "time": "1.378943000ms",
+                           "time_in_nanos": "1378943",
                            "children": [
                               {
                                  "name": "FilteredCollector",
                                  "reason": "search_post_filter",
-                                 "time": "0.4036590000ms",
+                                 "time_in_nanos": "403659",
                                  "children": [
                                     {
                                        "name": "SimpleTopScoreDocCollector",
                                        "reason": "search_top_hits",
-                                       "time": "0.006391000000ms"
+                                       "time_in_nanos": "6391"
                                     }
                                  ]
                               },
                               {
                                  "name": "BucketCollector: [[non_global_term, another_agg]]",
                                  "reason": "aggregation",
-                                 "time": "0.9546020000ms"
+                                 "time_in_nanos": "954602"
                               }
                            ]
                         }
@@ -948,7 +948,7 @@ A post_filter
                         {
                            "type": "MatchAllDocsQuery",
                            "description": "*:*",
-                           "time": "0.04829300000ms",
+                           "time_in_nanos": "48293",
                            "breakdown": {
                               "score": 0,
                               "score_count": 1,
@@ -970,7 +970,7 @@ A post_filter
                         {
                            "name": "GlobalAggregator: [global_agg]",
                            "reason": "aggregation_global",
-                           "time": "0.1226310000ms"
+                           "time_in_nanos": "122631"
                         }
                      ]
                   }
@@ -997,9 +997,9 @@ token <code class="literal">[bakery]</code>, so query rewrites to a single TermQ
 "lineage" showing how one query rewrites into the next.  At present time, all we can do is apologize, and suggest you
 collapse the details for that query’s children if it is too confusing.  Luckily, all the timing statistics are correct,
 just not the physical layout in the response, so it is sufficient to just analyze the top-level MultiTermQuery and
-ignore it’s children if you find the details too tricky to interpret.</p><p>Hopefully this will be fixed in future iterations, but it is a tricky problem to solve and still in-progress :)</p></div></div><div class="navfooter"><span class="prev"><a href="search-profile.html">
+ignore it’s children if you find the details too tricky to interpret.</p><p>Hopefully this will be fixed in future iterations, but it is a tricky problem to solve and still in-progress :)</p></div></div><div class="navfooter"><span class="prev"><a href="_human_readable_output_2.html">
               « 
-              Profile API</a>
+              Human readable output</a>
            
         </span><span class="next">
            
