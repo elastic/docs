@@ -178,6 +178,27 @@ jQuery(function() {
       "View in Console" : "View in Console"
     };
   }
+  else if (lang === 'zh') {
+    Strings = {
+      "Configure Console URL" : "Configure Console URL",
+      "Configure Sense URL" : "Configure Sense URL",
+      "Copy as cURL" : "Copy as cURL",
+      "Couldn't automatically copy!" : "Couldn't automatically copy!",
+      "Default Console URL" : "Default Console URL",
+      "Default Sense URL" : "Default Sense URL",
+      "Enter the URL of the Console editor:" : "Enter the URL of the Console editor:",
+      "Enter the URL of the Sense editor:" : "Enter the URL of the Sense editor:",
+      "On this page" : "On this page",
+      "Open snippet in Console" : "Open snippet in Console",
+      "Open snippet in Sense" : "Open snippet in Sense",
+      "Or install Kibana" : 'Or install <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>.',
+      "Or install Sense2" : 'Or install <a href="https://www.elastic.co/guide/en/sense/current/installing.html">the Sense 2 editor</a>.',
+      "Save" : "Save",
+      "This page is not available in the docs for version:" : "This page is not available in the docs for version:",
+      "View in Sense" : "View in Sense",
+      "View in Console" : "View in Console"
+    };
+  }
 
   // Move rtp container to top right and make visible
   var right_col = jQuery('#right_col');
