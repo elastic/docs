@@ -46,6 +46,7 @@ sub apply {
 #===================================
     my $self = shift;
     my $dir  = shift;
+    my $lang = shift || die "No lang specified";
 
     my $map = $self->_map;
 
@@ -67,6 +68,7 @@ sub apply {
         my ($head) = ( $contents =~ m{<head>(.+?)</head>}s );
         my ($body) = ( $contents =~ m{<body>(.+?)</body>}s );
         $parts[ $map->{PREHEAD} ] = $head;
+        $parts[ $map->{LANG} ]    = qq(lang="$lang");
         $parts[ $map->{BODY} ]
             = "<!-- start body -->\n$body\n<!-- end body -->\n";
 
@@ -203,6 +205,9 @@ sub _update_template {
         # posthead
         $content =~ s{(</head>)}{\n<!-- DOCS POSTHEAD -->\n$1}
             or die "Couldn't add POSTHEAD\n";
+
+        # lang
+        $content =~ s{(<section id="guide")}{$1 <!-- DOCS LANG -->};
 
         # body parts
         $content =~ s{
