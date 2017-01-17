@@ -10,8 +10,8 @@ use Search::Elasticsearch;
 use HTML::Entities qw(encode_entities decode_entities);
 use JSON::XS;
 
-our ( $es, $Docs_Index, $Site_Index, $Max_Page, $Page_Size, $Max_Sections,
-    $Max_Hits_Per_Section );
+our ( $es, $Docs_Index, $Site_Index, $Titles_Index, $Max_Page, $Page_Size,
+    $Max_Sections, $Max_Hits_Per_Section );
 
 use FindBin;
 
