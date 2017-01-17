@@ -5,7 +5,7 @@ use warnings;
 use HTML::Entities qw(decode_entities);
 
 our ( $Base_URL, @Sitemap_Paths, $es, $Site_Index );
-
+our $Procs = 12;
 use FindBin;
 
 BEGIN {
@@ -16,7 +16,7 @@ BEGIN {
 use Proc::PID::File;
 die "$0 already running\n" if Proc::PID::File->running( dir => '.run' );
 
-use ES::Util qw(timestamp get_url);
+use ES::Util qw(timestamp get_url proc_man);
 use ES::SiteParser;
 
 my $force        = @ARGV && $ARGV[0] =~ /^-f|--force/;
@@ -43,7 +43,33 @@ sub index_changes {
     }
     $bulk->flush;
 
+    my @entries;
+    my $i = 0;
     for my $url ( keys %$new ) {
+        push @{ $entries[ $i++ ] },
+            { url => $url, published_at => $new->{url} };
+        $i = $i % $Procs;
+    }
+
+    my $pm = proc_man($Procs);
+    for ( 1 .. $Procs - 1 ) {
+        $pm->start && next;
+        index_urls( $index, $entries[$_] );
+        $pm->finish;
+
+    }
+    $pm->wait_all_children;
+    return keys(%$new) + keys(%$old);
+}
+
+#===================================
+sub index_urls {
+#===================================
+    my ( $index, $urls ) = @_;
+    my $bulk
+        = $es->bulk_helper( index => $index, type => 'doc', max_docs => 100 );
+    for (@$urls) {
+        my ( $url, $published_at ) = @{$_}{ 'url', 'published_at' };
         print "Indexing ($url)\n";
         my $html = eval { get_url( $Base_URL . $url ) } || do {
             print "[WARN] $@";
@@ -55,7 +81,7 @@ sub index_changes {
         my $parser = ES::SiteParser->new();
         $parser->parse($html);
         my $doc = $parser->output;
-        $doc->{published_at} = $new->{$url};
+        $doc->{published_at} = $published_at;
         $doc->{title} =~ s/\s*\|\s*Elastic\s*$//;
 
         my @tags = @{ $doc->{tags} };
@@ -84,7 +110,7 @@ sub index_changes {
         $bulk->index( { id => $url, source => $doc } );
     }
     $bulk->flush;
-    return keys(%$new) + keys(%$old);
+
 }
 
 #===================================
@@ -146,4 +172,3 @@ sub get_known_urls {
     }
     return \%urls;
 }
-
