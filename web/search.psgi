@@ -75,7 +75,7 @@ sub search {
     _add_search_query( $request, $q );
 
     # return _as_json( 200, $request );
-    return _run_request($request);
+    return _run_request( [ $Docs_Index, $Site_Index ], $request );
 }
 
 #===================================
@@ -83,15 +83,18 @@ sub suggest {
 #===================================
     my $q = _parse_request(@_) or return _as_json( 200, {} );
 
+    return _as_json( 200, {} )
+        unless $q->{q};
+
     my $request = {
         from => 0,
         size => $Page_Size,
     };
 
-    _add_suggest_query( $request, $q);
+    _add_suggest_query( $request, $q );
 
-    #   return _as_json(200,$request);
-    return _run_request($request);
+    # return _as_json( 200, $request );
+    return _run_request( $Titles_Index, $request );
 }
 
 #===================================
@@ -137,7 +140,7 @@ sub _add_search_query {
                 "title.stemmed^3", "part_titles.stemmed^1.5",
                 "content.stemmed"
             ],
-            "minimum_should_match" => "80%",
+            "minimum_should_match" => "2<80%",
             "query"                => $text,
             "type"                 => "best_fields",
             "tie_breaker"          => 0.2
@@ -228,7 +231,6 @@ sub _add_search_query {
     $request->{highlight} = _highlight('content.stemmed');
 }
 
-
 #===================================
 sub _add_suggest_query {
 #===================================
@@ -243,7 +245,8 @@ sub _add_suggest_query {
             filter => \@filter
         }
     };
-    $request->{_source} = [qw(url title breadcrumbs)];
+    $request->{_source}   = [qw(url title breadcrumbs section tags)];
+    $request->{highlight} = _highlight("title.autocomplete");
 
     push @filter, (
         _section_filter($q),    #
@@ -252,101 +255,24 @@ sub _add_suggest_query {
     );
 
     my $text = $q->{q};
-    unless ($text) {
-        push @filter, { exists => { field => 'published_at' } };
-        $request->{sort} = [
-            {   "published_at" => {
-                    order         => 'desc',
-                    missing       => '_last',
-                    unmapped_type => 'date'
-                }
-            }
-        ];
-        return $request;
-    }
-
     push @must,
         {
-        "multi_match" => {
-            "fields" => [
-                "title.autocomplete^3", "part_titles.autocomplete^1.5",
-                "content.autocomplete"
-            ],
-            "minimum_should_match" => "80%",
-            "query"                => $text,
-            "type"                 => "best_fields",
-            "tie_breaker"          => 0.2
-        }
-        };
-
-    push @should,
-        {
-        "dis_max" => {
-            "boost"       => 2,
-            "tie_breaker" => 0.3,
-            "queries"     => [
-                {   "multi_match" => {
-                        "query"  => $text,
-                        "type"   => "most_fields",
-                        "boost"  => 1.5,
-                        "fields" => [ "title^1.5", "title.shingles" ]
-                    }
-                },
-                {   "multi_match" => {
-                        "query" => $text,
-                        "type"  => "most_fields",
-                        "boost" => 1.2,
-                        "fields" =>
-                            [ "part_titles^1.5", "part_titles.shingles" ]
-                    }
-                },
-                {   "multi_match" => {
-                        "query"  => $text,
-                        "type"   => "most_fields",
-                        "fields" => [ "content^1.5", "content.shingles" ]
-                    }
-                }
-            ]
-        }
-        };
-
-    push @should,
-        {
-        "nested" => {
-            "score_mode" => "none",
-            "path"       => "part",
-            "inner_hits" => {
-                "size"      => 3,
-                "_source"   => { "includes" => [ "part.id", "part.title" ] }
-            },
-            "query" => {
-                "dis_max" => {
-                    "tie_breaker" => 0.3,
-                    "queries"     => [
-                        {   "multi_match" => {
-                                "query"  => $text,
-                                "type"   => "most_fields",
-                                "boost"  => 1.5,
-                                "fields" => [
-                                    "part.title^1.5",
-                                    "part.title.autocomplete",
-                                    "part.title.shingles",
-                                ]
-                            }
-                        },
-                        {   "multi_match" => {
-                                "query"  => $text,
-                                "type"   => "most_fields",
-                                "fields" => [
-                                    "part.content^1.5",
-                                    "part.content.autocomplete",
-                                    "part.content.shingles",
-                                ]
-                            }
-                        }
-                    ]
-                }
+        "match" => {
+            "title.autocomplete" => {
+                "minimum_should_match" => "2<80%",
+                "fuzziness"            => 'auto',
+                "query"                => $text,
             }
+        }
+        };
+
+    push @should,
+        {
+        "multi_match" => {
+            "query"  => $text,
+            "type"   => "most_fields",
+            "boost"  => 1.5,
+            "fields" => [ "title^1.5", "title.shingles" ]
         }
         };
 
@@ -403,7 +329,6 @@ sub _highlight {
     };
 }
 
-
 #===================================
 sub _explain {
 #===================================
@@ -452,14 +377,15 @@ sub _explain_hit {
 #===================================
 sub _run_request {
 #===================================
+    my $indices = shift;
     my $request = shift;
     my $result  = eval {
         $es->search(
-            index         => _indices(),
-            preference    => '_local',
-            body          => $request,
+            index      => $indices,
+            preference => '_local',
+            body       => $request,
 
-            explain => 'false'
+            # explain => 'true'
         );
     }
         || do { warn $@; return _as_json( 200, {} ) };
@@ -467,24 +393,18 @@ sub _run_request {
     my $last_page = int( $result->{hits}{total} / $Page_Size ) + 1;
     $last_page = $Max_Page if $last_page > $Max_Page;
 
-    _explain($result);
-     #return _as_json( 200, $result );
+    # _explain($result);
+
+    # return _as_json( 200, $result );
 
     my %response = (
         total_hits   => $result->{hits}{total},
         current_page => ( $request->{from} / $Page_Size ) + 1,
         last_page    => $last_page,
         hits         => _format_hits($result),
-        aggs         => _format_aggs($result)
     );
 
     return _as_json( 200, \%response );
-}
-
-#===================================
-sub _indices {
-#===================================
-    return [ $Docs_Index, $Site_Index ];
 }
 
 #===================================
@@ -498,21 +418,28 @@ sub _format_hits {
 sub _format_hit {
 #===================================
     my $hit = shift;
-    _explain( $hit->{inner_hits}{part} );
+
+    # _explain( $hit->{inner_hits}{part} );
     my $inner  = $hit->{inner_hits}{part}{hits}{hits};
     my %result = (
-        url          => $hit->{_id},
-        section      => $hit->{_source}{section},
-        tags         => $hit->{_source}{tags},
-        page_title   => $hit->{_source}{title},
-        breadcrumbs  => $hit->{_source}{breadcrumbs},
-        _score       => $hit->{_score},
-        _explanation => $hit->{_explanation},
-        _format_inner_hit( shift @$inner ),
-        other => [ map { +{ _format_inner_hit($_) } } @$inner ],
+        url         => $hit->{_id},
+        section     => $hit->{_source}{section},
+        tags        => $hit->{_source}{tags},
+        page_title  => $hit->{_source}{title},
+        breadcrumbs => $hit->{_source}{breadcrumbs},
+        (   $inner
+            ? ( _format_inner_hit( shift @$inner ),
+                other => [ map { +{ _format_inner_hit($_) } } @$inner ]
+                )
+            : ()
+        )
     );
-    $result{content}
-        ||= _format_highlights( $hit->{highlight}{"content.stemmed"} );
+    if ( my $highlights = $hit->{highlight}{"title.autocomplete"} ) {
+        $result{title} ||= _format_highlights($highlights);
+    }
+    if ( my $highlights = $hit->{highlight}{"content.stemmed"} ) {
+        $result{content} ||= _format_highlights($highlights);
+    }
 
     return \%result;
 }
@@ -529,23 +456,6 @@ sub _format_inner_hit {
         content =>
             _format_highlights( $hit->{highlight}{"part.content.stemmed"} )
     );
-}
-
-#===================================
-sub _format_aggs {
-#===================================
-    my $result = shift;
-    my %aggs;
-
-    for my $agg ( keys %{ $result->{aggregations} } ) {
-        my @buckets;
-        for ( @{ $result->{aggregations}{$agg}{buckets} } ) {
-            push @buckets, { $_->{key} => $_->{doc_count} };
-        }
-        $aggs{$agg} = \@buckets;
-
-    }
-    return \%aggs;
 }
 
 #===================================
