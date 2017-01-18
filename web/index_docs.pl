@@ -69,6 +69,7 @@ sub main {
         }
 
         $es->indices->forcemerge( index => $index, max_num_segments => 1 );
+        $es->indices->refresh( index => $index );
         1;
     } or do {
         my $error = $@;

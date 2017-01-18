@@ -35,22 +35,20 @@ sub main {
             delete @base{ "content", "part_titles", "part" };
             if ( $doc->{_source}{part} ) {
                 for ( @{ $doc->{_source}{part} } ) {
-                    my $part_url = $url.$_->{id};
-                    $b->add_action(
-                        index => {
-                            _id     => $part_url,
+                    my $part_url = $url . $_->{id};
+                    $b->index(
+                        {   _id     => $part_url,
                             _source => {
                                 %base,
                                 title => $_->{title},
                                 url   => $part_url
-                                }
+                            }
                         }
                     );
                 }
             }
             else {
-                $b->add_action(
-                    index => {
+                $b->index( {
                         _id     => $url,
                         _source => { %base, title => $doc->{_source}{title}, }
                     }
@@ -62,6 +60,7 @@ sub main {
         die "Error indexing titles: $result"
             if $result->{errors};
         $es->indices->forcemerge( index => $index, max_num_segments => 1 );
+        $es->indices->refresh( index => $index );
         1;
 
     } or do {
