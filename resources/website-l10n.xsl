@@ -55,34 +55,34 @@
 
     <l:l10n language="zh">
       <l:context name="title">
-        <l:template name="part"    text="部分"/>
-        <l:template name="chapter" text="章"/>
-        <l:template name="section" text="节"/>
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
       </l:context>
       <l:context name="title-unnumbered">
-        <l:template name="part"    text="部分"/>
-        <l:template name="chapter" text="章"/>
-        <l:template name="section" text="节"/>
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
       </l:context>
       <l:context name="title-numbered">
-        <l:template name="part"    text="部分"/>
-        <l:template name="chapter" text="章"/>
-        <l:template name="section" text="节"/>
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
       </l:context>
       <l:context name="xref">
-        <l:template name="part"    text="部分"/>
-        <l:template name="chapter" text="章"/>
-        <l:template name="section" text="节"/>
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
       </l:context>
       <l:context name="xref-number">
-        <l:template name="part"    text="部分"/>
-        <l:template name="chapter" text="章"/>
-        <l:template name="section" text="节"/>
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
       </l:context>
       <l:context name="xref-number-and-title">
-        <l:template name="part"    text="部分"/>
-        <l:template name="chapter" text="章"/>
-        <l:template name="section" text="节"/>
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
       </l:context>
       <l:context name="edit-me">
         <l:template name="edit-me-title" text="在 GitHub 上编辑本页" />
@@ -92,14 +92,14 @@
         <l:template name="meta-description" text="有关如何使用 Elasticsearch、Kibana、Logstash、Beats、X-Pack、Elastic Cloud、Elasticsearch for Apache Hadoop 及我们各种语言的客户端的文档。" />
       </l:context>
       <l:context name="annotation">
-        <l:template name="added" text="加入于 " />
-        <l:template name="beta" text="beta 测试" />
+        <l:template name="added" text="于 $version 添加。$custom_text" />
+        <l:template name="beta" text="beta" />
         <l:template name="beta-text" text="这个功能当前处于测试阶段，随时可能发生变化。与正式的 GA 特性相比被认为是不成熟的设计和代码。Elastic 会尽最大努力来解决任何问题，但是 beta 特性不在官方提供的 SLA 支持列表（ 仅支持 GA 特性）。" />
-        <l:template name="coming" text="将于 " />
-        <l:template name="deprecated" text="不赞成 " />
+        <l:template name="coming" text="于 $version 到来。$custom_text " />
+        <l:template name="deprecated" text="于 $version 废弃。$custom_text " />
         <l:template name="experimental" text="实验" />
         <l:template name="experimental-text" text="这个功能是实验性的，可能在将来的版本完全被改变或删除。Elastic 会尽最大努力来解决任何问题，但是实验特性不在官方提供的 SLA 支持列表（ 仅支持 GA 特性）。" />
-        <l:template name="sentence-separator" text=". " />
+        <l:template name="sentence-separator" text="。" />
       </l:context>
     </l:l10n>
 
