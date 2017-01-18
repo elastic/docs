@@ -7,6 +7,7 @@ use HTML::Entities qw(decode_entities);
 our ( $Base_URL, @Sitemap_Paths, $es, $Site_Index );
 our $Procs = 12;
 use FindBin;
+use utf8;
 
 BEGIN {
     chdir "$FindBin::RealBin/..";
@@ -59,6 +60,7 @@ sub index_changes {
 
     }
     $pm->wait_all_children;
+    $es->indices->refresh( index => $index );
     return keys(%$new) + keys(%$old);
 }
 
@@ -68,6 +70,7 @@ sub index_urls {
     my ( $index, $urls ) = @_;
     my $bulk
         = $es->bulk_helper( index => $index, type => 'doc', max_docs => 100 );
+
     for (@$urls) {
         my ( $url, $published_at ) = @{$_}{ 'url', 'published_at' };
         print "Indexing ($url)\n";
@@ -80,6 +83,7 @@ sub index_urls {
 
         my $parser = ES::SiteParser->new();
         $parser->parse($html);
+
         my $doc = $parser->output;
         $doc->{published_at} = $published_at;
         $doc->{title} =~ s/\s*\|\s*Elastic\s*$//;
@@ -103,10 +107,14 @@ sub index_urls {
             }
         }
 
+        $doc->{breadcrumbs}
+            = $doc->{section}
+            ? $doc->{section} . " » " . $doc->{title}
+            : $doc->{title};
+
         $doc->{tags}       = \@tags;
         $doc->{is_current} = \1;
         $doc->{url}        = $url;
-
         $bulk->index( { id => $url, source => $doc } );
     }
     $bulk->flush;
