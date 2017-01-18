@@ -111,7 +111,7 @@ sub _add_search_query {
             filter => \@filter
         }
     };
-    $request->{_source} = [qw(section tags url title breadcrumbs)];
+    $request->{_source} = [qw(url title breadcrumbs)];
 
     push @filter, (
         _section_filter($q),    #
@@ -143,7 +143,8 @@ sub _add_search_query {
             "minimum_should_match" => "2<80%",
             "query"                => $text,
             "type"                 => "best_fields",
-            "tie_breaker"          => 0.2
+            "tie_breaker"          => 0.2,
+            "fuzziness"            => "auto",
         }
         };
 
@@ -184,7 +185,7 @@ sub _add_search_query {
             "score_mode" => "none",
             "path"       => "part",
             "inner_hits" => {
-                "size"      => 3,
+                "size"      => 4,
                 "_source"   => { "includes" => [ "part.id", "part.title" ] },
                 "highlight" => _highlight("part.content.stemmed")
             },
@@ -245,7 +246,7 @@ sub _add_suggest_query {
             filter => \@filter
         }
     };
-    $request->{_source}   = [qw(url title breadcrumbs section tags)];
+    $request->{_source}   = [qw(url breadcrumbs )];
     $request->{highlight} = _highlight("title.autocomplete");
 
     push @filter, (
@@ -402,6 +403,7 @@ sub _run_request {
         current_page => ( $request->{from} / $Page_Size ) + 1,
         last_page    => $last_page,
         hits         => _format_hits($result),
+        took         => $result->{took}
     );
 
     return _as_json( 200, \%response );
@@ -420,19 +422,17 @@ sub _format_hit {
     my $hit = shift;
 
     # _explain( $hit->{inner_hits}{part} );
-    my $inner  = $hit->{inner_hits}{part}{hits}{hits};
-    my %result = (
-        url         => $hit->{_id},
-        section     => $hit->{_source}{section},
-        tags        => $hit->{_source}{tags},
-        page_title  => $hit->{_source}{title},
+    my $inner    = $hit->{inner_hits}{part}{hits}{hits} || [];
+    my $page_url = $hit->{_id};
+    my %result   = (
+        page_url    => $page_url,
         breadcrumbs => $hit->{_source}{breadcrumbs},
-        (   $inner
-            ? ( _format_inner_hit( shift @$inner ),
-                other => [ map { +{ _format_inner_hit($_) } } @$inner ]
-                )
-            : ()
-        )
+        $hit->{_source}{title} ? ( page_title => $hit->{_source}{title} ) : (),
+        @$inner
+        ? ( _format_inner_hit( $page_url, shift @$inner, 'highlight' ),
+            _format_inner_hits( $page_url, $inner )
+            )
+        : ()
     );
     if ( my $highlights = $hit->{highlight}{"title.autocomplete"} ) {
         $result{title} ||= _format_highlights($highlights);
@@ -445,16 +445,33 @@ sub _format_hit {
 }
 
 #===================================
+sub _format_inner_hits {
+#===================================
+    my ( $page_url, $hits ) = @_;
+    my @results;
+    for my $hit (@$hits) {
+        next unless $hit->{_source}{part}{id};
+        push @results, { _format_inner_hit( $page_url, $hit ) };
+    }
+    return unless @results;
+    return ( other => \@results );
+}
+
+#===================================
 sub _format_inner_hit {
 #===================================
-    my $hit = shift;
+    my ( $page_url, $hit, $highlight ) = @_;
+    my $id = $hit->{_source}{part}{id} || '';
     return (
         title => $hit->{_source}{part}{title},
-        id    => $hit->{_source}{part}{id},
+        url   => $page_url . $id,
 
         #  _explanation => $hit->{_explanation},
-        content =>
-            _format_highlights( $hit->{highlight}{"part.content.stemmed"} )
+        $highlight
+        ? ( content =>
+                _format_highlights( $hit->{highlight}{"part.content.stemmed"} )
+            )
+        : ()
     );
 }
 
