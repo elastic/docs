@@ -626,7 +626,17 @@ This index request throws a <code class="literal">routing_missing_exception</cod
 </p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_unique_ids_with_custom_routing"></a>Unique IDs with custom routing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/fields/routing-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When indexing documents specifying a custom <code class="literal">_routing</code>, the uniqueness of the
 <code class="literal">_id</code> is not guaranteed across all of the shards in the index. In fact,
 documents with the same <code class="literal">_id</code> might end up on different shards if indexed with
-different <code class="literal">_routing</code> values.</p><p>It is up to the user to ensure that IDs are unique across the index.</p></div></div><div class="navfooter"><span class="prev"><a href="mapping-parent-field.html">
+different <code class="literal">_routing</code> values.</p><p>It is up to the user to ensure that IDs are unique across the index.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="routing-index-partition"></a>Routing to an index partition<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/fields/routing-field.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>An index can be configured such that custom routing values will go to a subset of the shards rather
+than a single shard. This helps mitigate the risk of ending up with an imbalanced cluster while still
+reducing the impact of searches.</p><p>This is done by providing the index level setting <a class="link" href="index-modules.html#routing-partition-size"><code class="literal">index.routing_partition_size</code></a> at index creation.
+As the partition size increases, the more evenly distributed the data will become at the
+expense of having to search more shards per request.</p><p>When this setting is present, the formula for calculating the shard becomes:</p><pre class="literallayout">shard_num = (hash(_routing) + hash(_id) % routing_partition_size) % num_primary_shards</pre><p>That is, the <code class="literal">_routing</code> field is used to calculate a set of shards within the index and then the
+<code class="literal">_id</code> is used to pick a shard within that set.</p><p>To enable this feature, the <code class="literal">index.routing_partition_size</code> should have a value greater than 1 and
+less than <code class="literal">index.number_of_shards</code>.</p><p>Once enabled, the partitioned index will have the following limitations:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Mappings with parent-child relationships cannot be created within it.
+</li><li class="listitem">
+All mappings within the index must have the <code class="literal">_routing</code> field marked as required.
+</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="mapping-parent-field.html">
               « 
               <code class="literal">_parent</code> field</a>
            
