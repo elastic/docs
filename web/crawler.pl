@@ -47,12 +47,12 @@ sub index_changes {
     my $i = 0;
     for my $url ( keys %$new ) {
         push @{ $entries[ $i++ ] },
-            { url => $url, published_at => $new->{url} };
+            { url => $url, published_at => $new->{$url} };
         $i = $i % $Procs;
     }
 
     my $pm = proc_man($Procs);
-    for ( 1 .. $Procs - 1 ) {
+    for ( 0 .. $Procs - 1 ) {
         $pm->start && next;
         index_urls( $index, $entries[$_] );
         $pm->finish;
