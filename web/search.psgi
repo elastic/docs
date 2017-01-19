@@ -143,8 +143,7 @@ sub _add_search_query {
             "minimum_should_match" => "2<80%",
             "query"                => $text,
             "type"                 => "best_fields",
-            "tie_breaker"          => 0.2,
-            "fuzziness"            => "auto",
+            "tie_breaker"          => 0.2
         }
         };
 
