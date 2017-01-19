@@ -10,7 +10,7 @@ use Search::Elasticsearch;
 use HTML::Entities qw(encode_entities decode_entities);
 use JSON::XS;
 
-our ( $es, $Docs_Index, $Site_Index, $Titles_Index, $Max_Page, $Page_Size,
+our ( $es, $Pages_Index, $Titles_Index, $Max_Page, $Page_Size,
     $Max_Sections, $Max_Hits_Per_Section );
 
 use FindBin;
@@ -75,7 +75,7 @@ sub search {
     _add_search_query( $request, $q );
 
     # return _as_json( 200, $request );
-    return _run_request( [ $Docs_Index, $Site_Index ], $request );
+    return _run_request( $Pages_Index, $request );
 }
 
 #===================================

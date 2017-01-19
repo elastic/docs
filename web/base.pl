@@ -11,7 +11,7 @@ use Path::Class qw(file);
 our $JSON = JSON::XS->new->utf8->pretty;
 
 our $Site_Index    = 'site';
-our $Docs_Index    = 'docs';
+our $Pages_Index   = 'pages';
 our $Titles_Index  = 'titles';
 our $Base_URL      = 'https://www.elastic.co/';
 our @Sitemap_Paths = (
