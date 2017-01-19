@@ -346,7 +346,7 @@ sub proc_man {
             if ( $_[1] ) {
                 kill -9, $pm->running_procs();
                 kill 9,  $pm->running_procs();
-                exit $_[1];
+                die "Child exited with $_[1]";
             }
             $finish->(@_) if $finish;
         }
