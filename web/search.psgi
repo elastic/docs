@@ -320,9 +320,9 @@ sub _highlight {
     my $field = shift;
     return {
         "type"                => "postings",
-        "number_of_fragments" => 4,
+        "number_of_fragments" => 3,
         "no_match_size"       => 300,
-        "fragment_size"       => 300,
+        "fragment_size"       => 200,
         pre_tags              => ['[[['],
         post_tags             => [']]]'],
         "fields"              => { $field => {} }
@@ -486,14 +486,19 @@ sub _format_highlights {
         $snippet =~ s/\s*\.\s*$//;
         if ( length $snippet > 300 ) {
             my $words = 10;
-            while ( my $length = length $snippet > 300 ) {
-                $snippet =~ s/(?:[.]{3})?(\w+\W+){$words,10}/.../;
-                $words-- if $length == length $snippet;
+            while ( $words && ( my $length = length $snippet ) > 300 ) {
+                $snippet =~ s/
+                    (?:^|(?<=\s))
+                    (?:[.]{3})?\s*
+                    (((?:(?![<>])\S)+\s+){2,5})
+                    ((?:(?![<>])\S)+\s+){$words,10}
+                /$1... /x;
+                $words-- unless $length > length $snippet;
             }
-            $snippet =~ s/(?:[.]{3}\s*)+/... /g;
-            $snippet =~ s/^\s*[.]{3}\s*//;
-            $snippet =~ s/\s*[.]{3}\s*$//;
         }
+        $snippet =~ s/(?:[.]{3}\s*)+/... /g;
+        $snippet =~ s/^\s*[.]{3}\s*//;
+        $snippet =~ s/\s*[.]{3}\s*$//;
         push @snippets, $snippet;
     }
     return join " ... ", @snippets
