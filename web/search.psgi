@@ -428,7 +428,7 @@ sub _format_hit {
         breadcrumbs => $hit->{_source}{breadcrumbs},
         $hit->{_source}{title} ? ( page_title => $hit->{_source}{title} ) : (),
         @$inner
-        ? ( _format_inner_hit( $page_url, shift @$inner, 'highlight' ),
+        ? ( _format_inner_hit( $page_url, shift @$inner ),
             _format_inner_hits( $page_url, $inner )
             )
         : ()
@@ -450,7 +450,7 @@ sub _format_inner_hits {
     my @results;
     for my $hit (@$hits) {
         next unless $hit->{_source}{part}{id};
-        push @results, { _format_inner_hit( $page_url, $hit ) };
+        push @results, { _format_inner_hit( $page_url, $hit, 'first' ) };
     }
     return unless @results;
     return ( other => \@results );
@@ -459,18 +459,19 @@ sub _format_inner_hits {
 #===================================
 sub _format_inner_hit {
 #===================================
-    my ( $page_url, $hit, $highlight ) = @_;
+    my ( $page_url, $hit, $first_highlight ) = @_;
     my $id = $hit->{_source}{part}{id} || '';
+
+    my $highlights = $hit->{highlight}{"part.content.stemmed"};
+    if ( $first_highlight && @$highlights ) {
+        $highlights = [ $highlights->[0] ];
+    }
     return (
         title => $hit->{_source}{part}{title},
         url   => $page_url . $id,
 
         #  _explanation => $hit->{_explanation},
-        $highlight
-        ? ( content =>
-                _format_highlights( $hit->{highlight}{"part.content.stemmed"} )
-            )
-        : ()
+        content => _format_highlights($highlights)
     );
 }
 
