@@ -247,6 +247,7 @@ jQuery(function() {
           if (body) {
             body = body.replace(/\'/g, '\\u0027');
             body = body.replace(/\s*$/,"\n");
+            curlText += " -H 'Content-Type: application/json'";
             curlText += " -d'" + body + "'";
           }
           curlText += '\n';
