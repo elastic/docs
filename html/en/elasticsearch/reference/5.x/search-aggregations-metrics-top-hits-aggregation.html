@@ -592,27 +592,26 @@ One or more bucket aggregators determines by which properties a result set get s
 </li><li class="listitem">
 <a class="link" href="search-request-version.html" title="Version">Include versions</a>
 </li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_example"></a>Example<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/tophits-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In the following example we group the questions by tag and per tag we show the last active question. For each question
-only the title field is being included in the source.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+only the title field is being included in the source.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /sales/_search?size=0
+{
     "aggs": {
-        "top-tags": {
+        "top_tags": {
             "terms": {
-                "field": "tags",
+                "field": "type",
                 "size": 3
             },
             "aggs": {
-                "top_tag_hits": {
+                "top_sales_hits": {
                     "top_hits": {
                         "sort": [
                             {
-                                "last_activity_date": {
+                                "date": {
                                     "order": "desc"
                                 }
                             }
                         ],
                         "_source": {
-                            "includes": [
-                                "title"
-                            ]
+                            "includes": [ "date", "price" ]
                         },
                         "size" : 1
                     }
@@ -620,82 +619,90 @@ only the title field is being included in the source.</p><div class="pre_wrapper
             }
         }
     }
-}</pre></div><p>Possible response snippet:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggregations": {
-  "top-tags": {
-     "buckets": [
-        {
-           "key": "windows-7",
-           "doc_count": 25365,
-           "top_tags_hits": {
-              "hits": {
-                 "total": 25365,
-                 "max_score": 1,
-                 "hits": [
-                    {
-                       "_index": "stack",
-                       "_type": "question",
-                       "_id": "602679",
-                       "_score": 1,
-                       "_source": {
-                          "title": "Windows port opening"
-                       },
-                       "sort": [
-                          1370143231177
-                       ]
-                    }
-                 ]
-              }
-           }
-        },
-        {
-           "key": "linux",
-           "doc_count": 18342,
-           "top_tags_hits": {
-              "hits": {
-                 "total": 18342,
-                 "max_score": 1,
-                 "hits": [
-                    {
-                       "_index": "stack",
-                       "_type": "question",
-                       "_id": "602672",
-                       "_score": 1,
-                       "_source": {
-                          "title": "Ubuntu RFID Screensaver lock-unlock"
-                       },
-                       "sort": [
-                          1370143379747
-                       ]
-                    }
-                 ]
-              }
-           }
-        },
-        {
-           "key": "windows",
-           "doc_count": 18119,
-           "top_tags_hits": {
-              "hits": {
-                 "total": 18119,
-                 "max_score": 1,
-                 "hits": [
-                    {
-                       "_index": "stack",
-                       "_type": "question",
-                       "_id": "602678",
-                       "_score": 1,
-                       "_source": {
-                          "title": "If I change my computers date / time, what could be affected?"
-                       },
-                       "sort": [
-                          1370142868283
-                       ]
-                    }
-                 ]
-              }
-           }
-        }
-     ]
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-top-hits-aggregation/1.json"></div><p>Possible response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  ...
+  "aggregations": {
+    "top_tags": {
+       "doc_count_error_upper_bound": 0,
+       "sum_other_doc_count": 0,
+       "buckets": [
+          {
+             "key": "hat",
+             "doc_count": 3,
+             "top_sales_hits": {
+                "hits": {
+                   "total": 3,
+                   "max_score": null,
+                   "hits": [
+                      {
+                         "_index": "sales",
+                         "_type": "sale",
+                         "_id": "AVnNBmauCQpcRyxw6ChK",
+                         "_source": {
+                            "date": "2015/03/01 00:00:00",
+                            "price": 200
+                         },
+                         "sort": [
+                            1425168000000
+                         ],
+                         "_score": null
+                      }
+                   ]
+                }
+             }
+          },
+          {
+             "key": "t-shirt",
+             "doc_count": 3,
+             "top_sales_hits": {
+                "hits": {
+                   "total": 3,
+                   "max_score": null,
+                   "hits": [
+                      {
+                         "_index": "sales",
+                         "_type": "sale",
+                         "_id": "AVnNBmauCQpcRyxw6ChL",
+                         "_source": {
+                            "date": "2015/03/01 00:00:00",
+                            "price": 175
+                         },
+                         "sort": [
+                            1425168000000
+                         ],
+                         "_score": null
+                      }
+                   ]
+                }
+             }
+          },
+          {
+             "key": "bag",
+             "doc_count": 1,
+             "top_sales_hits": {
+                "hits": {
+                   "total": 1,
+                   "max_score": null,
+                   "hits": [
+                      {
+                         "_index": "sales",
+                         "_type": "sale",
+                         "_id": "AVnNBmatCQpcRyxw6ChH",
+                         "_source": {
+                            "date": "2015/01/01 00:00:00",
+                            "price": 150
+                         },
+                         "sort": [
+                            1420070400000
+                         ],
+                         "_score": null
+                      }
+                   ]
+                }
+             }
+          }
+       ]
+    }
   }
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_field_collapse_example"></a>Field collapse example<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/tophits-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Field collapsing or result grouping is a feature that logically groups a result set into groups and per group returns
 top documents. The ordering of the groups is determined by the relevancy of the first document in a group. In
@@ -723,7 +730,6 @@ relevancy order of the most relevant document in a bucket.</p><div class="pre_wr
         "top_hit" : {
           "max": {
             "script": {
-              "lang": "painless",
               "inline": "_score"
             }
           }
