@@ -25,7 +25,7 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
     },
-    zh => {
+    zh_cn => {
         old => <<"HEADER",
 你当前正在查看的是旧版本的文档。如果不是你要找的，请点击查看 <a href="../current/index.html">当前发布版本的文档</a>。
 HEADER

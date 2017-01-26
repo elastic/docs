@@ -53,7 +53,7 @@
       </l:context>
     </l:l10n>
 
-    <l:l10n language="zh">
+    <l:l10n language="zh_cn">
       <l:context name="title">
         <l:template name="part"    text="%t"/>
         <l:template name="chapter" text="%t"/>

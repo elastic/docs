@@ -178,7 +178,7 @@ jQuery(function() {
       "View in Console" : "View in Console"
     };
   }
-  else if (lang === 'zh') {
+  else if (lang === 'zh_cn') {
     Strings = {
       "Configure Console URL" : "配置 Console URL",
       "Configure Sense URL" : "配置 Sense URL",
