@@ -46,12 +46,19 @@ sub check {
 sub check_file {
 #===================================
     my ( $self, $file, $extract, $file_descr ) = @_;
-    $extract||=\&_link_extractor;
     $file_descr ||= "$file";
+    my $source = $file->slurp( iomode => '<:encoding(UTF-8)' );
+    return $self->check_source( $source, $extract, $file_descr );
+}
 
-    my $contents = $file->slurp( iomode => '<:encoding(UTF-8)' );
-    my $link_it  = $extract->($contents);
-    my $seen     = $self->seen;
+#===================================
+sub check_source {
+#===================================
+    my ( $self, $source, $extract, $file_descr ) = @_;
+    $extract ||= \&_link_extractor;
+
+    my $link_it = $extract->($source);
+    my $seen    = $self->seen;
 
     while ( my ( $path, $fragment ) = $link_it->() ) {
 

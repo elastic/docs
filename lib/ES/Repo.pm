@@ -24,30 +24,12 @@ sub new {
     }
 
     my $dir = $args{dir} or die "No <dir> specified for repo <$name>";
-    my $temp_dir = $args{temp_dir}
-        or die "No <temp_dir> specified for repo <$name>";
-
-    my $current = $args{current}
-        or die "No <current> branch specified for repo <$name>";
-
-    my $branches = $args{branches}
-        or die "No <branches> specified for repo <$name>";
-
-    die "<branches> must be an array in repo <$name>"
-        unless ref $branches eq 'ARRAY';
-
-    die "Current branch <$current> is not in <branches> in repo <$name>"
-        unless grep { ref $_ ? $_->{$current} : $current eq $_ } @$branches;
 
     my $self = bless {
-        name     => $name,
-        git_dir  => $dir->subdir("$name.git"),
-        temp_dir => $temp_dir,
-        url      => $url,
-        current  => $current,
-        branches => $branches,
-        private  => $args{private} || 0,
-        tracker  => $args{tracker},
+        name    => $name,
+        git_dir => $dir->subdir("$name.git"),
+        url     => $url,
+        tracker => $args{tracker},
     }, $class;
     $Repos{$name} = $self;
 }
@@ -110,28 +92,10 @@ sub _try_to_fetch {
 }
 
 #===================================
-sub local_clone {
-#===================================
-    my ( $self, $branch ) = @_;
-
-    local $ENV{GIT_DIR} = $self->git_dir;
-    my $sha = sha_for($branch);
-    my $temp = Path::Class::tempdir( CLEANUP => 1, DIR => $self->temp_dir );
-    run qw( git clone), $self->git_dir, $temp;
-
-    local $ENV{GIT_DIR}       = $temp->subdir('.git');
-    local $ENV{GIT_WORK_TREE} = $temp;
-
-    run qw( git checkout --force -B), $branch, $sha;
-    return $temp;
-
-}
-
-#===================================
 sub has_changed {
 #===================================
     my $self = shift;
-    my ( $path, $branch ) = @_;
+    my ( $branch, $path ) = @_;
 
     my $old
         = $self->tracker->sha_for_branch( $self->name,
@@ -160,7 +124,7 @@ sub has_changed {
 sub mark_done {
 #===================================
     my $self = shift;
-    my ( $path, $branch ) = @_;
+    my ( $branch, $path ) = @_;
 
     local $ENV{GIT_DIR} = $self->git_dir;
 
@@ -171,22 +135,69 @@ sub mark_done {
 }
 
 #===================================
+sub tree {
+#===================================
+    my $self = shift;
+    my ( $branch, $path ) = @_;
+
+    local $ENV{GIT_DIR} = $self->git_dir;
+
+    my @files;
+    eval {
+        @files = map { Path::Class::file($_) } split /\0/,
+            run( qw(git ls-tree -r --name-only -z), $branch, '--', $path );
+        1;
+    } or do {
+        my $error = $@;
+        die "Unknown branch <$branch> in repo <" . $self->name . ">"
+            if $error =~ /Not a valid object name/;
+        die $@;
+    };
+    return @files;
+}
+
+#===================================
+sub extract_relative {
+#===================================
+    my $self = shift;
+    my ( $branch, $path, $dest, $strip ) = @_;
+    local $ENV{GIT_DIR} = $self->git_dir;
+
+    my $tar = $dest->file('.temp_git_archive.tar');
+    die "File <$tar> already exists" if -e $tar;
+    run qw(git archive --format=tar -o ), $tar, $branch, $path;
+
+    run qw(tar -x --strip-components ), $strip, "-C", $dest, "-f", $tar;
+    $tar->remove;
+}
+
+#===================================
+sub show_file {
+#===================================
+    my $self = shift;
+    my ( $branch, $file ) = @_;
+
+    local $ENV{GIT_DIR} = $self->git_dir;
+
+    return decode_utf8 run( qw (git show ), $branch . ':' . $file );
+}
+
+#===================================
 sub _tracker_branch {
 #===================================
     my $self   = shift;
-    my $path   = shift or die "No <path> specified";
     my $branch = shift or die "No <branch> specified";
+    my $path   = shift or die "No <path> specified";
     return "_${path}_${branch}";
 }
 
 #===================================
 sub edit_url {
 #===================================
-    my ( $self, $branch, $index ) = @_;
-    return '' if $self->private;
+    my ( $self, $branch, $path ) = @_;
     my $url = $self->url;
     $url =~ s/\.git$//;
-    my $dir = Path::Class::dir( "edit", $branch, $index->dir )
+    my $dir = Path::Class::dir( "edit", $branch, $path )
         ->cleanup->as_foreign('Unix');
     return "$url/$dir";
 }
@@ -194,10 +205,10 @@ sub edit_url {
 #===================================
 sub dump_recent_commits {
 #===================================
-    my ( $self, $src_path, $branch ) = @_;
+    my ( $self, $branch, $src_path ) = @_;
     local $ENV{GIT_DIR} = $self->git_dir;
 
-    my $start = $self->tracker->sha_for( $self->name, $branch );
+    my $start = $self->tracker->sha_for_branch( $self->name, $branch );
     my $rev_range = "$start...$branch";
 
     my $commits = eval {
@@ -213,7 +224,7 @@ sub dump_recent_commits {
             '-n', 10, '--abbrev-commit', '--date=relative', '--', $src_path );
     }
 
-    my $title = "Recent commits in " . $self->name . "/$branch - $src_path:";
+    my $title = "Recent commits in " . $self->name . "/$branch:$src_path:";
     return $title . "\n" . ( '-' x length($title) ) . "\n" . $commits . "\n\n";
 }
 
@@ -244,14 +255,10 @@ sub all_repo_branches {
 }
 
 #===================================
-sub name     { shift->{name} }
-sub git_dir  { shift->{git_dir} }
-sub temp_dir { shift->{temp_dir} }
-sub url      { shift->{url} }
-sub current  { shift->{current} }
-sub branches { shift->{branches} }
-sub private  { shift->{private} }
-sub tracker  { shift->{tracker} }
+sub name    { shift->{name} }
+sub git_dir { shift->{git_dir} }
+sub url     { shift->{url} }
+sub tracker { shift->{tracker} }
 #===================================
 
 1

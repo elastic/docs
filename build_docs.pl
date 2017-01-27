@@ -46,8 +46,8 @@ use ES::Template();
 GetOptions(
     $Opts,    #
     'all', 'push', 'update!',    #
-    'single', 'pdf', 'doc=s',   'out=s',   'toc', 'chunk=i', 'comments',
-    'open',    'staging', 'procs=i', 'user=s',
+    'single', 'pdf',     'doc=s',   'out=s', 'toc', 'chunk=i', 'comments',
+    'open',   'staging', 'procs=i', 'user=s',
     'lenient', 'verbose', 'reload_template'
 ) || exit usage();
 
@@ -156,7 +156,7 @@ sub build_all {
     ensure_creds_cache_enabled() || enable_creds_cache() || exit(1);
     check_github_authed();
 
-    init_repos();
+    my $repos_dir = init_repos();
 
     my $build_dir = $Conf->{paths}{build}
         or die "Missing <paths.build> in config";
@@ -164,11 +164,16 @@ sub build_all {
     $build_dir = dir($build_dir);
     $build_dir->mkpath;
 
+    my $temp_dir = $repos_dir->subdir('.temp');
+    $temp_dir->rmtree;
+    $temp_dir->mkpath;
+
     my $contents = $Conf->{contents}
         or die "Missing <contents> configuration section";
 
     my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide' );
-    build_entries( $build_dir, $toc, @$contents );
+    build_entries( $build_dir, $temp_dir, $toc, @$contents );
+    $temp_dir->rmtree;
 
     say "Writing main TOC";
     $toc->write( $build_dir, 0 );
@@ -235,16 +240,16 @@ sub check_kibana_links {
         $branch = $_;
         next if $branch eq 'current' || $branch =~ /^\d/ && $branch lt 5;
         say "  Branch $branch";
-        my $temp = $repo->local_clone($branch);
-        $link_checker->check_file( $temp->file($src_path),
-            $extractor, "Kibana [$branch]: $src_path" );
+        my $source = $repo->show_file( $branch, $src_path );
+        $link_checker->check_source( $source, $extractor,
+            "Kibana [$branch]: $src_path" );
     }
 }
 
 #===================================
 sub build_entries {
 #===================================
-    my ( $build, $toc, @entries ) = @_;
+    my ( $build, $temp_dir, $toc, @entries ) = @_;
 
     while ( my $entry = shift @entries ) {
         my $title = $entry->{title}
@@ -252,8 +257,10 @@ sub build_entries {
 
         if ( my $sections = $entry->{sections} ) {
             my $base_dir = $entry->{base_dir} || '';
-            my $section_toc = build_entries( $build->subdir($base_dir),
-                ES::Toc->new($title), @$sections );
+            my $section_toc = build_entries(
+                $build->subdir($base_dir), $temp_dir,
+                ES::Toc->new($title),      @$sections
+            );
             if ($base_dir) {
                 $section_toc->write( $build->subdir($base_dir) );
                 $toc->add_entry(
@@ -270,10 +277,12 @@ sub build_entries {
         my $book = ES::Book->new(
             dir      => $build,
             template => $Opts->{template},
+            temp_dir => $temp_dir,
             %$entry
         );
         $toc->add_entry( $book->build );
     }
+
     return $toc;
 }
 
@@ -339,9 +348,6 @@ sub init_repos {
     $repos_dir = dir($repos_dir)->absolute;
     $repos_dir->mkpath;
 
-    my $temp_dir = $repos_dir->subdir('.temp');
-    $temp_dir->rmtree;
-
     my %child_dirs = map { $_ => 1 } $repos_dir->children;
 
     my $conf = $Conf->{repos}
@@ -357,12 +363,11 @@ sub init_repos {
     for my $name (@repo_names) {
 
         my $repo = ES::Repo->new(
-            name     => $name,
-            dir      => $repos_dir,
-            temp_dir => $temp_dir,
-            tracker  => $tracker,
-            user     => $Opts->{user},
-            %{ $conf->{$name} }
+            name    => $name,
+            dir     => $repos_dir,
+            tracker => $tracker,
+            user    => $Opts->{user},
+            url     => $conf->{$name}
         );
         delete $child_dirs{ $repo->git_dir->absolute };
 
@@ -389,7 +394,7 @@ sub init_repos {
         say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
-    $temp_dir->mkpath;
+    return $repos_dir;
 }
 
 #===================================
@@ -625,7 +630,7 @@ sub usage {
           --staging         Use the template from the staging website
           --reload_template Force retrieving the latest web template
           --procs           Number of processes to run in parallel, defaults to 3
-          --update          Update the docs checkout (losing any changes!)         
+          --update          Update the docs checkout (losing any changes!)
           --verbose
 
 USAGE

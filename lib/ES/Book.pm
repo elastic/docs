@@ -7,7 +7,7 @@ use Data::Dumper qw(Dumper);
 use ES::Util
     qw(run build_chunked build_single proc_man write_html_redirect $Opts);
 use Path::Class();
-use ES::Repo();
+use ES::Source();
 use File::Copy::Recursive qw(fcopy rcopy);
 use ES::Toc();
 
@@ -22,20 +22,24 @@ sub new {
     my $dir = $args{dir}
         or die "No <dir> specified for book <$title>";
 
-    my $repo = ES::Repo->get_repo( $args{repo} );
+    my $temp_dir = $args{temp_dir}
+        or die "No <temp_dir> specified for book <$title>";
+
+    my $source = ES::Source->new(
+        temp_dir => $temp_dir,
+        sources  => $args{sources}
+    );
 
     my $prefix = $args{prefix}
         or die "No <prefix> specified for book <$title>";
 
-    my $index = $args{index}
-        or die "No <index> specfied for book <$title>";
-    $index = Path::Class::file($index),;
+    my $index = Path::Class::file( $args{index} || 'index.asciidoc' );
 
     my $chunk = $args{chunk} || 0;
     my $toc   = $args{toc}   || 0;
 
-    my $branch_list = $args{branches} || $repo->branches;
-    my $current     = $args{current}  || $repo->current;
+    my $branch_list = $args{branches};
+    my $current     = $args{current};
 
     die "<branches> must be an array in book <$title>"
         unless ref $branch_list eq 'ARRAY';
@@ -60,17 +64,17 @@ sub new {
         title         => $title,
         dir           => $dir->subdir($prefix),
         template      => $template,
-        repo          => $repo,
+        source        => $source,
         prefix        => $prefix,
         chunk         => $chunk,
         toc           => $toc,
         single        => $args{single},
         index         => $index,
-        src_path      => $index->parent,
         branches      => \@branches,
         branch_titles => \%branch_titles,
         current       => $current,
         tags          => $tags,
+        private       => $args{private} || '',
     }, $class;
 }
 
@@ -85,14 +89,13 @@ sub build {
     my $dir = $self->dir;
     $dir->mkpath;
 
-    my $title    = $self->title;
-    my $src_path = $self->src_path;
+    my $title = $self->title;
 
     my $pm = proc_man(
         $Opts->{procs},
         sub {
             my ( $pid, $error, $branch ) = @_;
-            $self->repo->mark_done( $src_path, $branch );
+            $self->source->mark_done($branch);
         }
     );
 
@@ -146,19 +149,19 @@ sub _build_book {
     my ( $self, $branch, $pm ) = @_;
 
     my $branch_dir    = $self->dir->subdir($branch);
-    my $repo          = $self->repo;
+    my $source        = $self->source;
     my $template      = $self->template;
-    my $src_path      = $self->src_path;
     my $index         = $self->index;
-    my $edit_url      = $repo->edit_url( $branch, $index );
     my $section_title = $self->section_title($branch);
+    my $edit_url      = $self->private ? '' : $self->source->edit_url($branch);
 
     return
            if -e $branch_dir
         && !$template->md5_changed($branch_dir)
-        && !$repo->has_changed( $src_path, $branch );
+        && !$source->has_changed($branch);
 
-    my $checkout = $repo->local_clone($branch);
+    my $checkout = $source->prepare($branch);
+
     $pm->start($branch) and return;
     say " - Branch: $branch - Building...";
     eval {
@@ -201,7 +204,7 @@ sub _build_book {
     die "\nERROR building "
         . $self->title
         . " branch $branch\n\n"
-        . $repo->dump_recent_commits( $src_path, $branch )
+        . $source->dump_recent_commits($branch)
         . $error . "\n";
 }
 
@@ -296,7 +299,6 @@ sub remove_old_branches {
         next if $branches{$version};
         say " - Deleting old branch: $version";
         $child->rmtree;
-        $self->repo->delete_branch( $self->src_path, $version );
     }
 }
 
@@ -313,9 +315,7 @@ sub section_title {
 #===================================
 sub title            { shift->{title} }
 sub dir              { shift->{dir} }
-sub src_path         { shift->{src_path} }
 sub template         { shift->{template} }
-sub repo             { shift->{repo} }
 sub prefix           { shift->{prefix} }
 sub chunk            { shift->{chunk} }
 sub toc              { shift->{toc} }
@@ -325,7 +325,9 @@ sub branches         { shift->{branches} }
 sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
 sub is_multi_version { @{ shift->branches } > 1 }
+sub private          { shift->{private} }
 sub tags             { shift->{tags} }
+sub source           { shift->{source} }
 #===================================
 
 1;
