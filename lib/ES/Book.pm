@@ -181,7 +181,7 @@ sub _build_book {
     my $template      = $self->template;
     my $index         = $self->index;
     my $section_title = $self->section_title($branch);
-    my $edit_url      = $self->private ? '' : $self->source->edit_url($branch);
+    my $edit_url      = $self->source->edit_url($branch);
     my $lang          = $self->lang;
 
     return
@@ -203,6 +203,7 @@ sub _build_book {
                 version       => $branch,
                 edit_url      => $edit_url,
                 lang          => $lang,
+                private       => $self->private,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
@@ -217,6 +218,7 @@ sub _build_book {
                 version       => $branch,
                 edit_url      => $edit_url,
                 lang          => $lang,
+                private       => $self->private,
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),

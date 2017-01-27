@@ -39,16 +39,19 @@ sub build_chunked {
     my $edit_url = $opts{edit_url}      || '';
     my $lang     = $opts{lang}          || 'en';
     my $section  = $opts{section_title} || '';
+    my $private  = $opts{private}       || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
     $dest->rmtree;
     $dest->mkpath;
     my $output = run(
-        'a2x', '-v',
+        'a2x', '-v', '--keep',
         '--icons',
-        '-d'              => 'book',
-        '-f'              => 'chunked',
-        '-a'              => 'showcomments=1',
-        '-a'              => "lang=$lang",
+        '-d' => 'book',
+        '-f' => 'chunked',
+        '-a' => 'showcomments=1',
+        '-a' => "lang=$lang",
+        '-a' => 'base_edit_url=' . $edit_url,
+        $private ? ( '-a' => 'edit_url!' ) : (),
         '--xsl-file'      => 'resources/website_chunked.xsl',
         '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
         '--destination-dir=' . $dest,
@@ -62,8 +65,6 @@ sub build_chunked {
             "local.book.multi_version" => $multi,
             "local.page.header"        => $page_header,
             "local.book.section.title" => "Docs/$section",
-            "local.root_dir"           => $index->dir->absolute,
-            "local.edit_url"           => $edit_url,
         ),
         $index
     );
@@ -99,15 +100,18 @@ sub build_single {
     my $edit_url = $opts{edit_url}      || '';
     my $lang     = $opts{lang}          || 'en';
     my $section  = $opts{section_title} || '';
+    my $private  = $opts{private}       || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
 
     my $output = run(
         'a2x', '-v',
         '--icons',
-        '-f'              => 'xhtml',
-        '-d'              => $type,
-        '-a'              => 'showcomments=1',
-        '-a'              => "lang=$lang",
+        '-f' => 'xhtml',
+        '-d' => $type,
+        '-a' => 'showcomments=1',
+        '-a' => "lang=$lang",
+        '-a' => 'base_edit_url=' . $edit_url,
+        $private ? ( '-a' => 'edit_url!' ) : (),
         '--xsl-file'      => 'resources/website.xsl',
         '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
         '--destination-dir=' . $dest,
@@ -120,8 +124,6 @@ sub build_single {
             "local.book.multi_version" => $multi,
             "local.page.header"        => $page_header,
             "local.book.section.title" => "Docs/$section",
-            "local.root_dir"           => $index->dir->absolute,
-            "local.edit_url"           => $edit_url,
         ),
         $index
     );
@@ -173,7 +175,6 @@ sub build_pdf {
             "img.src.path"       => $index->parent->absolute . '/',
             "toc.max.depth"      => $toc_level,
             "local.book.version" => $version,
-            "local.root_dir"     => $index->dir->absolute,
         ),
         $index
     );

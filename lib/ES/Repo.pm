@@ -199,7 +199,7 @@ sub edit_url {
     $url =~ s/\.git$//;
     my $dir = Path::Class::dir( "edit", $branch, $path )
         ->cleanup->as_foreign('Unix');
-    return "$url/$dir";
+    return "$url/$dir/";
 }
 
 #===================================

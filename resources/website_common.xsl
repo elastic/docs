@@ -3,11 +3,6 @@
 
   <xsl:import href="website-l10n.xsl"/>
 
-  <!-- github repo info -->
-  <xsl:param name="local.root" select="0" />
-  <xsl:param name="local.repo" select="0" />
-  <xsl:param name="local.edit_url" select="0" />
-
   <!-- book versions -->
   <xsl:param name="local.book.version">test build</xsl:param>
   <xsl:param name="local.book.multi_version" select="0"/>
@@ -65,40 +60,20 @@
 
   <!-- Edit me links -->
 
-  <xsl:template match="processing-instruction('edit_url')"/>
   <xsl:template match="ulink[@role='edit_me']">
-    <xsl:variable name="custom_edit_url">
-        <xsl:value-of select="normalize-space(preceding::processing-instruction('edit_url')[1])"/>
+    <xsl:variable name="title">
+      <xsl:call-template name="gentext.template">
+        <xsl:with-param name="context" select="'edit-me'"/>
+        <xsl:with-param name="name" select="'edit-me-title'"/>
+      </xsl:call-template>
     </xsl:variable>
-
-    <xsl:variable name="edit_url">
-        <xsl:choose>
-            <xsl:when test="$custom_edit_url != ''">
-                <xsl:value-of select="$custom_edit_url" />
-            </xsl:when>
-            <xsl:when test="$local.edit_url">
-                <xsl:value-of select="concat($local.edit_url,substring(attribute::url,string-length($local.root_dir)+1))" />
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:value-of select="''" />
-            </xsl:otherwise>
-        </xsl:choose>
+    <xsl:variable name="text">
+      <xsl:call-template name="gentext.template">
+        <xsl:with-param name="context" select="'edit-me'"/>
+        <xsl:with-param name="name" select="'edit-me-text'"/>
+      </xsl:call-template>
     </xsl:variable>
-    <xsl:if test="$edit_url != ''">
-        <xsl:variable name="title">
-          <xsl:call-template name="gentext.template">
-            <xsl:with-param name="context" select="'edit-me'"/>
-            <xsl:with-param name="name" select="'edit-me-title'"/>
-          </xsl:call-template>
-        </xsl:variable>
-        <xsl:variable name="text">
-          <xsl:call-template name="gentext.template">
-            <xsl:with-param name="context" select="'edit-me'"/>
-            <xsl:with-param name="name" select="'edit-me-text'"/>
-          </xsl:call-template>
-        </xsl:variable>
-        <a href="{$edit_url}" class="edit_me" title="{$title}" rel="nofollow"><xsl:value-of select="$text" /></a>
-    </xsl:if>
+    <a href="{attribute::url}" class="edit_me" title="{title}" rel="nofollow"><xsl:value-of select="$text" /></a>
   </xsl:template>
 
   <xsl:template match="ulink[@role='edit_me']" mode="no.anchor.mode" />
