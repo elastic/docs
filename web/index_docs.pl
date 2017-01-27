@@ -57,7 +57,7 @@ sub main {
             );
 
             my $current
-                = $book->{current} || $Conf->{repos}{ $book->{repo} }{current};
+                = $book->{current};
             my @docs = index_docs( $b, $dir, $book->{prefix}, $book->{tags},
                 $book->{single}, $current );
 
