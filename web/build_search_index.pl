@@ -207,6 +207,8 @@ sub _index_book {
 
         for my $file (@files) {
             my $url = $Guide_Prefix . substr( $file, $length_dir );
+            my $page_group = $url;
+            $page_group =~ s{/[^/]+/([^/]+\.html)}{/$1};
 
             for my $page ( _load_file( $file, $book->{single} ) ) {
 
@@ -219,6 +221,7 @@ sub _index_book {
                         _source => {
                             %$page,
                             url        => $url,
+                            page_group => $page_group,
                             tags       => $product,
                             section    => $section,
                             is_current => $version eq $current ? \1 : \0,

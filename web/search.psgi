@@ -111,12 +111,12 @@ sub _add_search_query {
             filter => \@filter
         }
     };
+    $request->{collapse} = { field => 'page_group' };
     $request->{_source} = [qw(url title breadcrumbs)];
 
     push @filter, (
         _section_filter($q),    #
         _tags_filter($q),       #
-        _current_filter($q)
     );
 
     my $text = $q->{q};
@@ -146,6 +146,8 @@ sub _add_search_query {
             "tie_breaker"          => 0.2
         }
         };
+
+    push @should, _current_filter($q);
 
     push @should,
         {
