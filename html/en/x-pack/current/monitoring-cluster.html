@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting up a Separate Monitoring Cluster
-        | X-Pack for the Elastic Stack [5.1]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Monitoring Elasticsearch
+        | X-Pack for the Elastic Stack [5.2]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [5.1]" /><link rel="up" href="configuring-monitoring.html" title="Configuring Monitoring" /><link rel="prev" href="stats-export.html" title="Collecting Data from Particular Indices" /><link rel="next" href="config-monitoring-indices.html" title="Configuring Monitoring’s Indices" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/5.1" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [5.2]" /><link rel="up" href="xpack-monitoring.html" title="Monitoring the Elastic Stack" /><link rel="prev" href="monitoring-getting-started.html" title="Getting Started" /><link rel="next" href="monitoring-logstash.html" title="Monitoring Logstash" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/5.2" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -555,24 +555,47 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">X-Pack for the Elastic Stack
-      [5.1]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-monitoring.html">Monitoring Elasticsearch and Kibana </a></span> » <span class="breadcrumb-link"><a href="configuring-monitoring.html">Configuring Monitoring</a></span> » <span class="breadcrumb-node">Setting up a Separate Monitoring Cluster</span></div><div class="navheader"><span class="prev"><a href="stats-export.html">
+      [5.2]
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-monitoring.html">Monitoring the Elastic Stack </a></span> » <span class="breadcrumb-node">Monitoring Elasticsearch</span></div><div class="navheader"><span class="prev"><a href="monitoring-getting-started.html">
               « 
-              Collecting Data from Particular Indices</a>
+              Getting Started</a>
            
         </span><span class="next">
            
-          <a href="config-monitoring-indices.html">Configuring Monitoring’s Indices
+          <a href="monitoring-logstash.html">Monitoring Logstash
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="monitoring-cluster"></a>Setting up a Separate Monitoring Cluster</h2></div></div></div><p>To store monitoring data in a separate cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="monitoring-cluster"></a>Monitoring Elasticsearch</h2></div></div></div><p>By default, X-Pack monitoring agents on Elasticsearch index data
+into the cluster where they’re running. In production, you should
+send data to a separate monitoring cluster so that the data is
+available even if the nodes you are monitoring are not.</p><p>To store monitoring data in a separate cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Set up the Elasticsearch cluster you want to use for monitoring,
 <a class="link" href="installing-xpack.html" title="Installing X-Pack">install X-Pack</a>, and start Elasticsearch. For
 example, you might set up a two host cluster with the nodes <code class="literal">es-mon-1</code>
 and <code class="literal">es-mon-2</code>.
-</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To monitor an Elasticsearch 5.0 cluster, you must run Elasticsearch
-5.0 on the monitoring cluster. While installing X-Pack on the monitoring
-cluster is not absolutely required, it is strongly recommended.</p></div></div></li><li class="listitem">
-Install X-Pack on the nodes in your production cluster.
+</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To monitor an Elasticsearch 5.x cluster, you must run Elasticsearch
+5.x on the monitoring cluster. While installing X-Pack on the monitoring
+cluster is not absolutely required, it is strongly recommended.</p></div></div></li><li class="listitem"><p class="simpara">
+Install X-Pack into Kibana.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/kibana-plugin install x-pack</pre></div></li><li class="listitem"><p class="simpara">
+Configure Kibana to connect to your monitoring cluster by setting the
+<code class="literal">xpack.monitoring.elasticsearch.url</code> property in <code class="literal">kibana.yml</code>.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.url: "http://es-mon-1:9200"</pre></div></li><li class="listitem"><p class="simpara">
+If X-Pack security is enabled on the monitoring cluster:
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+Configure credentials for Kibana to use to connect to the
+monitoring cluster.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.username: "kibana-monitor"
+xpack.monitoring.elasticsearch.password: "changeme"</pre></div></li><li class="listitem"><p class="simpara">
+Configure the <code class="literal">server.ssl</code> properties to encrypt communications
+between the browser and the Kibana server.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">server.ssl.key: /path/to/your/server.key
+server.ssl.cert: /path/to/your/server.crt</pre></div></li><li class="listitem"><p class="simpara">
+If SSL/TLS is enabled on the monitoring cluster, specify the trusted
+CA certificate(s) that will be used to verify the identity of the nodes
+in the monitoring cluster.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">elasticsearch.ssl.ca: "/path/to/ca/file"</pre></div><p class="simpara">For more information about configuring Kibana to connect to a secured
+cluster, see <a class="link" href="kibana.html" title="Kibana and Security">Kibana and Security</a>.</p></li></ol></div></li><li class="listitem">
+Start Kibana by running <code class="literal">bin/kibana</code>.
 </li><li class="listitem"><p class="simpara">
 If X-Pack security is enabled on the monitoring cluster, create a user on the
 monitoring cluster that has the <code class="literal">remote_monitoring_agent</code> role. You can create
@@ -586,8 +609,10 @@ that has the <code class="literal">remote_monitoring_agent</code> role:
   "roles" : [ "remote_monitoring_agent"],
   "full_name" : "Internal Agent For Remote Monitoring"
 }</pre></div></li><li class="listitem"><p class="simpara">
-Configure the nodes in your production cluster to send metrics to your
-monitoring cluster by configuring an HTTP exporter in the
+Install X-Pack on the Elasticsearch nodes in your production cluster.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch-plugin install x-pack</pre></div></li><li class="listitem"><p class="simpara">
+Configure the Elasticsearch nodes to send metrics
+to your monitoring cluster by configuring an HTTP exporter in the
 <code class="literal">xpack.monitoring.exporters</code> settings in <code class="literal">elasticsearch.yml</code>:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
   id1:
@@ -596,42 +621,54 @@ monitoring cluster by configuring an HTTP exporter in the
     auth.username: remote_monitor <a id="CO30-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     auth.password: changeme</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 If SSL/TLS is enabled on the monitoring cluster, you must
-connect through HTTPS and specify the trusted certificates
-that will be used to verify the identity of the nodes in the
-monitoring cluster. For more information, see <a class="link" href="secure-monitoring.html" title="Monitoring and Security">Monitoring and Security</a>.
+connect through HTTPS.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 If X-Pack security is disabled on the monitoring cluster, you can
 omit <code class="literal">auth.username</code> and <code class="literal">auth.password</code>.
 </p></td></tr></table></div></li><li class="listitem"><p class="simpara">
-Restart Elasticsearch on the nodes in your production cluster
-</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>You may want to temporarily <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.1/modules-cluster.html" target="_top">disable shard
+If SSL/TLS is enabled on the monitoring cluster, specify the trusted
+CA certificate(s) that will be used to verify the identity of the nodes
+in the monitoring cluster.
+</p><p class="simpara">To add a CA certificate to an Elasticsearch node’s trusted certificates, you
+can specify the location of the PEM encoded certificate with the
+<code class="literal">certificate_authorities</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
+  id1:
+    type: http
+    host: ["https://es-mon1:9200", "https://es-mon2:9200"]
+    auth:
+      username: agent-user
+      password: password
+    ssl:
+      certificate_authorities: [ "/path/to/ca.crt" ]
+  id2:
+    type: local</pre></div><p class="simpara">Alternatively, you can configure trusted certificates using a truststore
+(a Java Keystore file that contains the certificates):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
+  id1:
+    type: http
+    host: ["https://es-mon1:9200", "https://es-mon2:9200"]
+    auth:
+      username: remote_monitor
+      password: changeme
+    ssl:
+      truststore.path: /path/to/file
+      truststore.password: password
+  id2:
+    type: local</pre></div></li><li class="listitem"><p class="simpara">
+Restart Elasticsearch on the nodes in your production cluster.
+</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>You may want to temporarily <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.2/modules-cluster.html" target="_top">disable shard
 allocation</a> before you restart your nodes to avoid unnecessary shard
-reallocation during the install process.</p></div></div></li><li class="listitem">
-<a class="link" href="installing-xpack.html" title="Installing X-Pack">Install X-Pack</a> into Kibana.
-</li><li class="listitem"><p class="simpara">
-Configure Kibana to connect to your monitoring cluster by setting the
-<code class="literal">xpack.monitoring.elasticsearch</code> properties in the <code class="literal">kibana.yml</code> configuration
-file.
-</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
-Set the <code class="literal">url</code> property to point to your monitoring cluster. For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.url: "http://es-mon-1:9200"</pre></div></li><li class="listitem"><p class="simpara">
-Configure credentials for Kibana to use to connect to the
-monitoring cluster. If X-Pack security is disabled on the monitoring
-cluster, you can omit the credentials.
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.username: "kibana-monitor"
-xpack.monitoring.elasticsearch.password: "changeme"</pre></div></li><li class="listitem"><p class="simpara">
-If SSL is enabled on the monitoring cluster, you must configure the SSL
-properties. These properties have the same options as Kibana’s primary
-connection to Elasticsearch. For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.ssl.ca: "/path/to/ca/file"</pre></div><p class="simpara">For more information, see the <code class="literal">elasticsearch.ssl</code> properties in
-<a class="ulink" href="http://www.elastic.co/guide/en/kibana/5.1/settings.html" target="_top">Setting Kibana Server Properties</a>.</p></li></ol></div></li><li class="listitem">
-Start Kibana by running <code class="literal">bin/kibana</code>.
-</li><li class="listitem"><p class="simpara">
+reallocation during the install process.</p></div></div></li><li class="listitem"><p class="simpara">
 To verify your X-Pack monitoring installation, point your web browser at your Kibana
-host, and select <span class="strong"><strong>Monitoring</strong></span> from the side navigation.
-</p><p class="simpara"><span class="inlinemediaobject"><img src="images/monitoring/monitoring.jpg" alt="Monitoring" /></span></p></li></ol></div><h3><a id="http-exporter-reference"></a>HTTP Exporter</h3><p>X-Pack monitoring agents default to indexing data into the cluster where
-they’re running. In production, you should use an <code class="literal">http</code> exporter to send data
-to a separate <a class="link" href="monitoring-cluster.html" title="Setting up a Separate Monitoring Cluster">monitoring cluster</a>. When you configure
+host, and select <span class="strong"><strong>Monitoring</strong></span> from the side navigation. When security is enabled,
+to view the monitoring dashboards you must log in to Kibana as a user who has
+the <code class="literal">kibana_user</code> and <code class="literal">monitoring_user</code> roles.
+</p><p class="simpara"><span class="inlinemediaobject"><img src="images/monitoring/monitoring.jpg" alt="Monitoring" /></span></p></li></ol></div><h3><a id="stats-export"></a>Collecting Data from Particular Indices</h3><p>By default, the monitoring agent collects data from all Elasticsearch indices.
+To collect data from particular indices, configure the
+<code class="literal">xpack.monitoring.collection.indices</code> setting in <code class="literal">elasticsearch.yml</code>.
+You can specify multiple indices as a comma-separated list or
+use an index pattern to match multiple indices:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.collection.indices: logstash-*, index1, test2</pre></div><p>You can prepend <code class="literal">+</code> or <code class="literal">-</code> to explicitly include or exclude index
+names or patterns. For example, to include all indices that
+start with <code class="literal">test</code> except <code class="literal">test3</code>, you could specify <code class="literal">+test*,-test3</code>.</p><h3><a id="http-exporter-reference"></a>HTTP Exporter</h3><p>When you configure
 an exporter in <code class="literal">elasticsearch.yml</code>, the default <code class="literal">local</code> exporter is disabled.</p><p>The <code class="literal">http</code> exporter uses the low-level Elasticsearch REST Client. This allows
 the <code class="literal">http</code> exporter to send its data to any Elasticsearch cluster it can access
 through the network.</p><p>The <code class="literal">http</code> exporter supports a number of settings that control how it
@@ -676,13 +713,35 @@ Arbitrary key/value pairs to define as headers to send with every request.
     The array-based key/value format sends one header per value.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-8"><span><img src="images/icons/callouts/8.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 A mechanism for changing the date suffix used by default.
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="stats-export.html">
+</p></td></tr></table></div><h3><a id="monitoring-tribe"></a>Configuring a Tribe Node to Work with Monitoring</h3><p>If you connect to a cluster through a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-tribe.html" target="_top">tribe node</a>,
+and you want to monitor the tribe node, then you will need to install X-Pack on that node as well.</p><p>With this configuration, the tribe node is included in the node count displayed in the Monitoring UI,
+but is not included in the node list because it does not export any data to the monitoring cluster.</p><p>To include the tribe node in the monitoring data, enable Monitoring data collection at the tribe level:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.name: my-tribe-node1
+
+tribe:
+  on_conflict: prefer_cluster1
+  c1:
+    cluster.name: cluster1
+    discovery.zen.ping.unicast.hosts: [ "cluster1-node1:9300", "cluster1-node2:9300", "cluster1-node2:9300" ]
+    xpack.monitoring.enabled: true <a id="CO32-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  c2:
+    cluster.name: cluster2
+    discovery.zen.ping.unicast.hosts: [ "cluster2-node3:9300", "cluster2-node3:9300", "cluster2-node3:9300" ]
+    xpack.monitoring: <a id="CO32-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+      enabled: true
+      exporters:
+        id1:
+          type: http
+          host: [ "monitoring-cluster:9200" ]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO32-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Enable data collection from the tribe node using a Local Exporter.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO32-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Enable data collection from the tribe node using an HTTP Exporter.
+</p></td></tr></table></div><p>When you enable data collection from the tribe node, it is included in both the node count and node list.</p></div><div class="navfooter"><span class="prev"><a href="monitoring-getting-started.html">
               « 
-              Collecting Data from Particular Indices</a>
+              Getting Started</a>
            
         </span><span class="next">
            
-          <a href="config-monitoring-indices.html">Configuring Monitoring’s Indices
+          <a href="monitoring-logstash.html">Monitoring Logstash
                »
             </a></span></div>
 <!-- end body -->

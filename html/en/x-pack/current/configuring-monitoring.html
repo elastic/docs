@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuring Monitoring
-        | X-Pack for the Elastic Stack [5.1]
+        | X-Pack for the Elastic Stack [5.2]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [5.1]" /><link rel="up" href="xpack-monitoring.html" title="Monitoring Elasticsearch and Kibana" /><link rel="prev" href="monitoring-getting-started.html" title="Getting Started" /><link rel="next" href="stats-export.html" title="Collecting Data from Particular Indices" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/5.1" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [5.2]" /><link rel="up" href="xpack-monitoring.html" title="Monitoring the Elastic Stack" /><link rel="prev" href="monitoring-logstash.html" title="Monitoring Logstash" /><link rel="next" href="xpack-alerting.html" title="Alerting on Cluster and Index Events" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/5.2" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -555,34 +555,47 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">X-Pack for the Elastic Stack
-      [5.1]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-monitoring.html">Monitoring Elasticsearch and Kibana </a></span> » <span class="breadcrumb-node">Configuring Monitoring</span></div><div class="navheader"><span class="prev"><a href="monitoring-getting-started.html">
+      [5.2]
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-monitoring.html">Monitoring the Elastic Stack </a></span> » <span class="breadcrumb-node">Configuring Monitoring</span></div><div class="navheader"><span class="prev"><a href="monitoring-logstash.html">
               « 
-              Getting Started</a>
+              Monitoring Logstash</a>
            
         </span><span class="next">
            
-          <a href="stats-export.html">Collecting Data from Particular Indices
+          <a href="xpack-alerting.html">Alerting on Cluster and Index Events 
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-monitoring"></a>Configuring Monitoring</h2></div></div></div><p>By default, the monitoring agent collects data from all indices
-every 10 seconds and stores the monitoring data locally. You can
-configure Monitoring to:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="link" href="stats-export.html" title="Collecting Data from Particular Indices">Specify the indices you want to monitor</a>.
-</li><li class="listitem">
-<a class="link" href="monitoring-cluster.html" title="Setting up a Separate Monitoring Cluster">Export data to a separate monitoring cluster</a>.
-</li><li class="listitem">
-<a class="link" href="config-monitoring-indices.html" title="Configuring Monitoring’s Indices">Configure the indices used to store monitoring data</a>.
-</li></ul></div><p>Advanced monitoring settings enable you to control how frequently data
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-monitoring"></a>Configuring Monitoring</h2></div></div></div><p>Advanced monitoring settings enable you to control how frequently data
 is collected, configure timeouts, and set the retention period for
 locally-stored monitoring indices. You can also adjust how monitoring
 data is displayed. See <a class="link" href="monitoring-settings.html" title="Monitoring Settings">Monitoring Settings</a>
-for the complete list of settings you can configure.</p></div><div class="navfooter"><span class="prev"><a href="monitoring-getting-started.html">
+for the complete list of settings you can configure.</p><h3><a id="config-monitoring-indices"></a>Configuring Monitoring’s Indices</h3><p><a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.2/indices-templates.html" target="_top">Index templates</a> are used to configure the indices
+that store the monitoring data collected from a cluster.</p><p>You can retrieve the templates through the <code class="literal">_template</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /_template/.monitoring-*</pre></div><p>By default, the template configures one shard and one replica for the
+monitoring indices. To override the default settings, add your own template:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Set the <code class="literal">template</code> pattern to <code class="literal">.monitoring-*</code>.
+</li><li class="listitem">
+Set the template <code class="literal">order</code> to <code class="literal">1</code>. This ensures your template is
+applied after the default template, which has an order of 0.
+</li><li class="listitem">
+Specify the <code class="literal">number_of_shards</code> and/or <code class="literal">number_of_replicas</code> in the <code class="literal">settings</code>
+section.
+</li></ol></div><p>For example, the following template increases the number of shards to five
+and the number of replicas to two.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_template/custom_monitoring
+{
+    "template": ".monitoring-*",
+    "order": 1,
+    "settings": {
+        "number_of_shards": 5,
+        "number_of_replicas": 2
+    }
+}</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Only set the <code class="literal">number_of_shards</code> and <code class="literal">number_of_replicas</code> in the
+settings section. Overriding other monitoring template settings could cause
+your monitoring dashboards to stop working correctly.</p></div></div></div><div class="navfooter"><span class="prev"><a href="monitoring-logstash.html">
               « 
-              Getting Started</a>
+              Monitoring Logstash</a>
            
         </span><span class="next">
            
-          <a href="stats-export.html">Collecting Data from Particular Indices
+          <a href="xpack-alerting.html">Alerting on Cluster and Index Events 
                »
             </a></span></div>
 <!-- end body -->

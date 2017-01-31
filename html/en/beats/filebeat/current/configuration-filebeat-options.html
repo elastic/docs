@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Filebeat Prospectors Configuration
-        | Filebeat Reference [5.1]
+        | Filebeat Reference [5.2]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Filebeat Reference [5.1]" /><link rel="up" href="filebeat-configuration-details.html" title="Configuration Options (Reference)" /><link rel="prev" href="filebeat-configuration-details.html" title="Configuration Options (Reference)" /><link rel="next" href="configuration-global-options.html" title="Filebeat Global Configuration" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Filebeat/Reference/5.1" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Filebeat Reference [5.2]" /><link rel="up" href="filebeat-configuration-details.html" title="Configuration Options (Reference)" /><link rel="prev" href="filebeat-configuration-details.html" title="Configuration Options (Reference)" /><link rel="next" href="configuration-global-options.html" title="Filebeat Global Configuration" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Filebeat/Reference/5.2" />
   	
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -555,7 +555,7 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Filebeat Reference
-      [5.1]
+      [5.2]
     </a></span> » <span class="breadcrumb-link"><a href="configuring-howto-filebeat.html">Configuring Filebeat </a></span> » <span class="breadcrumb-link"><a href="filebeat-configuration-details.html">Configuration Options (Reference)</a></span> » <span class="breadcrumb-node">Filebeat Prospectors Configuration</span></div><div class="navheader"><span class="prev"><a href="filebeat-configuration-details.html">
               « 
               Configuration Options (Reference)</a>
@@ -635,15 +635,9 @@ This setting is especially useful for multiline log messages, which can get larg
 processes the logs line by line, so the JSON decoding only works if there is one JSON object per
 line.</p><p>The decoding happens before line filtering and multiline. You can combine JSON decoding with filtering
 and multiline if you set the <code class="literal">message_key</code> option. This can be helpful in situations where the application
-logs are wrapped in JSON objects, like it happens for example with Docker.</p><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">json.message_key: log
-json.keys_under_root: true
-json.add_error_key: true</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<span class="strong"><strong><code class="literal">message_key</code></strong></span>
-</span></dt><dd>
-JSON key on which to apply the line filtering and multiline settings. This key must be top level
-and its value must be string, otherwise it is ignored. If no text key is defined, the line
-filtering and multiline features cannot be used.
-</dd><dt><span class="term">
+logs are wrapped in JSON objects, like it happens for example with Docker.</p><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">json.keys_under_root: true
+json.add_error_key: true
+json.message_key: log</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <span class="strong"><strong><code class="literal">keys_under_root</code></strong></span>
 </span></dt><dd>
 By default, the decoded JSON is placed under a "json" key in the output document.
@@ -657,7 +651,15 @@ JSON object overwrite the fields that Filebeat normally adds (type, source, offs
 <span class="strong"><strong><code class="literal">add_error_key</code></strong></span>
 </span></dt><dd>
 If this setting is enabled, Filebeat adds a "json_error" key in case of JSON
-unmarshaling errors or when a text key is defined in the configuration but cannot be used.
+unmarshalling errors or when a <code class="literal">message_key</code> is defined in the configuration but cannot be used.
+</dd><dt><span class="term">
+<span class="strong"><strong><code class="literal">message_key</code></strong></span>
+</span></dt><dd>
+An optional configuration setting that specifies a JSON key on
+which to apply the line filtering and multiline settings. If specified the
+key must be at the top level in the JSON object and the value associated with
+the key must be a string, otherwise no filtering or multiline aggregation will
+occur.
 </dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="multiline"></a>multiline<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/reference/configuration/filebeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Options that control how Filebeat deals with log messages that span multiple lines. Multiline messages are common in files that contain Java stack traces.</p><p>The following example shows how to configure Filebeat to handle a multiline message where the first line of the message begins with a bracket (<code class="literal">[</code>).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">multiline.pattern: '^\['
 multiline.negate: true
 multiline.match: after</pre></div><p>Filebeat takes all the lines that do not start with <code class="literal">[</code> and combines them with the previous line that does. For example, you could use this configuration to join the following lines of a multiline message into a single event:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">[beat-logstash-some-name-832-2015.11.28] IndexNotFoundException[no such index]
@@ -705,7 +707,7 @@ to the maximum number of file handlers that are opened. The default for <code cl
 configuration is useful if the number of files to be harvested exceeds the open file handler limit of the operating system.</p><p>Setting a limit on the number of harvesters means that potentially not all files are opened in parallel. Therefore we recommended that you use
 this option in combination with the <code class="literal">close_*</code> options to make sure harvesters are stopped more often so that new files can be
 picked up.</p><p>Currently if a new harvester can be started again, the harvester is picked randomly. This means it’s possible that the harvester for a file that was just closed and then updated again might be started instead of the harvester for a file that hasn’t been harvested for a longer period of time.</p><p>This configuration option applies per prospector. You can use this option to indirectly set higher priorities on certain prospectors
-by assigning a higher limit of harvesters.</p></div></div></div><div class="navfooter"><span class="prev"><a href="filebeat-configuration-details.html">
+by assigning a higher limit of harvesters.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled"></a>enabled<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/reference/configuration/filebeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">enabled</code> option can be used with each prospector to define if a prospector is enabled or not. By default, enabled is set to true.</p></div></div></div><div class="navfooter"><span class="prev"><a href="filebeat-configuration-details.html">
               « 
               Configuration Options (Reference)</a>
            
