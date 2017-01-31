@@ -7,7 +7,6 @@
   <xsl:param name="local.root" select="0" />
   <xsl:param name="local.repo" select="0" />
   <xsl:param name="local.edit_url" select="0" />
-  <xsl:param name="local.comments" select="0" />
 
   <!-- book versions -->
   <xsl:param name="local.book.version">test build</xsl:param>
@@ -351,9 +350,6 @@
             <xsl:variable name="sense_url" select="translate(substring-after(text(),'SENSE:'),' ','')" />
             <div class="sense_widget" data-snippet="snippets/{$sense_url}"></div>
         </xsl:when>
-        <xsl:when test="$local.comments != 0">
-            <p class="remark"><xsl:call-template name="inline.charseq"/></p>
-        </xsl:when>
         </xsl:choose>
 
       </xsl:if>
@@ -371,9 +367,6 @@
         <xsl:when test="contains(text(),'SENSE:')">
             <xsl:variable name="sense_url" select="translate(substring-after(text(),'SENSE:'),' ','')" />
             <div class="sense_widget" data-snippet="snippets/{$sense_url}"></div>
-        </xsl:when>
-        <xsl:when test="$local.comments != 0">
-            <p class="remark"><xsl:call-template name="inline.charseq"/></p>
         </xsl:when>
         </xsl:choose>
       </xsl:if>

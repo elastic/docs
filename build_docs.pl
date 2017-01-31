@@ -46,7 +46,7 @@ use ES::Template();
 GetOptions(
     $Opts,    #
     'all', 'push', 'update!',    #
-    'single', 'pdf',     'doc=s',   'out=s',  'toc', 'chunk=i', 'comments',
+    'single',  'pdf',     'doc=s',   'out=s', 'toc', 'chunk=i',
     'open',   'staging', 'procs=i', 'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template'
 ) || exit usage();
@@ -611,7 +611,6 @@ sub usage {
           --toc             Include a TOC at the beginning of the page.
           --out dest/dir/   Defaults to ./html_docs.
           --chunk 1         Also chunk sections into separate files
-          --comments        Make // comments visible
           --open            Open the docs in a browser once built.
           --lenient         Ignore linking errors
           --lang            Defaults to 'en'

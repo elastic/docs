@@ -99,7 +99,6 @@ sub build_single {
     my $multi    = $opts{multi}         || 0;
     my $edit_url = $opts{edit_url}      || '';
     my $lang     = $opts{lang}          || 'en';
-    my $comments = $opts{comments}      || 0;
     my $section  = $opts{section_title} || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
 
@@ -124,7 +123,6 @@ sub build_single {
             "local.book.section.title" => "Docs/$section",
             "local.root_dir"           => $index->dir->absolute,
             "local.edit_url"           => $edit_url,
-            "local.comments"           => $comments,
         ),
         $index
     );
