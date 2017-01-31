@@ -64,7 +64,6 @@ sub build_chunked {
             "local.book.section.title" => "Docs/$section",
             "local.root_dir"           => $index->dir->absolute,
             "local.edit_url"           => $edit_url,
-            "l10n.gentext.language"    => 'en'
         ),
         $index
     );
