@@ -208,7 +208,8 @@ sub dump_recent_commits {
     my ( $self, $branch, $src_path ) = @_;
     local $ENV{GIT_DIR} = $self->git_dir;
 
-    my $start = $self->tracker->sha_for_branch( $self->name, $branch );
+    my $start = $self->tracker->sha_for_branch( $self->name,
+        $self->_tracker_branch( $branch, $src_path ) );
     my $rev_range = "$start...$branch";
 
     my $commits = eval {
