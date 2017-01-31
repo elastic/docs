@@ -88,10 +88,10 @@ sub build_local {
     if ( $Opts->{single} ) {
         $dir->rmtree;
         $dir->mkpath;
-        build_single( $index, $dir, %$Opts );
+        build_single( $index, $dir, %$Opts, root_dir => $index->parent );
     }
     else {
-        build_chunked( $index, $dir, %$Opts );
+        build_chunked( $index, $dir, %$Opts, root_dir => $index->parent );
     }
 
     say "Done";

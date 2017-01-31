@@ -36,21 +36,23 @@ sub build_chunked {
     my $version  = $opts{version}       || 'test build';
     my $multi    = $opts{multi}         || 0;
     my $lenient  = $opts{lenient}       || '';
-    my $edit_url = $opts{edit_url}      || '';
     my $lang     = $opts{lang}          || 'en';
+    my $edit_url = $opts{edit_url}      || '';
+    my $root_dir = $opts{root_dir}      || '';
     my $section  = $opts{section_title} || '';
     my $private  = $opts{private}       || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
     $dest->rmtree;
     $dest->mkpath;
     my $output = run(
-        'a2x', '-v', '--keep',
+        'a2x', '-v',    #'--keep',
         '--icons',
         '-d' => 'book',
         '-f' => 'chunked',
         '-a' => 'showcomments=1',
         '-a' => "lang=$lang",
         '-a' => 'base_edit_url=' . $edit_url,
+        '-a' => 'root_dir=' . $root_dir,
         $private ? ( '-a' => 'edit_url!' ) : (),
         '--xsl-file'      => 'resources/website_chunked.xsl',
         '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
@@ -97,8 +99,9 @@ sub build_single {
     my $lenient  = $opts{lenient}       || '';
     my $version  = $opts{version}       || 'test build';
     my $multi    = $opts{multi}         || 0;
-    my $edit_url = $opts{edit_url}      || '';
     my $lang     = $opts{lang}          || 'en';
+    my $edit_url = $opts{edit_url}      || '';
+    my $root_dir = $opts{root_dir}      || '';
     my $section  = $opts{section_title} || '';
     my $private  = $opts{private}       || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
@@ -111,6 +114,7 @@ sub build_single {
         '-a' => 'showcomments=1',
         '-a' => "lang=$lang",
         '-a' => 'base_edit_url=' . $edit_url,
+        '-a' => 'root_dir=' . $root_dir,
         $private ? ( '-a' => 'edit_url!' ) : (),
         '--xsl-file'      => 'resources/website.xsl',
         '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
