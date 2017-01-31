@@ -16,16 +16,11 @@ sub new {
     my @sources;
     for ( @{ $args{sources} } ) {
         my $path = dir('.')->subdir( $_->{path} )->relative('.');
-        my $strip
-            = defined $_->{strip}
-            ? $_->{strip}
-            : scalar grep { $_ ne '.' } $path->components;
 
         push @sources,
             {
             repo    => ES::Repo->get_repo( $_->{repo} ),
             path    => $path,
-            strip   => $strip,
             exclude => { map { $_ => 1 } @{ $_->{exclude_branches} || [] } }
             };
     }
@@ -87,15 +82,11 @@ sub prepare {
     my $dest = Path::Class::tempdir( DIR => $self->temp_dir );
 
     for my $source ( $self->_sources_for_branch($branch) ) {
-        my $repo  = $source->{repo};
-        my $path  = $source->{path};
-        my $strip = $source->{strip};
+        my $repo = $source->{repo};
+        my $path = $source->{path};
 
         # check that we're not overwriting files with subsequent repos
         for my $file ( $repo->tree( $branch, $path ) ) {
-            my @parts = $file->components;
-            splice @parts, 0, $strip;
-            $file = file(@parts);
             $entries{$file}++
                 && die "File <$file> already exists while checking out repo <"
                 . $repo->name
@@ -103,7 +94,7 @@ sub prepare {
         }
 
         # Extract files into dest, removing the path prefix
-        $repo->extract_relative( $branch, $path, $dest, $strip );
+        $repo->extract( $branch, $path, $dest );
 
     }
     return $dest;

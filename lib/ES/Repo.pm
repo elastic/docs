@@ -157,17 +157,17 @@ sub tree {
 }
 
 #===================================
-sub extract_relative {
+sub extract {
 #===================================
     my $self = shift;
-    my ( $branch, $path, $dest, $strip ) = @_;
+    my ( $branch, $path, $dest ) = @_;
     local $ENV{GIT_DIR} = $self->git_dir;
 
     my $tar = $dest->file('.temp_git_archive.tar');
     die "File <$tar> already exists" if -e $tar;
     run qw(git archive --format=tar -o ), $tar, $branch, $path;
 
-    run qw(tar -x --strip-components ), $strip, "-C", $dest, "-f", $tar;
+    run "tar", "-x", "-C", $dest, "-f", $tar;
     $tar->remove;
 }
 
