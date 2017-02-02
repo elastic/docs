@@ -1288,6 +1288,52 @@ var settings = WithConnectionSettings(s =&gt; s
     )
 );
 
+settings.Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class Parent
+{
+    public int Id { get; set; }
+    public string Description { get; set; }
+    public string IgnoreMe { get; set; }
+}
+
+public class Child : Parent { }</pre></div><p>All of the properties except <code class="literal">Name</code> have been ignored in the mapping</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
+    .Mappings(ms =&gt; ms
+        .Map&lt;Child&gt;(m =&gt; m
+            .AutoMap()
+        )
+    );
+
+var expected = new
+{
+    mappings = new
+    {
+        child = new
+        {
+            properties = new
+            {
+                desc = new {
+                    fields = new {
+                        keyword = new {
+                            ignore_above = 256,
+                            type = "keyword"
+                        }
+                    },
+                    type = "text"
+                },
+                id = new {
+                    type = "integer"
+                }
+            }
+        }
+    }
+};
+
+var settings = WithConnectionSettings(s =&gt; s
+    .InferMappingFor&lt;Child&gt;(m =&gt; m
+        .Rename(p =&gt; p.Description, "desc")
+        .Ignore(p =&gt; p.IgnoreMe)
+    )
+);
+
 settings.Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div><h2><a id="mapping-recursion"></a>Mapping Recursion<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>If you notice in our previous <code class="literal">Company</code> and <code class="literal">Employee</code> examples, the <code class="literal">Employee</code> type is recursive
 in that the <code class="literal">Employee</code> class itself contains a collection of type <code class="literal">Employee</code>. By default, <code class="literal">.AutoMap()</code> will only
 traverse a single depth when it encounters recursive instances like this.  Hence, in the
