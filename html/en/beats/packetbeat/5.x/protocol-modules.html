@@ -564,7 +564,7 @@
            
           <a href="testing.html">Testing
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="protocol-modules"></a>Protocol Modules<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Packetbeat’s source code is split up in Go packages or modules. The protocol
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="protocol-modules"></a>Protocol Modules<a href="https://github.com/elastic/beats/edit/5.x/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Packetbeat’s source code is split up in Go packages or modules. The protocol
 modules can be found in individual folders in the <code class="literal">beats/packetbeat/protos</code> directory
 in the <a class="ulink" href="https://github.com/elastic/beats" target="_top">Beats GitHub repository</a>.</p><p>Before starting, we recommend reading through the source code of some of the
 existing modules. For TCP based protocols, the MySQL or HTTP ones are good
@@ -628,7 +628,7 @@ when a TCP stream is closed, and it calls the <code class="literal">GapInStream(
 loss is detected in a TCP stream. The protocol module can use these callbacks to make
 decisions about what to do with partial data that it receives. For example, for the
 HTTP/1.0 protocol, the end of connection is used to know when the message is
-finished.</p><h3><a id="_registering_your_plugin"></a>Registering Your Plugin<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To configure your plugin, you need to add a configuration struct to the
+finished.</p><h3><a id="_registering_your_plugin"></a>Registering Your Plugin<a href="https://github.com/elastic/beats/edit/5.x/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To configure your plugin, you need to add a configuration struct to the
 Protocols struct in <code class="literal">config/config.go</code>. This struct will be filled by
 <a class="ulink" href="https://gopkg.in/yaml.v2" target="_top">goyaml</a> on startup.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">type Protocols struct {
         Icmp     Icmp
@@ -675,7 +675,7 @@ var ProtocolNames = []string{
         protos.DnsProtocol:      new(dns.Dns),
 }</pre></div><p>Once the module is registered, it can be configured, and packets will be processed.</p><p>Before implementing all the logic for your new protocol module, it can be
 helpful to first register the module and implement the minimal plugin interface
-for printing a debug message on received packets. This way you can test the plugin registration to ensure that it’s working correctly.</p><h3><a id="_the_tcp_parse_function"></a>The TCP Parse Function<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For TCP protocols, the <code class="literal">Parse()</code> function is the heart of the module. As
+for printing a debug message on received packets. This way you can test the plugin registration to ensure that it’s working correctly.</p><h3><a id="_the_tcp_parse_function"></a>The TCP Parse Function<a href="https://github.com/elastic/beats/edit/5.x/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For TCP protocols, the <code class="literal">Parse()</code> function is the heart of the module. As
 mentioned earlier, this function is called for every TCP packet
 that contains data on the configured ports.</p><p>It is important to understand that because TCP is a stream-based protocol,
 the packet boundaries don’t necessarily match the application
@@ -731,9 +731,9 @@ and valid message was separated from the stream. These two values are used for
 deciding what to do next. In case of errors, we drop the stream. If there are no
 errors, but the message is not yet complete, we do nothing and wait for more
 data. Finally, if the message is complete, we go to the next level.</p><p>This block of code is called in a loop so that it can separate multiple messages
-found in the same packet.</p><h3><a id="_the_udp_parseudp_function"></a>The UDP ParseUdp Function<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the protocol you are working on is running on top of UDP, then all the
+found in the same packet.</p><h3><a id="_the_udp_parseudp_function"></a>The UDP ParseUdp Function<a href="https://github.com/elastic/beats/edit/5.x/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the protocol you are working on is running on top of UDP, then all the
 complexities that TCP parser/decoders need to deal with around extracting
-messages from packets are no longer relevant.</p><p>For an example, see the <code class="literal">ParseUdp()</code> function from the DNS module.</p><h3><a id="_correlation"></a>Correlation<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Most protocols that Packetbeat supports today are request-response oriented.
+messages from packets are no longer relevant.</p><p>For an example, see the <code class="literal">ParseUdp()</code> function from the DNS module.</p><h3><a id="_correlation"></a>Correlation<a href="https://github.com/elastic/beats/edit/5.x/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Most protocols that Packetbeat supports today are request-response oriented.
 Packetbeat indexes into Elasticsearch a document for each request-response pair
 (called a transaction). This way we can have data from the request and the
 response in the same document and measure the response time.</p><p>But this can be different for your protocol. For example for an asynchronous
@@ -746,7 +746,7 @@ Packetbeat use a map with <code class="literal">tcptuple</code> maps for correla
 responses. One thing you should be careful about is to expire and remove from
 this map incomplete transactions. For example, we might see the request that has
 created an entry in the map, but if we never see the reply, we need to remove
-the request from memory on a timer, otherwise we risk leaking memory.</p><h3><a id="_sending_the_result"></a>Sending the Result<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>After the correlation step, you should have an JSON-like object that can be sent
+the request from memory on a timer, otherwise we risk leaking memory.</p><h3><a id="_sending_the_result"></a>Sending the Result<a href="https://github.com/elastic/beats/edit/5.x/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>After the correlation step, you should have an JSON-like object that can be sent
 to Elasticsearch for indexing. You send the object by publishing it
 through the publisher client interface, which is received by the <code class="literal">Init</code>
 function. The publisher client accepts structures of type <code class="literal">common.MapStr</code>, which
@@ -787,7 +787,7 @@ system tests:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc">
    depending on the protocol. For HTTP, this is the URL.  For SQL databases,
    this is the table name. For key-value stores, this is the key. If nothing
    seems to make sense to put in this field, use the empty string.
-</li></ul></div><h3><a id="_helpers"></a>Helpers<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><h4><a id="_parsing_helpers"></a>Parsing Helpers<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In libbeat you also find some helpers for implementing parsers for binary and
+</li></ul></div><h3><a id="_helpers"></a>Helpers<a href="https://github.com/elastic/beats/edit/5.x/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><h4><a id="_parsing_helpers"></a>Parsing Helpers<a href="https://github.com/elastic/beats/edit/5.x/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In libbeat you also find some helpers for implementing parsers for binary and
 text-based protocols. The <code class="literal">Bytes_*</code> functions are the most low-level helpers
 for binary protocols that use network byte order. These functions can be found in the
 <code class="literal">beats/libbeat/common</code> module in the <a class="ulink" href="https://github.com/elastic/beats" target="_top">Beats GitHub repository</a>.
@@ -850,7 +850,7 @@ for memcache.</p><div class="pre_wrapper"><pre class="programlisting prettyprint
                 return parser.yield(buf.BufferConsumed())
         }</pre></div><p>The stream buffer also implements a number of interfaces defined in the standard "io" package
 and can easily be used to serialize some packets for testing parsers (see
-<code class="literal">beats/packetbeat/protos/memcache/binary_test.go</code>).</p><h4><a id="_module_helpers"></a>Module Helpers<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Packetbeat provides the module <code class="literal">beats/packetbeat/protos/applayer</code> with
+<code class="literal">beats/packetbeat/protos/memcache/binary_test.go</code>).</p><h4><a id="_module_helpers"></a>Module Helpers<a href="https://github.com/elastic/beats/edit/5.x/packetbeat/docs/new_protocol.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Packetbeat provides the module <code class="literal">beats/packetbeat/protos/applayer</code> with
 common definitions among all application layer protocols. For example using the
 Transaction type from <code class="literal">applayer</code> guarantees that the final document will have all common required fields defined. Just embed the <code class="literal">applayer.Transaction</code> with your own
 application layer transaction type to make use of it. Here is an example from the memcache protocol:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">        type transaction struct {
