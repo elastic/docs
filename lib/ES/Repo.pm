@@ -83,8 +83,9 @@ sub _try_to_fetch {
     my $name = $self->name;
     my $url  = $self->url;
     if ( $origin ne $url ) {
-        say " - Updating remote for <$name> to: $url";
-        run qw(git remote set-url origin), $url;
+        say " - Upstream has changed to <$url>. Deleting";
+        $git_dir->rmtree;
+        return;
     }
     say " - Fetching: " . $self->name;
     run qw(git fetch --prune origin +refs/heads/*:refs/heads/*);
