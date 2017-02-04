@@ -34,7 +34,7 @@ sub edit_url {
     my $self   = shift;
     my $branch = shift;
     my $first  = $self->_sources->[0];
-    return $first->{repo}->edit_url( $branch, $first->{path} );
+    return $first->{repo}->edit_url( $branch );
 }
 
 #===================================

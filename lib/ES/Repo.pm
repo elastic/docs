@@ -194,11 +194,10 @@ sub _tracker_branch {
 #===================================
 sub edit_url {
 #===================================
-    my ( $self, $branch, $path ) = @_;
+    my ( $self, $branch ) = @_;
     my $url = $self->url;
     $url =~ s/\.git$//;
-    my $dir = Path::Class::dir( "edit", $branch, $path )
-        ->cleanup->as_foreign('Unix');
+    my $dir = Path::Class::dir( "edit", $branch )->cleanup->as_foreign('Unix');
     return "$url/$dir/";
 }
 

@@ -73,7 +73,7 @@
         <xsl:with-param name="name" select="'edit-me-text'"/>
       </xsl:call-template>
     </xsl:variable>
-    <a href="{attribute::url}" class="edit_me" title="{title}" rel="nofollow"><xsl:value-of select="$text" /></a>
+    <a href="{attribute::url}" class="edit_me" title="{$title}" rel="nofollow"><xsl:value-of select="$text" /></a>
   </xsl:template>
 
   <xsl:template match="ulink[@role='edit_me']" mode="no.anchor.mode" />
