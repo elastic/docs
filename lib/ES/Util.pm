@@ -44,39 +44,39 @@ sub build_chunked {
     my $page_header = custom_header($index) || $opts{page_header} || '';
     $dest->rmtree;
     $dest->mkpath;
-    my $output = run(
-        'a2x', '-v',    #'--keep',
-        '--icons',
-        '-d' => 'book',
-        '-f' => 'chunked',
-        '-a' => 'showcomments=1',
-        '-a' => "lang=$lang",
-        '-a' => 'base_edit_url=' . $edit_url,
-        '-a' => 'root_dir=' . $root_dir,
-        $private ? ( '-a' => 'edit_url!' ) : (),
-        '--xsl-file'      => 'resources/website_chunked.xsl',
-        '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
-        '--destination-dir=' . $dest,
-        ( $lenient ? '-L' : () ),
-        docinfo($index),
-        xsltopts(
-            "toc.max.depth"            => 5,
-            "toc.section.depth"        => $chunk,
-            "chunk.section.depth"      => $chunk,
-            "local.book.version"       => $version,
-            "local.book.multi_version" => $multi,
-            "local.page.header"        => $page_header,
-            "local.book.section.title" => "Docs/$section",
-        ),
-        $index
-    );
 
-    my @warn = grep {/(WARNING|ERROR)/} split "\n", $output;
-    if (@warn) {
-        $lenient
-            ? warn join "\n", @warn
-            : die join "\n", @warn;
-    }
+    my ( $output, $died );
+    eval {
+        $output = run(
+            'a2x', '-v',    #'--keep',
+            '--icons',
+            '-d' => 'book',
+            '-f' => 'chunked',
+            '-a' => 'showcomments=1',
+            '-a' => "lang=$lang",
+            '-a' => 'base_edit_url=' . $edit_url,
+            '-a' => 'root_dir=' . $root_dir,
+            $private ? ( '-a' => 'edit_url!' ) : (),
+            '--xsl-file'      => 'resources/website_chunked.xsl',
+            '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
+            '--destination-dir=' . $dest,
+            ( $lenient ? '-L' : () ),
+            docinfo($index),
+            xsltopts(
+                "toc.max.depth"            => 5,
+                "toc.section.depth"        => $chunk,
+                "chunk.section.depth"      => $chunk,
+                "local.book.version"       => $version,
+                "local.book.multi_version" => $multi,
+                "local.page.header"        => $page_header,
+                "local.book.section.title" => "Docs/$section",
+            ),
+            $index
+        );
+        1;
+    } or do { $output = $@; $died = 1; };
+
+    _check_build_error( $output, $died, $lenient );
 
     my ($chunk_dir) = grep { -d and /\.chunked$/ } $dest->children
         or die "Couldn't find chunk dir in <$dest>";
@@ -106,38 +106,37 @@ sub build_single {
     my $private  = $opts{private}       || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
 
-    my $output = run(
-        'a2x', '-v',
-        '--icons',
-        '-f' => 'xhtml',
-        '-d' => $type,
-        '-a' => 'showcomments=1',
-        '-a' => "lang=$lang",
-        '-a' => 'base_edit_url=' . $edit_url,
-        '-a' => 'root_dir=' . $root_dir,
-        $private ? ( '-a' => 'edit_url!' ) : (),
-        '--xsl-file'      => 'resources/website.xsl',
-        '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
-        '--destination-dir=' . $dest,
-        ( $lenient ? '-L' : () ),
-        docinfo($index),
-        xsltopts(
-            "generate.toc"             => $toc,
-            "toc.section.depth"        => 0,
-            "local.book.version"       => $version,
-            "local.book.multi_version" => $multi,
-            "local.page.header"        => $page_header,
-            "local.book.section.title" => "Docs/$section",
-        ),
-        $index
-    );
+    my ( $output, $died );
+    eval {
+        $output = run(
+            'a2x', '-v',
+            '--icons',
+            '-f' => 'xhtml',
+            '-d' => $type,
+            '-a' => 'showcomments=1',
+            '-a' => "lang=$lang",
+            '-a' => 'base_edit_url=' . $edit_url,
+            '-a' => 'root_dir=' . $root_dir,
+            $private ? ( '-a' => 'edit_url!' ) : (),
+            '--xsl-file'      => 'resources/website.xsl',
+            '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
+            '--destination-dir=' . $dest,
+            ( $lenient ? '-L' : () ),
+            docinfo($index),
+            xsltopts(
+                "generate.toc"             => $toc,
+                "toc.section.depth"        => 0,
+                "local.book.version"       => $version,
+                "local.book.multi_version" => $multi,
+                "local.page.header"        => $page_header,
+                "local.book.section.title" => "Docs/$section",
+            ),
+            $index
+        );
+        1;
+    } or do { $output = $@; $died = 1; };
 
-    my @warn = grep {/(WARNING|ERROR)/} split "\n", $output;
-    if (@warn) {
-        $lenient
-            ? warn join "\n", @warn
-            : die join "\n", @warn;
-    }
+    _check_build_error( $output, $died, $lenient );
 
     my $base_name = $index->basename;
     $base_name =~ s/\.[^.]+$/.html/;
@@ -150,6 +149,22 @@ sub build_single {
 
     finish_build( $index->parent, $dest, $lang );
 
+}
+
+#===================================
+sub _check_build_error {
+#===================================
+    my ( $output, $died, $lenient ) = @_;
+    my @warn = grep { /(WARNING|ERROR):/ || !/^(a2x|asciidoc): / } split "\n",
+        $output;
+
+    if ( @warn && !$died && $lenient ) {
+        warn join "\n", ( '', @warn, '' );
+    }
+    elsif ( @warn || $died ) {
+        die join "\n", ( '', @warn, '' );
+    }
+    return;
 }
 
 #===================================
