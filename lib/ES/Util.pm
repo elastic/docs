@@ -155,16 +155,17 @@ sub build_single {
 sub _check_build_error {
 #===================================
     my ( $output, $died, $lenient ) = @_;
+    my $warned = grep {/^(a2x|asciidoc): (WARNING):/} split "\n", $output;
+
+    return unless $died || $warned;
+
     my @warn = grep { /(WARNING|ERROR):/ || !/^(a2x|asciidoc): / } split "\n",
         $output;
 
-    if ( @warn && !$died && $lenient ) {
-        warn join "\n", ( '', @warn, '' );
-    }
-    elsif ( @warn || $died ) {
+    if ( $died || $warned && !$lenient ) {
         die join "\n", ( '', @warn, '' );
     }
-    return;
+    warn join "\n", ( '', @warn, '' );
 }
 
 #===================================
