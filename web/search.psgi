@@ -276,6 +276,8 @@ sub _add_suggest_query {
         }
         };
 
+    push @should, { term => { is_main_title => \1 } };
+
     $request->{sort} = [
         '_score',
         {   "published_at" => {

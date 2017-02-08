@@ -54,12 +54,12 @@ sub main {
                 dest   => { index => $pages_index }
             }
         );
-        $es->indices->refresh(index=>$pages_index);
+        $es->indices->refresh( index => $pages_index );
 
         say "";
         say "Indexing titles";
         $titles_index = create_index($Titles_Index);
-        index_titles($pages_index,$titles_index);
+        index_titles( $pages_index, $titles_index );
 
         say "";
         say "Putting indices live";
@@ -96,8 +96,7 @@ sub deploy {
 
     my @current
         = keys
-        %{ $es->indices->get_alias( name => [ $Titles_Index, $Pages_Index ] )
-        };
+        %{ $es->indices->get_alias( name => [ $Titles_Index, $Pages_Index ] ) };
 
     $es->indices->update_aliases(
         body => {
@@ -125,12 +124,14 @@ sub index_titles {
         if ( $doc->{_source}{part} ) {
             for ( @{ $doc->{_source}{part} } ) {
                 my $part_url = $url . $_->{id};
+                my $is_main = $_->{id} ? \0 : \1;
                 $b->index(
                     {   _id     => $part_url,
                         _source => {
                             %base,
-                            title => $_->{title},
-                            url   => $part_url
+                            title         => $_->{title},
+                            url           => $part_url,
+                            is_main_title => $is_main
                         }
                     }
                 );
@@ -139,7 +140,11 @@ sub index_titles {
         else {
             $b->index(
                 {   _id     => $url,
-                    _source => { %base, title => $doc->{_source}{title}, }
+                    _source => {
+                        %base,
+                        title         => $doc->{_source}{title},
+                        is_main_title => \1
+                    },
                 }
             );
         }
@@ -182,7 +187,7 @@ sub _index_book {
     my $length_dir = length($dir);
     my $book_dir   = $dir->subdir( $book->{prefix} );
     my $current    = $book->{current};
-    my @versions = grep { $_->is_dir && $_->basename ne 'current' }
+    my @versions   = grep { $_->is_dir && $_->basename ne 'current' }
         $book_dir->children();
 
     my $bulk = $es->bulk_helper(

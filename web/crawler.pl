@@ -112,9 +112,10 @@ sub index_urls {
             ? $doc->{section} . " » " . $doc->{title}
             : $doc->{title};
 
-        $doc->{tags}       = \@tags;
-        $doc->{is_current} = \1;
-        $doc->{url}        = $url;
+        $doc->{tags}          = \@tags;
+        $doc->{is_current}    = \1;
+        $doc->{is_main_title} = \1;
+        $doc->{url}           = $url;
         $bulk->index( { id => $url, source => $doc } );
     }
     $bulk->flush;
