@@ -423,10 +423,11 @@ sub _format_hit {
     # _explain( $hit->{inner_hits}{part} );
     my $inner    = $hit->{inner_hits}{part}{hits}{hits} || [];
     my $page_url = $hit->{_id};
+    my $title    = encode_entities( $hit->{_source}{title} || '' );
     my %result   = (
         page_url    => $page_url,
-        breadcrumbs => $hit->{_source}{breadcrumbs},
-        $hit->{_source}{title} ? ( page_title => $hit->{_source}{title} ) : (),
+        breadcrumbs => encode_entities( $hit->{_source}{breadcrumbs} ),
+        $title ? ( page_title => $title, title => $title ) : (),
         @$inner
         ? ( _format_inner_hit( $page_url, shift @$inner ),
             _format_inner_hits( $page_url, $inner )
@@ -467,7 +468,7 @@ sub _format_inner_hit {
         $highlights = [ $highlights->[0] ];
     }
     return (
-        title => $hit->{_source}{part}{title},
+        title => encode_entities( $hit->{_source}{part}{title} ),
         url   => $page_url . $id,
 
         #  _explanation => $hit->{_explanation},
