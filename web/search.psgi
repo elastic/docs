@@ -180,6 +180,16 @@ sub _add_search_query {
 
     push @should,
         {
+        term => {
+            section => {
+                value => 'Docs/Clients/JavaScript',
+                boost => -5
+            }
+        },
+        };
+
+    push @should,
+        {
         "nested" => {
             "score_mode" => "none",
             "path"       => "part",
@@ -277,6 +287,16 @@ sub _add_suggest_query {
         };
 
     push @should, { term => { is_main_title => \1 } };
+
+    push @should,
+        {
+        term => {
+            section => {
+                value => 'Docs/Clients/JavaScript',
+                boost => -5
+            }
+        }
+        };
 
     $request->{sort} = [
         '_score',
