@@ -569,38 +569,44 @@ Not what you want? See the
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="cluster-update-settings"></a>Cluster Update Settings<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cluster/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Allows to update cluster wide specific settings. Settings updated can
 either be persistent (applied cross restarts) or transient (will not
-survive a full cluster restart). Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/_cluster/settings -d '{
+survive a full cluster restart). Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
+{
     "persistent" : {
-        "discovery.zen.minimum_master_nodes" : 2
+        "indices.recovery.max_bytes_per_sec" : "50mb"
     }
-}'</pre></div><p>Or:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/_cluster/settings -d '{
+}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/1.json"></div><p>Or:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings?flat_settings=true
+{
     "transient" : {
-        "discovery.zen.minimum_master_nodes" : 2
+        "indices.recovery.max_bytes_per_sec" : "20mb"
     }
-}'</pre></div><p>The cluster responds with the settings updated. So the response for the
+}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/2.json"></div><p>The cluster responds with the settings updated. So the response for the
 last example will be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "persistent" : {},
+    ...
+    "persistent" : { },
     "transient" : {
-        "discovery.zen.minimum_master_nodes" : "2"
+        "indices.recovery.max_bytes_per_sec" : "20mb"
     }
-}'</pre></div><p>Resetting persistent or transient settings can be done by assigning a
+}</pre></div><p>Resetting persistent or transient settings can be done by assigning a
 <code class="literal">null</code> value. If a transient setting is reset, the persistent setting
 is applied if available. Otherwise Elasticsearch will fallback to the setting
 defined at the configuration file or, if not existent, to the default
-value. Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/_cluster/settings -d '{
+value. Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
+{
     "transient" : {
-        "discovery.zen.minimum_master_nodes" : null
+        "indices.recovery.max_bytes_per_sec" : null
     }
-}'</pre></div><p>Reset settings will not be included in the cluster response. So
+}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/3.json"></div><p>Reset settings will not be included in the cluster response. So
 the response for the last example will be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    ...
     "persistent" : {},
     "transient" : {}
 }</pre></div><p>Settings can also be reset using simple wildcards. For instance to reset
-all dynamic <code class="literal">discovery.zen</code> setting a prefix can be used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/_cluster/settings -d '{
+all dynamic <code class="literal">indices.recovery</code> setting a prefix can be used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
+{
     "transient" : {
-        "discovery.zen.*" : null
+        "indices.recovery.*" : null
     }
-}'</pre></div><p>Cluster wide settings can be returned using:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET localhost:9200/_cluster/settings</pre></div><h3><a id="_precedence_of_settings"></a>Precedence of settings<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cluster/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Transient cluster settings take precedence over persistent cluster settings,
+}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/4.json"></div><p>Cluster wide settings can be returned using:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_cluster/settings</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/5.json"></div><h3><a id="_precedence_of_settings"></a>Precedence of settings<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cluster/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Transient cluster settings take precedence over persistent cluster settings,
 which take precedence over settings configured in the <code class="literal">elasticsearch.yml</code>
 config file.</p><p>For this reason it is preferrable to  use the <code class="literal">elasticsearch.yml</code> file only
 for local configurations, and set all cluster-wider settings with the
