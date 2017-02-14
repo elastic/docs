@@ -358,8 +358,7 @@ jQuery(function() {
         Cookies.set('sense_url', '');
       } else {
         Cookies.set('sense_url', new_url, {
-          expires : 365,
-          path : ''
+          expires : 365
         });
       }
       sense_url = new_url;
@@ -405,8 +404,7 @@ jQuery(function() {
         Cookies.set('console_url', '');
       } else {
         Cookies.set('console_url', new_url, {
-          expires : 365,
-          path : ''
+          expires : 365
         });
       }
       console_url = new_url;
