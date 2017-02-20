@@ -9,7 +9,7 @@ sub new {
 #===================================
     shift()->SUPER::new(
         api_version     => 3,
-        ignore_elements => [ 'script', 'style' ],
+        ignore_elements => [ 'script', 'style','svg' ],
         report_tags     => [ "div", "meta", "title", "span", "a" ],
         handlers        => {
             text           => [ \&text,      'self, dtext' ],
