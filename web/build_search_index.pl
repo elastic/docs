@@ -29,7 +29,7 @@ our $Conf = LoadFile('conf.yaml');
 
 GetOptions( $Opts, 'force' );
 
-if ( !$Opts->{force} and sha_for("HEAD") eq sha_for('_index') ) {
+if ( is_up_to_date() ) {
     say "Up to date";
     exit;
 }
@@ -303,6 +303,27 @@ sub _books {
         }
     }
     return @books;
+}
+
+#===================================
+sub is_up_to_date {
+#===================================
+    return 0 if $Opts->{force};
+    return   if sha_for("HEAD") ne sha_for('_index');
+    my $site_last_updated = $es->get(
+        index  => $Site_Index,
+        type   => 'doc',
+        id     => 'LAST_MODIFIED',
+        ignore => 404
+    ) or return;
+    my $pages_last_updated = $es->get(
+        index  => $Pages_Index,
+        type   => 'doc',
+        id     => 'LAST_MODIFIED',
+        ignore => 404
+    ) or return;
+    return $site_last_updated->{_source}{last_published} eq
+        $pages_last_updated->{_source}{last_published};
 }
 
 #===================================

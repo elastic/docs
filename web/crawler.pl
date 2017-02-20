@@ -31,18 +31,20 @@ index_changes( $Site_Index, $sitemap_urls, $known_urls );
 sub index_changes {
 #===================================
     my ( $index, $new, $old ) = @_;
+    my $has_changed;
     my $bulk = $es->bulk_helper( index => $index, type => 'doc' );
     for ( keys %$old ) {
         if ( !$new->{$_} ) {
+            $has_changed = 1;
             $bulk->delete_ids($_);
             print "Deleting doc ($_)\n";
         }
         elsif ( !$force and $new->{$_} eq $old->{$_} ) {
             delete $new->{$_};
-            print "Doc ($_) unchanged\n";
         }
     }
     $bulk->flush;
+    update_last_modified() if $has_changed;
 
     my @entries;
     my $i = 0;
@@ -68,8 +70,17 @@ sub index_changes {
 sub index_urls {
 #===================================
     my ( $index, $urls ) = @_;
-    my $bulk
-        = $es->bulk_helper( index => $index, type => 'doc', max_docs => 100 );
+    my $has_changed;
+    my $bulk = $es->bulk_helper(
+        index      => $index,
+        type       => 'doc',
+        max_docs   => 100,
+        on_success => sub {
+            my ( $action, $response ) = @_;
+            $has_changed = 1
+                if ( $action eq 'index' or $response->{found} );
+        }
+    );
 
     for (@$urls) {
         my ( $url, $published_at ) = @{$_}{ 'url', 'published_at' };
@@ -119,7 +130,7 @@ sub index_urls {
         $bulk->index( { id => $url, source => $doc } );
     }
     $bulk->flush;
-
+    update_last_modified($bulk) if $has_changed;
 }
 
 #===================================
@@ -177,7 +188,20 @@ sub get_known_urls {
         _source => 'published_at'
     );
     while ( my $hit = $scroll->next ) {
+        next if $hit->{_id} eq 'LAST_MODIFIED';
         $urls{ $hit->{_id} } = $hit->{_source}{published_at};
     }
     return \%urls;
+}
+
+#===================================
+sub update_last_modified {
+#===================================
+    $es->index(
+        index => $Site_Index,
+        type  => 'doc',
+        id    => 'LAST_MODIFIED',
+        body  => { last_published => ( 1000 * time ) }
+    );
+    return;
 }
