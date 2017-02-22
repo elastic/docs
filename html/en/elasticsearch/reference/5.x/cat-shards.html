@@ -567,46 +567,19 @@ Not what you want? See the
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="cat-shards"></a>cat shards<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cat/shards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">shards</code> command is the detailed view of what nodes contain which
 shards.  It will tell you if it’s a primary or replica, the number of
-docs, the bytes it takes on disk, and the node where it’s located.</p><p>Here we see a single index, with three primary shards and no replicas:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">% curl 192.168.56.20:9200/_cat/shards
-wiki1 0 p STARTED 3014 31.1mb 192.168.56.10 H5dfFeA
-wiki1 1 p STARTED 3013 29.6mb 192.168.56.30 bGG90GE
-wiki1 2 p STARTED 3973 38.1mb 192.168.56.20 I8hydUG</pre></div><h3><a id="index-pattern"></a>Index pattern<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cat/shards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you have many shards, you may wish to limit which indices show up
+docs, the bytes it takes on disk, and the node where it’s located.</p><p>Here we see a single index, with one primary shard and no replicas:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cat/shards</pre></div><div class="console_widget" data-snippet="snippets/cat-shards/1.json"></div><p>This will return</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">twitter 0 p STARTED 3014 31.1mb 192.168.56.10 H5dfFeA
+twitter 0 r UNASSIGNED</pre></div><h3><a id="index-pattern"></a>Index pattern<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cat/shards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you have many shards, you may wish to limit which indices show up
 in the output.  You can always do this with <code class="literal">grep</code>, but you can save
-some bandwidth by supplying an index pattern to the end.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">% curl 192.168.56.20:9200/_cat/shards/wiki*
-wiki2 0 p STARTED 197 3.2mb 192.168.56.10 H5dfFeA
-wiki2 1 p STARTED 205 5.9mb 192.168.56.30 bGG90GE
-wiki2 2 p STARTED 275 7.8mb 192.168.56.20 I8hydUG</pre></div><h3><a id="relocation"></a>Relocation<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cat/shards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Let’s say you’ve checked your health and you see two relocating
-shards.  Where are they from and where are they going?</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">% curl 192.168.56.10:9200/_cat/health
-1384315316 20:01:56 foo green 3 3 12 6 2 0 0
-% curl 192.168.56.10:9200/_cat/shards | fgrep RELO
-wiki1 0 r RELOCATING 3014 31.1mb 192.168.56.20 I8hydUG -&gt; 192.168.56.30 bGG90GE
-wiki1 1 r RELOCATING 3013 29.6mb 192.168.56.10 H5dfFeA -&gt; 192.168.56.30 bGG90GE</pre></div><h3><a id="states"></a>Shard states<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cat/shards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Before a shard can be used, it goes through an <code class="literal">INITIALIZING</code> state.
-<code class="literal">shards</code> can show you which ones.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">% curl -XPUT 192.168.56.20:9200/_settings -d'{"number_of_replicas":1}'
-{"acknowledged":true}
-% curl 192.168.56.20:9200/_cat/shards
-wiki1 0 p STARTED      3014 31.1mb 192.168.56.10 H5dfFeA
-wiki1 0 r INITIALIZING    0 14.3mb 192.168.56.30 bGG90GE
-wiki1 1 p STARTED      3013 29.6mb 192.168.56.30 bGG90GE
-wiki1 1 r INITIALIZING    0 13.1mb 192.168.56.20 I8hydUG
-wiki1 2 r INITIALIZING    0   14mb 192.168.56.10 H5dfFeA
-wiki1 2 p STARTED      3973 38.1mb 192.168.56.20 I8hydUG</pre></div><p>If a shard cannot be assigned, for example you’ve overallocated the
+some bandwidth by supplying an index pattern to the end.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cat/shards/twitt*</pre></div><div class="console_widget" data-snippet="snippets/cat-shards/2.json"></div><p>Which will return the following</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">twitter 0 p STARTED 3014 31.1mb 192.168.56.10 H5dfFeA
+twitter 0 r UNASSIGNED</pre></div><h3><a id="relocation"></a>Relocation<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cat/shards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Let’s say you’ve checked your health and you see a relocating
+shards.  Where are they from and where are they going?</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cat/shards</pre></div><div class="console_widget" data-snippet="snippets/cat-shards/3.json"></div><p>A relocating shard will be shown as follows</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">twitter 0 p RELOCATING 3014 31.1mb 192.168.56.10 H5dfFeA -&gt; -&gt; 192.168.56.30 bGG90GE</pre></div><h3><a id="states"></a>Shard states<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cat/shards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Before a shard can be used, it goes through an <code class="literal">INITIALIZING</code> state.
+<code class="literal">shards</code> can show you which ones.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cat/shards</pre></div><div class="console_widget" data-snippet="snippets/cat-shards/4.json"></div><p>You can the the initializing state in the response like this</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">twitter 0 p STARTED      3014 31.1mb 192.168.56.10 H5dfFeA
+twitter 0 r INITIALIZING    0 14.3mb 192.168.56.30 bGG90GE</pre></div><p>If a shard cannot be assigned, for example you’ve overallocated the
 number of replicas for the number of nodes in the cluster, the shard
-will remain <code class="literal">UNASSIGNED</code> with the <a class="link" href="cat-shards.html#reason-unassigned" title="Reasons for unassigned shardedit">reason code</a> <code class="literal">ALLOCATION_FAILED</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">% curl -XPUT 192.168.56.20:9200/_settings -d'{"number_of_replicas":3}'
-% curl 192.168.56.20:9200/_cat/health
-1384316325 20:18:45 foo yellow 3 3 9 3 0 0 3
-% curl 192.168.56.20:9200/_cat/shards
-wiki1 0 p STARTED    3014 31.1mb 192.168.56.10 H5dfFeA
-wiki1 0 r STARTED    3014 31.1mb 192.168.56.30 bGG90GE
-wiki1 0 r STARTED    3014 31.1mb 192.168.56.20 I8hydUG
-wiki1 0 r UNASSIGNED ALLOCATION_FAILED
-wiki1 1 r STARTED    3013 29.6mb 192.168.56.10 H5dfFeA
-wiki1 1 p STARTED    3013 29.6mb 192.168.56.30 bGG90GE
-wiki1 1 r STARTED    3013 29.6mb 192.168.56.20 I8hydUG
-wiki1 1 r UNASSIGNED ALLOCATION_FAILED
-wiki1 2 r STARTED    3973 38.1mb 192.168.56.10 H5dfFeA
-wiki1 2 r STARTED    3973 38.1mb 192.168.56.30 bGG90GE
-wiki1 2 p STARTED    3973 38.1mb 192.168.56.20 I8hydUG
-wiki1 2 r UNASSIGNED ALLOCATION_FAILED</pre></div><h3><a id="reason-unassigned"></a>Reasons for unassigned shard<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cat/shards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>These are the possible reasons for a shard to be in a unassigned state:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+will remain <code class="literal">UNASSIGNED</code> with the <a class="link" href="cat-shards.html#reason-unassigned" title="Reasons for unassigned shardedit">reason code</a> <code class="literal">ALLOCATION_FAILED</code>.</p><p>You can use the shards API to find out that reason.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cat/shards?h=index,shard,prirep,state,unassigned.reason</pre></div><div class="console_widget" data-snippet="snippets/cat-shards/5.json"></div><p>The reason for an unassigned shard will be listed as the last field</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">twitter 0 p STARTED    3014 31.1mb 192.168.56.10 H5dfFeA
+twitter 0 r STARTED    3014 31.1mb 192.168.56.30 bGG90GE
+twitter 0 r STARTED    3014 31.1mb 192.168.56.20 I8hydUG
+twitter 0 r UNASSIGNED ALLOCATION_FAILED</pre></div><h3><a id="reason-unassigned"></a>Reasons for unassigned shard<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/cat/shards.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>These are the possible reasons for a shard to be in a unassigned state:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">INDEX_CREATED</code>
 </p>
