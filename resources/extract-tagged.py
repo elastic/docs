@@ -20,12 +20,13 @@ def extract_tagged(target, tag):
                 if m:
                     foundTag = True
                     indentation = m.group(1)
-    return 'Error locating ' + tag
 
 
 if __name__ == '__main__':
     from sys import argv, stdout
-    stdout.write(extract_tagged(argv[1], argv[2]))
-
-if __name__ == '__include_tagged__':
-    result = extract_tagged(target, tag)
+    result = extract_tagged(argv[1], argv[2])
+    if result:
+        stdout.write(result)
+    else:
+        print("Couldn't find " + tag)
+        exit(1)
