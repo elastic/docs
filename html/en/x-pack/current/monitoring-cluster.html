@@ -564,8 +564,10 @@
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="monitoring-cluster"></a>Monitoring Elasticsearch</h2></div></div></div><p>By default, X-Pack monitoring agents on Elasticsearch index data
 into the cluster where they’re running. In production, you should
-send data to a separate monitoring cluster so that the data is
-available even if the nodes you are monitoring are not.</p><p>To store monitoring data in a separate cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+send data to a separate monitoring cluster so that historical monitoring
+data is available even if the nodes you are monitoring are not. Using
+a dedicated monitoring cluster also enables you to monitor multiple
+clusters from a central location.</p><p>To store monitoring data in a separate cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Set up the Elasticsearch cluster you want to use for monitoring,
 <a class="link" href="installing-xpack.html" title="Installing X-Pack">install X-Pack</a>, and start Elasticsearch. For
 example, you might set up a two host cluster with the nodes <code class="literal">es-mon-1</code>
@@ -575,19 +577,12 @@ and <code class="literal">es-mon-2</code>.
 cluster is not absolutely required, it is strongly recommended.</p></div></div></li><li class="listitem"><p class="simpara">
 Install X-Pack into Kibana.
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/kibana-plugin install x-pack</pre></div></li><li class="listitem"><p class="simpara">
-Configure Kibana to connect to your monitoring cluster by setting the
-<code class="literal">xpack.monitoring.elasticsearch.url</code> property in <code class="literal">kibana.yml</code>.
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.url: "http://es-mon-1:9200"</pre></div></li><li class="listitem"><p class="simpara">
+Configure Kibana to retrieve data from your monitoring cluster
+by setting the <code class="literal">elasticsearch.url</code> property in <code class="literal">kibana.yml</code> to point
+to the monitoring cluster.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">elasticsearch.url: "http://es-mon-1:9200"</pre></div></li><li class="listitem"><p class="simpara">
 If X-Pack security is enabled on the monitoring cluster:
-</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
-Configure credentials for Kibana to use to connect to the
-monitoring cluster.  Create a user, for example one named
-<code class="literal">kibana-monitor</code>, with the roles <code class="literal">kibana_user</code> and
-<code class="literal">monitoring_user</code> in the monitoring cluster. Then update
-<code class="literal">xpack.monitoring.elasticsearch.username</code> and
-<code class="literal">xpack.monitoring.elasticsearch.password</code> settings accordingly.
-</li></ol></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.username: "kibana-monitor"
-xpack.monitoring.elasticsearch.password: "changeme"</pre></div><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
 Configure the <code class="literal">server.ssl</code> properties to encrypt communications
 between the browser and the Kibana server.
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">server.ssl.key: /path/to/your/server.key
@@ -596,26 +591,26 @@ If SSL/TLS is enabled on the monitoring cluster, specify the trusted
 CA certificate(s) that will be used to verify the identity of the nodes
 in the monitoring cluster.
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">elasticsearch.ssl.ca: "/path/to/ca/file"</pre></div><p class="simpara">For more information about configuring Kibana to connect to a secured
-cluster, see <a class="link" href="kibana.html" title="Kibana and Security">Kibana and Security</a>.</p></li></ol></div></li><li class="listitem">
-Start Kibana by running <code class="literal">bin/kibana</code>.
-</li><li class="listitem"><p class="simpara">
-If X-Pack security is enabled on the monitoring cluster, create a user on the
-monitoring cluster that has the <code class="literal">remote_monitoring_agent</code> role. You can create
-users from <span class="strong"><strong>Management / Users</strong></span> in Kibana. The Kibana instance must be
-connected to the monitoring cluster. You can also create users through the
-<code class="literal">user</code> API. For example, the following request creates a <code class="literal">remote_monitor</code> user
-that has the <code class="literal">remote_monitoring_agent</code> role:
+cluster, see <a class="link" href="kibana.html" title="Kibana and Security">Kibana and Security</a>.</p></li><li class="listitem"><p class="simpara">
+Create a user on the monitoring cluster that has the
+<code class="literal">remote_monitoring_agent</code> role. These credentials will be used when
+data is shipped from the Elasticsearch cluster you are monitoring to
+your dedicated monitoring cluster. For example, the following request
+creates a <code class="literal">remote_monitor</code> user that has the <code class="literal">remote_monitoring_agent</code> role:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /_xpack/security/user/remote_monitor
 {
   "password" : "changeme",
   "roles" : [ "remote_monitoring_agent"],
   "full_name" : "Internal Agent For Remote Monitoring"
-}</pre></div></li><li class="listitem"><p class="simpara">
+}</pre></div></li></ol></div></li><li class="listitem">
+Start Kibana by running <code class="literal">bin/kibana</code>.
+</li><li class="listitem"><p class="simpara">
 Install X-Pack on the Elasticsearch nodes in your production cluster.
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch-plugin install x-pack</pre></div></li><li class="listitem"><p class="simpara">
-Configure the Elasticsearch nodes to send metrics
-to your monitoring cluster by configuring an HTTP exporter in the
-<code class="literal">xpack.monitoring.exporters</code> settings in <code class="literal">elasticsearch.yml</code>:
+Configure each Elasticsearch node in the cluster you are
+monitoring to send metrics to your monitoring cluster by
+configuring an HTTP exporter in the
+<code class="literal">xpack.monitoring.exporters</code> settings in <code class="literal">elasticsearch.yml</code>.
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
   id1:
     type: http
@@ -663,8 +658,12 @@ reallocation during the install process.</p></div></div></li><li class="listitem
 To verify your X-Pack monitoring installation, point your web browser at your Kibana
 host, and select <span class="strong"><strong>Monitoring</strong></span> from the side navigation. When security is enabled,
 to view the monitoring dashboards you must log in to Kibana as a user who has
-the <code class="literal">kibana_user</code> and <code class="literal">monitoring_user</code> roles.
-</p><p class="simpara"><span class="inlinemediaobject"><img src="images/monitoring/monitoring.jpg" alt="Monitoring" /></span></p></li></ol></div><h3><a id="stats-export"></a>Collecting Data from Particular Indices</h3><p>By default, the monitoring agent collects data from all Elasticsearch indices.
+both the <code class="literal">kibana_user</code> and <code class="literal">monitoring_user</code> roles. For example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_xpack/security/user/stack-monitor
+{
+  "password" : "changeme",
+  "roles" : [ "kibana_user", "monitoring_user" ]
+}</pre></div><div class="console_widget" data-snippet="snippets/monitoring-cluster/1.json"></div><p class="simpara"><span class="inlinemediaobject"><img src="images/monitoring/monitoring.jpg" alt="Monitoring" /></span></p></li></ol></div><h3><a id="stats-export"></a>Collecting Data from Particular Indices</h3><p>By default, the monitoring agent collects data from all Elasticsearch indices.
 To collect data from particular indices, configure the
 <code class="literal">xpack.monitoring.collection.indices</code> setting in <code class="literal">elasticsearch.yml</code>.
 You can specify multiple indices as a comma-separated list or
