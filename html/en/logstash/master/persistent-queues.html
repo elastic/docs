@@ -575,12 +575,16 @@ a persistent queue feature which will store the message queue on disk.
 Persistent queues provide durability of data within Logstash.</p><p>Persistent queues are also useful for Logstash deployments that need large buffers.
 Instead of deploying and managing a message broker, such as Redis, RabbitMQ, or
 Apache Kafka, to facilitate a buffered publish-subscriber model, you can enable
-persistent queues to buffer events on disk and remove the message broker.</p><p>In summary, the two benefits of enabling persistent queues are as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Provides protection from in-flight message loss when the Logstash process is abnormally terminated.
+persistent queues to buffer events on disk and remove the message broker.</p><p>In summary, the benefits of enabling persistent queues are as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Absorbs bursts of events without needing an external buffering mechanism like
+Redis or Apache Kafka.
 </li><li class="listitem">
-Absorbs bursts of events without needing an external buffering mechanism like Redis or Apache Kafka.
+Provides an at-least-once delivery guarantee against message loss during
+a normal shutdown as well as when Logstash is terminated abnormally. If Logstash
+is restarted while events are in-flight, Logstash will attempt to deliver
+messages stored in the persistent queue until delivery succeeds at least once.
 </li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="persistent-queues-limitations"></a>Limitations of Persistent Queues<a href="https://github.com/elastic/logstash/edit/master/docs/static/persistent-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following are problems not solved by the persistent queue feature:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Input plugins that do not use a request-response protocol cannot be protected from data loss. For example: tcp, udp, zeromq push+pull, and many other inputs do not have a mechanism to acknowledge receipt to the sender. Plugins such as beats and http, which <span class="strong"><strong>do</strong></span> have a acknowledgement capability, are well protected by this queue.
+Input plugins that do not use a request-response protocol cannot be protected from data loss. For example: tcp, udp, zeromq push+pull, and many other inputs do not have a mechanism to acknowledge receipt to the sender. Plugins such as beats and http, which <span class="strong"><strong>do</strong></span> have an acknowledgement capability, are well protected by this queue.
 </li><li class="listitem">
 It does not handle permanent machine failures such as disk corruption, disk failure, and machine loss. The data persisted to disk is not replicated.
 </li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="persistent-queues-architecture"></a>How Persistent Queues Work<a href="https://github.com/elastic/logstash/edit/master/docs/static/persistent-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The queue sits between the input and filter stages in the same
