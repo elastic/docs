@@ -589,26 +589,28 @@ Not what you want? See the
     }
 }</pre></div><div class="console_widget" data-snippet="snippets/search-request-script-fields/1.json"></div><p>Script fields can work on fields that are not stored (<code class="literal">my_field_name</code> in
 the above case), and allow to return custom values to be returned (the
-evaluated value of the script).</p><p>Script fields can also access the actual <code class="literal">_source</code> document indexed and
-extract specific elements to be returned from it (can be an "object"
-type). Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+evaluated value of the script).</p><p>Script fields can also access the actual <code class="literal">_source</code> document and
+extract specific elements to be returned from it by using <code class="literal">params['_source']</code>.
+Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
     {
         "query" : {
             "match_all": {}
         },
         "script_fields" : {
             "test1" : {
-                "script" : "_source.obj1.obj2"
+                "script" : "params['_source']['message']"
             }
         }
     }</pre></div><div class="console_widget" data-snippet="snippets/search-request-script-fields/2.json"></div><p>Note the <code class="literal">_source</code> keyword here to navigate the json-like model.</p><p>It’s important to understand the difference between
-<code class="literal">doc['my_field'].value</code> and <code class="literal">_source.my_field</code>. The first, using the doc
-keyword, will cause the terms for that field to be loaded to memory
-(cached), which will result in faster execution, but more memory
+<code class="literal">doc['my_field'].value</code> and <code class="literal">params['_source']['my_field']</code>. The first,
+using the doc keyword, will cause the terms for that field to be loaded to
+memory (cached), which will result in faster execution, but more memory
 consumption. Also, the <code class="literal">doc[...]</code> notation only allows for simple valued
 fields (can’t return a json object from it) and make sense only on
-non-analyzed or single term based fields.</p><p>The <code class="literal">_source</code> on the other hand causes the source to be loaded, parsed,
-and then only the relevant part of the json is returned.</p></div><div class="navfooter"><span class="prev"><a href="search-request-stored-fields.html">
+non-analyzed or single term based fields.  However, using <code class="literal">doc</code> is
+still the recommended way to access values from the document, if at all
+possible, because <code class="literal">_source</code> must be loaded and parsed every time it’s used.
+Using <code class="literal">_source</code> is very slow.</p></div><div class="navfooter"><span class="prev"><a href="search-request-stored-fields.html">
               « 
               Fields</a>
            
