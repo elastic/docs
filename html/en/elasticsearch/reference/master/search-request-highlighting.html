@@ -653,6 +653,12 @@ It supports accurate phrase and multi-term (fuzzy, prefix, regex) highlighting a
 <code class="literal">pre_tags and `post_tags</code>
 </li><li class="listitem">
 <code class="literal">require_field_match</code>
+</li><li class="listitem">
+<code class="literal">boundary_scanner</code> (<code class="literal">sentence</code> (<span class="strong"><strong>default</strong></span>)  or <code class="literal">word</code>)
+</li><li class="listitem">
+<code class="literal">max_fragment_length</code> (only for <code class="literal">sentence</code> scanner)
+</li><li class="listitem">
+<code class="literal">no_match_size</code>
 </li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_force_highlighter_type"></a>Force highlighter type<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">type</code> field allows to force a specific highlighter type. This is useful
 for instance when needing to use the plain highlighter on a field that has
 <code class="literal">term_vectors</code> enabled. The allowed values are: <code class="literal">plain</code>, <code class="literal">postings</code> and <code class="literal">fvh</code>.
@@ -768,7 +774,7 @@ is required. Note that <code class="literal">fragment_size</code> is ignored in 
 parameter to control the margin to start highlighting from.</p><p>In the case where there is no matching fragment to highlight, the default is
 to not return anything. Instead, we can return a snippet of text from the
 beginning of the field by setting <code class="literal">no_match_size</code> (default <code class="literal">0</code>) to the length
-of the text that you want returned. The actual length may be shorter than
+of the text that you want returned. The actual length may be shorter or longer than
 specified as it tries to break on a word boundary. When using the postings
 highlighter it is not possible to control the actual size of the snippet,
 therefore the first sentence gets returned whenever <code class="literal">no_match_size</code> is
@@ -882,20 +888,22 @@ match will be highlighted.</p><div class="pre_wrapper"><pre class="programlistin
                 "_all" : { "pre_tags" : ["&lt;em&gt;"], "post_tags" : ["&lt;/em&gt;"] }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/13.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="boundary-scanners"></a>Boundary Scanners<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When highlighting a field using the fast vector highlighter, you can specify
-how to break the highlighted fragments using <code class="literal">boundary_scanner</code>, which accepts
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/13.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="boundary-scanners"></a>Boundary Scanners<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When highlighting a field using the unified highlighter or the fast vector highlighter,
+you can specify how to break the highlighted fragments using <code class="literal">boundary_scanner</code>, which accepts
 the following values:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">chars</code> (default): allows to configure which characters (<code class="literal">boundary_chars</code>)
+<code class="literal">chars</code> (default mode for the FVH): allows to configure which characters (<code class="literal">boundary_chars</code>)
 constitute a boundary for highlighting. It’s a single string with each boundary
 character defined in it (defaults to <code class="literal">.,!? \t\n</code>). It also allows configuring
 the <code class="literal">boundary_max_scan</code> to control how far to look for boundary characters
-(defaults to <code class="literal">20</code>).
+(defaults to <code class="literal">20</code>). Works only with the Fast Vector Highlighter.
 </li><li class="listitem">
-<code class="literal">word</code> and <code class="literal">sentence</code>: use Java’s <a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/text/BreakIterator.html" target="_top">BreakIterator</a>
-to break the highlighted fragments at the next <span class="emphasis"><em>word</em></span> or <span class="emphasis"><em>sentence</em></span> boundary.
+<code class="literal">sentence</code> and <code class="literal">word</code>: use Java’s <a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/text/BreakIterator.html" target="_top">BreakIterator</a>
+to break the highlighted fragments at the next  <span class="emphasis"><em>sentence</em></span> or <span class="emphasis"><em>word</em></span> boundary.
 You can further specify <code class="literal">boundary_scanner_locale</code> to control which Locale is used
 to search the text for these boundaries.
-</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="matched-fields"></a>Matched Fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Fast Vector Highlighter can combine matches on multiple fields to
+</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When used with the <code class="literal">unified</code> highlighter, the <code class="literal">sentence</code> scanner splits sentence
+bigger than <code class="literal">fragment_size</code> at the first word boundary next to <code class="literal">fragment_size</code>.
+You can set <code class="literal">fragment_size</code> to 0 to never split any sentence.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="matched-fields"></a>Matched Fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Fast Vector Highlighter can combine matches on multiple fields to
 highlight a single field using <code class="literal">matched_fields</code>.  This is most
 intuitive for multifields that analyze the same string in different
 ways.  All <code class="literal">matched_fields</code> must have <code class="literal">term_vector</code> set to
