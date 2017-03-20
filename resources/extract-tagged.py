@@ -23,10 +23,13 @@ def extract_tagged(target, tag):
 
 
 if __name__ == '__main__':
-    from sys import argv, stdout
-    result = extract_tagged(argv[1], argv[2])
-    if result:
-        stdout.write(result)
-    else:
-        print("Couldn't find " + tag)
-        exit(1)
+    from sys import argv, stdout, stderr
+    try:
+        result = extract_tagged(argv[1], argv[2])
+        if result:
+            stdout.write(result)
+        else:
+            raise Exception("Couldn't find tag")
+    except Exception as e:
+      stderr.write("asciidoc: ERROR: Extracting tag `" + argv[2] + "` from file `" + argv[1]+ "`: " + e.__str__() + "\n")
+      exit(1)
