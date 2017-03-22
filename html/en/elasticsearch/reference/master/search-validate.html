@@ -624,14 +624,14 @@ about why a query failed:</p><div class="pre_wrapper"><pre class="programlisting
   } ]
 }</pre></div><p>When the query is valid, the explanation defaults to the string
 representation of that query. With <code class="literal">rewrite</code> set to <code class="literal">true</code>, the explanation
-is more detailed showing the actual Lucene query that will be executed.</p><p>For Fuzzy Queries:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/tweet/_validate/query?rewrite=true
+is more detailed showing the actual Lucene query that will be executed.</p><p>For More Like This:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/tweet/_validate/query?rewrite=true
 {
   "query": {
-    "match": {
-      "user": {
-        "query": "kimchy",
-        "fuzziness": "auto"
-      }
+    "more_like_this": {
+      "like": {
+        "_id": "2"
+      },
+      "boost_terms": 1
     }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/search-validate/6.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
@@ -645,36 +645,63 @@ is more detailed showing the actual Lucene query that will be executed.</p><p>Fo
       {
          "index": "twitter",
          "valid": true,
-         "explanation": "+user:kimchy +user:kimchi^0.75 #(ConstantScore(_type:tweet))^0.0"
-      }
-   ]
-}</pre></div><p>For More Like This:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/tweet/_validate/query?rewrite=true
-{
-  "query": {
-    "more_like_this": {
-      "like": {
-        "_id": "2"
-      },
-      "boost_terms": 1
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-validate/7.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "valid": true,
-   "_shards": {
-      "total": 1,
-      "successful": 1,
-      "failed": 0
-   },
-   "explanations": [
-      {
-         "index": "twitter",
-         "valid": true,
          "explanation": "((user:terminator^3.71334 plot:future^2.763601 plot:human^2.8415773 plot:sarah^3.4193945 plot:kyle^3.8244398 plot:cyborg^3.9177752 plot:connor^4.040236 plot:reese^4.7133346 ... )~6) -ConstantScore(_uid:tweet#2)) #(ConstantScore(_type:tweet))^0.0"
       }
    ]
-}</pre></div><div class="caution admon"><div class="icon"><img alt="Caution" src="images/icons/caution.png" /></div><div class="admon_content"><p>The request is executed on a single shard only, which is randomly
+}</pre></div><p>By default, the request is executed on a single shard only, which is randomly
 selected. The detailed explanation of the query may depend on which shard is
-being hit, and therefore may vary from one request to another.</p></div></div></div><div class="navfooter"><span class="prev"><a href="search-count.html">
+being hit, and therefore may vary from one request to another. So, in case of
+query rewrite the <code class="literal">all_shards</code> parameter should be used to get response from
+all available shards.</p><p>For Fuzzy Queries:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/tweet/_validate/query?rewrite=true&amp;all_shards=true
+{
+  "query": {
+    "match": {
+      "user": {
+        "query": "kimchy",
+        "fuzziness": "auto"
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-validate/7.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "valid": true,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "failed": 0
+  },
+  "explanations": [
+    {
+      "index": "twitter",
+      "shard": 0,
+      "valid": true,
+      "explanation": "+MatchNoDocsQuery(\"empty BooleanQuery\") #ConstantScore(MatchNoDocsQuery(\"empty BooleanQuery\"))"
+    },
+    {
+      "index": "twitter",
+      "shard": 1,
+      "valid": true,
+      "explanation": "+MatchNoDocsQuery(\"empty BooleanQuery\") #ConstantScore(MatchNoDocsQuery(\"empty BooleanQuery\"))"
+    },
+    {
+      "index": "twitter",
+      "shard": 2,
+      "valid": true,
+      "explanation": "(user:kimchi)^0.8333333"
+    },
+    {
+      "index": "twitter",
+      "shard": 3,
+      "valid": true,
+      "explanation": "user:kimchy"
+    },
+    {
+      "index": "twitter",
+      "shard": 4,
+      "valid": true,
+      "explanation": "+MatchNoDocsQuery(\"empty BooleanQuery\") #ConstantScore(MatchNoDocsQuery(\"empty BooleanQuery\"))"
+    }
+  ]
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="search-count.html">
               « 
               Count API</a>
            
