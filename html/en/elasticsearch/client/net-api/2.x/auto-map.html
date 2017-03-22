@@ -1150,7 +1150,42 @@ var expected = new
     }
 };
 
-Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div><h2><a id="ignoring-properties"></a>Ignoring Properties<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Properties on a POCO can be ignored in a few ways:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class ParentWithStringId : Parent
+{
+    public new string Id { get; set; }
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
+    .Mappings(ms =&gt; ms
+        .Map&lt;ParentWithStringId&gt;(m =&gt; m
+            .AutoMap()
+        )
+    );
+
+var expected = new
+{
+    mappings = new
+    {
+        parent = new
+        {
+            properties = new
+            {
+                id = new
+                {
+                    type = "string",
+                }
+            }
+        }
+    }
+};
+
+var settings = WithConnectionSettings(s =&gt; s
+    .InferMappingFor&lt;ParentWithStringId&gt;(m =&gt; m
+        .TypeName("parent")
+        .Ignore(p =&gt; p.Description)
+        .Ignore(p =&gt; p.IgnoreMe)
+    )
+);
+
+settings.Expect(expected).WhenSerializing((ICreateIndexRequest) descriptor);</pre></div><h2><a id="ignoring-properties"></a>Ignoring Properties<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Properties on a POCO can be ignored in a few ways:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Using the <code class="literal">Ignore</code> property on a derived <code class="literal">ElasticsearchPropertyAttribute</code> type applied to the property that should be ignored on the POCO
 </li><li class="listitem">
 Using the <code class="literal">.InferMappingFor&lt;TDocument&gt;(Func&lt;ClrTypeMappingDescriptor&lt;TDocument&gt;, IClrTypeMapping&lt;TDocument&gt;&gt; selector)</code> on the connection settings
