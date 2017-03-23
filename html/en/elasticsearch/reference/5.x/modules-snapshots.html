@@ -725,7 +725,52 @@ cluster settings and templates. The transient settings and registered snapshot r
 the snapshot.</p><p>Only one snapshot process can be executed in the cluster at any time. While snapshot of a particular shard is being
 created this shard cannot be moved to another node, which can interfere with rebalancing process and allocation
 filtering. Elasticsearch will only be able to move a shard to another node (according to the current allocation
-filtering settings and rebalancing algorithm) once the snapshot is finished.</p><p>Once a snapshot is created information about this snapshot can be obtained using the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /_snapshot/my_backup/snapshot_1</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/6.json"></div><p>Similar as for repositories, information about multiple snapshots can be queried in one go, supporting wildcards as well:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /_snapshot/my_backup/snapshot_*,some_other_snapshot</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/7.json"></div><p>All snapshots currently stored in the repository can be listed using the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /_snapshot/my_backup/_all</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/8.json"></div><p>The command fails if some of the snapshots are unavailable. The boolean parameter <code class="literal">ignore_unavailable</code> can be used to
+filtering settings and rebalancing algorithm) once the snapshot is finished.</p><p>Once a snapshot is created information about this snapshot can be obtained using the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /_snapshot/my_backup/snapshot_1</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/6.json"></div><p>This command returns basic information about the snapshot including start and end time, version of
+elasticsearch that created the snapshot, the list of included indices, the current state of the
+snapshot and the list of failures that occurred during the snapshot. The snapshot <code class="literal">state</code> can be</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">IN_PROGRESS</code>
+</p>
+</td><td valign="top">
+<p>
+  The snapshot is currently running.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">SUCCESS</code>
+</p>
+</td><td valign="top">
+<p>
+  The snapshot finished and all shards were stored successfully.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">FAILED</code>
+</p>
+</td><td valign="top">
+<p>
+  The snapshot finished with an error and failed to store any data.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">PARTIAL</code>
+</p>
+</td><td valign="top">
+<p>
+  The global cluster state was stored, but data of at least one shard wasn’t stored successfully.
+  The <code class="literal">failure</code> section in this case should contain more detailed information about shards
+  that were not processed correctly.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">INCOMPATIBLE</code>
+</p>
+</td><td valign="top">
+<p>
+  The snapshot was created with an old version of elasticsearch and therefore is incompatible with
+  the current version of the cluster.
+</p>
+</td></tr></tbody></table></div><p>Similar as for repositories, information about multiple snapshots can be queried in one go, supporting wildcards as well:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /_snapshot/my_backup/snapshot_*,some_other_snapshot</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/7.json"></div><p>All snapshots currently stored in the repository can be listed using the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET /_snapshot/my_backup/_all</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/8.json"></div><p>The command fails if some of the snapshots are unavailable. The boolean parameter <code class="literal">ignore_unavailable</code> can be used to
 return all snapshots that are currently available.</p><p>A currently running snapshot can be retrieved using the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">$ curl -XGET "localhost:9200/_snapshot/my_backup/_current"</pre></div><p>A snapshot can be deleted from the repository using the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">DELETE /_snapshot/my_backup/snapshot_1</pre></div><div class="console_widget" data-snippet="snippets/modules-snapshots/9.json"></div><p>When a snapshot is deleted from a repository, Elasticsearch deletes all files that are associated with the deleted
 snapshot and not used by any other snapshots. If the deleted snapshot operation is executed while the snapshot is being
 created the snapshotting process will be aborted and all files created as part of the snapshotting process will be
