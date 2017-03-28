@@ -594,6 +594,17 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
                 )
             ),
         fs =&gt; fs
+            .Field(p =&gt; p.LeadDeveloper.LastName)
+            .Type(HighlighterType.Unified)
+            .PreTags("&lt;name&gt;")
+            .PostTags("&lt;/name&gt;")
+            .HighlightQuery(q =&gt; q
+                .Match(m =&gt; m
+                    .Field(p =&gt; p.LeadDeveloper.LastName)
+                    .Query(LastNameSearch)
+                )
+            ),
+        fs =&gt; fs
             .Field(p =&gt; p.State.Suffix("offsets"))
             .Type(HighlighterType.Postings)
             .PreTags("&lt;state&gt;")
@@ -640,6 +651,18 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
                     {
                         Field = "leadDeveloper.firstName",
                         Query = "Kurt Edgardo Naomi Dariana Justice Felton"
+                    }
+                }
+            },
+            { "leadDeveloper.lastName", new HighlightField
+                {
+                    Type = HighlighterType.Unified,
+                    PreTags = new[] { "&lt;name&gt;"},
+                    PostTags = new[] { "&lt;/name&gt;"},
+                    HighlightQuery = new MatchQuery
+                    {
+                        Field = "leadDeveloper.lastName",
+                        Query = LastNameSearch
                     }
                 }
             },
@@ -698,6 +721,22 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
           }
         }
       },
+      "leadDeveloper.lastName": {
+        "type": "unified",
+        "pre_tags": [
+          "&lt;name&gt;"
+        ],
+        "post_tags": [
+          "&lt;/name&gt;"
+        ],
+        "highlight_query": {
+          "match": {
+            "leadDeveloper.lastName": {
+              "query": "Stokes"
+            }
+          }
+        }
+      },
       "state.offsets": {
         "type": "postings",
         "pre_tags": [
@@ -733,6 +772,14 @@ foreach (var highlightsInEachHit in response.Hits.Select(d=&gt;d.Highlights))
             }
         }
         else if (highlightField.Key == "leadDeveloper.firstName")
+        {
+            foreach (var highlight in highlightField.Value.Highlights)
+            {
+                highlight.Should().Contain("&lt;name&gt;");
+                highlight.Should().Contain("&lt;/name&gt;");
+            }
+        }
+        else if (highlightField.Key == "leadDeveloper.lastName")
         {
             foreach (var highlight in highlightField.Value.Highlights)
             {
