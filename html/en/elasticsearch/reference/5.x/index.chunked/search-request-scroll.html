@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Scroll
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="search-request-body.html" title="Request Body Search" /><link rel="prev" href="search-request-search-type.html" title="Search Type" /><link rel="next" href="search-request-preference.html" title="Preference" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs</a></span> » <span class="breadcrumb-link"><a href="search-request-body.html">Request Body Search</a></span> » <span class="breadcrumb-node">Scroll</span></div><div xmlns="" class="navheader"><span class="prev"><a href="search-request-search-type.html">
+              « 
+              Search Type</a>
+           
+        </span><span class="next">
+           
+          <a href="search-request-preference.html">Preference
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-scroll"></a>Scroll<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/search/request/scroll.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>While a <code class="literal">search</code> request returns a single “page” of results, the <code class="literal">scroll</code>
+API can be used to retrieve large numbers of results (or even all results)
+from a single search request, in much the same way as you would use a cursor
+on a traditional database.</p><p>Scrolling is not intended for real time user requests, but rather for
+processing large amounts of data, e.g. in order to reindex the contents of one
+index into a new index with a different configuration.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Client support for scrolling and reindexing</strong></p></div></div></div><p>Some of the officially supported clients provide helpers to assist with
+scrolled searches and reindexing of documents from one index to another:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Perl
+</span></dt><dd>
+    See <a class="ulink" href="https://metacpan.org/pod/Search::Elasticsearch::Bulk" target="_top">Search::Elasticsearch::Bulk</a>
+    and <a class="ulink" href="https://metacpan.org/pod/Search::Elasticsearch::Scroll" target="_top">Search::Elasticsearch::Scroll</a>
+</dd><dt><span class="term">
+Python
+</span></dt><dd>
+    See <a class="ulink" href="http://elasticsearch-py.readthedocs.org/en/master/helpers.html" target="_top">elasticsearch.helpers.*</a>
+</dd></dl></div></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">The results that are returned from a scroll request reflect the state of
+the index at the time that the initial <code class="literal">search</code> request was  made, like a
+snapshot in time. Subsequent changes to documents (index, update or delete)
+will only affect later search requests.</p></div></div><p>In order to use scrolling, the initial search request should specify the
+<code class="literal">scroll</code> parameter in the query string, which tells Elasticsearch how long it
+should keep the “search context” alive (see <a class="xref" href="search-request-scroll.html#scroll-search-context" title="Keeping the search context alive">Keeping the search context alive</a>), eg <code class="literal">?scroll=1m</code>.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST /twitter/tweet/_search?scroll=1m
+{
+    "size": 100,
+    "query": {
+        "match" : {
+            "title" : "elasticsearch"
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>The result from the above request includes a <code class="literal">_scroll_id</code>, which should
+be passed to the <code class="literal">scroll</code> API in order to retrieve the next batch of
+results.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST <a id="CO17-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span> /_search/scroll <a id="CO17-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+{
+    "scroll" : "1m", <a id="CO17-3"></a><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span>
+    "scroll_id" : "DXF1ZXJ5QW5kRmV0Y2gBAAAAAAAAAD4WYm9laVYtZndUQlNsdDcwakFMNjU1QQ==" <a id="CO17-4"></a><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span>
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">GET</code> or <code class="literal">POST</code> can be used.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The URL should not include the <code class="literal">index</code> or <code class="literal">type</code> name — these
+    are specified in the original <code class="literal">search</code> request instead.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-3"><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">scroll</code> parameter tells Elasticsearch to keep the search context open
+    for another <code class="literal">1m</code>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-4"><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">scroll_id</code> parameter
+</p></td></tr></table></div><p>The <code class="literal">size</code> parameter allows you to configure the maximum number of hits to be
+returned with each batch of results.  Each call to the <code class="literal">scroll</code> API returns the
+next batch of results until there are no more results left to return, ie the
+<code class="literal">hits</code> array is empty.</p><div xmlns="" class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">The initial search request and each subsequent scroll request
+returns a new <code class="literal">_scroll_id</code> — only the most recent <code class="literal">_scroll_id</code> should be
+used.</p></div></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">If the request specifies aggregations, only the initial search response
+will contain the aggregations results.</p></div></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">Scroll requests have optimizations that make them faster when the sort
+order is <code class="literal">_doc</code>. If you want to iterate over all documents regardless of the
+order, this is the most efficient option:</p></div></div><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /_search?scroll=1m
+{
+  "sort": [
+    "_doc"
+  ]
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="scroll-search-context"></a>Keeping the search context alive<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/search/request/scroll.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">scroll</code> parameter (passed to the <code class="literal">search</code> request and to every <code class="literal">scroll</code>
+request) tells Elasticsearch how long it should keep the search context alive.
+Its value (e.g. <code class="literal">1m</code>, see <a class="xref" href="common-options.html#time-units" title="Time unitsedit">the section called “Time units<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a>) does not need to be long enough to
+process all data — it just needs to be long enough to process the previous
+batch of results. Each <code class="literal">scroll</code> request (with the <code class="literal">scroll</code> parameter) sets a
+new  expiry time.</p><p>Normally, the background merge process optimizes the
+index by merging together smaller segments to create new bigger segments, at
+which time the smaller segments are deleted. This process continues during
+scrolling, but an open search context prevents the old segments from being
+deleted while they are still in use.  This is how Elasticsearch is able to
+return the results of the initial search request, regardless of subsequent
+changes to documents.</p><div xmlns="" class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">Keeping older segments alive means that more file handles are needed.
+Ensure that you have configured your nodes to have ample free file handles.
+See <a class="xref" href="file-descriptors.html" title="File Descriptors">File Descriptors</a>.</p></div></div><p>You can check how many search contexts are open with the
+<a class="link" href="cluster-nodes-stats.html" title="Nodes Stats">nodes stats API</a>:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /_nodes/stats/indices/search</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_clear_scroll_api"></a>Clear scroll API<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/search/request/scroll.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Search context are automatically removed when the <code class="literal">scroll</code> timeout has been
+exceeded. However keeping scrolls open has a cost, as discussed in the
+<a class="link" href="search-request-scroll.html#scroll-search-context" title="Keeping the search context alive">previous section</a> so scrolls should be explicitly
+cleared as soon as the scroll is not being used anymore using the
+<code class="literal">clear-scroll</code> API:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">DELETE /_search/scroll
+{
+    "scroll_id" : ["DXF1ZXJ5QW5kRmV0Y2gBAAAAAAAAAD4WYm9laVYtZndUQlNsdDcwakFMNjU1QQ=="]
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>Multiple scroll IDs can be passed as array:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">DELETE /_search/scroll
+{
+    "scroll_id" : [
+      "DXF1ZXJ5QW5kRmV0Y2gBAAAAAAAAAD4WYm9laVYtZndUQlNsdDcwakFMNjU1QQ==",
+      "DnF1ZXJ5VGhlbkZldGNoBQAAAAAAAAABFmtSWWRRWUJrU2o2ZExpSGJCVmQxYUEAAAAAAAAAAxZrUllkUVlCa1NqNmRMaUhiQlZkMWFBAAAAAAAAAAIWa1JZZFFZQmtTajZkTGlIYkJWZDFhQQAAAAAAAAAFFmtSWWRRWUJrU2o2ZExpSGJCVmQxYUEAAAAAAAAABBZrUllkUVlCa1NqNmRMaUhiQlZkMWFB"
+    ]
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>All search contexts can be cleared with the <code class="literal">_all</code> parameter:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">DELETE /_search/scroll/_all</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>The <code class="literal">scroll_id</code> can also be passed as a query string parameter or in the request body.
+Multiple scroll IDs can be passed as comma separated values:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">DELETE /_search/scroll/DXF1ZXJ5QW5kRmV0Y2gBAAAAAAAAAD4WYm9laVYtZndUQlNsdDcwakFMNjU1QQ==,DnF1ZXJ5VGhlbkZldGNoBQAAAAAAAAABFmtSWWRRWUJrU2o2ZExpSGJCVmQxYUEAAAAAAAAAAxZrUllkUVlCa1NqNmRMaUhiQlZkMWFBAAAAAAAAAAIWa1JZZFFZQmtTajZkTGlIYkJWZDFhQQAAAAAAAAAFFmtSWWRRWUJrU2o2ZExpSGJCVmQxYUEAAAAAAAAABBZrUllkUVlCa1NqNmRMaUhiQlZkMWFB</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sliced-scroll"></a>Sliced Scroll<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/search/request/scroll.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For scroll queries that return a lot of documents it is possible to split the scroll in multiple slices which
+can be consumed independently:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /twitter/tweet/_search?scroll=1m
+{
+    "slice": {
+        "id": 0, <a id="CO18-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+        "max": 2 <a id="CO18-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+    },
+    "query": {
+        "match" : {
+            "title" : "elasticsearch"
+        }
+    }
+}
+GET /twitter/tweet/_search?scroll=1m
+{
+    "slice": {
+        "id": 1,
+        "max": 2
+    },
+    "query": {
+        "match" : {
+            "title" : "elasticsearch"
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The id of the slice
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The maximum number of slices
+</p></td></tr></table></div><p>The result from the first request returned documents that belong to the first slice (id: 0) and the result from the
+second request returned documents that belong to the second slice. Since the maximum number of slices is set to 2
+ the union of the results of the two requests is equivalent to the results of a scroll query without slicing.
+By default the splitting is done on the shards first and then locally on each shard using the _uid field
+with the following formula:
+<code class="literal">slice(doc) = floorMod(hashCode(doc._uid), max)</code>
+For instance if the number of shards is equal to 2 and the user requested 4 slices then the slices 0 and 2 are assigned
+to the first shard and the slices 1 and 3 are assigned to the second shard.</p><p>Each scroll is independent and can be processed in parallel like any scroll request.</p><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">If the number of slices is bigger than the number of shards the slice filter is very slow on the first calls, it has a complexity of O(N) and a memory cost equals
+to N bits per slice where N is the total number of documents in the shard.
+After few calls the filter should be cached and subsequent calls should be faster but you should limit the number of
+ sliced query you perform in parallel to avoid the memory explosion.</p></div></div><p>To avoid this cost entirely it is possible to use the <code class="literal">doc_values</code> of another field to do the slicing
+but the user must ensure that the field has the following properties:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The field is numeric.
+</li><li class="listitem">
+<code class="literal">doc_values</code> are enabled on that field
+</li><li class="listitem">
+Every document should contain a single value. If a document has multiple values for the specified field, the first value is used.
+</li><li class="listitem">
+The value for each document should be set once when the document is created and never updated. This ensures that each
+slice gets deterministic results.
+</li><li class="listitem">
+The cardinality of the field should be high. This ensures that each slice gets approximately the same amount of documents.
+</li></ul></div><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /twitter/tweet/_search?scroll=1m
+{
+    "slice": {
+        "field": "date",
+        "id": 0,
+        "max": 10
+    },
+    "query": {
+        "match" : {
+            "title" : "elasticsearch"
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>For append only time-based indices, the <code class="literal">timestamp</code> field can be used safely.</p><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">By default the maximum number of slices allowed per scroll is limited to 1024.
+You can update the <code class="literal">index.max_slices_per_scroll</code> index setting to bypass this limit.</p></div></div></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="search-request-search-type.html">
+              « 
+              Search Type</a>
+           
+        </span><span class="next">
+           
+          <a href="search-request-preference.html">Preference
+               »
+            </a></span></div></body></html>

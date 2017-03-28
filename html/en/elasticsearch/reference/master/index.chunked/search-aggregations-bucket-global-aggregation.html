@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Global Aggregation
+        | Elasticsearch Reference [master]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-aggregations-bucket.html" title="Bucket Aggregations" /><link rel="prev" href="search-aggregations-bucket-geohashgrid-aggregation.html" title="GeoHash grid Aggregation" /><link rel="next" href="search-aggregations-bucket-histogram-aggregation.html" title="Histogram Aggregation" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/master" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="search-aggregations.html">Aggregations</a></span> » <span class="breadcrumb-link"><a href="search-aggregations-bucket.html">Bucket Aggregations</a></span> » <span class="breadcrumb-node">Global Aggregation</span></div><div xmlns="" class="navheader"><span class="prev"><a href="search-aggregations-bucket-geohashgrid-aggregation.html">
+              « 
+              GeoHash grid Aggregation</a>
+           
+        </span><span class="next">
+           
+          <a href="search-aggregations-bucket-histogram-aggregation.html">Histogram Aggregation
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-bucket-global-aggregation"></a>Global Aggregation<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/global-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Defines a single bucket of all the documents within the search execution
+context. This context is defined by the indices and the document types you’re
+searching on, but is <span class="strong"><strong>not</strong></span> influenced by the search query itself.</p><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">Global aggregators can only be placed as top level aggregators because
+        it doesn’t make sense to embed a global aggregator within another
+        bucket aggregator.</p></div></div><p>Example:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST /sales/_search?size=0
+{
+    "query" : {
+        "match" : { "type" : "t-shirt" }
+    },
+    "aggs" : {
+        "all_products" : {
+            "global" : {}, <a id="CO76-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+            "aggs" : { <a id="CO76-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+                "avg_price" : { "avg" : { "field" : "price" } }
+            }
+        },
+        "t_shirts": { "avg" : { "field" : "price" } }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO76-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">global</code> aggregation has an empty body
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO76-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The sub-aggregations that are registered for this <code class="literal">global</code> aggregation
+</p></td></tr></table></div><p>The above aggregation demonstrates how one would compute aggregations
+(<code class="literal">avg_price</code> in this example) on all the documents in the search context,
+regardless of the query (in our example, it will compute the average price over
+all products in our catalog, not just on the "shirts").</p><p>The response for the above aggregation:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">{
+    ...
+    "aggregations" : {
+        "all_products" : {
+            "doc_count" : 7, <a id="CO77-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+            "avg_price" : {
+                "value" : 140.71428571428572 <a id="CO77-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+            }
+        },
+        "t_shirts": {
+            "value" : 128.33333333333334 <a id="CO77-3"></a><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span>
+        }
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO77-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The number of documents that were aggregated (in our case, all documents
+within the search context)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO77-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The average price of all products in the index
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO77-3"><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The average price of all t-shirts
+</p></td></tr></table></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="search-aggregations-bucket-geohashgrid-aggregation.html">
+              « 
+              GeoHash grid Aggregation</a>
+           
+        </span><span class="next">
+           
+          <a href="search-aggregations-bucket-histogram-aggregation.html">Histogram Aggregation
+               »
+            </a></span></div></body></html>

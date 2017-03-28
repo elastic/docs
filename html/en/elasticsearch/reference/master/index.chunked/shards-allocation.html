@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Cluster Level Shard Allocation
+        | Elasticsearch Reference [master]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-cluster.html" title="Cluster" /><link rel="prev" href="modules-cluster.html" title="Cluster" /><link rel="next" href="disk-allocator.html" title="Disk-based Shard Allocation" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/master" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-cluster.html">Cluster</a></span> » <span class="breadcrumb-node">Cluster Level Shard Allocation</span></div><div xmlns="" class="navheader"><span class="prev"><a href="modules-cluster.html">
+              « 
+              Cluster</a>
+           
+        </span><span class="next">
+           
+          <a href="disk-allocator.html">Disk-based Shard Allocation
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="shards-allocation"></a>Cluster Level Shard Allocation<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/shards_allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Shard allocation is the process of allocating shards to nodes. This can
+happen during initial recovery, replica allocation, rebalancing, or
+when nodes are added or removed.</p><h3><a id="_shard_allocation_settings"></a>Shard Allocation Settings<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/shards_allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following <span class="emphasis"><em>dynamic</em></span> settings may be used to control shard allocation and recovery:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">cluster.routing.allocation.enable</code>
+</span></dt><dd><p class="simpara">Enable or disable allocation for specific kinds of shards:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">all</code> -             (default) Allows shard allocation for all kinds of shards.
+</li><li class="listitem">
+<code class="literal">primaries</code> -       Allows shard allocation only for primary shards.
+</li><li class="listitem">
+<code class="literal">new_primaries</code> -   Allows shard allocation only for primary shards for new indices.
+</li><li class="listitem">
+<code class="literal">none</code> -            No shard allocations of any kind are allowed for any indices.
+</li></ul></div><p class="simpara">This setting does not affect the recovery of local primary shards when
+restarting a node.  A restarted node that has a copy of an unassigned primary
+shard will recover that primary immediately, assuming that its allocation id matches
+one of the active allocation ids in the cluster state.</p></dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.node_concurrent_incoming_recoveries</code>
+</span></dt><dd>
+     How many concurrent incoming shard recoveries are allowed to happen on a node. Incoming recoveries are the recoveries
+     where the target shard (most likely the replica unless a shard is relocating) is allocated on the node. Defaults to <code class="literal">2</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.node_concurrent_outgoing_recoveries</code>
+</span></dt><dd>
+     How many concurrent outgoing shard recoveries are allowed to happen on a node. Outgoing recoveries are the recoveries
+     where the source shard (most likely the primary unless a shard is relocating) is allocated on the node. Defaults to <code class="literal">2</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.node_concurrent_recoveries</code>
+</span></dt><dd>
+     A shortcut to set both <code class="literal">cluster.routing.allocation.node_concurrent_incoming_recoveries</code> and
+     <code class="literal">cluster.routing.allocation.node_concurrent_outgoing_recoveries</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.node_initial_primaries_recoveries</code>
+</span></dt><dd>
+    While the recovery of replicas happens over the network, the recovery of
+    an unassigned primary after node restart uses data from the local disk.
+    These should be fast so more initial primary recoveries can happen in
+    parallel on the same node.  Defaults to <code class="literal">4</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.same_shard.host</code>
+</span></dt><dd>
+      Allows to perform a check to prevent allocation of multiple instances of
+      the same shard on a single host, based on host name and host address.
+      Defaults to <code class="literal">false</code>, meaning that no check is performed by default. This
+      setting only applies if multiple nodes are started on the same machine.
+</dd></dl></div><h3><a id="_shard_rebalancing_settings"></a>Shard Rebalancing Settings<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/shards_allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following <span class="emphasis"><em>dynamic</em></span> settings may be used to control the rebalancing of
+shards across the cluster:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">cluster.routing.rebalance.enable</code>
+</span></dt><dd><p class="simpara">Enable or disable rebalancing for specific kinds of shards:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">all</code> -         (default) Allows shard balancing for all kinds of shards.
+</li><li class="listitem">
+<code class="literal">primaries</code> -   Allows shard balancing only for primary shards.
+</li><li class="listitem">
+<code class="literal">replicas</code> -    Allows shard balancing only for replica shards.
+</li><li class="listitem">
+<code class="literal">none</code> -        No shard balancing of any kind are allowed for any indices.
+</li></ul></div></dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.allow_rebalance</code>
+</span></dt><dd><p class="simpara">Specify when shard rebalancing is allowed:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">always</code> -                    Always allow rebalancing.
+</li><li class="listitem">
+<code class="literal">indices_primaries_active</code> -  Only when all primaries in the cluster are allocated.
+</li><li class="listitem">
+<code class="literal">indices_all_active</code> -        (default) Only when all shards (primaries and replicas) in the cluster are allocated.
+</li></ul></div></dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.cluster_concurrent_rebalance</code>
+</span></dt><dd>
+      Allow to control how many concurrent shard rebalances are
+      allowed cluster wide. Defaults to <code class="literal">2</code>. Note that this setting
+      only controls the number of concurrent shard relocations due
+      to imbalances in the cluster. This setting does not limit shard
+      relocations due to <a class="link" href="allocation-filtering.html" title="Shard Allocation Filtering">allocation filtering</a>
+      or <a class="link" href="allocation-awareness.html#forced-awareness" title="Forced Awarenessedit">forced awareness</a>.
+</dd></dl></div><h3><a id="_shard_balancing_heuristics"></a>Shard Balancing Heuristics<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/shards_allocation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following settings are used together to determine where to place each
+shard.  The cluster is balanced when no allowed action can bring the weights
+of each node closer together by more then the <code class="literal">balance.threshold</code>.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">cluster.routing.allocation.balance.shard</code>
+</span></dt><dd>
+     Defines the weight factor for shards allocated on a node
+     (float). Defaults to <code class="literal">0.45f</code>.  Raising this raises the tendency to
+     equalize the number of shards across all nodes in the cluster.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.balance.index</code>
+</span></dt><dd>
+     Defines a factor to the number of shards per index allocated
+      on a specific node (float). Defaults to <code class="literal">0.55f</code>.  Raising this raises the
+      tendency to equalize the number of shards per index across all nodes in
+      the cluster.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.balance.threshold</code>
+</span></dt><dd>
+     Minimal optimization value of operations that should be performed (non
+      negative float). Defaults to <code class="literal">1.0f</code>.  Raising this will cause the cluster
+      to be less aggressive about optimizing the shard balance.
+</dd></dl></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">Regardless of the result of the balancing algorithm, rebalancing might
+not be allowed due to forced awareness or allocation filtering.</p></div></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="modules-cluster.html">
+              « 
+              Cluster</a>
+           
+        </span><span class="next">
+           
+          <a href="disk-allocator.html">Disk-based Shard Allocation
+               »
+            </a></span></div></body></html>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Full cluster restart upgrade
+        | Elasticsearch Reference [master]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="setup-upgrade.html" title="Upgrading Elasticsearch" /><link rel="prev" href="rolling-upgrades.html" title="Rolling upgrades" /><link rel="next" href="reindex-upgrade.html" title="Reindex to upgrade" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/master" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="setup.html">Setup Elasticsearch</a></span> » <span class="breadcrumb-link"><a href="setup-upgrade.html">Upgrading Elasticsearch</a></span> » <span class="breadcrumb-node">Full cluster restart upgrade</span></div><div xmlns="" class="navheader"><span class="prev"><a href="rolling-upgrades.html">
+              « 
+              Rolling upgrades</a>
+           
+        </span><span class="next">
+           
+          <a href="reindex-upgrade.html">Reindex to upgrade
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="restart-upgrade"></a>Full cluster restart upgrade<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/cluster_restart.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch requires a full cluster restart when upgrading across major
+versions.  Rolling upgrades are not supported across major versions. Consult
+this <a class="link" href="setup-upgrade.html" title="Upgrading Elasticsearch">table</a> to verify that a full cluster restart is
+required.</p><p>The process to perform an upgrade with a full cluster restart is as follows:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+<span class="strong"><strong>Disable shard allocation</strong></span>
+</p><p class="simpara">When you shut down a node, the allocation process will immediately try to
+replicate the shards that were on that node to other nodes in the cluster,
+causing a lot of wasted I/O.  This can be avoided by disabling allocation
+before shutting down a node:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT _cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.enable": "none"
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div></li><li class="listitem"><p class="simpara">
+<span class="strong"><strong>Perform a synced flush</strong></span>
+</p><p class="simpara">Shard recovery will be much faster if you stop indexing and issue a
+<a class="link" href="indices-synced-flush.html" title="Synced Flush">synced-flush</a> request:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-sh">POST _flush/synced</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p class="simpara">A synced flush request is a “best effort” operation. It will fail if there
+are any pending indexing operations, but it is safe to reissue the request
+multiple times if necessary.</p></li><li class="listitem"><p class="simpara">
+<span class="strong"><strong>Shutdown and upgrade all nodes</strong></span>
+</p><p class="simpara">Stop all Elasticsearch services on all nodes in the cluster. Each node can be
+upgraded following the same procedure described in <a class="xref" href="rolling-upgrades.html#upgrade-node">[upgrade-node]</a>.</p></li><li class="listitem"><p class="simpara">
+<span class="strong"><strong>Upgrade any plugins</strong></span>
+</p><p class="simpara">Elasticsearch plugins must be upgraded when upgrading a node.  Use the
+<code class="literal">elasticsearch-plugin</code> script to install the correct version of any plugins
+that you need.</p></li><li class="listitem"><p class="simpara">
+<span class="strong"><strong>Start the cluster</strong></span>
+</p><p class="simpara">If you have dedicated master nodes — nodes with <code class="literal">node.master</code> set to
+<code class="literal">true</code>(the default) and <code class="literal">node.data</code> set to <code class="literal">false</code> —  then it is a good idea
+to start them first.  Wait for them to form a cluster and to elect a master
+before proceeding with the data nodes. You can check progress by looking at the
+logs.</p><p class="simpara">As soon as the <a class="link" href="modules-discovery-zen.html#master-election" title="Master Electionedit">minimum number of master-eligible nodes</a>
+have discovered each other, they will form a cluster and elect a master.  From
+that point on, the <a class="link" href="cat-health.html" title="cat health"><code class="literal">_cat/health</code></a> and <a class="link" href="cat-nodes.html" title="cat nodes"><code class="literal">_cat/nodes</code></a>
+APIs can be used to monitor nodes joining the cluster:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-sh">GET _cat/health
+
+GET _cat/nodes</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p class="simpara">Use these APIs to check that all nodes have successfully joined the cluster.</p></li><li class="listitem"><p class="simpara">
+<span class="strong"><strong>Wait for yellow</strong></span>
+</p><p class="simpara">As soon as each node has joined the cluster, it will start to recover any
+primary shards that are stored locally.  Initially, the
+<a class="link" href="cat-health.html" title="cat health"><code class="literal">_cat/health</code></a> request will report a <code class="literal">status</code> of <code class="literal">red</code>, meaning
+that not all primary shards have been allocated.</p><p class="simpara">Once each node has recovered its local shards, the <code class="literal">status</code> will become
+<code class="literal">yellow</code>, meaning all primary shards have been recovered, but not all replica
+shards are allocated.  This is to be expected because allocation is still
+disabled.</p></li><li class="listitem"><p class="simpara">
+<span class="strong"><strong>Reenable allocation</strong></span>
+</p><p class="simpara">Delaying the allocation of replicas until all nodes have joined the cluster
+allows the master to allocate replicas to nodes which already have local shard
+copies.   At this point, with all the nodes in the cluster, it is safe to
+reenable shard allocation:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT _cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.enable": "all"
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p class="simpara">The cluster will now start allocating replica shards to all data nodes. At this
+point it is safe to resume indexing and searching, but your cluster will
+recover more quickly if you can delay indexing and searching until all shards
+have recovered.</p><p class="simpara">You can monitor progress with the <a class="link" href="cat-health.html" title="cat health"><code class="literal">_cat/health</code></a> and
+<a class="link" href="cat-recovery.html" title="cat recovery"><code class="literal">_cat/recovery</code></a> APIs:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-sh">GET _cat/health
+
+GET _cat/recovery</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p class="simpara">Once the <code class="literal">status</code> column in the <code class="literal">_cat/health</code> output has reached <code class="literal">green</code>, all
+primary and replica shards have been successfully allocated.</p></li></ol></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="rolling-upgrades.html">
+              « 
+              Rolling upgrades</a>
+           
+        </span><span class="next">
+           
+          <a href="reindex-upgrade.html">Reindex to upgrade
+               »
+            </a></span></div></body></html>

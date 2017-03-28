@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">fields
+        | Elasticsearch Reference [master]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="mapping-params.html" title="Mapping parameters" /><link rel="prev" href="index-options.html" title="index_options" /><link rel="next" href="norms.html" title="norms" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/master" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-link"><a href="mapping-params.html">Mapping parameters</a></span> » <span class="breadcrumb-node"><code xmlns="http://www.w3.org/1999/xhtml" class="literal">fields</code></span></div><div xmlns="" class="navheader"><span class="prev"><a href="index-options.html">
+              « 
+              <code xmlns="http://www.w3.org/1999/xhtml" class="literal">index_options</code></a>
+           
+        </span><span class="next">
+           
+          <a href="norms.html"><code xmlns="http://www.w3.org/1999/xhtml" class="literal">norms</code>
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="multi-fields"></a><code class="literal">fields</code><a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/params/multi-fields.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>It is often useful to index the same field in different ways for different
+purposes.  This is the purpose of <span class="emphasis"><em>multi-fields</em></span>. For instance, a <code class="literal">string</code>
+field could be mapped as a <code class="literal">text</code> field for full-text
+search, and as a <code class="literal">keyword</code> field for sorting or aggregations:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "city": {
+          "type": "text",
+          "fields": {
+            "raw": { <a id="CO217-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+              "type":  "keyword"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+PUT my_index/my_type/1
+{
+  "city": "New York"
+}
+
+PUT my_index/my_type/2
+{
+  "city": "York"
+}
+
+GET my_index/_search
+{
+  "query": {
+    "match": {
+      "city": "york" <a id="CO217-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+    }
+  },
+  "sort": {
+    "city.raw": "asc" <a id="CO217-3"></a><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span>
+  },
+  "aggs": {
+    "Cities": {
+      "terms": {
+        "field": "city.raw" <a id="CO217-4"></a><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span>
+      }
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO217-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">city.raw</code> field is a <code class="literal">keyword</code> version of the <code class="literal">city</code> field.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO217-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">city</code> field can be used for full text search.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO217-3"><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO217-4"><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">city.raw</code> field can be used for sorting and aggregations
+</p></td></tr></table></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">Multi-fields do not change the original <code class="literal">_source</code> field.</p></div></div><div xmlns="" class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">The <code class="literal">fields</code> setting is allowed to have different settings for fields of
+the same name in the same index.  New multi-fields can be added to existing
+fields using the <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multi_fields_with_multiple_analyzers"></a>Multi-fields with multiple analyzers<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/params/multi-fields.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Another use case of multi-fields is to analyze the same field in different
+ways for better relevance. For instance we could index a field with the
+<a class="link" href="analysis-standard-analyzer.html" title="Standard Analyzer"><code class="literal">standard</code> analyzer</a> which breaks text up into
+words, and again with the <a class="link" href="analysis-lang-analyzer.html#english-analyzer" title="english analyzer"><code class="literal">english</code> analyzer</a>
+which stems words into their root form:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "text": { <a id="CO218-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+          "type": "text",
+          "fields": {
+            "english": { <a id="CO218-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+              "type":     "text",
+              "analyzer": "english"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+PUT my_index/my_type/1
+{ "text": "quick brown fox" } <a id="CO218-3"></a><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span>
+
+PUT my_index/my_type/2
+{ "text": "quick brown foxes" } <a id="CO218-4"></a><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span>
+
+GET my_index/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "quick brown foxes",
+      "fields": [ <a id="CO218-5"></a><span xmlns=""><img src="images/icons/callouts/5.png" alt="" /></span>
+        "text",
+        "text.english"
+      ],
+      "type": "most_fields" <a id="CO218-6"></a><span xmlns=""><img src="images/icons/callouts/6.png" alt="" /></span>
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO218-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">text</code> field uses the <code class="literal">standard</code> analyzer.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO218-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">text.english</code> field uses the <code class="literal">english</code> analyzer.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO218-3"><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO218-4"><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Index two documents, one with <code class="literal">fox</code> and the other with <code class="literal">foxes</code>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO218-5"><span xmlns=""><img src="images/icons/callouts/5.png" alt="" /></span></a> <a href="#CO218-6"><span xmlns=""><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Query both the <code class="literal">text</code> and <code class="literal">text.english</code> fields and combine the scores.
+</p></td></tr></table></div><p>The <code class="literal">text</code> field contains the term <code class="literal">fox</code> in the first document and <code class="literal">foxes</code> in
+the second document.  The <code class="literal">text.english</code> field contains <code class="literal">fox</code> for both
+documents, because <code class="literal">foxes</code> is stemmed to <code class="literal">fox</code>.</p><p>The query string is also analyzed by the <code class="literal">standard</code> analyzer for the <code class="literal">text</code>
+field, and by the <code class="literal">english</code> analyzer` for the <code class="literal">text.english</code> field.  The
+stemmed field allows a query for <code class="literal">foxes</code> to also match the document containing
+just <code class="literal">fox</code>.  This allows us to match as many documents as possible.  By also
+querying the unstemmed <code class="literal">text</code> field, we improve the relevance score of the
+document which matches <code class="literal">foxes</code> exactly.</p></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="index-options.html">
+              « 
+              <code xmlns="http://www.w3.org/1999/xhtml" class="literal">index_options</code></a>
+           
+        </span><span class="next">
+           
+          <a href="norms.html"><code xmlns="http://www.w3.org/1999/xhtml" class="literal">norms</code>
+               »
+            </a></span></div></body></html>

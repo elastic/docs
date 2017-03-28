@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Bulk API
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs-multi-get.html" title="Multi Get API" /><link rel="next" href="docs-reindex.html" title="Reindex API" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="docs.html">Document APIs</a></span> » <span class="breadcrumb-node">Bulk API</span></div><div xmlns="" class="navheader"><span class="prev"><a href="docs-multi-get.html">
+              « 
+              Multi Get API</a>
+           
+        </span><span class="next">
+           
+          <a href="docs-reindex.html">Reindex API
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-bulk"></a>Bulk API<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The bulk API makes it possible to perform many index/delete operations
+in a single API call. This can greatly increase the indexing speed.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Client support for bulk requests</strong></p></div></div></div><p>Some of the officially supported clients provide helpers to assist with
+bulk requests and reindexing of documents from one index to another:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Perl
+</span></dt><dd>
+    See <a class="ulink" href="https://metacpan.org/pod/Search::Elasticsearch::Bulk" target="_top">Search::Elasticsearch::Bulk</a>
+    and <a class="ulink" href="https://metacpan.org/pod/Search::Elasticsearch::Scroll" target="_top">Search::Elasticsearch::Scroll</a>
+</dd><dt><span class="term">
+Python
+</span></dt><dd>
+    See <a class="ulink" href="http://elasticsearch-py.readthedocs.org/en/master/helpers.html" target="_top">elasticsearch.helpers.*</a>
+</dd></dl></div></div><p>The REST API endpoint is <code class="literal">/_bulk</code>, and it expects the following newline delimited JSON
+(NDJSON) structure:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">action_and_meta_data\n
+optional_source\n
+action_and_meta_data\n
+optional_source\n
+....
+action_and_meta_data\n
+optional_source\n</pre></div><p><span class="strong"><strong>NOTE</strong></span>: the final line of data must end with a newline character <code class="literal">\n</code>. Each newline character
+may be preceded by a carriage return <code class="literal">\r</code>. When sending requests to this endpoint the
+<code class="literal">Content-Type</code> header should be set to <code class="literal">application/x-ndjson</code>.</p><p>The possible actions are <code class="literal">index</code>, <code class="literal">create</code>, <code class="literal">delete</code> and <code class="literal">update</code>.
+<code class="literal">index</code> and <code class="literal">create</code> expect a source on the next
+line, and have the same semantics as the <code class="literal">op_type</code> parameter to the
+standard index API (i.e. create will fail if a document with the same
+index and type exists already, whereas index will add or replace a
+document as necessary). <code class="literal">delete</code> does not expect a source on the
+following line, and has the same semantics as the standard delete API.
+<code class="literal">update</code> expects that the partial doc, upsert and script and its options
+are specified on the next line.</p><p>If you’re providing text file input to <code class="literal">curl</code>, you <span class="strong"><strong>must</strong></span> use the
+<code class="literal">--data-binary</code> flag instead of plain <code class="literal">-d</code>. The latter doesn’t preserve
+newlines. Example:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">$ cat requests
+{ "index" : { "_index" : "test", "_type" : "type1", "_id" : "1" } }
+{ "field1" : "value1" }
+$ curl -s -H "Content-Type: application/x-ndjson" -XPOST localhost:9200/_bulk --data-binary "@requests"; echo
+{"took":7, "errors": false, "items":[{"index":{"_index":"test","_type":"type1","_id":"1","_version":1,"result":"created","forced_refresh":false}}]}</pre></div><p>Because this format uses literal <code class="literal">\n</code>'s as delimiters, please be sure
+that the JSON actions and sources are not pretty printed. Here is an
+example of a correct sequence of bulk commands:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST _bulk
+{ "index" : { "_index" : "test", "_type" : "type1", "_id" : "1" } }
+{ "field1" : "value1" }
+{ "delete" : { "_index" : "test", "_type" : "type1", "_id" : "2" } }
+{ "create" : { "_index" : "test", "_type" : "type1", "_id" : "3" } }
+{ "field1" : "value3" }
+{ "update" : {"_id" : "1", "_type" : "type1", "_index" : "test"} }
+{ "doc" : {"field2" : "value2"} }</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>The result of this bulk operation is:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">{
+   "took": 30,
+   "errors": false,
+   "items": [
+      {
+         "index": {
+            "_index": "test",
+            "_type": "type1",
+            "_id": "1",
+            "_version": 1,
+            "result": "created",
+            "_shards": {
+               "total": 2,
+               "successful": 1,
+               "failed": 0
+            },
+            "created": true,
+            "status": 201
+         }
+      },
+      {
+         "delete": {
+            "found": false,
+            "_index": "test",
+            "_type": "type1",
+            "_id": "2",
+            "_version": 1,
+            "result": "not_found",
+            "_shards": {
+               "total": 2,
+               "successful": 1,
+               "failed": 0
+            },
+            "status": 404
+         }
+      },
+      {
+         "create": {
+            "_index": "test",
+            "_type": "type1",
+            "_id": "3",
+            "_version": 1,
+            "result": "created",
+            "_shards": {
+               "total": 2,
+               "successful": 1,
+               "failed": 0
+            },
+            "created": true,
+            "status": 201
+         }
+      },
+      {
+         "update": {
+            "_index": "test",
+            "_type": "type1",
+            "_id": "1",
+            "_version": 2,
+            "result": "updated",
+            "_shards": {
+                "total": 2,
+                "successful": 1,
+                "failed": 0
+            },
+            "status": 200
+         }
+      }
+   ]
+}</pre></div><p>The endpoints are <code class="literal">/_bulk</code>, <code class="literal">/{index}/_bulk</code>, and <code class="literal">{index}/{type}/_bulk</code>.
+When the index or the index/type are provided, they will be used by
+default on bulk items that don’t provide them explicitly.</p><p>A note on the format. The idea here is to make processing of this as
+fast as possible. As some of the actions will be redirected to other
+shards on other nodes, only <code class="literal">action_meta_data</code> is parsed on the
+receiving node side.</p><p>Client libraries using this protocol should try and strive to do
+something similar on the client side, and reduce buffering as much as
+possible.</p><p>The response to a bulk action is a large JSON structure with the
+individual results of each action that was performed. The failure of a
+single action does not affect the remaining actions.</p><p>There is no "correct" number of actions to perform in a single bulk
+call. You should experiment with different settings to find the optimum
+size for your particular workload.</p><p>If using the HTTP API, make sure that the client does not send HTTP
+chunks, as this will slow things down.</p><h3><a id="bulk-versioning"></a>Versioning<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each bulk item can include the version value using the
+<code class="literal">_version</code>/<code class="literal">version</code> field. It automatically follows the behavior of the
+index / delete operation based on the <code class="literal">_version</code> mapping. It also
+support the <code class="literal">version_type</code>/<code class="literal">_version_type</code> (see <a class="link" href="docs-index_.html#index-versioning" title="Versioningedit">versioning</a>)</p><h3><a id="bulk-routing"></a>Routing<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each bulk item can include the routing value using the
+<code class="literal">_routing</code>/<code class="literal">routing</code> field. It automatically follows the behavior of the
+index / delete operation based on the <code class="literal">_routing</code> mapping.</p><h3><a id="bulk-parent"></a>Parent<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each bulk item can include the parent value using the <code class="literal">_parent</code>/<code class="literal">parent</code>
+field. It automatically follows the behavior of the index / delete
+operation based on the <code class="literal">_parent</code> / <code class="literal">_routing</code> mapping.</p><h3><a id="bulk-wait-for-active-shards"></a>Wait For Active Shards<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When making bulk calls, you can set the <code class="literal">wait_for_active_shards</code>
+parameter to require a minimum number of shard copies to be active
+before starting to process the bulk request. See
+<a class="link" href="docs-index_.html#index-wait-for-active-shards" title="Wait For Active Shardsedit">here</a> for further details and a usage
+example.</p><h3><a id="bulk-refresh"></a>Refresh<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Control when the changes made by this request are visible to search. See
+<a class="link" href="docs-refresh.html" title="?refresh">refresh</a>.</p><h3><a id="bulk-update"></a>Update<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When using <code class="literal">update</code> action <code class="literal">_retry_on_conflict</code> can be used as field in
+the action itself (not in the extra payload line), to specify how many
+times an update should be retried in the case of a version conflict.</p><p>The <code class="literal">update</code> action payload, supports the following options: <code class="literal">doc</code>
+(partial document), <code class="literal">upsert</code>, <code class="literal">doc_as_upsert</code>, <code class="literal">script</code>, <code class="literal">params</code> (for
+script), <code class="literal">lang</code> (for script) and <code class="literal">_source</code>. See update documentation for details on
+the options. Example with update actions:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST _bulk
+{ "update" : {"_id" : "1", "_type" : "type1", "_index" : "index1", "_retry_on_conflict" : 3} }
+{ "doc" : {"field" : "value"} }
+{ "update" : { "_id" : "0", "_type" : "type1", "_index" : "index1", "_retry_on_conflict" : 3} }
+{ "script" : { "inline": "ctx._source.counter += params.param1", "lang" : "painless", "params" : {"param1" : 1}}, "upsert" : {"counter" : 1}}
+{ "update" : {"_id" : "2", "_type" : "type1", "_index" : "index1", "_retry_on_conflict" : 3} }
+{ "doc" : {"field" : "value"}, "doc_as_upsert" : true }
+{ "update" : {"_id" : "3", "_type" : "type1", "_index" : "index1", "_source" : true} }
+{ "doc" : {"field" : "value"} }
+{ "update" : {"_id" : "4", "_type" : "type1", "_index" : "index1"} }
+{ "doc" : {"field" : "value"}, "_source": true}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><h3><a id="bulk-security"></a>Security<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/docs/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>See <a class="xref" href="url-access-control.html" title="URL-based access control"><em>URL-based access control</em></a></p></div><div xmlns="" class="navfooter"><span class="prev"><a href="docs-multi-get.html">
+              « 
+              Multi Get API</a>
+           
+        </span><span class="next">
+           
+          <a href="docs-reindex.html">Reindex API
+               »
+            </a></span></div></body></html>

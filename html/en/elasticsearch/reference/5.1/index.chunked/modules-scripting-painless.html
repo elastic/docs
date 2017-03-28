@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Painless Scripting Language
+        | Elasticsearch Reference [5.1]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.1]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-scripting-groovy.html" title="Groovy Scripting Language" /><link rel="next" href="modules-scripting-painless-syntax.html" title="Painless Syntax" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.1" /></head><body><div xmlns="" class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.1]
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-scripting.html">Scripting</a></span> » <span class="breadcrumb-node">Painless Scripting Language</span></div><div xmlns="" class="navheader"><span class="prev"><a href="modules-scripting-groovy.html">
+              « 
+              Groovy Scripting Language</a>
+           
+        </span><span class="next">
+           
+          <a href="modules-scripting-painless-syntax.html">Painless Syntax
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-painless"></a>Painless Scripting Language<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div xmlns="" class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content">
+The Painless scripting language is new and is still marked as experimental. The syntax or API may be changed in the future in non-backwards compatible ways if required.
+</div></div><p><span class="emphasis"><em>Painless</em></span> is a simple, secure scripting language available in Elasticsearch
+by default. It is designed specifically for use with Elasticsearch and can
+safely be used with <code class="literal">inline</code> and <code class="literal">stored</code> scripting, which is enabled by
+default.</p><p>The Painless syntax is similar to <a class="ulink" href="http://groovy-lang.org/index.html" target="_top">Groovy</a>.</p><p>You can use Painless anywhere a script can be used in Elasticsearch—simply set the <code class="literal">lang</code> parameter
+to <code class="literal">painless</code>.</p><h2><a id="painless-features"></a>Painless Features<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Fast performance: <a class="ulink" href="https://benchmarks.elastic.co/index.html#search_qps_scripts" target="_top">several times faster</a> than the alternatives.
+</li><li class="listitem">
+Safety: Fine-grained <a class="link" href="modules-scripting-painless.html#painless-api" title="Painless APIedit">whitelist</a> with method call/field granularity.
+</li><li class="listitem">
+Optional typing: Variables and parameters can use explicit types or the dynamic <code class="literal">def</code> type.
+</li><li class="listitem">
+Syntax: Extends Java’s syntax with a subset of Groovy for ease of use. See the <a class="link" href="modules-scripting-painless-syntax.html" title="Painless Syntax">Syntax Overview</a>.
+</li><li class="listitem">
+Optimizations: Designed specifically for Elasticsearch scripting.
+</li></ul></div><h2><a id="painless-examples"></a>Painless Examples<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>To illustrate how Painless works, let’s load some hockey stats into an Elasticsearch index:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT hockey/player/_bulk?refresh
+{"index":{"_id":1}}
+{"first":"johnny","last":"gaudreau","goals":[9,27,1],"assists":[17,46,0],"gp":[26,82,1]}
+{"index":{"_id":2}}
+{"first":"sean","last":"monohan","goals":[7,54,26],"assists":[11,26,13],"gp":[26,82,82]}
+{"index":{"_id":3}}
+{"first":"jiri","last":"hudler","goals":[5,34,36],"assists":[11,62,42],"gp":[24,80,79]}
+{"index":{"_id":4}}
+{"first":"micheal","last":"frolik","goals":[4,6,15],"assists":[8,23,15],"gp":[26,82,82]}
+{"index":{"_id":5}}
+{"first":"sam","last":"bennett","goals":[5,0,0],"assists":[8,1,0],"gp":[26,1,0]}
+{"index":{"_id":6}}
+{"first":"dennis","last":"wideman","goals":[0,26,15],"assists":[11,30,24],"gp":[26,81,82]}
+{"index":{"_id":7}}
+{"first":"david","last":"jones","goals":[7,19,5],"assists":[3,17,4],"gp":[26,45,34]}
+{"index":{"_id":8}}
+{"first":"tj","last":"brodie","goals":[2,14,7],"assists":[8,42,30],"gp":[26,82,82]}
+{"index":{"_id":39}}
+{"first":"mark","last":"giordano","goals":[6,30,15],"assists":[3,30,24],"gp":[26,60,63]}
+{"index":{"_id":10}}
+{"first":"mikael","last":"backlund","goals":[3,15,13],"assists":[6,24,18],"gp":[26,82,82]}
+{"index":{"_id":11}}
+{"first":"joe","last":"colborne","goals":[3,18,13],"assists":[6,20,24],"gp":[26,67,82]}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><h3><a id="_accessing_doc_values_from_painless"></a>Accessing Doc Values from Painless<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Document values can be accessed from a <code class="literal">Map</code> named <code class="literal">doc</code>.</p><p>For example, the following script calculates a player’s total goals. This example uses a strongly typed <code class="literal">int</code> and a <code class="literal">for</code> loop.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET hockey/_search
+{
+  "query": {
+    "function_score": {
+      "script_score": {
+        "script": {
+          "lang": "painless",
+          "inline": "int total = 0; for (int i = 0; i &lt; doc['goals'].length; ++i) { total += doc['goals'][i]; } return total;"
+        }
+      }
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>Alternatively, you could do the same thing using a script field instead of a function score:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET hockey/_search
+{
+  "query": {
+    "match_all": {}
+  },
+  "script_fields": {
+    "total_goals": {
+      "script": {
+        "lang": "painless",
+        "inline": "int total = 0; for (int i = 0; i &lt; doc['goals'].length; ++i) { total += doc['goals'][i]; } return total;"
+      }
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>The following example uses a Painless script to sort the players by their combined first and last names. The names are accessed using
+<code class="literal">doc['first'].value</code> and <code class="literal">doc['last'].value</code>.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET hockey/_search
+{
+  "query": {
+    "match_all": {}
+  },
+  "sort": {
+    "_script": {
+      "type": "string",
+      "order": "asc",
+      "script": {
+        "lang": "painless",
+        "inline": "doc['first.keyword'].value + ' ' + doc['last.keyword'].value"
+      }
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><h3><a id="_updating_fields_with_painless"></a>Updating Fields with Painless<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can also easily update fields. You access the original source for a field as <code class="literal">ctx._source.&lt;field-name&gt;</code>.</p><p>First, let’s look at the source data for a player by submitting the following request:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET hockey/_search
+{
+  "stored_fields": [
+    "_id",
+    "_source"
+  ],
+  "query": {
+    "term": {
+      "_id": 1
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>To change player 1’s last name to <code class="literal">hockey</code>, simply set <code class="literal">ctx._source.last</code> to the new value:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST hockey/player/1/_update
+{
+  "script": {
+    "lang": "painless",
+    "inline": "ctx._source.last = params.last",
+    "params": {
+      "last": "hockey"
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>You can also add fields to a document. For example, this script adds a new field that contains
+the player’s nickname,  <span class="emphasis"><em>hockey</em></span>.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST hockey/player/1/_update
+{
+  "script": {
+    "lang": "painless",
+    "inline": "ctx._source.last = params.last; ctx._source.nick = params.nick",
+    "params": {
+      "last": "gaudreau",
+      "nick": "hockey"
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><h3><a id="modules-scripting-painless-regex"></a>Regular expressions<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">Regexes are disabled by default because they circumvent Painless’s
+protection against long running and memory hungry scripts. To make matters
+worse even innocuous looking regexes can have staggering performance and stack
+depth behavior. They remain an amazing powerful tool but are too scary to enable
+by default. To enable them yourself set <code class="literal">script.painless.regex.enabled: true</code> in
+<code class="literal">elasticsearch.yml</code>. We’d like very much to have a safe alternative
+implementation that can be enabled by default so check this space for later
+developments!</p></div></div><p>Painless’s native support for regular expressions has syntax constructs:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">/pattern/</code>: Pattern literals create patterns. This is the only way to create
+a pattern in painless. The pattern inside the `/`s are just
+<a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html" target="_top">Java regular expressions</a>.
+See <a class="xref" href="modules-scripting-painless-syntax.html#modules-scripting-painless-regex-flags" title="Pattern flagsedit">the section called “Pattern flags<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for more.
+</li><li class="listitem">
+<code class="literal">=~</code>: The find operator return a <code class="literal">boolean</code>, <code class="literal">true</code> if a subsequence of the
+text matches, <code class="literal">false</code> otherwise.
+</li><li class="listitem">
+<code class="literal">==~</code>: The match operator returns a <code class="literal">boolean</code>, <code class="literal">true</code> if the text matches,
+<code class="literal">false</code> if it doesn’t.
+</li></ul></div><p>Using the find operator (<code class="literal">=~</code>) you can update all hockey players with "b" in
+their last name:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
+{
+  "script": {
+    "lang": "painless",
+    "inline": "if (ctx._source.last =~ /b/) {ctx._source.last += \"matched\"} else {ctx.op = 'noop'}"
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>Using the match operator (<code class="literal">==~</code>) you can update all the hockey players who’s
+names start with a consonant and end with a vowel:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
+{
+  "script": {
+    "lang": "painless",
+    "inline": "if (ctx._source.last ==~ /[^aeiou].*[aeiou]/) {ctx._source.last += \"matched\"} else {ctx.op = 'noop'}"
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>You can use the <code class="literal">Pattern.matcher</code> directly to get a <code class="literal">Matcher</code> instance and
+remove all of the vowels in all of their last names:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
+{
+  "script": {
+    "lang": "painless",
+    "inline": "ctx._source.last = /[aeiou]/.matcher(ctx._source.last).replaceAll('')"
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p><code class="literal">Matcher.replaceAll</code> is just a call to Java’s <code class="literal">Matcher</code>'s
+<a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Matcher.html#replaceAll-java.lang.String-" target="_top">replaceAll</a>
+method so it supports <code class="literal">$1</code> and <code class="literal">\1</code> for replacements:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
+{
+  "script": {
+    "lang": "painless",
+    "inline": "ctx._source.last = /n([aeiou])/.matcher(ctx._source.last).replaceAll('$1')"
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>If you need more control over replacements you can call <code class="literal">replaceAll</code> on a
+<code class="literal">CharSequence</code> with a <code class="literal">Function&lt;Matcher, String&gt;</code> that builds the replacement.
+This does not support <code class="literal">$1</code> or <code class="literal">\1</code> to access replacements because you already
+have a reference to the matcher and can get them with <code class="literal">m.group(1)</code>.</p><div xmlns="" class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">Calling <code class="literal">Matcher.find</code> inside of the function that builds the
+replacement is rude and will likely break the replacement process.</p></div></div><p>This will make all of the vowels in the hockey player’s last names upper case:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
+{
+  "script": {
+    "lang": "painless",
+    "inline": "ctx._source.last = ctx._source.last.replaceAll(/[aeiou]/, m -&gt; m.group().toUpperCase(Locale.ROOT))"
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>Or you can use the <code class="literal">CharSequence.replaceFirst</code> to make the first vowel in their
+last names upper case:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
+{
+  "script": {
+    "lang": "painless",
+    "inline": "ctx._source.last = ctx._source.last.replaceFirst(/[aeiou]/, m -&gt; m.group().toUpperCase(Locale.ROOT))"
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>Note: all of the <code class="literal">_update_by_query</code> examples above could really do with a
+<code class="literal">query</code> to limit the data that they pull back. While you <span class="strong"><strong>could</strong></span> use a
+<a class="xref" href="query-dsl-script-query.html" title="Script Query">Script Query</a> it wouldn’t be as efficient as using any other query
+because script queries aren’t able to use the inverted index to limit the
+documents that they have to check.</p><h2><a id="painless-api"></a>Painless API<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>The following Java packages are available for use in the Painless language:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/lang/package-summary.html" target="_top">java.lang</a>
+</li><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/math/package-summary.html" target="_top">java.math</a>
+</li><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/text/package-summary.html" target="_top">java.text</a>
+</li><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/time/package-summary.html" target="_top">java.time</a>
+</li><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/time/chrono/package-summary.html" target="_top">java.time.chrono</a>
+</li><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/time/format/package-summary.html" target="_top">java.time.format</a>
+</li><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/time/temporal/package-summary.html" target="_top">java.time.temporal</a>
+</li><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/time/zone/package-summary.html" target="_top">java.time.zone</a>
+</li><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/util/package-summary.html" target="_top">java.util</a>
+</li><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/util/function/package-summary.html" target="_top">java.util.function</a>
+</li><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/util/regex/package-summary.html" target="_top">java.util.regex</a>
+</li><li class="listitem">
+<a class="ulink" href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html" target="_top">java.util.stream</a>
+</li></ul></div><p>Note that unsafe classes and methods are not included, there is no support for:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Manipulation of processes and threads
+</li><li class="listitem">
+Input/Output
+</li><li class="listitem">
+Reflection
+</li></ul></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="modules-scripting-groovy.html">
+              « 
+              Groovy Scripting Language</a>
+           
+        </span><span class="next">
+           
+          <a href="modules-scripting-painless-syntax.html">Painless Syntax
+               »
+            </a></span></div></body></html>

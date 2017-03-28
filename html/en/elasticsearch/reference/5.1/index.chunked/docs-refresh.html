@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">?refresh
+        | Elasticsearch Reference [5.1]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.1]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs-multi-termvectors.html" title="Multi termvectors API" /><link rel="next" href="search.html" title="Search APIs" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.1" /></head><body><div xmlns="" class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.1]
+    </a></span> » <span class="breadcrumb-link"><a href="docs.html">Document APIs</a></span> » <span class="breadcrumb-node"><code xmlns="http://www.w3.org/1999/xhtml" class="literal">?refresh</code></span></div><div xmlns="" class="navheader"><span class="prev"><a href="docs-multi-termvectors.html">
+              « 
+              Multi termvectors API</a>
+           
+        </span><span class="next">
+           
+          <a href="search.html">Search APIs
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-refresh"></a><code class="literal">?refresh</code><a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/docs/refresh.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <a class="link" href="docs-index_.html" title="Index API">Index</a>, <a class="link" href="docs-update.html" title="Update API">Update</a>, <a class="link" href="docs-delete.html" title="Delete API">Delete</a>, and
+<a class="link" href="docs-bulk.html" title="Bulk API">Bulk</a> APIs support setting <code class="literal">refresh</code> to control when changes made
+by this request are made visible to search. These are the allowed values:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Empty string or <code class="literal">true</code>
+</span></dt><dd>
+Refresh the relevant primary and replica shards (not the whole index)
+immediately after the operation occurs, so that the updated document appears
+in search results immediately. This should <span class="strong"><strong>ONLY</strong></span> be done after careful thought
+and verification that it does not lead to poor performance, both from an
+indexing and a search standpoint.
+</dd><dt><span class="term">
+<code class="literal">wait_for</code>
+</span></dt><dd>
+Wait for the changes made by the request to be made visible by a refresh before
+replying. This doesn’t force an immediate refresh, rather, it waits for a
+refresh to happen. Elasticsearch automatically refreshes shards that have changed
+every <code class="literal">index.refresh_interval</code> which defaults to one second. That setting is
+<a class="link" href="index-modules.html#dynamic-index-settings" title="Dynamic index settingsedit">dynamic</a>. Calling the <a class="xref" href="indices-refresh.html" title="Refresh"><em>Refresh</em></a> API or
+setting <code class="literal">refresh</code> to <code class="literal">true</code> on any of the APIs that support it will also
+cause a refresh, in turn causing already running requests with <code class="literal">refresh=wait_for</code>
+to return.
+</dd><dt><span class="term">
+<code class="literal">false</code> (the default)
+</span></dt><dd>
+Take no refresh related actions. The changes made by this request will be made
+visible at some point after the request returns.
+</dd></dl></div><h3><a id="_choosing_which_setting_to_use"></a>Choosing which setting to use<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/docs/refresh.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Unless you have a good reason to wait for the change to become visible always
+use <code class="literal">refresh=false</code>, or, because that is the default, just leave the <code class="literal">refresh</code>
+parameter out of the URL. That is the simplest and fastest choice.</p><p>If you absolutely must have the changes made by a request visible synchronously
+with the request then you must pick between putting more load on
+Elasticsearch (<code class="literal">true</code>) and waiting longer for the response (<code class="literal">wait_for</code>). Here
+are a few points that should inform that decision:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The more changes being made to the index the more work <code class="literal">wait_for</code> saves
+compared to <code class="literal">true</code>. In the case that the index is only changed once every
+<code class="literal">index.refresh_interval</code> then it saves no work.
+</li><li class="listitem">
+<code class="literal">true</code> creates less efficient indexes constructs (tiny segments) that must
+later be merged into more efficient index constructs (larger segments). Meaning
+that the cost of <code class="literal">true</code> is payed at index time to create the tiny segment, at
+search time to search the tiny segment, and at merge time to make the larger
+segments.
+</li><li class="listitem">
+Never start multiple <code class="literal">refresh=wait_for</code> requests in a row. Instead batch them
+into a single bulk request with <code class="literal">refresh=wait_for</code> and Elasticsearch will start
+them all in parallel and return only when they have all finished.
+</li><li class="listitem">
+If the refresh interval is set to <code class="literal">-1</code>, disabling the automatic refreshes,
+then requests with <code class="literal">refresh=wait_for</code> will wait indefinitely until some action
+causes a refresh. Conversely, setting <code class="literal">index.refresh_interval</code> to something
+shorter than the default like <code class="literal">200ms</code> will make <code class="literal">refresh=wait_for</code> come back
+faster, but it’ll still generate inefficient segments.
+</li><li class="listitem">
+<code class="literal">refresh=wait_for</code> only affects the request that it is on, but, by forcing a
+refresh immediately, <code class="literal">refresh=true</code> will affect other ongoing request. In
+general, if you have a running system you don’t wish to disturb then
+<code class="literal">refresh=wait_for</code> is a smaller modification.
+</li></ul></div><h3><a id="_literal_refresh_wait_for_literal_can_force_a_refresh"></a><code class="literal">refresh=wait_for</code> Can Force a Refresh<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/docs/refresh.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If a <code class="literal">refresh=wait_for</code> request comes in when there are already
+<code class="literal">index.max_refresh_listeners</code> (defaults to 1000) requests waiting for a refresh
+on that shard then that request will behave just as though it had <code class="literal">refresh</code> set
+to <code class="literal">true</code> instead: it will force a refresh. This keeps the promise that when a
+<code class="literal">refresh=wait_for</code> request returns that its changes are visible for search
+while preventing unchecked resource usage for blocked requests. If a request
+forced a refresh because it ran out of listener slots then its response will
+contain <code class="literal">"forced_refresh": true</code>.</p><p>Bulk requests only take up one slot on each shard that they touch no matter how
+many times they modify the shard.</p><h3><a id="_examples"></a>Examples<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/docs/refresh.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>These will create a document and immediately refresh the index so it is visible:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT /test/test/1?refresh
+{"test": "test"}
+PUT /test/test/2?refresh=true
+{"test": "test"}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>These will create a document without doing anything to make it visible for
+search:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT /test/test/3
+{"test": "test"}
+PUT /test/test/4?refresh=false
+{"test": "test"}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>This will create a document and wait for it to become visible for search:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT /test/test/4?refresh=wait_for
+{"test": "test"}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="docs-multi-termvectors.html">
+              « 
+              Multi termvectors API</a>
+           
+        </span><span class="next">
+           
+          <a href="search.html">Search APIs
+               »
+            </a></span></div></body></html>

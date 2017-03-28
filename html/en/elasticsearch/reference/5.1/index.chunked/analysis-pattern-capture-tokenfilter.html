@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Pattern Capture Token Filter
+        | Elasticsearch Reference [5.1]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.1]" /><link rel="up" href="analysis-tokenfilters.html" title="Token Filters" /><link rel="prev" href="analysis-unique-tokenfilter.html" title="Unique Token Filter" /><link rel="next" href="analysis-pattern_replace-tokenfilter.html" title="Pattern Replace Token Filter" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.1" /></head><body><div xmlns="" class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.1]
+    </a></span> » <span class="breadcrumb-link"><a href="analysis.html">Analysis</a></span> » <span class="breadcrumb-link"><a href="analysis-tokenfilters.html">Token Filters</a></span> » <span class="breadcrumb-node">Pattern Capture Token Filter</span></div><div xmlns="" class="navheader"><span class="prev"><a href="analysis-unique-tokenfilter.html">
+              « 
+              Unique Token Filter</a>
+           
+        </span><span class="next">
+           
+          <a href="analysis-pattern_replace-tokenfilter.html">Pattern Replace Token Filter
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="analysis-pattern-capture-tokenfilter"></a>Pattern Capture Token Filter<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/analysis/tokenfilters/pattern-capture-tokenfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">pattern_capture</code> token filter, unlike the <code class="literal">pattern</code> tokenizer,
+emits a token for every capture group in the regular expression.
+Patterns are not anchored to the beginning and end of the string, so
+each pattern can match multiple times, and matches are allowed to
+overlap.</p><div xmlns="" class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><h3>Beware of Pathological Regular Expressions</h3><p xmlns="http://www.w3.org/1999/xhtml">The pattern capture token filter uses
+<a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html" target="_top">Java Regular Expressions</a>.</p><p xmlns="http://www.w3.org/1999/xhtml">A badly written regular expression could run very slowly or even throw a
+StackOverflowError and cause the node it is running on to exit suddenly.</p><p xmlns="http://www.w3.org/1999/xhtml">Read more about <a class="ulink" href="http://www.regular-expressions.info/catastrophic.html" target="_top">pathological regular expressions and how to avoid them</a>.</p></div></div><p>For instance a pattern like :</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"(([a-z]+)(\d*))"</pre></div><p>when matched against:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"abc123def456"</pre></div><p>would produce the tokens: [ <code class="literal">abc123</code>, <code class="literal">abc</code>, <code class="literal">123</code>, <code class="literal">def456</code>, <code class="literal">def</code>,
+<code class="literal">456</code> ]</p><p>If <code class="literal">preserve_original</code> is set to <code class="literal">true</code> (the default) then it would also
+emit the original token: <code class="literal">abc123def456</code>.</p><p>This is particularly useful for indexing text like camel-case code, eg
+<code class="literal">stripHTML</code> where a user may search for <code class="literal">"strip html"</code> or <code class="literal">"striphtml"</code>:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/  -d '
+{
+   "settings" : {
+      "analysis" : {
+         "filter" : {
+            "code" : {
+               "type" : "pattern_capture",
+               "preserve_original" : 1,
+               "patterns" : [
+                  "(\\p{Ll}+|\\p{Lu}\\p{Ll}+|\\p{Lu}+)",
+                  "(\\d+)"
+               ]
+            }
+         },
+         "analyzer" : {
+            "code" : {
+               "tokenizer" : "pattern",
+               "filter" : [ "code", "lowercase" ]
+            }
+         }
+      }
+   }
+}
+'</pre></div><p>When used to analyze the text</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">import static org.apache.commons.lang.StringEscapeUtils.escapeHtml</pre></div><p>this emits the tokens: [ <code class="literal">import</code>, <code class="literal">static</code>, <code class="literal">org</code>, <code class="literal">apache</code>, <code class="literal">commons</code>,
+<code class="literal">lang</code>, <code class="literal">stringescapeutils</code>, <code class="literal">string</code>, <code class="literal">escape</code>, <code class="literal">utils</code>, <code class="literal">escapehtml</code>,
+<code class="literal">escape</code>, <code class="literal">html</code> ]</p><p>Another example is analyzing email addresses:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">curl -XPUT localhost:9200/test/  -d '
+{
+   "settings" : {
+      "analysis" : {
+         "filter" : {
+            "email" : {
+               "type" : "pattern_capture",
+               "preserve_original" : 1,
+               "patterns" : [
+                  "([^@]+)",
+                  "(\\p{L}+)",
+                  "(\\d+)",
+                  "@(.+)"
+               ]
+            }
+         },
+         "analyzer" : {
+            "email" : {
+               "tokenizer" : "uax_url_email",
+               "filter" : [ "email", "lowercase",  "unique" ]
+            }
+         }
+      }
+   }
+}
+'</pre></div><p>When the above analyzer is used on an email address like:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">john-smith_123@foo-bar.com</pre></div><p>it would produce the following tokens:</p><pre class="literallayout">john-smith_123@foo-bar.com, john-smith_123,
+john, smith, 123, foo-bar.com, foo, bar, com</pre><p>Multiple patterns are required to allow overlapping captures, but also
+means that patterns are less dense and easier to understand.</p><p><span class="strong"><strong>Note:</strong></span> All tokens are emitted in the same position, and with the same
+character offsets, so when combined with highlighting, the whole
+original token will be highlighted, not just the matching subset. For
+instance, querying the above email address for <code class="literal">"smith"</code> would
+highlight:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">  &lt;em&gt;john-smith_123@foo-bar.com&lt;/em&gt;</pre></div><p>not:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">  john-&lt;em&gt;smith&lt;/em&gt;_123@foo-bar.com</pre></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="analysis-unique-tokenfilter.html">
+              « 
+              Unique Token Filter</a>
+           
+        </span><span class="next">
+           
+          <a href="analysis-pattern_replace-tokenfilter.html">Pattern Replace Token Filter
+               »
+            </a></span></div></body></html>

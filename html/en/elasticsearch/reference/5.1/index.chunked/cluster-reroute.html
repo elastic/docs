@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Cluster Reroute
+        | Elasticsearch Reference [5.1]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.1]" /><link rel="up" href="cluster.html" title="Cluster APIs" /><link rel="prev" href="cluster-pending.html" title="Pending cluster tasks" /><link rel="next" href="cluster-update-settings.html" title="Cluster Update Settings" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.1" /></head><body><div xmlns="" class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.1]
+    </a></span> » <span class="breadcrumb-link"><a href="cluster.html">Cluster APIs</a></span> » <span class="breadcrumb-node">Cluster Reroute</span></div><div xmlns="" class="navheader"><span class="prev"><a href="cluster-pending.html">
+              « 
+              Pending cluster tasks</a>
+           
+        </span><span class="next">
+           
+          <a href="cluster-update-settings.html">Cluster Update Settings
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="cluster-reroute"></a>Cluster Reroute<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/cluster/reroute.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The reroute command allows to explicitly execute a cluster reroute
+allocation command including specific commands. For example, a shard can
+be moved from one node to another explicitly, an allocation can be
+canceled, or an unassigned shard can be explicitly allocated on a
+specific node.</p><p>Here is a short example of how a simple reroute API call:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">curl -XPOST 'localhost:9200/_cluster/reroute' -d '{
+    "commands" : [ {
+        "move" :
+            {
+              "index" : "test", "shard" : 0,
+              "from_node" : "node1", "to_node" : "node2"
+            }
+        },
+        {
+          "allocate_replica" : {
+              "index" : "test", "shard" : 1, "node" : "node3"
+          }
+        }
+    ]
+}'</pre></div><p>An important aspect to remember is the fact that once when an allocation
+occurs, the cluster will aim at re-balancing its state back to an even
+state. For example, if the allocation includes moving a shard from
+<code class="literal">node1</code> to <code class="literal">node2</code>, in an <code class="literal">even</code> state, then another shard will be moved
+from <code class="literal">node2</code> to <code class="literal">node1</code> to even things out.</p><p>The cluster can be set to disable allocations, which means that only the
+explicitly allocations will be performed. Obviously, only once all
+commands has been applied, the cluster will aim to be re-balance its
+state.</p><p>Another option is to run the commands in <code class="literal">dry_run</code> (as a URI flag, or in
+the request body). This will cause the commands to apply to the current
+cluster state, and return the resulting cluster after the commands (and
+re-balancing) has been applied.</p><p>If the <code class="literal">explain</code> parameter is specified, a detailed explanation of why the
+commands could or could not be executed is returned.</p><p>The commands supported are:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">move</code>
+</span></dt><dd>
+    Move a started shard from one node to another node. Accepts
+    <code class="literal">index</code> and <code class="literal">shard</code> for index name and shard number, <code class="literal">from_node</code> for the
+    node to move the shard <code class="literal">from</code>, and <code class="literal">to_node</code> for the node to move the
+    shard to.
+</dd><dt><span class="term">
+<code class="literal">cancel</code>
+</span></dt><dd>
+    Cancel allocation of a shard (or recovery). Accepts <code class="literal">index</code>
+    and <code class="literal">shard</code> for index name and shard number, and <code class="literal">node</code> for the node to
+    cancel the shard allocation on. It also accepts <code class="literal">allow_primary</code> flag to
+    explicitly specify that it is allowed to cancel allocation for a primary
+    shard.  This can be used to force resynchronization of existing replicas
+    from the primary shard by cancelling them and allowing them to be
+    reinitialized through the standard reallocation process.
+</dd><dt><span class="term">
+<code class="literal">allocate_replica</code>
+</span></dt><dd>
+    Allocate an unassigned replica shard to a node. Accepts the
+    <code class="literal">index</code> and <code class="literal">shard</code> for index name and shard number, and <code class="literal">node</code> to
+    allocate the shard to. Takes <a class="link" href="modules-cluster.html" title="Cluster">allocation deciders</a> into account.
+</dd></dl></div><p>Two more commands are available that allow the allocation of a primary shard
+to a node. These commands should however be used with extreme care, as primary
+shard allocation is usually fully automatically handled by Elasticsearch.
+Reasons why a primary shard cannot be automatically allocated include the following:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+A new index was created but there is no node which satisfies the allocation deciders.
+</li><li class="listitem">
+An up-to-date shard copy of the data cannot be found on the current data nodes in
+the cluster. To prevent data loss, the system does not automatically promote a stale
+shard copy to primary.
+</li></ul></div><p>As a manual override, two commands to forcefully allocate primary shards
+are available:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">allocate_stale_primary</code>
+</span></dt><dd>
+    Allocate a primary shard to a node that holds a stale copy. Accepts the
+    <code class="literal">index</code> and <code class="literal">shard</code> for index name and shard number, and <code class="literal">node</code> to
+    allocate the shard to. Using this command may lead to data loss
+    for the provided shard id. If a node which has the good copy of the
+    data rejoins the cluster later on, that data will be overwritten with
+    the data of the stale copy that was forcefully allocated with this
+    command. To ensure that these implications are well-understood,
+    this command requires the special field <code class="literal">accept_data_loss</code> to be
+    explicitly set to <code class="literal">true</code> for it to work.
+</dd><dt><span class="term">
+<code class="literal">allocate_empty_primary</code>
+</span></dt><dd>
+    Allocate an empty primary shard to a node. Accepts the
+    <code class="literal">index</code> and <code class="literal">shard</code> for index name and shard number, and <code class="literal">node</code> to
+    allocate the shard to. Using this command leads to a complete loss
+    of all data that was indexed into this shard, if it was previously
+    started. If a node which has a copy of the
+    data rejoins the cluster later on, that data will be deleted!
+    To ensure that these implications are well-understood,
+    this command requires the special field <code class="literal">accept_data_loss</code> to be
+    explicitly set to <code class="literal">true</code> for it to work.
+</dd></dl></div><h3><a id="_retry_failed_shards"></a>Retry failed shards<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/cluster/reroute.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The cluster will attempt to allocate a shard a maximum of
+<code class="literal">index.allocation.max_retries</code> times in a row (defaults to <code class="literal">5</code>), before giving
+up and leaving the shard unallocated. This scenario can be caused by
+structural problems such as having an analyzer which refers to a stopwords
+file which doesn’t exist on all nodes.</p><p>Once the problem has been corrected, allocation can be manually retried by
+calling the <a class="link" href="cluster-reroute.html" title="Cluster Reroute"><code class="literal">_reroute</code></a> API with <code class="literal">?retry_failed</code>, which
+will attempt a single retry round for these shards.</p></div><div xmlns="" class="navfooter"><span class="prev"><a href="cluster-pending.html">
+              « 
+              Pending cluster tasks</a>
+           
+        </span><span class="next">
+           
+          <a href="cluster-update-settings.html">Cluster Update Settings
+               »
+            </a></span></div></body></html>

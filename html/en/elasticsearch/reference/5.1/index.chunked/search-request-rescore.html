@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Rescoring
+        | Elasticsearch Reference [5.1]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.1]" /><link rel="up" href="search-request-body.html" title="Request Body Search" /><link rel="prev" href="search-request-highlighting.html" title="Highlighting" /><link rel="next" href="search-request-search-type.html" title="Search Type" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.1" /></head><body><div xmlns="" class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.1]
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs</a></span> » <span class="breadcrumb-link"><a href="search-request-body.html">Request Body Search</a></span> » <span class="breadcrumb-node">Rescoring</span></div><div xmlns="" class="navheader"><span class="prev"><a href="search-request-highlighting.html">
+              « 
+              Highlighting</a>
+           
+        </span><span class="next">
+           
+          <a href="search-request-search-type.html">Search Type
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-rescore"></a>Rescoring<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/request/rescore.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Rescoring can help to improve precision by reordering just the top (eg
+100 - 500) documents returned by the
+<a class="link" href="search-request-query.html" title="Query"><code class="literal">query</code></a> and
+<a class="link" href="search-request-post-filter.html" title="Post filter"><code class="literal">post_filter</code></a> phases, using a
+secondary (usually more costly) algorithm, instead of applying the
+costly algorithm to all documents in the index.</p><p>A <code class="literal">rescore</code> request is executed on each shard before it returns its
+results to be sorted by the node handling the overall search request.</p><p>Currently the rescore API has only one implementation: the query
+rescorer, which uses a query to tweak the scoring. In the future,
+alternative rescorers may be made available, for example, a pair-wise rescorer.</p><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">the <code class="literal">rescore</code> phase is not executed when <a class="link" href="search-request-sort.html" title="Sort"><code class="literal">sort</code></a> is used.</p></div></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">when exposing pagination to your users, you should not change
+<code class="literal">window_size</code> as you step through each page (by passing different
+<code class="literal">from</code> values) since that can alter the top hits causing results to
+confusingly shift as the user steps through pages.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_query_rescorer"></a>Query rescorer<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/request/rescore.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The query rescorer executes a second query only on the Top-K results
+returned by the <a class="link" href="search-request-query.html" title="Query"><code class="literal">query</code></a> and
+<a class="link" href="search-request-post-filter.html" title="Post filter"><code class="literal">post_filter</code></a> phases. The
+number of docs which will be examined on each shard can be controlled by
+the <code class="literal">window_size</code> parameter, which defaults to
+<a class="link" href="search-request-from-size.html" title="From / Size"><code class="literal">from</code> and <code class="literal">size</code></a>.</p><p>By default the scores from the original query and the rescore query are
+combined linearly to produce the final <code class="literal">_score</code> for each document. The
+relative importance of the original query and of the rescore query can
+be controlled with the <code class="literal">query_weight</code> and <code class="literal">rescore_query_weight</code>
+respectively. Both default to <code class="literal">1</code>.</p><p>For example:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">curl -s -XPOST 'localhost:9200/_search' -d '{
+   "query" : {
+      "match" : {
+         "field1" : {
+            "operator" : "or",
+            "query" : "the quick brown",
+            "type" : "boolean"
+         }
+      }
+   },
+   "rescore" : {
+      "window_size" : 50,
+      "query" : {
+         "rescore_query" : {
+            "match" : {
+               "field1" : {
+                  "query" : "the quick brown",
+                  "type" : "phrase",
+                  "slop" : 2
+               }
+            }
+         },
+         "query_weight" : 0.7,
+         "rescore_query_weight" : 1.2
+      }
+   }
+}
+'</pre></div><p>The way the scores are combined can be controlled with the <code class="literal">score_mode</code>:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Score Mode </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">total</code></p></td><td align="left" valign="top"><p>Add the original score and the rescore query score.  The default.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">multiply</code></p></td><td align="left" valign="top"><p>Multiply the original score by the rescore query score.  Useful
+for <a class="link" href="query-dsl-function-score-query.html" title="Function Score Query"><code class="literal">function query</code></a> rescores.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">avg</code></p></td><td align="left" valign="top"><p>Average the original score and the rescore query score.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">max</code></p></td><td align="left" valign="top"><p>Take the max of original score and the rescore query score.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">min</code></p></td><td align="left" valign="top"><p>Take the min of the original score and the rescore query score.</p></td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multiple_rescores"></a>Multiple Rescores<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/request/rescore.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It is also possible to execute multiple rescores in sequence:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">curl -s -XPOST 'localhost:9200/_search' -d '{
+   "query" : {
+      "match" : {
+         "field1" : {
+            "operator" : "or",
+            "query" : "the quick brown",
+            "type" : "boolean"
+         }
+      }
+   },
+   "rescore" : [ {
+      "window_size" : 100,
+      "query" : {
+         "rescore_query" : {
+            "match" : {
+               "field1" : {
+                  "query" : "the quick brown",
+                  "type" : "phrase",
+                  "slop" : 2
+               }
+            }
+         },
+         "query_weight" : 0.7,
+         "rescore_query_weight" : 1.2
+      }
+   }, {
+      "window_size" : 10,
+      "query" : {
+         "score_mode": "multiply",
+         "rescore_query" : {
+            "function_score" : {
+               "script_score": {
+                  "script": {
+                    "lang": "painless",
+                    "inline": "Math.log10(doc['numeric'].value + 2)"
+                  }
+               }
+            }
+         }
+      }
+   } ]
+}
+'</pre></div><p>The first one gets the results of the query then the second one gets the
+results of the first, etc.  The second rescore will "see" the sorting done
+by the first rescore so it is possible to use a large window on the first
+rescore to pull documents into a smaller window for the second rescore.</p></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="search-request-highlighting.html">
+              « 
+              Highlighting</a>
+           
+        </span><span class="next">
+           
+          <a href="search-request-search-type.html">Search Type
+               »
+            </a></span></div></body></html>

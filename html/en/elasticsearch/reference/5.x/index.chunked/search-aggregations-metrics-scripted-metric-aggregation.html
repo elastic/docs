@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Scripted Metric Aggregation
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="search-aggregations-metrics.html" title="Metrics Aggregations" /><link rel="prev" href="search-aggregations-metrics-percentile-rank-aggregation.html" title="Percentile Ranks Aggregation" /><link rel="next" href="search-aggregations-metrics-stats-aggregation.html" title="Stats Aggregation" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="search-aggregations.html">Aggregations</a></span> » <span class="breadcrumb-link"><a href="search-aggregations-metrics.html">Metrics Aggregations</a></span> » <span class="breadcrumb-node">Scripted Metric Aggregation</span></div><div xmlns="" class="navheader"><span class="prev"><a href="search-aggregations-metrics-percentile-rank-aggregation.html">
+              « 
+              Percentile Ranks Aggregation</a>
+           
+        </span><span class="next">
+           
+          <a href="search-aggregations-metrics-stats-aggregation.html">Stats Aggregation
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-metrics-scripted-metric-aggregation"></a>Scripted Metric Aggregation<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div xmlns="" class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.</p></div></div><p>A metric aggregation that executes using scripts to provide a metric output.</p><p>Example:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST ledger/_search?size=0
+{
+    "query" : {
+        "match_all" : {}
+    },
+    "aggs": {
+        "profit": {
+            "scripted_metric": {
+                "init_script" : "params._agg.transactions = []",
+                "map_script" : "params._agg.transactions.add(doc.type.value == 'sale' ? doc.amount.value : -1 * doc.amount.value)", <a id="CO64-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+                "combine_script" : "double profit = 0; for (t in params._agg.transactions) { profit += t } return profit",
+                "reduce_script" : "double profit = 0; for (a in params._aggs) { profit += a } return profit"
+            }
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO64-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">map_script</code> is the only required  parameter
+</p></td></tr></table></div><p>The above aggregation demonstrates how one would use the script aggregation compute the total profit from sale and cost transactions.</p><p>The response for the above aggregation:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">{
+    "took": 218,
+    ...
+    "aggregations": {
+        "profit": {
+            "value": 240.0
+        }
+   }
+}</pre></div><p>The above example can also be specified using file scripts as follows:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST ledger/_search?size=0
+{
+    "aggs": {
+        "profit": {
+            "scripted_metric": {
+                "init_script" : {
+                    "file": "my_init_script"
+                },
+                "map_script" : {
+                    "file": "my_map_script"
+                },
+                "combine_script" : {
+                    "file": "my_combine_script"
+                },
+                "params": {
+                    "field": "amount", <a id="CO65-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+                    "_agg": {}        <a id="CO65-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+                },
+                "reduce_script" : {
+                    "file": "my_reduce_script"
+                }
+            }
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO65-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+script parameters for <code class="literal">init</code>, <code class="literal">map</code> and <code class="literal">combine</code> scripts must be specified
+in a global <code class="literal">params</code> object so that it can be share between the scripts.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO65-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+if you specify script parameters then you must specify <code class="literal">"_agg": {}</code>.
+</p></td></tr></table></div><p>For more details on specifying scripts see <a class="link" href="modules-scripting.html" title="Scripting">script documentation</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_allowed_return_types"></a>Allowed return types<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Whilst any valid script object can be used within a single script, the scripts must return or store in the <code class="literal">_agg</code> object only the following types:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+primitive types
+</li><li class="listitem">
+String
+</li><li class="listitem">
+Map (containing only keys and values of the types listed here)
+</li><li class="listitem">
+Array (containing elements of only the types listed here)
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_scope_of_scripts"></a>Scope of scripts<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The scripted metric aggregation uses scripts at 4 stages of its execution:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+init_script
+</span></dt><dd><p class="simpara">
+Executed prior to any collection of documents. Allows the aggregation to set up any initial state.
+</p><p class="simpara">In the above example, the <code class="literal">init_script</code> creates an array <code class="literal">transactions</code> in the <code class="literal">_agg</code> object.</p></dd><dt><span class="term">
+map_script
+</span></dt><dd><p class="simpara">
+Executed once per document collected. This is the only required script. If no combine_script is specified, the resulting state
+                    needs to be stored in an object named <code class="literal">_agg</code>.
+</p><p class="simpara">In the above example, the <code class="literal">map_script</code> checks the value of the type field. If the value is <span class="emphasis"><em>sale</em></span> the value of the amount field
+is added to the transactions array. If the value of the type field is not <span class="emphasis"><em>sale</em></span> the negated value of the amount field is added
+to transactions.</p></dd><dt><span class="term">
+combine_script
+</span></dt><dd><p class="simpara">
+Executed once on each shard after document collection is complete. Allows the aggregation to consolidate the state returned from
+                    each shard. If a combine_script is not provided the combine phase will return the aggregation variable.
+</p><p class="simpara">In the above example, the <code class="literal">combine_script</code> iterates through all the stored transactions, summing the values in the <code class="literal">profit</code> variable
+and finally returns <code class="literal">profit</code>.</p></dd><dt><span class="term">
+reduce_script
+</span></dt><dd><p class="simpara">
+Executed once on the coordinating node after all shards have returned their results. The script is provided with access to a
+                    variable <code class="literal">_aggs</code> which is an array of the result of the combine_script on each shard. If a reduce_script is not provided
+                    the reduce phase will return the <code class="literal">_aggs</code> variable.
+</p><p class="simpara">In the above example, the <code class="literal">reduce_script</code> iterates through the <code class="literal">profit</code> returned by each shard summing the values before returning the
+final combined profit which will be returned in the response of the aggregation.</p></dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_worked_example"></a>Worked Example<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Imagine a situation where you index the following documents into an index with 2 shards:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT /transactions/stock/_bulk?refresh
+{"index":{"_id":1}}
+{"type": "sale","amount": 80}
+{"index":{"_id":2}}
+{"type": "cost","amount": 10}
+{"index":{"_id":3}}
+{"type": "cost","amount": 30}
+{"index":{"_id":4}}
+{"type": "sale","amount": 130}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>Lets say that documents 1 and 3 end up on shard A and documents 2 and 4 end up on shard B. The following is a breakdown of what the aggregation result is
+at each stage of the example above.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_before_init_script"></a>Before init_script<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>No params object was specified so the default params object is used:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"params" : {
+    "_agg" : {}
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_after_init_script"></a>After init_script<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>This is run once on each shard before any document collection is performed, and so we will have a copy on each shard:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Shard A
+</span></dt><dd><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"params" : {
+    "_agg" : {
+        "transactions" : []
+    }
+}</pre></div></dd><dt><span class="term">
+Shard B
+</span></dt><dd><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"params" : {
+    "_agg" : {
+        "transactions" : []
+    }
+}</pre></div></dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_after_map_script"></a>After map_script<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Each shard collects its documents and runs the map_script on each document that is collected:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Shard A
+</span></dt><dd><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"params" : {
+    "_agg" : {
+        "transactions" : [ 80, -30 ]
+    }
+}</pre></div></dd><dt><span class="term">
+Shard B
+</span></dt><dd><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"params" : {
+    "_agg" : {
+        "transactions" : [ -10, 130 ]
+    }
+}</pre></div></dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_after_combine_script"></a>After combine_script<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The combine_script is executed on each shard after document collection is complete and reduces all the transactions down to a single profit figure for each
+shard (by summing the values in the transactions array) which is passed back to the coordinating node:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Shard A
+</span></dt><dd>
+50
+</dd><dt><span class="term">
+Shard B
+</span></dt><dd>
+120
+</dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_after_reduce_script"></a>After reduce_script<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The reduce_script receives an <code class="literal">_aggs</code> array containing the result of the combine script for each shard:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"_aggs" : [
+    50,
+    120
+]</pre></div><p>It reduces the responses for the shards down to a final overall profit figure (by summing the values) and returns this as the result of the aggregation to
+produce the response:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">{
+    ...
+
+    "aggregations": {
+        "profit": {
+            "value": 170
+        }
+   }
+}</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_other_parameters"></a>Other Parameters<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+params
+</p>
+</td><td valign="top">
+<p>
+Optional. An object whose contents will be passed as variables to the  <code class="literal">init_script</code>, <code class="literal">map_script</code> and <code class="literal">combine_script</code>. This can be
+                   useful to allow the user to control the behavior of the aggregation and for storing state between the scripts. If this is not specified,
+                   the default is the equivalent of providing:
+</p>
+<div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"params" : {
+    "_agg" : {}
+}</pre></div>
+</td></tr></tbody></table></div></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="search-aggregations-metrics-percentile-rank-aggregation.html">
+              « 
+              Percentile Ranks Aggregation</a>
+           
+        </span><span class="next">
+           
+          <a href="search-aggregations-metrics-stats-aggregation.html">Stats Aggregation
+               »
+            </a></span></div></body></html>

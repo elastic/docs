@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">ignore_malformed
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="mapping-params.html" title="Mapping parameters" /><link rel="prev" href="ignore-above.html" title="ignore_above" /><link rel="next" href="include-in-all.html" title="include_in_all" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-link"><a href="mapping-params.html">Mapping parameters</a></span> » <span class="breadcrumb-node"><code xmlns="http://www.w3.org/1999/xhtml" class="literal">ignore_malformed</code></span></div><div xmlns="" class="navheader"><span class="prev"><a href="ignore-above.html">
+              « 
+              <code xmlns="http://www.w3.org/1999/xhtml" class="literal">ignore_above</code></a>
+           
+        </span><span class="next">
+           
+          <a href="include-in-all.html"><code xmlns="http://www.w3.org/1999/xhtml" class="literal">include_in_all</code>
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ignore-malformed"></a><code class="literal">ignore_malformed</code><a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/params/ignore-malformed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Sometimes you don’t have much control over the data that you receive.  One
+user may send a <code class="literal">login</code> field that is a <a class="link" href="date.html" title="Date datatype"><code class="literal">date</code></a>, and another sends a
+<code class="literal">login</code> field that is an email address.</p><p>Trying to index the wrong datatype into a field throws an exception by
+default, and rejects the whole document.  The <code class="literal">ignore_malformed</code> parameter, if
+set to <code class="literal">true</code>, allows the exception to be ignored.  The malformed field is not
+indexed, but other fields in the document are processed normally.</p><p>For example:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "number_one": {
+          "type": "integer",
+          "ignore_malformed": true
+        },
+        "number_two": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
+
+PUT my_index/my_type/1
+{
+  "text":       "Some text value",
+  "number_one": "foo" <a id="CO214-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+}
+
+PUT my_index/my_type/2
+{
+  "text":       "Some text value",
+  "number_two": "foo" <a id="CO214-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO214-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This document will have the <code class="literal">text</code> field indexed, but not the <code class="literal">number_one</code> field.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO214-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This document will be rejected because <code class="literal">number_two</code> does not allow malformed values.
+</p></td></tr></table></div><div xmlns="" class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">The <code class="literal">ignore_malformed</code> setting is allowed to have different settings for
+fields of the same name in the same index.  Its value can be updated on
+existing fields using the <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ignore-malformed-setting"></a>Index-level default<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/params/ignore-malformed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">index.mapping.ignore_malformed</code> setting can be set on the index level to
+allow to ignore malformed content globally across all mapping types.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT my_index
+{
+  "settings": {
+    "index.mapping.ignore_malformed": true <a id="CO215-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+  },
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "number_one": { <a id="CO215-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+          "type": "byte"
+        },
+        "number_two": {
+          "type": "integer",
+          "ignore_malformed": false <a id="CO215-3"></a><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span>
+        }
+      }
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO215-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO215-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">number_one</code> field inherits the index-level setting.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO215-3"><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">number_two</code> field overrides the index-level setting to turn off <code class="literal">ignore_malformed</code>.
+</p></td></tr></table></div></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="ignore-above.html">
+              « 
+              <code xmlns="http://www.w3.org/1999/xhtml" class="literal">ignore_above</code></a>
+           
+        </span><span class="next">
+           
+          <a href="include-in-all.html"><code xmlns="http://www.w3.org/1999/xhtml" class="literal">include_in_all</code>
+               »
+            </a></span></div></body></html>

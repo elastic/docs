@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Document API changes
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="breaking-changes-5.0.html" title="Breaking changes in 5.0" /><link rel="prev" href="breaking_50_index_apis.html" title="Index APIs changes" /><link rel="next" href="breaking_50_settings_changes.html" title="Settings changes" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes</a></span> » <span class="breadcrumb-link"><a href="breaking-changes-5.0.html">Breaking changes in 5.0</a></span> » <span class="breadcrumb-node">Document API changes</span></div><div xmlns="" class="navheader"><span class="prev"><a href="breaking_50_index_apis.html">
+              « 
+              Index APIs changes</a>
+           
+        </span><span class="next">
+           
+          <a href="breaking_50_settings_changes.html">Settings changes
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="breaking_50_document_api_changes"></a>Document API changes<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/migration/migrate_5_0/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_refresh_literal_no_longer_supports_truthy_and_falsy_values"></a><code class="literal">?refresh</code> no longer supports truthy and falsy values<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/migration/migrate_5_0/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">?refresh</code> request parameter used to accept any value other than <code class="literal">false</code>,
+<code class="literal">0</code>, <code class="literal">off</code>, and <code class="literal">no</code> to mean "make the changes from this request visible for
+search immediately." Now it only accepts <code class="literal">?refresh</code> and <code class="literal">?refresh=true</code> to
+mean that. You can set it to <code class="literal">?refresh=false</code> and the request will take no
+refresh-related action. The same is true if you leave <code class="literal">refresh</code> off of the
+url entirely. If you add <code class="literal">?refresh=wait_for</code> Elasticsearch will wait for the
+changes to become visible before replying to the request but won’t take any
+immediate refresh related action. See <a class="xref" href="docs-refresh.html" title="?refresh"><em><code class="literal">?refresh</code></em></a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_created_literal_field_deprecated_in_the_index_api"></a><code class="literal">created</code> field deprecated in the Index API<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/migration/migrate_5_0/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">created</code> field has been deprecated in the Index API. It now returns
+<code class="literal">result</code>, returning <code class="literal">"result": "created"</code> when it created a document and
+<code class="literal">"result": "updated"</code> when it updated the document. This is also true for
+<code class="literal">index</code> bulk operations.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_found_literal_field_deprecated_in_the_delete_api"></a><code class="literal">found</code> field deprecated in the Delete API<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/migration/migrate_5_0/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">found</code> field has been deprecated in the Delete API. It now returns
+<code class="literal">result</code>, returning <code class="literal">"result": "deleted"</code> when it deleted a document and
+<code class="literal">"result": "not_found"</code> when it didn’t find the document. This is also true for
+<code class="literal">delete</code> bulk operations.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_reindex_and_update_by_query"></a>Reindex and Update By Query<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/migration/migrate_5_0/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Before 5.0.0 <code class="literal">_reindex</code> and <code class="literal">_update_by_query</code> only retried bulk failures so
+they used the following response format:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">{
+   ...
+   "retries": 10
+   ...
+}</pre></div><p>Where <code class="literal">retries</code> counts the number of bulk retries. Now they retry on search
+failures as well and use this response format:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">{
+   ...
+   "retries": {
+     "bulk": 10,
+     "search": 1
+   }
+   ...
+}</pre></div><p>Where <code class="literal">bulk</code> counts the number of bulk retries and <code class="literal">search</code> counts the number
+of search retries.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_get_api"></a>get API<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/migration/migrate_5_0/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>As of 5.0.0 the get API will issue a refresh if the requested document has
+been changed since the last refresh but the change hasn’t been refreshed yet. This
+will also make all other changes visible immediately. This can have an impact on
+performance if the same document is updated very frequently using a read modify update
+pattern since it might create many small segments. This behavior can be disabled by
+passing <code class="literal">realtime=false</code> to the get request.</p><p>The <code class="literal">fields</code> field has been renamed to <code class="literal">stored_fields</code></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_mget_api"></a>mget API<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/migration/migrate_5_0/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">fields</code> field has been renamed to <code class="literal">stored_fields</code></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_update_api"></a>update API<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/migration/migrate_5_0/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">fields</code> field has been deprecated. You should use <code class="literal">_source</code> to load the field from _source.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_bulk_api"></a>bulk API<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/migration/migrate_5_0/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">fields</code> field has been deprecated. You should use <code class="literal">_source</code> to load the field from _source.</p></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="breaking_50_index_apis.html">
+              « 
+              Index APIs changes</a>
+           
+        </span><span class="next">
+           
+          <a href="breaking_50_settings_changes.html">Settings changes
+               »
+            </a></span></div></body></html>

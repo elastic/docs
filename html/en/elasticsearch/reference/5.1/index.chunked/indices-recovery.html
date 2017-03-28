@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Indices Recovery
+        | Elasticsearch Reference [5.1]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.1]" /><link rel="up" href="indices.html" title="Indices APIs" /><link rel="prev" href="indices-segments.html" title="Indices Segments" /><link rel="next" href="indices-shards-stores.html" title="Indices Shard Stores" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.1" /></head><body><div xmlns="" class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.1]
+    </a></span> » <span class="breadcrumb-link"><a href="indices.html">Indices APIs</a></span> » <span class="breadcrumb-node">Indices Recovery</span></div><div xmlns="" class="navheader"><span class="prev"><a href="indices-segments.html">
+              « 
+              Indices Segments</a>
+           
+        </span><span class="next">
+           
+          <a href="indices-shards-stores.html">Indices Shard Stores
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-recovery"></a>Indices Recovery<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/indices/recovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The indices recovery API provides insight into on-going index shard recoveries.
+Recovery status may be reported for specific indices, or cluster-wide.</p><p>For example, the following command would show recovery information for the indices "index1" and "index2".</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET index1,index2/_recovery?human</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>To see cluster-wide recovery status simply leave out the index names.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /_recovery?human</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>Response:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">{
+  "index1" : {
+    "shards" : [ {
+      "id" : 0,
+      "type" : "SNAPSHOT",
+      "stage" : "INDEX",
+      "primary" : true,
+      "start_time" : "2014-02-24T12:15:59.716",
+      "start_time_in_millis": 1393244159716,
+      "total_time" : "2.9m",
+      "total_time_in_millis" : 175576,
+      "source" : {
+        "repository" : "my_repository",
+        "snapshot" : "my_snapshot",
+        "index" : "index1"
+      },
+      "target" : {
+        "id" : "ryqJ5lO5S4-lSFbGntkEkg",
+        "hostname" : "my.fqdn",
+        "ip" : "10.0.1.7",
+        "name" : "my_es_node"
+      },
+      "index" : {
+        "size" : {
+          "total" : "75.4mb",
+          "total_in_bytes" : 79063092,
+          "reused" : "0b",
+          "reused_in_bytes" : 0,
+          "recovered" : "65.7mb",
+          "recovered_in_bytes" : 68891939,
+          "percent" : "87.1%"
+        },
+        "files" : {
+          "total" : 73,
+          "reused" : 0,
+          "recovered" : 69,
+          "percent" : "94.5%"
+        },
+        "total_time" : "0s",
+        "total_time_in_millis" : 0
+      },
+      "translog" : {
+        "recovered" : 0,
+        "total" : 0,
+        "percent" : "100.0%",
+        "total_on_start" : 0,
+        "total_time" : "0s",
+        "total_time_in_millis" : 0,
+      },
+      "start" : {
+        "check_index_time" : "0s",
+        "check_index_time_in_millis" : 0,
+        "total_time" : "0s",
+        "total_time_in_millis" : 0
+      }
+    } ]
+  }
+}</pre></div><p>The above response shows a single index recovering a single shard. In this case, the source of the recovery is a snapshot repository
+and the target of the recovery is the node with name "my_es_node".</p><p>Additionally, the output shows the number and percent of files recovered, as well as the number and percent of bytes recovered.</p><p>In some cases a higher level of detail may be preferable. Setting "detailed=true" will present a list of physical files in recovery.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET _recovery?human&amp;detailed=true</pre></div><p>Response:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">{
+  "index1" : {
+    "shards" : [ {
+      "id" : 0,
+      "type" : "STORE",
+      "stage" : "DONE",
+      "primary" : true,
+      "start_time" : "2014-02-24T12:38:06.349",
+      "start_time_in_millis" : "1393245486349",
+      "stop_time" : "2014-02-24T12:38:08.464",
+      "stop_time_in_millis" : "1393245488464",
+      "total_time" : "2.1s",
+      "total_time_in_millis" : 2115,
+      "source" : {
+        "id" : "RGMdRc-yQWWKIBM4DGvwqQ",
+        "hostname" : "my.fqdn",
+        "ip" : "10.0.1.7",
+        "name" : "my_es_node"
+      },
+      "target" : {
+        "id" : "RGMdRc-yQWWKIBM4DGvwqQ",
+        "hostname" : "my.fqdn",
+        "ip" : "10.0.1.7",
+        "name" : "my_es_node"
+      },
+      "index" : {
+        "size" : {
+          "total" : "24.7mb",
+          "total_in_bytes" : 26001617,
+          "reused" : "24.7mb",
+          "reused_in_bytes" : 26001617,
+          "recovered" : "0b",
+          "recovered_in_bytes" : 0,
+          "percent" : "100.0%"
+        },
+        "files" : {
+          "total" : 26,
+          "reused" : 26,
+          "recovered" : 0,
+          "percent" : "100.0%",
+          "details" : [ {
+            "name" : "segments.gen",
+            "length" : 20,
+            "recovered" : 20
+          }, {
+            "name" : "_0.cfs",
+            "length" : 135306,
+            "recovered" : 135306
+          }, {
+            "name" : "segments_2",
+            "length" : 251,
+            "recovered" : 251
+          },
+           ...
+          ]
+        },
+        "total_time" : "2ms",
+        "total_time_in_millis" : 2
+      },
+      "translog" : {
+        "recovered" : 71,
+        "total_time" : "2.0s",
+        "total_time_in_millis" : 2025
+      },
+      "start" : {
+        "check_index_time" : 0,
+        "total_time" : "88ms",
+        "total_time_in_millis" : 88
+      }
+    } ]
+  }
+}</pre></div><p>This response shows a detailed listing (truncated for brevity) of the actual files recovered and their sizes.</p><p>Also shown are the timings in milliseconds of the various stages of recovery: index retrieval, translog replay, and index start time.</p><p>Note that the above listing indicates that the recovery is in stage "done". All recoveries, whether on-going or complete, are kept in
+cluster state and may be reported on at any time. Setting "active_only=true" will cause only on-going recoveries to be reported.</p><p>Here is a complete list of options:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">detailed</code>
+</p>
+</td><td valign="top">
+<p>
+Display a detailed view. This is primarily useful for viewing the recovery of physical index files. Default: false.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">active_only</code>
+</p>
+</td><td valign="top">
+<p>
+Display only those recoveries that are currently on-going. Default: false.
+</p>
+</td></tr></tbody></table></div><p>Description of output fields:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">id</code>
+</p>
+</td><td valign="top">
+<p>
+Shard ID
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">type</code>
+</p>
+</td><td valign="top">
+<p>
+Recovery type:
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+store
+</li><li class="listitem">
+snapshot
+</li><li class="listitem">
+replica
+</li><li class="listitem">
+relocating
+</li></ul></div>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">stage</code>
+</p>
+</td><td valign="top">
+<p>
+Recovery stage:
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+init:     Recovery has not started
+</li><li class="listitem">
+index:    Reading index meta-data and copying bytes from source to destination
+</li><li class="listitem">
+start:    Starting the engine; opening the index for use
+</li><li class="listitem">
+translog: Replaying transaction log
+</li><li class="listitem">
+finalize: Cleanup
+</li><li class="listitem">
+done:     Complete
+</li></ul></div>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">primary</code>
+</p>
+</td><td valign="top">
+<p>
+True if shard is primary, false otherwise
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">start_time</code>
+</p>
+</td><td valign="top">
+<p>
+Timestamp of recovery start
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">stop_time</code>
+</p>
+</td><td valign="top">
+<p>
+Timestamp of recovery finish
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">total_time_in_millis</code>
+</p>
+</td><td valign="top">
+<p>
+Total time to recover shard in milliseconds
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">source</code>
+</p>
+</td><td valign="top">
+<p>
+Recovery source:
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+repository description if recovery is from a snapshot
+</li><li class="listitem">
+description of source node otherwise
+</li></ul></div>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">target</code>
+</p>
+</td><td valign="top">
+<p>
+Destination node
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">index</code>
+</p>
+</td><td valign="top">
+<p>
+Statistics about physical index recovery
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">translog</code>
+</p>
+</td><td valign="top">
+<p>
+Statistics about translog recovery
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">start</code>
+</p>
+</td><td valign="top">
+<p>
+Statistics about time to open and start the index
+</p>
+</td></tr></tbody></table></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="indices-segments.html">
+              « 
+              Indices Segments</a>
+           
+        </span><span class="next">
+           
+          <a href="indices-shards-stores.html">Indices Shard Stores
+               »
+            </a></span></div></body></html>

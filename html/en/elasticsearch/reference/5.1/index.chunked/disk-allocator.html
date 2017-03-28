@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Disk-based Shard Allocation
+        | Elasticsearch Reference [5.1]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.1]" /><link rel="up" href="modules-cluster.html" title="Cluster" /><link rel="prev" href="shards-allocation.html" title="Cluster Level Shard Allocation" /><link rel="next" href="allocation-awareness.html" title="Shard Allocation Awareness" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.1" /></head><body><div xmlns="" class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.1]
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-cluster.html">Cluster</a></span> » <span class="breadcrumb-node">Disk-based Shard Allocation</span></div><div xmlns="" class="navheader"><span class="prev"><a href="shards-allocation.html">
+              « 
+              Cluster Level Shard Allocation</a>
+           
+        </span><span class="next">
+           
+          <a href="allocation-awareness.html">Shard Allocation Awareness
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="disk-allocator"></a>Disk-based Shard Allocation<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/modules/cluster/disk_allocator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch factors in the available disk space on a node before deciding
+whether to allocate new shards to that node or to actively relocate shards
+away from that node.</p><p>Below are the settings that can be configured in the <code class="literal">elasticsearch.yml</code> config
+file or updated dynamically on a live cluster with the
+<a class="link" href="cluster-update-settings.html" title="Cluster Update Settings">cluster-update-settings</a> API:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">cluster.routing.allocation.disk.threshold_enabled</code>
+</span></dt><dd>
+    Defaults to <code class="literal">true</code>.  Set to <code class="literal">false</code> to disable the disk allocation decider.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.disk.watermark.low</code>
+</span></dt><dd>
+    Controls the low watermark for disk usage. It defaults to 85%, meaning ES will
+    not allocate new shards to nodes once they have more than 85% disk used. It
+    can also be set to an absolute byte value (like 500mb) to prevent ES from
+    allocating shards if less than the configured amount of space is available.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.disk.watermark.high</code>
+</span></dt><dd>
+    Controls the high watermark. It defaults to 90%, meaning ES will attempt to
+    relocate shards to another node if the node disk usage rises above 90%. It can
+    also be set to an absolute byte value (similar to the low watermark) to
+    relocate shards once less than the configured amount of space is available on
+    the node.
+</dd></dl></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">Percentage values refer to used disk space, while byte values refer to
+free disk space. This can be confusing, since it flips the meaning of high and
+low. For example, it makes sense to set the low watermark to 10gb and the high
+watermark to 5gb, but not the other way around.</p></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">cluster.info.update.interval</code>
+</span></dt><dd>
+    How often Elasticsearch should check on disk usage for each node in the
+    cluster. Defaults to <code class="literal">30s</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.routing.allocation.disk.include_relocations</code>
+</span></dt><dd>
+    Defaults to <code class="literal">true</code>, which means that Elasticsearch will take into account
+    shards that are currently being relocated to the target node when computing a
+    node’s disk usage. Taking relocating shards' sizes into account may, however,
+    mean that the disk usage for a node is incorrectly estimated on the high side,
+    since the relocation could be 90% complete and a recently retrieved disk usage
+    would include the total size of the relocating shard as well as the space
+    already used by the running relocation.
+</dd></dl></div><p>An example of updating the low watermark to no more than 80% of the disk size, a
+high watermark of at least 50 gigabytes free, and updating the information about
+the cluster every minute:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT _cluster/settings
+{
+  "transient": {
+    "cluster.routing.allocation.disk.watermark.low": "80%",
+    "cluster.routing.allocation.disk.watermark.high": "50gb",
+    "cluster.info.update.interval": "1m"
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">Prior to 2.0.0, when using multiple data paths, the disk threshold
+decider only factored in the usage across all data paths (if you had two
+data paths, one with 50b out of 100b free (50% used) and another with
+40b out of 50b free (80% used) it would see the node’s disk usage as 90b
+out of 150b). In 2.0.0, the minimum and maximum disk usages are tracked
+separately.</p></div></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="shards-allocation.html">
+              « 
+              Cluster Level Shard Allocation</a>
+           
+        </span><span class="next">
+           
+          <a href="allocation-awareness.html">Shard Allocation Awareness
+               »
+            </a></span></div></body></html>

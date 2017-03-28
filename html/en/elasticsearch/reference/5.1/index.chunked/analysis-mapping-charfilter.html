@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Mapping Char Filter
+        | Elasticsearch Reference [5.1]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.1]" /><link rel="up" href="analysis-charfilters.html" title="Character Filters" /><link rel="prev" href="analysis-htmlstrip-charfilter.html" title="HTML Strip Char Filter" /><link rel="next" href="analysis-pattern-replace-charfilter.html" title="Pattern Replace Char Filter" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.1" /></head><body><div xmlns="" class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.1]
+    </a></span> » <span class="breadcrumb-link"><a href="analysis.html">Analysis</a></span> » <span class="breadcrumb-link"><a href="analysis-charfilters.html">Character Filters</a></span> » <span class="breadcrumb-node">Mapping Char Filter</span></div><div xmlns="" class="navheader"><span class="prev"><a href="analysis-htmlstrip-charfilter.html">
+              « 
+              HTML Strip Char Filter</a>
+           
+        </span><span class="next">
+           
+          <a href="analysis-pattern-replace-charfilter.html">Pattern Replace Char Filter
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="analysis-mapping-charfilter"></a>Mapping Char Filter<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/analysis/charfilters/mapping-charfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">mapping</code> character filter accepts a map of keys and values.  Whenever it
+encounters a string of characters that is the same as a key, it replaces them
+with the value associated with that key.</p><p>Matching is greedy; the longest pattern matching at a given point wins.
+Replacements are allowed to be the empty string.</p><h3><a id="_configuration_22"></a>Configuration<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/analysis/charfilters/mapping-charfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">mapping</code> character filter accepts the following parameters:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">mappings</code>
+</p>
+</td><td valign="top">
+<p>
+    A array of mappings, with each element having the form <code class="literal">key =&gt; value</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">mappings_path</code>
+</p>
+</td><td valign="top">
+<p>
+    A path, either absolute or relative to the <code class="literal">config</code> directory, to a UTF-8
+    encoded text mappings file containing a <code class="literal">key =&gt; value</code> mapping per line.
+</p>
+</td></tr></tbody></table></div><p>Either the <code class="literal">mappings</code> or <code class="literal">mappings_path</code> parameter must be provided.</p><h3><a id="_example_configuration_14"></a>Example configuration<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/analysis/charfilters/mapping-charfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In this example, we configure the <code class="literal">mapping</code> character filter to replace Arabic
+numerals with their Latin equivalents:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "keyword",
+          "char_filter": [
+            "my_char_filter"
+          ]
+        }
+      },
+      "char_filter": {
+        "my_char_filter": {
+          "type": "mapping",
+          "mappings": [
+            "٠ =&gt; 0",
+            "١ =&gt; 1",
+            "٢ =&gt; 2",
+            "٣ =&gt; 3",
+            "٤ =&gt; 4",
+            "٥ =&gt; 5",
+            "٦ =&gt; 6",
+            "٧ =&gt; 7",
+            "٨ =&gt; 8",
+            "٩ =&gt; 9"
+          ]
+        }
+      }
+    }
+  }
+}
+
+POST my_index/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "My license plate is ٢٥٠١٥"
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>The above example produces the following term:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-text">[ My license plate is 25015 ]</pre></div><p>Keys and values can be strings with multiple characters.  The following
+example replaces the <code class="literal">:)</code> and <code class="literal">:(</code> emoticons with a text equivalent:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "standard",
+          "char_filter": [
+            "my_char_filter"
+          ]
+        }
+      },
+      "char_filter": {
+        "my_char_filter": {
+          "type": "mapping",
+          "mappings": [
+            ":) =&gt; _happy_",
+            ":( =&gt; _sad_"
+          ]
+        }
+      }
+    }
+  }
+}
+
+POST my_index/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "I'm delighted about it :("
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>The above example produces the following terms:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-text">[ I'm, delighted, about, it, _sad_ ]</pre></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="analysis-htmlstrip-charfilter.html">
+              « 
+              HTML Strip Char Filter</a>
+           
+        </span><span class="next">
+           
+          <a href="analysis-pattern-replace-charfilter.html">Pattern Replace Char Filter
+               »
+            </a></span></div></body></html>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Terms Query
+        | Elasticsearch Reference [master]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="term-level-queries.html" title="Term level queries" /><link rel="prev" href="query-dsl-term-query.html" title="Term Query" /><link rel="next" href="query-dsl-range-query.html" title="Range Query" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/master" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL</a></span> » <span class="breadcrumb-link"><a href="term-level-queries.html">Term level queries</a></span> » <span class="breadcrumb-node">Terms Query</span></div><div xmlns="" class="navheader"><span class="prev"><a href="query-dsl-term-query.html">
+              « 
+              Term Query</a>
+           
+        </span><span class="next">
+           
+          <a href="query-dsl-range-query.html">Range Query
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-terms-query"></a>Terms Query<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/terms-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Filters documents that have fields that match any of the provided terms
+(<span class="strong"><strong>not analyzed</strong></span>). For example:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /_search
+{
+    "query": {
+        "terms" : { "user" : ["kimchy", "elasticsearch"]}
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><h5><a id="query-dsl-terms-lookup"></a>Terms lookup mechanism<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/terms-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>When it’s needed to specify a <code class="literal">terms</code> filter with a lot of terms it can
+be beneficial to fetch those term values from a document in an index. A
+concrete example would be to filter tweets tweeted by your followers.
+Potentially the amount of user ids specified in the terms filter can be
+a lot. In this scenario it makes sense to use the terms filter’s terms
+lookup mechanism.</p><p>The terms lookup mechanism supports the following options:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">index</code>
+</p>
+</td><td valign="top">
+<p>
+    The index to fetch the term values from. Defaults to the
+    current index.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">type</code>
+</p>
+</td><td valign="top">
+<p>
+    The type to fetch the term values from.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">id</code>
+</p>
+</td><td valign="top">
+<p>
+    The id of the document to fetch the term values from.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">path</code>
+</p>
+</td><td valign="top">
+<p>
+    The field specified as path to fetch the actual values for the
+    <code class="literal">terms</code> filter.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">routing</code>
+</p>
+</td><td valign="top">
+<p>
+    A custom routing value to be used when retrieving the
+    external terms doc.
+</p>
+</td></tr></tbody></table></div><p>The values for the <code class="literal">terms</code> filter will be fetched from a field in a
+document with the specified id in the specified type and index.
+Internally a get request is executed to fetch the values from the
+specified path. At the moment for this feature to work the <code class="literal">_source</code>
+needs to be stored.</p><p>Also, consider using an index with a single shard and fully replicated
+across all nodes if the "reference" terms data is not large. The lookup
+terms filter will prefer to execute the get request on a local node if
+possible, reducing the need for networking.</p><h5><a id="_terms_lookup_twitter_example"></a>Terms lookup twitter example<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/terms-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>At first we index the information for user with id 2, specifically, its
+followers, then index a tweet from user with id 1. Finally we search on
+all the tweets that match the followers of user 2.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT /users/user/2
+{
+    "followers" : ["1", "3"]
+}
+
+PUT /tweets/tweet/1
+{
+    "user" : "1"
+}
+
+GET /tweets/_search
+{
+    "query" : {
+        "terms" : {
+            "user" : {
+                "index" : "users",
+                "type" : "user",
+                "id" : "2",
+                "path" : "followers"
+            }
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>The structure of the external terms document can also include array of
+inner objects, for example:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT /users/user/2
+{
+ "followers" : [
+   {
+     "id" : "1"
+   },
+   {
+     "id" : "2"
+   }
+ ]
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>In which case, the lookup path will be <code class="literal">followers.id</code>.</p></div><div xmlns="" class="navfooter"><span class="prev"><a href="query-dsl-term-query.html">
+              « 
+              Term Query</a>
+           
+        </span><span class="next">
+           
+          <a href="query-dsl-range-query.html">Range Query
+               »
+            </a></span></div></body></html>

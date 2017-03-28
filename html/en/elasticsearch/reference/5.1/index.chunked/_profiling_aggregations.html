@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Profiling Aggregations
+        | Elasticsearch Reference [5.1]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.1]" /><link rel="up" href="search-profile.html" title="Profile API" /><link rel="prev" href="_profiling_queries.html" title="Profiling Queries" /><link rel="next" href="_profiling_considerations.html" title="Profiling Considerations" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.1" /></head><body><div xmlns="" class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.1]
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs</a></span> » <span class="breadcrumb-link"><a href="search-profile.html">Profile API</a></span> » <span class="breadcrumb-node">Profiling Aggregations</span></div><div xmlns="" class="navheader"><span class="prev"><a href="_profiling_queries.html">
+              « 
+              Profiling Queries</a>
+           
+        </span><span class="next">
+           
+          <a href="_profiling_considerations.html">Profiling Considerations
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_profiling_aggregations"></a>Profiling Aggregations<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_aggregations_literal_section"></a><code class="literal">aggregations</code> Section<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">aggregations</code> section contains detailed timing of the aggregation tree executed by a particular shard.
+The overall structure of this aggregation tree will resemble your original Elasticsearch request.  Let’s consider
+the following example aggregations request:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /house-prices/_search
+{
+  "profile": true,
+  "size": 0,
+  "aggs": {
+    "property_type": {
+      "terms": {
+        "field": "propertyType"
+      },
+      "aggs": {
+        "avg_price": {
+          "avg": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>Which yields the following aggregation profile output</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"aggregations": [
+  {
+    "type": "org.elasticsearch.search.aggregations.bucket.terms.GlobalOrdinalsStringTermsAggregator",
+    "description": "property_type",
+    "time": "4280.456978ms",
+    "breakdown": {
+      "reduce": 0,
+      "reduce_count": 0,
+      "build_aggregation": 49765,
+      "build_aggregation_count": 300,
+      "initialise": 52785,
+      "initialize_count": 300,
+      "collect": 3155490036,
+      "collect_count": 1800
+    },
+    "children": [
+      {
+        "type": "org.elasticsearch.search.aggregations.metrics.avg.AvgAggregator",
+        "description": "avg_price",
+        "time": "1124.864392ms",
+        "breakdown": {
+          "reduce": 0,
+          "reduce_count": 0,
+          "build_aggregation": 1394,
+          "build_aggregation_count": 150,
+          "initialise": 2883,
+          "initialize_count": 150,
+          "collect": 1124860115,
+          "collect_count": 900
+        }
+      }
+    ]
+  }
+]</pre></div><p>From the profile structure we can see our <code class="literal">property_type</code> terms aggregation which is internally represented by the
+<code class="literal">GlobalOrdinalsStringTermsAggregator</code> class and the sub aggregator <code class="literal">avg_price</code> which is internally represented by the <code class="literal">AvgAggregator</code> class. The <code class="literal">type</code> field displays the class used internally to represent the aggregation. The <code class="literal">description</code> field displays the name of the aggregation.</p><p>The <code class="literal">"time"</code> field shows that it took ~4 seconds for the entire aggregation to execute.  The recorded time is inclusive
+of all children.</p><p>The <code class="literal">"breakdown"</code> field will give detailed stats about how the time was spent, we’ll look at
+that in a moment.  Finally, the <code class="literal">"children"</code> array lists any sub-aggregations that may be present.  Because we have an <code class="literal">avg_price</code> aggregation as a sub-aggregation to the <code class="literal">property_type</code> aggregation we see it listed as a child of the <code class="literal">property_type</code> aggregation.  the two aggregation outputs have identical information (type, time,
+breakdown, etc).  Children are allowed to have their own children.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_timing_breakdown_2"></a>Timing Breakdown<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">"breakdown"</code> component lists detailed timing statistics about low-level Lucene execution:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"breakdown": {
+  "reduce": 0,
+  "reduce_count": 0,
+  "build_aggregation": 49765,
+  "build_aggregation_count": 300,
+  "initialise": 52785,
+  "initialize_count": 300,
+  "collect": 3155490036,
+  "collect_count": 1800
+}</pre></div><p>Timings are listed in wall-clock nanoseconds and are not normalized at all.  All caveats about the overall
+<code class="literal">time</code> apply here.  The intention of the breakdown is to give you a feel for A) what machinery in Elasticsearch is
+actually eating time, and B) the magnitude of differences in times between the various components.  Like the overall time,
+the breakdown is inclusive of all children times.</p><p>The meaning of the stats are as follows:</p><h4><a id="_all_parameters_4"></a>All parameters:<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">initialise</code>
+</p>
+</td><td valign="top">
+<p>
+    This times how long it takes to create and initialise the aggregation before starting to collect documents.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">collect</code>
+</p>
+</td><td valign="top">
+<p>
+    This represents the cumulative time spent in the collect phase of the aggregation. This is where matching documents are passed to the aggregation and the state of the aggregator is updated based on the information contained in the documents.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">build_aggregation</code>
+</p>
+</td><td valign="top">
+<p>
+    This represents the time spent creating the shard level results of the aggregation ready to pass back to the reducing node after the collection of documents is finished.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">reduce</code>
+</p>
+</td><td valign="top">
+<p>
+    This is not currently used and will always report <code class="literal">0</code>. Currently aggregation profiling only times the shard level parts of the aggregation execution. Timing of the reduce phase will be added later.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">*_count</code>
+</p>
+</td><td valign="top">
+<p>
+    Records the number of invocations of the particular method.  For example, <code class="literal">"collect_count": 2,</code>
+    means the <code class="literal">collect()</code> method was called on two different documents.
+</p>
+</td></tr></tbody></table></div></div></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="_profiling_queries.html">
+              « 
+              Profiling Queries</a>
+           
+        </span><span class="next">
+           
+          <a href="_profiling_considerations.html">Profiling Considerations
+               »
+            </a></span></div></body></html>

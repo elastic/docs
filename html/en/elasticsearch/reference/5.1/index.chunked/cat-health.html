@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">cat health
+        | Elasticsearch Reference [5.1]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.1]" /><link rel="up" href="cat.html" title="cat APIs" /><link rel="prev" href="cat-fielddata.html" title="cat fielddata" /><link rel="next" href="cat-indices.html" title="cat indices" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.1" /></head><body><div xmlns="" class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.1]
+    </a></span> » <span class="breadcrumb-link"><a href="cat.html">cat APIs</a></span> » <span class="breadcrumb-node">cat health</span></div><div xmlns="" class="navheader"><span class="prev"><a href="cat-fielddata.html">
+              « 
+              cat fielddata</a>
+           
+        </span><span class="next">
+           
+          <a href="cat-indices.html">cat indices
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="cat-health"></a>cat health<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/cat/health.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><code class="literal">health</code> is a terse, one-line representation of the same information
+from <code class="literal">/_cluster/health</code>.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /_cat/health?v</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-txt">epoch      timestamp cluster       status node.total node.data shards pri relo init unassign pending_tasks max_task_wait_time active_shards_percent
+1475871424 16:17:04  elasticsearch green           1         1      5   5    0    0        0             0                  -                100.0%</pre></div><p>It has one option <code class="literal">ts</code> to disable the timestamping:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /_cat/health?v&amp;ts=0</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>which looks like:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-txt">cluster       status node.total node.data shards pri relo init unassign pending_tasks max_task_wait_time active_shards_percent
+elasticsearch green           1         1      5   5    0    0        0             0                  -                100.0%</pre></div><p>A common use of this command is to verify the health is consistent
+across nodes:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-sh">% pssh -i -h list.of.cluster.hosts curl -s localhost:9200/_cat/health
+[1] 20:20:52 [SUCCESS] es3.vm
+1384309218 18:20:18 foo green 3 3 3 3 0 0 0 0
+[2] 20:20:52 [SUCCESS] es1.vm
+1384309218 18:20:18 foo green 3 3 3 3 0 0 0 0
+[3] 20:20:52 [SUCCESS] es2.vm
+1384309218 18:20:18 foo green 3 3 3 3 0 0 0 0</pre></div><p>A less obvious use is to track recovery of a large cluster over
+time. With enough shards, starting a cluster, or even recovering after
+losing a node, can take time (depending on your network &amp; disk). A way
+to track its progress is by using this command in a delayed loop:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-sh">% while true; do curl localhost:9200/_cat/health; sleep 120; done
+1384309446 18:24:06 foo red 3 3 20 20 0 0 1812 0
+1384309566 18:26:06 foo yellow 3 3 950 916 0 12 870 0
+1384309686 18:28:06 foo yellow 3 3 1328 916 0 12 492 0
+1384309806 18:30:06 foo green 3 3 1832 916 4 0 0
+^C</pre></div><p>In this scenario, we can tell that recovery took roughly four minutes.
+If this were going on for hours, we would be able to watch the
+<code class="literal">UNASSIGNED</code> shards drop precipitously.  If that number remained
+static, we would have an idea that there is a problem.</p><h3><a id="timestamp"></a>Why the timestamp?<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/cat/health.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You typically are using the <code class="literal">health</code> command when a cluster is
+malfunctioning.  During this period, it’s extremely important to
+correlate activities across log files, alerting systems, etc.</p><p>There are two outputs.  The <code class="literal">HH:MM:SS</code> output is simply for quick
+human consumption.  The epoch time retains more information, including
+date, and is machine sortable if your recovery spans days.</p></div><div xmlns="" class="navfooter"><span class="prev"><a href="cat-fielddata.html">
+              « 
+              cat fielddata</a>
+           
+        </span><span class="next">
+           
+          <a href="cat-indices.html">cat indices
+               »
+            </a></span></div></body></html>

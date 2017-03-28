@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Range datatypes
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="mapping-types.html" title="Field datatypes" /><link rel="prev" href="binary.html" title="Binary datatype" /><link rel="next" href="boolean.html" title="Boolean datatype" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-link"><a href="mapping-types.html">Field datatypes</a></span> » <span class="breadcrumb-node">Range datatypes</span></div><div xmlns="" class="navheader"><span class="prev"><a href="binary.html">
+              « 
+              Binary datatype</a>
+           
+        </span><span class="next">
+           
+          <a href="boolean.html">Boolean datatype
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="range"></a>Range datatypes<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/types/range.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The following range types are supported:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">integer_range</code>
+</p>
+</td><td valign="top">
+<p>
+A range of signed 32-bit integers with a minimum value of <code class="literal">-2<sup>31</sup></code> and maximum of <code class="literal">2<sup>31</sup>-1</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">float_range</code>
+</p>
+</td><td valign="top">
+<p>
+A range of single-precision 32-bit IEEE 754 floating point values.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">long_range</code>
+</p>
+</td><td valign="top">
+<p>
+A range of signed 64-bit integers with a minimum value of <code class="literal">-2<sup>63</sup></code> and maximum of <code class="literal">2<sup>63</sup>-1</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">double_range</code>
+</p>
+</td><td valign="top">
+<p>
+A range of double-precision 64-bit IEEE 754 floating point values.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">date_range</code>
+</p>
+</td><td valign="top">
+<p>
+A range of date values represented as unsigned 64-bit integer milliseconds elapsed since system epoch.
+</p>
+</td></tr></tbody></table></div><p>Below is an example of configuring a mapping with various range fields followed by an example that indexes several range types.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT range_index
+{
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "expected_attendees": {
+          "type": "integer_range"
+        },
+        "time_frame": {
+          "type": "date_range", <a id="CO172-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        }
+      }
+    }
+  }
+}
+
+PUT range_index/my_type/1
+{
+  "expected_attendees" : { <a id="CO172-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+    "gte" : 10,
+    "lte" : 20
+  },
+  "time_frame" : { <a id="CO172-3"></a><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span>
+    "gte" : "2015-10-31 12:00:00", <a id="CO172-4"></a><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span>
+    "lte" : "2015-11-01"
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>The following is an example of a <code class="literal">date_range</code> query over the <code class="literal">date_range</code> field named "time_frame".</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST range_index/_search
+{
+  "query" : {
+    "range" : {
+      "time_frame" : { <a id="CO172-5"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+        "gte" : "2015-10-31",
+        "lte" : "2015-11-01",
+        "relation" : "within" <a id="CO172-6"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+      }
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>The result produced by the above query.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">{
+  "took": 13,
+  "timed_out": false,
+  "_shards" : {
+    "total": 2,
+    "successful": 2,
+    "failed": 0
+  },
+  "hits" : {
+    "total" : 1,
+    "max_score" : 1.0,
+    "hits" : [
+      {
+        "_index" : "range_index",
+        "_type" : "my_type",
+        "_id" : "1",
+        "_score" : 1.0,
+        "_source" : {
+          "expected_attendees" : {
+            "gte" : 10, "lte" : 20
+          },
+          "time_frame" : {
+            "gte" : "2015-10-31 12:00:00", "lte" : "2015-11-01"
+          }
+        }
+      }
+    ]
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO172-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">date_range</code> types accept the same field parameters defined by the <a class="link" href="date.html" title="Date datatype"><code class="literal">date</code></a> type.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO172-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Example indexing a meeting with 10 to 20 attendees.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO172-3"><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Date ranges accept the same format as described in <a class="link" href="query-dsl-range-query.html#ranges-on-dates" title="Ranges on date fields">date range queries</a>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO172-4"><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Example date range using date time stamp. This also accepts <a class="link" href="common-options.html#date-math" title="Date Mathedit">date math</a> formatting, or "now" for system time.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO172-5"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Range queries work the same as described in <a class="link" href="query-dsl-range-query.html" title="Range Query">range query</a>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO172-6"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Range queries over range <a class="link" href="mapping-types.html" title="Field datatypes">fields</a> support a <code class="literal">relation</code> parameter which can be one of <code class="literal">WITHIN</code>, <code class="literal">CONTAINS</code>,
+    <code class="literal">INTERSECTS</code> (default).
+</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="range-params"></a>Parameters for range fields<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/types/range.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following parameters are accepted by range types:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<a class="link" href="coerce.html" title="coerce"><code class="literal">coerce</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Try to convert strings to numbers and truncate fractions for integers.
+    Accepts <code class="literal">true</code> (default) and <code class="literal">false</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="mapping-boost.html" title="boost"><code class="literal">boost</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Mapping field-level query time boosting. Accepts a floating point number, defaults
+    to <code class="literal">1.0</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="include-in-all.html" title="include_in_all"><code class="literal">include_in_all</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Whether or not the field value should be included in the
+    <a class="link" href="mapping-all-field.html" title="_all field"><code class="literal">_all</code></a> field? Accepts <code class="literal">true</code> or <code class="literal">false</code>.  Defaults
+    to <code class="literal">false</code> if <a class="link" href="mapping-index.html" title="index"><code class="literal">index</code></a> is set to <code class="literal">false</code>, or if a parent
+    <a class="link" href="object.html" title="Object datatype"><code class="literal">object</code></a> field sets <code class="literal">include_in_all</code> to <code class="literal">false</code>.
+    Otherwise defaults to <code class="literal">true</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="mapping-index.html" title="index"><code class="literal">index</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Should the field be searchable? Accepts <code class="literal">true</code> (default) and <code class="literal">false</code>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<a class="link" href="mapping-store.html" title="store"><code class="literal">store</code></a>
+</p>
+</td><td valign="top">
+<p>
+    Whether the field value should be stored and retrievable separately from
+    the <a class="link" href="mapping-source-field.html" title="_source field"><code class="literal">_source</code></a> field. Accepts <code class="literal">true</code> or <code class="literal">false</code>
+    (default).
+</p>
+</td></tr></tbody></table></div></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="binary.html">
+              « 
+              Binary datatype</a>
+           
+        </span><span class="next">
+           
+          <a href="boolean.html">Boolean datatype
+               »
+            </a></span></div></body></html>

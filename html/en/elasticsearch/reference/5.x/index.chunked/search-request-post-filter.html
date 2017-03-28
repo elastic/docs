@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Post filter
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="search-request-body.html" title="Request Body Search" /><link rel="prev" href="search-request-docvalue-fields.html" title="Doc value Fields" /><link rel="next" href="search-request-highlighting.html" title="Highlighting" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs</a></span> » <span class="breadcrumb-link"><a href="search-request-body.html">Request Body Search</a></span> » <span class="breadcrumb-node">Post filter</span></div><div xmlns="" class="navheader"><span class="prev"><a href="search-request-docvalue-fields.html">
+              « 
+              Doc value Fields</a>
+           
+        </span><span class="next">
+           
+          <a href="search-request-highlighting.html">Highlighting
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-post-filter"></a>Post filter<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/search/request/post-filter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">post_filter</code> is applied to the search <code class="literal">hits</code> at the very end of a search
+request,  after aggregations have already been calculated. Its purpose is
+best explained by example:</p><p>Imagine that you are selling shirts that have the following properties:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT /shirts
+{
+    "mappings": {
+        "item": {
+            "properties": {
+                "brand": { "type": "keyword"},
+                "color": { "type": "keyword"},
+                "model": { "type": "keyword"}
+            }
+        }
+    }
+}
+
+PUT /shirts/item/1?refresh
+{
+    "brand": "gucci",
+    "color": "red",
+    "model": "slim"
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>Imagine a user has specified two filters:</p><p><code class="literal">color:red</code> and <code class="literal">brand:gucci</code>.  You only want to show them red shirts made by
+Gucci in the search results.  Normally you would do this with a
+<a class="link" href="query-dsl-bool-query.html" title="Bool Query"><code class="literal">bool</code> query</a>:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /shirts/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "color": "red"   }},
+        { "term": { "brand": "gucci" }}
+      ]
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>However, you would also like to use <span class="emphasis"><em>faceted navigation</em></span> to display a list of
+other options that the user could click on.  Perhaps you have a <code class="literal">model</code> field
+that would allow the user to limit their search results to red Gucci
+<code class="literal">t-shirts</code> or <code class="literal">dress-shirts</code>.</p><p>This can be done with a
+<a class="link" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation"><code class="literal">terms</code> aggregation</a>:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /shirts/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "color": "red"   }},
+        { "term": { "brand": "gucci" }}
+      ]
+    }
+  },
+  "aggs": {
+    "models": {
+      "terms": { "field": "model" } <a id="CO15-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Returns the most popular models of red shirts by Gucci.
+</p></td></tr></table></div><p>But perhaps you would also like to tell the user how many Gucci shirts are
+available in <span class="strong"><strong>other colors</strong></span>. If you just add a <code class="literal">terms</code> aggregation on the
+<code class="literal">color</code> field, you will only get back the color <code class="literal">red</code>, because your query
+returns only red shirts by Gucci.</p><p>Instead, you want to include shirts of all colors during aggregation, then
+apply the <code class="literal">colors</code> filter only to the search results.  This is the purpose of
+the <code class="literal">post_filter</code>:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET /shirts/_search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "term": { "brand": "gucci" } <a id="CO16-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+      }
+    }
+  },
+  "aggs": {
+    "colors": {
+      "terms": { "field": "color" } <a id="CO16-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+    },
+    "color_red": {
+      "filter": {
+        "term": { "color": "red" } <a id="CO16-3"></a><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span>
+      },
+      "aggs": {
+        "models": {
+          "terms": { "field": "model" } <a id="CO16-4"></a><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span>
+        }
+      }
+    }
+  },
+  "post_filter": { <a id="CO16-5"></a><span xmlns=""><img src="images/icons/callouts/5.png" alt="" /></span>
+    "term": { "color": "red" }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The main query now finds all shirts by Gucci, regardless of color.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">colors</code> agg returns popular colors for shirts by Gucci.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-3"><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO16-4"><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">color_red</code> agg limits the <code class="literal">models</code> sub-aggregation
+    to <span class="strong"><strong>red</strong></span> Gucci shirts.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-5"><span xmlns=""><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Finally, the <code class="literal">post_filter</code> removes colors other than red
+    from the search <code class="literal">hits</code>.
+</p></td></tr></table></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="search-request-docvalue-fields.html">
+              « 
+              Doc value Fields</a>
+           
+        </span><span class="next">
+           
+          <a href="search-request-highlighting.html">Highlighting
+               »
+            </a></span></div></body></html>

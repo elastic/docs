@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Bool Query
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="compound-queries.html" title="Compound queries" /><link rel="prev" href="query-dsl-constant-score-query.html" title="Constant Score Query" /><link rel="next" href="query-dsl-dis-max-query.html" title="Dis Max Query" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL</a></span> » <span class="breadcrumb-link"><a href="compound-queries.html">Compound queries</a></span> » <span class="breadcrumb-node">Bool Query</span></div><div xmlns="" class="navheader"><span class="prev"><a href="query-dsl-constant-score-query.html">
+              « 
+              Constant Score Query</a>
+           
+        </span><span class="next">
+           
+          <a href="query-dsl-dis-max-query.html">Dis Max Query
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-bool-query"></a>Bool Query<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/query-dsl/bool-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A query that matches documents matching boolean combinations of other
+queries. The bool query maps to Lucene <code class="literal">BooleanQuery</code>. It is built using
+one or more boolean clauses, each clause with a typed occurrence. The
+occurrence types are:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Occur </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">must</code></p></td><td align="left" valign="top"><p>The clause (query) must appear in matching documents and will
+contribute to the score.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">filter</code></p></td><td align="left" valign="top"><p>The clause (query) must appear in matching documents. However unlike
+<code class="literal">must</code> the score of the query will be ignored. Filter clauses are executed
+in <a class="link" href="query-filter-context.html" title="Query and filter context">filter context</a>, meaning that scoring is ignored
+and clauses are considered for caching.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">should</code></p></td><td align="left" valign="top"><p>The clause (query) should appear in the matching document. In
+a boolean query with no <code class="literal">must</code> or <code class="literal">filter</code> clauses, one or more <code class="literal">should</code> clauses
+must match a document. The minimum number of should clauses to match can
+be set using the
+<a class="link" href="query-dsl-minimum-should-match.html" title="Minimum Should Match"><code class="literal">minimum_should_match</code></a>
+parameter.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">must_not</code></p></td><td align="left" valign="top"><p>The clause (query) must not appear in the matching
+documents.  Clauses are executed in <a class="link" href="query-filter-context.html" title="Query and filter context">filter context</a> meaning
+that scoring is ignored and clauses are considered for caching. Because scoring is
+ignored, a score of <code class="literal">0</code> for all documents is returned.</p></td></tr></tbody></table></div><div xmlns="" class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h3>Bool query in filter context</h3><p xmlns="http://www.w3.org/1999/xhtml">If this query is used in a filter context and it has <code class="literal">should</code>
+clauses then at least one <code class="literal">should</code> clause is required to match.</p></div></div><p>The bool query also supports <code class="literal">disable_coord</code> parameter (defaults to
+<code class="literal">false</code>). Basically the coord similarity computes a score factor based
+on the fraction of all query terms that a document contains. See Lucene
+<code class="literal">BooleanQuery</code> for more details.</p><p>The <code class="literal">bool</code> query takes a <span class="emphasis"><em>more-matches-is-better</em></span> approach, so the score from
+each matching <code class="literal">must</code> or <code class="literal">should</code> clause will be added together to provide the
+final <code class="literal">_score</code> for each document.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST _search
+{
+  "query": {
+    "bool" : {
+      "must" : {
+        "term" : { "user" : "kimchy" }
+      },
+      "filter": {
+        "term" : { "tag" : "tech" }
+      },
+      "must_not" : {
+        "range" : {
+          "age" : { "gte" : 10, "lte" : 20 }
+        }
+      },
+      "should" : [
+        { "term" : { "tag" : "wow" } },
+        { "term" : { "tag" : "elasticsearch" } }
+      ],
+      "minimum_should_match" : 1,
+      "boost" : 1.0
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_scoring_with_literal_bool_filter_literal"></a>Scoring with <code class="literal">bool.filter</code><a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/query-dsl/bool-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Queries specified under the <code class="literal">filter</code> element have no effect on scoring — scores are returned as <code class="literal">0</code>.  Scores are only affected by the query that has
+been specified.  For instance, all three of the following queries return
+all documents where the <code class="literal">status</code> field contains the term <code class="literal">active</code>.</p><p>This first query assigns a score of <code class="literal">0</code> to all documents, as no scoring
+query has been specified:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET _search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "term": {
+          "status": "active"
+        }
+      }
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>This <code class="literal">bool</code> query has a <code class="literal">match_all</code> query, which assigns a score of <code class="literal">1.0</code> to
+all documents.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET _search
+{
+  "query": {
+    "bool": {
+      "must": {
+        "match_all": {}
+      },
+      "filter": {
+        "term": {
+          "status": "active"
+        }
+      }
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>This <code class="literal">constant_score</code> query behaves in exactly the same way as the second example above.
+The <code class="literal">constant_score</code> query assigns a score of <code class="literal">1.0</code> to all documents matched
+by the filter.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">GET _search
+{
+  "query": {
+    "constant_score": {
+      "filter": {
+        "term": {
+          "status": "active"
+        }
+      }
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_named_queries_to_see_which_clauses_matched"></a>Using named queries to see which clauses matched<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/query-dsl/bool-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you need to know which of the clauses in the bool query matched the documents
+returned from the query, you can use
+<a class="link" href="search-request-named-queries-and-filters.html" title="Named Queries">named queries</a> to assign a name to
+each clause.</p></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="query-dsl-constant-score-query.html">
+              « 
+              Constant Score Query</a>
+           
+        </span><span class="next">
+           
+          <a href="query-dsl-dis-max-query.html">Dis Max Query
+               »
+            </a></span></div></body></html>

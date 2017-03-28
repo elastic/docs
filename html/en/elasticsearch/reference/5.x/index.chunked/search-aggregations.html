@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Aggregations
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="prev" href="search-field-stats.html" title="Field stats API" /><link rel="next" href="search-aggregations-metrics.html" title="Metrics Aggregations" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-node">Aggregations</span></div><div xmlns="" class="navheader"><span class="prev"><a href="search-field-stats.html">
+              « 
+              Field stats API</a>
+           
+        </span><span class="next">
+           
+          <a href="search-aggregations-metrics.html">Metrics Aggregations
+               »
+            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="search-aggregations"></a>Aggregations<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><p>The aggregations framework helps provide aggregated data based on a search query. It is based on simple building blocks
+called aggregations, that can be composed in order to build complex summaries of the data.</p><p>An aggregation can be seen as a <span class="emphasis"><em>unit-of-work</em></span> that builds analytic information over a set of documents. The context of
+the execution defines what this document set is (e.g. a top-level aggregation executes within the context of the executed
+query/filters of the search request).</p><p>There are many different types of aggregations, each with its own purpose and output. To better understand these types,
+it is often easier to break them into three main families:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<a class="link" href="search-aggregations-bucket.html" title="Bucket Aggregations"><span class="emphasis"><em>Bucketing</em></span></a>
+</span></dt><dd>
+                                A family of aggregations that build buckets, where each bucket is associated with a <span class="emphasis"><em>key</em></span> and a document
+                                criterion. When the aggregation is executed, all the buckets criteria are evaluated on every document in
+                                the context and when a criterion matches, the document is considered to "fall in" the relevant bucket.
+                                By the end of the aggregation process, we’ll end up with a list of buckets - each one with a set of
+                                documents that "belong" to it.
+</dd><dt><span class="term">
+<a class="link" href="search-aggregations-metrics.html" title="Metrics Aggregations"><span class="emphasis"><em>Metric</em></span></a>
+</span></dt><dd>
+                                Aggregations that keep track and compute metrics over a set of documents.
+</dd><dt><span class="term">
+<a class="link" href="search-aggregations-matrix.html" title="Matrix Aggregations"><span class="emphasis"><em>Matrix</em></span></a>
+</span></dt><dd>
+                A family of aggregations that operate on multiple fields and produce a matrix result based on the
+                values extracted from the requested document fields. Unlike metric and bucket aggregations, this
+                aggregation family does not yet support scripting.
+</dd><dt><span class="term">
+<a class="link" href="search-aggregations-pipeline.html" title="Pipeline Aggregations"><span class="emphasis"><em>Pipeline</em></span></a>
+</span></dt><dd>
+                                Aggregations that aggregate the output of other aggregations and their associated metrics
+</dd></dl></div><p>The interesting part comes next. Since each bucket effectively defines a document set (all documents belonging to
+the bucket), one can potentially associate aggregations on the bucket level, and those will execute within the context
+of that bucket. This is where the real power of aggregations kicks in: <span class="strong"><strong>aggregations can be nested!</strong></span></p><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">Bucketing aggregations can have sub-aggregations (bucketing or metric). The sub-aggregations will be computed for
+                the buckets which their parent aggregation generates. There is no hard limit on the level/depth of nested
+                aggregations (one can nest an aggregation under a "parent" aggregation, which is itself a sub-aggregation of
+                another higher-level aggregation).</p></div></div><h2><a id="_structuring_aggregations"></a>Structuring Aggregations<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>The following snippet captures the basic structure of aggregations:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">"aggregations" : {
+    "&lt;aggregation_name&gt;" : {
+        "&lt;aggregation_type&gt;" : {
+            &lt;aggregation_body&gt;
+        }
+        [,"meta" : {  [&lt;meta_data_body&gt;] } ]?
+        [,"aggregations" : { [&lt;sub_aggregation&gt;]+ } ]?
+    }
+    [,"&lt;aggregation_name_2&gt;" : { ... } ]*
+}</pre></div><p>The <code class="literal">aggregations</code> object (the key <code class="literal">aggs</code> can also be used) in the JSON holds the aggregations to be computed. Each aggregation
+is associated with a logical name that the user defines (e.g. if the aggregation computes the average price, then it would
+make sense to name it <code class="literal">avg_price</code>). These logical names will also be used to uniquely identify the aggregations in the
+response. Each aggregation has a specific type (<code class="literal">&lt;aggregation_type&gt;</code> in the above snippet) and is typically the first
+key within the named aggregation body. Each type of aggregation defines its own body, depending on the nature of the
+aggregation (e.g. an <code class="literal">avg</code> aggregation on a specific field will define the field on which the average will be calculated).
+At the same level of the aggregation type definition, one can optionally define a set of additional aggregations,
+though this only makes sense if the aggregation you defined is of a bucketing nature. In this scenario, the
+sub-aggregations you define on the bucketing aggregation level will be computed for all the buckets built by the
+bucketing aggregation. For example, if you define a set of aggregations under the <code class="literal">range</code> aggregation, the
+sub-aggregations will be computed for the range buckets that are defined.</p><h3><a id="_values_source"></a>Values Source<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Some aggregations work on values extracted from the aggregated documents. Typically, the values will be extracted from
+a specific document field which is set using the <code class="literal">field</code> key for the aggregations. It is also possible to define a
+<a class="link" href="modules-scripting.html" title="Scripting"><code class="literal">script</code></a> which will generate the values (per document).</p><p>When both <code class="literal">field</code> and <code class="literal">script</code> settings are configured for the aggregation, the script will be treated as a
+<code class="literal">value script</code>.  While normal scripts are evaluated on a document level (i.e. the script has access to all the data
+associated with the document), value scripts are evaluated on the <span class="strong"><strong>value</strong></span> level. In this mode, the values are extracted
+from the configured <code class="literal">field</code> and the <code class="literal">script</code> is used to apply a "transformation" over these value/s.</p><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><a xmlns="http://www.w3.org/1999/xhtml" id="aggs-script-note"></a><p xmlns="http://www.w3.org/1999/xhtml">When working with scripts, the <code class="literal">lang</code> and <code class="literal">params</code> settings can also be defined. The former defines the scripting
+language which is used (assuming the proper language is available in Elasticsearch, either by default or as a plugin). The latter
+enables defining all the "dynamic" expressions in the script as parameters, which enables the script to keep itself static
+between calls (this will ensure the use of the cached compiled scripts in Elasticsearch).</p></div></div><p>Elasticsearch uses the type of the field in the mapping in order to figure out
+how to run the aggregation and format the response. However there are two cases
+in which Elasticsearch cannot figure out this information: unmapped fields (for
+instance in the case of a search request across multiple indices, and only some
+of them have a mapping for the field) and pure scripts. For those cases, it is
+possible to give Elasticsearch a hint using the <code class="literal">value_type</code> option, which
+accepts the following values: <code class="literal">string</code>, <code class="literal">long</code> (works for all integer types),
+<code class="literal">double</code> (works for all decimal types like <code class="literal">float</code> or <code class="literal">scaled_float</code>), <code class="literal">date</code>,
+<code class="literal">ip</code> and <code class="literal">boolean</code>.</p></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="search-field-stats.html">
+              « 
+              Field stats API</a>
+           
+        </span><span class="next">
+           
+          <a href="search-aggregations-metrics.html">Metrics Aggregations
+               »
+            </a></span></div></body></html>

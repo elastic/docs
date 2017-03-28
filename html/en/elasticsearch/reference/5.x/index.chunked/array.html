@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Array datatype
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="mapping-types.html" title="Field datatypes" /><link rel="prev" href="mapping-types.html" title="Field datatypes" /><link rel="next" href="binary.html" title="Binary datatype" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-link"><a href="mapping-types.html">Field datatypes</a></span> » <span class="breadcrumb-node">Array datatype</span></div><div xmlns="" class="navheader"><span class="prev"><a href="mapping-types.html">
+              « 
+              Field datatypes</a>
+           
+        </span><span class="next">
+           
+          <a href="binary.html">Binary datatype
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="array"></a>Array datatype<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/types/array.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In Elasticsearch, there is no dedicated <code class="literal">array</code> type.  Any field can contain
+zero or more values by default, however, all values in the array must be of
+the same datatype. For instance:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+an array of strings: [ <code class="literal">"one"</code>, <code class="literal">"two"</code> ]
+</li><li class="listitem">
+an array of integers: [ <code class="literal">1</code>, <code class="literal">2</code> ]
+</li><li class="listitem">
+an array of arrays: [ <code class="literal">1</code>, [ <code class="literal">2</code>, <code class="literal">3</code> ]] which is the equivalent of [ <code class="literal">1</code>, <code class="literal">2</code>, <code class="literal">3</code> ]
+</li><li class="listitem">
+an array of objects: [ <code class="literal">{ "name": "Mary", "age": 12 }</code>, <code class="literal">{ "name": "John", "age": 10 }</code>]
+</li></ul></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><h3>Arrays of objects</h3><p xmlns="http://www.w3.org/1999/xhtml">Arrays of objects do not work as you would expect: you cannot query each
+object independently of the other objects in the array.  If you need to be
+able to do this then you should use the <a class="link" href="nested.html" title="Nested datatype"><code class="literal">nested</code></a> datatype instead
+of the <a class="link" href="object.html" title="Object datatype"><code class="literal">object</code></a> datatype.</p><p xmlns="http://www.w3.org/1999/xhtml">This is explained in more detail in <a class="xref" href="nested.html" title="Nested datatype">Nested datatype</a>.</p></div></div><p>When adding a field dynamically, the first value in the array determines the
+field <code class="literal">type</code>.  All subsequent values must be of the same datatype or it must
+at least be possible to <a class="link" href="coerce.html" title="coerce">coerce</a> subsequent values to the same
+datatype.</p><p>Arrays with a mixture of datatypes are <span class="emphasis"><em>not</em></span> supported: [ <code class="literal">10</code>, <code class="literal">"some string"</code> ]</p><p>An array may contain <code class="literal">null</code> values, which are either replaced by the
+configured <a class="link" href="null-value.html" title="null_value"><code class="literal">null_value</code></a> or skipped entirely.  An empty array
+<code class="literal">[]</code> is treated as a missing field — a field with no values.</p><p>Nothing needs to be pre-configured in order to use arrays in documents, they
+are supported out of the box:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT my_index/my_type/1
+{
+  "message": "some arrays in this document...",
+  "tags":  [ "elasticsearch", "wow" ], <a id="CO170-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+  "lists": [ <a id="CO170-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+    {
+      "name": "prog_list",
+      "description": "programming list"
+    },
+    {
+      "name": "cool_list",
+      "description": "cool stuff list"
+    }
+  ]
+}
+
+PUT my_index/my_type/2 <a id="CO170-3"></a><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span>
+{
+  "message": "no arrays in this document...",
+  "tags":  "elasticsearch",
+  "lists": {
+    "name": "prog_list",
+    "description": "programming list"
+  }
+}
+
+GET my_index/_search
+{
+  "query": {
+    "match": {
+      "tags": "elasticsearch" <a id="CO170-4"></a><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span>
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO170-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">tags</code> field is dynamically added as a <code class="literal">string</code> field.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO170-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">lists</code> field is dynamically added as an <code class="literal">object</code> field.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO170-3"><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The second document contains no arrays, but can be indexed into the same fields.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO170-4"><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The query looks for <code class="literal">elasticsearch</code> in the <code class="literal">tags</code> field, and matches both documents.
+</p></td></tr></table></div><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Multi-value fields and the inverted index</strong></p></div></div></div><p>The fact that all field types support multi-value fields out of the box is a
+consequence of the origins of Lucene.  Lucene was designed to be a full text
+search engine.  In order to be able to search for individual words within a
+big block of text, Lucene tokenizes the text into individual terms, and
+adds each term to the inverted index separately.</p><p>This means that even a simple text field must be able to support multiple
+values by default.  When other datatypes were added, such as numbers and
+dates, they used the same data structure as strings, and so got multi-values
+for free.</p></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="mapping-types.html">
+              « 
+              Field datatypes</a>
+           
+        </span><span class="next">
+           
+          <a href="binary.html">Binary datatype
+               »
+            </a></span></div></body></html>

@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Context Suggester
+        | Elasticsearch Reference [5.1]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.1]" /><link rel="up" href="search-suggesters.html" title="Suggesters" /><link rel="prev" href="search-suggesters-completion.html" title="Completion Suggester" /><link rel="next" href="search-multi-search.html" title="Multi Search API" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.1" /></head><body><div xmlns="" class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.1]
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs</a></span> » <span class="breadcrumb-link"><a href="search-suggesters.html">Suggesters</a></span> » <span class="breadcrumb-node">Context Suggester</span></div><div xmlns="" class="navheader"><span class="prev"><a href="search-suggesters-completion.html">
+              « 
+              Completion Suggester</a>
+           
+        </span><span class="next">
+           
+          <a href="search-multi-search.html">Multi Search API
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="suggester-context"></a>Context Suggester<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The completion suggester considers all documents in the index, but it is often
+desirable to serve suggestions filtered and/or boosted by some criteria.
+For example, you want to suggest song titles filtered by certain artists or
+you want to boost song titles based on their genre.</p><p>To achieve suggestion filtering and/or boosting, you can add context mappings while
+configuring a completion field. You can define multiple context mappings for a
+completion field.
+Every context mapping has a unique name and a type. There are two types: <code class="literal">category</code>
+and <code class="literal">geo</code>. Context mappings are configured under the <code class="literal">contexts</code> parameter in
+the field mapping.</p><p>The following defines types, each with two context mappings for a completion
+field:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT place
+{
+    "mappings": {
+        "shops" : {
+            "properties" : {
+                "suggest" : {
+                    "type" : "completion",
+                    "contexts": [
+                        { <a id="CO33-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+                            "name": "place_type",
+                            "type": "category",
+                            "path": "cat"
+                        },
+                        { <a id="CO33-2"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+                            "name": "location",
+                            "type": "geo",
+                            "precision": 4
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
+PUT place_path_category
+{
+    "mappings": {
+        "shops" : {
+            "properties" : {
+                "suggest" : {
+                    "type" : "completion",
+                    "contexts": [
+                        { <a id="CO33-3"></a><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span>
+                            "name": "place_type",
+                            "type": "category",
+                            "path": "cat"
+                        },
+                        { <a id="CO33-4"></a><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span>
+                            "name": "location",
+                            "type": "geo",
+                            "precision": 4,
+                            "path": "loc"
+                        }
+                    ]
+                },
+                "loc": {
+                    "type": "geo_point"
+                }
+            }
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO33-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Defines a <code class="literal">category</code> context named <span class="emphasis"><em>place_type</em></span> where the categories must be
+    sent with the suggestions.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO33-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Defines a <code class="literal">geo</code> context named <span class="emphasis"><em>location</em></span> where the categories must be sent
+    with the suggestions.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO33-3"><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Defines a <code class="literal">category</code> context named <span class="emphasis"><em>place_type</em></span> where the categories are
+    read from the <code class="literal">cat</code> field.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO33-4"><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Defines a <code class="literal">geo</code> context named <span class="emphasis"><em>location</em></span> where the categories are read from
+    the <code class="literal">loc</code> field.
+</p></td></tr></table></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">Adding context mappings increases the index size for completion field. The completion index
+is entirely heap resident, you can monitor the completion field index size using <a class="xref" href="indices-stats.html" title="Indices Stats"><em>Indices Stats</em></a>.</p></div></div><h4><a id="suggester-context-category"></a>Category Context<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">category</code> context allows you to associate one or more categories with suggestions at index
+time. At query time, suggestions can be filtered and boosted by their associated categories.</p><p>The mappings are set up like the <code class="literal">place_type</code> fields above. If <code class="literal">path</code> is defined
+then the categories are read from that path in the document, otherwise they must
+be sent in the suggest field like this:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT place/shops/1
+{
+    "suggest": {
+        "input": ["timmy's", "starbucks", "dunkin donuts"],
+        "contexts": {
+            "place_type": ["cafe", "food"] <a id="CO34-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO34-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+These suggestions will be associated with <span class="emphasis"><em>cafe</em></span> and <span class="emphasis"><em>food</em></span> category.
+</p></td></tr></table></div><p>If the mapping had a <code class="literal">path</code> then the following index request would be enough to
+add the categories:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT place_path_category/shops/1
+{
+    "suggest": ["timmy's", "starbucks", "dunkin donuts"],
+    "cat": ["cafe", "food"] <a id="CO35-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO35-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+These suggestions will be associated with <span class="emphasis"><em>cafe</em></span> and <span class="emphasis"><em>food</em></span> category.
+</p></td></tr></table></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">If context mapping references another field and the categories
+are explicitly indexed, the suggestions are indexed with both set
+of categories.</p></div></div><h5><a id="_category_query"></a>Category Query<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Suggestions can be filtered by one or more categories. The following
+filters suggestions by multiple categories:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST place/_suggest?pretty
+{
+    "suggest" : {
+        "prefix" : "tim",
+        "completion" : {
+            "field" : "suggest",
+            "size": 10,
+            "contexts": {
+                "place_type": [ "cafe", "restaurants" ]
+            }
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">When no categories are provided at query-time, all indexed documents are considered.
+Querying with no categories on a category enabled completion field should be avoided, as it
+will degrade search performance.</p></div></div><p>Suggestions with certain categories can be boosted higher than others.
+The following filters suggestions by categories and additionally boosts
+suggestions associated with some categories:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST place/_suggest?pretty
+{
+    "suggest" : {
+        "prefix" : "tim",
+        "completion" : {
+            "field" : "suggest",
+            "size": 10,
+            "contexts": {
+                "place_type": [ <a id="CO36-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+                    { "context" : "cafe" },
+                    { "context" : "restaurants", "boost": 2 }
+                 ]
+            }
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO36-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The context query filter suggestions associated with
+    categories <span class="emphasis"><em>cafe</em></span> and <span class="emphasis"><em>restaurants</em></span> and boosts the
+    suggestions associated with <span class="emphasis"><em>restaurants</em></span> by a
+    factor of <code class="literal">2</code>
+</p></td></tr></table></div><p>In addition to accepting category values, a context query can be composed of
+multiple category context clauses. The following parameters are supported for a
+<code class="literal">category</code> context clause:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">context</code>
+</p>
+</td><td valign="top">
+<p>
+    The value of the category to filter/boost on.
+    This is mandatory.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">boost</code>
+</p>
+</td><td valign="top">
+<p>
+    The factor by which the score of the suggestion
+    should be boosted, the score is computed by
+    multiplying the boost with the suggestion weight,
+    defaults to <code class="literal">1</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">prefix</code>
+</p>
+</td><td valign="top">
+<p>
+    Whether the category value should be treated as a
+    prefix or not. For example, if set to <code class="literal">true</code>,
+    you can filter category of <span class="emphasis"><em>type1</em></span>, <span class="emphasis"><em>type2</em></span> and
+    so on, by specifying a category prefix of <span class="emphasis"><em>type</em></span>.
+    Defaults to <code class="literal">false</code>
+</p>
+</td></tr></tbody></table></div><h4><a id="suggester-context-geo"></a>Geo location Context<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A <code class="literal">geo</code> context allows you to associate one or more geo points or geohashes with suggestions
+at index time. At query time, suggestions can be filtered and boosted if they are within
+a certain distance of a specified geo location.</p><p>Internally, geo points are encoded as geohashes with the specified precision.</p><h5><a id="_geo_mapping"></a>Geo Mapping<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>In addition to the <code class="literal">path</code> setting, <code class="literal">geo</code> context mapping accepts the following settings:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">precision</code>
+</p>
+</td><td valign="top">
+<p>
+    This defines the precision of the geohash to be indexed and can be specified
+    as a distance value (<code class="literal">5m</code>, <code class="literal">10km</code> etc.), or as a raw geohash precision (<code class="literal">1</code>..<code class="literal">12</code>).
+    Defaults to a raw geohash precision value of <code class="literal">6</code>.
+</p>
+</td></tr></tbody></table></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">The index time <code class="literal">precision</code> setting sets the maximum geohash precision that
+can be used at query time.</p></div></div><h5><a id="_indexing_geo_contexts"></a>Indexing geo contexts<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p><code class="literal">geo</code> contexts can be explicitly set with suggestions or be indexed from a geo point field in the
+document via the <code class="literal">path</code> parameter, similar to <code class="literal">category</code> contexts. Associating multiple geo location context
+with a suggestion, will index the suggestion for every geo location. The following indexes a suggestion
+with two geo location contexts:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT place/shops/1
+{
+    "suggest": {
+        "input": "timmy's",
+        "contexts": {
+            "location": [
+                {
+                    "lat": 43.6624803,
+                    "lon": -79.3863353
+                },
+                {
+                    "lat": 43.6624718,
+                    "lon": -79.3873227
+                }
+            ]
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><h5><a id="_geo_location_query"></a>Geo location Query<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.1/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Suggestions can be filtered and boosted with respect to how close they are to one or
+more geo points. The following filters suggestions that fall within the area represented by
+the encoded geohash of a geo point:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST place/_suggest
+{
+    "suggest" : {
+        "prefix" : "tim",
+        "completion" : {
+            "field" : "suggest",
+            "size": 10,
+            "contexts": {
+                "location": {
+                    "lat": 43.662,
+                    "lon": -79.380
+                }
+            }
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div xmlns="" class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">When a location with a lower precision at query time is specified, all suggestions
+that fall within the area will be considered.</p></div></div><p>Suggestions that are within an area represented by a geohash can also be boosted higher
+than others, as shown by the following:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST place/_suggest?pretty
+{
+    "suggest" : {
+        "prefix" : "tim",
+        "completion" : {
+            "field" : "suggest",
+            "size": 10,
+            "contexts": {
+                "location": [ <a id="CO37-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+                    {
+                        "lat": 43.6624803,
+                        "lon": -79.3863353,
+                        "precision": 2
+                    },
+                    {
+                        "context": {
+                            "lat": 43.6624803,
+                            "lon": -79.3863353
+                        },
+                        "boost": 2
+                    }
+                 ]
+            }
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO37-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The context query filters for suggestions that fall under
+    the geo location represented by a geohash of <span class="emphasis"><em>(43.662, -79.380)</em></span>
+    with a precision of <span class="emphasis"><em>2</em></span> and boosts suggestions
+    that fall under the geohash representation of <span class="emphasis"><em>(43.6624803, -79.3863353)</em></span>
+    with a default precision of <span class="emphasis"><em>6</em></span> by a factor of <code class="literal">2</code>
+</p></td></tr></table></div><p>In addition to accepting context values, a context query can be composed of
+multiple context clauses. The following parameters are supported for a
+<code class="literal">category</code> context clause:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">context</code>
+</p>
+</td><td valign="top">
+<p>
+    A geo point object or a geo hash string to filter or
+    boost the suggestion by. This is mandatory.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">boost</code>
+</p>
+</td><td valign="top">
+<p>
+    The factor by which the score of the suggestion
+    should be boosted, the score is computed by
+    multiplying the boost with the suggestion weight,
+    defaults to <code class="literal">1</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">precision</code>
+</p>
+</td><td valign="top">
+<p>
+    The precision of the geohash to encode the query geo point.
+    This can be specified as a distance value (<code class="literal">5m</code>, <code class="literal">10km</code> etc.),
+    or as a raw geohash precision (<code class="literal">1</code>..<code class="literal">12</code>).
+    Defaults to index time precision level.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">neighbours</code>
+</p>
+</td><td valign="top">
+<p>
+    Accepts an array of precision values at which
+    neighbouring geohashes should be taken into account.
+    precision value can be a distance value (<code class="literal">5m</code>, <code class="literal">10km</code> etc.)
+    or a raw geohash precision (<code class="literal">1</code>..<code class="literal">12</code>). Defaults to
+    generating neighbours for index time precision level.
+</p>
+</td></tr></tbody></table></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="search-suggesters-completion.html">
+              « 
+              Completion Suggester</a>
+           
+        </span><span class="next">
+           
+          <a href="search-multi-search.html">Multi Search API
+               »
+            </a></span></div></body></html>

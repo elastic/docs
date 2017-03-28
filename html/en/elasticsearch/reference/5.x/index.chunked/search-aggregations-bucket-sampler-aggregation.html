@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">Sampler Aggregation
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="search-aggregations-bucket.html" title="Bucket Aggregations" /><link rel="prev" href="search-aggregations-bucket-reverse-nested-aggregation.html" title="Reverse nested Aggregation" /><link rel="next" href="search-aggregations-bucket-significantterms-aggregation.html" title="Significant Terms Aggregation" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="search-aggregations.html">Aggregations</a></span> » <span class="breadcrumb-link"><a href="search-aggregations-bucket.html">Bucket Aggregations</a></span> » <span class="breadcrumb-node">Sampler Aggregation</span></div><div xmlns="" class="navheader"><span class="prev"><a href="search-aggregations-bucket-reverse-nested-aggregation.html">
+              « 
+              Reverse nested Aggregation</a>
+           
+        </span><span class="next">
+           
+          <a href="search-aggregations-bucket-significantterms-aggregation.html">Significant Terms Aggregation
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-bucket-sampler-aggregation"></a>Sampler Aggregation<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/bucket/sampler-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div xmlns="" class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.</p></div></div><p>A filtering aggregation used to limit any sub aggregations' processing to a sample of the top-scoring documents.</p><div class="itemizedlist"><p class="title"><strong>Example use cases:</strong></p><ul class="itemizedlist" type="disc"><li class="listitem">
+Tightening the focus of analytics to high-relevance matches rather than the potentially very long tail of low-quality matches
+</li><li class="listitem">
+Reducing the running cost of aggregations that can produce useful results using only samples e.g. <code class="literal">significant_terms</code>
+</li></ul></div><p>Example:</p><p>A query on StackOverflow data for the popular term <code class="literal">javascript</code> OR the rarer term
+<code class="literal">kibana</code> will match many documents - most of them missing the word Kibana. To focus
+the <code class="literal">significant_terms</code> aggregation on top-scoring documents that are more likely to match
+the most interesting parts of our query we use a sample.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST /stackoverflow/_search?size=0
+{
+    "query": {
+        "query_string": {
+            "query": "tags:kibana OR tags:javascript"
+        }
+    },
+    "aggs": {
+        "sample": {
+            "sampler": {
+                "shard_size": 200
+            },
+            "aggs": {
+                "keywords": {
+                    "significant_terms": {
+                        "field": "tags",
+                        "exclude": ["kibana", "javascript"]
+                    }
+                }
+            }
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>Response:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">{
+    ...
+    "aggregations": {
+        "sample": {
+            "doc_count": 1000,<a id="CO84-1"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+            "keywords": {
+                "doc_count": 1000,
+                "buckets": [
+                    {
+                        "key": "elasticsearch",
+                        "doc_count": 150,
+                        "score": 1.078125,
+                        "bg_count": 200
+                    },
+                    {
+                        "key": "logstash",
+                        "doc_count": 50,
+                        "score": 0.5625,
+                        "bg_count": 50
+                    }
+                ]
+            }
+        }
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO84-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+1000 documents were sampled in total because we asked for a maximum of 200 from an index with 5 shards. The cost of performing the nested significant_terms aggregation was therefore limited rather than unbounded.
+</p></td></tr></table></div><p>Without the <code class="literal">sampler</code> aggregation the request query considers the full "long tail" of low-quality matches and therefore identifies
+less significant terms such as <code class="literal">jquery</code> and <code class="literal">angular</code> rather than focusing on the more insightful Kibana-related terms.</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">POST /stackoverflow/_search?size=0
+{
+    "query": {
+        "query_string": {
+            "query": "tags:kibana OR tags:javascript"
+        }
+    },
+    "aggs": {
+             "low_quality_keywords": {
+                "significant_terms": {
+                    "field": "tags",
+                    "size": 3,
+                    "exclude":["kibana", "javascript"]
+                }
+        }
+    }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><p>Response:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">{
+    ...
+    "aggregations": {
+        "low_quality_keywords": {
+            "doc_count": 1000,
+            "buckets": [
+                {
+                    "key": "angular",
+                    "doc_count": 200,
+                    "score": 0.02777,
+                   "bg_count": 200
+                },
+                {
+                    "key": "jquery",
+                    "doc_count": 200,
+                    "score": 0.02777,
+                    "bg_count": 200
+                },
+                {
+                    "key": "logstash",
+                    "doc_count": 50,
+                    "score": 0.0069,
+                    "bg_count": 50
+                }
+            ]
+        }
+    }
+}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_shard_size_2"></a>shard_size<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/bucket/sampler-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">shard_size</code> parameter limits how many top-scoring documents are collected in the sample processed on each shard.
+The default value is 100.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_limitations_4"></a>Limitations<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/bucket/sampler-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_cannot_be_nested_under_literal_breadth_first_literal_aggregations_2"></a>Cannot be nested under <code class="literal">breadth_first</code> aggregations<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/bucket/sampler-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Being a quality-based filter the sampler aggregation needs access to the relevance score produced for each document.
+It therefore cannot be nested under a <code class="literal">terms</code> aggregation which has the <code class="literal">collect_mode</code> switched from the default <code class="literal">depth_first</code> mode to <code class="literal">breadth_first</code> as this discards scores.
+In this situation an error will be thrown.</p></div></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="search-aggregations-bucket-reverse-nested-aggregation.html">
+              « 
+              Reverse nested Aggregation</a>
+           
+        </span><span class="next">
+           
+          <a href="search-aggregations-bucket-significantterms-aggregation.html">Significant Terms Aggregation
+               »
+            </a></span></div></body></html>

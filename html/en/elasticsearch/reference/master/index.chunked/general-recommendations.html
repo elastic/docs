@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">General recommendations
+        | Elasticsearch Reference [master]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="how-to.html" title="How To" /><link rel="prev" href="how-to.html" title="How To" /><link rel="next" href="recipes.html" title="Recipes" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/master" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="how-to.html">How To</a></span> » <span class="breadcrumb-node">General recommendations</span></div><div xmlns="" class="navheader"><span class="prev"><a href="how-to.html">
+              « 
+              How To</a>
+           
+        </span><span class="next">
+           
+          <a href="recipes.html">Recipes
+               »
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="general-recommendations"></a>General recommendations<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/general.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><h3><a id="large-size"></a>Don’t return large result sets<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/general.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elasticsearch is designed as a search engine, which makes it very good at
+getting back the top documents that match a query. However, it is not as good
+for workloads that fall into the database domain, such as retrieving all
+documents that match a particular query. If you need to do this, make sure to
+use the <a class="link" href="search-request-scroll.html" title="Scroll">Scroll</a> API.</p><h3><a id="maximum-document-size"></a>Avoid large documents<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/general.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Given that the default <a class="link" href="modules-http.html" title="HTTP"><code class="literal">http.max_context_length</code></a> is set to
+100MB, Elasticsearch will refuse to index any document that is larger than
+that. You might decide to increase that particular setting, but Lucene still
+has a limit of about 2GB.</p><p>Even without considering hard limits, large documents are usually not
+practical. Large documents put more stress on network, memory usage and disk,
+even for search requests that do not request the <code class="literal">_source</code> since Elasticsearch
+needs to fetch the <code class="literal">_id</code> of the document in all cases, and the cost of getting
+this field is bigger for large documents due to how the filesystem cache works.
+Indexing this document can use an amount of memory that is a multiplier of the
+original size of the document. Proximity search (phrase queries for instance)
+and <a class="link" href="search-request-highlighting.html" title="Highlighting">highlighting</a> also become more expensive
+since their cost directly depends on the size of the original document.</p><p>It is sometimes useful to reconsider what the unit of information should be.
+For instance, the fact you want to make books searchable doesn’t necesarily
+mean that a document should consist of a whole book. It might be a better idea
+to use chapters or even paragraphs as documents, and then have a property in
+these documents that identifies which book they belong to. This does not only
+avoid the issues with large documents, it also makes the search experience
+better. For instance if a user searches for two words <code class="literal">foo</code> and <code class="literal">bar</code>, a match
+across different chapters is probably very poor, while a match within the same
+paragraph is likely good.</p><h3><a id="sparsity"></a>Avoid sparsity<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/general.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The data-structures behind Lucene, which Elasticsearch relies on in order to
+index and store data, work best with dense data, ie. when all documents have the
+same fields. This is especially true for fields that have norms enabled (which
+is the case for <code class="literal">text</code> fields by default) or doc values enabled (which is the
+case for numerics, <code class="literal">date</code>, <code class="literal">ip</code> and <code class="literal">keyword</code> by default).</p><p>The reason is that Lucene internally identifies documents with so-called doc
+ids, which are integers between 0 and the total number of documents in the
+index. These doc ids are used for communication between the internal APIs of
+Lucene: for instance searching on a term with a <code class="literal">match</code> query produces an
+iterator of doc ids, and these doc ids are then used to retrieve the value of
+the <code class="literal">norm</code> in order to compute a score for these documents. The way this <code class="literal">norm</code>
+lookup is implemented currently is by reserving one byte for each document.
+The <code class="literal">norm</code> value for a given doc id can then be retrieved by reading the
+byte at index <code class="literal">doc_id</code>. While this is very efficient and helps Lucene quickly
+have access to the <code class="literal">norm</code> values of every document, this has the drawback that
+documents that do not have a value will also require one byte of storage.</p><p>In practice, this means that if an index has <code class="literal">M</code> documents, norms will require
+<code class="literal">M</code> bytes of storage <span class="strong"><strong>per field</strong></span>, even for fields that only appear in a small
+fraction of the documents of the index. Although slightly more complex with doc
+values due to the fact that doc values have multiple ways that they can be
+encoded depending on the type of field and on the actual data that the field
+stores, the problem is very similar. In case you wonder: <code class="literal">fielddata</code>, which was
+used in Elasticsearch pre-2.0 before being replaced with doc values, also
+suffered from this issue, except that the impact was only on the memory
+footprint since <code class="literal">fielddata</code> was not explicitly materialized on disk.</p><p>Note that even though the most notable impact of sparsity is on storage
+requirements, it also has an impact on indexing speed and search speed since
+these bytes for documents that do not have a field still need to be written
+at index time and skipped over at search time.</p><p>It is totally fine to have a minority of sparse fields in an index. But beware
+that if sparsity becomes the rule rather than the exception, then the index
+will not be as efficient as it could be.</p><p>This section mostly focused on <code class="literal">norms</code> and <code class="literal">doc values</code> because those are the
+two features that are most affected by sparsity. Sparsity also affect the
+efficiency of the inverted index (used to index <code class="literal">text</code>/<code class="literal">keyword</code> fields) and
+dimensional points (used to index <code class="literal">geo_point</code> and numerics) but to a lesser
+extent.</p><p>Here are some recommendations that can help avoid sparsity:</p><h4><a id="_avoid_putting_unrelated_data_in_the_same_index"></a>Avoid putting unrelated data in the same index<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/general.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>You should avoid putting documents that have totally different structures into
+the same index in order to avoid sparsity. It is often better to put these
+documents into different indices, you could also consider giving fewer shards
+to these smaller indices since they will contain fewer documents overall.</p><p>Note that this advice does not apply in the case that you need to use
+parent/child relations between your documents since this feature is only
+supported on documents that live in the same index.</p><h4><a id="_normalize_document_structures"></a>Normalize document structures<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/general.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Even if you really need to put different kinds of documents in the same index,
+maybe there are opportunities to reduce sparsity. For instance if all documents
+in the index have a timestamp field but some call it <code class="literal">timestamp</code> and others
+call it <code class="literal">creation_date</code>, it would help to rename it so that all documents have
+the same field name for the same data.</p><h4><a id="_avoid_types"></a>Avoid types<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/general.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Types might sound like a good way to store multiple tenants in a single index.
+They are not: given that types store everything in a single index, having
+multiple types that have different fields in a single index will also cause
+problems due to sparsity as described above. If your types do not have very
+similar mappings, you might want to consider moving them to a dedicated index.</p><h4><a id="_disable_literal_norms_literal_and_literal_doc_values_literal_on_sparse_fields"></a>Disable <code class="literal">norms</code> and <code class="literal">doc_values</code> on sparse fields<a xmlns="" href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/general.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If none of the above recommendations apply in your case, you might want to
+check whether you actually need <code class="literal">norms</code> and <code class="literal">doc_values</code> on your sparse fields.
+<code class="literal">norms</code> can be disabled if producing scores is not necessary on a field, this is
+typically true for fields that are only used for filtering. <code class="literal">doc_values</code> can be
+disabled on fields that are neither used for sorting nor for aggregations.
+Beware that this decision should not be made lightly since these parameters
+cannot be changed on a live index, so you would have to reindex if you realize
+that you need <code class="literal">norms</code> or <code class="literal">doc_values</code>.</p></div><div xmlns="" class="navfooter"><span class="prev"><a href="how-to.html">
+              « 
+              How To</a>
+           
+        </span><span class="next">
+           
+          <a href="recipes.html">Recipes
+               »
+            </a></span></div></body></html>

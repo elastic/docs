@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title xmlns="">search_analyzer
+        | Elasticsearch Reference [5.x]
+      | Elastic
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="mapping-params.html" title="Mapping parameters" /><link rel="prev" href="properties.html" title="properties" /><link rel="next" href="similarity.html" title="similarity" /><meta xmlns="" name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta xmlns="" name="DC.type" content="Docs/Elasticsearch/Reference/5.x" /></head><body><div xmlns="" class="page_header">You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div xmlns="" class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-link"><a href="mapping-params.html">Mapping parameters</a></span> » <span class="breadcrumb-node"><code xmlns="http://www.w3.org/1999/xhtml" class="literal">search_analyzer</code></span></div><div xmlns="" class="navheader"><span class="prev"><a href="properties.html">
+              « 
+              <code xmlns="http://www.w3.org/1999/xhtml" class="literal">properties</code></a>
+           
+        </span><span class="next">
+           
+          <a href="similarity.html"><code xmlns="http://www.w3.org/1999/xhtml" class="literal">similarity</code>
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-analyzer"></a><code class="literal">search_analyzer</code><a xmlns="" href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/params/search-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Usually, the same <a class="link" href="analyzer.html" title="analyzer">analyzer</a> should be applied at index time and at
+search time, to ensure that the terms in the query are in the same format as
+the terms in the inverted index.</p><p>Sometimes, though, it can make sense to use a different analyzer at search
+time, such as when using the  <a class="link" href="analysis-edgengram-tokenizer.html" title="Edge NGram Tokenizer"><code class="literal">edge_ngram</code></a>
+tokenizer for autocomplete.</p><p>By default, queries will use the <code class="literal">analyzer</code> defined in the field mapping, but
+this can be overridden with the <code class="literal">search_analyzer</code> setting:</p><div xmlns="" class="pre_wrapper"><pre xmlns="http://www.w3.org/1999/xhtml" class="programlisting prettyprint lang-js">PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "autocomplete_filter": {
+          "type": "edge_ngram",
+          "min_gram": 1,
+          "max_gram": 20
+        }
+      },
+      "analyzer": {
+        "autocomplete": { <a id="CO225-3"></a><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span>
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "autocomplete_filter"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "text": {
+          "type": "text",
+          "analyzer": "autocomplete", <a id="CO225-4"></a><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span>
+          "search_analyzer": "standard" <a id="CO225-5"></a><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span>
+        }
+      }
+    }
+  }
+}
+
+PUT my_index/my_type/1
+{
+  "text": "Quick Brown Fox" <a id="CO225-6"></a><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span>
+}
+
+GET my_index/_search
+{
+  "query": {
+    "match": {
+      "text": {
+        "query": "Quick Br", <a id="CO225-7"></a><span xmlns=""><img src="images/icons/callouts/5.png" alt="" /></span>
+        "operator": "and"
+      }
+    }
+  }
+}</pre></div><div xmlns="" class="console_widget" data-snippet=":CONSOLE:"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO225-1"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO225-3"><span xmlns=""><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Analysis settings to define the custom <code class="literal">autocomplete</code> analyzer.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO225-2"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO225-4"><span xmlns=""><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO225-5"><span xmlns=""><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">text</code> field uses the <code class="literal">autocomplete</code> analyzer at index time, but the <code class="literal">standard</code> analyzer at search time.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO225-6"><span xmlns=""><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This field is indexed as the terms: [ <code class="literal">q</code>, <code class="literal">qu</code>, <code class="literal">qui</code>, <code class="literal">quic</code>, <code class="literal">quick</code>, <code class="literal">b</code>, <code class="literal">br</code>, <code class="literal">bro</code>, <code class="literal">brow</code>, <code class="literal">brown</code>, <code class="literal">f</code>, <code class="literal">fo</code>, <code class="literal">fox</code> ]
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO225-7"><span xmlns=""><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The query searches for both of these terms: [ <code class="literal">quick</code>, <code class="literal">br</code> ]
+</p></td></tr></table></div><p>See <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/_index_time_search_as_you_type.html" target="_top">Index time search-as-you-
+type</a> for a full explanation of this example.</p><div xmlns="" class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p xmlns="http://www.w3.org/1999/xhtml">The <code class="literal">search_analyzer</code> setting must have the same setting for fields of
+the same name in the same index.  Its value can be updated on existing fields
+using the <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a>.</p></div></div></div><div xmlns="" class="navfooter"><span class="prev"><a href="properties.html">
+              « 
+              <code xmlns="http://www.w3.org/1999/xhtml" class="literal">properties</code></a>
+           
+        </span><span class="next">
+           
+          <a href="similarity.html"><code xmlns="http://www.w3.org/1999/xhtml" class="literal">similarity</code>
+               »
+            </a></span></div></body></html>
