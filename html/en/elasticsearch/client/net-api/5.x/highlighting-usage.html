@@ -594,17 +594,6 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
                 )
             ),
         fs =&gt; fs
-            .Field(p =&gt; p.LeadDeveloper.LastName)
-            .Type(HighlighterType.Unified)
-            .PreTags("&lt;name&gt;")
-            .PostTags("&lt;/name&gt;")
-            .HighlightQuery(q =&gt; q
-                .Match(m =&gt; m
-                    .Field(p =&gt; p.LeadDeveloper.LastName)
-                    .Query(LastNameSearch)
-                )
-            ),
-        fs =&gt; fs
             .Field(p =&gt; p.State.Suffix("offsets"))
             .Type(HighlighterType.Postings)
             .PreTags("&lt;state&gt;")
@@ -651,18 +640,6 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
                     {
                         Field = "leadDeveloper.firstName",
                         Query = "Kurt Edgardo Naomi Dariana Justice Felton"
-                    }
-                }
-            },
-            { "leadDeveloper.lastName", new HighlightField
-                {
-                    Type = HighlighterType.Unified,
-                    PreTags = new[] { "&lt;name&gt;"},
-                    PostTags = new[] { "&lt;/name&gt;"},
-                    HighlightQuery = new MatchQuery
-                    {
-                        Field = "leadDeveloper.lastName",
-                        Query = LastNameSearch
                     }
                 }
             },
@@ -721,22 +698,6 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
           }
         }
       },
-      "leadDeveloper.lastName": {
-        "type": "unified",
-        "pre_tags": [
-          "&lt;name&gt;"
-        ],
-        "post_tags": [
-          "&lt;/name&gt;"
-        ],
-        "highlight_query": {
-          "match": {
-            "leadDeveloper.lastName": {
-              "query": "Stokes"
-            }
-          }
-        }
-      },
       "state.offsets": {
         "type": "postings",
         "pre_tags": [
@@ -779,20 +740,111 @@ foreach (var highlightsInEachHit in response.Hits.Select(d=&gt;d.Highlights))
                 highlight.Should().Contain("&lt;/name&gt;");
             }
         }
-        else if (highlightField.Key == "leadDeveloper.lastName")
-        {
-            foreach (var highlight in highlightField.Value.Highlights)
-            {
-                highlight.Should().Contain("&lt;name&gt;");
-                highlight.Should().Contain("&lt;/name&gt;");
-            }
-        }
         else if (highlightField.Key == "state.offsets")
         {
             foreach (var highlight in highlightField.Value.Highlights)
             {
                 highlight.Should().Contain("&lt;state&gt;");
                 highlight.Should().Contain("&lt;/state&gt;");
+            }
+        }
+        else
+        {
+            Assert.True(false, $"highlights contains unexpected key {highlightField.Key}");
+        }
+    }
+}</pre></div><h2><a id="unified-highlighter"></a>Unified highlighter<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/search/request/highlighting-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>The unified highlighter can extract offsets from either postings, term vectors, or via re-analyzing text.
+Under the hood it uses Lucene UnifiedHighlighter which picks its strategy depending on the
+field and the query to highlight.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Unified highlighter is available only in Elasticsearch 5.3.0+</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release.
+Elastic will take a best effort approach to fix any issues, but experimental features
+are not subject to the support SLA of official GA features.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_fluent_dsl_example_6"></a>Fluent DSL Example<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/search/request/highlighting-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
+.Query(q =&gt; q
+    .Match(m =&gt; m
+        .Field(f =&gt; f.Name.Suffix("standard"))
+        .Query("Upton Sons Shield Rice Rowe Roberts")
+    )
+)
+.Highlight(h =&gt; h
+    .Fields(
+        fs =&gt; fs
+            .Field(p =&gt; p.LeadDeveloper.LastName)
+            .Type(HighlighterType.Unified)
+            .PreTags("&lt;name&gt;")
+            .PostTags("&lt;/name&gt;")
+            .HighlightQuery(q =&gt; q
+                .Match(m =&gt; m
+                    .Field(p =&gt; p.LeadDeveloper.LastName)
+                    .Query(LastNameSearch)
+                )
+            )
+    )
+)</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_object_initializer_syntax_example_6"></a>Object Initializer Syntax Example<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/search/request/highlighting-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
+{
+    Query = new MatchQuery
+    {
+        Query = "Upton Sons Shield Rice Rowe Roberts",
+        Field = "name.standard"
+    },
+    Highlight = new Highlight
+    {
+        Fields = new Dictionary&lt;Field, IHighlightField&gt;
+        {
+            { "leadDeveloper.lastName", new HighlightField
+                {
+                    Type = HighlighterType.Unified,
+                    PreTags = new[] { "&lt;name&gt;"},
+                    PostTags = new[] { "&lt;/name&gt;"},
+                    HighlightQuery = new MatchQuery
+                    {
+                        Field = "leadDeveloper.lastName",
+                        Query = LastNameSearch
+                    }
+                }
+            }
+        }
+    }
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "query": {
+    "match": {
+      "name.standard": {
+        "query": "Upton Sons Shield Rice Rowe Roberts"
+      }
+    }
+  },
+  "highlight": {
+    "fields": {
+      "leadDeveloper.lastName": {
+        "type": "unified",
+        "pre_tags": [
+          "&lt;name&gt;"
+        ],
+        "post_tags": [
+          "&lt;/name&gt;"
+        ],
+        "highlight_query": {
+          "match": {
+            "leadDeveloper.lastName": {
+              "query": "Stokes"
+            }
+          }
+        }
+      }
+    }
+  }
+}</pre></div><p>
+</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_handling_responses_2"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/search/request/highlighting-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+
+foreach (var highlightsInEachHit in response.Hits.Select(d =&gt; d.Highlights))
+{
+    foreach (var highlightField in highlightsInEachHit)
+    {
+        if (highlightField.Key == "leadDeveloper.lastName")
+        {
+            foreach (var highlight in highlightField.Value.Highlights)
+            {
+                highlight.Should().Contain("&lt;name&gt;");
+                highlight.Should().Contain("&lt;/name&gt;");
             }
         }
         else
