@@ -571,52 +571,86 @@ High precision geohashes have a long string length and represent cells that cove
 </li><li class="listitem">
 Low precision geohashes have a short string length and represent cells that each cover a large area.
 </li></ul></div><p>Geohashes used in this aggregation can have a choice of precision between 1 and 12.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The highest-precision geohash of length 12 produces cells that cover less than a square metre of land and so high-precision requests can be very costly in terms of RAM and result sizes.
-Please see the example below on how to first filter the aggregation to a smaller geographic area before requesting high-levels of detail.</p></div></div><p>The specified field must be of type <code class="literal">geo_point</code> (which can only be set explicitly in the mappings) and it can also hold an array of <code class="literal">geo_point</code> fields, in which case all points will be taken into account during aggregation.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_simple_low_precision_request"></a>Simple low-precision request<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/geohashgrid-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+Please see the example below on how to first filter the aggregation to a smaller geographic area before requesting high-levels of detail.</p></div></div><p>The specified field must be of type <code class="literal">geo_point</code> (which can only be set explicitly in the mappings) and it can also hold an array of <code class="literal">geo_point</code> fields, in which case all points will be taken into account during aggregation.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_simple_low_precision_request"></a>Simple low-precision request<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/geohashgrid-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /museums
+{
+    "mappings": {
+        "doc": {
+            "properties": {
+                "location": {
+                    "type": "geo_point"
+                }
+            }
+        }
+    }
+}
+
+POST /museums/doc/_bulk?refresh
+{"index":{"_id":1}}
+{"location": "52.374081,4.912350", "name": "NEMO Science Museum"}
+{"index":{"_id":2}}
+{"location": "52.369219,4.901618", "name": "Museum Het Rembrandthuis"}
+{"index":{"_id":3}}
+{"location": "52.371667,4.914722", "name": "Nederlands Scheepvaartmuseum"}
+{"index":{"_id":4}}
+{"location": "51.222900,4.405200", "name": "Letterenhuis"}
+{"index":{"_id":5}}
+{"location": "48.861111,2.336389", "name": "Musée du Louvre"}
+{"index":{"_id":6}}
+{"location": "48.860000,2.327000", "name": "Musée d'Orsay"}
+
+POST /museums/_search?size=0
+{
     "aggregations" : {
-        "myLarge-GrainGeoHashGrid" : {
+        "large-grid" : {
             "geohash_grid" : {
                 "field" : "location",
                 "precision" : 3
             }
         }
     }
-}</pre></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-geohashgrid-aggregation/1.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    ...
     "aggregations": {
-        "myLarge-GrainGeoHashGrid": {
+        "large-grid": {
             "buckets": [
                 {
-                    "key": "svz",
-                    "doc_count": 10964
+                    "key": "u17",
+                    "doc_count": 3
                 },
                 {
-                    "key": "sv8",
-                    "doc_count": 3198
+                    "key": "u09",
+                    "doc_count": 2
+                },
+                {
+                    "key": "u15",
+                    "doc_count": 1
                 }
             ]
         }
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_high_precision_requests"></a>High-precision requests<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/geohashgrid-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When requesting detailed buckets (typically for displaying a "zoomed in" map) a filter like <a class="link" href="query-dsl-geo-bounding-box-query.html" title="Geo Bounding Box Query">geo_bounding_box</a> should be applied to narrow the subject area otherwise potentially millions of buckets will be created and returned.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_high_precision_requests"></a>High-precision requests<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/geohashgrid-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When requesting detailed buckets (typically for displaying a "zoomed in" map) a filter like <a class="link" href="query-dsl-geo-bounding-box-query.html" title="Geo Bounding Box Query">geo_bounding_box</a> should be applied to narrow the subject area otherwise potentially millions of buckets will be created and returned.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /museums/_search?size=0
+{
     "aggregations" : {
-        "zoomedInView" : {
+        "zoomed-in" : {
             "filter" : {
                 "geo_bounding_box" : {
                     "location" : {
-                        "top_left" : "51.73, 0.9",
-                        "bottom_right" : "51.55, 1.1"
+                        "top_left" : "52.4, 4.9",
+                        "bottom_right" : "52.3, 5.0"
                     }
                 }
             },
             "aggregations":{
                 "zoom1":{
                     "geohash_grid" : {
-                        "field":"location",
-                        "precision":8
+                        "field": "location",
+                        "precision": 8
                     }
                 }
             }
         }
     }
- }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_cell_dimensions_at_the_equator"></a>Cell dimensions at the equator<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/geohashgrid-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The table below shows the metric dimensions for cells covered by various string lengths of geohash.
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-geohashgrid-aggregation/2.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_cell_dimensions_at_the_equator"></a>Cell dimensions at the equator<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/geohashgrid-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The table below shows the metric dimensions for cells covered by various string lengths of geohash.
 Cell dimensions vary with latitude and so the table is for the worst-case scenario at the equator.</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <span class="strong"><strong>GeoHash length</strong></span>
