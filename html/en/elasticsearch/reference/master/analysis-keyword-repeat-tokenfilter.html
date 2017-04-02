@@ -607,16 +607,63 @@ term to be indexed side by side with the stemmed version of the term.
 Given the nature of this filter each token that isn’t transformed by a
 subsequent stemmer will be indexed twice. Therefore, consider adding a
 <code class="literal">unique</code> filter with <code class="literal">only_on_same_position</code> set to <code class="literal">true</code> to drop
-unnecessary duplicates.</p><p>Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">index :
-    analysis :
-        analyzer :
-            myAnalyzer :
-                type : custom
-                tokenizer : standard
-                filter : [lowercase, keyword_repeat, porter_stem, unique_stem]
-            unique_stem:
-                type: unique
-                only_on_same_position : true</pre></div></div><div class="navfooter"><span class="prev"><a href="analysis-keyword-marker-tokenfilter.html">
+unnecessary duplicates.</p><p>Here is an example of using the <code class="literal">keyword_repeat</code> token filter to
+preserve both the stemmed and unstemmed version of tokens:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /keyword_repeat_example
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "stemmed_and_unstemmed": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "keyword_repeat", "porter_stem", "unique_stem"]
+        }
+      },
+      "filter": {
+        "unique_stem": {
+          "type": "unique",
+          "only_on_same_position": true
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-keyword-repeat-tokenfilter/1.json"></div><p>And you can test it with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /keyword_repeat_example/_analyze
+{
+  "analyzer" : "stemmed_and_unstemmed",
+  "text" : "I like cats"
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-keyword-repeat-tokenfilter/2.json"></div><p>And it’d respond:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "tokens": [
+    {
+      "token": "i",
+      "start_offset": 0,
+      "end_offset": 1,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 0
+    },
+    {
+      "token": "like",
+      "start_offset": 2,
+      "end_offset": 6,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 1
+    },
+    {
+      "token": "cats",
+      "start_offset": 7,
+      "end_offset": 11,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 2
+    },
+    {
+      "token": "cat",
+      "start_offset": 7,
+      "end_offset": 11,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 2
+    }
+  ]
+}</pre></div><p>Which preserves both the <code class="literal">cat</code> and <code class="literal">cats</code> tokens. Compare this to the example
+on the <a class="xref" href="analysis-keyword-marker-tokenfilter.html" title="Keyword Marker Token Filter">Keyword Marker Token Filter</a>.</p></div><div class="navfooter"><span class="prev"><a href="analysis-keyword-marker-tokenfilter.html">
               « 
               Keyword Marker Token Filter</a>
            

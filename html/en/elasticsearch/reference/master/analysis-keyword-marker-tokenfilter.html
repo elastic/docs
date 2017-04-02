@@ -605,17 +605,87 @@ Not what you want? See the
 any stemming filters.</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">keywords</code></p></td><td align="left" valign="top"><p>A list of words to use.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">keywords_path</code></p></td><td align="left" valign="top"><p>A path (either relative to <code class="literal">config</code> location, or
 absolute) to a list of words.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">keywords_pattern</code></p></td><td align="left" valign="top"><p>A regular expression pattern to match against words
 in the text.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">ignore_case</code></p></td><td align="left" valign="top"><p>Set to <code class="literal">true</code> to lower case all words first. Defaults to
-<code class="literal">false</code>.</p></td></tr></tbody></table></div><p>Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">index :
-    analysis :
-        analyzer :
-            myAnalyzer :
-                type : custom
-                tokenizer : standard
-                filter : [lowercase, protwords, porter_stem]
-        filter :
-            protwords :
-                type : keyword_marker
-                keywords_path : analysis/protwords.txt</pre></div></div><div class="navfooter"><span class="prev"><a href="analysis-stemmer-override-tokenfilter.html">
+<code class="literal">false</code>.</p></td></tr></tbody></table></div><p>You can configure it like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /keyword_marker_example
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "protect_cats": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "protect_cats", "porter_stem"]
+        },
+        "normal": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "porter_stem"]
+        }
+      },
+      "filter": {
+        "protect_cats": {
+          "type": "keyword_marker",
+          "keywords": ["cats"]
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-keyword-marker-tokenfilter/1.json"></div><p>And test it with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /keyword_marker_example/_analyze
+{
+  "analyzer" : "protect_cats",
+  "text" : "I like cats"
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-keyword-marker-tokenfilter/2.json"></div><p>And it’d respond:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "tokens": [
+    {
+      "token": "i",
+      "start_offset": 0,
+      "end_offset": 1,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 0
+    },
+    {
+      "token": "like",
+      "start_offset": 2,
+      "end_offset": 6,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 1
+    },
+    {
+      "token": "cats",
+      "start_offset": 7,
+      "end_offset": 11,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 2
+    }
+  ]
+}</pre></div><p>As compared to the <code class="literal">normal</code> analyzer which has <code class="literal">cats</code> stemmed to <code class="literal">cat</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /keyword_marker_example/_analyze
+{
+  "analyzer" : "normal",
+  "text" : "I like cats"
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-keyword-marker-tokenfilter/3.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "tokens": [
+    {
+      "token": "i",
+      "start_offset": 0,
+      "end_offset": 1,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 0
+    },
+    {
+      "token": "like",
+      "start_offset": 2,
+      "end_offset": 6,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 1
+    },
+    {
+      "token": "cat",
+      "start_offset": 7,
+      "end_offset": 11,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 2
+    }
+  ]
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="analysis-stemmer-override-tokenfilter.html">
               « 
               Stemmer Override Token Filter</a>
            
