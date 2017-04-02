@@ -126,8 +126,8 @@ sub index_titles {
                 my $part_url = $url . $_->{id};
                 my $is_main = $_->{id} ? \0 : \1;
                 $b->index(
-                    {   _id     => $part_url,
-                        _source => {
+                    {   _id    => $part_url,
+                        source => {
                             %base,
                             title         => $_->{title},
                             url           => $part_url,
@@ -139,8 +139,8 @@ sub index_titles {
         }
         else {
             $b->index(
-                {   _id     => $url,
-                    _source => {
+                {   _id    => $url,
+                    source => {
                         %base,
                         title         => $doc->{_source}{title},
                         is_main_title => \1
@@ -217,8 +217,8 @@ sub _index_book {
                 $page->{breadcrumbs} ||= $book_title;
 
                 $bulk->index(
-                    {   _id     => $url,
-                        _source => {
+                    {   _id    => $url,
+                        source => {
                             %$page,
                             url        => $url,
                             page_group => $page_group,
