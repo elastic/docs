@@ -184,8 +184,8 @@ sub _add_search_query {
         {
         term => {
             section => {
-                value => 'Docs/Clients/JavaScript',
-                boost => -5
+                value => 'Docs/Clients/JavaScript/',
+                boost => -10
             }
         },
         };
@@ -294,8 +294,8 @@ sub _add_suggest_query {
         {
         term => {
             section => {
-                value => 'Docs/Clients/JavaScript',
-                boost => -5
+                value => 'Docs/Clients/JavaScript/',
+                boost => -10
             }
         }
         };
