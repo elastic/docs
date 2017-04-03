@@ -618,7 +618,11 @@ Not what you want? See the
                 key: your_azure_storage_key2</pre></div><p><code class="literal">my_account1</code> is the default account which will be used by a repository unless you set an explicit one.</p><p>You can set the client side timeout to use when making any single request. It can be defined globally, per account or both.
 It’s not set by default which means that elasticsearch is using the
 <a class="ulink" href="http://azure.github.io/azure-storage-java/com/microsoft/azure/storage/RequestOptions.html#setTimeoutIntervalInMs(java.lang.Integer)" target="_top">default value</a>
-set by the azure client (known as 5 minutes).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
+set by the azure client (known as 5 minutes).</p><p><code class="literal">max_retries</code> can help to control the exponential backoff policy. It will fix the number of retries
+in case of failures before considering the snapshot is failing. Defaults to <code class="literal">3</code> retries.
+The initial backoff period is defined by Azure SDK as <code class="literal">30s</code>. Which means <code class="literal">30s</code> of wait time
+before retrying after a first timeout or failure. The maximum backoff period is defined by Azure SDK as
+<code class="literal">90s</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
     azure:
         storage:
             timeout: 10s
@@ -626,10 +630,12 @@ set by the azure client (known as 5 minutes).</p><div class="pre_wrapper"><pre c
                 account: your_azure_storage_account1
                 key: your_azure_storage_key1
                 default: true
+                max_retries: 7
             my_account2:
                 account: your_azure_storage_account2
                 key: your_azure_storage_key2
-                timeout: 30s</pre></div><p>In this example, timeout will be 10s for <code class="literal">my_account1</code> and 30s for <code class="literal">my_account2</code>.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-azure-repository-settings"></a>Repository settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-azure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The Azure repository supports following settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+                timeout: 30s</pre></div><p>In this example, timeout will be <code class="literal">10s</code> per try for <code class="literal">my_account1</code> with <code class="literal">7</code> retries before failing
+and <code class="literal">30s</code> per try for <code class="literal">my_account2</code> with <code class="literal">3</code> retries.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-azure-repository-settings"></a>Repository settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-azure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The Azure repository supports following settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">account</code>
 </span></dt><dd>
     Azure account settings to use. Defaults to the only one if you set a single
