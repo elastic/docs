@@ -152,7 +152,7 @@ sub _add_search_query {
         }
         };
 
-    push @should, ( _current_filter($q), _weighting() );
+    push @should, _weighting();
 
     push @should,
         {
@@ -283,11 +283,7 @@ sub _add_suggest_query {
         }
         };
 
-    push @should,
-        (
-        _current_filter($q), { term => { is_main_title => \1 } },
-        _weighting()
-        );
+    push @should, ( { term => { is_main_title => \1 } }, _weighting() );
 
     $request->{sort} = [
         '_score',
@@ -304,7 +300,8 @@ sub _add_suggest_query {
 sub _current_filter {
 #===================================
     my $q = shift;
-    return if $q->{docs}{version} && $q->{docs}{version} ne 'current';
+    no warnings 'uninitialized';
+    return unless $q->{docs}{version} eq 'current';
     return { term => { is_current => \1 } };
 }
 
@@ -351,7 +348,8 @@ sub _weighting {
                     boost => -5
                 }
             },
-        }
+        },
+        { term => { is_current => \1 } }
     );
 
 }
