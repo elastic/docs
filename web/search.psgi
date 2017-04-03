@@ -152,7 +152,7 @@ sub _add_search_query {
         }
         };
 
-    push @should, _current_filter($q);
+    push @should, ( _current_filter($q), _weighting() );
 
     push @should,
         {
@@ -183,16 +183,6 @@ sub _add_search_query {
                 }
             ]
         }
-        };
-
-    push @should,
-        {
-        term => {
-            section => {
-                value => 'Docs/Clients/JavaScript/',
-                boost => -10
-            }
-        },
         };
 
     push @should,
@@ -293,17 +283,11 @@ sub _add_suggest_query {
         }
         };
 
-    push @should, { term => { is_main_title => \1 } };
-
     push @should,
-        {
-        term => {
-            section => {
-                value => 'Docs/Clients/JavaScript/',
-                boost => -10
-            }
-        }
-        };
+        (
+        _current_filter($q), { term => { is_main_title => \1 } },
+        _weighting()
+        );
 
     $request->{sort} = [
         '_score',
@@ -341,6 +325,28 @@ sub _tags_filter {
         return { bool => { filter => \@filters } };
     }
     return;
+}
+
+#===================================
+sub _weighting {
+#===================================
+    return (
+        {   term => {
+                section => {
+                    value => 'Docs/Elasticsearch/Reference/',
+                    boost => 3
+                }
+            },
+        },
+        {   term => {
+                section => {
+                    value => 'Docs/Clients/JavaScript/',
+                    boost => -10
+                }
+            },
+        }
+    );
+
 }
 
 #===================================
