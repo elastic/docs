@@ -340,8 +340,15 @@ sub _weighting {
         },
         {   term => {
                 section => {
+                    value => 'Docs/Clients/',
+                    boost => -5
+                }
+            },
+        },
+        {   term => {
+                section => {
                     value => 'Docs/Clients/JavaScript/',
-                    boost => -10
+                    boost => -5
                 }
             },
         }
