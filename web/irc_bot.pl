@@ -86,7 +86,7 @@ sub _format_results {
     my @results;
     return "No results found" unless @_;
     while ( my $doc = shift @_ ) {
-        my $url = $doc->{url};
+        my $url = $doc->{page_url};
         push @results, ' http://elastic.co' . $url;
     }
     return join "\n", "Try these urls:", @results;

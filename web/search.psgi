@@ -51,6 +51,10 @@ sub _parse_request {
 
     if ( $section =~ /^Docs/ ) {
         my ( undef, $product, $book, $version ) = split /\//, $section;
+        if ( $version eq 'current' ) {
+            $section =~ s{current/?$}{};
+            $query{section} = $section;
+        }
         $query{docs} = {
             product => $product,
             book    => $book,
@@ -115,6 +119,7 @@ sub _add_search_query {
     $request->{_source} = [qw(url title breadcrumbs)];
 
     push @filter, (
+        _current_filter($q),    #
         _section_filter($q),    #
         _tags_filter($q),       #
     );
@@ -315,7 +320,7 @@ sub _add_suggest_query {
 sub _current_filter {
 #===================================
     my $q = shift;
-    return if $q->{docs}{version};
+    return if $q->{docs}{version} && $q->{docs}{version} ne 'current';
     return { term => { is_current => \1 } };
 }
 
