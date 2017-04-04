@@ -599,100 +599,154 @@
            
           <a href="ece-administering-clusters.html">Working with Clusters
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="ece-manage-certificates"></a>Manage Security Certificates</h2></div></div></div><p>You install your own TLS/SSL certificates so that you can connect securely to Elastic Cloud Enterprise using the HTTPS protocol. Without these added certificates, your browser returns a security warning when you try to connect to the Cloud UI over HTTPS on port 12443, for example.</p><p>In these instructions, we show you how you can download the security certificate that gets generated during the Elastic Cloud Enterprise install and use it to add your own TLS/SSL certificates. You can add your TLS/SSL certificates any time after you have installed Elastic Cloud Enterprise on your hosts. In addition to the steps shown here, you might also need to import your CA certificate into your browser certificate chain, if you don’t already use the same certificate within your organization.</p><p>You need to change the certificates for the following three Elastic Cloud Enterprise components:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Proxy
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="ece-manage-certificates"></a>Manage Security Certificates</h2></div></div></div><p>During installation, Elastic Cloud Enterprise generates certificates so that you can connect to your installation securely. In order to connect securely, you must first download and trust the CA certificates generated during installation before issuing any requests to Elastic Cloud Enterprise. If your organization operates as its own certificate authority, you can provide your certificates for Elastic Cloud Enterprise to avoid a security warning when connecting to the Cloud UI over HTTPS.</p><p>In these instructions, we show you how you can download the security certificate that gets generated during the Elastic Cloud Enterprise install and use it to add your own TLS/SSL certificates. You can add your TLS/SSL certificates any time after you have installed Elastic Cloud Enterprise on your hosts. In addition to the steps shown here, you might also need to import your CA certificate into your browser certificate chain, if you don’t already use the same certificate within your organization.</p><p>You can change the certificates for the following Elastic Cloud Enterprise components separately:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Proxy certificate
 </span></dt><dd>
-  Requires a certificate to connect securely to Kibana, for example. Requires a wildcard certificate.
+  Used to connect securely to Elasticsearch clusters and Kibana. You should use a wildcard certificate rooted at the <a class="link" href="ece-administering-endpoints.html" title="Change Endpoints URLs">cluster endpoint that you set</a> (<code class="literal">*.example.com</code>, for example). A wildcard certificate is required, because the first label of the DNS address is distinct for Elasticsearch clusters and Kibana (<code class="literal">bc898abb421843918ebc31a513169a.example.com</code>, for example).
 </dd><dt><span class="term">
-Admin console
+Cloud UI certificate
 </span></dt><dd>
-  Requires a certificate for secure <a class="link" href="ece-api-reference.html" title="API Reference">RESTful API calls</a>.
-</dd><dt><span class="term">
-Cloud UI
-</span></dt><dd>
-  Requires a certificate to connect securely to the Cloud UI.
-</dd></dl></div><p>After the certificates have been installed, connecting securely to Kibana and the Cloud UI or making secure RESTful API calls should not result in any security warnings or errors.</p><p>Before you begin:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-If your organization already uses a CA certificate and X.509 certificate chain, you need to have these files ready. Alternatively, you can <a class="link" href="ece-manage-certificates.html#ece-tls-generate" title="Generate a CA Certificate and X.509 Certificate Chain">generate a CA certificate and X.509 certificate chain</a>.
+  Used to connect securely to the Cloud UI.
+</dd></dl></div><p>After the certificates have been installed, connecting securely to Elasticsearch, Kibana, and the Cloud UI or making secure RESTful API calls to Elastic Cloud Enterprise should not result in any security warnings or errors.</p><p>Before you begin:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+If your organization already uses a CA certificate and X.509 certificate chain, you need to have these files ready. You also need your unencrypted RSA private key.
 </li><li class="listitem"><p class="simpara">
-Obtain the existing certificate generated during the installation of Elastic Cloud Enterprise, where <code class="literal">CLUSTER_ID</code> and <code class="literal">LOCAL_HOST_IP</code> are values that depend on your specific installation (<code class="literal">bc898abb421843918ebc31a513169a28.54.152.125.221.ip.es.io:12443</code>, for example):
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">openssl s_client -showcerts -connect CLUSTER_ID.HOST_IP.ip.es.io:12443 &lt; /dev/zero
+Obtain the existing certificate generated during the installation of Elastic Cloud Enterprise. You can use the <a class="ulink" href="https://www.openssl.org/source/" target="_top">openssl</a> command line tool to display the whole server certificate chain. Run the command against the Cloud UI URL provided at the end of the installation process on your first host, <code class="literal">192.168.43.10:12343</code> in our example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">openssl s_client -showcerts -connect 192.168.43.10:12343 &lt; /dev/zero
 
 CONNECTED(00000003)
-depth=1 /CN=elastic ce admin console root
-verify error:num=20:unable to get local issuer certificate
-verify return:0
+depth=2 CN = elastic ce master
+verify error:num=19:self signed certificate in certificate chain
 ---
 Certificate chain
- 0 s:/CN=elastic ce ui 192.168.40.154
+ 0 s:/CN=elastic ce admin console a954e2668da4
    i:/CN=elastic ce admin console root
 -----BEGIN CERTIFICATE-----
-MIIDNTCCAh2gAwIBAgIJAPdj/gHysETfMA0GCSqGSIb3DQEBCwUAMCgxJjAkBgNV
-BAMTHWVsYXN0aWMgY2UgYWRtaW4gY29uc29sZSByb290MB4XDTE3MDIyNTE4MTgy
-NFoXDTI3MDIyMzE4MTgyNFowJzElMCMGA1UEAwwcZWxhc3RpYyBjZSB1aSAxOTIu
-MTY4LjQwLjE1NDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKwn4NkW
-R4aEI3oLqv9Z7kIK/q6IPky+ExXyN4I6VrARJ3qxa0Mix5NEK87Qpx2o1AXf+TWz
-qnXyvVWGQh70Cp5HURQqgOfvUPa4X3zyheNeL4rRr4C/ap+Wh6R2PhKK933PMhKA
-Q4e3fwqpKdQ0c1dRfQvARQ03IGX3j7FKB08a0T8E9nb3cJ+ntSTYztaw+45FBmip
-rhBTF5c31HlZk3sJ0/GHIRi2sse/xwzkPtFM4WjWtZYl+TYIk9A6cFOFb2qQ16ak
-1L9pWCp0aKq0YX8WsBJ/znUsXohWna+fN5wefdHdeOi0mXcxQnYJsPg0IWHU9na4
-X39/NBO6LuhpIEcCAwEAAaNjMGEwCQYDVR0TBAIwADALBgNVHQ8EBAMCBeAwRwYD
-VR0RBEAwPoIOMTkyLjE2OC40MC4xNTSCDjE5Mi4xNjguNDAuMTU0hwTAqCiaggZk
-ZW1vLTGCBmRlbW8tMoIGZGVtby0zMA0GCSqGSIb3DQEBCwUAA4IBAQAGlgCO0iNC
-f4MWfZIq8+cGLomJoRheGlnDHnxXe9HQ1HiSSnx2oBOfxSK0FDhIiqY5YyVZfUfk
-BhvU5CQYtG14nbOOYszVmiJwAnPCF7a/+cLaBY8rFgGZ2mWiYoxCIF8C+estfeXU
-0868jHuwWSrZaYRd/l/Qjfr1Oq5MHmn7/69NmG+NvWI4mCLKXl81oHbqoeA0YGIY
-8q94vz42errr/cHhElDERqDKnWJYXc7qvBvJgwm2eCk2GSZuBaZtsrXoBRFT7/NN
-9wY50ekK3Gq4VgP/0NaCny498moY15mbgvFg+eCSyJWyxnAAKULwHxmHQwqPMUVT
-evSkX7jpiofQ
+MIIDjzCCAnegAwIBAgIGAVqk1eYJMA0GCSqGSIb3DQEBCwUAMCgxJjAkBgNVBAMT
+HWVsYXN0aWMgY2UgYWRtaW4gY29uc29sZSByb290MB4XDTE3MDMwNjE4MTYwNVoX
+DTI3MDMwNDE4MTYwNVowMDEuMCwGA1UEAxMlZWxhc3RpYyBjZSBhZG1pbiBjb25z
+b2xlIGE5NTRlMjY2OGRhNDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
+ALqsQZexkEWoOnhK5uDrGC4kjEWVSWoYOR6ymd8ySHIqhqAZTGoRhiO46jlrCr+e
+Jqn3a+qlNNCmEBc5BqjDlKpEKmaLQJoAZock2fOXLiKVQZiJK+ygShoMq2KGpIeY
+m/gzQ01atAuETBut8AgpjMN2/xbm3FI0KiqPEpglC8wKQ4hKukbVn5YJBZmBjJxr
+17vzhDpC/qJJ+owRNUoz9vd4VEfDjNhaZWJ8ihDWUCL9rDwVp8XVLUQ38SBurd7A
+zJjfzHfrpI9+C8F2UBHjDdqus253Qho5a8S+hGq7VRVqcGoo0nvqThVvR2s0tEDk
+fsN0rDOL3or9BwUbv0gIiAECAwEAAaOBtjCBszAsBgNVHREEJTAjggxlY2UtMC1y
+dW5uZXKCDTE5Mi4xNjguNDMuMTCHBMCoKwowSQYDVR0jBEIwQIAUgB4X3GsrUoGz
+SzJ4IQ8nuB6cosOhIKQeMBwxGjAYBgNVBAMTEWVsYXN0aWMgY2UgbWFzdGVyggYB
+WqTVH5EwHQYDVR0OBBYEFA7euGA6jC4XSKCRNt1ZWqABUa/EMAkGA1UdEwQCMAAw
+DgYDVR0PAQH/BAQDAgTwMA0GCSqGSIb3DQEBCwUAA4IBAQA9xskIXZ8byN0I+M/R
+cXKbvVzsu//gVgswCSZ/KpidWZnSxhuQ4tIryby6DqTKSvzp17ASld1VrYp3vZw+
+zIgU7k7f/w2ATnm39Sn/DxuKUGEblMjUs2X9cF+ijFZklgX1LyWwIK9iKCATuS7J
+OThTFGuV0NScsvhiFTTaCXteQql+WwFOI2vL5XZKE8XiQesDiJfNbWg2K/EhxBih
+sFPWgik9aljciAHXK/pH9vQNf2rfpSL9HSTc89RetDFkmkXGIPKd3lxORE6wCdKm
+mUi6uktMCnBSyMapNEbiWR3sAPf30y81UAVJKcnzd7r8bP3V/19ZBEfvEUSy80DT
+th3x
 -----END CERTIFICATE-----
  1 s:/CN=elastic ce admin console root
    i:/CN=elastic ce master
 -----BEGIN CERTIFICATE-----
-MIIDUDCCAjigAwIBAgIGAVp2fjVUMA0GCSqGSIb3DQEBCwUAMBwxGjAYBgNVBAMT
-EWVsYXN0aWMgY2UgbWFzdGVyMB4XDTE3MDIyNTE4MTc0N1oXDTI3MDIyMzE4MTc0
-N1owKDEmMCQGA1UEAxMdZWxhc3RpYyBjZSBhZG1pbiBjb25zb2xlIHJvb3QwggEi
-MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCJZfavp0d+RigIb54f9SZOl+yX
-4wiHDKNMxmbcSIlXsf1tQWGQFy0xRl7H45e6keeJgV3PB1Z2zl1adAA48rIEkwDG
-xL9z70OdgRk4bmIIbY1MgLYc02Zu+SPxk9TP3lkWrVP5El+UOBDhM3mbz/NQ8GYI
-b1fmzOr1kC6vglNwB9lrdyxmUEhfeEFMiOG0iOcU1gHUB5I0myZ3N6OqN5+dgUSc
-weJnCk7UCe5lo75Ixvk7D7uIIwvgdMq7PQPGVdJ/V1dKVzJfr/feTo3JWjB6HLgq
-RafNGrbrstIHZaflxZIBCuoXExMY0urYW/zi9+tKkUE5RDv19Dwn3vB5cXHNAgMB
-AAGjgYswgYgwSQYDVR0jBEIwQIAUiUe2DvDqzUUofx2A7aeDtq8o2zuhIKQeMBwx
-GjAYBgNVBAMTEWVsYXN0aWMgY2UgbWFzdGVyggYBWnZ+LAswHQYDVR0OBBYEFJxi
-IZ50RxM3fUvUp51MIT/3gZnvMAwGA1UdEwQFMAMBAf8wDgYDVR0PAQH/BAQDAgH2
-MA0GCSqGSIb3DQEBCwUAA4IBAQAP2l2Xsq9YsWaI9XbPb6jEEVEfjLY4hdmweLzP
-SnwtNqhIYZetdihevPBB4BdGNhXYBwjNkBaZ2Kv6Th4r0TyC2es7WGQ7CeFcx0A3
-U+3ZNRo95TAao1KLXocUrncuXHGanoDQjQiZw3qaHGdvXPnwAm5OSF/U03x57ltM
-BzgRtLgbLGqNaBBp+zYtU3iMUq5/Zje7/G6nKKwyydeJu39NfFT1ExURMUNOrauJ
-vIKLgRLerL08lIhFpC0PCzHiw7eqg4sn1EeHiVL27Fe/s7rD9PNmswzavgVJv9FT
-PXCBZvf1QH1ZfEDoiMQ7XYSRLH+viTIEoLR1UqD2mh/y+F+Y
+MIIDUDCCAjigAwIBAgIGAVqk1R+RMA0GCSqGSIb3DQEBCwUAMBwxGjAYBgNVBAMT
+EWVsYXN0aWMgY2UgbWFzdGVyMB4XDTE3MDMwNjE4MTUxNVoXDTI3MDMwNDE4MTUx
+NVowKDEmMCQGA1UEAxMdZWxhc3RpYyBjZSBhZG1pbiBjb25zb2xlIHJvb3QwggEi
+MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbse8n9LOSSnrBI6KSFieNZKKL
+MEjK+TqbA5dYmyC7935Jkpe2aWBhVT2o29+EgKotlWF6/3i+db4SPRVTJ21rLYJu
+usPkPr9jkEvKxExPG9hgzvXBQvbgKx4kzw9wEi5Mmh1bEsEBqkQsfXG5Tgk8J+VA
+IUIueiqZXhkmZvEx4e7m2rVhxWoVMHkzlQGOmZ77cQ9F68yFeCnbXUrvIIVs1Doj
+vFOybEFfYKuMjUqG+i6M0WrvOxij6QHnOfLEBc/Th0ckU60yKFnTYRHaym6xBcZN
+oDdkGwl7imbn62jvBUF7VLs7QLnkjF7ExxDksY3uxdcL9+q7BRwFW3bDTWDfAgMB
+AAGjgYswgYgwSQYDVR0jBEIwQIAUZdT53vvMI/XLUKahehVoLA5z4RGhIKQeMBwx
+GjAYBgNVBAMTEWVsYXN0aWMgY2UgbWFzdGVyggYBWqTVFtIwHQYDVR0OBBYEFIAe
+F9xrK1KBs0syeCEPJ7genKLDMAwGA1UdEwQFMAMBAf8wDgYDVR0PAQH/BAQDAgH2
+MA0GCSqGSIb3DQEBCwUAA4IBAQDR6vYhPau8ue0D/+iUha1NA6zAoImSEqr06dGe
+fyDJ5BCRWIEXvF4e//th55h/8eObCZhyeDPhcg1u73MWWGub3WO1EFqo4+Se7fKS
+6uz5tTQplfSHI6fUaRzQ6lIClmc5RaAtnV86if/pfcK9Vb0yoLxOR4510gFZTp2x
+WRi8Q9E2LHkTYoMxoWZG9CyNrZ1apsV8GE1DG9f8OaxJ99exymVctySQynJqPSPP
+S2Xzb6TYzvW6ZiApzAgM6oS2KejA2CRNO+HjNWsJCceBuM8Z60Jq8Rm5Wh1rHjWw
+vFJZB0z0J6l/rOKAIIpeoPxoyDr/4RlommC3BRMEcOF0NdTk
+-----END CERTIFICATE-----
+ 2 s:/CN=elastic ce master
+   i:/CN=elastic ce master
+-----BEGIN CERTIFICATE-----
+MIIDRDCCAiygAwIBAgIGAVqk1RbSMA0GCSqGSIb3DQEBCwUAMBwxGjAYBgNVBAMT
+EWVsYXN0aWMgY2UgbWFzdGVyMB4XDTE3MDMwNjE4MTUxMloXDTI3MDMwNDE4MTUx
+MlowHDEaMBgGA1UEAxMRZWxhc3RpYyBjZSBtYXN0ZXIwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDbwOBtXjKvw4B10HDfoXatlXn8qUHkesV9+lWT0NT1
+WU1X4rc9TwCsWHbH1S0YmOiTw9YVrzFjbYtjNgW5M3DXiewfvnfVm6ifrcuU1C0L
+yN8WxqBmvQt/7H2hyKwgsmiXfoULbT5PGuhizvRntlD2OgnPjshwetkRN//O3NWo
+Osd2LKMyzUvRPxNP2CwbQLetLgEpQjrjB+nfv4WZHkAQ4vGwxFkN6WaIpqhuhg2q
+I8xEHHh1IYTEOiQJZXXg7nU3vqY3kQ2Yu9kopuUJoXY5CviZLZO/xCriNVEPaOhX
+6pWM+dDHaEzx1EiZNg3bjpAXAP+aErSDVAlqbYqCoeAvAgMBAAGjgYswgYgwHQYD
+VR0OBBYEFGXU+d77zCP1y1CmoXoVaCwOc+ERMEkGA1UdIwRCMECAFGXU+d77zCP1
+y1CmoXoVaCwOc+ERoSCkHjAcMRowGAYDVQQDExFlbGFzdGljIGNlIG1hc3RlcoIG
+AVqk1RbSMAwGA1UdEwQFMAMBAf8wDgYDVR0PAQH/BAQDAgH2MA0GCSqGSIb3DQEB
+CwUAA4IBAQBclrkSxPRhN6uxPmJ4QIlZ8OOBKuPPul5434Au8UWAzQX8p6tKLBBT
+Zpl9py/fg8YS1iTlPBkRCjssZG9x3x0gG2ftDqrO4AqL7L0X3oZRy+sIkG17h3GI
+CcHO596EGzhFPSa183kIwGXb4mI5nNUe43KkDXEyid/VIn27jokeqslfu2KQJnC1
+ggwLRgrNpeNO4pb7cK4aBu3oLZ0tPnhdbIG+bVgHE6a6ZYyBH266oJmNpqmNOTzn
+JjrgOt5gEB5JcL1VWXZ3lU3ukd5Jq/rGFkqytBj+uQccpuWkGUMqU82xjREES8D8
+AIHl4ghc6SM1jl2SqZR7aoAjP0uGwW31
 -----END CERTIFICATE-----
 ---
 Server certificate
-subject=/CN=elastic ce ui 192.168.40.154
+subject=/CN=elastic ce admin console a954e2668da4
 issuer=/CN=elastic ce admin console root
 ---
 No client certificate CA names sent
+Peer signing digest: SHA512
+Server Temp Key: ECDH, P-256, 256 bits
 ---
-SSL handshake has read 2635 bytes and written 456 bytes
+SSL handshake has read 3120 bytes and written 433 bytes
 ---
-New, TLSv1/SSLv3, Cipher is DHE-RSA-AES256-SHA
+New, TLSv1/SSLv3, Cipher is ECDHE-RSA-AES256-GCM-SHA384
 Server public key is 2048 bit
 Secure Renegotiation IS supported
 Compression: NONE
 Expansion: NONE
+No ALPN negotiated
 SSL-Session:
-    Protocol  : TLSv1
-    Cipher    : DHE-RSA-AES256-SHA
-    Session-ID: 7236F5DBC0E59B9E1D8BAB6DAC03A0E3ACFA43C437A1F1919CE209DC13DA948E
+    Protocol  : TLSv1.2
+    Cipher    : ECDHE-RSA-AES256-GCM-SHA384
+    Session-ID: C9FA70D80592981C4174F490EF47AF0091326AED6ED4115CED30A9861EBD7758
     Session-ID-ctx:
-    Master-Key: E0D55606F630993D5DCC01105AF73B1291F68EA1A2DE6DA721F5BBBD1F4581A4DE0CF1B501F78D2B77BFECAF83077FC0
+    Master-Key: 0EF40D4B72E102395352FE7935CAA47CA84BF743E8BF102B98856AFCB76E4BDDCEFDE3E0F7D4D4681A3BCFB170864C9F
     Key-Arg   : None
-    Start Time: 1488419502
+    PSK identity: None
+    PSK identity hint: None
+    SRP username: None
+    Start Time: 1488824550
     Timeout   : 300 (sec)
-    Verify return code: 20 (unable to get local issuer certificate)
+    Verify return code: 19 (self signed certificate in certificate chain)
 ---
-closed</pre></div></li></ol></div><p>Save the output to a local file. In subsequent steps, this file is referred to as the <code class="literal">CA_CERTIFICATE_FILENAME</code> and used to add your own TLS/SSL certificates.</p><h3><a id="ece-tls-generate"></a>Generate a CA Certificate and X.509 Certificate Chain</h3><p>The steps in this section provide high-level instructions on what you need to do if you do not already have a CA certificate and X.509 certificate chain. The method by which you generate the certificate and certificate chain differs by operating system, and the exact steps are outside the scope of these instructions.</p><p>To generate the necessary files:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+HTTP/1.1 501 Not Implemented
+Server: fac/9431ee
+Date: Mon, 06 Mar 2017 18:21:19 GMT
+Content-Type: text/plain; charset=UTF-8
+Connection: close
+Content-Length: 23
+Unsupported HTTP methodclosed</pre></div></li><li class="listitem"><p class="simpara">
+Save the last certificate shown in the output to a local file, <code class="literal">elastic-ece-ca-cert.pem</code> in this example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">cat &lt;&lt; EOF &gt; ~/elastic-ece-ca-cert.pem
+-----BEGIN CERTIFICATE-----
+MIIDRDCCAiygAwIBAgIGAVqk1RbSMA0GCSqGSIb3DQEBCwUAMBwxGjAYBgNVBAMT
+EWVsYXN0aWMgY2UgbWFzdGVyMB4XDTE3MDMwNjE4MTUxMloXDTI3MDMwNDE4MTUx
+MlowHDEaMBgGA1UEAxMRZWxhc3RpYyBjZSBtYXN0ZXIwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDbwOBtXjKvw4B10HDfoXatlXn8qUHkesV9+lWT0NT1
+WU1X4rc9TwCsWHbH1S0YmOiTw9YVrzFjbYtjNgW5M3DXiewfvnfVm6ifrcuU1C0L
+yN8WxqBmvQt/7H2hyKwgsmiXfoULbT5PGuhizvRntlD2OgnPjshwetkRN//O3NWo
+Osd2LKMyzUvRPxNP2CwbQLetLgEpQjrjB+nfv4WZHkAQ4vGwxFkN6WaIpqhuhg2q
+I8xEHHh1IYTEOiQJZXXg7nU3vqY3kQ2Yu9kopuUJoXY5CviZLZO/xCriNVEPaOhX
+6pWM+dDHaEzx1EiZNg3bjpAXAP+aErSDVAlqbYqCoeAvAgMBAAGjgYswgYgwHQYD
+VR0OBBYEFGXU+d77zCP1y1CmoXoVaCwOc+ERMEkGA1UdIwRCMECAFGXU+d77zCP1
+y1CmoXoVaCwOc+ERoSCkHjAcMRowGAYDVQQDExFlbGFzdGljIGNlIG1hc3RlcoIG
+AVqk1RbSMAwGA1UdEwQFMAMBAf8wDgYDVR0PAQH/BAQDAgH2MA0GCSqGSIb3DQEB
+CwUAA4IBAQBclrkSxPRhN6uxPmJ4QIlZ8OOBKuPPul5434Au8UWAzQX8p6tKLBBT
+Zpl9py/fg8YS1iTlPBkRCjssZG9x3x0gG2ftDqrO4AqL7L0X3oZRy+sIkG17h3GI
+CcHO596EGzhFPSa183kIwGXb4mI5nNUe43KkDXEyid/VIn27jokeqslfu2KQJnC1
+ggwLRgrNpeNO4pb7cK4aBu3oLZ0tPnhdbIG+bVgHE6a6ZYyBH266oJmNpqmNOTzn
+JjrgOt5gEB5JcL1VWXZ3lU3ukd5Jq/rGFkqytBj+uQccpuWkGUMqU82xjREES8D8
+AIHl4ghc6SM1jl2SqZR7aoAjP0uGwW31
+-----END CERTIFICATE-----
+EOF</pre></div><p class="simpara">In subsequent steps, this <code class="literal">elastic-ece-ca-cert.pem</code> file is referred to as the <code class="literal">CA_CERTIFICATE_FILENAME</code> and used to add your own TLS/SSL certificates.</p></li></ol></div><h3><a id="ece-tls-generate"></a>Generate a CA Certificate and X.509 Certificate Chain</h3><p>The steps in this section provide high-level instructions on what you need to do if you do not already have a CA certificate and X.509 certificate chain. The method by which you generate the certificate and certificate chain differs by operating system, and the exact steps are outside the scope of these instructions.</p><p>The high-level steps to generate the necessary files include:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 Generate a certificate authority (CA) RSA key pair.
 </li><li class="listitem">
 Create a self-signed CA certificate.
@@ -704,32 +758,20 @@ Create a certificate signing request (CSR) for server certificate with the commo
 Sign the server CSR with CA key pair.
 </li><li class="listitem">
 Concatenate the PEM encode server RSA private key, the server certificate, and the CA certificate into a single file.
-</li></ol></div><p>In subsequent steps, the concatenated file containing the RSA private key, server certificate, and CA certificate is referred to as the <code class="literal">CA_CERTIFICATE_FILENAME</code> and used to add your own TLS/SSL certificates.</p><h3><a id="ece-tls-proxy"></a>Proxy</h3><p>To change the proxy certificate:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Add the wildcard certificate chain for the proxy to your Elastic Cloud Enterprise installation, where <code class="literal">CA_CERTIFICATE_FILENAME</code> is the name of the CA certificate you downloaded earlier and <code class="literal">PROXY_PEM_FILENAME</code> is the name of the concatenated file containing the RSA private key, server certificate, and CA certificate:
-</p><pre class="literallayout">curl -vvv --cacert CA_CERTIFICATE_FILENAME -H 'Content-Type: application/json' --data-binary @PROXY_PEM_FILENAME --user "root:PASSWORD" "https://admin:12343/api/v1/platform/tls/proxy"</pre></li><li class="listitem">
+</li></ol></div><p>Use the concatenated file containing the unencrypted RSA private key, server certificate, and CA certificate when adding your own TLS/SSL certificates in subsequent steps.</p><h3><a id="ece-tls-proxy"></a>Add a Proxy Certificate</h3><p>To add a proxy certificate:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Add the wildcard certificate chain for the proxy to your Elastic Cloud Enterprise installation, where <code class="literal">CA_CERTIFICATE_FILENAME</code> is the name of the CA certificate you downloaded earlier and <code class="literal">PROXY_PEM_FILENAME</code> is the name of the concatenated file containing your RSA private key, server certificate, and CA certificate:
+</p><pre class="literallayout">curl --cacert CA_CERTIFICATE_FILENAME -H 'Content-Type: application/json' --data-binary @PROXY_PEM_FILENAME --user "root:PASSWORD" "https://admin:12343/api/v1/platform/tls/proxy"</pre></li><li class="listitem">
 Log out of any Kibana instances you might be logged into and log in again.
 </li><li class="listitem"><p class="simpara">
 Verify that you are now using the new certificate chain. There should be no security warnings when you connect to the Kibana endpoint over HTTPS in your web browser.
-</p><p class="simpara">Alternatively, you can also use the openssl command to check the proxy certificates:</p><pre class="literallayout">openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect containerhost:9243 &lt; /dev/zero
-openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect containerhost:9343 &lt; /dev/zero</pre></li></ol></div><h3><a id="ece-tls-console"></a>Admin Console</h3><p>To change the admin console certificate:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Add the certificate for the admin console to your Elastic Cloud Enterprise installation, where <code class="literal">CA_CERTIFICATE_FILENAME</code> is the name of the CA certificate you downloaded earlier and <code class="literal">ADMIN_PEM_FILENAME</code> is the name of the concatenated file containing the RSA private key, server certificate, and CA certificate:
-</p><pre class="literallayout">curl -vvv -H 'Content-Type: application/json' --data-binary @ADMIN_PEM_FILENAME --user "root:PASSWORD" "http://containerhost:12300/api/v1/platform/tls/adminconsole"`</pre></li><li class="listitem"><p class="simpara">
-You should see the certificate change for the admin console when you connect over HTTPS in your web browser, but you can also check the certificate using the openssl command:
-</p><pre class="literallayout">openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect containerhost:12343 &lt; /dev/zero</pre><p class="simpara">If successful, the output includes <code class="literal">verify return:1</code>:</p><pre class="literallayout">depth=1 C = US, ST = California, L = Mountain View, O = "Elasticsearch, Inc.", CN = ECE Certificate Authority
-verify return:1
-depth=0 C = US, ST = California, L = Mountain View, O = "Elasticsearch, Inc.", CN = admin
-verify return:1</pre><p class="simpara">If unsuccessful, the output includes a <code class="literal">verify error:</code> indicator.</p></li><li class="listitem">
-To use the new certificate when making RESTful API calls, include the <code class="literal">--cacert CA_CERTIFICATE_FILENAME</code> parameter, where <code class="literal">CA_CERTIFICATE_FILENAME</code> is now the name of your own CA certificate, and change the protocol and port to <code class="literal">https://containerhost:12343</code>.
-</li><li class="listitem"><p class="simpara">
-Update your /etc/hosts to add <code class="literal">admin</code> and <code class="literal">admin-update</code> as an alias for your host:
-</p><pre class="literallayout">sudo vim /etc/hosts
-192.168.43.10 containerhost   admin   admin-update</pre></li></ol></div><h3><a id="ece-tls-ui"></a>Cloud UI</h3><p>To change the Cloud UI certificate:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Add the certificate for the Cloud UI to your Elastic Cloud Enterprise installation, where <code class="literal">CA_CERTIFICATE_FILENAME</code> is the name of the CA certificate you downloaded earlier and <code class="literal">CLOUDUI_PEM_FILENAME</code> is the name of the concatenated file containing the RSA private key, server certificate, and CA certificate:
-</p><pre class="literallayout">curl -vvv --cacert CA_CERTIFICATE_FILENAME -H 'Content-Type: application/json' --data-binary @CLOUDUI_PEM_FILENAME --user "root:PASSWORD" "http://admin:12300/api/v1/platform/tls/ui"</pre></li><li class="listitem">
+</p><p class="simpara">Alternatively, you can also use the openssl command to check the proxy certificates, where HOSTNAME_OR_IP is the hostname or IP address of the proxy host:</p><pre class="literallayout">openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect HOSTNAME_OR_IP:9243 &lt; /dev/zero
+openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect HOSTNAME_OR_IP:9343 &lt; /dev/zero</pre></li></ol></div><h3><a id="ece-tls-ui"></a>Add a Cloud UI Certificate</h3><p>To add a Cloud UI certificate:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Add the certificate for the Cloud UI to your Elastic Cloud Enterprise installation, where <code class="literal">CA_CERTIFICATE_FILENAME</code> is the name of the CA certificate you downloaded earlier and <code class="literal">CLOUDUI_PEM_FILENAME</code> is the name of the concatenated file containing your RSA private key, server certificate, and CA certificate:
+</p><pre class="literallayout">curl --cacert CA_CERTIFICATE_FILENAME -H 'Content-Type: application/json' --data-binary @CLOUDUI_PEM_FILENAME --user "root:PASSWORD" "http://admin:12443/api/v1/platform/tls/ui"</pre></li><li class="listitem">
 Log out of the Cloud UI and log in again.
 </li><li class="listitem"><p class="simpara">
 Verify that you are now using the new certificate chain. There should be no security warnings when you connect to the  Cloud UI over HTTPS in your web browser.
-</p><p class="simpara">Alternatively, you can also check the certificate using the openssl command:</p><pre class="literallayout">openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect containerhost:12443 &lt; /dev/zero</pre></li></ol></div></div><div class="navfooter"><span class="prev"><a href="ece-monitoring-ece.html">
+</p><p class="simpara">Alternatively, you can also check the certificate using the openssl command:</p><pre class="literallayout">openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect containerhost:12443 &lt; /dev/zero</pre></li></ol></div><p>After adding your certificate, API requests made through the Cloud UI should use your certificate. When you use the <code class="literal">curl</code> command, include the path to your CA certificate with the <code class="literal">--cacert</code> parameter.</p></div><div class="navfooter"><span class="prev"><a href="ece-monitoring-ece.html">
               « 
               Monitor Your Installation</a>
            
