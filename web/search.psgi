@@ -349,7 +349,13 @@ sub _weighting {
                 }
             },
         },
-        { term => { is_current => \1 } }
+        {   term => {
+                is_current => {
+                    value => \1,
+                    boost => 10
+                }
+            }
+        }
     );
 
 }
