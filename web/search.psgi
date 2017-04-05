@@ -37,12 +37,9 @@ sub _parse_request {
     my @tags    = grep {$_} $qs->get_all('tags');
     my $page    = eval { $qs->get_one('page') } || 1;
 
-    if ( length $q > 200 ) {
-        $q = susbtr( $q, 0, 200 )
-    }
-
-    $q =~ s/^\s+//;
-    $q =~ s/\s$//;
+    my @words = split /\s+/, $q;
+    $#words = 9 if @words > 10;
+    $q = join " ", @words;
 
     return unless $q || $section || @tags;
 
