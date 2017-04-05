@@ -10,7 +10,8 @@ use JSON::XS;
 use Path::Class qw(file);
 our $JSON = JSON::XS->new->utf8->pretty;
 
-our $Site_Index    = 'site';
+our $ES_URLS = [ split /\s*,\s*/, $ENV{ES_URLS} || 'http://localhost:9200' ];
+our $Site_Index = 'site';
 our $Pages_Index   = 'pages';
 our $Titles_Index  = 'titles';
 our $Base_URL      = 'https://www.elastic.co/';
@@ -28,7 +29,7 @@ our $Max_Sections         = 10;
 our $Max_Hits_Per_Section = 5;
 
 our $es = Search::Elasticsearch->new(
-    nodes           => 'http://localhost:9200',
+    nodes           => $ES_URLS,
     client          => '5_0::Direct',
     request_timeout => 1000
 );
