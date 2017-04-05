@@ -226,6 +226,7 @@ sub _index_book {
                             page_group => $page_group,
                             tags       => $product,
                             section    => $section,
+                            version    => $version,
                             is_current => $version eq $current ? \1 : \0,
                         }
                     }

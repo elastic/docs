@@ -127,14 +127,7 @@ sub _add_search_query {
     my $text = $q->{q};
     unless ($text) {
         push @filter, { exists => { field => 'published_at' } };
-        $request->{sort} = [
-            {   "published_at" => {
-                    order         => 'desc',
-                    missing       => '_last',
-                    unmapped_type => 'date'
-                }
-            }
-        ];
+        $request->{sort} = _text_sort();
         return $request;
     }
 
@@ -226,15 +219,7 @@ sub _add_search_query {
         }
         };
 
-    $request->{sort} = [
-        '_score',
-        {   "published_at" => {
-                order         => 'desc',
-                missing       => '_last',
-                unmapped_type => 'date'
-            }
-        }
-    ];
+    $request->{sort}      = _text_sort();
     $request->{highlight} = _highlight('content.stemmed');
 }
 
@@ -286,15 +271,7 @@ sub _add_suggest_query {
 
     push @should, ( { term => { is_main_title => \1 } }, _weighting() );
 
-    $request->{sort} = [
-        '_score',
-        {   "published_at" => {
-                order         => 'desc',
-                missing       => '_last',
-                unmapped_type => 'date'
-            }
-        }
-    ];
+    $request->{sort} = _text_sort();
 }
 
 #===================================
@@ -359,6 +336,24 @@ sub _weighting {
         }
     );
 
+}
+
+#===================================
+sub _text_sort {
+#===================================
+    return [
+        '_score',
+        {   "published_at" => {
+                order   => 'desc',
+                missing => '_last'
+            }
+        },
+        {   "version" => {
+                order   => 'desc',
+                missing => '_first'
+            }
+        }
+    ];
 }
 
 #===================================
