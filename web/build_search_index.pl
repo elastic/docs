@@ -123,14 +123,16 @@ sub index_titles {
         delete @base{ "content", "part_titles", "part" };
         if ( $doc->{_source}{part} ) {
             for ( @{ $doc->{_source}{part} } ) {
-                my $part_url = $url . $_->{id};
-                my $is_main = $_->{id} ? \0 : \1;
+                my $part_url   = $url . $_->{id};
+                my $page_group = $doc->{_source}{page_group} . $_->{id};
+                my $is_main    = $_->{id} ? \0 : \1;
                 $b->index(
                     {   _id    => $part_url,
                         source => {
                             %base,
                             title         => $_->{title},
                             url           => $part_url,
+                            page_group    => $page_group,
                             is_main_title => $is_main
                         }
                     }

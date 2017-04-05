@@ -252,6 +252,7 @@ sub _add_suggest_query {
             filter => \@filter
         }
     };
+    $request->{collapse}  = { field => 'page_group' };
     $request->{_source}   = [qw(url breadcrumbs )];
     $request->{highlight} = _highlight("title.autocomplete");
 
