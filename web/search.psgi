@@ -38,7 +38,7 @@ sub _parse_request {
     my $page    = eval { $qs->get_one('page') } || 1;
 
     my @words = split /\s+/, $q;
-    $#words = 9 if @words > 10;
+    $#words = 19 if @words > 20;
     $q = join " ", @words;
 
     return unless $q || $section || @tags;
