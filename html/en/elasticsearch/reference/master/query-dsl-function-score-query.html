@@ -769,25 +769,43 @@ documents that do not meet a certain score threshold the <code class="literal">m
 </li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="function-script-score"></a>Script score<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/function-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">script_score</code> function allows you to wrap another query and customize
 the scoring of it optionally with a computation derived from other numeric
 field values in the doc using a script expression. Here is a
-simple sample:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"script_score" : {
-    "script" : {
-      "lang": "painless",
-      "inline": "_score * doc['my_numeric_field'].value"
+simple sample:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
+    "query": {
+        "function_score": {
+            "query": {
+                "match": { "message": "elasticsearch" }
+            },
+            "script_score" : {
+                "script" : {
+                  "inline": "Math.log(2 + doc['likes'].value)"
+                }
+            }
+        }
     }
-}</pre></div><p>On top of the different scripting field values and expression, the
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-function-score-query/3.json"></div><p>On top of the different scripting field values and expression, the
 <code class="literal">_score</code> script parameter can be used to retrieve the score based on the
-wrapped query.</p><p>Scripts are cached for faster execution. If the script has parameters
-that it needs to take into account, it is preferable to reuse the same
-script, and provide parameters to it:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"script_score": {
-    "script": {
-        "lang": "painless",
-        "params": {
-            "param1": value1,
-            "param2": value2
-        },
-        "inline": "_score * doc['my_numeric_field'].value / Math.pow(params.param1, params.param2)"
+wrapped query.</p><p>Scripts compilation is cached for faster execution. If the script has
+parameters that it needs to take into account, it is preferable to reuse the
+same script, and provide parameters to it:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
+    "query": {
+        "function_score": {
+            "query": {
+                "match": { "message": "elasticsearch" }
+            },
+            "script_score" : {
+                "script" : {
+                    "params": {
+                        "a": 5,
+                        "b": 1.2
+                    },
+                    "inline": "params.a / Math.pow(params.b, doc['likes'].value)"
+                }
+            }
+        }
     }
-}</pre></div><p>Note that unlike the <code class="literal">custom_score</code> query, the
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-function-score-query/4.json"></div><p>Note that unlike the <code class="literal">custom_score</code> query, the
 score of the query is multiplied with the result of the script scoring. If
 you wish to inhibit this, set <code class="literal">"boost_mode": "replace"</code></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="function-weight"></a>Weight<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/function-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">weight</code> score allows you to multiply the score by the provided
 <code class="literal">weight</code>. This can sometimes be desired since boost value set on
@@ -795,19 +813,33 @@ specific queries gets normalized, while for this score function it does
 not. The number value is of type float.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"weight" : number</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="function-random"></a>Random<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/function-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">random_score</code> generates scores using a hash of the <code class="literal">_uid</code> field,
 with a <code class="literal">seed</code> for variation. If <code class="literal">seed</code> is not specified, the current
 time is used.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Using this feature will load field data for <code class="literal">_uid</code>, which can
-be a memory intensive operation since the values are unique.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"random_score": {
-    "seed" : number
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="function-field-value-factor"></a>Field Value factor<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/function-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">field_value_factor</code> function allows you to use a field from a document to
+be a memory intensive operation since the values are unique.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
+    "query": {
+        "function_score": {
+            "random_score": {
+                "seed": 10
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-function-score-query/5.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="function-field-value-factor"></a>Field Value factor<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/function-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">field_value_factor</code> function allows you to use a field from a document to
 influence the score. It’s similar to using the <code class="literal">script_score</code> function, however,
 it avoids the overhead of scripting. If used on a multi-valued field, only the
 first value of the field is used in calculations.</p><p>As an example, imagine you have a document indexed with a numeric <code class="literal">popularity</code>
 field and wish to influence the score of a document with this field, an example
-doing so would look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"field_value_factor": {
-  "field": "popularity",
-  "factor": 1.2,
-  "modifier": "sqrt",
-  "missing": 1
-}</pre></div><p>Which will translate into the following formula for scoring:</p><p><code class="literal">sqrt(1.2 * doc['popularity'].value)</code></p><p>There are a number of options for the <code class="literal">field_value_factor</code> function:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+doing so would look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
+    "query": {
+        "function_score": {
+            "field_value_factor": {
+                "field": "likes",
+                "factor": 1.2,
+                "modifier": "sqrt",
+                "missing": 1
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-function-score-query/6.json"></div><p>Which will translate into the following formula for scoring:</p><p><code class="literal">sqrt(1.2 * doc['likes'].value)</code></p><p>There are a number of options for the <code class="literal">field_value_factor</code> function:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">field</code>
 </p>
@@ -859,14 +891,24 @@ decay function is specified as</p><div class="pre_wrapper"><pre class="programli
 The <code class="literal">DECAY_FUNCTION</code> should be one of <code class="literal">linear</code>, <code class="literal">exp</code>, or <code class="literal">gauss</code>.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO158-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The specified field must be a numeric, date, or geo-point field.
-</p></td></tr></table></div><p>In the above example, the field is a <a class="link" href="geo-point.html" title="Geo-point datatype"><code class="literal">geo_point</code></a> and origin can be provided in geo format. <code class="literal">scale</code> and <code class="literal">offset</code> must be given with a unit in this case. If your field is a date field, you can set <code class="literal">scale</code> and <code class="literal">offset</code> as days, weeks, and so on. Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">    "gauss": {
-        "date": {
-              "origin": "2013-09-17", <a id="CO159-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-              "scale": "10d",
-              "offset": "5d", <a id="CO159-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-              "decay" : 0.5 <a id="CO159-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+</p></td></tr></table></div><p>In the above example, the field is a <a class="link" href="geo-point.html" title="Geo-point datatype"><code class="literal">geo_point</code></a> and origin can
+be provided in geo format. <code class="literal">scale</code> and <code class="literal">offset</code> must be given with a unit in
+this case. If your field is a date field, you can set <code class="literal">scale</code> and <code class="literal">offset</code> as
+days, weeks, and so on. Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
+    "query": {
+        "function_score": {
+            "gauss": {
+                "date": {
+                      "origin": "2013-09-17", <a id="CO159-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                      "scale": "10d",
+                      "offset": "5d", <a id="CO159-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                      "decay" : 0.5 <a id="CO159-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+                }
+            }
         }
-    }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO159-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-function-score-query/7.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO159-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The date format of the origin depends on the <a class="link" href="mapping-date-format.html" title="format"><code class="literal">format</code></a> defined in
     your mapping. If you do not define the origin, the current time is used.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO159-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO159-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
@@ -1024,7 +1066,7 @@ the request would look like this:</p><div class="pre_wrapper"><pre class="progra
           "score_mode": "multiply"
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-function-score-query/3.json"></div><p>Next, we show how the computed score looks like for each of the three
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-function-score-query/8.json"></div><p>Next, we show how the computed score looks like for each of the three
 possible decay functions.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="gauss-decay"></a>Normal decay, keyword <code class="literal">gauss</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/function-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>When choosing <code class="literal">gauss</code> as the decay function in the above example, the
 contour and surface plot of the multiplier looks like this:</p><div class="informalfigure"><div class="mediaobject"><img src="https://f.cloud.github.com/assets/4320215/768157/cd0e18a6-e898-11e2-9b3c-f0145078bd6f.png" width="700" alt="https://f.cloud.github.com/assets/4320215/768157/cd0e18a6-e898-11e2-9b3c-f0145078bd6f.png" /></div></div><div class="informalfigure"><div class="mediaobject"><img src="https://f.cloud.github.com/assets/4320215/768160/ec43c928-e898-11e2-8e0d-f3c4519dbd89.png" width="700" alt="https://f.cloud.github.com/assets/4320215/768160/ec43c928-e898-11e2-8e0d-f3c4519dbd89.png" /></div></div><p>Suppose your original search results matches three hotels :</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 "Backback Nap"
