@@ -469,6 +469,7 @@ sub _format_hit {
     my $title    = encode_entities( $hit->{_source}{title} || '' );
     my %result   = (
         page_url    => $page_url,
+        url         => $page_url,
         breadcrumbs => encode_entities( $hit->{_source}{breadcrumbs} ),
         $title ? ( page_title => $title, title => $title ) : (),
         @$inner
