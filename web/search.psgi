@@ -331,7 +331,7 @@ sub _weighting {
         {   term => {
                 is_current => {
                     value => \1,
-                    boost => 10
+                    boost => 25
                 }
             }
         }
