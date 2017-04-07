@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Tribe node
-        | Elasticsearch Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Auditd module
+        | Filebeat Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules.html" title="Modules" /><link rel="prev" href="modules-transport.html" title="Transport" /><link rel="next" href="modules-cross-cluster-search.html" title="Cross cluster search" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Filebeat Reference [master]" /><link rel="up" href="filebeat-modules.html" title="Modules" /><link rel="prev" href="_fields.html" title="Fields" /><link rel="next" href="_fields_2.html" title="Fields" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Filebeat/Reference/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -592,120 +592,27 @@
 <div class="page_header">You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Filebeat Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-node">Tribe node</span></div><div class="navheader"><span class="prev"><a href="modules-transport.html">
+    </a></span> » <span class="breadcrumb-link"><a href="filebeat-modules.html">Modules</a></span> » <span class="breadcrumb-node">Auditd module</span></div><div class="navheader"><span class="prev"><a href="_fields.html">
               « 
-              Transport</a>
+              Fields</a>
            
         </span><span class="next">
            
-          <a href="modules-cross-cluster-search.html">Cross cluster search
+          <a href="_fields_2.html">Fields
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="modules-tribe"></a>Tribe node<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/tribe.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <span class="emphasis"><em>tribes</em></span> feature allows a <span class="emphasis"><em>tribe node</em></span> to act as a federated client across
-multiple clusters.</p><p>The tribe node works by retrieving the cluster state from all connected
-clusters and merging them into a global cluster state. With this information
-at hand, it is able to perform read and write operations against the nodes in
-all clusters as if they were local. Note that a tribe node needs to be able
-to connect to each single node in every configured cluster.</p><p>The <code class="literal">elasticsearch.yml</code> config file for a tribe node just needs to list the
-clusters that should be joined, for instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">tribe:
-    t1: <a id="CO293-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        cluster.name:   cluster_one
-    t2: <a id="CO293-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-        cluster.name:   cluster_two</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO293-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO293-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-<code class="literal">t1</code> and <code class="literal">t2</code> are arbitrary names representing the connection to each
-    cluster.
-</p></td></tr></table></div><p>The example above configures connections to two clusters, name <code class="literal">t1</code> and <code class="literal">t2</code>
-respectively.  The tribe node will create a <a class="link" href="modules-node.html" title="Node">node client</a> to
-connect each cluster using <a class="link" href="modules-discovery-zen.html#unicast" title="Unicastedit">unicast discovery</a> by default. Any
-other settings for the connection can be configured under <code class="literal">tribe.{name}</code>, just
-like the <code class="literal">cluster.name</code> in the example.</p><p>The merged global cluster state means that almost all operations work in the
-same way as a single cluster: distributed search, suggest, percolation,
-indexing, etc.</p><p>However, there are a few exceptions:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-The merged view cannot handle indices with the same name in multiple
-  clusters. By default it will pick one of them, see later for on_conflict options.
-</li><li class="listitem">
-Master level read operations (eg <a class="xref" href="cluster-state.html" title="Cluster State"><em>Cluster State</em></a>, <a class="xref" href="cluster-health.html" title="Cluster Health"><em>Cluster Health</em></a>)
-  will automatically execute with a local flag set to true since there is
-  no master.
-</li><li class="listitem">
-Master level write operations (eg <a class="xref" href="indices-create-index.html" title="Create Index"><em>Create Index</em></a>) are not
-  allowed. These should be performed on a single cluster.
-</li></ul></div><p>The tribe node can be configured to block all write operations and all
-metadata operations with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">tribe:
-    blocks:
-        write:    true
-        metadata: true</pre></div><p>The tribe node can also configure blocks on selected indices:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">tribe:
-    blocks:
-        write.indices:    hk*,ldn*
-        metadata.indices: hk*,ldn*</pre></div><p>When there is a conflict and multiple clusters hold the same index, by default
-the tribe node will pick one of them. This can be configured using the <code class="literal">tribe.on_conflict</code>
-setting. It defaults to <code class="literal">any</code>, but can be set to <code class="literal">drop</code> (drop indices that have
-a conflict), or <code class="literal">prefer_[tribeName]</code> to prefer the index from a specific tribe.</p><h3><a id="_tribe_node_settings"></a>Tribe node settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/tribe.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The tribe node starts a node client for each listed cluster.  The following
-configuration options are passed down from the tribe node to each node client:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">node.name</code> (used to derive the <code class="literal">node.name</code> for each node client)
-</li><li class="listitem">
-<code class="literal">network.host</code>
-</li><li class="listitem">
-<code class="literal">network.bind_host</code>
-</li><li class="listitem">
-<code class="literal">network.publish_host</code>
-</li><li class="listitem">
-<code class="literal">transport.host</code>
-</li><li class="listitem">
-<code class="literal">transport.bind_host</code>
-</li><li class="listitem">
-<code class="literal">transport.publish_host</code>
-</li><li class="listitem">
-<code class="literal">path.home</code>
-</li><li class="listitem">
-<code class="literal">path.conf</code>
-</li><li class="listitem">
-<code class="literal">path.logs</code>
-</li><li class="listitem">
-<code class="literal">path.scripts</code>
-</li><li class="listitem">
-<code class="literal">shield.*</code>
-</li></ul></div><p>Almost any setting (except for <code class="literal">path.*</code>) may be configured at the node client
-level itself, in which case it will override any passed through setting from
-the tribe node.  Settings you may want to set at the node client level
-include:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">network.host</code>
-</li><li class="listitem">
-<code class="literal">network.bind_host</code>
-</li><li class="listitem">
-<code class="literal">network.publish_host</code>
-</li><li class="listitem">
-<code class="literal">transport.host</code>
-</li><li class="listitem">
-<code class="literal">transport.bind_host</code>
-</li><li class="listitem">
-<code class="literal">transport.publish_host</code>
-</li><li class="listitem">
-<code class="literal">cluster.name</code>
-</li><li class="listitem">
-<code class="literal">discovery.zen.ping.unicast.hosts</code>
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">path.scripts:   some/path/to/config <a id="CO294-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-network.host:   192.168.1.5 <a id="CO294-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-
-tribe:
-  t1:
-    cluster.name:   cluster_one
-  t2:
-    cluster.name:   cluster_two
-    network.host:   10.1.2.3 <a id="CO294-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO294-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">path.scripts</code> setting is inherited by both <code class="literal">t1</code> and <code class="literal">t2</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO294-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">network.host</code> setting is inherited by <code class="literal">t1</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO294-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">t3</code> node client overrides the inherited from the tribe node.
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="modules-transport.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="filebeat-module-auditd"></a>Auditd module<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/modules/auditd.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This module collects and parses logs from the audit daemon (<code class="literal">auditd</code>).</p><h3><a id="_compatibility_6"></a>Compatibility<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/modules/auditd.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This module was tested with logs from <code class="literal">auditd</code> on OSes like CentOS 6 and
+CentOS 7.</p><p>This module is not available for Windows.</p><h3><a id="_dashboard_2"></a>Dashboard<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/modules/auditd.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This module comes with a sample dashboard showing an overview of the audit log
+data. You can build more specific dashboards that are tailored to the audit
+rules that you use on your systems.</p><div class="informalfigure"><div class="mediaobject"><img src="./images/kibana-audit-auditd.png" alt="./images/kibana-audit-auditd.png" /></div></div><h3><a id="_syslog_fileset_settings"></a>Syslog fileset settings<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/modules/auditd.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><h4><a id="_var_paths_3"></a>var.paths<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/modules/auditd.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>An array of paths where to look for the log files. If left empty, Filebeat
+will choose the paths depending on your operating systems.</p></div><div class="navfooter"><span class="prev"><a href="_fields.html">
               « 
-              Transport</a>
+              Fields</a>
            
         </span><span class="next">
            
-          <a href="modules-cross-cluster-search.html">Cross cluster search
+          <a href="_fields_2.html">Fields
                »
             </a></span></div>
 <!-- end body -->
