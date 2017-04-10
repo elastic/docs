@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Sniffing role detection
         | Elasticsearch.Net and NEST: the .NET clients [5.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [5.x]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="sniffing-periodically.html" title="Sniffing periodically" /><link rel="next" href="pinging-first-usage.html" title="Pinging - First Usage" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/5.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [5.x]" /><link rel="up" href="sniffing-behaviour.html" title="Sniffing behaviour" /><link rel="prev" href="sniffing-periodically.html" title="Sniffing periodically" /><link rel="next" href="pinging-behaviour.html" title="Pinging behaviour" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/5.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -591,16 +591,43 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [5.x]
-    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net</a></span> » <span class="breadcrumb-node">Sniffing role detection</span></div><div class="navheader"><span class="prev"><a href="sniffing-periodically.html">
+    </a></span> » <span class="breadcrumb-link"><a href="api-conventions.html">API Conventions</a></span> » <span class="breadcrumb-link"><a href="sniffing-behaviour.html">Sniffing behaviour</a></span> » <span class="breadcrumb-node">Sniffing role detection</span></div><div class="navheader"><span class="prev"><a href="sniffing-periodically.html">
               « 
               Sniffing periodically</a>
            
         </span><span class="next">
            
-          <a href="pinging-first-usage.html">Pinging - First Usage
+          <a href="pinging-behaviour.html">Pinging behaviour
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="sniffing-role-detection"></a>Sniffing role detection<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/client-concepts/connection-pooling/sniffing/role-detection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When we sniff the cluster state, we detect the role of the node, whether it’s master eligible and holds data.
-We use this information when selecting a node to perform an API call on.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="sniffing-role-detection"></a>Sniffing role detection<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/client-concepts/connection-pooling/sniffing/role-detection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When we sniff the cluster state, we detect the role of each node, for example,
+whether it’s master eligible, a node that holds data, etc.
+We can then use this information when selecting a node to perform an API call on.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+    .Nodes(10)
+    .Sniff(s =&gt; s.Fails(Always))
+    .Sniff(s =&gt; s.OnPort(9202)
+        .Succeeds(Always, Framework.Cluster.Nodes(8).MasterEligible(9200, 9201, 9202))
+    )
+    .SniffingConnectionPool()
+    .AllDefaults()
+)
+{
+    AssertPoolBeforeStartup = (pool) =&gt;
+    {
+        pool.Should().NotBeNull();
+        pool.Nodes.Should().HaveCount(10);
+        pool.Nodes.Where(n =&gt; n.MasterEligible).Should().HaveCount(10);
+    },
+    AssertPoolAfterStartup = (pool) =&gt;
+    {
+        pool.Should().NotBeNull();
+        pool.Nodes.Should().HaveCount(8);
+        pool.Nodes.Where(n =&gt; n.MasterEligible).Should().HaveCount(3);
+    }
+};
+
+await audit.TraceStartup();
+
+var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
     .Sniff(s =&gt; s.Fails(Always))
     .Sniff(s =&gt; s.OnPort(9202)
@@ -624,8 +651,9 @@ We use this information when selecting a node to perform an API call on.</p><div
         pool.Nodes.Where(n =&gt; n.HoldsData).Should().HaveCount(5);
     }
 };
+await audit.TraceStartup();
 
-await audit.TraceStartup();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
     .Sniff(s =&gt; s.SucceedAlways()
         .Succeeds(Always, Framework.Cluster.Nodes(8).StoresNoData(9200, 9201, 9202).HttpDisabled(9201))
@@ -651,69 +679,49 @@ await audit.TraceStartup();</pre></div><div class="pre_wrapper"><pre class="prog
         pool.Nodes.Where(n =&gt; n.HoldsData).Should().HaveCount(5);
     }
 };
-
-await audit.TraceStartup();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var masterNodes = new[] {9200, 9201, 9202};
-
+await audit.TraceStartup();</pre></div><p>In this example, We create a Virtual cluster with a Sniffing connection pool that seeds all the known master nodes.
+When the client sniffs on startup, we see that the cluster is 20 nodes in total, with the master eligible nodes
+storing no data.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var masterNodes = new[] {9200, 9201, 9202};
 var totalNodesInTheCluster = 20;
-
+//
 var audit = new Auditor(() =&gt; Framework.Cluster
     .MasterOnlyNodes(masterNodes.Length)
-    // When the client sniffs on startup we see the cluster is 20 nodes in total
     .Sniff(s =&gt; s.SucceedAlways()
-        .Succeeds(Always, Framework.Cluster.Nodes(totalNodesInTheCluster).StoresNoData(masterNodes).MasterEligible(masterNodes))
+        .Succeeds(Always, Framework.Cluster
+            .Nodes(totalNodesInTheCluster)
+            .StoresNoData(masterNodes)
+            .MasterEligible(masterNodes))
     )
     .SniffingConnectionPool()
-    .Settings(s=&gt;s.DisablePing()) //for testing simplicity we disable pings
+    .Settings(s=&gt;s.DisablePing())
 )
 {
-    // before the sniff assert we only see three master only nodes
-    AssertPoolBeforeStartup = (pool) =&gt;
+    AssertPoolBeforeStartup = pool =&gt; <a id="CO15-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     {
         pool.Should().NotBeNull();
         pool.Nodes.Should().HaveCount(3, "we seeded 3 master only nodes at the start of the application");
         pool.Nodes.Where(n =&gt; n.HoldsData).Should().HaveCount(0, "none of which hold data");
     },
-    // after sniff assert we now know about the existence of 20 nodes.
-    AssertPoolAfterStartup = (pool) =&gt;
+    AssertPoolAfterStartup = (pool) =&gt; <a id="CO15-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     {
         pool.Should().NotBeNull();
         var nodes = pool.CreateView().ToList();
         nodes.Count().Should().Be(20, "Master nodes are included in the registration of nodes since we still favor sniffing on them");
     }
-};
-
-var nodes = pool.CreateView().ToList();
-
-audit = await audit.TraceStartup(new ClientCall
+};</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Before the sniff, assert we only see three master only nodes
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+After the sniff, assert we now know about the existence of 20 nodes.
+</p></td></tr></table></div><p>After the sniff has happened on 9200 before the first API call, assert that the subsequent API
+call hits the first non master eligible node</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceStartup(new ClientCall
 {
     { SniffSuccess, 9200},
-    { HealthyResponse, 9203}
-});
-
-var seenNodes = new HashSet&lt;int&gt;();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
-    .Nodes(10)
-    .Sniff(s =&gt; s.Fails(Always))
-    .Sniff(s =&gt; s.OnPort(9202)
-        .Succeeds(Always, Framework.Cluster.Nodes(8).MasterEligible(9200, 9201, 9202))
-    )
-    .SniffingConnectionPool()
-    .AllDefaults()
-)
-{
-    AssertPoolBeforeStartup = (pool) =&gt;
-    {
-        pool.Should().NotBeNull();
-        pool.Nodes.Should().HaveCount(10);
-        pool.Nodes.Where(n =&gt; n.MasterEligible).Should().HaveCount(10);
-    },
-    AssertPoolAfterStartup = (pool) =&gt;
-    {
-        pool.Should().NotBeNull();
-        pool.Nodes.Should().HaveCount(8);
-        pool.Nodes.Where(n =&gt; n.MasterEligible).Should().HaveCount(3);
-    }
-};
-await audit.TraceStartup();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">foreach (var _ in Enumerable.Range(0, 1000))
+    { HealthyResponse, 9203} <a id="CO16-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+});</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Healthy response from 9203, not a master eligible node
+</p></td></tr></table></div><p>To verify that the client behaves as we expect when making requests to the virtual cluster, make 1000 different
+client calls and assert that each is not sent to any of the known master only nodes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var seenNodes = new HashSet&lt;int&gt;();
+foreach (var _ in Enumerable.Range(0, 1000))
 {
     audit = await audit.TraceCalls(
         new ClientCall {{HealthyResponse, (a) =&gt;
@@ -725,46 +733,55 @@ await audit.TraceStartup();</pre></div><div class="pre_wrapper"><pre class="prog
     );
 }
 
-seenNodes.Should().HaveCount(totalNodesInTheCluster - masterNodes.Length);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var totalNodesInTheCluster = 20;
-
+seenNodes.Should().HaveCount(totalNodesInTheCluster - masterNodes.Length); <a id="CO17-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">seenNodes</code> is a hash set of all the ports we hit. assert that this is equal to <code class="literal">known total nodes - known master only nodes</code>
+</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_node_predicates"></a>Node predicates<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/client-concepts/connection-pooling/sniffing/role-detection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A predicate can be specified on <code class="literal">ConnectionSettings</code> that can be used to determine which nodes in the cluster API calls
+can be executed on.</p><p>As an example, Let’s create a Virtual cluster with a Sniffing connection pool that seeds all 20 nodes to begin. When the client
+sniffs on startup, we see the cluster is still 20 nodes in total, however we are now aware of the
+actual configured settings for the nodes from the cluster response.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var totalNodesInTheCluster = 20;
 var setting = "node.attr.rack_id";
-
 var value = "rack_one";
-
 var nodesInRackOne = new[] {9204, 9210, 9213};
 
 var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(totalNodesInTheCluster)
-    // When the client sniffs on startup we see the cluster is still 20 nodes in total
-    // However we are now aware of the actual configured settings on the nodes
+    //
     .Sniff(s =&gt; s.SucceedAlways()
-        .Succeeds(Always, Framework.Cluster.Nodes(totalNodesInTheCluster).HasSetting(setting, value, nodesInRackOne))
+        .Succeeds(Always, Framework.Cluster
+            .Nodes(totalNodesInTheCluster)
+            .HasSetting(setting, value, nodesInRackOne))
     )
     .SniffingConnectionPool()
     .Settings(s=&gt;s
-        .DisablePing() //for testing simplicity we disable pings
-        //We only want to execute API calls to nodes in rack_one
-        .NodePredicate(node=&gt;node.Settings.ContainsKey(setting) &amp;&amp; node.Settings[setting] == value)
+        .DisablePing() <a id="CO18-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        .NodePredicate(node =&gt; <a id="CO18-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+            node.Settings.ContainsKey(setting) &amp;&amp;
+            node.Settings[setting] == value
+        )
     )
 )
 {
-    AssertPoolAfterStartup = (pool) =&gt;
+    AssertPoolAfterStartup = pool =&gt; <a id="CO18-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
     {
         pool.Should().NotBeNull();
         var nodes = pool.CreateView().ToList();
         nodes.Count(n =&gt; n.Settings.ContainsKey(setting)).Should().Be(3, "only three nodes are in rack_one");
     }
-};
-
-var nodes = pool.CreateView().ToList();
-
-audit = await audit.TraceStartup(new ClientCall
+};</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+for testing simplicity, disable pings
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We only want to execute API calls to nodes in rack_one
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+After sniffing on startup, assert that the pool of nodes that the client will execute API calls against only contains the three nodes that are in <code class="literal">rack_one</code>
+</p></td></tr></table></div><p>With the cluster set up, assert that the sniff happens on 9200 before the first API call
+and that API call hits the first node in <code class="literal">rack_one</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceStartup(new ClientCall
 {
     { SniffSuccess, 9200},
     { HealthyResponse, 9204}
-});
-
-var seenNodes = new HashSet&lt;int&gt;();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">foreach (var _ in Enumerable.Range(0, 1000))
+});</pre></div><p>To prove that the client is working as expected, do a 1000 different client calls and
+assert that each is sent to a node in <code class="literal">rack_one</code> only,
+respecting the node predicate on connection settings</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var seenNodes = new HashSet&lt;int&gt;();
+foreach (var _ in Enumerable.Range(0, 1000))
 {
     audit = await audit.TraceCalls(
         new ClientCall {{HealthyResponse, (a) =&gt;
@@ -776,7 +793,8 @@ var seenNodes = new HashSet&lt;int&gt;();</pre></div><div class="pre_wrapper"><p
     );
 }
 
-seenNodes.Should().HaveCount(nodesInRackOne.Length);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var totalNodesInTheCluster = 20;
+seenNodes.Should().HaveCount(nodesInRackOne.Length);</pre></div><p>As another example of node predicates, let’s set up a Virtual cluster with a <span class="emphasis"><em>bad</em></span> node predicate, i.e.
+predicate that filters out <span class="strong"><strong>all</strong></span> nodes from being the targets of API calls from the client</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var totalNodesInTheCluster = 20;
 
 var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(totalNodesInTheCluster)
@@ -786,95 +804,35 @@ var audit = new Auditor(() =&gt; Framework.Cluster
     .SniffingConnectionPool()
     .Settings(s =&gt; s
         .DisablePing()
-        // evil predicate that declines ALL nodes
-        .NodePredicate(node =&gt; false)
+        .NodePredicate(node =&gt; false) <a id="CO19-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     )
-);
-
-await audit.TraceUnexpectedElasticsearchException(new ClientCall
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+A <span class="emphasis"><em>bad</em></span> predicate that declines <span class="strong"><strong>all</strong></span> nodes
+</p></td></tr></table></div><p>Now when making the client calls, the audit trail indicates that a sniff on startup succeeds, but the subsequent
+API call fails because the node predicate filters out all nodes as targets on which to execute API calls</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">await audit.TraceUnexpectedElasticsearchException(new ClientCall
 {
-    { SniffOnStartup }, //audit logs we are sniffing for the very very first time one startup
-    { SniffSuccess }, //this goes ok because we ignore predicate when sniffing
-    { NoNodesAttempted } //when trying to do an actual API call the predicate prevents any nodes from being attempted
+    { SniffOnStartup }, <a id="CO20-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    { SniffSuccess }, <a id="CO20-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    { NoNodesAttempted } <a id="CO20-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
 }, e =&gt;
 {
     e.FailureReason.Should().Be(PipelineFailure.Unexpected);
-    //generating the debug information should not throw
+
     Func&lt;string&gt; debug = () =&gt; e.DebugInformation;
-    debug.Invoking(s =&gt;s()).ShouldNotThrow();
-    /* EXAMPLE OF PREVIOUS
-# FailureReason: Unrecoverable/Unexpected NoNodesAttempted while attempting POST on default-index/project/_search on an empty node, likely a node predicate on ConnectionSettings not matching ANY nodes
- - [1] SniffOnStartup: Took: 00:00:00
- - [2] SniffSuccess: Node: http://localhost:9200/ Took: 00:00:00
- - [3] NoNodesAttempted: Took: 00:00:00
-# Inner Exception: No nodes were attempted, this can happen when a node predicate does not match any nodes
-    */
-});
-
-e.FailureReason.Should().Be(PipelineFailure.Unexpected);
-
-Func&lt;string&gt; debug = () =&gt; e.DebugInformation;
-
-debug.Invoking(s =&gt;s()).ShouldNotThrow();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
-    .Nodes(10)
-    .Sniff(s =&gt; s.SucceedAlways()
-        .Succeeds(Always, Framework.Cluster.Nodes(8).StoresNoData(9200, 9201, 9202).SniffShouldReturnFqdn())
-    )
-    .SniffingConnectionPool()
-    .AllDefaults()
-)
-{
-    AssertPoolBeforeStartup = (pool) =&gt;
-    {
-        pool.Should().NotBeNull();
-        pool.Nodes.Should().HaveCount(10);
-        pool.Nodes.Where(n =&gt; n.HoldsData).Should().HaveCount(10);
-        pool.Nodes.Should().OnlyContain(n =&gt; n.Uri.Host == "localhost");
-    },
-
-    AssertPoolAfterStartup = (pool) =&gt;
-    {
-        pool.Should().NotBeNull();
-        pool.Nodes.Should().HaveCount(8);
-        pool.Nodes.Where(n =&gt; n.HoldsData).Should().HaveCount(5);
-        pool.Nodes.Should().OnlyContain(n =&gt; n.Uri.Host.StartsWith("fqdn") &amp;&amp; !n.Uri.Host.Contains("/"));
-    }
-};
-
-await audit.TraceStartup();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var node = SniffAndReturnNode();
-
-node.MasterEligible.Should().BeTrue();
-
-node.HoldsData.Should().BeFalse();
-
-node.Settings.Should().NotBeEmpty().And.Contain("node.attr.rack_id", "rack_one");
-
-node = await SniffAndReturnNodeAsync();
-
-node.MasterEligible.Should().BeTrue();
-
-node.HoldsData.Should().BeFalse();
-
-node.Settings.Should().NotBeEmpty().And.Contain("node.attr.rack_id", "rack_one");</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pipeline = CreatePipeline();
-
-pipeline.Sniff();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pipeline = CreatePipeline();
-
-await pipeline.SniffAsync(default(CancellationToken));</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var uri = TestClient.CreateUri(this._cluster.Node.Port);
-
-this._settings = new ConnectionSettings(new SniffingConnectionPool(new[] { uri }));
-
-var pipeline = new RequestPipeline(this._settings, DateTimeProvider.Default, new MemoryStreamFactory(),
-    new SearchRequestParameters());</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var nodes = this._settings.ConnectionPool.Nodes;
-
-nodes.Should().NotBeEmpty().And.HaveCount(1);
-
-var node = nodes.First();</pre></div></div><div class="navfooter"><span class="prev"><a href="sniffing-periodically.html">
+    debug.Invoking(s =&gt; s.Invoke()).ShouldNotThrow();
+});</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO20-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The audit trail indicates a sniff for the very first time on startup
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO20-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The sniff succeeds because the node predicate is ignored when sniffing
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO20-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+when trying to do an actual API call however, the predicate prevents any nodes from being attempted
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="sniffing-periodically.html">
               « 
               Sniffing periodically</a>
            
         </span><span class="next">
            
-          <a href="pinging-first-usage.html">Pinging - First Usage
+          <a href="pinging-behaviour.html">Pinging behaviour
                »
             </a></span></div>
 <!-- end body -->

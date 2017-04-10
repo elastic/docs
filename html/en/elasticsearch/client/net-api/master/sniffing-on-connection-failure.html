@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Sniffing on connection failure
         | Elasticsearch.Net and NEST: the .NET clients [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="sniffing-on-startup.html" title="Sniffing on startup" /><link rel="next" href="sniffing-periodically.html" title="Sniffing periodically" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="sniffing-behaviour.html" title="Sniffing behaviour" /><link rel="prev" href="sniffing-on-startup.html" title="Sniffing on startup" /><link rel="next" href="sniffing-periodically.html" title="Sniffing periodically" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -594,7 +594,7 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net</a></span> » <span class="breadcrumb-node">Sniffing on connection failure</span></div><div class="navheader"><span class="prev"><a href="sniffing-on-startup.html">
+    </a></span> » <span class="breadcrumb-link"><a href="api-conventions.html">API Conventions</a></span> » <span class="breadcrumb-link"><a href="sniffing-behaviour.html">Sniffing behaviour</a></span> » <span class="breadcrumb-node">Sniffing on connection failure</span></div><div class="navheader"><span class="prev"><a href="sniffing-on-startup.html">
               « 
               Sniffing on startup</a>
            
@@ -602,23 +602,20 @@ Not what you want? See the
            
           <a href="sniffing-periodically.html">Sniffing periodically
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="sniffing-on-connection-failure"></a>Sniffing on connection failure<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/connection-pooling/sniffing/on-connection-failure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Sniffing on connection is enabled by default when using a connection pool that allows reseeding.
-The only IConnectionPool we ship that allows this is the <a class="link" href="connection-pooling.html#sniffing-connection-pool" title="SniffingConnectionPool">SniffingConnectionPool</a>.</p><p>This can be very handy to force a refresh of the pools known healthy node by inspecting Elasticsearch itself.
-A sniff tries to get the nodes by asking each currently known node until one response.</p><p>Here we seed our connection with 5 known nodes 9200-9204 of which we think
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="sniffing-on-connection-failure"></a>Sniffing on connection failure<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/connection-pooling/sniffing/on-connection-failure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Sniffing on connection is enabled by default when using a connection pool that allows reseeding.
+The only connection pool we ship with that allows this is the <a class="link" href="connection-pooling.html#sniffing-connection-pool" title="SniffingConnectionPool">Sniffing connection pool</a>.</p><p>This can be very handy to force a refresh of the connection pool’s known healthy nodes by asking the Elasticsearch cluster itself, and
+a sniff tries to get the nodes by asking each node it currently knows about, until one responds.</p><p>Here we seed our connection with 5 known nodes on ports 9200-9204, of which we think
 9202, 9203, 9204 are master eligible nodes. Our virtualized cluster will throw once when doing
-a search on 9201. This should a sniff to be kicked off.</p><p>When the call fails on 9201 the sniff succeeds and returns a new cluster of healthy nodes
-this cluster only has 3 nodes and the known masters are 9200 and 9202 but a search on 9201
-still fails once</p><p>After this second failure on 9201 another sniff will be returned a cluster that no
-longer fails but looks completely different (9210-9212) we should be able to handle this</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+a search on 9201. This should cause a sniff to be kicked off.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(5)
     .MasterEligible(9202, 9203, 9204)
     .ClientCalls(r =&gt; r.SucceedAlways())
-    .ClientCalls(r =&gt; r.OnPort(9201).Fails(Once))
-.Sniff(p =&gt; p.SucceedAlways(Framework.Cluster
+    .ClientCalls(r =&gt; r.OnPort(9201).Fails(Once)) <a id="CO12-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    .Sniff(p =&gt; p.SucceedAlways(Framework.Cluster
         .Nodes(3)
         .MasterEligible(9200, 9202)
         .ClientCalls(r =&gt; r.OnPort(9201).Fails(Once))
-.Sniff(s =&gt; s.SucceedAlways(Framework.Cluster
+        .Sniff(s =&gt; s.SucceedAlways(Framework.Cluster <a id="CO12-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
             .Nodes(3, 9210)
             .MasterEligible(9210, 9212)
             .ClientCalls(r =&gt; r.SucceedAlways())
@@ -627,21 +624,24 @@ longer fails but looks completely different (9210-9212) we should be able to han
     ))
     .SniffingConnectionPool()
     .Settings(s =&gt; s.DisablePing().SniffOnStartup(false))
-);</pre></div><p>We assert we do a sniff on our first known master node 9202</p><p>Our pool should now have three nodes</p><p>We assert we do a sniff on the first master node in our updated cluster</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceCalls(
-new ClientCall {
+);
+
+audit = await audit.TraceCalls(
+/** */
+    new ClientCall {
         { HealthyResponse, 9200 },
         { pool =&gt;  pool.Nodes.Count.Should().Be(5) }
     },
     new ClientCall {
         { BadResponse, 9201},
-{ SniffOnFail },
-        { SniffSuccess, 9202},
+        { SniffOnFail },
+        { SniffSuccess, 9202}, <a id="CO12-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
         { HealthyResponse, 9200},
-{ pool =&gt;  pool.Nodes.Count.Should().Be(3) }
+        { pool =&gt;  pool.Nodes.Count.Should().Be(3) } <a id="CO12-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
     },
     new ClientCall {
         { BadResponse, 9201},
-{ SniffOnFail },
+        { SniffOnFail }, <a id="CO12-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
         { SniffSuccess, 9200},
         { HealthyResponse, 9210},
         { pool =&gt;  pool.Nodes.Count.Should().Be(3) }
@@ -655,8 +655,18 @@ new ClientCall {
     new ClientCall { { HealthyResponse, 9211 } },
     new ClientCall { { HealthyResponse, 9212 } },
     new ClientCall { { HealthyResponse, 9210 } }
-);</pre></div><p>Here we set up our cluster exactly the same as the previous setup
-Only we enable pinging (default is true) and make the ping fail</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+When the call fails on 9201, the following sniff succeeds and returns a new cluster state of healthy nodes. This cluster only has 3 nodes and the known masters are 9200 and 9202. A search on 9201 is setup to still fail once
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+After this second failure on 9201, another sniff will happen which returns a cluster state that no longer fails but looks completely different; It’s now three nodes on ports 9210 - 9212, with 9210 and 9212 being master eligible.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We assert we do a sniff on our first known master node 9202 after the failed call on 9201
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Our pool should now have three nodes
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We assert we do a sniff on the first master node in our updated cluster
+</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sniffing_after_ping_failure"></a>Sniffing after ping failure<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/connection-pooling/sniffing/on-connection-failure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Here we set up our cluster exactly the same as the previous setup
+Only we enable pinging (default is <code class="literal">true</code>) and make the ping fail</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(5)
     .MasterEligible(9202, 9203, 9204)
     .Ping(r =&gt; r.OnPort(9201).Fails(Once))
@@ -673,7 +683,9 @@ Only we enable pinging (default is true) and make the ping fail</p><div class="p
     ))
     .SniffingConnectionPool()
     .Settings(s =&gt; s.SniffOnStartup(false))
-);</pre></div><p>We assert we do a sniff on our first known master node 9202</p><p>Our pool should now have three nodes</p><p>We assert we do a sniff on the first master node in our updated cluster</p><p>9210 was already pinged after the sniff returned the new nodes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceCalls(
+);
+
+audit = await audit.TraceCalls(
     new ClientCall {
         { PingSuccess, 9200 },
         { HealthyResponse, 9200 },
@@ -681,27 +693,41 @@ Only we enable pinging (default is true) and make the ping fail</p><div class="p
     },
     new ClientCall {
         { PingFailure, 9201},
-{ SniffOnFail },
+        { SniffOnFail }, <a id="CO13-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         { SniffSuccess, 9202},
         { PingSuccess, 9200},
         { HealthyResponse, 9200},
-{ pool =&gt;  pool.Nodes.Count.Should().Be(3) }
+        { pool =&gt;  pool.Nodes.Count.Should().Be(3) } <a id="CO13-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     },
     new ClientCall {
         { PingFailure, 9201},
-{ SniffOnFail },
+        { SniffOnFail }, <a id="CO13-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
         { SniffSuccess, 9200},
         { PingSuccess, 9210},
         { HealthyResponse, 9210},
         { pool =&gt;  pool.Nodes.Count.Should().Be(3) }
     },
-    new ClientCall { { PingSuccess, 9211 }, { HealthyResponse, 9211 } },
-    new ClientCall { { PingSuccess, 9212 }, { HealthyResponse, 9212 } },
-new ClientCall { { HealthyResponse, 9210 } },
+    new ClientCall {
+        { PingSuccess, 9211 },
+        { HealthyResponse, 9211 }
+    },
+    new ClientCall {
+        { PingSuccess, 9212 },
+        { HealthyResponse, 9212 }
+    },
+    new ClientCall { { HealthyResponse, 9210 } }, <a id="CO13-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
     new ClientCall { { HealthyResponse, 9211 } },
     new ClientCall { { HealthyResponse, 9212 } },
     new ClientCall { { HealthyResponse, 9210 } }
-);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We assert we do a sniff on our first known master node 9202
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Our pool should now have three nodes
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We assert we do a sniff on the first master node in our updated cluster
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+9210 was already pinged after the sniff returned the new nodes
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_client_uses_publish_address"></a>Client uses publish address<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/connection-pooling/sniffing/on-connection-failure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
         .Nodes(2)
         .MasterEligible(9200)
         .Ping(r =&gt; r.OnPort(9200).Fails(Once))
@@ -713,22 +739,25 @@ new ClientCall { { HealthyResponse, 9210 } },
         .SniffingConnectionPool()
         .Settings(s =&gt; s.SniffOnStartup(false))
 );
+
 Action&lt;Audit, string, int&gt; hostAssert = (a, host, expectedPort) =&gt;
 {
     a.Node.Uri.Host.Should().Be(host);
     a.Node.Uri.Port.Should().Be(expectedPort);
 };
-a.Node.Uri.Host.Should().Be(host);
-a.Node.Uri.Port.Should().Be(expectedPort);</pre></div><p>Our pool should now have three nodes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceCalls(
+
+audit = await audit.TraceCalls(
     new ClientCall {
         { PingFailure, a =&gt; hostAssert(a, "localhost", 9200)},
         { SniffOnFail },
         { SniffSuccess, a =&gt; hostAssert(a, "localhost", 9200)},
         { PingSuccess, a =&gt; hostAssert(a, "10.0.12.1", 9200)},
         { HealthyResponse,  a =&gt; hostAssert(a, "10.0.12.1", 9200)},
-{ pool =&gt;  pool.Nodes.Count.Should().Be(10) }
+        { pool =&gt;  pool.Nodes.Count.Should().Be(10) } <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
-);</pre></div></div><div class="navfooter"><span class="prev"><a href="sniffing-on-startup.html">
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Our pool should now have 10 nodes
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="sniffing-on-startup.html">
               « 
               Sniffing on startup</a>
            

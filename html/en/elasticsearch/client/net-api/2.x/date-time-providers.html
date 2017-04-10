@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Date time providers
         | Elasticsearch.Net and NEST: the .NET clients [2.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [2.x]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="keeping-track-of-nodes.html" title="Keeping track of nodes" /><link rel="next" href="sniffing-on-startup.html" title="Sniffing on startup" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/2.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [2.x]" /><link rel="up" href="transports-and-pipelines.html" title="Transports and pipelines" /><link rel="prev" href="request-pipelines.html" title="Request pipelines" /><link rel="next" href="keeping-track-of-nodes.html" title="Keeping track of nodes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/2.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -594,34 +594,37 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [2.x]
-    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net</a></span> » <span class="breadcrumb-node">Date time providers</span></div><div class="navheader"><span class="prev"><a href="keeping-track-of-nodes.html">
+    </a></span> » <span class="breadcrumb-link"><a href="api-conventions.html">API Conventions</a></span> » <span class="breadcrumb-link"><a href="transports-and-pipelines.html">Transports and pipelines</a></span> » <span class="breadcrumb-node">Date time providers</span></div><div class="navheader"><span class="prev"><a href="request-pipelines.html">
               « 
-              Keeping track of nodes</a>
+              Request pipelines</a>
            
         </span><span class="next">
            
-          <a href="sniffing-on-startup.html">Sniffing on startup
+          <a href="keeping-track-of-nodes.html">Keeping track of nodes
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="date-time-providers"></a>Date time providers<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/building-blocks/date-time-providers.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Not typically something you’ll have to pass to the client but all calls to <code class="literal">System.DateTime.UtcNow</code>
-in the client have been abstracted by <code class="literal">IDateTimeProvider</code>. This allows us to unit test timeouts and cluster failover
-without being bound to wall clock time as calculated by using <code class="literal">System.DateTime.UtcNow</code> directly.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var dateTimeProvider = DateTimeProvider.Default;</pre></div><p>dates are always returned in UTC</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">dateTimeProvider.Now().Should().BeCloseTo(DateTime.UtcNow);</pre></div><p>Another responsibility of this interface is to calculate the time a node has to be taken out of rotation
-based on the number of attempts to revive it. For very advanced use cases, this might be something of interest
-to provide a custom implementation for.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var dateTimeProvider = DateTimeProvider.Default;</pre></div><p>The default timeout calculation is: <code class="literal">min(timeout * 2 ^ (attempts * 0.5 -1), maxTimeout)</code>, where the
-default values for <code class="literal">timeout</code> and <code class="literal">maxTimeout</code> are</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var timeout = TimeSpan.FromMinutes(1);
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="date-time-providers"></a>Date time providers<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/building-blocks/date-time-providers.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Not typically something you’ll have to pass to the client but all calls to <code class="literal">System.DateTime.UtcNow</code>
+in the client have been abstracted behind an <code class="literal">IDateTimeProvider</code> interface.
+This allows us to unit test timeouts and cluster failover without being bound to wall clock
+time as calculated by using <code class="literal">System.DateTime.UtcNow</code> directly.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var dateTimeProvider = DateTimeProvider.Default;
 
-var maxTimeout = TimeSpan.FromMinutes(30);</pre></div><p>Plotting these defaults looks as followed:</p><div class="figure"><a id="timeout"></a><p class="title"><strong>Figure 1. Default formula, x-axis number of attempts to revive, y-axis time in minutes</strong></p><div class="figure-contents"><div class="mediaobject"><img src="timeoutplot.png" alt="dead timeout" /></div></div></div><br class="figure-break" /><p>The goal here is that whenever a node is resurrected and is found to still be offline, we send it
-<span class="emphasis"><em>back to the doghouse</em></span> for an ever increasingly long period, until we hit a bounded maximum.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var timeouts = Enumerable.Range(0, 30)
+dateTimeProvider.Now().Should().BeCloseTo(DateTime.UtcNow);</pre></div><p>As you can see, dates are always returned in UTC from the default implementation.</p><p>Another responsibility of this interface is to calculate the time a node has to be taken out of rotation
+based on the number of attempts to revive it. For very advanced use cases, this might be something of interest
+to provide a custom implementation for.</p><p>The default timeout calculation is</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">min(timeout * 2 ^ (attempts * 0.5 -1), maxTimeout)</pre></div><p>where the default values for <code class="literal">timeout</code> and <code class="literal">maxTimeout</code> are</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var timeout = TimeSpan.FromMinutes(1);
+var maxTimeout = TimeSpan.FromMinutes(30);</pre></div><p>Plotting these defaults looks as follows</p><div class="figure"><a id="id-1.4.5.5.11"></a><p class="title"><strong>Figure 1. Default formula, x-axis number of attempts to revive, y-axis time in minutes</strong></p><div class="figure-contents"><div class="mediaobject"><img src="timeoutplot.png" alt="dead timeout" /></div></div></div><br class="figure-break" /><p>The goal here is that whenever a node is resurrected and is found to still be offline, we send it
+<span class="emphasis"><em>back to the doghouse</em></span> for an ever increasingly long period, until we hit a bounded maximum.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var dateTimeProvider = DateTimeProvider.Default;
+
+var timeouts = Enumerable.Range(0, 30)
     .Select(attempt =&gt; dateTimeProvider.DeadTime(attempt, timeout, maxTimeout))
     .ToList();
 
 foreach (var increasedTimeout in timeouts.Take(10))
-    increasedTimeout.Should().BeWithin(maxTimeout);</pre></div></div><div class="navfooter"><span class="prev"><a href="keeping-track-of-nodes.html">
+    increasedTimeout.Should().BeWithin(maxTimeout);</pre></div></div><div class="navfooter"><span class="prev"><a href="request-pipelines.html">
               « 
-              Keeping track of nodes</a>
+              Request pipelines</a>
            
         </span><span class="next">
            
-          <a href="sniffing-on-startup.html">Sniffing on startup
+          <a href="keeping-track-of-nodes.html">Keeping track of nodes
                »
             </a></span></div>
 <!-- end body -->

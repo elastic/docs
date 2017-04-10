@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Transports
         | Elasticsearch.Net and NEST: the .NET clients [5.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [5.x]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="request-pipeline.html" title="Request Pipeline" /><link rel="next" href="keeping-track-of-nodes.html" title="Keeping track of nodes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/5.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [5.x]" /><link rel="up" href="transports-and-pipelines.html" title="Transports and pipelines" /><link rel="prev" href="transports-and-pipelines.html" title="Transports and pipelines" /><link rel="next" href="request-pipelines.html" title="Request pipelines" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/5.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -591,21 +591,22 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [5.x]
-    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net</a></span> » <span class="breadcrumb-node">Transports</span></div><div class="navheader"><span class="prev"><a href="request-pipeline.html">
+    </a></span> » <span class="breadcrumb-link"><a href="api-conventions.html">API Conventions</a></span> » <span class="breadcrumb-link"><a href="transports-and-pipelines.html">Transports and pipelines</a></span> » <span class="breadcrumb-node">Transports</span></div><div class="navheader"><span class="prev"><a href="transports-and-pipelines.html">
               « 
-              Request Pipeline</a>
+              Transports and pipelines</a>
            
         </span><span class="next">
            
-          <a href="keeping-track-of-nodes.html">Keeping track of nodes
+          <a href="request-pipelines.html">Request pipelines
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="transports"></a>Transports<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/client-concepts/connection-pooling/building-blocks/transports.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">ITransport</code> interface can be seen as the motor block of the client. It’s interface is deceitfully simple and
-it’s ultimately responsible from translating a client call to a response.</p><p>If for some reason you do not agree with the way we wrote the internals of the client,
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="transports"></a>Transports<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/client-concepts/connection-pooling/building-blocks/transports.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">ITransport</code> interface can be seen as the motor block of the client. Its interface is
+deceitfully simple, yet it’s ultimately responsible for translating a client call to a response.</p><p>If for some reason you do not agree with the way we wrote the internals of the client,
 by implementing a custom <code class="literal">ITransport</code>, you can circumvent all of it and introduce your own.</p><p>Transport is generically typed to a type that implements <code class="literal">IConnectionConfigurationValues</code>
-This is the minimum <code class="literal">ITransport</code> needs to report back for the client to function.</p><p>In the low level client, <code class="literal">ElasticLowLevelClient</code>, a <code class="literal">Transport</code> is instantiated like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var lowLevelTransport = new Transport&lt;ConnectionConfiguration&gt;(new ConnectionConfiguration());</pre></div><p>and in the high level client, <code class="literal">ElasticClient</code>, like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var highlevelTransport = new Transport&lt;ConnectionSettings&gt;(new ConnectionSettings());
+This is the minimum <code class="literal">ITransport</code> needs to report back for the client to function.</p><p>In the low level client, <code class="literal">ElasticLowLevelClient</code>, a <code class="literal">Transport</code> is instantiated like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var lowLevelTransport = new Transport&lt;ConnectionConfiguration&gt;(new ConnectionConfiguration());</pre></div><p>and in the high level client, <code class="literal">ElasticClient</code>, like this</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var highlevelTransport = new Transport&lt;ConnectionSettings&gt;(new ConnectionSettings());
 
 var connectionPool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
-var inMemoryTransport = new Transport&lt;ConnectionSettings&gt;(new ConnectionSettings(connectionPool, new InMemoryConnection()));</pre></div><p>The only two methods on <code class="literal">ITransport</code> are <code class="literal">Request()</code> and <code class="literal">RequestAsync()</code>; the default <code class="literal">ITransport</code> implementation is responsible for introducing
+var inMemoryTransport = new Transport&lt;ConnectionSettings&gt;(
+    new ConnectionSettings(connectionPool, new InMemoryConnection()));</pre></div><p>The only two methods on <code class="literal">ITransport</code> are <code class="literal">Request()</code> and <code class="literal">RequestAsync()</code>; the default <code class="literal">ITransport</code> implementation is responsible for introducing
 many of the building blocks in the client. If you feel that the defaults do not work for you then you can swap them out for your own
 custom <code class="literal">ITransport</code> implementation and if you do, <a class="ulink" href="https://github.com/elastic/elasticsearch-net/issues" target="_top">please let us know</a> as we’d love to learn why you’ve go down this route!</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var response = inMemoryTransport.Request&lt;SearchResponse&lt;Project&gt;&gt;(
     HttpMethod.GET,
@@ -616,13 +617,13 @@ response = await inMemoryTransport.RequestAsync&lt;SearchResponse&lt;Project&gt;
     HttpMethod.GET,
     "/_search",
     default(CancellationToken),
-    new { query = new { match_all = new { } } });</pre></div></div><div class="navfooter"><span class="prev"><a href="request-pipeline.html">
+    new { query = new { match_all = new { } } });</pre></div></div><div class="navfooter"><span class="prev"><a href="transports-and-pipelines.html">
               « 
-              Request Pipeline</a>
+              Transports and pipelines</a>
            
         </span><span class="next">
            
-          <a href="keeping-track-of-nodes.html">Keeping track of nodes
+          <a href="request-pipelines.html">Request pipelines
                »
             </a></span></div>
 <!-- end body -->

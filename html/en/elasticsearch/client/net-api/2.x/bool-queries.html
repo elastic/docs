@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Bool Queries
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Writing bool queries
         | Elasticsearch.Net and NEST: the .NET clients [2.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [2.x]" /><link rel="up" href="query-dsl.html" title="Query DSL" /><link rel="prev" href="query-dsl.html" title="Query DSL" /><link rel="next" href="verbatim-and-strict-query-usage.html" title="Verbatim and Strict Query Usage" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/2.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [2.x]" /><link rel="up" href="search.html" title="Search" /><link rel="prev" href="writing-queries.html" title="Writing queries" /><link rel="next" href="returned-fields.html" title="Selecting fields to return" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/2.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -594,16 +594,16 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [2.x]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL</a></span> » <span class="breadcrumb-node">Bool Queries</span></div><div class="navheader"><span class="prev"><a href="query-dsl.html">
+    </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-link"><a href="search.html">Search</a></span> » <span class="breadcrumb-node">Writing bool queries</span></div><div class="navheader"><span class="prev"><a href="writing-queries.html">
               « 
-              Query DSL</a>
+              Writing queries</a>
            
         </span><span class="next">
            
-          <a href="verbatim-and-strict-query-usage.html">Verbatim and Strict Query Usage
+          <a href="returned-fields.html">Selecting fields to return
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="bool-queries"></a>Bool Queries<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Writing boolean queries can grow verbose rather quickly when using the query DSL. For example,
-take a single <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.3/query-dsl-bool-query.html" target="_top">bool query</a> with only two clauses</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var searchResults = this.Client.Search&lt;Project&gt;(s =&gt; s
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="bool-queries"></a>Writing bool queries<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Writing <code class="literal">bool</code> queries can grow verbose rather quickly when using the query DSL. For example,
+take a single <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.4/query-dsl-bool-query.html" target="_top">bool query</a> with two <code class="literal">should</code> clauses</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var searchResults = this.Client.Search&lt;Project&gt;(s =&gt; s
     .Query(q =&gt; q
         .Bool(b =&gt; b
             .Should(
@@ -612,47 +612,175 @@ take a single <a class="ulink" href="https://www.elastic.co/guide/en/elasticsear
             )
         )
     )
-);</pre></div><p>Now, imagine multiple nested bools; you’ll realise that this quickly becomes an exercise in <span class="emphasis"><em>hadouken indenting</em></span></p><div class="figure"><a id="indent"></a><p class="title"><strong>Figure 2. hadouken indenting</strong></p><div class="figure-contents"><div class="mediaobject"><img src="hadouken-indentation.jpg" alt="hadouken indenting" /></div></div></div><br class="figure-break" /><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_operator_overloading"></a>Operator Overloading<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>For this reason, NEST introduces <span class="strong"><strong>operator overloading</strong></span> so complex bool queries become easier to write.
-The previous example now becomes the following with the fluent API</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var searchResults = this.Client.Search&lt;Project&gt;(s =&gt; s
-    .Query(q =&gt; q.Term(p =&gt; p.Name, "x") || q.Term(p =&gt; p.Name, "y"))
-);</pre></div><p>or, using the object initializer syntax</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">searchResults = this.Client.Search&lt;Project&gt;(new SearchRequest&lt;Project&gt;
+);</pre></div><p>Now, imagine multiple nested <code class="literal">bool</code> queries; you’ll realise that this quickly becomes an exercise
+in <span class="emphasis"><em>hadouken indenting</em></span></p><div class="figure"><a id="id-1.6.8.5.5"></a><p class="title"><strong>Figure 2. hadouken indenting</strong></p><div class="figure-contents"><div class="mediaobject"><img src="hadouken-indentation.jpg" alt="hadouken indenting" /></div></div></div><br class="figure-break" /><h3><a id="_operator_overloading"></a>Operator overloading<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For this reason, NEST introduces <span class="strong"><strong>operator overloading</strong></span> so complex <code class="literal">bool</code> queries become easier to write.
+The overloaded operators are</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="bool-queries.html#binary-or-operator" title="Binary || operator">Binary <code class="literal">||</code> operator</a>
+</li><li class="listitem">
+<a class="link" href="bool-queries.html#binary-and-operator" title="Binary &amp;&amp; operator">Binary <code class="literal">&amp;&amp;</code> operator</a>
+</li><li class="listitem">
+<a class="link" href="bool-queries.html#unary-negation-operator" title="Unary ! operator">Unary <code class="literal">!</code> operator</a>
+</li><li class="listitem">
+<a class="link" href="bool-queries.html#unary-plus-operator" title="Unary + operator">Unary <code class="literal">+</code> operator</a>
+</li></ul></div><p>We’ll demonstrate each with examples.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="binary-or-operator"></a>Binary || operator<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Using the overloaded binary <code class="literal">||</code> operator, a <code class="literal">bool</code> query with <code class="literal">should</code> clauses can be more succinctly
+expressed.</p><p>The previous example now becomes the following with the Fluent API</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var firstSearchResponse = client.Search&lt;Project&gt;(s =&gt; s
+    .Query(q =&gt; q
+        .Term(p =&gt; p.Name, "x") || q
+        .Term(p =&gt; p.Name, "y")
+    )
+);</pre></div><p>and, with the the Object Initializer syntax</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var secondSearchResponse = client.Search&lt;Project&gt;(new SearchRequest&lt;Project&gt;
 {
-    Query = new TermQuery { Field = "name", Value= "x" }
-        || new TermQuery { Field = Field&lt;Project&gt;(p=&gt;p.Name), Value = "y" }
-});</pre></div><p>A naive implementation of operator overloading would rewrite</p><p><code class="literal">term &amp;&amp; term &amp;&amp; term</code> to</p><pre class="literallayout">bool
+    Query = new TermQuery { Field = Field&lt;Project&gt;(p =&gt; p.Name), Value = "x" } ||
+            new TermQuery { Field = Field&lt;Project&gt;(p =&gt; p.Name), Value = "y" }
+});</pre></div><p>Both result in the following JSON query DSL</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "query": {
+    "bool": {
+      "should": [
+        {
+          "term": {
+            "name": {
+              "value": "x"
+            }
+          }
+        },
+        {
+          "term": {
+            "name": {
+              "value": "y"
+            }
+          }
+        }
+      ]
+    }
+  }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="binary-and-operator"></a>Binary &amp;&amp; operator<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The overloaded binary <code class="literal">&amp;&amp;</code> operator can be used to combine queries together. When the queries to be combined
+don’t have any unary operators applied to them, the resulting query is a <code class="literal">bool</code> query with <code class="literal">must</code> clauses</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var firstSearchResponse = client.Search&lt;Project&gt;(s =&gt; s
+    .Query(q =&gt; q
+        .Term(p =&gt; p.Name, "x") &amp;&amp; q
+        .Term(p =&gt; p.Name, "y")
+    )
+);</pre></div><p>and, with the the Object Initializer syntax</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var secondSearchResponse = client.Search&lt;Project&gt;(new SearchRequest&lt;Project&gt;
+{
+    Query = new TermQuery { Field = Field&lt;Project&gt;(p =&gt; p.Name), Value = "x" } &amp;&amp;
+            new TermQuery { Field = Field&lt;Project&gt;(p =&gt; p.Name), Value = "y" }
+});</pre></div><p>Both result in the following JSON query DSL</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "name": {
+              "value": "x"
+            }
+          }
+        },
+        {
+          "term": {
+            "name": {
+              "value": "y"
+            }
+          }
+        }
+      ]
+    }
+  }
+}</pre></div><p>A naive implementation of operator overloading would rewrite</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">term &amp;&amp; term &amp;&amp; term</pre></div><p>to</p><pre class="literallayout">bool
 |___must
    |___term
-       |___bool
-           |___must
-               |___term
-               |___term</pre><p>As you can imagine this becomes unwieldy quite fast the more complex a query becomes, NEST can spot these and
-join them together to become a single bool query</p><pre class="literallayout">bool
+   |___bool
+       |___must
+           |___term
+           |___term</pre><p>As you can imagine this becomes unwieldy quite fast, the more complex a query becomes. NEST is smart enough
+to join the <code class="literal">&amp;&amp;</code> queries together to form a single <code class="literal">bool</code> query</p><pre class="literallayout">bool
 |___must
    |___term
    |___term
-   |___term</pre><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
-    q =&gt; q.Query() &amp;&amp; q.Query() &amp;&amp; q.Query(),
-    Query &amp;&amp; Query &amp;&amp; Query,
-    c =&gt; c.Bool.Must.Should().HaveCount(3)
-    );</pre></div><p>The bool DSL offers also a shorthand notation to mark a query as a <code class="literal">must_not</code> using the <code class="literal">!</code> operator</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(q =&gt; !q.Query(), !Query, c =&gt; c.Bool.MustNot.Should().HaveCount(1));</pre></div><p>And to mark a query as a <code class="literal">filter</code> using the <code class="literal">+</code> operator</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(q =&gt; +q.Query(), +Query, c =&gt; c.Bool.Filter.Should().HaveCount(1));</pre></div><p>Both of these can be combined with <code class="literal">&amp;&amp;</code> to form a single bool query</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(q =&gt; !q.Query() &amp;&amp; !q.Query(), !Query &amp;&amp; !Query, c =&gt; c.Bool.MustNot.Should().HaveCount(2));</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(q =&gt; +q.Query() &amp;&amp; +q.Query(), +Query &amp;&amp; +Query, c =&gt; c.Bool.Filter.Should().HaveCount(2));</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_combining_merging_bool_queries"></a>Combining/Merging bool queries<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When combining multiple queries some or all possibly marked as <code class="literal">must_not</code> or <code class="literal">filter</code>, NEST still combines to a single bool query</p><pre class="literallayout">bool
+   |___term</pre><p>as demonstrated with the following</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; q.Query() &amp;&amp; q.Query() &amp;&amp; q.Query(), <a id="CO49-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    Query &amp;&amp; Query &amp;&amp; Query, <a id="CO49-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    c =&gt; c.Bool.Must.Should().HaveCount(3) <a id="CO49-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO49-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+three queries <code class="literal">&amp;&amp;</code> together using the Fluent API
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO49-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+three queries <code class="literal">&amp;&amp;</code> together using Object Initialzer syntax
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO49-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+assert the resulting <code class="literal">bool</code> query in each case has 3 <code class="literal">must</code> clauses
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="unary-negation-operator"></a>Unary ! operator<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>NEST also offers a shorthand notation for creating a <code class="literal">bool</code> query with a <code class="literal">must_not</code> clause
+using the unary <code class="literal">!</code> operator</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var firstSearchResponse = client.Search&lt;Project&gt;(s =&gt; s
+    .Query(q =&gt; !q
+        .Term(p =&gt; p.Name, "x")
+    )
+);</pre></div><p>and, with the Object Initializer syntax</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var secondSearchResponse = client.Search&lt;Project&gt;(new SearchRequest&lt;Project&gt;
+{
+    Query = !new TermQuery { Field = Field&lt;Project&gt;(p =&gt; p.Name), Value = "x" }
+});</pre></div><p>Both result in the following JSON query DSL</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+          "term": {
+            "name": {
+              "value": "x"
+            }
+          }
+        }
+      ]
+    }
+  }
+}</pre></div><p>Two queries marked with the unary <code class="literal">!</code>  operator can be combined with the <code class="literal">&amp;&amp;</code> operator to form
+a single <code class="literal">bool</code> query with two <code class="literal">must_not</code> clauses</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; !q.Query() &amp;&amp; !q.Query(), <a id="CO50-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    !Query &amp;&amp; !Query, <a id="CO50-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    c =&gt; c.Bool.MustNot.Should().HaveCount(2)); <a id="CO50-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO50-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+two queries with <code class="literal">!</code> operator applied, <code class="literal">&amp;&amp;</code> together using the Fluent API
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO50-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+two queries with <code class="literal">!</code> operator applied, <code class="literal">&amp;&amp;</code> together using the Object Initializer syntax
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO50-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+assert the resulting <code class="literal">bool</code> query in each case has two <code class="literal">must_not</code> clauses
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="unary-plus-operator"></a>Unary + operator<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A query can be transformed into a <code class="literal">bool</code> query with a <code class="literal">filter</code> clause using the unary <code class="literal">+</code> operator</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var firstSearchResponse = client.Search&lt;Project&gt;(s =&gt; s
+    .Query(q =&gt; +q
+        .Term(p =&gt; p.Name, "x")
+    )
+);</pre></div><p>and, with the Object Initializer syntax</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var secondSearchResponse = client.Search&lt;Project&gt;(new SearchRequest&lt;Project&gt;
+{
+    Query = +new TermQuery { Field = Field&lt;Project&gt;(p =&gt; p.Name), Value = "x" }
+});</pre></div><p>Both result in the following JSON query DSL</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "name": {
+              "value": "x"
+            }
+          }
+        }
+      ]
+    }
+  }
+}</pre></div><p>This runs the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.4/query-filter-context.html" target="_top">query in a filter context</a>,
+which can be useful in improving performance where the relevancy score for the query
+is not required to affect the order of results.</p><p>Similarly to the unary <code class="literal">!</code> operator, queries marked with the unary <code class="literal">+</code>  operator can be
+combined with the <code class="literal">&amp;&amp;</code> operator to form a single <code class="literal">bool</code> query with two <code class="literal">filter</code> clauses</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    q =&gt; +q.Query() &amp;&amp; +q.Query(),
+    +Query &amp;&amp; +Query,
+    c =&gt; c.Bool.Filter.Should().HaveCount(2));</pre></div><h3><a id="_combining_bool_queries"></a>Combining bool queries<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When combining multiple queries with the binary <code class="literal">&amp;&amp;</code> operator
+where some or all queries have unary operators applied,
+NEST is still able to combine them to form a single <code class="literal">bool</code> query.</p><p>Take for example the following <code class="literal">bool</code> query</p><pre class="literallayout">bool
 |___must
 |   |___term
 |   |___term
 |   |___term
 |
 |___must_not
-   |___term</pre><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+   |___term</pre><p>This can be constructed with NEST using</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
     q =&gt; q.Query() &amp;&amp; q.Query() &amp;&amp; q.Query() &amp;&amp; !q.Query(),
     Query &amp;&amp; Query &amp;&amp; Query &amp;&amp; !Query,
     c=&gt;
     {
         c.Bool.Must.Should().HaveCount(3);
         c.Bool.MustNot.Should().HaveCount(1);
-    });
-
-c.Bool.Must.Should().HaveCount(3);
-
-c.Bool.MustNot.Should().HaveCount(1);</pre></div><p>Even more involved <code class="literal">term &amp;&amp; term &amp;&amp; term &amp;&amp; !term &amp;&amp; +term &amp;&amp; +term</code> still only results in a single <code class="literal">bool</code> query:</p><pre class="literallayout">bool
+    });</pre></div><p>An even more complex example</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">term &amp;&amp; term &amp;&amp; term &amp;&amp; !term &amp;&amp; +term &amp;&amp; +term</pre></div><p>still only results in a single <code class="literal">bool</code> query with the following structure</p><pre class="literallayout">bool
 |___must
 |   |___term
 |   |___term
@@ -671,39 +799,32 @@ c.Bool.MustNot.Should().HaveCount(1);</pre></div><p>Even more involved <code cla
         c.Bool.Must.Should().HaveCount(3);
         c.Bool.MustNot.Should().HaveCount(1);
         c.Bool.Filter.Should().HaveCount(2);
-    });
-
-c.Bool.Must.Should().HaveCount(3);
-
-c.Bool.MustNot.Should().HaveCount(1);
-
-c.Bool.Filter.Should().HaveCount(2);</pre></div><p>You can still mix and match actual bool queries with the bool DSL e.g
-<code class="literal">bool(must=term, term, term) &amp;&amp; !term</code> would still merge into a single <code class="literal">bool</code> query.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+    });</pre></div><p>You can still mix and match actual <code class="literal">bool</code> queries with operator overloaded queries e.g</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bool(must=term, term, term) &amp;&amp; !term</pre></div><p>This will still merge into a single <code class="literal">bool</code> query.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
     q =&gt; q.Bool(b =&gt; b.Must(mq =&gt; mq.Query(), mq =&gt; mq.Query(), mq =&gt; mq.Query())) &amp;&amp; !q.Query(),
     new BoolQuery { Must = new QueryContainer[] { Query, Query, Query } } &amp;&amp; !Query,
     c =&gt;
     {
         c.Bool.Must.Should().HaveCount(3);
         c.Bool.MustNot.Should().HaveCount(1);
-    });
-
-c.Bool.Must.Should().HaveCount(3);
-
-c.Bool.MustNot.Should().HaveCount(1);</pre></div><p>NEST will also do the same with <code class="literal">should`s or `||</code> when it sees that the boolean queries in play <span class="strong"><strong>only</strong></span> consist of <code class="literal">should</code> clauses.
-This is because the <code class="literal">bool</code> query does not quite follow the same boolean logic you expect from a programming language.</p><p>To summarize, the latter:</p><p><code class="literal">term || term || term</code></p><p>becomes</p><pre class="literallayout">bool
+    });</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_combining_queries_with_or_should_clauses"></a>Combining queries with || or should clauses<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>As per the previous example, NEST will combine multiple <code class="literal">should</code> or <code class="literal">||</code> into a single <code class="literal">bool</code> query
+with <code class="literal">should</code> clauses, when it sees that the <code class="literal">bool</code> queries in play <span class="strong"><strong>only</strong></span> consist of <code class="literal">should</code> clauses;</p><p>To summarize, this</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">term || term || term</pre></div><p>becomes</p><pre class="literallayout">bool
 |___should
    |___term
    |___term
-   |___term</pre><p>but <code class="literal">term1 &amp;&amp; (term2 || term3 || term4)</code> does <span class="strong"><strong>not</strong></span> become</p><pre class="literallayout">bool
+   |___term</pre><p>However, the <code class="literal">bool</code> query does not quite follow the same boolean logic you expect from a
+programming language. That is</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">term1 &amp;&amp; (term2 || term3 || term4)</pre></div><p>does <span class="strong"><strong>not</strong></span> become</p><pre class="literallayout">bool
 |___must
 |   |___term1
 |
 |___should
    |___term2
    |___term3
-   |___term4</pre><p>This is because when a <code class="literal">bool</code> query has <span class="strong"><strong>only</strong></span> <code class="literal">should</code> clauses, at least one of them must match.
-When that <code class="literal">bool</code> query also has a <code class="literal">must</code> clause then the <code class="literal">should</code> clauses start acting as a <span class="emphasis"><em>boost</em></span> factor
-and none of them have to match, drastically altering its meaning.</p><p>So in the previous you could get back results that <span class="strong"><strong>only</strong></span> contain <code class="literal">term1</code>. This is clearly not what you want in the strict boolean sense of the input.</p><p>To aid with this, NEST rewrites the previous query to</p><pre class="literallayout">bool
+   |___term4</pre><p>Why is this? Well, when a <code class="literal">bool</code> query has <span class="strong"><strong>only</strong></span> <code class="literal">should</code> clauses, <span class="strong"><strong><span class="emphasis"><em>at least one</em></span></strong></span> of them must match.
+However, when that <code class="literal">bool</code> query also has a <code class="literal">must</code> clause, the <code class="literal">should</code> clauses instead now act as a
+<span class="emphasis"><em>boost</em></span> factor, meaning none of them have to match but if they do, the relevancy score for that document
+will be boosted and thus appear higher in the results. The semantics for how <code class="literal">should</code> clauses behave then
+changes based on the presence of the <code class="literal">must</code> clause.</p><p>So, relating this back to the previous example, you could get back results that <span class="strong"><strong>only</strong></span> contain <code class="literal">term1</code>.
+This is clearly not what was intended when using operator overloading.</p><p>To aid with this, NEST rewrites the previous query as</p><pre class="literallayout">bool
 |___must
    |___term1
    |___bool
@@ -716,24 +837,16 @@ and none of them have to match, drastically altering its meaning.</p><p>So in th
     c =&gt;
     {
         c.Bool.Must.Should().HaveCount(2);
-        var lastClause = c.Bool.Must.Last() as IQueryContainer;
-        lastClause.Should().NotBeNull();
-        lastClause.Bool.Should().NotBeNull();
-        lastClause.Bool.Should.Should().HaveCount(3);
-    });
-
-c.Bool.Must.Should().HaveCount(2);
-
-var lastClause = c.Bool.Must.Last() as IQueryContainer;
-
-lastClause.Should().NotBeNull();
-
-lastClause.Bool.Should().NotBeNull();
-
-lastClause.Bool.Should.Should().HaveCount(3);</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p><span class="strong"><strong>add parentheses to force evaluation order</strong></span></p></div></div><p>Also note that using shoulds as boosting factors can be really powerful so if you need this
-always remember that you can mix and match an actual bool query with the bool dsl.</p><p>There is another subtle situation where NEST will not blindly merge 2 bool queries with only should clauses. Imagine the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bool(should=term1, term2, term3, term4, minimum_should_match=2) || term5 || term6</pre></div><p>if NEST identified both sides of the OR operation as only containing <code class="literal">should</code> clauses and it would
-join them together it would give a different meaning to the <code class="literal">minimum_should_match</code> parameter of the first boolean query.
-Rewriting this to a single bool with 5 <code class="literal">should</code> clauses would break because only matching on <code class="literal">term5</code> or <code class="literal">term6</code> should still be a hit.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
+        var lastMustClause = (IQueryContainer)c.Bool.Must.Last();
+        lastMustClause.Should().NotBeNull();
+        lastMustClause.Bool.Should().NotBeNull();
+        lastMustClause.Bool.Should.Should().HaveCount(3);
+    });</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p><span class="strong"><strong>Add parentheses to force evaluation order</strong></span></p></div></div><p>Using <code class="literal">should</code> clauses as boost factors can be a really powerful construct when building
+search queries, and remember, you can mix and match an actual <code class="literal">bool</code> query with NEST’s operator overloading.</p><p>There is another subtle situation where NEST will not blindly merge two <code class="literal">bool</code> queries with only
+<code class="literal">should</code> clauses. Consider the following</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bool(should=term1, term2, term3, term4, minimum_should_match=2) || term5 || term6</pre></div><p>if NEST identified both sides of a binary <code class="literal">||</code> operation as only containing <code class="literal">should</code> clauses and
+joined them together, it would give a different meaning to the <code class="literal">minimum_should_match</code> parameter of
+the first <code class="literal">bool</code> query; rewriting this to a single <code class="literal">bool</code> with 5 <code class="literal">should</code> clauses would break the semantics
+of the original query because only matching on <code class="literal">term5</code> or <code class="literal">term6</code> should still be a hit.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
     q =&gt; q.Bool(b =&gt; b
         .Should(mq =&gt; mq.Query(), mq =&gt; mq.Query(), mq =&gt; mq.Query(), mq =&gt; mq.Query())
         .MinimumShouldMatch(2)
@@ -749,13 +862,7 @@ Rewriting this to a single bool with 5 <code class="literal">should</code> claus
         c.Bool.Should.Should().HaveCount(3);
         var nestedBool = c.Bool.Should.First() as IQueryContainer;
         nestedBool.Bool.Should.Should().HaveCount(4);
-    });
-
-c.Bool.Should.Should().HaveCount(3);
-
-var nestedBool = c.Bool.Should.First() as IQueryContainer;
-
-nestedBool.Bool.Should.Should().HaveCount(4);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_locked_bool_queries"></a>Locked bool queries<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>NEST will not combine <code class="literal">bool</code> queries if any of the query metadata is set e.g if metadata such as <code class="literal">boost</code> or <code class="literal">name</code> are set,
+    });</pre></div><h3><a id="_locked_bool_queries"></a>Locked bool queries<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>NEST will not combine <code class="literal">bool</code> queries if any of the query metadata is set e.g if metadata such as <code class="literal">boost</code> or <code class="literal">name</code> are set,
 NEST will treat these as locked.</p><p>Here we demonstrate that two locked <code class="literal">bool</code> queries are not combined</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Assert(
     q =&gt; q.Bool(b =&gt; b.Name("leftBool").Should(mq =&gt; mq.Query()))
          || q.Bool(b =&gt; b.Name("rightBool").Should(mq =&gt; mq.Query())),
@@ -771,36 +878,31 @@ NEST will treat these as locked.</p><p>Here we demonstrate that two locked <code
          || q.Bool(b =&gt; b.Should(mq =&gt; mq.Query())),
     new BoolQuery { Name = "leftBool", Should = new QueryContainer[] { Query } }
     || new BoolQuery { Should = new QueryContainer[] { Query } },
-    c =&gt; AssertDoesNotJoinOntoLockedBool(c, "leftBool"));</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_perfomance_considerations"></a>Perfomance considerations<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you have a requirement of combining many many queries using the bool dsl please take the following into account.</p><p>You <span class="strong"><strong>can</strong></span> use bitwise assignments in a loop to combine many queries into a bigger bool.</p><p>In this example we are creating a single bool query with a 1000 must clauses using the <code class="literal">&amp;=</code> assign operator.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var c = new QueryContainer();
-
+    c =&gt; AssertDoesNotJoinOntoLockedBool(c, "leftBool"));</pre></div><h3><a id="_perfomance_considerations"></a>Perfomance considerations<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/query-dsl/bool-dsl/bool-dsl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you have a requirement of combining many many queries using the bool dsl please take the following into account.</p><p>You <span class="strong"><strong>can</strong></span> use bitwise assignments in a loop to combine many queries into a bigger bool.</p><p>In this example we are creating a single bool query with a 1000 must clauses using the <code class="literal">&amp;=</code> assign operator.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var c = new QueryContainer();
 var q = new TermQuery { Field = "x", Value = "x" };
 
-c &amp;= q;</pre></div><pre class="literallayout">|===
-|     Median|     StdDev|       Gen 0|  Gen 1|  Gen 2|  Bytes Allocated/Op
-|  1.8507 ms|  0.1878 ms|    1,793.00|  21.00|      -|        1.872.672,28
-|===</pre><p>As you can see while still fast its causes a lot of allocations to happen because with each iteration
+for (var i = 0; i &lt; 1000; i++)
+{
+    c &amp;= q;
+}</pre></div><pre class="literallayout">|     Median|     StdDev|       Gen 0|  Gen 1|  Gen 2|  Bytes Allocated/Op
+|  1.8507 ms|  0.1878 ms|    1,793.00|  21.00|      -|        1.872.672,28</pre><p>As you can see while still fast its causes a lot of allocations to happen because with each iteration
 we need to re evaluate the mergability of our bool query.</p><p>Since we already know the shape of our bool query in advance its much much faster to do this instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">QueryContainer q = new TermQuery { Field = "x", Value = "x" };
-
 var x = Enumerable.Range(0, 1000).Select(f =&gt; q).ToArray();
-
 var boolQuery = new BoolQuery
 {
     Must = x
-};</pre></div><pre class="literallayout">|===
-|      Median|     StdDev|   Gen 0|  Gen 1|  Gen 2|  Bytes Allocated/Op
-|  31.4610 us|  0.9495 us|  439.00|      -|      -|            7.912,95
-|===</pre><pre class="literallayout">The drop both in performance and allocations is tremendous!</pre><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you assigning many bool queries prior to NEST 2.4.6 into a bigger bool using an assignment loop
-the client did not do a good job flattening the result in the most optimal way and could
-cause a stackoverflow when doing ~2000 iterations. This only applied to bitwise assigning many <code class="literal">boolean</code> queries.
-Other queries behave fine in earlier versions. Since NEST 2.4.6 you can combine as many bool queries
-as you’d like this way too.
-See <a class="ulink" href="https://github.com/elastic/elasticsearch-net/pull/2235" target="_top">PR #2335 on github for more information</a></p></div></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl.html">
+};</pre></div><pre class="literallayout">|      Median|     StdDev|   Gen 0|  Gen 1|  Gen 2|  Bytes Allocated/Op
+|  31.4610 us|  0.9495 us|  439.00|      -|      -|            7.912,95</pre><p>The drop both in performance and allocations is tremendous!</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you assigning many <code class="literal">bool</code> queries prior to NEST 2.4.6 into a bigger <code class="literal">bool</code> query using an assignment loop,
+the client did not do a good job of flattening the result in the most optimal way and could
+cause a stackoverflow when doing ~2000 iterations. This only applied to bitwise assigning many <code class="literal">bool</code> queries,
+other queries were not affected.</p><p>Since NEST 2.4.6 you can combine as many bool queries as you’d like this way too.
+See <a class="ulink" href="https://github.com/elastic/elasticsearch-net/pull/2235" target="_top">PR #2335 on github for more information</a></p></div></div></div></div><div class="navfooter"><span class="prev"><a href="writing-queries.html">
               « 
-              Query DSL</a>
+              Writing queries</a>
            
         </span><span class="next">
            
-          <a href="verbatim-and-strict-query-usage.html">Verbatim and Strict Query Usage
+          <a href="returned-fields.html">Selecting fields to return
                »
             </a></span></div>
 <!-- end body -->

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Auto mapping properties
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Auto mapping
         | Elasticsearch.Net and NEST: the .NET clients [2.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [2.x]" /><link rel="up" href="nest.html" title="Client Concepts - NEST" /><link rel="prev" href="features-inference.html" title="Features Inference" /><link rel="next" href="covariant-search-results.html" title="Covariant Search Results" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/2.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [2.x]" /><link rel="up" href="mapping.html" title="Mapping" /><link rel="prev" href="mapping.html" title="Mapping" /><link rel="next" href="attribute-mapping.html" title="Attribute mapping" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/2.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -594,20 +594,18 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [2.x]
-    </a></span> » <span class="breadcrumb-link"><a href="nest.html">Client Concepts - NEST</a></span> » <span class="breadcrumb-node">Auto mapping properties</span></div><div class="navheader"><span class="prev"><a href="features-inference.html">
+    </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-node">Auto mapping</span></div><div class="navheader"><span class="prev"><a href="mapping.html">
               « 
-              Features Inference</a>
+              Mapping</a>
            
         </span><span class="next">
            
-          <a href="covariant-search-results.html">Covariant Search Results
+          <a href="attribute-mapping.html">Attribute mapping
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="auto-map"></a>Auto mapping properties<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When creating a mapping (either when creating an index or via the put mapping API),
-NEST offers a feature called <code class="literal">.AutoMap()</code>, which will automagically infer the correct
-Elasticsearch datatypes of the POCO properties you are mapping.  Alternatively, if
-you’re using attributes to map your properties, then calling <code class="literal">.AutoMap()</code> is required
-in order for your attributes to be applied.  We’ll look at the features of auto mapping
-with a number of examples.</p><p>For these examples, we’ll define two POCOS, <code class="literal">Company</code>, which has a name
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="auto-map"></a>Auto mapping<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When creating a mapping either when creating an index or through the Put Mapping API,
+NEST offers a feature called auto mapping that can automagically infer the correct
+Elasticsearch field datatypes from the CLR POCO property types you are mapping.</p><p>We’ll look at the features of auto mapping with a number of examples. For this,
+we’ll define two POCOs, <code class="literal">Company</code>, which has a name
 and a collection of Employees, and <code class="literal">Employee</code> which has various properties of
 different types, and itself has a collection of <code class="literal">Employee</code> types.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class Company
 {
@@ -624,572 +622,78 @@ public class Employee
     public bool IsManager { get; set; }
     public List&lt;Employee&gt; Employees { get; set; }
     public TimeSpan Hours { get; set; }
-}</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_manual_mapping"></a>Manual mapping<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To create a mapping for our Company type, we can use the fluent API
-and map each property explicitly</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
+}</pre></div><p>Auto mapping can take the pain out of having to define a manual mapping for all properties
+on the POCO</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
     .Mappings(ms =&gt; ms
-        .Map&lt;Company&gt;(m =&gt; m
-            .Properties(ps =&gt; ps
-                .String(s =&gt; s
-                    .Name(c =&gt; c.Name) <a id="CO18-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                )
-                .Object&lt;Employee&gt;(o =&gt; o  <a id="CO18-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                    .Name(c =&gt; c.Employees)
-                    .Properties(eps =&gt; eps
-                        .String(s =&gt; s
-                            .Name(e =&gt; e.FirstName)
-                        )
-                        .String(s =&gt; s
-                            .Name(e =&gt; e.LastName)
-                        )
-                        .Number(n =&gt; n
-                            .Name(e =&gt; e.Salary)
-                            .Type(NumberType.Integer)
-                        )
-                    )
-                )
-            )
-        )
-    );</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-map <code class="literal">Name</code> as a <code class="literal">string</code> type
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-map <code class="literal">Employees</code> as an <code class="literal">object</code> type, mapping each of the properties of <code class="literal">Employee</code>
-</p></td></tr></table></div><p>This is all fine and dandy and useful for some use cases however in most cases
-this can become verbose and wieldy. The majority of the time you simply just want to map <span class="strong"><strong>all</strong></span>
-the properties of a POCO in a single go.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var expected = new
-{
-    mappings = new
-    {
-        company = new
-        {
-            properties = new
-            {
-                name = new
-                {
-                    type = "string"
-                },
-                employees = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        firstName = new
-                        {
-                            type = "string"
-                        },
-                        lastName = new
-                        {
-                            type = "string"
-                        },
-                        salary = new
-                        {
-                            type = "integer"
-                        }
-                    }
-                }
-            }
-        }
-    }
-};
-
-Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_simple_automapping"></a>Simple Automapping<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This is exactly where <code class="literal">.AutoMap()</code> becomes useful. Instead of manually mapping each property,
-explicitly, we can instead call <code class="literal">.AutoMap()</code> for each of our mappings and let NEST do all the work</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;Company&gt;(m =&gt; m.AutoMap())
-        .Map&lt;Employee&gt;(m =&gt; m.AutoMap())
-    );</pre></div><p>Observe that NEST has inferred the Elasticsearch types based on the CLR type of our POCO properties.
-In this example,</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Birthday was mapped as a <code class="literal">date</code>,
-</li><li class="listitem">
-Hours was mapped as a <code class="literal">long</code> (ticks)
-</li><li class="listitem">
-IsManager was mapped as a <code class="literal">bool</code>,
-</li><li class="listitem">
-Salary as an <code class="literal">integer</code>
-</li><li class="listitem">
-Employees as an <code class="literal">object</code>
-</li></ul></div><p>and the remaining string properties as <code class="literal">string</code> types</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var expected = new
-{
-    mappings = new
-    {
-        company = new
-        {
-            properties = new
-            {
-                employees = new
-                {
-                    properties = new
-                    {
-                        birthday = new
-                        {
-                            type = "date"
-                        },
-                        employees = new
-                        {
-                            properties = new { },
-                            type = "object"
-                        },
-                        firstName = new
-                        {
-                            type = "string"
-                        },
-                        hours = new
-                        {
-                            type = "long"
-                        },
-                        isManager = new
-                        {
-                            type = "boolean"
-                        },
-                        lastName = new
-                        {
-                            type = "string"
-                        },
-                        salary = new
-                        {
-                            type = "integer"
-                        }
-                    },
-                    type = "object"
-                },
-                name = new
-                {
-                    type = "string"
-                }
-            }
-        },
-        employee = new
-        {
-            properties = new
-            {
-                birthday = new
-                {
-                    type = "date"
-                },
-                employees = new
-                {
-                    properties = new { },
-                    type = "object"
-                },
-                firstName = new
-                {
-                    type = "string"
-                },
-                hours = new
-                {
-                    type = "long"
-                },
-                isManager = new
-                {
-                    type = "boolean"
-                },
-                lastName = new
-                {
-                    type = "string"
-                },
-                salary = new
-                {
-                    type = "integer"
-                }
-            }
-        }
-    }
-};
-
-Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Some .NET types do not have direct equivalent Elasticsearch types. For example, <code class="literal">System.Decimal</code> is a type
-commonly used to express currencies and other financial calculations that require large numbers of significant
-integral and fractional digits and no round-off errors. There is no equivalent type in Elasticsearch, and the
-nearest type is <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.3/number.html" target="_top">``double``</a>, a double-precision 64-bit IEEE 754 floating point.</p><p>When a POCO has a <code class="literal">System.Decimal</code> property, it is automapped to the Elasticsearch <code class="literal">double</code> type. With the caveat
-of a potential loss of precision, this is generally acceptable for a lot of use cases, but it can however cause
-problems in <span class="emphasis"><em>some</em></span> edge cases.</p><p>As the <a class="ulink" href="https://download.microsoft.com/download/3/8/8/388e7205-bc10-4226-b2a8-75351c669b09/csharp%20language%20specification.doc" target="_top">C# Specification states</a>,</p><div class="blockquote"><table border="0" class="blockquote" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p>For a conversion from <code class="literal">decimal</code> to <code class="literal">float</code> or <code class="literal">double</code>, the <code class="literal">decimal</code> value is rounded to the nearest <code class="literal">double</code> or <code class="literal">float</code> value.
-While this conversion may lose precision, it never causes an exception to be thrown.</p></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">
-C# Specification section 6.2.1
-</span></td></tr></table></div><p>This conversion causes an exception to be thrown at deserialization time for <code class="literal">Decimal.MinValue</code> and <code class="literal">Decimal.MaxValue</code> because, at
-serialization time, the nearest <code class="literal">double</code> value that is converted to is outside of the bounds of <code class="literal">Decimal.MinValue</code> or <code class="literal">Decimal.MaxValue</code>,
-respectively. In these cases, it is advisable to use <code class="literal">double</code> as the POCO property type.</p></div></div><h2><a id="auto-mapping-with-overrides"></a>Auto mapping with overrides<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>In most cases, you’ll want to map more than just the vanilla datatypes and also provide
-various options for your properties (analyzer to use, whether to enable doc_values, etc…).
-In that case, it’s possible to use <code class="literal">.AutoMap()</code> in conjunction with explicitly mapped properties.</p><p>Here we are using <code class="literal">.AutoMap()</code> to automatically map our company type, but then we’re
-overriding our employee property and making it a <code class="literal">nested</code> type, since by default,
-<code class="literal">.AutoMap()</code> will infer objects as <code class="literal">object</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;Company&gt;(m =&gt; m
-            .AutoMap()
-            .Properties(ps =&gt; ps
-                .Nested&lt;Employee&gt;(n =&gt; n
-                    .Name(c =&gt; c.Employees)
-                )
-            )
-        )
-    );
-
-var expected = new
-{
-    mappings = new
-    {
-        company = new
-        {
-            properties = new
-            {
-                name = new
-                {
-                    type = "string"
-                },
-                employees = new
-                {
-                    type = "nested",
-                }
-            }
-        }
-    }
-};
-
-Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div><p><code class="literal">.AutoMap()</code> is idempotent; calling it before or after manually
-mapped properties will still yield the same results.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;Company&gt;(m =&gt; m
-            .Properties(ps =&gt; ps
-                .Nested&lt;Employee&gt;(n =&gt; n
-                    .Name(c =&gt; c.Employees)
-                )
-            )
-            .AutoMap()
-        )
-    );
-
-Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div><h2><a id="attribute-mapping"></a>Attribute mapping<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>It is also possible to define your mappings using attributes on your POCOs.  When you
-use attributes, you <span class="strong"><strong>must</strong></span> use <code class="literal">.AutoMap()</code> in order for the attributes to be applied.
-Here we define the same two types as before, but this time using attributes to define the mappings.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">[ElasticsearchType(Name = "company")]
-public class CompanyWithAttributes
-{
-    [String(Analyzer = "keyword", NullValue = "null", Similarity = SimilarityOption.BM25)]
-    public string Name { get; set; }
-
-    [String(Name = "office_hours")]
-    public TimeSpan? HeadOfficeHours { get; set; }
-
-    [Object(Path = "employees", Store = false)]
-    public List&lt;Employee&gt; Employees { get; set; }
-}
-
-[ElasticsearchType(Name = "employee")]
-public class EmployeeWithAttributes
-{
-    [String(Name = "first_name")]
-    public string FirstName { get; set; }
-
-    [String(Name = "last_name")]
-    public string LastName { get; set; }
-
-    [Number(DocValues = false, IgnoreMalformed = true, Coerce = true)]
-    public int Salary { get; set; }
-
-    [Date(Format = "MMddyyyy", NumericResolution = NumericResolutionUnit.Seconds)]
-    public DateTime Birthday { get; set; }
-
-    [Boolean(NullValue = false, Store = true)]
-    public bool IsManager { get; set; }
-
-    [Nested(Path = "employees")]
-    [JsonProperty("empl")]
-    public List&lt;Employee&gt; Employees { get; set; }
-}</pre></div><p>Then we map the types by calling <code class="literal">.AutoMap()</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;CompanyWithAttributes&gt;(m =&gt; m.AutoMap())
-        .Map&lt;EmployeeWithAttributes&gt;(m =&gt; m.AutoMap())
-    );
-
-var expected = new
-{
-    mappings = new
-    {
-        company = new
-        {
-            properties = new
-            {
-                employees = new
-                {
-                    path = "employees",
-                    properties = new
-                    {
-                        birthday = new
-                        {
-                            type = "date"
-                        },
-                        employees = new
-                        {
-                            properties = new { },
-                            type = "object"
-                        },
-                        firstName = new
-                        {
-                            type = "string"
-                        },
-                        hours = new
-                        {
-                            type = "long"
-                        },
-                        isManager = new
-                        {
-                            type = "boolean"
-                        },
-                        lastName = new
-                        {
-                            type = "string"
-                        },
-                        salary = new
-                        {
-                            type = "integer"
-                        }
-                    },
-                    store = false,
-                    type = "object"
-                },
-                name = new
-                {
-                    analyzer = "keyword",
-                    null_value = "null",
-                    similarity = "BM25",
-                    type = "string"
-                },
-                office_hours = new
-                {
-                    type = "string"
-                }
-            }
-        },
-        employee = new
-        {
-            properties = new
-            {
-                birthday = new
-                {
-                    format = "MMddyyyy",
-                    numeric_resolution = "seconds",
-                    type = "date"
-                },
-                empl = new
-                {
-                    path = "employees",
-                    properties = new
-                    {
-                        birthday = new
-                        {
-                            type = "date"
-                        },
-                        employees = new
-                        {
-                            properties = new { },
-                            type = "object"
-                        },
-                        firstName = new
-                        {
-                            type = "string"
-                        },
-                        hours = new
-                        {
-                            type = "long"
-                        },
-                        isManager = new
-                        {
-                            type = "boolean"
-                        },
-                        lastName = new
-                        {
-                            type = "string"
-                        },
-                        salary = new
-                        {
-                            type = "integer"
-                        }
-                    },
-                    type = "nested"
-                },
-                first_name = new
-                {
-                    type = "string"
-                },
-                isManager = new
-                {
-                    null_value = false,
-                    store = true,
-                    type = "boolean"
-                },
-                last_name = new
-                {
-                    type = "string"
-                },
-                salary = new
-                {
-                    coerce = true,
-                    doc_values = false,
-                    ignore_malformed = true,
-                    type = "double"
-                }
-            }
-        }
-    }
-};
-
-Expect(expected).WhenSerializing((ICreateIndexRequest) descriptor);</pre></div><p>Just as we were able to override the inferred properties in our earlier example, explicit (manual)
-mappings also take precedence over attributes.  Therefore we can also override any mappings applied
-via any attributes defined on the POCO</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;CompanyWithAttributes&gt;(m =&gt; m
-            .AutoMap()
-            .Properties(ps =&gt; ps
-                .Nested&lt;Employee&gt;(n =&gt; n
-                    .Name(c =&gt; c.Employees)
-                )
-            )
-        )
-        .Map&lt;EmployeeWithAttributes&gt;(m =&gt; m
-            .AutoMap()
-            .TtlField(ttl =&gt; ttl
-                .Enable()
-                .Default("10m")
-            )
-            .Properties(ps =&gt; ps
-                .String(s =&gt; s
-                    .Name(e =&gt; e.FirstName)
-                    .Fields(fs =&gt; fs
-                        .String(ss =&gt; ss
-                            .Name("firstNameRaw")
-                            .Index(FieldIndexOption.NotAnalyzed)
-                        )
-                        .TokenCount(t =&gt; t
-                            .Name("length")
-                            .Analyzer("standard")
-                        )
-                    )
-                )
-                .Number(n =&gt; n
-                    .Name(e =&gt; e.Salary)
-                    .Type(NumberType.Double)
-                    .IgnoreMalformed(false)
-                )
-                .Date(d =&gt; d
-                    .Name(e =&gt; e.Birthday)
-                    .Format("MM-dd-yy")
-                )
-            )
-        )
-    );
-
-var expected = new
-{
-    mappings = new
-    {
-        company = new
-        {
-            properties = new
-            {
-                employees = new
-                {
-                    type = "nested"
-                },
-                name = new
-                {
-                    analyzer = "keyword",
-                    null_value = "null",
-                    similarity = "BM25",
-                    type = "string"
-                },
-                office_hours = new
-                {
-                    type = "string"
-                }
-            }
-        },
-        employee = new
-        {
-            _ttl = new
-            {
-                enabled = true,
-                @default = "10m"
+        .Map&lt;Company&gt;(m =&gt; m.AutoMap()) <a id="CO35-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        .Map&lt;Employee&gt;(m =&gt; m.AutoMap()) <a id="CO35-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    );</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO35-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Auto map <code class="literal">Company</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO35-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Auto map <code class="literal">Employee</code>
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "mappings": {
+    "company": {
+      "properties": {
+        "employees": {
+          "properties": {
+            "birthday": {
+              "type": "date"
             },
-            properties = new
-            {
-                birthday = new
-                {
-                    format = "MM-dd-yy",
-                    type = "date"
-                },
-                empl = new
-                {
-                    path = "employees",
-                    properties = new
-                    {
-                        birthday = new
-                        {
-                            type = "date"
-                        },
-                        employees = new
-                        {
-                            properties = new { },
-                            type = "object"
-                        },
-                        firstName = new
-                        {
-                            type = "string"
-                        },
-                        hours = new
-                        {
-                            type = "long"
-                        },
-                        isManager = new
-                        {
-                            type = "boolean"
-                        },
-                        lastName = new
-                        {
-                            type = "string"
-                        },
-                        salary = new
-                        {
-                            type = "integer"
-                        }
-                    },
-                    type = "nested"
-                },
-                first_name = new
-                {
-                    fields = new
-                    {
-                        firstNameRaw = new
-                        {
-                            index = "not_analyzed",
-                            type = "string"
-                        },
-                        length = new
-                        {
-                            type = "token_count",
-                            analyzer = "standard"
-                        }
-                    },
-                    type = "string"
-                },
-                isManager = new
-                {
-                    null_value = false,
-                    store = true,
-                    type = "boolean"
-                },
-                last_name = new
-                {
-                    type = "string"
-                },
-                salary = new
-                {
-                    ignore_malformed = false,
-                    type = "double"
-                }
+            "employees": {
+              "properties": {},
+              "type": "object"
+            },
+            "firstName": {
+              "type": "string"
+            },
+            "hours": {
+              "type": "long"
+            },
+            "isManager": {
+              "type": "boolean"
+            },
+            "lastName": {
+              "type": "string"
+            },
+            "salary": {
+              "type": "integer"
             }
+          },
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
         }
+      }
+    },
+    "employee": {
+      "properties": {
+        "birthday": {
+          "type": "date"
+        },
+        "employees": {
+          "properties": {},
+          "type": "object"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "hours": {
+          "type": "long"
+        },
+        "isManager": {
+          "type": "boolean"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "salary": {
+          "type": "integer"
+        }
+      }
     }
-};
-
-Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class ParentWithStringId : Parent
-{
-    public new string Id { get; set; }
+  }
 }</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
     .Mappings(ms =&gt; ms
         .Map&lt;ParentWithStringId&gt;(m =&gt; m
@@ -1222,101 +726,72 @@ var settings = WithConnectionSettings(s =&gt; s
     )
 );
 
-settings.Expect(expected).WhenSerializing((ICreateIndexRequest) descriptor);</pre></div><h2><a id="ignoring-properties"></a>Ignoring Properties<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Properties on a POCO can be ignored in a few ways:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Using the <code class="literal">Ignore</code> property on a derived <code class="literal">ElasticsearchPropertyAttribute</code> type applied to the property that should be ignored on the POCO
+settings.Expect(expected).WhenSerializing((ICreateIndexRequest) descriptor);</pre></div><p>Observe that NEST has inferred the Elasticsearch types based on the CLR type of our POCO properties.
+In this example,</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Birthday is mapped as a <code class="literal">date</code>,
 </li><li class="listitem">
-Using the <code class="literal">.InferMappingFor&lt;TDocument&gt;(Func&lt;ClrTypeMappingDescriptor&lt;TDocument&gt;, IClrTypeMapping&lt;TDocument&gt;&gt; selector)</code> on the connection settings
+Hours is mapped as a <code class="literal">long</code> <code class="literal">TimeSpan</code> ticks)
 </li><li class="listitem">
-Using an ignore attribute applied to the POCO property that is understood by the <code class="literal">IElasticsearchSerializer</code> used, and inspected inside of the <code class="literal">CreatePropertyMapping()</code> on the serializer. In the case of the default <code class="literal">JsonNetSerializer</code>, this is the Json.NET <code class="literal">JsonIgnoreAttribute</code>
-</li></ul></div><p>This example demonstrates all ways, using the <code class="literal">Ignore</code> property on the attribute to ignore the property <code class="literal">PropertyToIgnore</code>, the infer mapping to ignore the
-property <code class="literal">AnotherPropertyToIgnore</code> and the json serializer specific attribute  to ignore the property <code class="literal">JsonIgnoredProperty</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">[ElasticsearchType(Name = "company")]
-public class CompanyWithAttributesAndPropertiesToIgnore
-{
-    public string Name { get; set; }
-
-    [String(Ignore = true)]
-    public string PropertyToIgnore { get; set; }
-
-    public string AnotherPropertyToIgnore { get; set; }
-
-    [JsonIgnore]
-    public string JsonIgnoredProperty { get; set; }
-}</pre></div><p>All of the properties except <code class="literal">Name</code> have been ignored in the mapping</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;CompanyWithAttributesAndPropertiesToIgnore&gt;(m =&gt; m
-            .AutoMap()
-        )
-    );
-
-var expected = new
-{
-    mappings = new
-    {
-        company = new
-        {
-            properties = new
-            {
-                name = new
-                {
-                    type = "string"
-                }
-            }
-        }
-    }
-};
-
-var settings = WithConnectionSettings(s =&gt; s
-    .InferMappingFor&lt;CompanyWithAttributesAndPropertiesToIgnore&gt;(i =&gt; i
-        .Ignore(p =&gt; p.AnotherPropertyToIgnore)
-    )
-);
-
-settings.Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class Parent
-{
-    public int Id { get; set; }
-    public string Description { get; set; }
-    public string IgnoreMe { get; set; }
-}
-
-public class Child : Parent { }</pre></div><p>All of the properties except <code class="literal">Name</code> have been ignored in the mapping</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;Child&gt;(m =&gt; m
-            .AutoMap()
-        )
-    );
-
-var expected = new
-{
-    mappings = new
-    {
-        child = new
-        {
-            properties = new
-            {
-                desc = new {
-                    type = "string"
-                },
-                id = new {
-                    type = "integer"
-                }
-            }
-        }
-    }
-};
-
-var settings = WithConnectionSettings(s =&gt; s
-    .InferMappingFor&lt;Child&gt;(m =&gt; m
-        .Rename(p =&gt; p.Description, "desc")
-        .Ignore(p =&gt; p.IgnoreMe)
-    )
-);
-
-settings.Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div><h2><a id="mapping-recursion"></a>Mapping Recursion<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>If you notice in our previous <code class="literal">Company</code> and <code class="literal">Employee</code> examples, the <code class="literal">Employee</code> type is recursive
+IsManager is mapped as a <code class="literal">boolean</code>,
+</li><li class="listitem">
+Salary is mapped as an <code class="literal">integer</code>
+</li><li class="listitem">
+Employees is mapped as an <code class="literal">object</code>
+</li></ul></div><p>and the remaining string properties as <code class="literal">string</code> datatypes.</p><p>NEST has inferred mapping support for the following .NET types</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">String</code> maps to <code class="literal">"string"</code>
+</li><li class="listitem">
+<code class="literal">Int32</code> maps to <code class="literal">"integer"</code>
+</li><li class="listitem">
+<code class="literal">UInt16</code> maps to <code class="literal">"integer"</code>
+</li><li class="listitem">
+<code class="literal">Int16</code> maps to <code class="literal">"short"</code>
+</li><li class="listitem">
+<code class="literal">Byte</code> maps to <code class="literal">"short"</code>
+</li><li class="listitem">
+<code class="literal">Int64</code> maps to <code class="literal">"long"</code>
+</li><li class="listitem">
+<code class="literal">UInt32</code> maps to <code class="literal">"long"</code>
+</li><li class="listitem">
+<code class="literal">TimeSpan</code> maps to <code class="literal">"long"</code>
+</li><li class="listitem">
+<code class="literal">Single</code> maps to <code class="literal">"float"</code>
+</li><li class="listitem">
+<code class="literal">Double</code> maps to <code class="literal">"double"</code>
+</li><li class="listitem">
+<code class="literal">Decimal</code> maps to <code class="literal">"double"</code>
+</li><li class="listitem">
+<code class="literal">UInt64</code> maps to <code class="literal">"double"</code>
+</li><li class="listitem">
+<code class="literal">DateTime</code> maps to <code class="literal">"date"</code>
+</li><li class="listitem">
+<code class="literal">DateTimeOffset</code> maps to <code class="literal">"date"</code>
+</li><li class="listitem">
+<code class="literal">Boolean</code> maps to <code class="literal">"boolean"</code>
+</li><li class="listitem">
+<code class="literal">Char</code> maps to <code class="literal">"string"</code>
+</li><li class="listitem">
+<code class="literal">Guid</code> maps to <code class="literal">"string"</code>
+</li></ul></div><p>and supports a number of special types defined in NEST</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">Nest.GeoLocation</code> maps to <code class="literal">"geo_point"</code>
+</li><li class="listitem">
+<code class="literal">Nest.CompletionField&lt;TPayload&gt;</code> maps to <code class="literal">"completion"</code>
+</li><li class="listitem">
+<code class="literal">Nest.Attachment</code> maps to <code class="literal">"attachment"</code>
+</li></ul></div><p>All other types map to <code class="literal">"object"</code> by default.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Some .NET types do not have direct equivalent Elasticsearch types. For example, <code class="literal">System.Decimal</code> is a type
+commonly used to express currencies and other financial calculations that require large numbers of significant
+integral and fractional digits and no round-off errors. There is no equivalent type in Elasticsearch, and the
+nearest type is <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.4/number.html" target="_top">double</a>, a double-precision 64-bit IEEE 754 floating point.</p><p>When a POCO has a <code class="literal">System.Decimal</code> property, it is automapped to the Elasticsearch <code class="literal">double</code> type. With the caveat
+of a potential loss of precision, this is generally acceptable for a lot of use cases, but it can however cause
+problems in <span class="emphasis"><em>some</em></span> edge cases.</p><p>As the <a class="ulink" href="https://download.microsoft.com/download/3/8/8/388e7205-bc10-4226-b2a8-75351c669b09/csharp%20language%20specification.doc" target="_top">C# Specification states</a>,</p><div class="blockquote"><table border="0" class="blockquote" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p>For a conversion from <code class="literal">decimal</code> to <code class="literal">float</code> or <code class="literal">double</code>, the <code class="literal">decimal</code> value is rounded to the nearest <code class="literal">double</code> or <code class="literal">float</code> value.
+While this conversion may lose precision, it never causes an exception to be thrown.</p></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">
+C# Specification section 6.2.1
+</span></td></tr></table></div><p>This conversion causes an exception to be thrown at deserialization time for <code class="literal">Decimal.MinValue</code> and <code class="literal">Decimal.MaxValue</code> because, at
+serialization time, the nearest <code class="literal">double</code> value that is converted to is outside of the bounds of <code class="literal">Decimal.MinValue</code> or <code class="literal">Decimal.MaxValue</code>,
+respectively. In these cases, it is advisable to use <code class="literal">double</code> as the POCO property type.</p></div></div><h3><a id="_mapping_recursion"></a>Mapping Recursion<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you notice in our previous <code class="literal">Company</code> and <code class="literal">Employee</code> example, the <code class="literal">Employee</code> type is recursive
 in that the <code class="literal">Employee</code> class itself contains a collection of type <code class="literal">Employee</code>. By default, <code class="literal">.AutoMap()</code> will only
-traverse a single depth when it encounters recursive instances like this.  Hence, in the
-previous examples, the collection of type <code class="literal">Employee</code> on the <code class="literal">Employee</code> class did not get any of its properties mapped.
-This is done as a safe-guard to prevent stack overflows and all the fun that comes with
-infinite recursion.  Additionally, in most cases, when it comes to Elasticsearch mappings, it is
+traverse a single depth when it encounters recursive instances like this; the collection of type <code class="literal">Employee</code>
+on the <code class="literal">Employee</code> class did not get any of its properties mapped.</p><p>This is done as a safe-guard to prevent stack overflows and all the fun that comes with
+<span class="emphasis"><em>infinite</em></span> recursion.  Additionally, in most cases, when it comes to Elasticsearch mappings, it is
 often an edge case to have deeply nested mappings like this.  However, you may still have
 the need to do this, so you can control the recursion depth of <code class="literal">.AutoMap()</code>.</p><p>Let’s introduce a very simple class, <code class="literal">A</code>, which itself has a property
 Child of type <code class="literal">A</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class A
@@ -1325,237 +800,53 @@ Child of type <code class="literal">A</code>.</p><div class="pre_wrapper"><pre c
 }</pre></div><p>By default, <code class="literal">.AutoMap()</code> only goes as far as depth 1</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
     .Mappings(ms =&gt; ms
         .Map&lt;A&gt;(m =&gt; m.AutoMap())
-    );</pre></div><p>Thus we do not map properties on the second occurrence of our Child property</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var expected = new
-{
-    mappings = new
-    {
-        a = new
-        {
-            properties = new
-            {
-                child = new
-                {
-                    properties = new { },
-                    type = "object"
-                }
-            }
+    );</pre></div><p>Thus we do not map properties on the second occurrence of our Child property</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "mappings": {
+    "a": {
+      "properties": {
+        "child": {
+          "properties": {},
+          "type": "object"
         }
+      }
     }
-};
-
-Expect(expected).WhenSerializing((ICreateIndexRequest)descriptor);</pre></div><p>Now let’s specify a maxRecursion of 3</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var withMaxRecursionDescriptor = new CreateIndexDescriptor("myindex")
+  }
+}</pre></div><p>Now let’s specify a maxRecursion of <code class="literal">3</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var withMaxRecursionDescriptor = new CreateIndexDescriptor("myindex")
     .Mappings(ms =&gt; ms
         .Map&lt;A&gt;(m =&gt; m.AutoMap(3))
-    );</pre></div><p><code class="literal">.AutoMap()</code> has now mapped three levels of our Child property</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var expectedWithMaxRecursion = new
-{
-    mappings = new
-    {
-        a = new
-        {
-            properties = new
-            {
-                child = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        child = new
-                        {
-                            type = "object",
-                            properties = new
-                            {
-                                child = new
-                                {
-                                    type = "object",
-                                    properties = new
-                                    {
-                                        child = new
-                                        {
-                                            type = "object",
-                                            properties = new { }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+    );</pre></div><p><code class="literal">.AutoMap()</code> has now mapped three levels of our Child property</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "mappings": {
+    "a": {
+      "properties": {
+        "child": {
+          "type": "object",
+          "properties": {
+            "child": {
+              "type": "object",
+              "properties": {
+                "child": {
+                  "type": "object",
+                  "properties": {
+                    "child": {
+                      "type": "object",
+                      "properties": {}
                     }
+                  }
                 }
+              }
             }
+          }
         }
+      }
     }
-};
-
-Expect(expectedWithMaxRecursion).WhenSerializing((ICreateIndexRequest)withMaxRecursionDescriptor);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new PutMappingDescriptor&lt;A&gt;().AutoMap();
-
-var expected = new
-{
-    properties = new
-    {
-        child = new
-        {
-            properties = new { },
-            type = "object"
-        }
-    }
-};
-
-Expect(expected).WhenSerializing((IPutMappingRequest)descriptor);
-
-var withMaxRecursionDescriptor = new PutMappingDescriptor&lt;A&gt;().AutoMap(3);
-
-var expectedWithMaxRecursion = new
-{
-    properties = new
-    {
-        child = new
-        {
-            type = "object",
-            properties = new
-            {
-                child = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        child = new
-                        {
-                            type = "object",
-                            properties = new
-                            {
-                                child = new
-                                {
-                                    type = "object",
-                                    properties = new { }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-};
-
-Expect(expectedWithMaxRecursion).WhenSerializing((IPutMappingRequest)withMaxRecursionDescriptor);</pre></div><h2><a id="applying-conventions-through-the-visitor-pattern"></a>Applying conventions through the Visitor pattern<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>It is also possible to apply a transformation on all or specific properties.</p><p><code class="literal">.AutoMap()</code> internally implements the <a class="ulink" href="https://en.wikipedia.org/wiki/Visitor_pattern" target="_top">visitor pattern</a>. The default visitor, <code class="literal">NoopPropertyVisitor</code>,
-does nothing and acts as a blank canvas for you to implement your own visiting methods.</p><p>For instance, let’s create a custom visitor that disables doc values for numeric and boolean types
-(Not really a good idea in practice, but let’s do it anyway for the sake of a clear example.)</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class DisableDocValuesPropertyVisitor : NoopPropertyVisitor
-{
-    public override void Visit(
-        INumberProperty type,
-        PropertyInfo propertyInfo,
-        ElasticsearchPropertyAttributeBase attribute) <a id="CO19-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    {
-        type.DocValues = false;
-    }
-
-    public override void Visit(
-        IBooleanProperty type,
-        PropertyInfo propertyInfo,
-        ElasticsearchPropertyAttributeBase attribute) <a id="CO19-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    {
-        type.DocValues = false;
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Override the <code class="literal">Visit</code> method on <code class="literal">INumberProperty</code> and set <code class="literal">DocValues = false</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Similarily, override the <code class="literal">Visit</code> method on <code class="literal">IBooleanProperty</code> and set <code class="literal">DocValues = false</code>
-</p></td></tr></table></div><p>Now we can pass an instance of our custom visitor to <code class="literal">.AutoMap()</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;Employee&gt;(m =&gt; m.AutoMap(new DisableDocValuesPropertyVisitor()))
-    );</pre></div><p>and any time the client maps a property of the POCO (Employee in this example) as a number (INumberProperty) or boolean (IBooleanProperty),
-it will apply the transformation defined in each <code class="literal">Visit()</code> call respectively, which in this example
-disables <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.3/doc-values.html" target="_top">doc_values</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var expected = new
-{
-    mappings = new
-    {
-        employee = new
-        {
-            properties = new
-            {
-                birthday = new
-                {
-                    type = "date"
-                },
-                employees = new
-                {
-                    properties = new { },
-                    type = "object"
-                },
-                firstName = new
-                {
-                    type = "string"
-                },
-                isManager = new
-                {
-                    doc_values = false,
-                    type = "boolean"
-                },
-                lastName = new
-                {
-                    type = "string"
-                },
-                salary = new
-                {
-                    doc_values = false,
-                    type = "integer"
-                }
-            }
-        }
-    }
-};</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_visiting_on_propertyinfo"></a>Visiting on PropertyInfo<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/mapping/auto-map.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You can even take the visitor approach a step further, and instead of visiting on <code class="literal">IProperty</code> types, visit
-directly on your POCO properties (PropertyInfo). As an example, let’s create a visitor that maps all CLR types
-to an Elasticsearch string (IStringProperty).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class EverythingIsAStringPropertyVisitor : NoopPropertyVisitor
-{
-    public override IProperty Visit(
-        PropertyInfo propertyInfo,
-        ElasticsearchPropertyAttributeBase attribute) =&gt; new StringProperty();
-}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;Employee&gt;(m =&gt; m.AutoMap(new EverythingIsAStringPropertyVisitor()))
-    );
-
-var expected = new
-{
-    mappings = new
-    {
-        employee = new
-        {
-            properties = new
-            {
-                birthday = new
-                {
-                    type = "string"
-                },
-                employees = new
-                {
-                    type = "string"
-                },
-                firstName = new
-                {
-                    type = "string"
-                },
-                isManager = new
-                {
-                    type = "string"
-                },
-                lastName = new
-                {
-                    type = "string"
-                },
-                salary = new
-                {
-                    type = "string"
-                }
-            }
-        }
-    }
-};</pre></div></div></div><div class="navfooter"><span class="prev"><a href="features-inference.html">
+  }
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="mapping.html">
               « 
-              Features Inference</a>
+              Mapping</a>
            
         </span><span class="next">
            
-          <a href="covariant-search-results.html">Covariant Search Results
+          <a href="attribute-mapping.html">Attribute mapping
                »
             </a></span></div>
 <!-- end body -->

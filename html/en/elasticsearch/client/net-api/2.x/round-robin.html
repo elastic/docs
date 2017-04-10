@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Round Robin
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Round robin behaviour
         | Elasticsearch.Net and NEST: the .NET clients [2.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [2.x]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="pinging-revival.html" title="Pinging - Revival" /><link rel="next" href="round-robin-skipping-dead-nodes.html" title="Round Robin - Skipping Dead Nodes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/2.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [2.x]" /><link rel="up" href="api-conventions.html" title="API Conventions" /><link rel="prev" href="ping-on-revival.html" title="Ping on revival" /><link rel="next" href="skipping-dead-nodes.html" title="Skipping dead nodes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/2.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -594,57 +594,64 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [2.x]
-    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net</a></span> » <span class="breadcrumb-node">Round Robin</span></div><div class="navheader"><span class="prev"><a href="pinging-revival.html">
+    </a></span> » <span class="breadcrumb-link"><a href="api-conventions.html">API Conventions</a></span> » <span class="breadcrumb-node">Round robin behaviour</span></div><div class="navheader"><span class="prev"><a href="ping-on-revival.html">
               « 
-              Pinging - Revival</a>
+              Ping on revival</a>
            
         </span><span class="next">
            
-          <a href="round-robin-skipping-dead-nodes.html">Round Robin - Skipping Dead Nodes
+          <a href="skipping-dead-nodes.html">Skipping dead nodes
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="round-robin"></a>Round Robin<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/round-robin/round-robin.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><a class="link" href="connection-pooling.html#sniffing-connection-pool" title="SniffingConnectionPool">Sniffing</a> and <a class="link" href="connection-pooling.html#static-connection-pool" title="StaticConnectionPool">Static</a> connection pools
-round robin over the <code class="literal">live</code> nodes to evenly distribute request load over all known nodes.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_getnext"></a>GetNext<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/round-robin/round-robin.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><code class="literal">GetNext</code> is implemented in a lock free thread safe fashion, meaning each callee gets returned its own cursor to advance
-over the internal list of nodes. This to guarantee each request that needs to fall over tries all the nodes without
-suffering from noisy neighbours advancing a global cursor.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var uris = Enumerable.Range(9200, NumberOfNodes).Select(p =&gt; new Uri("http://localhost:" + p));
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="round-robin"></a>Round robin behaviour<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/round-robin/round-robin.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><a class="link" href="connection-pooling.html#sniffing-connection-pool" title="SniffingConnectionPool">Sniffing</a> and <a class="link" href="connection-pooling.html#static-connection-pool" title="StaticConnectionPool">Static</a> connection pools
+round robin over the <code class="literal">live</code> nodes to evenly distribute requests over all known nodes.</p><h3><a id="_createview"></a>CreateView<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/round-robin/round-robin.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This is the method on an <code class="literal">IConnectionPool</code> that creates a view of all the live nodes in the cluster that the client
+knows about. Different connection pool implementations can decide on the view to return, for example,</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">SingleNodeConnectionPool</code> is only ever seeded with and hence only knows about one node
+</li><li class="listitem">
+<code class="literal">StickyConnectionPool</code> can return a view of live nodes with the same starting position as the last live node a request was made against
+</li><li class="listitem">
+<code class="literal">SniffingConnectionPool</code> returns a view with a changing starting position that wraps over on each call
+</li></ul></div><p><code class="literal">CreateView</code> is implemented in a lock free thread safe fashion, meaning each callee gets returned
+its own cursor to advance over the internal list of nodes. This to guarantee each request that needs to
+fall over tries all the nodes without suffering from noisy neighbours advancing a global cursor.</p><p>Here we have setup a Static connection pool seeded with 10 nodes. We force randomization OnStartup to false
+so that we can test the nodes being returned are in the order we expect them to be.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var uris = Enumerable.Range(9200, NumberOfNodes).Select(p =&gt; new Uri("http://localhost:" + p));
 var staticPool = new StaticConnectionPool(uris, randomize: false);
 var sniffingPool = new SniffingConnectionPool(uris, randomize: false);
+
 this.AssertCreateView(staticPool);
-this.AssertCreateView(sniffingPool);</pre></div><p>Here we have setup a static connection pool seeded with 10 nodes. We force randomization OnStartup to false
-so that we can test the nodes being returned are int the order we expect them to.
-So what order we expect? Imagine the following:</p><p>Thread A calls GetNext first without a local cursor and takes the current from the internal global cursor which is 0.
-Thread B calls GetNext() second without a local cursor and therefor starts at 1.
-After this each thread should walk the nodes in successive order using their local cursor
-e.g Thread A might get 0,1,2,3,5 and thread B will get 1,2,3,4,0.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var startingPositions = Enumerable.Range(0, NumberOfNodes)
+this.AssertCreateView(sniffingPool);</pre></div><p>So what order do we expect? Imagine the following:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Thread A calls <code class="literal">CreateView()</code> first without a local cursor and takes the current value from the internal global cursor, which is <code class="literal">0</code>
+</li><li class="listitem">
+Thread B calls <code class="literal">CreateView()</code> second without a local cursor and therefore starts at <code class="literal">1</code>
+</li><li class="listitem">
+After this, each thread should walk the nodes in successive order using their local cursor. For example, Thread A might
+get 0,1,2,3,5 and thread B will get 1,2,3,4,0.
+</li></ol></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var startingPositions = Enumerable.Range(0, NumberOfNodes)
     .Select(i =&gt; pool.CreateView().First())
     .Select(n =&gt; n.Uri.Port)
     .ToList();
 
 var expectedOrder = Enumerable.Range(9200, NumberOfNodes);
-
-startingPositions.Should().ContainInOrder(expectedOrder);</pre></div><p>What the above code just proved is that each call to GetNext(null) gets assigned the next available node.</p><p>Lets up the ante:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-call get next over <code class="literal">NumberOfNodes * 2</code> threads
+startingPositions.Should().ContainInOrder(expectedOrder);</pre></div><p>What the above code just proved is that each call to <code class="literal">CreateView()</code> gets assigned the next available node.</p><p>Lets up the ante:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Call <code class="literal">CreateView()</code> over <code class="literal">NumberOfNodes * 2</code> threads
 </li><li class="listitem">
-on each thread call getnext <code class="literal">NumberOfNodes * 10</code> times using a local cursor.
-We’ll validate that each thread sees all the nodes and they they wrap over e.g after node 9209
-comes 9200 again
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var threadedStartPositions = new ConcurrentBag&lt;int&gt;();
-
+On each thread, call <code class="literal">CreateView()</code> <code class="literal">NumberOfNodes * 10</code> times using a local cursor.
+</li></ol></div><p>We’ll validate that each thread sees all the nodes and that they wrap over, for example, after node 9209
+comes 9200 again</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var threadedStartPositions = new ConcurrentBag&lt;int&gt;();
 var threads = Enumerable.Range(0, 20)
-    .Select(i =&gt; CreateThreadCallingGetNext(pool, threadedStartPositions))
-    .ToList();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">foreach (var t in threads) t.Start();
+    .Select(i =&gt; CreateThreadCallingCreateView(pool, threadedStartPositions))
+    .ToList();
 
-foreach (var t in threads) t.Join();</pre></div><p>Each thread reported the first node it started off lets make sure we see each node twice as the first node
+foreach (var t in threads) t.Start();
+foreach (var t in threads) t.Join();</pre></div><p>Each thread reported the first node it started off. Let’s make sure we see each node twice
 because we started <code class="literal">NumberOfNodes * 2</code> threads</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var grouped = threadedStartPositions.GroupBy(p =&gt; p).ToList();
-
-grouped.Count().Should().Be(NumberOfNodes);
-
-grouped.Select(p =&gt; p.Count()).Should().OnlyContain(p =&gt; p == 2);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="pinging-revival.html">
+grouped.Count.Should().Be(NumberOfNodes);
+grouped.Select(p =&gt; p.Count()).Should().OnlyContain(p =&gt; p == 2);</pre></div></div><div class="navfooter"><span class="prev"><a href="ping-on-revival.html">
               « 
-              Pinging - Revival</a>
+              Ping on revival</a>
            
         </span><span class="next">
            
-          <a href="round-robin-skipping-dead-nodes.html">Round Robin - Skipping Dead Nodes
+          <a href="skipping-dead-nodes.html">Skipping dead nodes
                »
             </a></span></div>
 <!-- end body -->

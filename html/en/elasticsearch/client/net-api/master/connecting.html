@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Connecting
         | Elasticsearch.Net and NEST: the .NET clients [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="next" href="lifetimes.html" title="Lifetimes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="nest.html" title="NEST - High level client" /><link rel="prev" href="nest-getting-started.html" title="Getting started" /><link rel="next" href="configuration-options.html" title="Configuration options" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -594,224 +594,30 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net</a></span> » <span class="breadcrumb-node">Connecting</span></div><div class="navheader"><span class="prev"><a href="elasticsearch-net.html">
+    </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-node">Connecting</span></div><div class="navheader"><span class="prev"><a href="nest-getting-started.html">
               « 
-              Client Concepts - Elasticsearch.Net</a>
+              Getting started</a>
            
         </span><span class="next">
            
-          <a href="lifetimes.html">Lifetimes
+          <a href="configuration-options.html">Configuration options
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="connecting"></a>Connecting<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Connecting to Elasticsearch with <code class="literal">Elasticsearch.Net</code> is quite easy and there a few options to suit a number of different use cases.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="connection-strategies"></a>Choosing the right Connection Strategy<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you simply new an <code class="literal">ElasticLowLevelClient</code>, it will be a non-failover connection to <code class="literal">http://localhost:9200</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var client = new ElasticLowLevelClient();</pre></div><p>If your Elasticsearch node does not live at <code class="literal">http://localhost:9200</code> but instead lives somewhere else, for example, <code class="literal">http://mynode.example.com:8082/apiKey</code>, then
-you will need to pass in some instance of <code class="literal">IConnectionConfigurationValues</code>.</p><p>The easiest way to do this is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var node = new Uri("http://mynode.example.com:8082/apiKey");
-
-var config = new ConnectionConfiguration(node);
-
-var client = new ElasticLowLevelClient(config);</pre></div><p>This will still be a non-failover connection, meaning if that <code class="literal">node</code> goes down the operation will not be retried on any other nodes in the cluster.</p><p>To get a failover connection we have to pass an <a class="link" href="connection-pooling.html" title="Connection Pooling">IConnectionPool</a> instance instead of a <code class="literal">Uri</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var node = new Uri("http://mynode.example.com:8082/apiKey");
-
-var connectionPool = new SniffingConnectionPool(new[] { node });
-
-var config = new ConnectionConfiguration(connectionPool);
-
-var client = new ElasticLowLevelClient(config);</pre></div><p>Here instead of directly passing <code class="literal">node</code>, we pass a <a class="link" href="connection-pooling.html#sniffing-connection-pool" title="SniffingConnectionPool">SniffingConnectionPool</a>
-which will use our <code class="literal">node</code> to find out the rest of the available cluster nodes.
-Be sure to read more about <a class="link" href="connection-pooling.html" title="Connection Pooling">Connection Pooling and Cluster Failover</a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_configuration_options"></a>Configuration Options<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Besides either passing a <code class="literal">Uri</code> or <code class="literal">IConnectionPool</code> to <code class="literal">ConnectionConfiguration</code>, you can also fluently control many more options. For instance:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var node = new Uri("http://mynode.example.com:8082/apiKey");
-
-var connectionPool = new SniffingConnectionPool(new[] { node });
-
-var config = new ConnectionConfiguration(connectionPool)
-    .DisableDirectStreaming() <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    .BasicAuthentication("user", "pass")
-    .RequestTimeout(TimeSpan.FromSeconds(5));</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Additional options are fluent method calls on <code class="literal">ConnectionConfiguration</code>
-</p></td></tr></table></div><p>The following is a list of available connection configuration options:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var config = new ConnectionConfiguration()
-    .DisableAutomaticProxyDetection() <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    .EnableHttpCompression() <a id="CO2-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    .DisableDirectStreaming(); <a id="CO2-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-
-var client = new ElasticLowLevelClient(config);
-
-var result = client.Search&lt;SearchResponse&lt;object&gt;&gt;(new { size = 12 });</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Disable automatic proxy detection. When called, defaults to <code class="literal">true</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Enable compressed request and responses from Elasticsearch (Note that nodes need to be configured to allow this. See the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/modules-http.html" target="_top">http module settings</a> for more info).
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-By default responses are deserialized directly from the response stream to the object you tell it to. For debugging purposes, it can be very useful to keep a copy of the raw response on the result object, which is what calling this method will do.
-</p></td></tr></table></div><p><code class="literal">.ResponseBodyInBytes</code> will only have a value if the client configuration has <code class="literal">DisableDirectStreaming</code> set</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var raw = result.ResponseBodyInBytes;</pre></div><p>Please note that using <code class="literal">.DisableDirectStreaming</code> only makes sense if you need the mapped response <span class="strong"><strong>and</strong></span> the raw response <span class="emphasis"><em>at the same time</em></span>.
-If you need only a <code class="literal">string</code> response simply call</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var stringResult = client.Search&lt;string&gt;(new { });</pre></div><p>and similarly, if you need only a <code class="literal">byte[]</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var byteResult = client.Search&lt;byte[]&gt;(new { });</pre></div><p>other configuration options</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">config = config
-    .GlobalQueryStringParameters(new NameValueCollection()) <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    .Proxy(new Uri("http://myproxy"), "username", "pass") <a id="CO3-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    .RequestTimeout(TimeSpan.FromSeconds(4)) <a id="CO3-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-    .ThrowExceptions() <a id="CO3-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-    .PrettyJson() <a id="CO3-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
-    .BasicAuthentication("username", "password");</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Allows you to set querystring parameters that have to be added to every request. For instance, if you use a hosted elasticserch provider, and you need need to pass an <code class="literal">apiKey</code> parameter onto every request.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Sets proxy information on the connection.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-<a id="request-timeout"></a> Sets the global maximum time a connection may take. Please note that this is the request timeout, the builtin .NET <code class="literal">WebRequest</code> has no way to set connection timeouts (see <a class="ulink" href="http://msdn.microsoft.com/en-us/library/system.net.httpwebrequest.timeout(v=vs.110).aspx" target="_top">the MSDN documentation on <code class="literal">HttpWebRequest.Timeout</code> Property</a>).
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-As an alternative to the C/go like error checking on <code class="literal">response.IsValid</code>, you can instead tell the client to <a class="link" href="connecting.html#thrown-exceptions" title="Exceptions">throw exceptions</a>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-forces all serialization to be indented and appends <code class="literal">pretty=true</code> to all the requests so that the responses are indented as well
-</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Basic authentication credentials can alternatively be specified on the node URI directly:</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var uri = new Uri("http://username:password@localhost:9200");
-
-var settings = new ConnectionConfiguration(uri);</pre></div><p>…but this may become tedious when using connection pooling with multiple nodes.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="thrown-exceptions"></a>Exceptions<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>There are three categories of exceptions that may be thrown:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">ElasticsearchClientException</code>
-</span></dt><dd>
-These are known exceptions, either an exception that occurred in the request pipeline
-(such as max retries or timeout reached, bad authentication, etc…) or Elasticsearch itself returned an error (could
-not parse the request, bad query, missing field, etc…). If it is an Elasticsearch error, the <code class="literal">ServerError</code> property
-on the response will contain the the actual error that was returned.  The inner exception will always contain the
-root causing exception.
-</dd><dt><span class="term">
-<code class="literal">UnexpectedElasticsearchClientException</code>
-</span></dt><dd>
-These are unknown exceptions, for instance a response from Elasticsearch not
-properly deserialized.  These are sometimes bugs and <a class="ulink" href="https://github.com/elastic/elasticsearch-net/issues" target="_top">should be reported</a>. This exception also inherits from <code class="literal">ElasticsearchClientException</code>
-so an additional catch block isn’t necessary, but can be helpful in distinguishing between the two.
-</dd><dt><span class="term">
-Development time exceptions
-</span></dt><dd>
-These are CLR exceptions like <code class="literal">ArgumentException</code>, <code class="literal">ArgumentOutOfRangeException</code>, etc.
-that are thrown when an API in the client is misused.  The <code class="literal">.ThrowExceptions()</code> setting has no bearing on these as
-they will always be thrown, and also should not be handled by a consumer.
-</dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_onrequestcompleted"></a>OnRequestCompleted<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You can pass a callback of type <code class="literal">Action&lt;IApiCallDetails&gt;</code> that can eavesdrop every time a response (good or bad) is created.
-If you have complex logging needs this is a good place to add that in.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var counter = 0;
-
-var client = TestClient.GetInMemoryClient(s =&gt; s.OnRequestCompleted(r =&gt; counter++));
-
-client.RootNodeInfo();
-
-counter.Should().Be(1);
-
-client.RootNodeInfoAsync();
-
-counter.Should().Be(2);</pre></div><p><code class="literal">OnRequestCompleted</code> is called even when an exception is thrown</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var counter = 0;
-
-var client = TestClient.GetFixedReturnClient(new { }, 500, s =&gt; s
-    .ThrowExceptions()
-    .OnRequestCompleted(r =&gt; counter++)
-);
-
-Assert.Throws&lt;ElasticsearchClientException&gt;(() =&gt; client.RootNodeInfo());
-
-counter.Should().Be(1);
-
-Assert.ThrowsAsync&lt;ElasticsearchClientException&gt;(() =&gt; client.RootNodeInfoAsync());
-
-counter.Should().Be(2);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="complex-logging"></a>Complex logging with OnRequestCompleted<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Here’s an example of using <code class="literal">OnRequestCompleted()</code> for complex logging. Remember, if you would also like
-to capture the request and/or response bytes, you also need to set <code class="literal">.DisableDirectStreaming()</code> to <code class="literal">true</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var list = new List&lt;string&gt;();
-
-var connectionPool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
-
-var settings = new ConnectionSettings(connectionPool, new InMemoryConnection()) <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    .DefaultIndex("default-index")
-    .DisableDirectStreaming()
-    .OnRequestCompleted(response =&gt;
-    {
-        // log out the request and the request body, if one exists for the type of request
-        if (response.RequestBodyInBytes != null)
-        {
-            list.Add(
-                $"{response.HttpMethod} {response.Uri} \n" +
-                $"{Encoding.UTF8.GetString(response.RequestBodyInBytes)}");
-        }
-        else
-        {
-            list.Add($"{response.HttpMethod} {response.Uri}");
-        }
-
-        // log out the response and the response body, if one exists for the type of response
-        if (response.ResponseBodyInBytes != null)
-        {
-            list.Add($"Status: {response.HttpStatusCode}\n" +
-                     $"{Encoding.UTF8.GetString(response.ResponseBodyInBytes)}\n" +
-                     $"{new string('-', 30)}\n");
-        }
-        else
-        {
-            list.Add($"Status: {response.HttpStatusCode}\n" +
-                     $"{new string('-', 30)}\n");
-        }
-    });
-
-var client = new ElasticClient(settings);
-
-var syncResponse = client.Search&lt;object&gt;(s =&gt; s
-    .AllTypes()
-    .AllIndices()
-    .Scroll("2m")
-    .Sort(ss =&gt; ss
-        .Ascending(SortSpecialField.DocumentIndexOrder)
-    )
-);
-
-list.Count.Should().Be(2);
-
-var asyncResponse = await client.SearchAsync&lt;object&gt;(s =&gt; s
-    .AllTypes()
-    .AllIndices()
-    .Scroll("2m")
-    .Sort(ss =&gt; ss
-        .Ascending(SortSpecialField.DocumentIndexOrder)
-    )
-);
-
-list.Count.Should().Be(4);
-
-list.ShouldAllBeEquivalentTo(new[]
-{
-    "POST http://localhost:9200/_search?scroll=2m \n{\"sort\":[{\"_doc\":{\"order\":\"asc\"}}]}",
-    "Status: 200\n------------------------------\n",
-    "POST http://localhost:9200/_search?scroll=2m \n{\"sort\":[{\"_doc\":{\"order\":\"asc\"}}]}",
-    "Status: 200\n------------------------------\n"
-});</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Here we use <code class="literal">InMemoryConnection</code>; in reality you would use another type of <code class="literal">IConnection</code> that actually makes a request.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-ssl"></a>Configuring SSL<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>SSL can be configured via the <code class="literal">ServerCertificateValidationCallback</code> property on either <code class="literal">ServerPointManager</code> or <code class="literal">HttpClientHandler</code>
-depending on which version of the .NET framework is in use.</p><p>On the full .NET Framework, this must be done outside of the client using .NET’s built-in
- <a class="ulink" href="http://msdn.microsoft.com/en-us/library/system.net.servicepointmanager%28v=vs.110%29.aspx" target="_top">ServicePointManager</a> class:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, errors) =&gt; true;</pre></div><p>The bare minimum to make .NET accept self-signed SSL certs that are not in the Windows CA store would be to have the callback simply return <code class="literal">true</code>.</p><p>However, this will accept <span class="strong"><strong>all</strong></span> requests from the AppDomain to untrusted SSL sites,
-therefore <span class="strong"><strong>we recommend doing some minimal introspection on the passed in certificate.</strong></span></p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_overriding_json_net_settings"></a>Overriding Json.NET settings<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/connecting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Overriding the default Json.NET behaviour in NEST is an expert behavior but if you need to get to the nitty gritty, this can be really useful.</p><p>The easiest way is to create an instance of <code class="literal">SerializerFactory</code> that allows you to register a modification callback
-in the constructor</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
-
-var connectionSettings = new ConnectionSettings(
-    pool,
-    new HttpConnection(),
-    new SerializerFactory((jsonSettings, nestSettings) =&gt; jsonSettings.PreserveReferencesHandling = PreserveReferencesHandling.All));
-
-var client = new ElasticClient(connectionSettings);</pre></div><p>A more involved and explicit way would be to implement your own JsonNetSerializer subclass.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>this is subject to change in the next major release. NEST relies heavily on stateful deserializers (that have access to the original
-request) for specialized features such a covariant search results. This requirement leaks into this abstraction.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyJsonNetSerializer : JsonNetSerializer
-{
-    public MyJsonNetSerializer(IConnectionSettingsValues settings)
-        : base(settings, (s, csv) =&gt; s.PreserveReferencesHandling = PreserveReferencesHandling.All) <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    {
-        OverwriteDefaultSerializers((s, cvs) =&gt; s.PreserveReferencesHandling = PreserveReferencesHandling.All); <a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    }
-
-    public int CallToModify { get; set; } = 0;
-
-    public int CallToContractConverter { get; set; } = 0;
-
-    protected override IList&lt;Func&lt;Type, JsonConverter&gt;&gt; ContractConverters =&gt; new List&lt;Func&lt;Type, JsonConverter&gt;&gt; <a id="CO5-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-    {
-        t =&gt; {
-            CallToContractConverter++;
-            return null;
-        }
-    };
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Call this constructor if you only need access to <code class="literal">JsonSerializerSettings</code> without local state (properties on MyJsonNetSerializer)
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Call OverwriteDefaultSerializers if you need access to <code class="literal">JsonSerializerSettings</code> with local state
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-You can inject contract resolved converters by implementing the ContractConverters property. This can be much faster then registering them on <code class="literal">JsonSerializerSettings.Converters</code>
-</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="elasticsearch-net.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="connecting"></a>Connecting<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/high-level.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>NEST uses sensible defaults for connecting to and interacting with an Elasticsearch cluster but provides numerous
+configuration options and components to change this behaviour</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="configuration-options.html" title="Configuration options">Configuration options</a>
+</li><li class="listitem">
+<a class="link" href="connection-pooling.html" title="Connection pools">Connection pools</a>
+</li><li class="listitem">
+<a class="link" href="modifying-default-connection.html" title="Modifying the default connection">Modifying the default connection</a>
+</li><li class="listitem">
+<a class="link" href="working-with-certificates.html" title="Working with certificates">Working with certificates</a>
+</li></ul></div></div><div class="navfooter"><span class="prev"><a href="nest-getting-started.html">
               « 
-              Client Concepts - Elasticsearch.Net</a>
+              Getting started</a>
            
         </span><span class="next">
            
-          <a href="lifetimes.html">Lifetimes
+          <a href="configuration-options.html">Configuration options
                »
             </a></span></div>
 <!-- end body -->

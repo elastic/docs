@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Sniffing periodically
         | Elasticsearch.Net and NEST: the .NET clients [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="elasticsearch-net.html" title="Client Concepts - Elasticsearch.Net" /><link rel="prev" href="sniffing-on-connection-failure.html" title="Sniffing on connection failure" /><link rel="next" href="sniffing-role-detection.html" title="Sniffing role detection" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="sniffing-behaviour.html" title="Sniffing behaviour" /><link rel="prev" href="sniffing-on-connection-failure.html" title="Sniffing on connection failure" /><link rel="next" href="sniffing-role-detection.html" title="Sniffing role detection" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -594,7 +594,7 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="elasticsearch-net.html">Client Concepts - Elasticsearch.Net</a></span> » <span class="breadcrumb-node">Sniffing periodically</span></div><div class="navheader"><span class="prev"><a href="sniffing-on-connection-failure.html">
+    </a></span> » <span class="breadcrumb-link"><a href="api-conventions.html">API Conventions</a></span> » <span class="breadcrumb-link"><a href="sniffing-behaviour.html">Sniffing behaviour</a></span> » <span class="breadcrumb-node">Sniffing periodically</span></div><div class="navheader"><span class="prev"><a href="sniffing-on-connection-failure.html">
               « 
               Sniffing on connection failure</a>
            
@@ -602,10 +602,11 @@ Not what you want? See the
            
           <a href="sniffing-role-detection.html">Sniffing role detection
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="sniffing-periodically"></a>Sniffing periodically<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/connection-pooling/sniffing/on-stale-cluster-state.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Connection pools that return true for <code class="literal">SupportsReseeding</code> can be configured to sniff periodically.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="sniffing-periodically"></a>Sniffing periodically<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/connection-pooling/sniffing/on-stale-cluster-state.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Connection pools that return true for <code class="literal">SupportsReseeding</code> can be configured to sniff periodically.
 In addition to sniffing on startup and sniffing on failures, sniffing periodically can benefit scenarios where
-clusters are often scaled horizontally during peak hours. An application might have a healthy view of a subset of the nodes
-but without sniffing periodically it will never find the nodes that have been added to help out with load</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+clusters are often scaled horizontally during peak hours. An application might have a healthy view of a subset of the nodes,
+but without sniffing periodically, it will never find the nodes that have been added as part of horizontal scaling,
+to help out with load</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
     .MasterEligible(9202, 9203, 9204)
     .ClientCalls(r =&gt; r.SucceedAlways())
@@ -641,19 +642,23 @@ but without sniffing periodically it will never find the nodes that have been ad
         { HealthyResponse, 9200 },
         { pool =&gt; pool.Nodes.Count.Should().Be(10) }
     }
-);</pre></div><p>Now let’s forward the clock 31 minutes, our sniff lifespan should now go state
-and the first call should do a sniff which discovered we scaled up to a 100 nodes!</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit.ChangeTime(d =&gt; d.AddMinutes(31));</pre></div><p>a sniff is done first and it prefers the first node master node</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceCalls(
+);</pre></div><p>Now let’s forward the clock 31 minutes. Our sniff lifespan should now go stale
+and the first call should do a sniff, which discovers we’ve scaled up to 100 nodes!</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit.ChangeTime(d =&gt; d.AddMinutes(31));
+
+audit = await audit.TraceCalls(
     new ClientCall {
-{ SniffOnStaleCluster },
+        { SniffOnStaleCluster },
         { SniffSuccess, 9202 },
         { HealthyResponse, 9201 },
         { pool =&gt; pool.Nodes.Count.Should().Be(100) }
     }
-);
+);</pre></div><p>If we move the clock forward again by another 31 minutes, we now discover that we’ve scaled back
+down to 10 nodes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit.ChangeTime(d =&gt; d.AddMinutes(31));
 
-audit.ChangeTime(d =&gt; d.AddMinutes(31));</pre></div><p>a sniff is done first and it prefers the first node master node</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceCalls(
+audit = await audit.TraceCalls(
     new ClientCall {
-{ SniffOnStaleCluster },
+
+        { SniffOnStaleCluster },
         { SniffSuccess, 9202 },
         { HealthyResponse, 9200 },
         { pool =&gt; pool.Nodes.Count.Should().Be(10) }

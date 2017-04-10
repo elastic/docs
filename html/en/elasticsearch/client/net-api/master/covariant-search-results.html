@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Covariant Search Results
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Covariant search results
         | Elasticsearch.Net and NEST: the .NET clients [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="nest.html" title="Client Concepts - NEST" /><link rel="prev" href="auto-map.html" title="Auto mapping properties" /><link rel="next" href="common-options.html" title="Common Options" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="search.html" title="Search" /><link rel="prev" href="returned-fields.html" title="Selecting fields to return" /><link rel="next" href="aggregations.html" title="Aggregations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/.Net/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -594,15 +594,15 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="nest.html">Client Concepts - NEST</a></span> » <span class="breadcrumb-node">Covariant Search Results</span></div><div class="navheader"><span class="prev"><a href="auto-map.html">
+    </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-link"><a href="search.html">Search</a></span> » <span class="breadcrumb-node">Covariant search results</span></div><div class="navheader"><span class="prev"><a href="returned-fields.html">
               « 
-              Auto mapping properties</a>
+              Selecting fields to return</a>
            
         </span><span class="next">
            
-          <a href="common-options.html">Common Options
+          <a href="aggregations.html">Aggregations
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="covariant-search-results"></a>Covariant Search Results<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/covariant-hits/covariant-search-results.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>NEST directly supports returning covariant result sets.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="covariant-search-results"></a>Covariant search results<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/covariant-hits/covariant-search-results.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>NEST directly supports returning covariant result sets.
 Meaning a result can be typed to an interface or base class
 but the actual instance type of the result can be that of the subclass directly</p><p>Let’s look at an example; Imagine we want to search over multiple types that all implement
 <code class="literal">ISearchResult</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public interface ISearchResult
@@ -624,26 +624,24 @@ public class C : ISearchResult
 {
     public string Name { get; set; }
     public int PropertyOnC { get; set; }
-}</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_using_types"></a>Using Types<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/covariant-hits/covariant-search-results.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The most straightforward way to search over multiple types is to
+}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_types"></a>Using types<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/covariant-hits/covariant-search-results.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The most straightforward way to search over multiple types is to
 type the response to the parent interface or base class
 and pass the actual types we want to search over using <code class="literal">.Type()</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var result = this._client.Search&lt;ISearchResult&gt;(s =&gt; s
     .Type(Types.Type(typeof(A), typeof(B), typeof(C)))
     .Size(100)
 );</pre></div><p>NEST will translate this to a search over <code class="literal">/index/a,b,c/_search</code>;
 hits that have <code class="literal">"_type" : "a"</code> will be serialized to <code class="literal">A</code> and so forth</p><p>Here we assume our response is valid and that we received the 100 documents
-we are expecting. Remember <code class="literal">result.Documents</code> is an <code class="literal">IEnumerable&lt;ISearchResult&gt;</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">result.ShouldBeValid();
-
-result.Documents.Count().Should().Be(100);</pre></div><p>To prove the returned result set is covariant we filter the documents based on their
+we are expecting. Remember <code class="literal">result.Documents</code> is an <code class="literal">IReadOnlyCollection&lt;ISearchResult&gt;</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">result.ShouldBeValid();
+result.Documents.Count.Should().Be(100);</pre></div><p>To prove the returned result set is covariant we filter the documents based on their
 actual type and assert the returned subsets are the expected sizes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var aDocuments = result.Documents.OfType&lt;A&gt;();
-
 var bDocuments = result.Documents.OfType&lt;B&gt;();
 var cDocuments = result.Documents.OfType&lt;C&gt;();
+
 aDocuments.Count().Should().Be(25);
 bDocuments.Count().Should().Be(25);
 cDocuments.Count().Should().Be(50);</pre></div><p>and assume that properties that only exist on the subclass itself are properly filled</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">aDocuments.Should().OnlyContain(a =&gt; a.PropertyOnA &gt; 0);
-
 bDocuments.Should().OnlyContain(a =&gt; a.PropertyOnB &gt; 0);
-cDocuments.Should().OnlyContain(a =&gt; a.PropertyOnC &gt; 0);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_using_concretetypeselector"></a>Using ConcreteTypeSelector<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/covariant-hits/covariant-search-results.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A more low level approach is to inspect the hit yourself and determine the CLR type to deserialize to</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var result = this._client.Search&lt;ISearchResult&gt;(s =&gt; s
+cDocuments.Should().OnlyContain(a =&gt; a.PropertyOnC &gt; 0);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_concretetypeselector"></a>Using ConcreteTypeSelector<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/covariant-hits/covariant-search-results.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A more low level approach is to inspect the hit yourself and determine the CLR type to deserialize to</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var result = this._client.Search&lt;ISearchResult&gt;(s =&gt; s
     .ConcreteTypeSelector((d, h) =&gt; h.Type == "a" ? typeof(A) : h.Type == "b" ? typeof(B) : typeof(C))
     .Size(100)
 );</pre></div><p>here for each hit we’ll call the delegate passed to <code class="literal">ConcreteTypeSelector</code> where</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
@@ -651,45 +649,31 @@ cDocuments.Should().OnlyContain(a =&gt; a.PropertyOnC &gt; 0);</pre></div></div>
 </li><li class="listitem">
 a typed <code class="literal">h</code> which represents the encapsulating hit of the source i.e. <code class="literal">Hit&lt;dynamic&gt;</code>
 </li></ul></div><p>Here we assume our response is valid and that we received the 100 documents
-we are expecting. Remember <code class="literal">result.Documents</code> is an <code class="literal">IEnumerable&lt;ISearchResult&gt;</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">result.ShouldBeValid();
-
-result.Documents.Count().Should().Be(100);</pre></div><p>To prove the returned result set is covariant we filter the documents based on their
+we are expecting. Remember <code class="literal">result.Documents</code> is an <code class="literal">IReadOnlyCollection&lt;ISearchResult&gt;</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">result.ShouldBeValid();
+result.Documents.Count.Should().Be(100);</pre></div><p>To prove the returned result set is covariant we filter the documents based on their
 actual type and assert the returned subsets are the expected sizes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var aDocuments = result.Documents.OfType&lt;A&gt;();
-
 var bDocuments = result.Documents.OfType&lt;B&gt;();
-
 var cDocuments = result.Documents.OfType&lt;C&gt;();
 
 aDocuments.Count().Should().Be(25);
-
 bDocuments.Count().Should().Be(25);
-
 cDocuments.Count().Should().Be(50);</pre></div><p>and assume that properties that only exist on the subclass itself are properly filled</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">aDocuments.Should().OnlyContain(a =&gt; a.PropertyOnA &gt; 0);
-
 bDocuments.Should().OnlyContain(a =&gt; a.PropertyOnB &gt; 0);
-
-cDocuments.Should().OnlyContain(a =&gt; a.PropertyOnC &gt; 0);</pre></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_using_covarianttypes"></a>Using CovariantTypes()<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/covariant-hits/covariant-search-results.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Scroll API is a continuation of the previous Search example so Types() are lost.
+cDocuments.Should().OnlyContain(a =&gt; a.PropertyOnC &gt; 0);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_covarianttypes"></a>Using CovariantTypes<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/covariant-hits/covariant-search-results.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Scroll API is a continuation of the previous Search example so Types() are lost.
 You can hint at the types using <code class="literal">.CovariantTypes()</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var result = this._client.Scroll&lt;ISearchResult&gt;(TimeSpan.FromMinutes(60), "scrollId", s =&gt; s
     .CovariantTypes(Types.Type(typeof(A), typeof(B), typeof(C)))
 );</pre></div><p>NEST will translate this to a search over <code class="literal">/index/a,b,c/_search</code>;
 hits that have <code class="literal">"_type" : "a"</code> will be serialized to <code class="literal">A</code> and so forth</p><p>Here we assume our response is valid and that we received the 100 documents
-we are expecting. Remember <code class="literal">result.Documents</code> is an <code class="literal">IEnumerable&lt;ISearchResult&gt;</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">result.ShouldBeValid();
-
-result.Documents.Count().Should().Be(100);</pre></div><p>To prove the returned result set is covariant we filter the documents based on their
+we are expecting. Remember <code class="literal">result.Documents</code> is an <code class="literal">IReadOnlyCollection&lt;ISearchResult&gt;</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">result.ShouldBeValid();
+result.Documents.Count.Should().Be(100);</pre></div><p>To prove the returned result set is covariant we filter the documents based on their
 actual type and assert the returned subsets are the expected sizes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var aDocuments = result.Documents.OfType&lt;A&gt;();
-
 var bDocuments = result.Documents.OfType&lt;B&gt;();
-
 var cDocuments = result.Documents.OfType&lt;C&gt;();
 
 aDocuments.Count().Should().Be(25);
-
 bDocuments.Count().Should().Be(25);
-
 cDocuments.Count().Should().Be(50);</pre></div><p>and assume that properties that only exist on the subclass itself are properly filled</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">aDocuments.Should().OnlyContain(a =&gt; a.PropertyOnA &gt; 0);
-
 bDocuments.Should().OnlyContain(a =&gt; a.PropertyOnB &gt; 0);
-
 cDocuments.Should().OnlyContain(a =&gt; a.PropertyOnC &gt; 0);</pre></div><p>The more low level concrete type selector can also be specified on scroll</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var result = this._client.Scroll&lt;ISearchResult&gt;(TimeSpan.FromMinutes(1), "scrollid", s =&gt; s
     .ConcreteTypeSelector((d, h) =&gt; h.Type == "a" ? typeof(A) : h.Type == "b" ? typeof(B) : typeof(C))
 );</pre></div><p>As before, within the delegate passed to <code class="literal">.ConcreteTypeSelector</code></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
@@ -697,30 +681,23 @@ cDocuments.Should().OnlyContain(a =&gt; a.PropertyOnC &gt; 0);</pre></div><p>The
 </li><li class="listitem">
 <code class="literal">h</code> is the encapsulating typed hit
 </li></ul></div><p>Here we assume our response is valid and that we received the 100 documents
-we are expecting. Remember <code class="literal">result.Documents</code> is an <code class="literal">IEnumerable&lt;ISearchResult&gt;</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">result.ShouldBeValid();
-
-result.Documents.Count().Should().Be(100);</pre></div><p>To prove the returned result set is covariant we filter the documents based on their
+we are expecting. Remember <code class="literal">result.Documents</code> is an <code class="literal">IReadOnlyCollection&lt;ISearchResult&gt;</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">result.ShouldBeValid();
+result.Documents.Count.Should().Be(100);</pre></div><p>To prove the returned result set is covariant we filter the documents based on their
 actual type and assert the returned subsets are the expected sizes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var aDocuments = result.Documents.OfType&lt;A&gt;();
-
 var bDocuments = result.Documents.OfType&lt;B&gt;();
-
 var cDocuments = result.Documents.OfType&lt;C&gt;();
 
 aDocuments.Count().Should().Be(25);
-
 bDocuments.Count().Should().Be(25);
-
 cDocuments.Count().Should().Be(50);</pre></div><p>and assume that properties that only exist on the subclass itself are properly filled</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">aDocuments.Should().OnlyContain(a =&gt; a.PropertyOnA &gt; 0);
-
 bDocuments.Should().OnlyContain(a =&gt; a.PropertyOnB &gt; 0);
-
-cDocuments.Should().OnlyContain(a =&gt; a.PropertyOnC &gt; 0);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="auto-map.html">
+cDocuments.Should().OnlyContain(a =&gt; a.PropertyOnC &gt; 0);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="returned-fields.html">
               « 
-              Auto mapping properties</a>
+              Selecting fields to return</a>
            
         </span><span class="next">
            
-          <a href="common-options.html">Common Options
+          <a href="aggregations.html">Aggregations
                »
             </a></span></div>
 <!-- end body -->
