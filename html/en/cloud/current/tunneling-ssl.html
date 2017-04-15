@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Tunneling SSL: When Your Client Supports Only HTTP
         | Elastic Cloud Documentation
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Documentation" /><link rel="up" href="security.html" title="Securing your Cluster" /><link rel="prev" href="security.html" title="Securing your Cluster" /><link rel="next" href="ec-monitoring.html" title="Keeping Your Cluster Healthy" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Cloud/Reference" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Documentation" /><link rel="up" href="security.html" title="Securing your Cluster" /><link rel="prev" href="security.html" title="Securing your Cluster" /><link rel="next" href="_tunneling_with_stunnel.html" title="Tunneling With stunnel" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Cloud/Reference" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -595,47 +595,15 @@
            
         </span><span class="next">
            
-          <a href="ec-monitoring.html">Keeping Your Cluster Healthy
+          <a href="_tunneling_with_stunnel.html">Tunneling With stunnel
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="tunneling-ssl"></a>Tunneling SSL: When Your Client Supports Only HTTP</h2></div></div></div><p>While Elastic  recommends always using SSL/HTTPS, not all clients support HTTPS. Also, some clients have poor support, because they do not actually verify the certificate, for example.</p><p>To work around this, you can use a proxy or a tunnel. The application without HTTPS support can connect to a local endpoint using HTTP, which in turn connects to a Elastic Cloud cluster using HTTPS.</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_tunneling_with_stunnel"></a>Tunneling With stunnel</h2></div></div></div><p><a class="ulink" href="https://www.stunnel.org/index.html" target="_top">stunnel</a> is tool that can be used to provide secure encrypted connections for clients or servers that do not speak TLS or SSL natively.</p><p>We can use stunnel to bind to a port on localhost (e.g., 19200), which in turn will connect to Elastic Cloud.</p><p>Here is a sample configuration to achieve this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ini">; Actually verify the certificate
-verify = 2
-; Works for Ubuntu. Adapt to your system.
-CApath = /etc/ssl/certs
-
-pid = /var/run/stunnel4/found-us-east-1.pid
-
-; Log level. WARN=4, DEBUG=7
-debug = 4
-
-[foundcluster]
-; Service that tunnels traffic to a single region's endpoint. This configuration is not cluster specific.
-accept = 19200
-client = yes
-; Don't cache DNS. IPs of Elastic Cloud's load balancers may change.
-delay = yes
-; Replace us-east-1 with your region. Valid hosts:
-; - proxy-v1-us-east-1.foundcluster.com
-; - proxy-v1-us-west-1.foundcluster.com
-; - proxy-v1-eu-west-1.foundcluster.com
-; - proxy-v1-sa-east-1.foundcluster.com
-; - proxy-v1-ap-northeast-1.foundcluster.com
-; - proxy-v1-ap-southeast-1.foundcluster.com
-
-connect = proxy-v1-us-east-1.foundcluster.com:9243</pre></div><p>To use this with Ubuntu:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Install the <code class="literal">stunnel4</code>-package, e.g. <code class="literal">apt-get install stunnel4</code>.
-</li><li class="listitem">
-Put the above file in <code class="literal">/etc/stunnel/found-us-east-1.conf</code>
-</li><li class="listitem">
-Make sure <code class="literal">/etc/default/stunnel4</code> contains <code class="literal">ENABLED=1</code>
-</li><li class="listitem">
-Run <code class="literal">service stunnel4 start</code>
-</li></ul></div><p>Then you will have a service that listens to port 19200 and forwards traffic to <code class="literal">proxy-v1-us-east-1.foundcluster.com:9243</code>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_connecting"></a>Connecting</h2></div></div></div><p>Now we have a service that listens to port 19200 and tunnels traffic to Elastic Cloud, while making sure the traffic is encrypted and that the certificate is valid.</p><p>However, if you try to send HTTP requests to <code class="literal">http://localhost:19200</code>, no information is forwarded about what cluster requests must be routed to.</p><p>Typically, endpoints are on the form <code class="literal">[cluster id]-[region].foundcluster.com</code>. The hostname is what specifies what cluster requests will be routed to.</p><p>A compatible hostname must be sent to Elastic Cloud, but we still want to connect to <code class="literal">127.0.0.1</code>.</p><p>To do this, we can use <a class="ulink" href="https://github.com/elastic/hipio" target="_top">ip.es.io</a>. By connecting to <code class="literal">http://[your-cluster-id]-[region].127.0.0.1.ip.es.io:19200</code>, e.g. <code class="literal">http://7893883873a705aec69e2942901f20d7b1e28dec-us-east-1.127.0.0.1.ip.es.io</code>, the hostname will resolve to <code class="literal">127.0.0.1</code> and the hostname with the cluster id will be sent to Elastic Cloud.</p><p>Elastic Cloud then has sufficient information to route requests to your cluster.</p><p>While this hostname is not matching that of the SSL certificate (which matches *.foundcluster.com), it is stunnel that is terminating the SSL-connection. stunnel knows nothing about HTTP, and the client connecting to 19200 is completely unaware that traffic is being tunneled through SSL.</p><p>Note that stunnel will establish a new SSL-connection for every client that connects to it. It is important to use persistent connections, even though you are connecting to localhost. If not, you will be spending a lot of time establishing SSL-connections!</p></div></div><div class="navfooter"><span class="prev"><a href="security.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="tunneling-ssl"></a>Tunneling SSL: When Your Client Supports Only HTTP</h2></div></div></div><p>While Elastic  recommends always using SSL/HTTPS, not all clients support HTTPS. Also, some clients have poor support, because they do not actually verify the certificate, for example.</p><p>To work around this, you can use a proxy or a tunnel. The application without HTTPS support can connect to a local endpoint using HTTP, which in turn connects to a Elastic Cloud cluster using HTTPS.</p></div><div class="navfooter"><span class="prev"><a href="security.html">
               « 
               Securing your Cluster</a>
            
         </span><span class="next">
            
-          <a href="ec-monitoring.html">Keeping Your Cluster Healthy
+          <a href="_tunneling_with_stunnel.html">Tunneling With stunnel
                »
             </a></span></div>
 <!-- end body -->
