@@ -821,7 +821,106 @@ greater than <code class="literal">0</code>.</p><div class="pre_wrapper"><pre cl
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/10.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_highlight_query"></a>Highlight query<a href="https://github.com/elastic/elasticsearch/edit/5.3/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It is also possible to highlight against a query other than the search
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/10.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fragmenter"></a>Fragmenter<a href="https://github.com/elastic/elasticsearch/edit/5.3/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Fragmenter can control how text should be broken up in highlight snippets.
+However, this option is applicable only for the Plain Highlighter.
+There are two options:</p><div class="horizontal"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">simple</code>
+</p>
+</td><td valign="top">
+<p>
+Breaks up text into same sized fragments.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">span</code>
+</p>
+</td><td valign="top">
+<p>
+Same as the simple fragmenter, but tries not to break up text between highlighted terms (this is applicable when using phrase like queries). This is the default.
+</p>
+</td></tr></tbody></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/tweet/_search
+{
+    "query" : {
+        "match_phrase": { "message": "number 1" }
+    },
+    "highlight" : {
+        "fields" : {
+            "message" : {
+                "fragment_size" : 15,
+                "number_of_fragments" : 3,
+                "fragmenter": "simple"
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/11.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    ...
+    "hits": {
+        "total": 1,
+        "max_score": 1.4818809,
+        "hits": [
+            {
+                "_index": "twitter",
+                "_type": "tweet",
+                "_id": "1",
+                "_score": 1.4818809,
+                "_source": {
+                    "user": "test",
+                    "message": "some message with the number 1",
+                    "date": "2009-11-15T14:12:12",
+                    "likes": 1
+                },
+                "highlight": {
+                    "message": [
+                        " with the &lt;em&gt;number&lt;/em&gt;",
+                        " &lt;em&gt;1&lt;/em&gt;"
+                    ]
+                }
+            }
+        ]
+    }
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/tweet/_search
+{
+    "query" : {
+        "match_phrase": { "message": "number 1" }
+    },
+    "highlight" : {
+        "fields" : {
+            "message" : {
+                "fragment_size" : 15,
+                "number_of_fragments" : 3,
+                "fragmenter": "span"
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/12.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    ...
+    "hits": {
+        "total": 1,
+        "max_score": 1.4818809,
+        "hits": [
+            {
+                "_index": "twitter",
+                "_type": "tweet",
+                "_id": "1",
+                "_score": 1.4818809,
+                "_source": {
+                    "user": "test",
+                    "message": "some message with the number 1",
+                    "date": "2009-11-15T14:12:12",
+                    "likes": 1
+                },
+                "highlight": {
+                    "message": [
+                        "some message with the &lt;em&gt;number&lt;/em&gt; &lt;em&gt;1&lt;/em&gt;"
+                    ]
+                }
+            }
+        ]
+    }
+}</pre></div><p>If the <code class="literal">number_of_fragments</code> option is set to <code class="literal">0</code>,
+<code class="literal">NullFragmenter</code> is used which does not fragment the text at all.
+This is useful for highlighting the entire content of a document or field.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_highlight_query"></a>Highlight query<a href="https://github.com/elastic/elasticsearch/edit/5.3/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It is also possible to highlight against a query other than the search
 query by setting <code class="literal">highlight_query</code>.  This is especially useful if you
 use a rescore query because those are not taken into account by
 highlighting by default.  Elasticsearch does not validate that
@@ -883,7 +982,7 @@ query and the rescore query in <code class="literal">highlight_query</code>.</p>
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/11.json"></div><p>Note that the score of text fragment in this case is calculated by the Lucene
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/13.json"></div><p>Note that the score of text fragment in this case is calculated by the Lucene
 highlighting framework. For implementation details you can check the
 <code class="literal">ScoreOrderFragmentsBuilder.java</code> class. On the other hand when using the
 postings highlighter the fragments are scored using, as mentioned above,
@@ -903,7 +1002,7 @@ at the field level.</p><div class="pre_wrapper"><pre class="programlisting prett
             "bio.content" : { "number_of_fragments" : 5, "order" : "score" }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/12.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="field-match"></a>Require Field Match<a href="https://github.com/elastic/elasticsearch/edit/5.3/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><code class="literal">require_field_match</code> can be set to <code class="literal">false</code> which will cause any field to
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/14.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="field-match"></a>Require Field Match<a href="https://github.com/elastic/elasticsearch/edit/5.3/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><code class="literal">require_field_match</code> can be set to <code class="literal">false</code> which will cause any field to
 be highlighted regardless of whether the query matched specifically on them.
 The default behaviour is <code class="literal">true</code>, meaning that only fields that hold a query
 match will be highlighted.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
@@ -917,7 +1016,7 @@ match will be highlighted.</p><div class="pre_wrapper"><pre class="programlistin
                 "_all" : { "pre_tags" : ["&lt;em&gt;"], "post_tags" : ["&lt;/em&gt;"] }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/13.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="boundary-characters"></a>Boundary Characters<a href="https://github.com/elastic/elasticsearch/edit/5.3/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When highlighting a field using the fast vector highlighter,
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/15.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="boundary-characters"></a>Boundary Characters<a href="https://github.com/elastic/elasticsearch/edit/5.3/docs/reference/search/request/highlighting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When highlighting a field using the fast vector highlighter,
 <code class="literal">boundary_chars</code> can be configured to define what constitutes a boundary
 for highlighting. It’s a single string with each boundary character
 defined in it. It defaults to <code class="literal">.,!? \t\n</code>.</p><p>The <code class="literal">boundary_max_scan</code> allows to control how far to look for boundary
@@ -945,7 +1044,7 @@ analyzer and <code class="literal">content.plain</code> is analyzed by the <code
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/14.json"></div><p>The above matches both "run with scissors" and "running with scissors"
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/16.json"></div><p>The above matches both "run with scissors" and "running with scissors"
 and would highlight "running" and "scissors" but not "run". If both
 phrases appear in a large document then "running with scissors" is
 sorted above "run with scissors" in the fragments list because there
@@ -966,7 +1065,7 @@ are more matches in that fragment.</p><div class="pre_wrapper"><pre class="progr
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/15.json"></div><p>The above highlights "run" as well as "running" and "scissors" but
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/17.json"></div><p>The above highlights "run" as well as "running" and "scissors" but
 still sorts "running with scissors" above "run with scissors" because
 the plain match ("running") is boosted.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
 {
@@ -985,7 +1084,7 @@ the plain match ("running") is boosted.</p><div class="pre_wrapper"><pre class="
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/16.json"></div><p>The above query wouldn’t highlight "run" or "scissor" but shows that
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-highlighting/18.json"></div><p>The above query wouldn’t highlight "run" or "scissor" but shows that
 it is just fine not to list the field to which the matches are combined
 (<code class="literal">content</code>) in the matched fields.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Technically it is also fine to add fields to <code class="literal">matched_fields</code> that
 don’t share the same underlying string as the field to which the matches
