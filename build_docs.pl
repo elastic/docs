@@ -46,9 +46,9 @@ use ES::Template();
 GetOptions(
     $Opts,    #
     'all', 'push', 'update!',    #
-    'single',  'pdf',     'doc=s',   'out=s',  'toc', 'chunk=i',
-    'open',    'staging', 'procs=i', 'user=s', 'lang=s',
-    'lenient', 'verbose', 'reload_template'
+    'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
+    'open',    'staging', 'procs=i',         'user=s', 'lang=s',
+    'lenient', 'verbose', 'reload_template', 'resource=s@'
 ) || exit usage();
 
 our $Conf = LoadFile('conf.yaml');
@@ -85,6 +85,10 @@ sub build_local {
     say "Building HTML from $doc";
 
     my $dir = dir( $Opts->{out} || 'html_docs' )->absolute($Old_Pwd);
+
+    $Opts->{resource}
+        = [ map { dir($_)->absolute($Old_Pwd) } @{ $Opts->{resource} || [] } ];
+
     if ( $Opts->{single} ) {
         $dir->rmtree;
         $dir->mkpath;
@@ -614,6 +618,7 @@ sub usage {
           --open            Open the docs in a browser once built.
           --lenient         Ignore linking errors
           --lang            Defaults to 'en'
+          --resource        Path to image dir - may be repeated
 
         WARNING: Anything in the `out` dir will be deleted!
 

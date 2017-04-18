@@ -32,15 +32,16 @@ sub build_chunked {
 #===================================
     my ( $index, $dest, %opts ) = @_;
 
-    my $chunk    = $opts{chunk}         || 0;
-    my $version  = $opts{version}       || 'test build';
-    my $multi    = $opts{multi}         || 0;
-    my $lenient  = $opts{lenient}       || '';
-    my $lang     = $opts{lang}          || 'en';
-    my $edit_url = $opts{edit_url}      || '';
-    my $root_dir = $opts{root_dir}      || '';
-    my $section  = $opts{section_title} || '';
-    my $private  = $opts{private}       || '';
+    my $chunk     = $opts{chunk}         || 0;
+    my $version   = $opts{version}       || 'test build';
+    my $multi     = $opts{multi}         || 0;
+    my $lenient   = $opts{lenient}       || '';
+    my $lang      = $opts{lang}          || 'en';
+    my $edit_url  = $opts{edit_url}      || '';
+    my $root_dir  = $opts{root_dir}      || '';
+    my $section   = $opts{section_title} || '';
+    my $private   = $opts{private}       || '';
+    my $resources = $opts{resource}      || [];
     my $page_header = custom_header($index) || $opts{page_header} || '';
     $dest->rmtree;
     $dest->mkpath;
@@ -48,8 +49,9 @@ sub build_chunked {
     my ( $output, $died );
     eval {
         $output = run(
-            'a2x', '-v',    #'--keep',
+            'a2x', '-v',                                    #'--keep',
             '--icons',
+            ( map { ( '--resource' => $_ ) } @$resources ),
             '-d' => 'book',
             '-f' => 'chunked',
             '-a' => 'showcomments=1',
@@ -96,14 +98,15 @@ sub build_single {
 
     my $type = $opts{type} || 'book';
     my $toc = $opts{toc} ? "$type toc" : '';
-    my $lenient  = $opts{lenient}       || '';
-    my $version  = $opts{version}       || 'test build';
-    my $multi    = $opts{multi}         || 0;
-    my $lang     = $opts{lang}          || 'en';
-    my $edit_url = $opts{edit_url}      || '';
-    my $root_dir = $opts{root_dir}      || '';
-    my $section  = $opts{section_title} || '';
-    my $private  = $opts{private}       || '';
+    my $lenient   = $opts{lenient}       || '';
+    my $version   = $opts{version}       || 'test build';
+    my $multi     = $opts{multi}         || 0;
+    my $lang      = $opts{lang}          || 'en';
+    my $edit_url  = $opts{edit_url}      || '';
+    my $root_dir  = $opts{root_dir}      || '';
+    my $section   = $opts{section_title} || '';
+    my $private   = $opts{private}       || '';
+    my $resources = $opts{resource}      || [];
     my $page_header = custom_header($index) || $opts{page_header} || '';
 
     my ( $output, $died );
@@ -111,6 +114,7 @@ sub build_single {
         $output = run(
             'a2x', '-v',
             '--icons',
+            ( map { ( '--resource' => $_ ) } @$resources ),
             '-f' => 'xhtml',
             '-d' => $type,
             '-a' => 'showcomments=1',
@@ -177,11 +181,13 @@ sub build_pdf {
     my $lenient   = $opts{lenient}   || '';
     my $toc_level = $opts{toc_level} || 7;
     my $lang      = $opts{lang}      || 'en';
+    my $resources = $opts{resource}  || [];
 
     my $output = run(
         'a2x', '-v',
         '-a' => "lang=$lang",
         '--icons',
+        ( map { ( '--resource' => $_ ) } @$resources ),
         '-d' => 'book',
         '-f' => 'pdf',
         '--fop',

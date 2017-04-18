@@ -209,7 +209,8 @@ sub _build_book {
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
                 toc           => $self->toc,
-                template      => $template
+                template      => $template,
+                resource      => [$checkout],
             );
         }
         else {
@@ -225,7 +226,8 @@ sub _build_book {
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
-                template      => $template
+                template      => $template,
+                resource      => [$checkout],
             );
             $self->_add_title_to_toc( $branch, $branch_dir );
         }
