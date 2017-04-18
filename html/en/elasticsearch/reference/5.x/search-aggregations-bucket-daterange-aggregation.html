@@ -687,7 +687,77 @@ to round to the beginning of the day in the CET time zone, you can do the follow
 This date will be converted to <code class="literal">2016-02-15T00:00:00.000+01:00</code>.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO74-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 <code class="literal">now/d</code> will be rounded to the beginning of the day in the CET time zone.
-</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-datehistogram-aggregation.html">
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_keyed_response_4"></a>Keyed Response<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/aggregations/bucket/daterange-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Setting the <code class="literal">keyed</code> flag to <code class="literal">true</code> will associate a unique string key with each bucket and return the ranges as a hash rather than an array:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /sales/_search?size=0
+{
+    "aggs": {
+        "range": {
+            "date_range": {
+                "field": "date",
+                "format": "MM-yyy",
+                "ranges": [
+                    { "to": "now-10M/M" },
+                    { "from": "now-10M/M" }
+                ],
+                "keyed": true
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-daterange-aggregation/3.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    ...
+    "aggregations": {
+        "range": {
+            "buckets": {
+                "*-10-2015": {
+                    "to": 1.4436576E12,
+                    "to_as_string": "10-2015",
+                    "doc_count": 7
+                },
+                "10-2015-*": {
+                    "from": 1.4436576E12,
+                    "from_as_string": "10-2015",
+                    "doc_count": 0
+                }
+            }
+        }
+    }
+}</pre></div><p>It is also possible to customize the key for each range:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /sales/_search?size=0
+{
+    "aggs": {
+        "range": {
+            "date_range": {
+                "field": "date",
+                "format": "MM-yyy",
+                "ranges": [
+                    { "from": "01-2015",  "to": "03-2015", "key": "quarter_01" },
+                    { "from": "03-2015", "to": "06-2015", "key": "quarter_02" }
+                ],
+                "keyed": true
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-daterange-aggregation/4.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    ...
+    "aggregations": {
+        "range": {
+            "buckets": {
+                "quarter_01": {
+                    "from": 1.4200704E12,
+                    "from_as_string": "01-2015",
+                    "to": 1.425168E12,
+                    "to_as_string": "03-2015",
+                    "doc_count": 5
+                },
+                "quarter_02": {
+                    "from": 1.425168E12,
+                    "from_as_string": "03-2015",
+                    "to": 1.4331168E12,
+                    "to_as_string": "06-2015",
+                    "doc_count": 2
+                }
+            }
+        }
+    }
+}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-datehistogram-aggregation.html">
               « 
               Date Histogram Aggregation</a>
            
