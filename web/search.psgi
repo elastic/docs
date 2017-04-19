@@ -25,6 +25,7 @@ our $JSON = JSON::XS->new->utf8;
 builder {
     mount '/search'  => \&search;
     mount '/suggest' => \&suggest;
+    mount '/scroll'  => \&scroll;
 };
 
 #===================================
@@ -100,6 +101,32 @@ sub suggest {
 
     # return _as_json( 200, $request );
     return _run_request( $Titles_Index, $request );
+}
+
+#===================================
+sub scroll {
+#===================================
+    my $req       = Plack::Request->new(@_);
+    my $qs        = $req->query_parameters;
+    my $scroll_id = eval { $qs->get_one('scroll_id') };
+    my $results   = eval {
+        if ($scroll_id) {
+            $es->scroll(
+                scroll => '1m',
+                body => { scroll_id => $scroll_id }
+            );
+        }
+        else {
+            $es->search(
+                index  => $Pages_Index,
+                size   => 1000,
+                scroll => '1m'
+            );
+        }
+    };
+
+    return _as_json( 200, $results ) if $results;
+    return _as_json( 400, { error => "$@" } );
 }
 
 #===================================
