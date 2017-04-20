@@ -603,13 +603,45 @@ Not what you want? See the
           <a href="plugins-inputs-lumberjack.html">lumberjack
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="plugins-inputs-log4j"></a>log4j<a href="https://github.com/logstash-plugins/logstash-input-log4j/edit/master/lib/logstash/inputs/log4j.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Version: 3.0.3
+Version: 3.0.4
 </li><li class="listitem">
 Released on: August 11, 2016
 </li><li class="listitem">
 <a class="ulink" href="https://github.com/logstash-plugins/logstash-input-log4j/blob/master/CHANGELOG.md#303" target="_top">Changelog</a>
 </li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_getting_help_18"></a>Getting Help<a href="https://github.com/logstash-plugins/logstash-input-log4j/edit/master/lib/logstash/inputs/log4j.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For questions about the plugin, open a topic in the <a class="ulink" href="http://discuss.elastic.co" target="_top">Discuss</a> forums. For bugs or feature requests, open an issue in <a class="ulink" href="https://github.com/elastic/logstash" target="_top">Github</a>.
-For the list of Elastic supported plugins, please consult the <a class="ulink" href="https://www.elastic.co/support/matrix#show_logstash_plugins" target="_top">Elastic Support Matrix</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_description_18"></a>Description<a href="https://github.com/logstash-plugins/logstash-input-log4j/edit/master/lib/logstash/inputs/log4j.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Read events over a TCP socket from a Log4j SocketAppender. This plugin works only with log4j version 1.x.</p><p>Can either accept connections from clients or connect to a server,
+For the list of Elastic supported plugins, please consult the <a class="ulink" href="https://www.elastic.co/support/matrix#show_logstash_plugins" target="_top">Elastic Support Matrix</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_deprecation_notice"></a>Deprecation Notice<a href="https://github.com/logstash-plugins/logstash-input-log4j/edit/master/lib/logstash/inputs/log4j.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This plugin is deprecated. It is recommended that you use filebeat to collect logs from log4j.</p></div></div><p>The following section is a guide for how to migrate from SocketAppender to use filebeat.</p><p>To migrate away from log4j SocketAppender to using filebeat, you will need to make 3 changes:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Configure your log4j.properties (in your app) to write to a local file.
+</li><li class="listitem">
+Install and configure filebeat to collect those logs and ship them to Logstash
+</li><li class="listitem">
+Configure Logstash to use the beats input.
+</li></ol></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_configuring_log4j_for_writing_to_local_files"></a>Configuring log4j for writing to local files<a href="https://github.com/logstash-plugins/logstash-input-log4j/edit/master/lib/logstash/inputs/log4j.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>In your log4j.properties file, remove SocketAppender and replace it with RollingFileAppender.</p><p>For example, you can use the following log4j.properties configuration to write daily log files.</p><pre class="literallayout"># Your app's log4j.properties (log4j 1.2 only)
+log4j.rootLogger=daily
+log4j.appender.daily=org.apache.log4j.rolling.RollingFileAppender
+log4j.appender.daily.RollingPolicy=org.apache.log4j.rolling.TimeBasedRollingPolicy
+log4j.appender.daily.RollingPolicy.FileNamePattern=/var/log/your-app/app.%d.log
+log4j.appender.daily.layout = org.apache.log4j.PatternLayout
+log4j.appender.daily.layout.ConversionPattern=%d{YYYY-MM-dd HH:mm:ss,SSSZ} %p %c{1}:%L - %m%n</pre><p>Configuring log4j.properties in more detail is outside the scope of this migration guide.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_configuring_filebeat"></a>Configuring filebeat<a href="https://github.com/logstash-plugins/logstash-input-log4j/edit/master/lib/logstash/inputs/log4j.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Next,
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-installation.html" target="_top">install
+filebeat</a>. Based on the above log4j.properties, we can use this filebeat
+configuration:</p><pre class="literallayout"># filebeat.yml
+filebeat:
+  prospectors:
+    -
+      paths:
+        - /var/log/your-app/app.*.log
+      input_type: log
+output:
+  logstash:
+    hosts: ["your-logstash-host:5000"]</pre><p>For more details on configuring filebeat, see
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-configuration.html" target="_top">the filebeat configuration guide</a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_configuring_logstash_to_receive_from_filebeat"></a>Configuring Logstash to receive from filebeat<a href="https://github.com/logstash-plugins/logstash-input-log4j/edit/master/lib/logstash/inputs/log4j.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Finally, configure Logstash with a beats input:</p><pre class="literallayout"># logstash configuration
+input {
+  beats {
+    port =&gt; 5000
+  }
+}</pre><p>It is strongly recommended that you also enable TLS in filebeat and logstash
+beats input for protection and safety of your log data..</p><p>For more details on configuring the beats input, see
+<a class="ulink" href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-beats.html" target="_top">the logstash beats input documentation</a>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_description_18"></a>Description<a href="https://github.com/logstash-plugins/logstash-input-log4j/edit/master/lib/logstash/inputs/log4j.rb" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Read events over a TCP socket from a Log4j SocketAppender. This plugin works only with log4j version 1.x.</p><p>Can either accept connections from clients or connect to a server,
 depending on <code class="literal">mode</code>. Depending on which <code class="literal">mode</code> is configured,
 you need a matching SocketAppender or a SocketHubAppender
 on the remote side.</p><p>One event is created per received log4j LoggingEvent with the following schema:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
