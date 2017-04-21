@@ -599,16 +599,35 @@
            
           <a href="configuration-processors.html">Processors
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_reload_configuration"></a>Reload Configuration<a href="https://github.com/elastic/beats/edit/5.3/metricbeat/docs/reference/configuration/reload-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.</p></div></div><p>Reload configuration allows to dynamically reload module configuration files. A glob can be defined which should be watched
- for module configuration changes. New modules will started / stopped accordingly. This is especially useful in
- container environments where 1 container is used to monitor all services in other containers on the same host.
- New containers appear and disappear dynamically which requires changes to which modules
- are needed and which hosts must be monitored.</p><p>The configuration in the main metricbeat.yml config file looks as following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat.config.modules:
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="metricbeat-configuration-reloading"></a>Reload Configuration<a href="https://github.com/elastic/beats/edit/5.3/metricbeat/docs/reference/configuration/reload-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.</p></div></div><p>You can configure Metricbeat to dynamically reload configuration files when
+there are changes. To do this, you specify a path
+(<a class="ulink" href="https://golang.org/pkg/path/filepath/#Glob" target="_top">Glob</a>) to watch for module
+configuration changes. When the files found by the Glob change, new modules are
+started/stopped according to changes in the configuration files.</p><p>This feature is especially useful in container environments where one container
+is used to monitor all services running in other containers on the same host.
+Because new containers appear and disappear dynamically, you may need to change
+the Metricbeat configuration frequently to specify which modules are needed and
+which hosts must be monitored.</p><p>To enable dynamic config reloading, you specify the <code class="literal">path</code> and <code class="literal">reload</code> options
+in the main <code class="literal">metricbeat.yml</code> config file. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat.config.modules:
   path: configs/*.yml
   reload.enabled: true
-  reload.period: 10s</pre></div><p>A path with a glob must be defined on which files should be checked for changes. A period is set on how often
-the files are checked for changes. Do not set period below 1s as the modification time of files is often stored in seconds.
-Setting it below 1s will have an unnecessary overhead.</p><p>The configuration inside the files which are found by the glob look as following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: system
+  reload.period: 10s</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">path</code>
+</span></dt><dd>
+A Glob that defines the files to check for changes.
+</dd><dt><span class="term">
+<code class="literal">reload.enabled</code>
+</span></dt><dd>
+When set to <code class="literal">true</code>, enables dynamic config reload.
+</dd><dt><span class="term">
+<code class="literal">reload.period</code>
+</span></dt><dd>
+Specifies how often the files are checked for changes. Do not
+set the <code class="literal">period</code> to less than 1s because the modification time of files is often
+stored in seconds. Setting the <code class="literal">period</code> to less than 1s will result in
+unnecessary overhead.
+</dd></dl></div><p>Each file found by the Glob must contain a list of one or more module
+definitions. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: system
   metricsets: ["cpu"]
   enabled: false
   perdiod: 1s
@@ -616,7 +635,7 @@ Setting it below 1s will have an unnecessary overhead.</p><p>The configuration i
 - module: system
   metricsets: ["network"]
   enabled: true
-  period: 10s</pre></div><p>Each file directly contains a list of modules. Each file can contain one or multiple module definitions.</p></div><div class="navfooter"><span class="prev"><a href="configuration-logging.html">
+  period: 10s</pre></div></div><div class="navfooter"><span class="prev"><a href="configuration-logging.html">
               « 
               Logging</a>
            

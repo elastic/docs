@@ -599,14 +599,32 @@
            
           <a href="elasticsearch-output.html">Elasticsearch Output
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="filebeat-configuration-reloading"></a>Reload Configuration<a href="https://github.com/elastic/beats/edit/5.3/filebeat/docs/reference/configuration/reload-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. The design and code is considered to be less mature than official GA features. Elastic will take a best effort approach to fix any issues, but beta features are not subject to the support SLA of official GA features.</p></div></div><p>Reload configuration allows to dynamically reload prospector configuration files. A glob can be defined which should be watched
- for prospector configuration changes. New prospectors will be started / stopped accordingly. This is especially useful in
- container environments where 1 container is used to tail logs from services in other containers on the same host.</p><p>The configuration in the main filebeat.yml config file looks as following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.config.prospectors:
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="filebeat-configuration-reloading"></a>Reload Configuration<a href="https://github.com/elastic/beats/edit/5.3/filebeat/docs/reference/configuration/reload-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. The design and code is considered to be less mature than official GA features. Elastic will take a best effort approach to fix any issues, but beta features are not subject to the support SLA of official GA features.</p></div></div><p>You can configure Filebeat to dynamically reload prospector configuration files
+when there are changes. To do this, you specify a path
+(<a class="ulink" href="https://golang.org/pkg/path/filepath/#Glob" target="_top">Glob</a>) to watch for prospector
+configuration changes. When the files found by the Glob change, new prospectors
+are started/stopped according to changes in the configuration files.</p><p>This feature is especially useful in container environments where one container
+is used to tail logs for services running in other containers on the same host.</p><p>To enable dynamic config reloading, you specify the <code class="literal">path</code> and <code class="literal">reload</code> options
+in the main <code class="literal">filebeat.yml</code> config file. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.config.prospectors:
   path: configs/*.yml
   reload.enabled: true
-  reload.period: 10s</pre></div><p>A path with a glob must be defined on which files should be checked for changes. A period is set on how often
-the files are checked for changes. Do not set period below 1s as the modification time of files is often stored in seconds.
-Setting it below 1s will cause an unnecessary overhead.</p><p>The configuration inside the files which are found by the glob look as following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- input_type: log
+  reload.period: 10s</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">path</code>
+</span></dt><dd>
+A Glob that defines the files to check for changes.
+</dd><dt><span class="term">
+<code class="literal">reload.enabled</code>
+</span></dt><dd>
+When set to <code class="literal">true</code>, enables dynamic config reload.
+</dd><dt><span class="term">
+<code class="literal">reload.period</code>
+</span></dt><dd>
+Specifies how often the files are checked for changes. Do not
+set the <code class="literal">period</code> to less than 1s because the modification time of files is often
+stored in seconds. Setting the <code class="literal">period</code> to less than 1s will result in
+unnecessary overhead.
+</dd></dl></div><p>Each file found by the Glob must contain a list of one or more prospector
+definitions. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- input_type: log
   paths:
     - /var/log/mysql.log
   scan_frequency: 10s
@@ -614,8 +632,9 @@ Setting it below 1s will cause an unnecessary overhead.</p><p>The configuration 
 - input_type: log
   paths:
     - /var/log/apache.log
-  scan_frequency: 5s</pre></div><p>Each file directly contains a list of prospectors. Each file can contain one or multiple prospector definitions.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>It is critical that two running prospectors DO NOT have overlapping file paths defined. If more then one prospector
-harvests the same file at the same time, it can lead to unexpected behaviour.</p></div></div></div><div class="navfooter"><span class="prev"><a href="configuration-general.html">
+  scan_frequency: 5s</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>It is critical that two running prospectors DO NOT have overlapping
+file paths defined. If more than one prospector harvests the same file at the
+same time, it can lead to unexpected behaviour.</p></div></div></div><div class="navfooter"><span class="prev"><a href="configuration-general.html">
               « 
               General</a>
            
