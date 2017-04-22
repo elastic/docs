@@ -96,7 +96,7 @@ sub _try_to_fetch {
 sub has_changed {
 #===================================
     my $self = shift;
-    my ( $branch, $path ) = @_;
+    my ( $title, $branch, $path ) = @_;
 
     my $old
         = $self->tracker->sha_for_branch( $self->name,
@@ -118,6 +118,7 @@ sub has_changed {
         1;
     }
         || do { $changed = 1 };
+
     return $changed;
 }
 
@@ -125,7 +126,7 @@ sub has_changed {
 sub mark_done {
 #===================================
     my $self = shift;
-    my ( $branch, $path ) = @_;
+    my ( $title, $branch, $path ) = @_;
 
     local $ENV{GIT_DIR} = $self->git_dir;
 
@@ -187,9 +188,10 @@ sub show_file {
 sub _tracker_branch {
 #===================================
     my $self   = shift;
+    my $title  = shift or die "No <title> specified";
     my $branch = shift or die "No <branch> specified";
     my $path   = shift or die "No <path> specified";
-    return "_${path}_${branch}";
+    return "$title/${path}/${branch}";
 }
 
 #===================================
@@ -205,11 +207,11 @@ sub edit_url {
 #===================================
 sub dump_recent_commits {
 #===================================
-    my ( $self, $branch, $src_path ) = @_;
+    my ( $self, $title, $branch, $src_path ) = @_;
     local $ENV{GIT_DIR} = $self->git_dir;
 
     my $start = $self->tracker->sha_for_branch( $self->name,
-        $self->_tracker_branch( $branch, $src_path ) );
+        $self->_tracker_branch( $title, $branch, $src_path ) );
     my $rev_range = "$start...$branch";
 
     my $commits = eval {
@@ -225,8 +227,12 @@ sub dump_recent_commits {
             '-n', 10, '--abbrev-commit', '--date=relative', '--', $src_path );
     }
 
-    my $title = "Recent commits in " . $self->name . "/$branch:$src_path:";
-    return $title . "\n" . ( '-' x length($title) ) . "\n" . $commits . "\n\n";
+    my $header
+        = "Recent commits in " . $self->name . "/$title:$branch:$src_path:";
+    return
+          $header . "\n"
+        . ( '-' x length($header) ) . "\n"
+        . $commits . "\n\n";
 }
 
 #===================================

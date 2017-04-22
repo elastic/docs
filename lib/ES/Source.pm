@@ -34,16 +34,18 @@ sub edit_url {
     my $self   = shift;
     my $branch = shift;
     my $first  = $self->_sources->[0];
-    return $first->{repo}->edit_url( $branch );
+    return $first->{repo}->edit_url($branch);
 }
 
 #===================================
 sub has_changed {
 #===================================
     my $self   = shift;
+    my $title  = shift;
     my $branch = shift;
     for my $source ( $self->_sources_for_branch($branch) ) {
-        return 1 if $source->{repo}->has_changed( $branch, $source->{path} );
+        return 1
+            if $source->{repo}->has_changed( $title, $branch, $source->{path} );
     }
     return;
 }
@@ -52,9 +54,10 @@ sub has_changed {
 sub mark_done {
 #===================================
     my $self   = shift;
+    my $title  = shift;
     my $branch = shift;
     for my $source ( $self->_sources_for_branch($branch) ) {
-        $source->{repo}->mark_done( $branch, $source->{path} );
+        $source->{repo}->mark_done( $title, $branch, $source->{path} );
     }
     return;
 }
@@ -63,11 +66,13 @@ sub mark_done {
 sub dump_recent_commits {
 #===================================
     my $self   = shift;
+    my $title  = shift;
     my $branch = shift;
     my $text   = '';
     for my $source ( $self->_sources_for_branch($branch) ) {
         $text
-            .= $source->{repo}->dump_recent_commits( $branch, $source->{path} );
+            .= $source->{repo}
+            ->dump_recent_commits( $title, $branch, $source->{path} );
     }
     return $text;
 }

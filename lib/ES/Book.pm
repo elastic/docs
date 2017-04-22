@@ -123,7 +123,7 @@ sub build {
         $Opts->{procs},
         sub {
             my ( $pid, $error, $branch ) = @_;
-            $self->source->mark_done($branch);
+            $self->source->mark_done( $title, $branch );
         }
     );
 
@@ -187,7 +187,7 @@ sub _build_book {
     return
            if -e $branch_dir
         && !$template->md5_changed($branch_dir)
-        && !$source->has_changed($branch);
+        && !$source->has_changed( $self->title, $branch );
 
     my $checkout = $source->prepare($branch);
 
@@ -241,7 +241,7 @@ sub _build_book {
     die "\nERROR building "
         . $self->title
         . " branch $branch\n\n"
-        . $source->dump_recent_commits($branch)
+        . $source->dump_recent_commits( $self->title, $branch )
         . $error . "\n";
 }
 
