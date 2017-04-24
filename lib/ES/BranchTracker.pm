@@ -18,7 +18,7 @@ sub new {
     my $yaml = '';
 
     if ( -e $file ) {
-        my $yaml = $file->slurp( iomode => '<:raw' );
+        my $yaml = $file->slurp( iomode => '<:utf8' );
         $old = Load($yaml);
     }
 
@@ -77,7 +77,7 @@ sub write {
     my $self = shift;
     my $new  = Dump( $self->shas );
     return if $new eq $self->{yaml};
-    $self->file->spew( iomode => '>:raw', $new );
+    $self->file->spew( iomode => '>:utf8', $new );
     $self->{yaml} = $new;
 
 }

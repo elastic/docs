@@ -4,6 +4,10 @@ use strict;
 use warnings;
 use v5.10;
 
+binmode( STDIN,  ":utf8" );
+binmode( STDOUT, ":utf8" );
+binmode( STDERR, ":utf8" );
+
 our ($Old_Pwd);
 our @Old_ARGV = @ARGV;
 
