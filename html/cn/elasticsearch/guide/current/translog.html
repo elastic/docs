@@ -601,9 +601,11 @@
 一个文档被索引之后，就会被添加到内存缓冲区，<span class="emphasis"><em>并且</em></span> 追加到了 translog ，正如 <a class="xref" href="translog.html#img-xlog-pre-refresh" title="图 21. 新的文档被添加到内存缓冲区并且被追加到了事务日志">图 21 “新的文档被添加到内存缓冲区并且被追加到了事务日志”</a> 描述的一样。
 </p><div class="figure"><a id="img-xlog-pre-refresh"></a><p class="title"><strong>图 21. 新的文档被添加到内存缓冲区并且被追加到了事务日志</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/elas_1106.png" alt="New documents are added to the in-memory buffer and appended to the transaction log" /></div></div></div><br class="figure-break" /></li><li class="listitem"><p class="simpara">
 刷新（refresh）使分片处于 <a class="xref" href="translog.html#img-xlog-post-refresh" title="图 22. 刷新（refresh）完成后, 缓存被清空但是事务日志不会">图 22 “刷新（refresh）完成后, 缓存被清空但是事务日志不会”</a> 描述的状态，分片每秒被刷新（refresh）一次：
-</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 这些在内存缓冲区的文档被写入到一个新的段中，且没有进行 <code class="literal">fsync</code> 操作。
-</p><pre class="literallayout">  ** 这个段被打开，使其可被搜索。</pre></li><li class="listitem">
+</li><li class="listitem">
+这个段被打开，使其可被搜索。
+</li><li class="listitem">
 内存缓冲区被清空。
 </li></ul></div><div class="figure"><a id="img-xlog-post-refresh"></a><p class="title"><strong>图 22. 刷新（refresh）完成后, 缓存被清空但是事务日志不会</strong></p><div class="figure-contents"><div class="mediaobject"><img src="images/elas_1107.png" alt="After a refresh, the buffer is cleared but the transaction log is not" /></div></div></div><br class="figure-break" /></li><li class="listitem"><p class="simpara">
 这个进程继续工作，更多的文档被添加到内存缓冲区和追加到事务日志（见 <a class="xref" href="translog.html#img-xlog-pre-flush" title="图 23. 事务日志不断积累文档">图 23 “事务日志不断积累文档”</a> ）。
@@ -633,12 +635,10 @@ POST /_flush?wait_for_ongoing <a id="CO40-2"></a><span><img src="images/icons/ca
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO40-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 刷新（flush）所有的索引并且并且等待所有刷新在返回前完成。
 </p></td></tr></table></div><p>你很少需要自己手动执行一个的 <code class="literal">flush</code> 操作；通常情况下，自动刷新就足够了。</p><p>这就是说，在重启节点或关闭索引之前执行 <a class="link" href="translog.html#flush-api" title="flush API">flush</a> 有益于你的索引。当 Elasticsearch 尝试恢复或重新打开一个索引，
-它需要重放 translog 中所有的操作，所以如果日志越短，恢复越快。</p><div class="orderedlist"><a id="how-safe-is-the-translog"></a><ol class="orderedlist" type="1"><li class="listitem">
-Translog 有多安全?
-</li></ol></div><div class="sidebar"><div class="titlepage"></div><p>translog 的目的是保证操作不会丢失。这引出了这个问题： Translog 有多安全<a id="id-1.4.13.9.10.9.1.1" class="indexterm"></a>
-<a id="id-1.4.13.9.10.9.1.2" class="indexterm"></a>？</p><p>在文件被 <code class="literal">fsync</code> 到磁盘前，被写入的文件在重启之后就会丢失。默认 translog 是每 5 秒被 <code class="literal">fsync</code> 刷新到硬盘，
-_或者_ 在每次写请求完成之后执行(e.g. index, delete, update, bulk)。这个过程在主分片和复制分片都会发生。最终，
-基本上，这意味着在整个请求被+fsync+到主分片和复制分片的translog之前，你的客户端不会得到一个 200 OK 响应。</p><p>在每次请求后都执行一个 fsync 会带来一些性能损失，尽管实践表明这种损失相对较小（特别是bulk导入，它在一次请求中平摊了大量文档的开销）。</p><p>但是对于一些大容量的偶尔丢失几秒数据问题也并不严重的集群，使用异步的 fsync 还是比较有益的。比如，写入的数据被缓存到内存中，并且每5秒执行一次 <code class="literal">fsync</code> 。</p><p>这个行为可以通过设置 <code class="literal">durability</code> 参数为 <code class="literal">async</code> 来启用：</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_index/_settings
+它需要重放 translog 中所有的操作，所以如果日志越短，恢复越快。</p><div class="sidebar"><a id="how-safe-is-the-translog"></a><div class="titlepage"><div><div><p class="title"><strong>Translog 有多安全?</strong></p></div></div></div><p>translog 的目的是保证操作不会丢失。这引出了这个问题： Translog 有多安全<a id="id-1.4.13.9.10.8.2.1" class="indexterm"></a>
+<a id="id-1.4.13.9.10.8.2.2" class="indexterm"></a>？</p><p>在文件被 <code class="literal">fsync</code> 到磁盘前，被写入的文件在重启之后就会丢失。默认 translog 是每 5 秒被 <code class="literal">fsync</code> 刷新到硬盘，
+或者在每次写请求完成之后执行(e.g. index, delete, update, bulk)。这个过程在主分片和复制分片都会发生。最终，
+基本上，这意味着在整个请求被 <code class="literal">fsync</code> 到主分片和复制分片的translog之前，你的客户端不会得到一个 200 OK 响应。</p><p>在每次请求后都执行一个 fsync 会带来一些性能损失，尽管实践表明这种损失相对较小（特别是bulk导入，它在一次请求中平摊了大量文档的开销）。</p><p>但是对于一些大容量的偶尔丢失几秒数据问题也并不严重的集群，使用异步的 fsync 还是比较有益的。比如，写入的数据被缓存到内存中，再每5秒执行一次 <code class="literal">fsync</code> 。</p><p>这个行为可以通过设置 <code class="literal">durability</code> 参数为 <code class="literal">async</code> 来启用：</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_index/_settings
 {
     "index.translog.durability": "async",
     "index.translog.sync_interval": "5s"
