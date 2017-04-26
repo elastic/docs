@@ -4,8 +4,8 @@
 
 def extract_tagged(target, tag):
     import re
-    start = re.compile('^(\s+).+tag::' + tag)
-    end = re.compile('end::' + tag)
+    start = re.compile('^(\s+).+tag::' + tag + '\s*\n')
+    end = re.compile('end::' + tag + '\s*\n')
     foundTag = False
 
     result = ''
