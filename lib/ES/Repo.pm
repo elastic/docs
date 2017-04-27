@@ -165,6 +165,7 @@ sub extract {
     my ( $branch, $path, $dest ) = @_;
     local $ENV{GIT_DIR} = $self->git_dir;
 
+    $dest->mkpath;
     my $tar = $dest->file('.temp_git_archive.tar');
     die "File <$tar> already exists" if -e $tar;
     run qw(git archive --format=tar -o ), $tar, $branch, $path;

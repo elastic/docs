@@ -15,11 +15,13 @@ sub new {
 
     my @sources;
     for ( @{ $args{sources} } ) {
-        my $path = dir('.')->subdir( $_->{path} )->relative('.');
-
+        my $path   = dir('.')->subdir( $_->{path} )->relative('.');
+        my $repo   = ES::Repo->get_repo( $_->{repo} );
+        my $prefix = defined $_->{prefix} ? $_->{prefix} : $repo->name;
         push @sources,
             {
-            repo    => ES::Repo->get_repo( $_->{repo} ),
+            repo    => $repo,
+            prefix  => $prefix,
             path    => $path,
             exclude => { map { $_ => 1 } @{ $_->{exclude_branches} || [] } }
             };
@@ -29,12 +31,17 @@ sub new {
 }
 
 #===================================
+sub first {
+#===================================
+    return shift->_sources->[0];
+}
+
+#===================================
 sub edit_url {
 #===================================
     my $self   = shift;
     my $branch = shift;
-    my $first  = $self->_sources->[0];
-    return $first->{repo}->edit_url($branch);
+    return $self->first->{repo}->edit_url($branch);
 }
 
 #===================================
@@ -86,23 +93,16 @@ sub prepare {
     my %entries;
     my $dest = Path::Class::tempdir( DIR => $self->temp_dir );
 
+    # need to handle repo name here, not in Repo
     for my $source ( $self->_sources_for_branch($branch) ) {
-        my $repo = $source->{repo};
-        my $path = $source->{path};
+        my $repo   = $source->{repo};
+        my $prefix = $source->{prefix};
+        my $path   = $source->{path};
 
-        # check that we're not overwriting files with subsequent repos
-        for my $file ( $repo->tree( $branch, $path ) ) {
-            $entries{$file}++
-                && die "File <$file> already exists while checking out repo <"
-                . $repo->name
-                . ">, branch <$branch>";
-        }
-
-        # Extract files into dest, removing the path prefix
-        $repo->extract( $branch, $path, $dest );
+        $repo->extract( $branch, $path, $dest->subdir($prefix) );
 
     }
-    return $dest;
+    return ( $dest, $dest->subdir( $self->first->{prefix} ) );
 }
 
 #===================================

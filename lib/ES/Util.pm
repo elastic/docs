@@ -49,7 +49,7 @@ sub build_chunked {
     my ( $output, $died );
     eval {
         $output = run(
-            'a2x', '-v',                                    #'--keep',
+            'a2x', '-v',    #'--keep',
             '--icons',
             ( map { ( '--resource' => $_ ) } @$resources ),
             '-d' => 'book',

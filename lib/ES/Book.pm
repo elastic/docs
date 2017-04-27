@@ -189,7 +189,7 @@ sub _build_book {
         && !$template->md5_changed($branch_dir)
         && !$source->has_changed( $self->title, $branch );
 
-    my $checkout = $source->prepare($branch);
+    my ( $checkout, $first_path ) = $source->prepare($branch);
 
     $pm->start($branch) and return;
     say " - Branch: $branch - Building...";
@@ -198,12 +198,12 @@ sub _build_book {
             $branch_dir->rmtree;
             $branch_dir->mkpath;
             build_single(
-                $checkout->file($index),
+                $first_path->file($index),
                 $branch_dir,
                 version       => $branch,
                 lang          => $lang,
                 edit_url      => $edit_url,
-                root_dir      => $checkout,
+                root_dir      => $first_path,
                 private       => $self->private,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
@@ -215,12 +215,12 @@ sub _build_book {
         }
         else {
             build_chunked(
-                $checkout->file($index),
+                $first_path->file($index),
                 $branch_dir,
                 version       => $branch,
                 lang          => $lang,
                 edit_url      => $edit_url,
-                root_dir      => $checkout,
+                root_dir      => $first_path,
                 private       => $self->private,
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
