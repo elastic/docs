@@ -6,7 +6,7 @@ def extract_tagged(target, tag):
     import re
     start = re.compile('^(\s+).+tag::' + tag)
     end = re.compile('end::' + tag)
-    callout = re.compile(r'// (<[^>]+>)')
+    callout = re.compile(r'// (<[^>]+>)\s*?\n')
     foundTag = False
 
     result = ''
@@ -16,7 +16,7 @@ def extract_tagged(target, tag):
                 return result
             if foundTag:
                 line = line.replace(indentation, '', 1)
-                line = callout.sub(r'\1', line)
+                line = callout.sub(r'\1\n', line)
                 result = result + line
             else:
                 m = start.search(line)
