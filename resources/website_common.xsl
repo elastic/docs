@@ -347,4 +347,15 @@
       </xsl:if>
     </xsl:template>
 
+<!--Images -->
+  <xsl:template match="mediaobject[@role = 'screenshot']" mode="class.value">
+      <xsl:value-of select="'screenshot'"/>
+    </xsl:template>
+  <xsl:template match="informalfigure[@role = 'screenshot']" mode="class.value">
+      <xsl:value-of select="'screenshot'"/>
+  </xsl:template>
+  <xsl:template match="inlinemediaobject[@role = 'screenshot']" mode="class.value">
+      <xsl:value-of select="'screenshot'"/>
+  </xsl:template>
+
 </xsl:stylesheet>
