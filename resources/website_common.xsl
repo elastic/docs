@@ -347,4 +347,14 @@
       </xsl:if>
     </xsl:template>
 
+    <!--  Add classes to images -->
+
+    <xsl:template match="figure|informalfigure" mode="class.value">
+      <xsl:if test="@role">
+        <xsl:value-of select="@role"/>
+        <xsl:value-of select="' '"/>
+      </xsl:if>
+      <xsl:value-of select="local-name(.)" />
+    </xsl:template>
+
 </xsl:stylesheet>
