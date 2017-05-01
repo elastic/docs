@@ -600,17 +600,15 @@
           <a href="_restoring_from_a_snapshot.html">Restoring from a Snapshot
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="backing-up-your-cluster"></a>Backing Up Your Cluster<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>As with any software that stores data, it is important to routinely back up your
-data. <a id="id-1.10.5.8.2.1" class="indexterm"></a>
-<a id="id-1.10.5.8.2.2" class="indexterm"></a><a id="id-1.10.5.8.2.3" class="indexterm"></a>
-<a id="id-1.10.5.8.2.4" class="indexterm"></a><a id="id-1.10.5.8.2.5" class="indexterm"></a> Elasticsearch replicas provide high availability during runtime; they allow
-you to tolerate sporadic node loss without an interruption of service.</p><p>Replicas do not provide protection from catastrophic failure, however.  For that,
+data. Elasticsearch replicas provide high availability during runtime; they
+allow you to tolerate sporadic node loss without an interruption of service.</p><p>Replicas do not provide protection from catastrophic failure, however. For that,
 you need a real backup of your cluster—a complete copy in case something goes
-wrong.</p><p>To back up your cluster, you can use the <code class="literal">snapshot</code> API.<a id="id-1.10.5.8.4.2" class="indexterm"></a>  This will take the current
-state and data in your cluster and save it to a shared repository.  This
-backup process is "smart."  Your first snapshot will be a complete copy of data,
+wrong.</p><p>To back up your cluster, you can use the <code class="literal">snapshot</code> API. This will take the
+current state and data in your cluster and save it to a shared repository. This
+backup process is "smart." Your first snapshot will be a complete copy of data,
 but all subsequent snapshots will save the <span class="emphasis"><em>delta</em></span> between the existing
-snapshots and the new data.  Data is incrementally added and deleted as you snapshot
-data over time.  This means subsequent backups will be substantially
+snapshots and the new data. Data is incrementally added and deleted as you
+snapshot data over time. This means subsequent backups will be substantially
 faster since they are transmitting far less data.</p><p>To use this functionality, you must first create a repository to save data.
 There are several repository types that you may choose from:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Shared filesystem, such as a NAS
@@ -620,8 +618,7 @@ Amazon S3
 HDFS (Hadoop Distributed File System)
 </li><li class="listitem">
 Azure Cloud
-</li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_creating_the_repository"></a>Creating the Repository<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Let’s set up a shared <a id="id-1.10.5.8.7.2.1" class="indexterm"></a>
-<a id="id-1.10.5.8.7.2.2" class="indexterm"></a><a id="id-1.10.5.8.7.2.3" class="indexterm"></a>filesystem repository:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_backup <a id="CO310-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+</li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_creating_the_repository"></a>Creating the Repository<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Let’s set up a shared filesystem repository:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_backup <a id="CO310-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 {
     "type": "fs", <a id="CO310-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     "settings": {
@@ -634,19 +631,19 @@ We specify that the type of the repository should be a shared filesystem.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO310-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 And finally, we provide a mounted drive as the destination.
 </p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The shared filesystem path must be accessible from all nodes in your
-cluster!</p></div></div><p>This will create the repository and required metadata at the mount point.  There
+cluster!</p></div></div><p>This will create the repository and required metadata at the mount point. There
 are also some other options that you may want to configure, depending on the
 performance profile of your nodes, network, and repository location:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">max_snapshot_bytes_per_sec</code>
 </span></dt><dd>
-    When snapshotting data into the repo, this controls
-the throttling of that process.  The default is <code class="literal">20mb</code> per second.
+    When snapshotting data into the repo, this controls the throttling of that
+process. The default is <code class="literal">20mb</code> per second.
 </dd><dt><span class="term">
 <code class="literal">max_restore_bytes_per_sec</code>
 </span></dt><dd>
-When restoring data from the repo, this controls
-how much the restore is throttled so that your network is not saturated.  The
-default is <code class="literal">20mb</code> per second.
+    When restoring data from the repo, this controls how much the restore is
+throttled so that your network is not saturated. The default is <code class="literal">20mb</code> per
+second.
 </dd></dl></div><p>Let’s assume we have a very fast network and are OK with extra traffic, so we
 can increase the defaults:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _snapshot/my_backup/ <a id="CO311-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 {
@@ -657,32 +654,28 @@ can increase the defaults:</p><div class="pre_wrapper"><pre class="programlistin
         "max_restore_bytes_per_sec" : "50mb"
     }
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO311-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Note that we are using a <code class="literal">POST</code> instead of <code class="literal">PUT</code>.  This will update the settings
-of the existing repository.
+Note that we are using a <code class="literal">POST</code> instead of <code class="literal">PUT</code>. This will update the
+settings of the existing repository.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO311-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Then add our new settings.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_snapshotting_all_open_indices"></a>Snapshotting All Open Indices<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A repository can contain multiple snapshots.<a id="id-1.10.5.8.8.2.1" class="indexterm"></a>
-<a id="id-1.10.5.8.8.2.2" class="indexterm"></a><a id="id-1.10.5.8.8.2.3" class="indexterm"></a>
-<a id="id-1.10.5.8.8.2.4" class="indexterm"></a>  Each snapshot is associated with a
-certain set of indices (for example, all indices, some subset, or a single index).  When
-creating a snapshot, you specify which indices you are interested in and
-give the snapshot a unique name.</p><p>Let’s start with the most basic snapshot command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_backup/snapshot_1</pre></div><p>This will back up all open indices into a snapshot named <code class="literal">snapshot_1</code>, under the
-<code class="literal">my_backup</code> repository.  This call will return immediately, and the snapshot will
-proceed in the background.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Usually you’ll want your snapshots to proceed as a background process, but occasionally
-you may want to wait for completion in your script.  This can be accomplished by
-adding a <code class="literal">wait_for_completion</code> flag:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_backup/snapshot_1?wait_for_completion=true</pre></div><p>This will block the call until the snapshot has completed.  Note that large snapshots
-may take a long time to return!</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_snapshotting_particular_indices"></a>Snapshotting Particular Indices<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The default behavior is to back up all open indices.<a id="id-1.10.5.8.9.2.1" class="indexterm"></a>
-<a id="id-1.10.5.8.9.2.2" class="indexterm"></a><a id="id-1.10.5.8.9.2.3" class="indexterm"></a>
-<a id="id-1.10.5.8.9.2.4" class="indexterm"></a>  But say you are using Marvel,
-and don’t really want to back up all the diagnostic <code class="literal">.marvel</code> indices.  You
-just don’t have enough space to back up everything.</p><p>In that case, you can specify which indices to back up when snapshotting your cluster:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_backup/snapshot_2
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_snapshotting_all_open_indices"></a>Snapshotting All Open Indices<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A repository can contain multiple snapshots. Each snapshot is associated with a
+certain set of indices (for example, all indices, some subset, or a single
+index). When creating a snapshot, you specify which indices you are interested
+in and give the snapshot a unique name.</p><p>Let’s start with the most basic snapshot command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_backup/snapshot_1</pre></div><p>This will back up all open indices into a snapshot named <code class="literal">snapshot_1</code>, under the
+<code class="literal">my_backup</code> repository. This call will return immediately, and the snapshot will
+proceed in the background.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Usually you’ll want your snapshots to proceed as a background process, but
+occasionally you may want to wait for completion in your script. This can be
+accomplished by adding a <code class="literal">wait_for_completion</code> flag:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_backup/snapshot_1?wait_for_completion=true</pre></div><p>This will block the call until the snapshot has completed. Note that large
+snapshots may take a long time to return!</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_snapshotting_particular_indices"></a>Snapshotting Particular Indices<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The default behavior is to back up all open indices. But say you are using
+Marvel, and don’t really want to back up all the diagnostic <code class="literal">.marvel</code> indices.
+You just don’t have enough space to back up everything.</p><p>In that case, you can specify which indices to back up when snapshotting your
+cluster:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_backup/snapshot_2
 {
     "indices": "index_1,index_2"
-}</pre></div><p>This snapshot command will now back up only <code class="literal">index1</code> and <code class="literal">index2</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_listing_information_about_snapshots"></a>Listing Information About Snapshots<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Once you start accumulating snapshots in your repository, you may forget the details<a id="id-1.10.5.8.10.2.1" class="indexterm"></a>
-<a id="id-1.10.5.8.10.2.2" class="indexterm"></a>
-relating to each—particularly when the snapshots are named based on time
-demarcations (for example, <code class="literal">backup_2014_10_28</code>).</p><p>To obtain information about a single snapshot, simply issue a <code class="literal">GET</code> request against
-the repo and snapshot name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _snapshot/my_backup/snapshot_2</pre></div><p>This will return a small response with various pieces of information regarding
+}</pre></div><p>This snapshot command will now back up only <code class="literal">index1</code> and <code class="literal">index2</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_listing_information_about_snapshots"></a>Listing Information About Snapshots<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Once you start accumulating snapshots in your repository, you may forget the
+details relating to each—particularly when the snapshots are named based on
+time demarcations (for example, <code class="literal">backup_2014_10_28</code>).</p><p>To obtain information about a single snapshot, simply issue a <code class="literal">GET</code> request
+against the repo and snapshot name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _snapshot/my_backup/snapshot_2</pre></div><p>This will return a small response with various pieces of information regarding
 the snapshot:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
    "snapshots": [
       {
@@ -706,22 +699,22 @@ the snapshot:</p><div class="pre_wrapper"><pre class="programlisting prettyprint
          }
       }
    ]
-}</pre></div><p>For a complete listing of all snapshots in a repository, use the <code class="literal">_all</code> placeholder
-instead of a snapshot name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _snapshot/my_backup/_all</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_deleting_snapshots"></a>Deleting Snapshots<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Finally, we need a command to delete old snapshots that <a id="id-1.10.5.8.11.2.1" class="indexterm"></a>
-<a id="id-1.10.5.8.11.2.2" class="indexterm"></a>are no longer useful.
+}</pre></div><p>For a complete listing of all snapshots in a repository, use the <code class="literal">_all</code>
+placeholder instead of a snapshot name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _snapshot/my_backup/_all</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_deleting_snapshots"></a>Deleting Snapshots<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Finally, we need a command to delete old snapshots that are no longer useful.
 This is simply a <code class="literal">DELETE</code> HTTP call to the repo/snapshot name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE _snapshot/my_backup/snapshot_2</pre></div><p>It is important to use the API to delete snapshots, and not some other mechanism
-(such as deleting by hand, or using automated cleanup tools on S3).  Because snapshots are
-incremental, it is possible that many snapshots are relying on old segments.
-The <code class="literal">delete</code> API understands what data is still in use by more recent snapshots,
-and will delete only unused segments.</p><p>If you do a manual file delete, however, you are at risk of seriously corrupting
+(such as deleting by hand, or using automated cleanup tools on S3). Because
+snapshots are incremental, it is possible that many snapshots are relying on old
+segments. The <code class="literal">delete</code> API understands what data is still in use by more recent
+snapshots, and will delete only unused segments.</p><p>If you do a manual file delete, however, you are at risk of seriously corrupting
 your backups because you are deleting data that is still in use.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_monitoring_snapshot_progress"></a>Monitoring Snapshot Progress<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">wait_for_completion</code> flag provides a rudimentary form of monitoring, but
-really isn’t sufficient when snapshotting or restoring even moderately sized clusters.</p><p>Two other APIs will give you more-detailed status about the
-state of the snapshotting.  First you can execute a <code class="literal">GET</code> to the snapshot ID,
-just as we did earlier get information about a particular snapshot:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _snapshot/my_backup/snapshot_3</pre></div><p>If the snapshot is still in progress when you call this, you’ll see information
-about when it was started, how long it has been running, and so forth.  Note, however,
-that this API uses the same threadpool as the snapshot mechanism.  If you are
-snapshotting very large shards, the time between status updates can be quite large,
-since the API is competing for the same threadpool resources.</p><p>A better option is to poll the <code class="literal">_status</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _snapshot/my_backup/snapshot_3/_status</pre></div><p>The <code class="literal">_status</code> API returns immediately and gives a much more verbose output of
+really isn’t sufficient when snapshotting or restoring even moderately sized
+clusters.</p><p>Two other APIs will give you more-detailed status about the state of the
+snapshotting. First you can execute a <code class="literal">GET</code> to the snapshot ID, just as we did
+earlier get information about a particular snapshot:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _snapshot/my_backup/snapshot_3</pre></div><p>If the snapshot is still in progress when you call this, you’ll see information
+about when it was started, how long it has been running, and so forth. Note,
+however, that this API uses the same threadpool as the snapshot mechanism. If
+you are snapshotting very large shards, the time between status updates can be
+quite large, since the API is competing for the same threadpool resources.</p><p>A better option is to poll the <code class="literal">_status</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _snapshot/my_backup/snapshot_3/_status</pre></div><p>The <code class="literal">_status</code> API returns immediately and gives a much more verbose output of
 statistics:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
    "snapshots": [
       {
@@ -777,14 +770,16 @@ statistics:</p><div class="pre_wrapper"><pre class="programlisting prettyprint l
                   ...</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO312-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 A snapshot that is currently running will show <code class="literal">IN_PROGRESS</code> as its status.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO312-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This particular snapshot has one shard still transferring (the other four have already completed).
-</p></td></tr></table></div><p>The response includes the overall status of the snapshot, but also drills down into
-per-index and per-shard statistics.  This gives you an incredibly detailed view
-of how the snapshot is progressing.  Shards can be in various states of completion:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+This particular snapshot has one shard still transferring (the other four
+have already completed).
+</p></td></tr></table></div><p>The response includes the overall status of the snapshot, but also drills down
+into per-index and per-shard statistics. This gives you an incredibly detailed
+view of how the snapshot is progressing. Shards can be in various states of
+completion:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">INITIALIZING</code>
 </span></dt><dd>
-    The shard is checking with the cluster state to see whether it can
-be snapshotted.  This is usually very fast.
+    The shard is checking with the cluster state to see whether it can be
+snapshotted. This is usually very fast.
 </dd><dt><span class="term">
 <code class="literal">STARTED</code>
 </span></dt><dd>
@@ -800,12 +795,12 @@ be snapshotted.  This is usually very fast.
 </dd><dt><span class="term">
 <code class="literal">FAILED</code>
 </span></dt><dd>
-    An error was encountered during the snapshot process, and this shard/index/snapshot
-could not be completed.  Check your logs for more information.
-</dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_canceling_a_snapshot"></a>Canceling a Snapshot<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Finally, you may want to cancel a snapshot or restore.<a id="id-1.10.5.8.13.2.1" class="indexterm"></a>
-<a id="id-1.10.5.8.13.2.2" class="indexterm"></a>  Since these are long-running
-processes, a typo or mistake when executing the operation could take a long time to
-resolve—and use up valuable resources at the same time.</p><p>To cancel a snapshot, simply delete the snapshot while it is in progress:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE _snapshot/my_backup/snapshot_3</pre></div><p>This will halt the snapshot process. Then proceed to delete the half-completed
+    An error was encountered during the snapshot process, and this
+shard/index/snapshot could not be completed. Check your logs for more
+information.
+</dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_canceling_a_snapshot"></a>Canceling a Snapshot<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/520_Post_Deployment/50_backup.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Finally, you may want to cancel a snapshot or restore. Since these are
+long-running processes, a typo or mistake when executing the operation could
+take a long time to resolve—and use up valuable resources at the same time.</p><p>To cancel a snapshot, simply delete the snapshot while it is in progress:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE _snapshot/my_backup/snapshot_3</pre></div><p>This will halt the snapshot process. Then proceed to delete the half-completed
 snapshot from the repository.</p></div></div><div class="navfooter"><span class="prev"><a href="_rolling_restarts.html">
               « 
               Rolling Restarts</a>

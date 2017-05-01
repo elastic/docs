@@ -599,18 +599,16 @@
            
           <a href="_cat_api.html">cat API
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_pending_tasks"></a>Pending Tasks<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/500_Cluster_Admin/40_other_stats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>There are certain tasks that only the master can perform, such as creating a new <a id="id-1.10.3.10.2.1" class="indexterm"></a>
-<a id="id-1.10.3.10.2.2" class="indexterm"></a>
-<a id="id-1.10.3.10.2.3" class="indexterm"></a>
-index or moving shards around the cluster.  Since a cluster can have only one
-master, only one node can ever process cluster-level metadata changes.  For
-99.9999% of the time, this is never a problem.  The queue of metadata changes
-remains essentially zero.</p><p>In some <span class="emphasis"><em>rare</em></span> clusters, the number of metadata changes occurs faster than
-the master can process them.  This leads to a buildup of pending actions that
-are queued.</p><p>The <code class="literal">pending-tasks</code> API <a id="id-1.10.3.10.4.2" class="indexterm"></a>will show you what (if any) cluster-level metadata changes
-are pending in the queue:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/pending_tasks</pre></div><p>Usually, the response will look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_pending_tasks"></a>Pending Tasks<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/500_Cluster_Admin/40_other_stats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>There are certain tasks that only the master can perform, such as creating a new
+index or moving shards around the cluster. Since a cluster can have only one
+master, only one node can ever process cluster-level metadata changes. For
+99.9999% of the time, this is never a problem. The queue of metadata changes
+remains essentially zero.</p><p>In some <span class="emphasis"><em>rare</em></span> clusters, the number of metadata changes occurs faster than the
+master can process them. This leads to a buildup of pending actions that are
+queued.</p><p>The <code class="literal">pending-tasks</code> API will show you what (if any) cluster-level metadata
+changes are pending in the queue:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/pending_tasks</pre></div><p>Usually, the response will look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
    "tasks": []
-}</pre></div><p>This means there are no pending tasks.  If you have one of the rare clusters that
+}</pre></div><p>This means there are no pending tasks. If you have one of the rare clusters that
 bottlenecks on the master node, your pending task list may look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
    "tasks": [
       {
@@ -637,19 +635,19 @@ bottlenecks on the master node, your pending task list may look like this:</p><d
          "time_in_queue": "858ms"
       }
   ]
-}</pre></div><p>You can see that tasks are assigned a priority (<code class="literal">URGENT</code> is processed before <code class="literal">HIGH</code>,
-for example), the order it was inserted, how long the action has been queued and
-what the action is trying to perform.  In the preceding list, there is a <code class="literal">create-index</code>
-action and two <code class="literal">shard-started</code> actions pending.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>When Should I Worry About Pending Tasks?</strong></p></div></div></div><p>As mentioned, the master node is rarely the bottleneck for clusters.  The only
-time it could bottleneck is if the cluster state is both very large
-<span class="emphasis"><em>and</em></span> updated frequently.</p><p>For example, if you allow customers to create as many dynamic fields as they wish,
-and have a unique index for each customer every day, your cluster state will grow
-very large.  The cluster state includes (among other things) a list of all indices,
-their types, and the fields for each index.</p><p>So if you have 100,000 customers, and each customer averages 1,000 fields and 90
+}</pre></div><p>You can see that tasks are assigned a priority (<code class="literal">URGENT</code> is processed before
+<code class="literal">HIGH</code>, for example), the order it was inserted, how long the action has been
+queued and what the action is trying to perform. In the preceding list, there is
+a <code class="literal">create-index</code> action and two <code class="literal">shard-started</code> actions pending.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>When Should I Worry About Pending Tasks?</strong></p></div></div></div><p>As mentioned, the master node is rarely the bottleneck for clusters. The only
+time it could bottleneck is if the cluster state is both very large <span class="emphasis"><em>and</em></span>
+updated frequently.</p><p>For example, if you allow customers to create as many dynamic fields as they
+wish, and have a unique index for each customer every day, your cluster state
+will grow very large. The cluster state includes (among other things) a list of
+all indices, their types, and the fields for each index.</p><p>So if you have 100,000 customers, and each customer averages 1,000 fields and 90
 days of retention—that’s nine billion fields to keep in the cluster state.
 Whenever this changes, the nodes must be notified.</p><p>The master must process these changes, which requires nontrivial CPU overhead,
 plus the network overhead of pushing the updated cluster state to all nodes.</p><p>It is these clusters that may begin to see cluster-state actions queuing up.
-There is no easy solution to this problem, however.  You have three options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+There is no easy solution to this problem, however. You have three options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Obtain a beefier master node.  Vertical scaling just delays the inevitable,
 unfortunately.
 </li><li class="listitem">
