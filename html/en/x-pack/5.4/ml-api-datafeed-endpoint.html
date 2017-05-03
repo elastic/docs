@@ -641,7 +641,8 @@ datafeed to each job.</p></div><div class="section"><div class="titlepage"><div>
 </dd><dt><span class="term">
 <code class="literal">indexes</code> (required)
 </span></dt><dd>
-  (array) An array of index names. For example: ["it_ops_metrics"].
+  (array) An array of index names. Wildcards are supported. For example:
+  ["it_ops_metrics", "server*"].
 </dd><dt><span class="term">
 <code class="literal">job_id</code> (required)
 </span></dt><dd>
@@ -854,12 +855,11 @@ Seconds from the Epoch, for example <code class="literal">1390370400</code>
 </li></ul></div><p>Date-time arguments using either of the ISO 8601 formats must have a time zone
 designator, where Z is accepted as an abbreviation for UTC time.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When a URL is expected (for example, in browsers), the <code class="literal">+</code> used in time
 zone designators must be encoded as <code class="literal">%2B</code>.</p></div></div><p>If the system restarts, any jobs that had datafeeds running are also restarted.</p><p>When a stopped datafeed is restarted, it continues processing input data from
-the next millisecond after it was stopped. If your data contains the same
-timestamp (for example, it is summarized by minute), then data loss is possible
-for the timestamp value when the datafeed stopped.  This situation can occur
-because the job might not have completely processed all data for that millisecond.
+the next millisecond after it was stopped. If new data was indexed for that
+exact millisecond between stopping and starting, it will be ignored.
 If you specify a <code class="literal">start</code> value that is earlier than the timestamp of the latest
-processed record, that value is ignored.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_path_parameters_6"></a>Path Parameters</h4></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+processed record, the datafeed continues from 1 millisecond after the timestamp
+of the latest processed record.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_path_parameters_6"></a>Path Parameters</h4></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">feed_id</code> (required)
 </span></dt><dd>
 (string) Identifier for the datafeed
@@ -926,9 +926,10 @@ For more information, see <a class="xref" href="security-privileges.html#privile
   bucket spans, or, for longer bucket spans, a sensible fraction of the bucket
   span. For example: "150s".
 </dd><dt><span class="term">
-<code class="literal">indexes</code> (required)
+<code class="literal">indexes</code>
 </span></dt><dd>
-  (array) An array of index names. For example: ["it_ops_metrics"].
+  (array) An array of index names. Wildcards are supported. For example:
+  ["it_ops_metrics", "server*"].
 </dd><dt><span class="term">
 <code class="literal">job_id</code>
 </span></dt><dd>
@@ -953,83 +954,38 @@ For more information, see <a class="xref" href="security-privileges.html#privile
   (unsigned integer) The <code class="literal">size</code> parameter that is used in Elasticsearch searches.
   The default value is <code class="literal">1000</code>.
 </dd><dt><span class="term">
-<code class="literal">types</code> (required)
+<code class="literal">types</code>
 </span></dt><dd>
   (array) A list of types to search for within the specified indices.
   For example: ["network","sql","kpi"].
 </dd></dl></div><p>For more information about these properties,
 see <a class="xref" href="ml-api-definitions.html#ml-datafeed-resource" title="Datafeed Resources">Datafeed Resources</a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_authorization_9"></a>Authorization</h4></div></div></div><p>You must have <code class="literal">manage_ml</code>, or <code class="literal">manage</code> cluster privileges to use this API.
-For more information, see <a class="xref" href="security-privileges.html#privileges-list-cluster" title="Cluster Privileges">Cluster Privileges</a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_examples_8"></a>Examples</h4></div></div></div><p>The following example updates the <code class="literal">datafeed-it-ops-kpi</code> datafeed:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _xpack/ml/datafeeds/datafeed-it-ops-kpi/_update
+For more information, see <a class="xref" href="security-privileges.html#privileges-list-cluster" title="Cluster Privileges">Cluster Privileges</a>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_examples_8"></a>Examples</h4></div></div></div><p>The following example updates the query for the <code class="literal">datafeed-it-ops-kpi</code> datafeed
+so that only log entries of error level are analyzed:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _xpack/ml/datafeeds/datafeed-it-ops-kpi/_update
 {
-  "query_delay": "60s",
-  "frequency": "150s",
-  "aggregations": {
-        "buckets": {
-          "date_histogram": {
-            "field": "@timestamp",
-            "interval": 30000,
-            "offset": 0,
-            "order": {
-              "_key": "asc"
-            },
-            "keyed": false,
-            "min_doc_count": 0
-          },
-          "aggregations": {
-            "events_per_min": {
-              "sum": {
-                "field": "events_per_min"
-              }
-            },
-            "@timestamp": {
-              "max": {
-                "field": "@timestamp"
-              }
-            }
-          }
-        }
-      },
-  "scroll_size": 1000,
-  "chunking_config": {
-  "mode": "manual",
-  "time_span": "30000000ms"
+  "query": {
+    "term": {
+      "level": "error"
+    }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/ml-api-datafeed-endpoint/8.json"></div><p>When the datafeed is updated, you receive the following results:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/ml-api-datafeed-endpoint/8.json"></div><p>When the datafeed is updated, you receive the full datafeed configuration with
+with the updated values:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "datafeed_id": "datafeed-it-ops-kpi",
   "job_id": "it-ops-kpi",
-  "query_delay": "60s",
-  "frequency": "150s",
-  ...
-  "aggregations": {
-    "buckets": {
-      "date_histogram": {
-        "field": "@timestamp",
-        "interval": 30000,
-        "offset": 0,
-        "order": {
-          "_key": "asc"
-        },
-        "keyed": false,
-        "min_doc_count": 0
-      },
-      "aggregations": {
-        "events_per_min": {
-          "sum": {
-            "field": "events_per_min"
-          }
-        },
-        "@timestamp": {
-          "max": {
-            "field": "@timestamp"
-          }
-        }
+  "query_delay": "1m",
+  "indexes": ["it-ops"],
+  "types": ["logs"],
+  "query": {
+    "term": {
+      "level": {
+        "value": "error",
+        "boost": 1
       }
     }
   },
   "scroll_size": 1000,
   "chunking_config": {
-    "mode": "manual",
-    "time_span": "30000000ms"
+    "mode": "auto"
   }
 }</pre></div></div></div></div><div class="navfooter"><span class="prev"><a href="ml-apis.html">
               « 
