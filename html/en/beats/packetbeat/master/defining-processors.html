@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Managing Multiline Messages
-        | Filebeat Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Defining Processors
+        | Packetbeat Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Filebeat Reference [master]" /><link rel="up" href="configuring-howto-filebeat.html" title="Configuring Filebeat" /><link rel="prev" href="kubernetes.html" title="Adding Kubernetes Metadata" /><link rel="next" href="configuring-ingest-node.html" title="Configuring Filebeat to Use Ingest Node" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Filebeat/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Packetbeat Reference [master]" /><link rel="up" href="filtering-and-enhancing-data.html" title="Filtering and Enhancing the Exported Data" /><link rel="prev" href="filtering-and-enhancing-data.html" title="Filtering and Enhancing the Exported Data" /><link rel="next" href="add-cloud-metadata.html" title="Adding Cloud Metadata" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Packetbeat/Reference/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -592,69 +592,119 @@
 <div class="page_header">You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Filebeat Reference
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Packetbeat Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="configuring-howto-filebeat.html">Configuring Filebeat</a></span> » <span class="breadcrumb-node">Managing Multiline Messages</span></div><div class="navheader"><span class="prev"><a href="kubernetes.html">
+    </a></span> » <span class="breadcrumb-link"><a href="configuring-howto-packetbeat.html">Configuring Packetbeat</a></span> » <span class="breadcrumb-link"><a href="filtering-and-enhancing-data.html">Filtering and Enhancing the Exported Data</a></span> » <span class="breadcrumb-node">Defining Processors</span></div><div class="navheader"><span class="prev"><a href="filtering-and-enhancing-data.html">
               « 
-              Adding Kubernetes Metadata</a>
+              Filtering and Enhancing the Exported Data</a>
            
         </span><span class="next">
            
-          <a href="configuring-ingest-node.html">Configuring Filebeat to Use Ingest Node
+          <a href="add-cloud-metadata.html">Adding Cloud Metadata
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="multiline-examples"></a>Managing Multiline Messages<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/multiline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The files harvested by Filebeat may contain messages that span multiple lines of text. In order to correctly handle
-these multiline events, you need to configure <code class="literal">multiline</code> settings in the <code class="literal">filebeat.yml</code> file to specify which
-lines are part of a single event.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If you are sending multiline events to Logstash, use the options described here to handle multiline events
-before sending the event data to Logstash. Trying to implement multiline event handling in Logstash (for example, by
-using the Logstash multiline codec) may result in the mixing of streams and corrupted data.</p></div></div><p>At a minimum, you need to configure these <code class="literal">multiline</code> options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-the <code class="literal">pattern</code> option, which specifies a regular expression. Depending on how you configure other multiline options,
-lines that match the specified regular expression are considered either continuations of a previous line or the start of a new multiline event. You can set the <code class="literal">negate</code> option to negate the pattern.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="defining-processors"></a>Defining Processors<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You define processors in the <code class="literal">packetbeat.yml</code> file to filter and enhance the
+data before sending events to the configured output.</p><p>To define a processor, you specify the processor name, an optional condition,
+and a set of parameters:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">processors:
+ - &lt;processor_name&gt;:
+     when:
+        &lt;condition&gt;
+     &lt;parameters&gt;
+ - &lt;processor_name&gt;:
+     when:
+        &lt;condition&gt;
+     &lt;parameters&gt;
+...</pre></div><p>Where:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+&lt;processor_name&gt; specifies a <a class="link" href="defining-processors.html#processors" title="Processors">processor</a> that performs some kind
+of action, such as selecting the fields that are exported or adding metadata to
+the event.
 </li><li class="listitem">
-the <code class="literal">match</code> option, which specifies how Filebeat combines matching lines into an event. You can specify <code class="literal">before</code> or <code class="literal">after</code>.
-</li></ul></div><p>See the full documentation for <a class="xref" href="configuration-filebeat-options.html#multiline" title="multiline">multiline</a> to learn more about these options. Also read <a class="xref" href="yaml-tips.html" title="YAML Tips and Gotchas"><em>YAML Tips and Gotchas</em></a> and
-<a class="xref" href="regexp-support.html" title="Regular Expression Support"><em>Regular Expression Support</em></a> to avoid common mistakes.</p><h3><a id="_testing_your_regexp_pattern_for_multiline"></a>Testing Your Regexp Pattern for Multiline<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/multiline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To make it easier for you to test the regexp patterns in your multiline config, we’ve created a
-<a class="ulink" href="https://play.golang.org/p/uAd5XHxscu" target="_top">Go Playground</a>. You can simply plug in the regexp pattern along with
-the <code class="literal">negate</code> setting that you plan to use, and paste a sample message between the content backticks (` `).
-Then click Run, and you’ll see which lines in the message match your specified configuration. For example:</p><p><span class="inlinemediaobject"><img src="images/go-playground.png" alt="images/go-playground.png" /></span></p><h3><a id="_examples_of_multiline_configuration"></a>Examples of Multiline Configuration<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/multiline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The examples in this section cover the following use cases:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Combining a Java stack trace into a single event
+&lt;when: condition&gt; specifies an optional <a class="link" href="defining-processors.html#conditions" title="Conditions">condition</a>. If the
+condition is present, then the action is executed only if the condition is
+fulfilled. If no condition is passed, then the action is always executed.
 </li><li class="listitem">
-Combining C-style line continuations into a single event
+&lt;parameters&gt; is the list of parameters to pass to the processor.
+</li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="processors"></a>Processors<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The supported processors are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="add-cloud-metadata.html" title="Adding Cloud Metadata"><code class="literal">add_cloud_metadata</code></a>
 </li><li class="listitem">
-Combining multiple lines from time-stamped events
-</li></ul></div><h4><a id="_java_stack_traces"></a>Java Stack Traces<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/multiline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Java stack traces consist of multiple lines, with each line after the initial line beginning with whitespace, as in
-this example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Exception in thread "main" java.lang.NullPointerException
-        at com.example.myproject.Book.getTitle(Book.java:16)
-        at com.example.myproject.Author.getBookTitles(Author.java:25)
-        at com.example.myproject.Bootstrap.main(Bootstrap.java:14)</pre></div><p>To consolidate these lines into a single event in Filebeat, use the following multiline configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">multiline.pattern: '^[[:space:]]'
-multiline.negate: false
-multiline.match: after</pre></div><p>This configuration merges any line that begins with whitespace up to the previous line.</p><p>Here’s a Java stack trace that presents a slightly more complex example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">Exception in thread "main" java.lang.IllegalStateException: A book has a null property
-       at com.example.myproject.Author.getBookIds(Author.java:38)
-       at com.example.myproject.Bootstrap.main(Bootstrap.java:14)
-Caused by: java.lang.NullPointerException
-       at com.example.myproject.Book.getId(Book.java:22)
-       at com.example.myproject.Author.getBookIds(Author.java:35)
-       ... 1 more</pre></div><p>To consolidate these lines into a single event in Filebeat, use the following multiline configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">multiline.pattern: '^[[:space:]]+|^Caused by:'
-multiline.negate: false
-multiline.match: after</pre></div><p>In this example, the pattern matches the following lines:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-a line that begins with spaces followed by the word <code class="literal">at</code> or <code class="literal">...</code>
+<a class="link" href="add-locale.html" title="Adding the Local Time Zone"><code class="literal">add_locale</code></a>
 </li><li class="listitem">
-a line that begins with the words <code class="literal">Caused by:</code>
-</li></ul></div><h4><a id="_line_continuations"></a>Line Continuations<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/multiline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Several programming languages use the backslash (<code class="literal">\</code>) character at the end of a line to denote that the line continues,
-as in this example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-c">printf ("%10.10ld  \t %10.10ld \t %s\
-  %f", w, x, y, z );</pre></div><p>To consolidate these lines into a single event in Filebeat, use the following multiline configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">multiline.pattern: '\\$'
-multiline.negate: false
-multiline.match: before</pre></div><p>This configuration merges any line that ends with the <code class="literal">\</code> character with the line that follows.</p><h4><a id="_timestamps"></a>Timestamps<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/multiline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Activity logs from services such as Elasticsearch typically begin with a timestamp, followed by information on the
-specific activity, as in this example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">[2015-08-24 11:49:14,389][INFO ][env                      ] [Letha] using [1] data paths, mounts [[/
-(/dev/disk1)]], net usable_space [34.5gb], net total_space [118.9gb], types [hfs]</pre></div><p>To consolidate these lines into a single event in Filebeat, use the following multiline configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">multiline.pattern: '^\[[0-9]{4}-[0-9]{2}-[0-9]{2}'
-multiline.negate: true
-multiline.match: after</pre></div><p>This configuration uses the <code class="literal">negate: true</code> and <code class="literal">match: after</code> settings to specify that any line that does not match the
-specified pattern belongs to the previous line.</p></div><div class="navfooter"><span class="prev"><a href="kubernetes.html">
+<a class="link" href="decode-json-fields.html" title="Decoding JSON Fields"><code class="literal">decode_json_fields</code></a>
+</li><li class="listitem">
+<a class="link" href="drop-event.html" title="Dropping Events"><code class="literal">drop_event</code></a>
+</li><li class="listitem">
+<a class="link" href="drop-fields.html" title="Dropping Fields from Events"><code class="literal">drop_fields</code></a>
+</li><li class="listitem">
+<a class="link" href="include-fields.html" title="Adding Additional Fields to Events"><code class="literal">include_fields</code></a>
+</li><li class="listitem">
+<a class="link" href="kubernetes.html" title="Adding Kubernetes Metadata"><code class="literal">kubernetes</code></a>
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="conditions"></a>Conditions<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Each condition receives a field to compare. You can specify multiple fields
+under the same condition by using <code class="literal">AND</code> between the fields (for example,
+<code class="literal">field1 AND field2</code>).</p><p>For each field, you can specify a simple field name or a nested map, for
+example <code class="literal">dns.question.name</code>.</p><p>See <a class="xref" href="exported-fields.html" title="Exported Fields">Exported Fields</a> for a list of all the fields that are exported by
+Packetbeat.</p><p>The supported conditions are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="defining-processors.html#condition-equals" title="equalsedit"><code class="literal">equals</code></a>
+</li><li class="listitem">
+<a class="link" href="defining-processors.html#condition-contains" title="containsedit"><code class="literal">contains</code></a>
+</li><li class="listitem">
+<a class="link" href="defining-processors.html#condition-regexp" title="regexpedit"><code class="literal">regexp</code></a>
+</li><li class="listitem">
+<a class="link" href="defining-processors.html#condition-range" title="rangeedit"><code class="literal">range</code></a>
+</li><li class="listitem">
+<a class="link" href="defining-processors.html#condition-or" title="ORedit"><code class="literal">or</code></a>
+</li><li class="listitem">
+<a class="link" href="defining-processors.html#condition-and" title="ANDedit"><code class="literal">and</code></a>
+</li><li class="listitem">
+<a class="link" href="defining-processors.html#condition-not" title="NOTedit"><code class="literal">not</code></a>
+</li></ul></div><h5><a id="condition-equals"></a>equals<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>With the <code class="literal">equals</code> condition, you can compare if a field has a certain value.
+The condition accepts only an integer or a string value.</p><p>For example, the following condition checks if the response code of the HTTP
+transaction is 200:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">equals:
+  http.response.code: 200</pre></div><h5><a id="condition-contains"></a>contains<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">contains</code> condition checks if a value is part of a field. The field can be
+a string or an array of strings. The condition accepts only a string value.</p><p>For example, the following condition checks if an error is part of the
+transaction status:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">contains:
+  status: "Specific error"</pre></div><h5><a id="condition-regexp"></a>regexp<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">regexp</code> condition checks the field against a regular expression. The
+condition accepts only strings.</p><p>For example, the following condition checks if the process name starts with
+<code class="literal">foo</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">regexp:
+  system.process.name: "foo.*"</pre></div><h5><a id="condition-range"></a>range<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">range</code> condition checks if the field is in a certain range of values. The
+condition supports <code class="literal">lt</code>, <code class="literal">lte</code>, <code class="literal">gt</code> and <code class="literal">gte</code>. The condition accepts only
+integer or float values.</p><p>For example, the following condition checks for failed HTTP transactions by
+comparing the <code class="literal">http.response.code</code> field with 400.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">range:
+    http.response.code:
+        gte: 400</pre></div><p>This can also be written as:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">range:
+    http.response.code.gte: 400</pre></div><p>The following condition checks if the CPU usage in percentage has a value
+between 0.5 and 0.8.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">range:
+    system.cpu.user.pct.gte: 0.5
+    system.cpu.user.pct.lt: 0.8</pre></div><h5><a id="condition-or"></a>OR<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">or</code> operator receives a list of conditions.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">or:
+  - &lt;condition1&gt;
+  - &lt;condition2&gt;
+  - &lt;condition3&gt;
+  ...</pre></div><p>For example, to configure the condition
+<code class="literal">http.response.code = 304 OR http.response.code = 404</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">or:
+  - equals:
+      http.response.code: 304
+  - equals:
+      http.response.code: 404</pre></div><h5><a id="condition-and"></a>AND<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">and</code> operator receives a list of conditions.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">and:
+  - &lt;condition1&gt;
+  - &lt;condition2&gt;
+  - &lt;condition3&gt;
+  ...</pre></div><p>For example, to configure the condition
+<code class="literal">http.response.code = 200 AND status = OK</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">and:
+  - equals:
+      http.response.code: 200
+  - equals:
+      status: OK</pre></div><p>To configure a condition like <code class="literal">&lt;condition1&gt; OR &lt;condition2&gt; AND &lt;condition3&gt;</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">or:
+ - &lt;condition1&gt;
+ - and:
+    - &lt;condition2&gt;
+    - &lt;condition3&gt;</pre></div><h5><a id="condition-not"></a>NOT<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">not</code> operator receives the condition to negate.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">not:
+  &lt;condition&gt;</pre></div><p>For example, to configure the condition <code class="literal">NOT status = OK</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">not:
+  equals:
+    status: OK</pre></div></div></div><div class="navfooter"><span class="prev"><a href="filtering-and-enhancing-data.html">
               « 
-              Adding Kubernetes Metadata</a>
+              Filtering and Enhancing the Exported Data</a>
            
         </span><span class="next">
            
-          <a href="configuring-ingest-node.html">Configuring Filebeat to Use Ingest Node
+          <a href="add-cloud-metadata.html">Adding Cloud Metadata
                »
             </a></span></div>
 <!-- end body -->
