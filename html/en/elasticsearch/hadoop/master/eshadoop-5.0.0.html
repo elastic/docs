@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Performance considerations
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Elasticsearch for Apache Hadoop version 5.0.0
         | Elasticsearch for Apache Hadoop [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch for Apache Hadoop [master]" /><link rel="up" href="reference.html" title="Elasticsearch for Apache Hadoop" /><link rel="prev" href="metrics.html" title="Hadoop Metrics" /><link rel="next" href="cloud.html" title="Cloud/restricted environments" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Apache Hadoop/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch for Apache Hadoop [master]" /><link rel="up" href="release-notes.html" title="Release Notes" /><link rel="prev" href="eshadoop-5.0.1.html" title="Elasticsearch for Apache Hadoop version 5.0.1" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Apache Hadoop/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -594,33 +594,312 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch for Apache Hadoop
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="reference.html">Elasticsearch for Apache Hadoop</a></span> » <span class="breadcrumb-node">Performance considerations</span></div><div class="navheader"><span class="prev"><a href="metrics.html">
+    </a></span> » <span class="breadcrumb-link"><a href="release-notes.html">Release Notes</a></span> » <span class="breadcrumb-node">Elasticsearch for Apache Hadoop version 5.0.0</span></div><div class="navheader"><span class="prev"><a href="eshadoop-5.0.1.html">
               « 
-              Hadoop Metrics</a>
+              Elasticsearch for Apache Hadoop version 5.0.1</a>
            
         </span><span class="next">
            
-          <a href="cloud.html">Cloud/restricted environments
-               »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="performance"></a>Performance considerations<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/performance.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>As the connector itself does not abstract Elasticsearch nor is it stateful per se (does not keep any state between jobs and only sends writes in bulk - see below), when looking at performance, one should keep an eye on Elasticsearch itself and its behavior.</p><p>Do note that in general, we advise against changing too many settings especially on the Elasticsearch side simply because the defaults are good enough for most cases. With every release Elasticsearch becomes <span class="emphasis"><em>smarter</em></span> about its environment and automatically adjusts itself (for example HDD vs SDD).</p><p>Unless you really <span class="emphasis"><em>know</em></span> what you are doing and have actual results showing the improvements (aka real benchmarks) do <span class="strong"><strong>not</strong></span> make blind adjustments simply because there is a blog or post somewhere telling you to do so. Way too many times we have encountered systems that underperformed due to some misconfiguration that was supposed to do otherwise.</p><h3><a id="_always_aim_for_stability"></a>Always aim for stability<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/performance.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Do note that the first and most important part of a system (even more so in a distributed one) is to have a stable, predictable environment as much as possible. While failure is a certainty (it is not a question of if but rather when), one should also keep in mind the stability of a system under pressure.
-Be generous with your hardware and start with baby steps - if a system cannot perform adequate under small load, it will certainly lag behind under pressure.
-Always stability should come first and performance second. One can’t have a performant system without it being stable.</p><p>Please keep this in mind and do not tweak settings hoping it would automatically increase performance.
-That is why for reliable results, always measure to see whether the changes that you make, have the desired impact.</p><h3><a id="_read_performance"></a>Read performance<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/performance.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>elasticsearch-hadoop performs a parallel read spread across all the target resource shards. It relies on <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/current/scroll.html" target="_top">scrolling</a> which is as efficient as it can be in returning the results of a query.
-If the read performance is not optimal, first try to see how <span class="emphasis"><em>expensive</em></span> the query is by interogating Elasticsearch directly. The Elasticsearch documentation is a good place to start, such as the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/current/_improving_performance.html" target="_top">Improving Performance</a> page; similar queries might return the same results but can have a different cost.</p><p>If a query is inefficient, try rewriting it in a more optimal way. Sometimes changing the data structure (for example by adding a new field or denormalizing it) can significantly improve the query performance as there are less calculations that need to be done.</p><p>Note that typically, the number of results do not influence the performance of the connector nor Elasticsearch itself. The connector does <span class="strong"><strong>not</strong></span> read all the results at once but rather in chunks and passes them onwards to the consumer.
-Thus typically the size becomes an issue on the consumer side depending on whether it tries to buffer the results from the connector or can simply iterate or stream through them.</p><p>A common concern is whether increasing the number of shards improves read performance. And it does if that means scaling out, that is spread the data better across multiple nodes (which ideally sit on multiple machines). If that is not the case, the shards end up sitting on the same node and thus on the same machine; there’s simply <span class="emphasis"><em>virtual</em></span> partitioning of data as the hardware behind it remains the same.</p><p>This can increase the consumption parallelism on the client side (more shards means more tasks that can read the data from Elasticsearch at once) however from Elasticsearch perspective there are no actual gains and thus query performance will likely remain the same.</p><h3><a id="_write_performance"></a>Write performance<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/performance.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A crucial aspect in improving the write performance is to determine the maximum rate of data that Elasticsearch can ingest comfortably. This depends on many variables (data size, hardware, current load, etc..) but a good rule of thumb is for a bulk request to not take longer than 1-2s to be successfully processed.</p><p>Since elasticsearch-hadoop performs parallel writes, it is important to keep this in mind across <span class="emphasis"><em>all</em></span> tasks, which are created by Hadoop/Spark at runtime.</p><h4><a id="_decrease_bulk_size"></a>Decrease bulk size<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/performance.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Remember that elasticsearch-hadoop allows one to configure the number of entries and size for a batch write to Elasticsearch <span class="emphasis"><em>per task</em></span>.
-That is, assuming there are <code class="literal">T</code> tasks, with a configuration of <code class="literal">B</code> bytes and <code class="literal">N</code> number of documents (where <code class="literal">d</code> is the average document size), the maximum number of bulk write requests at a given point in time can be
-<code class="literal">T*B</code> bytes or <code class="literal">T*N</code> number of docs (<code class="literal">T*N*d</code> in bytes) - which ever comes first.</p><p>Thus for a job with 5 tasks, using the defaults (1mb or 1000 docs) means up to 5mb/5000 docs bulk size (spread across shards). If this takes more than 1-2s to be processed, there’s no need to decrease it. If it’s less then that, you can try increasing it in <span class="emphasis"><em>small</em></span> steps.</p><h4><a id="_use_a_maximum_limit_of_tasks_writing_to_elasticsearch"></a>Use a maximum limit of tasks writing to Elasticsearch<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/performance.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In case of elasticsearch-hadoop, the runtime (Hadoop or Spark) can and will create multiple tasks that will write at the same time to Elasticsearch. In some cases, this leads to a disproportionate number of tasks (sometimes one or even two orders of magnitude higher) between what the user planned to use for Elasticsearch and the actual number.
-This appears in particular when dealing with inputs that are highly splittable which can easily generate tens or hundreds of tasks. If the target Elasticsearch cluster has just a few nodes, likely dealing with so much data at once will be problematic.</p><h4><a id="_understand_why_rejections_happen"></a>Understand why rejections happen<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/performance.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Under too much load, Elasticsearch starts rejecting documents - in such a case elasticsearch-hadoop waits for a while (default 10s) and then retries (by default up to 3 times). If Elasticsearch keeps rejecting documents, the job will eventually fail.
-In such a scenario, monitor Elasticsearch (through Marvel or other plugins) and keep an eye on bulk processing. Look at the percentage of documents being rejected; it is perfectly fine to have some documents rejected but anything higher then 10-15% on a regular basis is a good indication the cluster is overloaded.</p><h4><a id="_keep_the_number_of_retries_and_waits_at_bay"></a>Keep the number of retries and waits at bay<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/performance.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>As mentioned above, retries happen when documents are being rejected. This can be for a number of reasons - a sudden indexing spike, node relocation, etc… If your job keeps being aborted as the retries fail, this is a good indication your cluster is overloaded.
-Increasing it will <span class="strong"><strong>not</strong></span> make the problem go away, rather it will just hide it under the rug; the job will be quite slow (as likely each write will be retried several times until all documents are acknowledged).</p></div><div class="navfooter"><span class="prev"><a href="metrics.html">
+          </span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="eshadoop-5.0.0"></a>Elasticsearch for Apache Hadoop version 5.0.0<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/appendix/release-notes/5.0.0.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>October 26, 2016</p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="breaking-5.0.0"></a>Breaking Changes<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/appendix/release-notes/5.0.0.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Update to compat with Storm 1.x.x
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/769" target="_top">#769</a>
+</li><li class="listitem">
+Why does EsBolt still use the old JAR
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/754" target="_top">#754</a>
+</li><li class="listitem">
+Drop HDFS repository
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/741" target="_top">#741</a>
+</li><li class="listitem">
+Drop support for Spark 1.0-1.2
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/740" target="_top">#740</a>
+</li><li class="listitem">
+Remove legacy Hive version
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/739" target="_top">#739</a>
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="new-5.0.0"></a>New Features<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/appendix/release-notes/5.0.0.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Mapping
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Add support for 16-bit/half floats in ES 5.x
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/800" target="_top">#800</a>
+</li><li class="listitem">
+New ES type scaled_float
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/822" target="_top">#822</a>
+</li></ul></div></dd><dt><span class="term">
+MR
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Integrating with ES ingest node pipeline
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/806" target="_top">#806</a>
+</li></ul></div></dd><dt><span class="term">
+New Slice API
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Add the ability to create IndexPartition based on the desired
+number of documents per split
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/812" target="_top">#812</a>
+(issue: <a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/778" target="_top">#778</a>)
+</li></ul></div></dd><dt><span class="term">
+Spark
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Support for Spark 2.0 / Datasets
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/647" target="_top">#647</a>
+</li><li class="listitem">
+Provided dedicated support for Spark 1.3-1.6 DStreams
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/" target="_top">#802</a>
+</li></ul></div></dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="enhancements-5.0.0"></a>Enhancements<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/appendix/release-notes/5.0.0.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Build
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+2.3.1 release notes list many bugs as fixed without commits
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/770" target="_top">#770</a>
+</li></ul></div></dd><dt><span class="term">
+REST
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Expire Unused Pooled Transports in Spark Streaming
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/849" target="_top">#849</a>
+</li><li class="listitem">
+Validate field exclusion settings when EsSpark.saveJsonToEs()
+is executed
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/782" target="_top">#782</a>
+</li><li class="listitem">
+Review the error messages in ES 5.x and properly parse them
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/779" target="_top">#779</a>
+</li><li class="listitem">
+Align extended Boolean parsing with Elasticsearch
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/798" target="_top">#798</a>
+</li><li class="listitem">
+Fields replacement in es.update.script.params fails for objects
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/760" target="_top">#760</a>
+</li><li class="listitem">
+Replace/Ignore DOT character in field names before inserting
+into Elastic Search
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/758" target="_top">#758</a>
+</li></ul></div></dd><dt><span class="term">
+Spark
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Improve ElasticsearchRelation extensibility
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/829" target="_top">#829</a>
+</li><li class="listitem">
+Explicitly specify buildScan return type
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/826" target="_top">#826</a>
+</li><li class="listitem">
+Upgrade to Spark 1.6.2
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/797" target="_top">#797</a>
+</li><li class="listitem">
+Fix example for spark.
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/768" target="_top">#768</a>
+(issue: <a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/767" target="_top">#767</a>)
+</li></ul></div></dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="bugs-5.0.0"></a>Bug Fixes<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/appendix/release-notes/5.0.0.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Build
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Repository HDFS still referred in the build system
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/775" target="_top">#775</a>
+</li><li class="listitem">
+Spark 1.2 artifacts are still referenced
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/774" target="_top">#774</a>
+</li></ul></div></dd><dt><span class="term">
+Hive
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Date type not properly inserted into ES
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/757" target="_top">#757</a>
+</li></ul></div></dd><dt><span class="term">
+MR
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Reading boolean 0/1 values from ES into Spark does not work
+(although false/true is ok)
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/795" target="_top">#795</a>
+</li><li class="listitem">
+Elasticsearch Mapreduce write "es.mapping.exclude" not working
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/752" target="_top">#752</a>
+</li></ul></div></dd><dt><span class="term">
+MR and Spark
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Restore data locality preference for hadoop and spark
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/819" target="_top">#819</a>
+(issue: <a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/814" target="_top">#814</a>)
+</li></ul></div></dd><dt><span class="term">
+NetworkClient
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Node [127.0.0.1:9200] failed (Read timed out); no other nodes
+left - aborting…
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/753" target="_top">#753</a>
+</li><li class="listitem">
+Invalid target URI <a class="ulink" href="mailto:POST@null" target="_top">POST@null</a>/pharmadata/test/_search
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/748" target="_top">#748</a>
+</li></ul></div></dd><dt><span class="term">
+Pig
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Pig maps can have values of different types
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/777" target="_top">#777</a>
+</li></ul></div></dd><dt><span class="term">
+Rest
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Update/Upsert bulk actions with scripts are broken for ES 1.x as of 5.0.0-alpha5
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/817" target="_top">#817</a>
+</li><li class="listitem">
+Shard size estimations for Slice API do not target shards
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/843" target="_top">#843</a>
+</li><li class="listitem">
+Elasticsearch-spark connector failing to save data with an Illegal
+Argument Exception : "No class name given"
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/837" target="_top">#837</a>
+</li><li class="listitem">
+Spark Datasource: Non empty BINARY fields are always considered empty
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/835" target="_top">#835</a>
+</li><li class="listitem">
+Fix memory leak caused by re-wrapping DelegatedProtocol
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/823" target="_top">#823</a>
+</li><li class="listitem">
+Fixed parsing of ES mapping with OBJECT field named <span class="emphasis"><em>properties</em></span>
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/810" target="_top">#810</a>
+(issue: <a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/809" target="_top">#809</a>)
+</li><li class="listitem">
+Not all errors in ES are reported when writing
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/720" target="_top">#720</a>
+</li><li class="listitem">
+es.index.auto.create setting doesn’t work as expected
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/793" target="_top">#793</a>
+</li><li class="listitem">
+Parsing error messages can cause a NPE
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/776" target="_top">#776</a>
+</li><li class="listitem">
+shard preference concatenation with | gives query error
+<a class="ulink" href="https://github.com/elastic/elasticsearch-hadoop/issues/874" target="_top">#874</a>
+</li></ul></div></dd><dt><span class="term">
+Spark
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Dropping a whole column of a DataFrame while indexing the DF into ES
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/841" target="_top">#841</a>
+</li><li class="listitem">
+Fix: Non empty BINARY fields are considered empty
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/834" target="_top">#834</a>
+</li><li class="listitem">
+saveToEs saves fields with NULL values
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/792" target="_top">#792</a>
+</li><li class="listitem">
+Failed to write data back to ES by using Spark DataFrame save() API !!
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/749" target="_top">#749</a>
+</li><li class="listitem">
+Pushdown option not working as expected with Spark data frames
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/734" target="_top">#734</a>
+</li></ul></div></dd><dt><span class="term">
+URLDecoder
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Illegal hex characters in escape (%) pattern - For input string: " S"
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/747" target="_top">#747</a>
+</li></ul></div></dd><dt><span class="term">
+Yarn
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Authenticate with a local keytab in the YARN Application Master
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/807" target="_top">#807</a>
+</li></ul></div></dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="docs-5.0.0"></a>Documentation<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/appendix/release-notes/5.0.0.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+es.read.field.as.array.include NOT es.field.read.as.array.include
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/860" target="_top">#860</a>
+</li><li class="listitem">
+Corrected property name
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/805" target="_top">#805</a>
+</li><li class="listitem">
+Repository HDFS doc improvements
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/781" target="_top">#781</a>
+</li><li class="listitem">
+Snapshot Creation Exception
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/813" target="_top">#813</a>
+</li><li class="listitem">
+Corrected link to <span class="emphasis"><em>ADD</em></span> command
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/788" target="_top">#788</a>
+</li><li class="listitem">
+Update spark.adoc
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/785" target="_top">#785</a>
+</li><li class="listitem">
+Update cloud.adoc
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/773" target="_top">#773</a>
+</li><li class="listitem">
+Update configuration.adoc
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/772" target="_top">#772</a>
+</li><li class="listitem">
+Tests fail in build
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/755" target="_top">#755</a>
+</li><li class="listitem">
+Documentation Issue : Wrong package name
+<a class="ulink" href="https://github.com/elastic/elasticsearch-hadoop/issues/838" target="_top">#838</a>
+</li><li class="listitem">
+ES_CLASSPATH removed from ES 2.x
+<a class="ulink" href="https://github.com/elastic/elasticsearch-hadoop/issues/861" target="_top">#861</a>
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="nonissue-5.0.0"></a>Non-issue<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/appendix/release-notes/5.0.0.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Hive
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Error Loading Data
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/839" target="_top">#839</a>
+</li><li class="listitem">
+EsHadoopIllegalArgumentException: Cannot detect ES version
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/794" target="_top">#794</a>
+</li><li class="listitem">
+ES-Hive throwing exception while reading for bulk no. of columns
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/790" target="_top">#790</a>
+</li><li class="listitem">
+Create a external table with <span class="emphasis"><em>location</em></span> command success while
+elasticsearch-hadoop do not support <span class="emphasis"><em>location</em></span> function
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/786" target="_top">#786</a>
+</li></ul></div></dd><dt><span class="term">
+Pig
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Store Map as object with Pig in Elasticsearch
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/848" target="_top">#848</a>
+</li><li class="listitem">
+Get fields with documents in Elasticsearch
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/825" target="_top">#825</a>
+</li><li class="listitem">
+Failure while using EsStorage twice on a single Pig script to store a Parent Child relation
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/756" target="_top">#756</a>
+</li><li class="listitem">
+Store Tuple as object with Pig in Elasticsearch
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/746" target="_top">#746</a>
+</li></ul></div></dd><dt><span class="term">
+REST
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Some way to query "total" field from result set?
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/830" target="_top">#830</a>
+</li><li class="listitem">
+PROBLEM: Failed to write data back to ES by using Spark DataFrame save() API !!
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/836" target="_top">#836</a>
+</li><li class="listitem">
+Elasticsearch : Cannot detect ES version
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/791" target="_top">#791</a>
+</li></ul></div></dd><dt><span class="term">
+Spark
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Class Not Found Exception
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/863" target="_top">#863</a>
+</li><li class="listitem">
+java.lang.NoClassDefFoundError: scala/collection/GenTraversableOnce$class
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/862" target="_top">#862</a>
+</li><li class="listitem">
+Array types not supported in automatic mapping
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/847" target="_top">#847</a>
+</li><li class="listitem">
+Connection error with Elasticsearch 2.4.0
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/846" target="_top">#846</a>
+</li><li class="listitem">
+Handling decimal type in dataset
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/842" target="_top">#842</a>
+</li><li class="listitem">
+Fix import of JavaEsSparkSQL
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/840" target="_top">#840</a>
+</li><li class="listitem">
+Got exception when I tried to invoke _mtermvector
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/796" target="_top">#796</a>
+</li><li class="listitem">
+ES-Hadoop on Spark 2.0
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/759" target="_top">#759</a>
+</li><li class="listitem">
+elasticsearch-hadoop exception about mapping
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/766" target="_top">#766</a>
+</li><li class="listitem">
+Parameter ES_MAPPING_TIMESTAMP is not working using saveToEs
+<a class="ulink" href="http://github.com/elastic/elasticsearch-hadoop/issues/765" target="_top">#765</a>
+</li></ul></div></dd></dl></div></div></div><div class="navfooter"><span class="prev"><a href="eshadoop-5.0.1.html">
               « 
-              Hadoop Metrics</a>
+              Elasticsearch for Apache Hadoop version 5.0.1</a>
            
         </span><span class="next">
            
-          <a href="cloud.html">Cloud/restricted environments
-               »
-            </a></span></div>
+          </span></div>
 <!-- end body -->
 
             </div>
