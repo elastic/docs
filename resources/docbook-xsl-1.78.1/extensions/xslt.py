@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python2.7 -u
 # $Id: xslt.py 8353 2009-03-17 16:57:50Z mzjn $
 
 import sys
