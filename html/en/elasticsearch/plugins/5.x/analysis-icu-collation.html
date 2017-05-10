@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ICU Collation Token Filter
         | Elasticsearch Plugins and Integrations [5.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [5.x]" /><link rel="up" href="analysis-icu.html" title="ICU Analysis Plugin" /><link rel="prev" href="analysis-icu-folding.html" title="ICU Folding Token Filter" /><link rel="next" href="analysis-icu-transform.html" title="ICU Transform Token Filter" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Plugins/5.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [5.x]" /><link rel="up" href="analysis-icu.html" title="ICU Analysis Plugin" /><link rel="prev" href="analysis-icu-folding.html" title="ICU Folding Token Filter" /><link rel="next" href="analysis-icu-collation-keyword-field.html" title="ICU Collation Keyword Field" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Plugins/5.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -600,128 +600,16 @@ Not what you want? See the
            
         </span><span class="next">
            
-          <a href="analysis-icu-transform.html">ICU Transform Token Filter
+          <a href="analysis-icu-collation-keyword-field.html">ICU Collation Keyword Field
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="analysis-icu-collation"></a>ICU Collation Token Filter<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/plugins/analysis-icu.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Collations are used for sorting documents in a language-specific word order.
-The <code class="literal">icu_collation</code> token filter is available to all indices and defaults to
-using the
-<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/sorting-collations.html#uca" target="_top">DUCET collation</a>,
-which is a best-effort attempt at language-neutral sorting.</p><p>Below is an example of how to set up a field for sorting German names in
-“phonebook” order:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_index
-{
-  "settings": {
-    "analysis": {
-      "filter": {
-        "german_phonebook": {
-          "type":     "icu_collation",
-          "language": "de",
-          "country":  "DE",
-          "variant":  "@collation=phonebook"
-        }
-      },
-      "analyzer": {
-        "german_phonebook": {
-          "tokenizer": "keyword",
-          "filter":  [ "german_phonebook" ]
-        }
-      }
-    }
-  },
-  "mappings": {
-    "user": {
-      "properties": {
-        "name": { <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-          "type": "text",
-          "fields": {
-            "sort": { <a id="CO4-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-              "type":      "text",
-              "fielddata": true,
-              "analyzer":  "german_phonebook"
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-GET _search <a id="CO4-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-{
-  "query": {
-    "match": {
-      "name": "Fritz"
-    }
-  },
-  "sort": "name.sort"
-}</pre></div><div class="console_widget" data-snippet="snippets/analysis-icu-collation/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">name</code> field uses the <code class="literal">standard</code> analyzer, and so support full text queries.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">name.sort</code> field uses the <code class="literal">keyword</code> analyzer to preserve the name as
-    a single token, and applies the <code class="literal">german_phonebook</code> token filter to index
-    the value in German phonebook sort order.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-An example query which searches the <code class="literal">name</code> field and sorts on the <code class="literal">name.sort</code> field.
-</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_collation_options"></a>Collation options<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/plugins/analysis-icu.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">strength</code>
-</span></dt><dd>
-The strength property determines the minimum level of difference considered
-significant during comparison. Possible values are : <code class="literal">primary</code>, <code class="literal">secondary</code>,
-<code class="literal">tertiary</code>, <code class="literal">quaternary</code> or <code class="literal">identical</code>. See the
-<a class="ulink" href="http://icu-project.org/apiref/icu4j/com/ibm/icu/text/Collator.html" target="_top">ICU Collation documentation</a>
-for a more detailed  explanation for each value.  Defaults to <code class="literal">tertiary</code>
-unless otherwise specified in the collation.
-</dd><dt><span class="term">
-<code class="literal">decomposition</code>
-</span></dt><dd>
-Possible values: <code class="literal">no</code> (default, but collation-dependent) or <code class="literal">canonical</code>.
-Setting this decomposition property to <code class="literal">canonical</code> allows the Collator to
-handle unnormalized text properly, producing the same results as if the text
-were normalized. If <code class="literal">no</code> is set, it is the user’s responsibility to insure
-that all text is already in the appropriate form before a comparison or before
-getting a CollationKey. Adjusting decomposition mode allows the user to select
-between faster and more complete collation behavior. Since a great many of the
-world’s languages do not require text normalization, most locales set <code class="literal">no</code> as
-the default decomposition mode.
-</dd></dl></div><p>The following options are expert only:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">alternate</code>
-</span></dt><dd>
-Possible values: <code class="literal">shifted</code> or <code class="literal">non-ignorable</code>. Sets the alternate handling for
-strength <code class="literal">quaternary</code> to be either shifted or non-ignorable. Which boils down
-to ignoring punctuation and whitespace.
-</dd><dt><span class="term">
-<code class="literal">caseLevel</code>
-</span></dt><dd>
-Possible values: <code class="literal">true</code> or <code class="literal">false</code> (default). Whether case level sorting is
-required. When strength is set to <code class="literal">primary</code> this will ignore accent
-differences.
-</dd><dt><span class="term">
-<code class="literal">caseFirst</code>
-</span></dt><dd>
-Possible values: <code class="literal">lower</code> or <code class="literal">upper</code>. Useful to control which case is sorted
-first when case is not ignored for strength <code class="literal">tertiary</code>. The default depends on
-the collation.
-</dd><dt><span class="term">
-<code class="literal">numeric</code>
-</span></dt><dd>
-Possible values: <code class="literal">true</code> or <code class="literal">false</code> (default) . Whether digits are sorted
-according to their numeric representation. For example the value <code class="literal">egg-9</code> is
-sorted before the value <code class="literal">egg-21</code>.
-</dd><dt><span class="term">
-<code class="literal">variableTop</code>
-</span></dt><dd>
-Single character or contraction. Controls what is variable for <code class="literal">alternate</code>.
-</dd><dt><span class="term">
-<code class="literal">hiraganaQuaternaryMode</code>
-</span></dt><dd>
-Possible values: <code class="literal">true</code> or <code class="literal">false</code>.  Distinguishing between Katakana and
-Hiragana characters in <code class="literal">quaternary</code> strength.
-</dd></dl></div></div></div><div class="navfooter"><span class="prev"><a href="analysis-icu-folding.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="analysis-icu-collation"></a>ICU Collation Token Filter<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/plugins/analysis-icu.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This token filter has been deprecated since Lucene 5.0.  Please use
+<a class="link" href="analysis-icu-collation-keyword-field.html" title="ICU Collation Keyword Field">ICU Collation Keyword Field</a>.</p></div></div></div><div class="navfooter"><span class="prev"><a href="analysis-icu-folding.html">
               « 
               ICU Folding Token Filter</a>
            
         </span><span class="next">
            
-          <a href="analysis-icu-transform.html">ICU Transform Token Filter
+          <a href="analysis-icu-collation-keyword-field.html">ICU Collation Keyword Field
                »
             </a></span></div>
 <!-- end body -->
