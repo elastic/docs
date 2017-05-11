@@ -713,73 +713,8 @@ under a range <code class="literal">filter</code> aggregation with the appropria
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-histogram-aggregation/3.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_order"></a>Order<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default the returned buckets are sorted by their <code class="literal">key</code> ascending, though the order behaviour can be controlled
-using the <code class="literal">order</code> setting.</p><p>Ordering the buckets by their key - descending:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /sales/_search?size=0
-{
-    "aggs" : {
-        "prices" : {
-            "histogram" : {
-                "field" : "price",
-                "interval" : 50,
-                "order" : { "_key" : "desc" }
-            }
-        }
-    }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-histogram-aggregation/4.json"></div><p>Ordering the buckets by their <code class="literal">doc_count</code> - ascending:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /sales/_search?size=0
-{
-    "aggs" : {
-        "prices" : {
-            "histogram" : {
-                "field" : "price",
-                "interval" : 50,
-                "order" : { "_count" : "asc" }
-            }
-        }
-    }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-histogram-aggregation/5.json"></div><p>If the histogram aggregation has a direct metrics sub-aggregation, the latter can determine the order of the buckets:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /sales/_search?size=0
-{
-    "aggs" : {
-        "prices" : {
-            "histogram" : {
-                "field" : "price",
-                "interval" : 50,
-                "order" : { "price_stats.min" : "asc" } <a id="CO84-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            },
-            "aggs" : {
-                "price_stats" : { "stats" : {"field" : "price"} }
-            }
-        }
-    }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-histogram-aggregation/6.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO84-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">{ "price_stats.min" : asc" }</code> will sort the buckets based on <code class="literal">min</code> value of their <code class="literal">price_stats</code> sub-aggregation.
-</p></td></tr></table></div><p>It is also possible to order the buckets based on a "deeper" aggregation in the hierarchy. This is supported as long
-as the aggregations path are of a single-bucket type, where the last aggregation in the path may either by a single-bucket
-one or a metrics one. If it’s a single-bucket type, the order will be defined by the number of docs in the bucket (i.e. <code class="literal">doc_count</code>),
-in case it’s a metrics one, the same rules as above apply (where the path must indicate the metric name to sort by in case of
-a multi-value metrics aggregation, and in case of a single-value metrics aggregation the sort will be applied on that value).</p><p>The path must be defined in the following form:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ebnf">AGG_SEPARATOR       =  '&gt;' ;
-METRIC_SEPARATOR    =  '.' ;
-AGG_NAME            =  &lt;the name of the aggregation&gt; ;
-METRIC              =  &lt;the name of the metric (in case of multi-value metrics aggregation)&gt; ;
-PATH                =  &lt;AGG_NAME&gt; [ &lt;AGG_SEPARATOR&gt;, &lt;AGG_NAME&gt; ]* [ &lt;METRIC_SEPARATOR&gt;, &lt;METRIC&gt; ] ;</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /sales/_search?size=0
-{
-    "aggs" : {
-        "prices" : {
-            "histogram" : {
-                "field" : "price",
-                "interval" : 50,
-                "order" : { "promoted_products&gt;rating_stats.avg" : "desc" } <a id="CO85-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            },
-            "aggs" : {
-                "promoted_products" : {
-                    "filter" : { "term" : { "promoted" : true }},
-                    "aggs" : {
-                        "rating_stats" : { "stats" : { "field" : "rating" }}
-                    }
-                }
-            }
-        }
-    }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-histogram-aggregation/7.json"></div><p>The above will sort the buckets based on the avg rating among the promoted products</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_offset_2"></a>Offset<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default the bucket keys start with 0 and then continue in even spaced steps of <code class="literal">interval</code>, e.g. if the interval is 10 the first buckets
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-histogram-aggregation/3.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_order_2"></a>Order<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default the returned buckets are sorted by their <code class="literal">key</code> ascending, though the order behaviour can be controlled using
+the <code class="literal">order</code> setting. Supports the same <code class="literal">order</code> functionality as the <a class="link" href="search-aggregations-bucket-terms-aggregation.html#search-aggregations-bucket-terms-aggregation-order" title="Order"><code class="literal">Terms Aggregation</code></a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_offset_2"></a>Offset<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default the bucket keys start with 0 and then continue in even spaced steps of <code class="literal">interval</code>, e.g. if the interval is 10 the first buckets
 (assuming there is data inside them) will be [0 - 9], [10-19], [20-29]. The bucket boundaries can be shifted by using the <code class="literal">offset</code> option.</p><p>This can be best illustrated with an example. If there are 10 documents with values ranging from 5 to 14, using interval <code class="literal">10</code> will result in
 two buckets with 5 documents each. If an additional offset <code class="literal">5</code> is used, there will be only one single bucket [5-14] containing all the 10
 documents.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_response_format_2"></a>Response Format<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/histogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default, the buckets are returned as an ordered array. It is also possible to request the response as a hash
@@ -794,7 +729,7 @@ instead keyed by the buckets keys:</p><div class="pre_wrapper"><pre class="progr
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-histogram-aggregation/8.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-histogram-aggregation/4.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     ...
     "aggregations": {
         "prices": {
@@ -831,11 +766,11 @@ had a value.</p><div class="pre_wrapper"><pre class="programlisting prettyprint 
              "histogram" : {
                  "field" : "quantity",
                  "interval": 10,
-                 "missing": 0 <a id="CO85-2"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                 "missing": 0 <a id="CO84-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
              }
          }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-histogram-aggregation/9.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO85-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO85-2"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-histogram-aggregation/5.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO84-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Documents without a value in the <code class="literal">quantity</code> field will fall into the same bucket as documents that have the value <code class="literal">0</code>.
 </p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-global-aggregation.html">
               « 
