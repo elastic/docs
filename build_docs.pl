@@ -452,7 +452,9 @@ sub init_env {
         file('resources/docbook-xml-4.5/catalog.xml')->absolute;
 
     $ENV{PATH}
-        = dir('resources/asciidoc-8.6.8/')->absolute . ':' . $ENV{PATH};
+        = dir('resources/asciidoc-8.6.8/')->absolute
+        . ":$FindBin::RealBin:"
+        . $ENV{PATH};
 
     eval { run( 'xsltproc', '--version' ) }
         or die "Please install <xsltproc>";
