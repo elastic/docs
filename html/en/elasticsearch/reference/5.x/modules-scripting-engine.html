@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Advanced scripting
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Advanced scripts using script engines
         | Elasticsearch Reference [5.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="redirects.html" title="Appendix B. Deleted pages" /><link rel="prev" href="modules-scripting-native.html" title="Native scripting" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/5.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-scripting-expression.html" title="Lucene Expressions Language" /><link rel="next" href="modules-snapshots.html" title="Snapshot And Restore" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/5.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -594,19 +594,145 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [5.x]
-    </a></span> » <span class="breadcrumb-link"><a href="redirects.html">Deleted pages</a></span> » <span class="breadcrumb-node">Advanced scripting</span></div><div class="navheader"><span class="prev"><a href="modules-scripting-native.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-scripting.html">Scripting</a></span> » <span class="breadcrumb-node">Advanced scripts using script engines</span></div><div class="navheader"><span class="prev"><a href="modules-scripting-expression.html">
               « 
-              Native scripting</a>
+              Lucene Expressions Language</a>
            
         </span><span class="next">
            
-          </span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-advanced-scripting"></a>Advanced scripting<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/redirects.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Using <code class="literal">_index</code> in scripts has been replaced with writing <code class="literal">ScriptEngine</code> backends (see <a class="xref" href="modules-scripting-engine.html" title="Advanced scripts using script engines">Advanced scripts using script engines</a>).</p></div><div class="navfooter"><span class="prev"><a href="modules-scripting-native.html">
+          <a href="modules-snapshots.html">Snapshot And Restore
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-engine"></a>Advanced scripts using script engines<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/modules/scripting/engine.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A <code class="literal">ScriptEngine</code> is a backend for implementing a scripting language. It may also
+be used to write scripts that need to use advanced internals of scripting. For example,
+a script that wants to use term frequencies while scoring.</p><p>The plugin <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/5.x/plugin-authors.html" target="_top">documentation</a> has more information on
+how to write a plugin so that Elasticsearch will properly load it. To register
+the <code class="literal">ScriptEngine</code>, your plugin should implement the <code class="literal">ScriptPlugin</code> interface
+and override the <code class="literal">getScriptEngine(Settings settings)</code> method.</p><p>The following is an example of a custom <code class="literal">ScriptEngine</code> which uses the language
+name <code class="literal">expert_scripts</code>. It implements a single script called <code class="literal">pure_df</code> which
+may be used as a search script to override each document’s score as
+the document frequency of a provided term.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">private static class MyExpertScriptEngine implements ScriptEngineService {
+    @Override
+    public String getType() {
+        return "expert_scripts";
+    }
+
+    @Override
+    public Function&lt;Map&lt;String,Object&gt;,SearchScript&gt; compile(String scriptName, String scriptSource, Map&lt;String, String&gt; params) {
+        // we use the script "source" as the script identifier
+        if ("pure_df".equals(scriptSource)) {
+            return p -&gt; new SearchScript() {
+                final String field;
+                final String term;
+                {
+                    if (p.containsKey("field") == false) {
+                        throw new IllegalArgumentException("Missing parameter [field]");
+                    }
+                    if (p.containsKey("term") == false) {
+                        throw new IllegalArgumentException("Missing parameter [term]");
+                    }
+                    field = p.get("field").toString();
+                    term = p.get("term").toString();
+                }
+
+                @Override
+                public LeafSearchScript getLeafSearchScript(LeafReaderContext context) throws IOException {
+                    PostingsEnum postings = context.reader().postings(new Term(field, term));
+                    if (postings == null) {
+                        // the field and/or term don't exist in this segment, so always return 0
+                        return () -&gt; 0.0d;
+                    }
+                    return new LeafSearchScript() {
+                        int currentDocid = -1;
+                        @Override
+                        public void setDocument(int docid) {
+                            // advance has undefined behavior calling with a docid &lt;= its current docid
+                            if (postings.docID() &lt; docid) {
+                                try {
+                                    postings.advance(docid);
+                                } catch (IOException e) {
+                                    throw new UncheckedIOException(e);
+                                }
+                            }
+                            currentDocid = docid;
+                        }
+                        @Override
+                        public double runAsDouble() {
+                            if (postings.docID() != currentDocid) {
+                                // advance moved past the current doc, so this doc has no occurrences of the term
+                                return 0.0d;
+                            }
+                            try {
+                                return postings.freq();
+                            } catch (IOException e) {
+                                throw new UncheckedIOException(e);
+                            }
+                        }
+                    };
+                }
+
+                @Override
+                public boolean needsScores() {
+                    return false;
+                }
+            };
+        }
+        throw new IllegalArgumentException("Unknown script name " + scriptSource);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public SearchScript search(CompiledScript compiledScript, SearchLookup lookup, @Nullable Map&lt;String, Object&gt; params) {
+      Function&lt;Map&lt;String,Object&gt;,SearchScript&gt; scriptFactory = (Function&lt;Map&lt;String,Object&gt;,SearchScript&gt;) compiledScript.compiled();
+      return scriptFactory.apply(params);
+    }
+
+    @Override
+    public ExecutableScript executable(CompiledScript compiledScript, @Nullable Map&lt;String, Object&gt; params) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isInlineScriptEnabled() {
+        return true;
+    }
+
+    @Override
+    public void close() {}
+}</pre></div><p>You can execute the script by specifying its <code class="literal">lang</code> as <code class="literal">expert_scripts</code>, and the name
+of the script as the the script source:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_search
+{
+  "query": {
+    "function_score": {
+      "query": {
+        "match": {
+          "body": "foo"
+        }
+      },
+      "functions": [
+        {
+          "script_score": {
+            "script": {
+                "inline": "pure_df",
+                "lang" : "expert_scripts",
+                "params": {
+                    "field": "body",
+                    "term": "foo"
+                }
+            }
+          }
+        }
+      ]
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-engine/1.json"></div></div><div class="navfooter"><span class="prev"><a href="modules-scripting-expression.html">
               « 
-              Native scripting</a>
+              Lucene Expressions Language</a>
            
         </span><span class="next">
            
-          </span></div>
+          <a href="modules-snapshots.html">Snapshot And Restore
+               »
+            </a></span></div>
 <!-- end body -->
 
             </div>
