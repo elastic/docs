@@ -599,24 +599,27 @@
            
           <a href="one-lang-fields.html">One Language per Field
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="one-lang-docs"></a>One Language per Document<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/200_Language_intro/40_One_language_per_doc.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A single predominant language per document <a id="id-1.6.3.11.2.1" class="indexterm"></a>
-<a id="id-1.6.3.11.2.2" class="indexterm"></a><a id="id-1.6.3.11.2.3" class="indexterm"></a>
-<a id="id-1.6.3.11.2.4" class="indexterm"></a>requires a relatively simple setup.
-Documents from different languages can be stored in separate indices—<code class="literal">blogs-en</code>,
-<code class="literal">blogs-fr</code>, and so forth—that use the same type and the same fields for each index,
-just with different analyzers:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /blogs-en
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="one-lang-docs"></a>One Language per Document<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/200_Language_intro/40_One_language_per_doc.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A single predominant language per document requires a relatively simple setup.
+Documents from different languages can be stored in separate indices — <code class="literal">blogs-en</code>,
+<code class="literal">blogs-fr</code>, and so forth — that use the same fields for each index, just
+with different analyzers:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /blogs-en
 {
   "mappings": {
     "post": {
       "properties": {
         "title": {
-          "type": "string", <a id="CO129-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "type": "text", <a id="CO129-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
           "fields": {
             "stemmed": {
-              "type":     "string",
+              "type": "string",
               "analyzer": "english" <a id="CO129-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
             }
-}}}}}}
+          }
+        }
+      }
+    }
+  }
+}
 
 PUT /blogs-fr
 {
@@ -624,13 +627,18 @@ PUT /blogs-fr
     "post": {
       "properties": {
         "title": {
-          "type": "string", <a id="CO129-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+          "type": "text", <a id="CO129-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
           "fields": {
             "stemmed": {
-              "type":     "string",
+              "type": "text",
               "analyzer": "french" <a id="CO129-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
             }
-}}}}}}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO129-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO129-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/one-lang-docs/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO129-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO129-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Both <code class="literal">blogs-en</code> and <code class="literal">blogs-fr</code> have a type called <code class="literal">post</code> that contains
     the field <code class="literal">title</code>.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO129-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO129-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
@@ -640,21 +648,26 @@ create a new index—and because each language is completely separate, we
 don’t suffer from the term-frequency and stemming problems described in
 <a class="xref" href="language-pitfalls.html" title="Pitfalls of Mixing Languages">Pitfalls of Mixing Languages</a>.</p><p>The documents of a single language can be queried independently, or queries
 can target multiple languages by querying multiple indices.  We can even
-specify a preference<a id="id-1.6.3.11.6.1" class="indexterm"></a>
-<a id="id-1.6.3.11.6.2" class="indexterm"></a> for particular languages with the <code class="literal">indices_boost</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /blogs-*/post/_search <a id="CO130-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+specify a preference for particular languages with the <code class="literal">indices_boost</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /blogs-en/post/1
+{ "title": "That feeling of déjà vu" }
+
+PUT /blogs-fr/post/1
+{ "title": "Ce sentiment de déjà vu" }
+
+GET /blogs-*/post/_search <a id="CO130-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 {
     "query": {
         "multi_match": {
             "query":   "deja vu",
-            "fields":  [ "title", "title.stemmed" ] <a id="CO130-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+            "fields":  [ "title", "title.stemmed" ], <a id="CO130-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
             "type":    "most_fields"
         }
     },
-    "indices_boost": { <a id="CO130-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-        "blogs-en": 3,
-        "blogs-fr": 2
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO130-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+    "indices_boost": [ <a id="CO130-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+      { "blogs-en": 3 },
+      { "blogs-fr": 2 }
+    ]
+}</pre></div><div class="console_widget" data-snippet="snippets/one-lang-docs/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO130-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This search is performed on any index beginning with <code class="literal">blogs-</code>.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO130-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">title.stemmed</code> fields are queried using the analyzer
@@ -665,21 +678,12 @@ Perhaps the user’s <code class="literal">accept-language</code> headers showed
     Any other languages will have a neutral boost of <code class="literal">1</code>.
 </p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_foreign_words"></a>Foreign Words<a href="https://github.com/elastic/elasticsearch-definitive-guide/edit/master/200_Language_intro/40_One_language_per_doc.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Of course, these documents may contain words or sentences in other languages,
 and these words are unlikely to be stemmed correctly.  With
-predominant-language documents, this is not usually a major problem.  The user will
-often search for the exact words—for instance, of a quotation from another
+predominant-language documents, this is not usually a major problem.  The user
+will often search for the exact words—for instance, of a quotation from another
 language—rather than for inflections of a word. Recall can be improved
 by using techniques explained in <a class="xref" href="token-normalization.html" title="Normalizing Tokens"><em>Normalizing Tokens</em></a>.</p><p>Perhaps some words like place names should be queryable in the predominant
 language and in the original language, such as <span class="emphasis"><em>Munich</em></span> and <span class="emphasis"><em>München</em></span>.  These
-words are effectively synonyms, which we discuss in <a class="xref" href="synonyms.html" title="Synonyms"><em>Synonyms</em></a>.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Don’t Use Types for Languages</strong></p></div></div></div><p>You may be tempted to use a separate type for each language,<a id="id-1.6.3.11.9.4.2.1" class="indexterm"></a>
-<a id="id-1.6.3.11.9.4.2.2" class="indexterm"></a><a id="id-1.6.3.11.9.4.2.3" class="indexterm"></a>
-<a id="id-1.6.3.11.9.4.2.4" class="indexterm"></a> instead of a
-separate index. For best results, you should avoid using types for this
-purpose.  As explained in <a class="xref" href="mapping.html" title="Types and Mappings">Types and Mappings</a>, fields from different types but with
-the same field name are indexed into the <span class="emphasis"><em>same inverted index</em></span>.  This means
-that the term frequencies from each type (and thus each language) are mixed
-together.</p><p>To ensure that the term frequencies of one language don’t pollute those of
-another, either use a separate index for each language, or a separate field,
-as explained in the next section.</p></div></div></div><div class="navfooter"><span class="prev"><a href="language-pitfalls.html">
+words are effectively synonyms, which we discuss in <a class="xref" href="synonyms.html" title="Synonyms"><em>Synonyms</em></a>.</p></div></div><div class="navfooter"><span class="prev"><a href="language-pitfalls.html">
               « 
               Pitfalls of Mixing Languages</a>
            
