@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Cloud Enterprise - Elastic Cloud on your Infrastructure
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Cloud UI Login Failures
+        | Elastic Cloud Enterprise Reference [1.0.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Enterprise Reference [1.0.0]" /><link rel="up" href="ece-issues.html" title="Common issues" /><link rel="prev" href="_allocator_failures.html" title="Allocator Failures" /><link rel="next" href="ece-recover-ui-login.html" title="Lost Cloud UI Login Information" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/CloudEnterprise/Reference/1.0.0" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -593,17 +594,42 @@
 				
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
-<div class="article" lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id-1"></a>Cloud Enterprise - Elastic Cloud on your Infrastructure</h2></div></div><hr /></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="1.0.0/index.html" target="_top">Cloud Enterprise - Elastic Cloud on your Infrastructure: 1.0.0</a>
+<div class="page_header">Why not take our <a href="https://www.elastic.co/cloud/enterprise">Elastic Cloud Enterprise</a> beta for a spin and join us in the <a href="https://discuss.elastic.co/c/cloud-enterprise">public beta forum</a>?
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elastic Cloud Enterprise Reference
+      [1.0.0]
+    </a></span> » <span class="breadcrumb-link"><a href="ece-troubleshooting.html">Troubleshooting</a></span> » <span class="breadcrumb-link"><a href="ece-issues.html">Common issues</a></span> » <span class="breadcrumb-node">Cloud UI Login Failures</span></div><div class="navheader"><span class="prev"><a href="_allocator_failures.html">
+              « 
+              Allocator Failures</a>
+           
+        </span><span class="next">
+           
+          <a href="ece-recover-ui-login.html">Lost Cloud UI Login Information
+               »
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_cloud_ui_login_failures"></a>Cloud UI Login Failures</h2></div></div></div><p><span class="strong"><strong>Symptoms:</strong></span> When you attempt to log into the Cloud UI, the login process appears to hang and then fails.</p><p><span class="strong"><strong>Resolution:</strong></span> The <a class="link" href="ece-glossary.html#admin-console">administration console</a> that supports the Cloud UI might be running out of Java heap space, causing login failures. This issue is expected to be fixed in a future release. As a workaround, you can manually increase the heap size.</p><p>In the current release, there is no direct way to change the Java heap size in the UI, so you need to increase the heap size as follows:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+For convenience, you can store the IP address of the host machine where the Cloud UI is running in the <code class="literal">ADMIN_IP</code> environment variable. Alternatively, replace <code class="literal">$ADMIN_IP</code> in the commands shown with the IP address.
+</li><li class="listitem"><p class="simpara">
+Create a file with your current configuration, here <code class="literal">containerdata.json</code> (requires that you have <a class="ulink" href="https://stedolan.github.io/jq/download/" target="_top">jq</a> installed):
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -u root http://$ADMIN_IP:12400/api/v0/regions/ece-region/container-sets/admin-consoles | jq '.containers | ."admin-console" | .data' &gt; containerdata.json</pre></div><p class="simpara">When prompted, enter the password you use to log into the Cloud UI.</p></li><li class="listitem"><p class="simpara">
+Open the <code class="literal">containerdata.json</code> file in your favorite editor and locate this line:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">"ADMINCONSOLE_JAVA_OPTIONS=-Djute.maxbuffer=33554432 -Xmx256M -Xms256M",</pre></div></li><li class="listitem">
+Increase the Java heap size by changing the values for <code class="literal">Xmx</code> and <code class="literal">Xms</code> to 1024 or 4096, depending on the size of your host machine. For example: Change the values to <code class="literal">-Xmx1024M -Xms1024M</code>.
 </li><li class="listitem">
-<a class="ulink" href="current/index.html" target="_top">Cloud Enterprise - Elastic Cloud on your Infrastructure: 1.0.0-beta2 (current)</a>
-</li><li class="listitem">
-<a class="ulink" href="1.0.0-beta1/index.html" target="_top">Cloud Enterprise - Elastic Cloud on your Infrastructure: 1.0.0-beta1</a>
-</li><li class="listitem">
-<a class="ulink" href="1.0.0-alpha4/index.html" target="_top">Cloud Enterprise - Elastic Cloud on your Infrastructure: 1.0.0-alpha4</a>
-</li><li class="listitem">
-<a class="ulink" href="1.0.0-alpha3/index.html" target="_top">Cloud Enterprise - Elastic Cloud on your Infrastructure: 1.0.0-alpha3</a>
-</li></ul></div></div>
+Save the configuration and exit the editor.
+</li><li class="listitem"><p class="simpara">
+Apply the new configuration:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPOST -u root 'http://$ADMIN_IP:12400/api/v0/regions/ece-region/container-sets/admin-consoles/containers/admin-console' -d @containerdata.json</pre></div></li><li class="listitem"><p class="simpara">
+On the host machine where the Cloud UI administration console is running, recreate the Cloud UI:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">docker stop frc-admin-consoles-admin-console &amp;&amp; docker rm -f frc-admin-consoles-admin-console</pre></div><p class="simpara">If you prefer, you can use the HTTPS protocol on port 12443, but it currently supports only a self-signed certificate. Alternatively, you can perform the step from localhost.</p></li><li class="listitem">
+Log into the Cloud UI administration console to confirm that the issue is resolved.
+</li></ol></div></div><div class="navfooter"><span class="prev"><a href="_allocator_failures.html">
+              « 
+              Allocator Failures</a>
+           
+        </span><span class="next">
+           
+          <a href="ece-recover-ui-login.html">Lost Cloud UI Login Information
+               »
+            </a></span></div>
 <!-- end body -->
 
             </div>
