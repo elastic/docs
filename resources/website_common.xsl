@@ -211,17 +211,12 @@
   <xsl:template name="graphical.admonition">
       <xsl:variable name="admon.type">
         <xsl:choose>
-          <xsl:when test="attribute::role = 'xpack'">XPack</xsl:when>
-          <xsl:otherwise>
-            <xsl:choose>
-              <xsl:when test="local-name(.)='note'">Note</xsl:when>
-              <xsl:when test="local-name(.)='warning'">Warning</xsl:when>
-              <xsl:when test="local-name(.)='caution'">Caution</xsl:when>
-              <xsl:when test="local-name(.)='tip'">Tip</xsl:when>
-              <xsl:when test="local-name(.)='important'">Important</xsl:when>
-              <xsl:otherwise>Note</xsl:otherwise>
-            </xsl:choose>
-          </xsl:otherwise>
+          <xsl:when test="local-name(.)='note'">Note</xsl:when>
+          <xsl:when test="local-name(.)='warning'">Warning</xsl:when>
+          <xsl:when test="local-name(.)='caution'">Caution</xsl:when>
+          <xsl:when test="local-name(.)='tip'">Tip</xsl:when>
+          <xsl:when test="local-name(.)='important'">Important</xsl:when>
+          <xsl:otherwise>Note</xsl:otherwise>
         </xsl:choose>
       </xsl:variable>
 
@@ -235,20 +230,12 @@
         <xsl:call-template name="id.attribute"/>
 
         <div class="icon">
-        <xsl:choose>
-          <xsl:when test="normalize-space($admon.type) = 'XPack'">
-            <img alt="{$alt}" src="images/xpackicon.png"></img>
-          </xsl:when>
-          <xsl:otherwise>
             <img alt="{$alt}">
                 <xsl:attribute name="src">
                   <xsl:call-template name="admon.graphic"/>
                 </xsl:attribute>
             </img>
-          </xsl:otherwise>
-        </xsl:choose>
         </div>
-
         <div class="admon_content">
           <xsl:choose>
             <xsl:when test="attribute::revisionflag != ''">
@@ -362,13 +349,12 @@
 
     <!--  Add classes to images -->
 
-    <xsl:template match="figure|informalfigure" mode="class.value">
+    <xsl:template match="*" mode="class.value">
       <xsl:if test="@role">
         <xsl:value-of select="@role"/>
         <xsl:value-of select="' '"/>
       </xsl:if>
       <xsl:value-of select="local-name(.)" />
     </xsl:template>
-
 
 </xsl:stylesheet>
