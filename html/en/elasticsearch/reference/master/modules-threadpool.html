@@ -625,9 +625,10 @@ of discarded.</p><p>There are several thread pools, but the important ones inclu
 </dd><dt><span class="term">
 <code class="literal">search</code>
 </span></dt><dd>
-    For count/search/suggest operations. Thread pool type is <code class="literal">fixed</code>
-    with a size of <code class="literal">int((# of available_processors * 3) / 2) + 1</code>,
-    queue_size of <code class="literal">1000</code>.
+    For count/search/suggest operations. Thread pool type is
+    <code class="literal">fixed_auto_queue_size</code> with a size of
+    <code class="literal">int((# of available_processors * 3) / 2) + 1</code>, and initial queue_size of
+    <code class="literal">1000</code>.
 </dd><dt><span class="term">
 <code class="literal">get</code>
 </span></dt><dd>
@@ -673,7 +674,29 @@ requests that have no threads to execute them. By default, it is set to
 full, it will abort the request.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">thread_pool:
     index:
         size: 30
-        queue_size: 1000</pre></div><h4><a id="_literal_scaling_literal"></a><code class="literal">scaling</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/threadpool.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">scaling</code> thread pool holds a dynamic number of threads. This
+        queue_size: 1000</pre></div><h4><a id="_literal_fixed_auto_queue_size_literal"></a><code class="literal">fixed_auto_queue_size</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/threadpool.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">fixed_auto_queue_size</code> thread pool holds a fixed size of threads to handle
+the requests with a bounded queue for pending requests that have no threads to
+service them. It’s similar to the <code class="literal">fixed</code> threadpool, however, the <code class="literal">queue_size</code>
+automatically adjusts according to calculations based on
+<a class="ulink" href="https://en.wikipedia.org/wiki/Little%27s_law" target="_top">Little’s Law</a>. These calculations
+will potentially adjust the <code class="literal">queue_size</code> up or down by 50 every time
+<code class="literal">auto_queue_frame_size</code> operations have been completed.</p><p>The <code class="literal">size</code> parameter controls the number of threads, and defaults to the
+number of cores times 5.</p><p>The <code class="literal">queue_size</code> allows to control the initial size of the queue of pending
+requests that have no threads to execute them.</p><p>The <code class="literal">min_queue_size</code> setting controls the minimum amount the <code class="literal">queue_size</code> can be
+adjusted to.</p><p>The <code class="literal">max_queue_size</code> setting controls the maximum amount the <code class="literal">queue_size</code> can be
+adjusted to.</p><p>The <code class="literal">auto_queue_frame_size</code> setting controls the number of operations during
+which measurement is taken before the queue is adjusted. It should be large
+enough that a single operation cannot unduly bias the calculation.</p><p>The <code class="literal">target_response_rate</code> is a time value setting that indicates the targeted
+average response time for tasks in the thread pool queue. If tasks are routinely
+above this time, the thread pool queue will be adjusted down so that tasks are
+rejected.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">thread_pool:
+    search:
+        size: 30
+        queue_size: 500
+        min_queue_size: 10
+        max_queue_size: 1000
+        auto_queue_frame_size: 2000
+        target_response_rate: 1s</pre></div><h4><a id="_literal_scaling_literal"></a><code class="literal">scaling</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/threadpool.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">scaling</code> thread pool holds a dynamic number of threads. This
 number is proportional to the workload and varies between the value of
 the <code class="literal">core</code> and <code class="literal">max</code> parameters.</p><p>The <code class="literal">keep_alive</code> parameter determines how long a thread should be kept
 around in the thread pool without it doing any work.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">thread_pool:
