@@ -630,24 +630,16 @@ Select a location
 </li><li class="listitem">
 Click the "Create" button
 </li></ol></div><p>The bucket should now be created.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-gcs-service-authentication"></a>Service Authentication<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-gcs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The plugin supports two authentication modes:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-the built-in <a class="link" href="repository-gcs-usage.html#repository-gcs-using-compute-engine" title="Using Compute Engine">Compute Engine authentication</a>. This mode is
+The built-in <a class="link" href="repository-gcs-usage.html#repository-gcs-using-compute-engine" title="Using Compute Engine">Compute Engine authentication</a>. This mode is
 recommended if your elasticsearch node is running on a Compute Engine virtual machine.
 </li><li class="listitem">
-the <a class="link" href="repository-gcs-usage.html#repository-gcs-using-service-account" title="Using a Service Account">Service Account</a> authentication mode.
-</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-gcs-using-compute-engine"></a>Using Compute Engine<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-gcs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>When running on Compute Engine, the plugin use the Google’s built-in authentication mechanism to
+Specifying <a class="link" href="repository-gcs-usage.html#repository-gcs-using-service-account" title="Using a Service Account">Service Account</a> credentials.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-gcs-using-compute-engine"></a>Using Compute Engine<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-gcs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>When running on Compute Engine, the plugin use Google’s built-in authentication mechanism to
 authenticate on the Storage service. Compute Engine virtual machines are usually associated to a
 default service account. This service account can be found in the VM instance details in the
-<a class="ulink" href="https://console.cloud.google.com/compute/" target="_top">Compute Engine console</a>.</p><p>To indicate that a repository should use the built-in authentication,
-the repository <code class="literal">service_account</code> setting must be set to <code class="literal">_default_</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_gcs_repository_on_compute_engine
-{
-  "type": "gcs",
-  "settings": {
-    "bucket": "my_bucket",
-    "service_account": "_default_"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/repository-gcs-usage/1.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The Compute Engine VM must be allowed to use the Storage service. This can be done only at VM
+<a class="ulink" href="https://console.cloud.google.com/compute/" target="_top">Compute Engine console</a>.</p><p>This is the default authentication mode and requires no configuration.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The Compute Engine VM must be allowed to use the Storage service. This can be done only at VM
 creation time, when "Storage" access can be configured to "Read/Write" permission. Check your
-instance details at the section "Cloud API access scopes".</p></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-gcs-using-service-account"></a>Using a Service Account<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-gcs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If your elasticsearch node is not running on Compute Engine, or if you don’t want to use Google
+instance details at the section "Cloud API access scopes".</p></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-gcs-using-service-account"></a>Using a Service Account<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-gcs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If your elasticsearch node is not running on Compute Engine, or if you don’t want to use Google’s
 built-in authentication mechanism, you can authenticate on the Storage service using a
 <a class="ulink" href="https://cloud.google.com/iam/docs/overview#service_account" target="_top">Service Account</a> file.</p><p>To create a service account file:
 1. Connect to the <a class="ulink" href="https://console.cloud.google.com/" target="_top">Google Cloud Platform Console</a>
@@ -666,15 +658,19 @@ built-in authentication mechanism, you can authenticate on the Storage service u
   "token_uri": "https://accounts.google.com/o/oauth2/token",
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": "..."
-}</pre></div><p>This file must be copied in the <code class="literal">config</code> directory of the elasticsearch installation and on
-every node of the cluster.</p><p>To indicate that a repository should use a service account file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_gcs_repository
+}</pre></div><p>This file must be stored in the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/secure-settings.html" target="_top">elasticsearch keystore</a>, under a setting name
+of the form <code class="literal">gcs.client.NAME.credentials_file</code>, where <code class="literal">NAME</code> is the name of the client congiguration.
+The default client name is <code class="literal">default</code>, but a different client name can be specified in repository
+settings using <code class="literal">client</code>.</p><p>For example, if specifying the credentials file in the keystore under
+<code class="literal">gcs.client.my_alternate_client.credentials_file</code>, you can configure a repository to use these
+credentials like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_gcs_repository
 {
   "type": "gcs",
   "settings": {
     "bucket": "my_bucket",
-    "service_account": "service_account.json"
+    "client": "my_alternate_client"
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/repository-gcs-usage/2.json"></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-gcs-bucket-permission"></a>Set Bucket Permission<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-gcs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The service account used to access the bucket must have the "Writer" access to the bucket:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+}</pre></div><div class="console_widget" data-snippet="snippets/repository-gcs-usage/1.json"></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-gcs-bucket-permission"></a>Set Bucket Permission<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/repository-gcs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The service account used to access the bucket must have the "Writer" access to the bucket:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 Connect to the <a class="ulink" href="https://console.cloud.google.com/" target="_top">Google Cloud Platform Console</a>
 </li><li class="listitem">
 Select your project

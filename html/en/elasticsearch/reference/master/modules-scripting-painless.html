@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Painless Scripting Language
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-scripting-security.html" title="Scripting and security" /><link rel="next" href="modules-scripting-painless-syntax.html" title="Painless Syntax" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-scripting-security.html" title="Scripting and security" /><link rel="next" href="modules-scripting-expression.html" title="Lucene Expressions Language" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -605,237 +605,38 @@ Not what you want? See the
            
         </span><span class="next">
            
-          <a href="modules-scripting-painless-syntax.html">Painless Syntax
+          <a href="modules-scripting-expression.html">Lucene Expressions Language
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-painless"></a>Painless Scripting Language<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content">
 The Painless scripting language is new and is still marked as experimental. The syntax or API may be changed in the future in non-backwards compatible ways if required.
-</div></div><p><span class="emphasis"><em>Painless</em></span> is a simple, secure scripting language available in Elasticsearch
-by default. It is designed specifically for use with Elasticsearch and can
-safely be used with <code class="literal">inline</code> and <code class="literal">stored</code> scripting, which is enabled by
-default.</p><p>The Painless syntax is similar to <a class="ulink" href="http://groovy-lang.org/index.html" target="_top">Groovy</a>.</p><p>You can use Painless anywhere a script can be used in Elasticsearch. It is the
-default if you don’t set the <code class="literal">lang</code> parameter but if you want to be explicit you
-can set the <code class="literal">lang</code> parameter to <code class="literal">painless</code>.</p><h2><a id="painless-features"></a>Painless Features<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Fast performance: <a class="ulink" href="https://benchmarks.elastic.co/index.html#search_qps_scripts" target="_top">several times faster</a> than the alternatives.
+</div></div><p><span class="emphasis"><em>Painless</em></span> is a simple, secure scripting language designed specifically for use
+with Elasticsearch. It is the default scripting language for Elasticsearch and
+can safely be used for inline and stored scripts. For a detailed description of
+the Painless syntax and language features, see the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/painless/master/painless-specification.html" target="_top">Painless Language Specification</a>.</p><p><a id="painless-features"></a>You can use Painless anywhere scripts can be used in Elasticsearch. Painless
+provides:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Fast performance: Painless scripts <a class="ulink" href="https://benchmarks.elastic.co/index.html#search_qps_scripts" target="_top">
+run several times faster</a> than the alternatives.
 </li><li class="listitem">
-Safety: Fine-grained whitelist with method call/field granularity. See
-<a class="xref" href="painless-api-reference.html" title="Appendix A. Painless API Reference">Appendix A, <em>Painless API Reference</em></a> for a complete list of available classes and methods.
+Safety: Fine-grained whitelist with method call/field granularity. See the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/painless/master/painless-api-reference.html" target="_top">Painless API Reference</a> for a
+complete list of available classes and methods.
 </li><li class="listitem">
-Optional typing: Variables and parameters can use explicit types or the dynamic <code class="literal">def</code> type.
+Optional typing: Variables and parameters can use explicit types or the
+dynamic <code class="literal">def</code> type.
 </li><li class="listitem">
-Syntax: Extends Java’s syntax with a subset of Groovy for ease of use. See the <a class="link" href="modules-scripting-painless-syntax.html" title="Painless Syntax">Syntax Overview</a>.
+Syntax: Extends Java’s syntax to provide <a class="ulink" href="http://groovy-lang.org/index.html" target="_top">
+Groovy-style</a> scripting language features that make scripts easier to write.
 </li><li class="listitem">
 Optimizations: Designed specifically for Elasticsearch scripting.
-</li></ul></div><h2><a id="painless-examples"></a>Painless Examples<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>To illustrate how Painless works, let’s load some hockey stats into an Elasticsearch index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT hockey/player/_bulk?refresh
-{"index":{"_id":1}}
-{"first":"johnny","last":"gaudreau","goals":[9,27,1],"assists":[17,46,0],"gp":[26,82,1],"born":"1993/08/13"}
-{"index":{"_id":2}}
-{"first":"sean","last":"monohan","goals":[7,54,26],"assists":[11,26,13],"gp":[26,82,82],"born":"1994/10/12"}
-{"index":{"_id":3}}
-{"first":"jiri","last":"hudler","goals":[5,34,36],"assists":[11,62,42],"gp":[24,80,79],"born":"1984/01/04"}
-{"index":{"_id":4}}
-{"first":"micheal","last":"frolik","goals":[4,6,15],"assists":[8,23,15],"gp":[26,82,82],"born":"1988/02/17"}
-{"index":{"_id":5}}
-{"first":"sam","last":"bennett","goals":[5,0,0],"assists":[8,1,0],"gp":[26,1,0],"born":"1996/06/20"}
-{"index":{"_id":6}}
-{"first":"dennis","last":"wideman","goals":[0,26,15],"assists":[11,30,24],"gp":[26,81,82],"born":"1983/03/20"}
-{"index":{"_id":7}}
-{"first":"david","last":"jones","goals":[7,19,5],"assists":[3,17,4],"gp":[26,45,34],"born":"1984/08/10"}
-{"index":{"_id":8}}
-{"first":"tj","last":"brodie","goals":[2,14,7],"assists":[8,42,30],"gp":[26,82,82],"born":"1990/06/07"}
-{"index":{"_id":39}}
-{"first":"mark","last":"giordano","goals":[6,30,15],"assists":[3,30,24],"gp":[26,60,63],"born":"1983/10/03"}
-{"index":{"_id":10}}
-{"first":"mikael","last":"backlund","goals":[3,15,13],"assists":[6,24,18],"gp":[26,82,82],"born":"1989/03/17"}
-{"index":{"_id":11}}
-{"first":"joe","last":"colborne","goals":[3,18,13],"assists":[6,20,24],"gp":[26,67,82],"born":"1990/01/30"}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/1.json"></div><h3><a id="_accessing_doc_values_from_painless"></a>Accessing Doc Values from Painless<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Document values can be accessed from a <code class="literal">Map</code> named <code class="literal">doc</code>.</p><p>For example, the following script calculates a player’s total goals. This example uses a strongly typed <code class="literal">int</code> and a <code class="literal">for</code> loop.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
-{
-  "query": {
-    "function_score": {
-      "script_score": {
-        "script": {
-          "lang": "painless",
-          "inline": "int total = 0; for (int i = 0; i &lt; doc['goals'].length; ++i) { total += doc['goals'][i]; } return total;"
-        }
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/2.json"></div><p>Alternatively, you could do the same thing using a script field instead of a function score:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
-{
-  "query": {
-    "match_all": {}
-  },
-  "script_fields": {
-    "total_goals": {
-      "script": {
-        "lang": "painless",
-        "inline": "int total = 0; for (int i = 0; i &lt; doc['goals'].length; ++i) { total += doc['goals'][i]; } return total;"
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/3.json"></div><p>The following example uses a Painless script to sort the players by their combined first and last names. The names are accessed using
-<code class="literal">doc['first'].value</code> and <code class="literal">doc['last'].value</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
-{
-  "query": {
-    "match_all": {}
-  },
-  "sort": {
-    "_script": {
-      "type": "string",
-      "order": "asc",
-      "script": {
-        "lang": "painless",
-        "inline": "doc['first.keyword'].value + ' ' + doc['last.keyword'].value"
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/4.json"></div><h3><a id="_updating_fields_with_painless"></a>Updating Fields with Painless<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can also easily update fields. You access the original source for a field as <code class="literal">ctx._source.&lt;field-name&gt;</code>.</p><p>First, let’s look at the source data for a player by submitting the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
-{
-  "stored_fields": [
-    "_id",
-    "_source"
-  ],
-  "query": {
-    "term": {
-      "_id": 1
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/5.json"></div><p>To change player 1’s last name to <code class="literal">hockey</code>, simply set <code class="literal">ctx._source.last</code> to the new value:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/1/_update
-{
-  "script": {
-    "lang": "painless",
-    "inline": "ctx._source.last = params.last",
-    "params": {
-      "last": "hockey"
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/6.json"></div><p>You can also add fields to a document. For example, this script adds a new field that contains
-the player’s nickname,  <span class="emphasis"><em>hockey</em></span>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/1/_update
-{
-  "script": {
-    "lang": "painless",
-    "inline": "ctx._source.last = params.last; ctx._source.nick = params.nick",
-    "params": {
-      "last": "gaudreau",
-      "nick": "hockey"
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/7.json"></div><h3><a id="modules-scripting-painless-dates"></a>Dates<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Date fields are exposed as
-<a class="link" href="painless-api-reference.html#painless-api-reference-org-joda-time-ReadableDateTime"><code class="literal">ReadableDateTime</code></a>s
-so they support methods like
-<a class="link" href="painless-api-reference.html#painless-api-reference-org-joda-time-ReadableDateTime-getYear-0"><code class="literal">getYear</code></a>,
-and
-<a class="link" href="painless-api-reference.html#painless-api-reference-org-joda-time-ReadableDateTime-getDayOfWeek-0"><code class="literal">getDayOfWeek</code></a>.
-To get milliseconds since epoch call
-<a class="link" href="painless-api-reference.html#painless-api-reference-org-joda-time-ReadableInstant-getMillis-0"><code class="literal">getMillis</code></a>.
-For example, the following returns every hockey player’s birth year:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET hockey/_search
-{
-  "script_fields": {
-    "birth_year": {
-      "script": {
-        "inline": "doc.born.value.year"
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/8.json"></div><h3><a id="modules-scripting-painless-regex"></a>Regular expressions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Regexes are disabled by default because they circumvent Painless’s
-protection against long running and memory hungry scripts. To make matters
-worse even innocuous looking regexes can have staggering performance and stack
-depth behavior. They remain an amazing powerful tool but are too scary to enable
-by default. To enable them yourself set <code class="literal">script.painless.regex.enabled: true</code> in
-<code class="literal">elasticsearch.yml</code>. We’d like very much to have a safe alternative
-implementation that can be enabled by default so check this space for later
-developments!</p></div></div><p>Painless’s native support for regular expressions has syntax constructs:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">/pattern/</code>: Pattern literals create patterns. This is the only way to create
-a pattern in painless. The pattern inside the <code class="literal">/</code>'s are just
-<a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html" target="_top">Java regular expressions</a>.
-See <a class="xref" href="modules-scripting-painless-syntax.html#modules-scripting-painless-regex-flags" title="Pattern flagsedit">the section called “Pattern flags<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a> for more.
-</li><li class="listitem">
-<code class="literal">=~</code>: The find operator return a <code class="literal">boolean</code>, <code class="literal">true</code> if a subsequence of the
-text matches, <code class="literal">false</code> otherwise.
-</li><li class="listitem">
-<code class="literal">==~</code>: The match operator returns a <code class="literal">boolean</code>, <code class="literal">true</code> if the text matches,
-<code class="literal">false</code> if it doesn’t.
-</li></ul></div><p>Using the find operator (<code class="literal">=~</code>) you can update all hockey players with "b" in
-their last name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
-{
-  "script": {
-    "lang": "painless",
-    "inline": "if (ctx._source.last =~ /b/) {ctx._source.last += \"matched\"} else {ctx.op = 'noop'}"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/9.json"></div><p>Using the match operator (<code class="literal">==~</code>) you can update all the hockey players who’s
-names start with a consonant and end with a vowel:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
-{
-  "script": {
-    "lang": "painless",
-    "inline": "if (ctx._source.last ==~ /[^aeiou].*[aeiou]/) {ctx._source.last += \"matched\"} else {ctx.op = 'noop'}"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/10.json"></div><p>You can use the <code class="literal">Pattern.matcher</code> directly to get a <code class="literal">Matcher</code> instance and
-remove all of the vowels in all of their last names:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
-{
-  "script": {
-    "lang": "painless",
-    "inline": "ctx._source.last = /[aeiou]/.matcher(ctx._source.last).replaceAll('')"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/11.json"></div><p><code class="literal">Matcher.replaceAll</code> is just a call to Java’s <code class="literal">Matcher</code>'s
-<a class="ulink" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Matcher.html#replaceAll-java.lang.String-" target="_top">replaceAll</a>
-method so it supports <code class="literal">$1</code> and <code class="literal">\1</code> for replacements:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
-{
-  "script": {
-    "lang": "painless",
-    "inline": "ctx._source.last = /n([aeiou])/.matcher(ctx._source.last).replaceAll('$1')"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/12.json"></div><p>If you need more control over replacements you can call <code class="literal">replaceAll</code> on a
-<code class="literal">CharSequence</code> with a <code class="literal">Function&lt;Matcher, String&gt;</code> that builds the replacement.
-This does not support <code class="literal">$1</code> or <code class="literal">\1</code> to access replacements because you already
-have a reference to the matcher and can get them with <code class="literal">m.group(1)</code>.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Calling <code class="literal">Matcher.find</code> inside of the function that builds the
-replacement is rude and will likely break the replacement process.</p></div></div><p>This will make all of the vowels in the hockey player’s last names upper case:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
-{
-  "script": {
-    "lang": "painless",
-    "inline": "ctx._source.last = ctx._source.last.replaceAll(/[aeiou]/, m -&gt; m.group().toUpperCase(Locale.ROOT))"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/13.json"></div><p>Or you can use the <code class="literal">CharSequence.replaceFirst</code> to make the first vowel in their
-last names upper case:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST hockey/player/_update_by_query
-{
-  "script": {
-    "lang": "painless",
-    "inline": "ctx._source.last = ctx._source.last.replaceFirst(/[aeiou]/, m -&gt; m.group().toUpperCase(Locale.ROOT))"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-painless/14.json"></div><p>Note: all of the <code class="literal">_update_by_query</code> examples above could really do with a
-<code class="literal">query</code> to limit the data that they pull back. While you <span class="strong"><strong>could</strong></span> use a
-<a class="xref" href="query-dsl-script-query.html" title="Script Query">Script Query</a> it wouldn’t be as efficient as using any other query
-because script queries aren’t able to use the inverted index to limit the
-documents that they have to check.</p><h3><a id="modules-scripting-painless-dispatch"></a>How painless dispatches functions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/painless.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Painless uses receiver, name, and <a class="ulink" href="https://en.wikipedia.org/wiki/Arity" target="_top">arity</a>
-for method dispatch. For example, <code class="literal">s.foo(a, b)</code> is resolved by first getting
-the class of <code class="literal">s</code> and then looking up the method <code class="literal">foo</code> with two parameters. This
-is different from Groovy which uses the
-<a class="ulink" href="https://en.wikipedia.org/wiki/Multiple_dispatch" target="_top">runtime types</a> of the
-parameters and Java which uses the compile time types of the parameters.</p><p>The consequence of this that Painless doesn’t support overloaded methods like
-Java, leading to some trouble when it whitelists classes from the Java
-standard library. For example, in Java and Groovy, <code class="literal">Matcher</code> has two methods:
-<code class="literal">group(int)</code> and <code class="literal">group(String)</code>. Painless can’t whitelist both of them methods
-because they have the same name and the same number of parameters. So instead it
-has <a class="link" href="painless-api-reference.html#painless-api-reference-Matcher-group-1"><code class="literal">group(int)</code></a> and
-<a class="link" href="painless-api-reference.html#painless-api-reference-Matcher-namedGroup-1"><code class="literal">namedGroup(String)</code></a>.</p><p>We have a few justifications for this different way of dispatching methods:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-It makes operating on <code class="literal">def</code> types simpler and, presumably, faster. Using
-receiver, name, and arity means when Painless sees a call on a <code class="literal">def</code> object it
-can dispatch the appropriate method without having to do expensive comparisons
-of the types of the parameters. The same is true for invocations with <code class="literal">def</code>
-typed parameters.
-</li><li class="listitem">
-It keeps things consistent. It would be genuinely weird for Painless to
-behave like Groovy if any <code class="literal">def</code> typed parameters were involved and Java
-otherwise. It’d be slow for it to behave like Groovy all the time.
-</li><li class="listitem">
-It keeps Painless maintainable. Adding the Java or Groovy like method
-dispatch <span class="strong"><strong>feels</strong></span> like it’d add a ton of complexity which’d make maintenance and
-other improvements much more difficult.
-</li></ol></div></div><div class="navfooter"><span class="prev"><a href="modules-scripting-security.html">
+</li></ul></div><p>Ready to start scripting with Painless? See <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/painless/master/painless-getting-started.html" target="_top">Getting Started with Painless</a> in the guide to the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/painless/master/index.html" target="_top">Painless Scripting Language</a>.</p></div><div class="navfooter"><span class="prev"><a href="modules-scripting-security.html">
               « 
               Scripting and security</a>
            
         </span><span class="next">
            
-          <a href="modules-scripting-painless-syntax.html">Painless Syntax
+          <a href="modules-scripting-expression.html">Lucene Expressions Language
                »
             </a></span></div>
 <!-- end body -->
