@@ -617,7 +617,7 @@ use in Logstash for indexing and filtering:</p><div class="pre_wrapper"><pre cla
     ...
     "@metadata": { <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
       "beat": "packetbeat", <a id="CO4-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-      "type": "&lt;event type&gt;" <a id="CO4-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+      "type": "doc" <a id="CO4-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
     }
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Packetbeat uses the <code class="literal">@metadata</code> field to send metadata to Logstash. The
@@ -629,8 +629,10 @@ for more about the <code class="literal">@metadata</code> field.
 The default is packetbeat. To change this value, set the
 <a class="link" href="logstash-output.html#logstash-index" title="index"><code class="literal">index</code></a> option in the Packetbeat config file.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The value of <code class="literal">type</code> varies depending on the event type.
-</p></td></tr></table></div><p>You can access this metadata from within the Logstash config file to set values
+The value of <code class="literal">type</code> is currently hardcoded to <code class="literal">doc</code>. It was used by previous
+Logstash configs to set the type of the document in Elasticsearch.
+</p></td></tr></table></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The <code class="literal">@metadata.type</code> field, added by the Logstash output, is
+deprecated, hardcoded to <code class="literal">doc</code>, and will be removed in Packetbeat 7.0.</p></div></div><p>You can access this metadata from within the Logstash config file to set values
 dynamically based on the contents of the metadata.</p><p>For example, the following Logstash configuration file for versions 2.x and
 5.x sets Logstash to use the index and document type reported by Beats for
 indexing events into Elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-logstash">input {
@@ -643,16 +645,12 @@ output {
   elasticsearch {
     hosts =&gt; ["http://localhost:9200"]
     index =&gt; "%{[@metadata][beat]}-%{+YYYY.MM.dd}" <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    document_type =&gt; "%{[@metadata][type]}" <a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
   }
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 <code class="literal">%{[@metadata][beat]}</code> sets the first part of the index name to the value
 of the <code class="literal">beat</code> metadata field, and <code class="literal">%{+YYYY.MM.dd}</code> sets the second part of the
 name to a date based on the Logstash <code class="literal">@timestamp</code> field. For example:
 <code class="literal">packetbeat-2017.03.29</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-<code class="literal">%{[@metadata][type]}</code> sets the document type based on the value of the <code class="literal">type</code>
-metadata field.
 </p></td></tr></table></div><p>Events indexed into Elasticsearch with the Logstash configuration shown here
 will be similar to events directly indexed by Beats into Elasticsearch.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_compatibility_2"></a>Compatibility<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/outputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This output works with all compatible versions of Logstash. See "Supported Beats Versions" in the <a class="ulink" href="https://www.elastic.co/support/matrix#show_compatibility" target="_top">Elastic Support Matrix</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_logstash_output_options"></a>Logstash Output Options<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/outputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can specify the following options in the <code class="literal">logstash</code> section of the
 <code class="literal">packetbeat.yml</code> config file:</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_enabled_5"></a>enabled<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/outputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The enabled config is a boolean setting to enable or disable the output. If set
