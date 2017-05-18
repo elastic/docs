@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Encode qw(encode_utf8);
+use Encode qw(encode_utf8 decode_utf8);
 use Plack::Request;
 use Plack::Builder;
 use Plack::Response;
@@ -33,7 +33,7 @@ sub _parse_request {
 #===================================
     my $req     = Plack::Request->new(@_);
     my $qs      = $req->query_parameters;
-    my $q       = eval { $qs->get_one('q') } || '';
+    my $q       = decode_utf8( eval { $qs->get_one('q') } || '' );
     my $section = eval { $qs->get_one('section') } || '';
     my @tags    = grep {$_} $qs->get_all('tags');
     my $page    = eval { $qs->get_one('page') } || 1;
