@@ -605,12 +605,47 @@
            
           <a href="ml-info-functions.html">Information Content Functions
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ml-geo-functions"></a>Geographic Functions</h2></div></div></div><p>The X-Pack machine learning features include the following geographic functions:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">lat_long</code>
-</li></ul></div><p>The geographic functions detect anomalies in the geographic location of the
-input data.</p><p>The <code class="literal">field_name</code> that you supply must be a string of the form
-<code class="literal">latitude,longitude</code>. The <code class="literal">latitude</code> and <code class="literal">longitude</code> must be in the range -180
-to 180 and represent a point on the surface of the Earth.</p></div><div class="navfooter"><span class="prev"><a href="ml-count-functions.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ml-geo-functions"></a>Geographic Functions</h2></div></div></div><p>The geographic functions detect anomalies in the geographic location of the
+input data.</p><p>The X-Pack machine learning features include the following geographic function: <code class="literal">lat_long</code>.</p><h4><a id="ml-lat-long"></a>Lat_long</h4><p>The <code class="literal">lat_long</code> function detects anomalies in the geographic location of the
+input data.</p><p>This function supports the following properties:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">field_name</code> (required)
+</li><li class="listitem">
+<code class="literal">by_field_name</code> (optional)
+</li><li class="listitem">
+<code class="literal">over_field_name</code> (optional)
+</li><li class="listitem">
+<code class="literal">partition_field_name</code> (optional)
+</li></ul></div><p>For more information about those properties,
+see <a class="link" href="ml-api-definitions.html#ml-detectorconfig" title="Detector Configuration Objects">Detector Configuration Objects</a>.</p><p><strong>Example 1: Analyzing transactions with the lat_long function. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "function" : "lat_long",
+  "field_name" : "transactionCoordinates",
+  "by_field_name" : "creditCardNumber"
+}</pre></div><p>
+</p><p>If you use this <code class="literal">lat_long</code> function in a detector in your job, it
+detects anomalies where the geographic location of a credit card transaction is
+unusual for a particular customer’s credit card. An anomaly might indicate fraud.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The <code class="literal">field_name</code> that you supply must be a single string that contains
+two comma-separated numbers of the form <code class="literal">latitude,longitude</code>. The <code class="literal">latitude</code> and
+<code class="literal">longitude</code> must be in the range -180 to 180 and represent a point on the
+surface of the Earth.</p></div></div><p>For example, JSON data might contain the following transaction coordinates:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "time": 1460464275,
+  "transactionCoordinates": "40.7,-74.0",
+  "creditCardNumber": "1234123412341234"
+}</pre></div><p>In Elasticsearch, location data is likely to be stored in <code class="literal">geo_point</code> fields. For more
+information, see <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.x/geo-point.html" target="_top">Geo-point datatype</a>. This data type is not
+supported natively in X-Pack machine learning features. You can, however, use Painless scripts
+in <code class="literal">script_fields</code> in your datafeed to transform the data into an appropriate
+format. For example, the following Painless script transforms
+<code class="literal">"coords": {"lat" : 41.44, "lon":90.5}</code> into <code class="literal">"lat-lon": "41.44,90.5"</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "script_fields": {
+    "lat-lon": {
+      "script": {
+        "inline": "doc['coords'].lat + ',' + doc['coords'].lon",
+        "lang": "painless"
+      }
+    }
+  }
+}</pre></div><p>For more information about <code class="literal">script_fields</code>, see <a class="xref" href="ml-api-definitions.html#ml-datafeed-resource" title="Datafeed Resources">Datafeed Resources</a>.</p></div><div class="navfooter"><span class="prev"><a href="ml-count-functions.html">
               « 
               Count Functions</a>
            
