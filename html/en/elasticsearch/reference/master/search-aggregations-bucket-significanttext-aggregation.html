@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Lucene Expressions Language
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Significant Text Aggregation
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-scripting-painless.html" title="Painless Scripting Language" /><link rel="next" href="modules-scripting-engine.html" title="Advanced scripts using script engines" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-aggregations-bucket.html" title="Bucket Aggregations" /><link rel="prev" href="search-aggregations-bucket-significantterms-aggregation.html" title="Significant Terms Aggregation" /><link rel="next" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -599,46 +599,322 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-scripting.html">Scripting</a></span> » <span class="breadcrumb-node">Lucene Expressions Language</span></div><div class="navheader"><span class="prev"><a href="modules-scripting-painless.html">
+    </a></span> » <span class="breadcrumb-link"><a href="search-aggregations.html">Aggregations</a></span> » <span class="breadcrumb-link"><a href="search-aggregations-bucket.html">Bucket Aggregations</a></span> » <span class="breadcrumb-node">Significant Text Aggregation</span></div><div class="navheader"><span class="prev"><a href="search-aggregations-bucket-significantterms-aggregation.html">
               « 
-              Painless Scripting Language</a>
+              Significant Terms Aggregation</a>
            
         </span><span class="next">
            
-          <a href="modules-scripting-engine.html">Advanced scripts using script engines
+          <a href="search-aggregations-bucket-terms-aggregation.html">Terms Aggregation
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-expression"></a>Lucene Expressions Language<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/expression.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Lucene’s expressions compile a <code class="literal">javascript</code> expression to bytecode. They are
-designed for high-performance custom ranking and sorting functions and are
-enabled for <code class="literal">inline</code> and <code class="literal">stored</code> scripting by default.</p><h3><a id="_performance"></a>Performance<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/expression.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Expressions were designed to have competitive performance with custom Lucene code.
-This performance is due to having low per-document overhead as opposed to other
-scripting engines: expressions do more "up-front".</p><p>This allows for very fast execution, even faster than if you had written a <code class="literal">native</code> script.</p><h3><a id="_syntax_14"></a>Syntax<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/expression.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Expressions support a subset of javascript syntax: a single expression.</p><p>See the <a class="ulink" href="http://lucene.apache.org/core/6_0_0/expressions/index.html?org/apache/lucene/expressions/js/package-summary.html" target="_top">expressions module documentation</a>
-for details on what operators and functions are available.</p><p>Variables in <code class="literal">expression</code> scripts are available to access:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-document fields, e.g. <code class="literal">doc['myfield'].value</code>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-bucket-significanttext-aggregation"></a>Significant Text Aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.</p></div></div><p>An aggregation that returns interesting or unusual occurrences of free-text terms in a set.
+It is like the <a class="link" href="search-aggregations-bucket-significantterms-aggregation.html" title="Significant Terms Aggregation">significant terms</a> aggregation but differs in that:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+It is specifically designed for use on type <code class="literal">text</code> fields
 </li><li class="listitem">
-variables and methods that the field supports, e.g. <code class="literal">doc['myfield'].empty</code>
+It does not require field data or doc-values
 </li><li class="listitem">
-Parameters passed into the script, e.g. <code class="literal">mymodifier</code>
+It re-analyzes text content on-the-fly meaning it can also filter duplicate sections of
+noisy text that otherwise tend to skew statistics.
+</li></ul></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Re-analyzing <span class="emphasis"><em>large</em></span> result sets will require a lot of time and memory. It is recommended that the significant_text
+         aggregation is used as a child of either the <a class="link" href="search-aggregations-bucket-sampler-aggregation.html" title="Sampler Aggregation">sampler</a> or
+         <a class="link" href="search-aggregations-bucket-diversified-sampler-aggregation.html" title="Diversified Sampler Aggregation">diversified sampler</a> aggregation to limit the analysis
+         to a <span class="emphasis"><em>small</em></span> selection of top-matching documents e.g. 200. This will typically improve speed, memory use and quality of
+         results.</p></div></div><div class="itemizedlist"><p class="title"><strong>Example use cases:</strong></p><ul class="itemizedlist" type="disc"><li class="listitem">
+Suggesting "H5N1" when users search for "bird flu" to help expand queries
 </li><li class="listitem">
-The current document’s score, <code class="literal">_score</code> (only available when used in a <code class="literal">script_score</code>)
-</li></ul></div><p>You can use Expressions scripts for <code class="literal">script_score</code>, <code class="literal">script_fields</code>, sort scripts, and numeric aggregation
-scripts, simply set the <code class="literal">lang</code> parameter to <code class="literal">expression</code>.</p><h3><a id="_numeric_field_api"></a>Numeric field API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/expression.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Expression </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].value</code></p></td><td align="left" valign="top"><p>The value of the field, as a <code class="literal">double</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].empty</code></p></td><td align="left" valign="top"><p>A boolean indicating if the field has no
-values within the doc.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].length</code></p></td><td align="left" valign="top"><p>The number of values in this document.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].min()</code></p></td><td align="left" valign="top"><p>The minimum value of the field in this document.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].max()</code></p></td><td align="left" valign="top"><p>The maximum value of the field in this document.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].median()</code></p></td><td align="left" valign="top"><p>The median value of the field in this document.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].avg()</code></p></td><td align="left" valign="top"><p>The average of the values in this document.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].sum()</code></p></td><td align="left" valign="top"><p>The sum of the values in this document.</p></td></tr></tbody></table></div><p>When a document is missing the field completely, by default the value will be treated as <code class="literal">0</code>.
-You can treat it as another value instead, e.g. <code class="literal">doc['myfield'].empty ? 100 : doc['myfield'].value</code></p><p>When a document has multiple values for the field, by default the minimum value is returned.
-You can choose a different value instead, e.g. <code class="literal">doc['myfield'].sum()</code>.</p><p>When a document is missing the field completely, by default the value will be treated as <code class="literal">0</code>.</p><p>Boolean fields are exposed as numerics, with <code class="literal">true</code> mapped to <code class="literal">1</code> and <code class="literal">false</code> mapped to <code class="literal">0</code>.
-For example: <code class="literal">doc['on_sale'].value ? doc['price'].value * 0.5 : doc['price'].value</code></p><h3><a id="_date_field_api"></a>Date field API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/expression.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Date fields are treated as the number of milliseconds since January 1, 1970 and
-support the Numeric Fields API above, plus access to some date-specific fields:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Expression </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.centuryOfEra</code></p></td><td align="left" valign="top"><p>Century (1-2920000)</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.dayOfMonth</code></p></td><td align="left" valign="top"><p>Day (1-31), e.g. <code class="literal">1</code> for the first of the month.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.dayOfWeek</code></p></td><td align="left" valign="top"><p>Day of the week (1-7), e.g. <code class="literal">1</code> for Monday.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.dayOfYear</code></p></td><td align="left" valign="top"><p>Day of the year, e.g. <code class="literal">1</code> for January 1.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.era</code></p></td><td align="left" valign="top"><p>Era: <code class="literal">0</code> for BC, <code class="literal">1</code> for AD.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.hourOfDay</code></p></td><td align="left" valign="top"><p>Hour (0-23).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.millisOfDay</code></p></td><td align="left" valign="top"><p>Milliseconds within the day (0-86399999).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.millisOfSecond</code></p></td><td align="left" valign="top"><p>Milliseconds within the second (0-999).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.minuteOfDay</code></p></td><td align="left" valign="top"><p>Minute within the day (0-1439).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.minuteOfHour</code></p></td><td align="left" valign="top"><p>Minute within the hour (0-59).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.monthOfYear</code></p></td><td align="left" valign="top"><p>Month within the year (1-12), e.g. <code class="literal">1</code> for January.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.secondOfDay</code></p></td><td align="left" valign="top"><p>Second within the day (0-86399).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.secondOfMinute</code></p></td><td align="left" valign="top"><p>Second within the minute (0-59).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.year</code></p></td><td align="left" valign="top"><p>Year (-292000000 - 292000000).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.yearOfCentury</code></p></td><td align="left" valign="top"><p>Year within the century (1-100).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].date.yearOfEra</code></p></td><td align="left" valign="top"><p>Year within the era (1-292000000).</p></td></tr></tbody></table></div><p>The following example shows the difference in years between the <code class="literal">date</code> fields date0 and date1:</p><p><code class="literal">doc['date1'].date.year - doc['date0'].date.year</code></p><h3><a id="_literal_geo_point_literal_field_api"></a><code class="literal">geo_point</code> field API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/expression.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Expression </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].empty</code></p></td><td align="left" valign="top"><p>A boolean indicating if the field has no
-values within the doc.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].lat</code></p></td><td align="left" valign="top"><p>The latitude of the geo point.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">doc['field_name'].lon</code></p></td><td align="left" valign="top"><p>The longitude of the geo point.</p></td></tr></tbody></table></div><p>The following example computes distance in kilometers from Washington, DC:</p><p><code class="literal">haversin(38.9072, 77.0369, doc['field_name'].lat, doc['field_name'].lon)</code></p><p>In this example the coordinates could have been passed as parameters to the script,
-e.g. based on geolocation of the user.</p><h3><a id="_limitations_8"></a>Limitations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/expression.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>There are a few limitations relative to other script languages:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Only numeric, boolean, date, and geo_point fields may be accessed
+Suggesting keywords relating to stock symbol $ATI for use in an automated news classifier
+</li></ul></div><p>In these cases the words being selected are not simply the most popular terms in results. The most popular words tend to be
+very boring (<span class="emphasis"><em>and, of, the, we, I, they</em></span> …).
+The significant words are the ones that have undergone a significant change in popularity measured between a <span class="emphasis"><em>foreground</em></span> and <span class="emphasis"><em>background</em></span> set.
+If the term "H5N1" only exists in 5 documents in a 10 million document index and yet is found in 4 of the 100 documents that make up a user’s search results
+that is significant and probably very relevant to their search. 5/10,000,000 vs 4/100 is a big swing in frequency.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content">
+The significant_text aggregation is new and may change in non-backwards compatible ways if we add further text-analysis features e.g. phrase detection
+</div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_basic_use"></a>Basic use<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In the typical use case, the <span class="emphasis"><em>foreground</em></span> set of interest is a selection of the top-matching search results for a query
+and the _background_set used for statistical comparisons is the index or indices from which the results were gathered.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET news/article/_search
+{
+    "query" : {
+        "match" : {"content" : "Bird flu"}
+    },
+    "aggregations" : {
+        "my_sample" : {
+            "sampler" : {
+                "shard_size" : 100
+            },
+            "aggregations": {
+                "keywords" : {
+                    "significant_text" : { "field" : "content" }
+                }
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-significanttext-aggregation/1.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "took": 9,
+  "timed_out": false,
+  "_shards": ...,
+  "hits": ...,
+    "aggregations" : {
+        "my_sample": {
+            "doc_count": 100,
+            "keywords" : {
+                "doc_count": 100,
+                "buckets" : [
+                    {
+                        "key": "h5n1",
+                        "doc_count": 4,
+                        "score": 4.71235374214817,
+                        "bg_count": 5
+                    }
+                    ...
+                ]
+            }
+        }
+    }
+}</pre></div><p>The results show that "h5n1" is one of several terms strongly associated with bird flu.
+It only occurs 5 times in our index as a whole (see the <code class="literal">bg_count</code>) and yet 4 of these
+were lucky enough to appear in our 100 document sample of "bird flu" results. That suggests
+a significant word and one which the user can potentially add to their search.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_dealing_with_noisy_data_using_literal_filter_duplicate_text_literal"></a>Dealing with noisy data using <code class="literal">filter_duplicate_text</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Free-text fields often contain a mix of original content and mechanical copies of text (cut-and-paste biographies, email reply chains,
+retweets, boilerplate headers/footers, page navigation menus, sidebar news links, copyright notices, standard disclaimers, addresses).</p><p>In real-world data these duplicate sections of text tend to feature heavily in <code class="literal">significant_text</code> results if they aren’t filtered out.
+Filtering near-duplicate text is a difficult task at index-time but we can cleanse the data on-the-fly at query time using the
+<code class="literal">filter_duplicate_text</code> setting.</p><p>First let’s look at an unfiltered real-world example using the  <a class="ulink" href="http://research.signalmedia.co/newsir16/signal-dataset.html" target="_top">Signal media dataset</a> of
+a million news articles covering a wide variety of news. Here are the raw significant text results for a search for the articles
+mentioning "elasticsearch":</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    ...
+  "aggregations": {
+    "sample": {
+      "doc_count": 35,
+      "keywords": {
+        "doc_count": 35,
+        "buckets": [
+          {
+            "key": "elasticsearch",
+            "doc_count": 35,
+            "score": 28570.428571428572,
+            "bg_count": 35
+          },
+          ...
+          {
+            "key": "currensee",
+            "doc_count": 8,
+            "score": 6530.383673469388,
+            "bg_count": 8
+          },
+          ...
+          {
+            "key": "pozmantier",
+            "doc_count": 4,
+            "score": 3265.191836734694,
+            "bg_count": 4
+          },
+          ...
+
+}</pre></div><p>The uncleansed documents have thrown up some odd-looking terms that are, on the face of it, statistically
+correlated with appearances of our search term "elasticsearch" e.g. "pozmantier".
+We can drill down into examples of these documents to see why pozmantier is connected using this query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET news/article/_search
+{
+  "query": {
+    "simple_query_string": {
+      "query": "+elasticsearch  +pozmantier"
+    }
+  },
+  "_source": [
+    "title",
+    "source"
+  ],
+  "highlight": {
+    "fields": {
+      "content": {}
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-significanttext-aggregation/2.json"></div><p>The results show a series of very similar news articles about a judging panel for a number of tech projects:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  ...
+  "hits": {
+    "hits": [
+      {
+        ...
+        "_source": {
+          "source": "Presentation Master",
+          "title": "T.E.N. Announces Nominees for the 2015 ISE® North America Awards"
+        },
+        "highlight": {
+          "content": [
+            "City of San Diego Mike &lt;em&gt;Pozmantier&lt;/em&gt;, Program Manager, Cyber Security Division, Department of",
+            " Janus, Janus &lt;em&gt;ElasticSearch&lt;/em&gt; Security Visualization Engine "
+          ]
+        }
+      },
+      {
+        ...
+        "_source": {
+          "source": "RCL Advisors",
+          "title": "T.E.N. Announces Nominees for the 2015 ISE(R) North America Awards"
+        },
+        "highlight": {
+          "content": [
+            "Mike &lt;em&gt;Pozmantier&lt;/em&gt;, Program Manager, Cyber Security Division, Department of Homeland Security S&amp;T",
+            "Janus, Janus &lt;em&gt;ElasticSearch&lt;/em&gt; Security Visualization Engine"
+          ]
+        }
+      },
+      ...</pre></div><p>Mike Pozmantier was one of many judges on a panel and elasticsearch was used in one of many projects being judged.</p><p>As is typical, this lengthy press release was cut-and-paste by a variety of news sites and consequently any rare names, numbers or
+typos they contain become statistically correlated with our matching query.</p><p>Fortunately similar documents tend to rank similarly so as part of examining the stream of top-matching documents the significant_text
+aggregation can apply a filter to remove sequences of any 6 or more tokens that have already been seen. Let’s try this same query now but
+with the <code class="literal">filter_duplicate_text</code> setting turned on:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET news/article/_search
+{
+  "query": {
+    "match": {
+      "content": "elasticsearch"
+    }
+  },
+  "aggs": {
+    "sample": {
+      "sampler": {
+        "shard_size": 100
+      },
+      "aggs": {
+        "keywords": {
+          "significant_text": {
+            "field": "content",
+            "filter_duplicate_text": true
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-significanttext-aggregation/3.json"></div><p>The results from analysing our deduplicated text are obviously of higher quality to anyone familiar with the elastic stack:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  ...
+  "aggregations": {
+    "sample": {
+      "doc_count": 35,
+      "keywords": {
+        "doc_count": 35,
+        "buckets": [
+          {
+            "key": "elasticsearch",
+            "doc_count": 22,
+            "score": 11288.001166180758,
+            "bg_count": 35
+          },
+          {
+            "key": "logstash",
+            "doc_count": 3,
+            "score": 1836.648979591837,
+            "bg_count": 4
+          },
+          {
+            "key": "kibana",
+            "doc_count": 3,
+            "score": 1469.3020408163263,
+            "bg_count": 5
+          }
+        ]
+      }
+    }
+  }
+}</pre></div><p>Mr Pozmantier and other one-off associations with elasticsearch no longer appear in the aggregation
+results as a consequence of copy-and-paste operations or other forms of mechanical repetition.</p><p>If your duplicate or near-duplicate content is identifiable via a single-value indexed field  (perhaps
+a hash of the article’s <code class="literal">title</code> text or an <code class="literal">original_press_release_url</code> field) then it would be more
+efficient to use a parent <a class="link" href="search-aggregations-bucket-diversified-sampler-aggregation.html" title="Diversified Sampler Aggregation">diversified sampler</a> aggregation
+to eliminate these documents from the sample set based on that single key. The less duplicate content you can feed into
+the significant_text aggregation up front the better in terms of performance.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>How are the significance scores calculated?</strong></p></div></div></div><p>The numbers returned for scores are primarily intended for ranking different suggestions sensibly rather than something easily
+understood by end users. The scores are derived from the doc frequencies in <span class="emphasis"><em>foreground</em></span> and <span class="emphasis"><em>background</em></span> sets. In brief, a
+term is considered significant if there is a noticeable difference in the frequency in which a term appears in the subset and
+in the background. The way the terms are ranked can be configured, see "Parameters" section.</p></div><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Use the <span class="emphasis"><em>"like this but not this"</em></span> pattern</strong></p></div></div></div><p>You can spot mis-categorized content by first searching a structured field e.g. <code class="literal">category:adultMovie</code> and use significant_text on the
+text "movie_description" field. Take the suggested words (I’ll leave them to your imagination) and then search for all movies NOT marked as category:adultMovie but containing these keywords.
+You now have a ranked list of badly-categorized movies that you should reclassify or at least remove from the "familyFriendly" category.</p><p>The significance score from each term can also provide a useful <code class="literal">boost</code> setting to sort matches.
+Using the <code class="literal">minimum_should_match</code> setting of the <code class="literal">terms</code> query with the keywords will help control the balance of precision/recall in the result set i.e
+a high setting would have a small number of relevant results packed full of keywords and a setting of "1" would produce a more exhaustive results set with all documents containing <span class="emphasis"><em>any</em></span> keyword.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_limitations_6"></a>Limitations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_no_support_for_child_aggregations"></a>No support for child aggregations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The significant_text aggregation intentionally does not support the addition of child aggregations because:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+It would come with a high memory cost
 </li><li class="listitem">
-Stored fields are not available
-</li></ul></div></div><div class="navfooter"><span class="prev"><a href="modules-scripting-painless.html">
+It isn’t a generally useful feature and there is a workaround for those that need it
+</li></ul></div><p>The volume of candidate terms is generally very high and these are pruned heavily before the final
+results are returned. Supporting child aggregations would generate additional churn and be inefficient.
+Clients can always take the heavily-trimmed set of results from a <code class="literal">significant_text</code> request and
+make a subsequent follow-up query using a <code class="literal">terms</code> aggregation with an <code class="literal">include</code> clause and child
+aggregations to perform further analysis of selected keywords in a more efficient fashion.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_approximate_counts_2"></a>Approximate counts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The counts of how many documents contain a term provided in results are based on summing the samples returned from each shard and
+as such may be:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+low if certain shards did not provide figures for a given term in their top sample
+</li><li class="listitem">
+high when considering the background frequency as it may count occurrences found in deleted documents
+</li></ul></div><p>Like most design decisions, this is the basis of a trade-off in which we have chosen to provide fast performance at the cost of some (typically small) inaccuracies.
+However, the <code class="literal">size</code> and <code class="literal">shard size</code> settings covered in the next section provide tools to help control the accuracy levels.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_parameters_6"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_significance_heuristics"></a>Significance heuristics<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>This aggregation supports the same scoring heuristics (JLH, mutual_information, gnd, chi_square etc) as the <a class="link" href="search-aggregations-bucket-significantterms-aggregation.html" title="Significant Terms Aggregation">significant terms</a> aggregation</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_size_amp_shard_size_2"></a>Size &amp; Shard Size<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">size</code> parameter can be set to define how many term buckets should be returned out of the overall terms list. By
+default, the node coordinating the search process will request each shard to provide its own top term buckets
+and once all shards respond, it will reduce the results to the final list that will then be returned to the client.
+If the number of unique terms is greater than <code class="literal">size</code>, the returned list can be slightly off and not accurate
+(it could be that the term counts are slightly off and it could even be that a term that should have been in the top
+size buckets was not returned).</p><p>To ensure better accuracy a multiple of the final <code class="literal">size</code> is used as the number of terms to request from each shard
+using a heuristic based on the number of shards. To take manual control of this setting the <code class="literal">shard_size</code> parameter
+can be  used to control the volumes of candidate terms produced by each shard.</p><p>Low-frequency terms can turn out to be the most interesting ones once all results are combined so the
+significant_terms aggregation can produce higher-quality results when the <code class="literal">shard_size</code> parameter is set to
+values significantly higher than the <code class="literal">size</code> setting. This ensures that a bigger volume of promising candidate terms are given
+a consolidated review by the reducing node before the final selection. Obviously large candidate term lists
+will cause extra network traffic and RAM usage so this is  quality/cost trade off that needs to be balanced.  If <code class="literal">shard_size</code> is set to -1 (the default) then <code class="literal">shard_size</code> will be automatically estimated based on the number of shards and the <code class="literal">size</code> parameter.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p><code class="literal">shard_size</code> cannot be smaller than <code class="literal">size</code> (as it doesn’t make much sense). When it is, elasticsearch will
+        override it and reset it to be equal to <code class="literal">size</code>.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_minimum_document_count_3"></a>Minimum document count<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>It is possible to only return terms that match more than a configured number of hits using the <code class="literal">min_doc_count</code> option.
+The Default value is 3.</p><p>Terms that score highly will be collected on a shard level and merged with the terms collected from other shards in a second step.
+However, the shard does not have the information about the global term frequencies available. The decision if a term is added to a
+candidate list depends only on the score computed on the shard using local shard frequencies, not the global frequencies of the word.
+The <code class="literal">min_doc_count</code> criterion is only applied after merging local terms statistics of all shards. In a way the decision to add the
+term as a candidate is made without being very <span class="emphasis"><em>certain</em></span> about if the term will actually reach the required <code class="literal">min_doc_count</code>.
+This might cause many (globally) high frequent terms to be missing in the final result if low frequent but high scoring terms populated
+the candidate lists. To avoid this, the <code class="literal">shard_size</code> parameter can be increased to allow more candidate terms on the shards.
+However, this increases memory consumption and network traffic.</p><p><code class="literal">shard_min_doc_count</code> parameter</p><p>The parameter <code class="literal">shard_min_doc_count</code> regulates the <span class="emphasis"><em>certainty</em></span> a shard has if the term should actually be added to the candidate list or
+not with respect to the <code class="literal">min_doc_count</code>. Terms will only be considered if their local shard frequency within the set is higher than the
+<code class="literal">shard_min_doc_count</code>. If your dictionary contains many low frequent words and you are not interested in these (for example misspellings),
+then you can set the <code class="literal">shard_min_doc_count</code> parameter to filter out candidate terms on a shard level that will with a reasonable certainty
+not reach the required <code class="literal">min_doc_count</code> even after merging the local frequencies. <code class="literal">shard_min_doc_count</code> is set to <code class="literal">1</code> per default and has
+no effect unless you explicitly set it.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Setting <code class="literal">min_doc_count</code> to <code class="literal">1</code> is generally not advised as it tends to return terms that
+         are typos or other bizarre curiosities. Finding more than one instance of a term helps
+         reinforce that, while still rare, the term was not the result of a one-off accident. The
+         default value of 3 is used to provide a minimum weight-of-evidence.
+         Setting <code class="literal">shard_min_doc_count</code> too high will cause significant candidate terms to be filtered out on a shard level.
+         This value should be set much lower than <code class="literal">min_doc_count/#shards</code>.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_custom_background_context_2"></a>Custom background context<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The default source of statistical information for background term frequencies is the entire index and this
+scope can be narrowed through the use of a <code class="literal">background_filter</code> to focus in on significant terms within a narrower
+context:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET news/article/_search
+{
+    "query" : {
+        "match" : {
+            "content" : "madrid"
+        }
+    },
+    "aggs" : {
+        "tags" : {
+            "significant_text" : {
+                "field" : "content",
+                "background_filter": {
+                    "term" : { "content" : "spain"}
+                }
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-significanttext-aggregation/4.json"></div><p>The above filter would help focus in on terms that were peculiar to the city of Madrid rather than revealing
+terms like "Spanish" that are unusual in the full index’s worldwide context but commonplace in the subset of documents containing the
+word "Spain".</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Use of background filters will slow the query as each term’s postings must be filtered to determine a frequency</p></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_dealing_with_source_and_index_mappings"></a>Dealing with source and index mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Ordinarily the indexed field name and the original JSON field being retrieved share the same name.
+However with more complex field mappings using features like <code class="literal">copy_to</code> the source
+JSON field(s) and the indexed field being aggregated can differ.
+In these cases it is possible to list the JSON _source fields from which text
+will be analyzed using the <code class="literal">source_fields</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET news/article/_search
+{
+    "query" : {
+        "match" : {
+            "custom_all" : "elasticsearch"
+        }
+    },
+    "aggs" : {
+        "tags" : {
+            "significant_text" : {
+                "field" : "custom_all",
+                "source_fields": ["content" , "title"]
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-significanttext-aggregation/5.json"></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_filtering_values_2"></a>Filtering Values<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>It is possible (although rarely required) to filter the values for which buckets will be created. This can be done using the <code class="literal">include</code> and
+<code class="literal">exclude</code> parameters which are based on a regular expression string or arrays of exact terms. This functionality mirrors the features
+described in the <a class="link" href="search-aggregations-bucket-terms-aggregation.html" title="Terms Aggregation">terms aggregation</a> documentation.</p></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-significantterms-aggregation.html">
               « 
-              Painless Scripting Language</a>
+              Significant Terms Aggregation</a>
            
         </span><span class="next">
            
-          <a href="modules-scripting-engine.html">Advanced scripts using script engines
+          <a href="search-aggregations-bucket-terms-aggregation.html">Terms Aggregation
                »
             </a></span></div>
 <!-- end body -->
