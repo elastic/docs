@@ -622,10 +622,13 @@ the document frequency of a provided term.</p><div class="pre_wrapper"><pre clas
     }
 
     @Override
-    public Function&lt;Map&lt;String,Object&gt;,SearchScript&gt; compile(String scriptName, String scriptSource, Map&lt;String, String&gt; params) {
+    public &lt;T&gt; T compile(String scriptName, String scriptSource, ScriptContext&lt;T&gt; context, Map&lt;String, String&gt; params) {
+        if (context.equals(ScriptContext.SEARCH) == false) {
+            throw new IllegalArgumentException(getType() + " scripts cannot be used for context [" + context.name + "]");
+        }
         // we use the script "source" as the script identifier
         if ("pure_df".equals(scriptSource)) {
-            return p -&gt; new SearchScript() {
+            SearchScript.Compiled compiled = (p, lookup) -&gt; new SearchScript() {
                 final String field;
                 final String term;
                 {
@@ -680,20 +683,9 @@ the document frequency of a provided term.</p><div class="pre_wrapper"><pre clas
                     return false;
                 }
             };
+            return context.compiledClazz.cast(compiled);
         }
         throw new IllegalArgumentException("Unknown script name " + scriptSource);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public SearchScript search(Object compiledScript, SearchLookup lookup, @Nullable Map&lt;String, Object&gt; params) {
-      Function&lt;Map&lt;String,Object&gt;,SearchScript&gt; scriptFactory = (Function&lt;Map&lt;String,Object&gt;,SearchScript&gt;) compiledScript;
-      return scriptFactory.apply(params);
-    }
-
-    @Override
-    public ExecutableScript executable(Object compiledScript, @Nullable Map&lt;String, Object&gt; params) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
