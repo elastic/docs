@@ -655,9 +655,39 @@ the number of inner_hits to retrieve per collapse key
 how to sort the document inside each group
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO23-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 the number of concurrent requests allowed to retrieve the inner_hits` per group
-</p></td></tr></table></div><p>See <a class="link" href="search-request-inner-hits.html" title="Inner hits">inner hits</a> for the complete list of supported options and the format of the response.</p><p>The expansion of the group is done by sending an additional query for each
-collapsed hit returned in the response.
-The <code class="literal">max_concurrent_group_searches</code> request parameter can be used to control
+</p></td></tr></table></div><p>See <a class="link" href="search-request-inner-hits.html" title="Inner hits">inner hits</a> for the complete list of supported options and the format of the response.</p><p>It is also possible to request multiple <code class="literal">inner_hits</code> for each collapsed hit.  This can be useful when you want to get
+multiple representations of the collapsed hits.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /twitter/tweet/_search
+{
+    "query": {
+        "match": {
+            "message": "elasticsearch"
+        }
+    },
+    "collapse" : {
+        "field" : "user", <a id="CO24-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "inner_hits": [
+            {
+                "name": "most_liked",  <a id="CO24-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                "size": 3,
+                "sort": ["likes"]
+            },
+            {
+                "name": "most_recent", <a id="CO24-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+                "size": 3,
+                "sort": [{ "date": "asc" }]
+            }
+        ]
+    },
+    "sort": ["likes"]
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-collapse/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+collapse the result set using the "user" field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+return the three most liked tweets for the user
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+return the three most recent tweets for the user
+</p></td></tr></table></div><p>The expansion of the group is done by sending an additional query for each
+<code class="literal">inner_hit</code> request for each collapsed hit returned in the response.  This can significantly slow things down
+if you have too many groups and/or <code class="literal">inner_hit</code> requests.</p><p>The <code class="literal">max_concurrent_group_searches</code> request parameter can be used to control
 the maximum number of concurrent searches allowed in this phase.
 The default is based on the number of data nodes and the default search thread pool size.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p><code class="literal">collapse</code> cannot be used in conjunction with <a class="link" href="search-request-scroll.html" title="Scroll">scroll</a>,
 <a class="link" href="search-request-rescore.html" title="Rescoring">rescore</a> or <a class="link" href="search-request-search-after.html" title="Search After">search after</a>.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="search-request-inner-hits.html">
