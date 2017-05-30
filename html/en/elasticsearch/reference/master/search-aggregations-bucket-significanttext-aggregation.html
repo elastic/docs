@@ -630,7 +630,7 @@ If the term "H5N1" only exists in 5 documents in a 10 million document index and
 that is significant and probably very relevant to their search. 5/10,000,000 vs 4/100 is a big swing in frequency.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content">
 The significant_text aggregation is new and may change in non-backwards compatible ways if we add further text-analysis features e.g. phrase detection
 </div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_basic_use"></a>Basic use<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In the typical use case, the <span class="emphasis"><em>foreground</em></span> set of interest is a selection of the top-matching search results for a query
-and the _background_set used for statistical comparisons is the index or indices from which the results were gathered.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET news/article/_search
+and the _background_set used for statistical comparisons is the index or indices from which the results were gathered.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting">GET news/article/_search
 {
     "query" : {
         "match" : {"content" : "Bird flu"}
@@ -647,7 +647,7 @@ and the _background_set used for statistical comparisons is the index or indices
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-significanttext-aggregation/1.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-significanttext-aggregation/1.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting">{
   "took": 9,
   "timed_out": false,
   "_shards": ...,
@@ -677,7 +677,7 @@ retweets, boilerplate headers/footers, page navigation menus, sidebar news links
 Filtering near-duplicate text is a difficult task at index-time but we can cleanse the data on-the-fly at query time using the
 <code class="literal">filter_duplicate_text</code> setting.</p><p>First let’s look at an unfiltered real-world example using the  <a class="ulink" href="http://research.signalmedia.co/newsir16/signal-dataset.html" target="_top">Signal media dataset</a> of
 a million news articles covering a wide variety of news. Here are the raw significant text results for a search for the articles
-mentioning "elasticsearch":</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+mentioning "elasticsearch":</p><div class="pre_wrapper"><pre class="programlisting">{
     ...
   "aggregations": {
     "sample": {
@@ -709,7 +709,7 @@ mentioning "elasticsearch":</p><div class="pre_wrapper"><pre class="programlisti
 
 }</pre></div><p>The uncleansed documents have thrown up some odd-looking terms that are, on the face of it, statistically
 correlated with appearances of our search term "elasticsearch" e.g. "pozmantier".
-We can drill down into examples of these documents to see why pozmantier is connected using this query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET news/article/_search
+We can drill down into examples of these documents to see why pozmantier is connected using this query:</p><div class="pre_wrapper"><pre class="programlisting">GET news/article/_search
 {
   "query": {
     "simple_query_string": {
@@ -725,7 +725,7 @@ We can drill down into examples of these documents to see why pozmantier is conn
       "content": {}
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-significanttext-aggregation/2.json"></div><p>The results show a series of very similar news articles about a judging panel for a number of tech projects:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-significanttext-aggregation/2.json"></div><p>The results show a series of very similar news articles about a judging panel for a number of tech projects:</p><div class="pre_wrapper"><pre class="programlisting">{
   ...
   "hits": {
     "hits": [
@@ -758,7 +758,7 @@ We can drill down into examples of these documents to see why pozmantier is conn
       ...</pre></div><p>Mike Pozmantier was one of many judges on a panel and elasticsearch was used in one of many projects being judged.</p><p>As is typical, this lengthy press release was cut-and-paste by a variety of news sites and consequently any rare names, numbers or
 typos they contain become statistically correlated with our matching query.</p><p>Fortunately similar documents tend to rank similarly so as part of examining the stream of top-matching documents the significant_text
 aggregation can apply a filter to remove sequences of any 6 or more tokens that have already been seen. Let’s try this same query now but
-with the <code class="literal">filter_duplicate_text</code> setting turned on:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET news/article/_search
+with the <code class="literal">filter_duplicate_text</code> setting turned on:</p><div class="pre_wrapper"><pre class="programlisting">GET news/article/_search
 {
   "query": {
     "match": {
@@ -780,7 +780,7 @@ with the <code class="literal">filter_duplicate_text</code> setting turned on:</
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-significanttext-aggregation/3.json"></div><p>The results from analysing our deduplicated text are obviously of higher quality to anyone familiar with the elastic stack:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-significanttext-aggregation/3.json"></div><p>The results from analysing our deduplicated text are obviously of higher quality to anyone familiar with the elastic stack:</p><div class="pre_wrapper"><pre class="programlisting">{
   ...
   "aggregations": {
     "sample": {
@@ -868,7 +868,7 @@ no effect unless you explicitly set it.</p><div class="warning admon"><div class
          Setting <code class="literal">shard_min_doc_count</code> too high will cause significant candidate terms to be filtered out on a shard level.
          This value should be set much lower than <code class="literal">min_doc_count/#shards</code>.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_custom_background_context_2"></a>Custom background context<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/significanttext-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The default source of statistical information for background term frequencies is the entire index and this
 scope can be narrowed through the use of a <code class="literal">background_filter</code> to focus in on significant terms within a narrower
-context:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET news/article/_search
+context:</p><div class="pre_wrapper"><pre class="programlisting">GET news/article/_search
 {
     "query" : {
         "match" : {
@@ -891,7 +891,7 @@ word "Spain".</p><div class="warning admon"><div class="icon"><img alt="Warning"
 However with more complex field mappings using features like <code class="literal">copy_to</code> the source
 JSON field(s) and the indexed field being aggregated can differ.
 In these cases it is possible to list the JSON _source fields from which text
-will be analyzed using the <code class="literal">source_fields</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET news/article/_search
+will be analyzed using the <code class="literal">source_fields</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting">GET news/article/_search
 {
     "query" : {
         "match" : {
