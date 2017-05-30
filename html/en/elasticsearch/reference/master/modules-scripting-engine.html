@@ -620,7 +620,7 @@ the document frequency of a provided term.</p><div class="pre_wrapper"><pre clas
         }
         // we use the script "source" as the script identifier
         if ("pure_df".equals(scriptSource)) {
-            SearchScript.Factory factory = (p, lookup) -&gt; new SearchScript() {
+            SearchScript.Factory factory = (p, lookup) -&gt; new SearchScript.LeafFactory() {
                 final String field;
                 final String term;
                 {
@@ -635,13 +635,18 @@ the document frequency of a provided term.</p><div class="pre_wrapper"><pre clas
                 }
 
                 @Override
-                public LeafSearchScript getLeafSearchScript(LeafReaderContext context) throws IOException {
+                public SearchScript newInstance(LeafReaderContext context) throws IOException {
                     PostingsEnum postings = context.reader().postings(new Term(field, term));
                     if (postings == null) {
                         // the field and/or term don't exist in this segment, so always return 0
-                        return () -&gt; 0.0d;
+                        return new SearchScript(p, lookup, context) {
+                            @Override
+                            public double runAsDouble() {
+                                return 0.0d;
+                            }
+                        };
                     }
-                    return new LeafSearchScript() {
+                    return new SearchScript(p, lookup, context) {
                         int currentDocid = -1;
                         @Override
                         public void setDocument(int docid) {
