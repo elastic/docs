@@ -349,7 +349,7 @@
 
     <!--  Add classes to images -->
 
-    <xsl:template match="figure|informalfigure" mode="class.value">
+    <xsl:template match="*" mode="class.value">
       <xsl:if test="@role">
         <xsl:value-of select="@role"/>
         <xsl:value-of select="' '"/>
