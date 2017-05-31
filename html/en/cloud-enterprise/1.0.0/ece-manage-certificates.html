@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Manage Security Certificates
         | Elastic Cloud Enterprise Reference [1.0.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Enterprise Reference [1.0.0]" /><link rel="up" href="ece-administering-ece.html" title="Working with Elastic Cloud Enterprise" /><link rel="prev" href="ece-monitoring-ece.html" title="Monitor Your Installation" /><link rel="next" href="ece-administering-clusters.html" title="Working with Clusters" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/CloudEnterprise/Reference/1.0.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Enterprise Reference [1.0.0]" /><link rel="up" href="ece-securing-ece.html" title="Securing Your Installation" /><link rel="prev" href="ece-revoke-roles-token.html" title="Revoke Roles Tokens" /><link rel="next" href="ece-retrieve-passwords.html" title="Retrieve User Passwords" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/CloudEnterprise/Reference/1.0.0" />
     <!-- RTP tag -->
    <script type='text/javascript'> (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)}; c[a].a=i;c[a].e=e;h.write('<script src="'+f+'?aid='+i+'" type="text/javascript"><\/script>'); })(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js ","elasticco" ); rtp('send','view'); rtp('get', 'campaign',true); </script>
     <!-- End of RTP tag -->
@@ -591,22 +591,22 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elastic Cloud Enterprise Reference
       [1.0.0]
-    </a></span> » <span class="breadcrumb-link"><a href="ece-administering-ece.html">Working with Elastic Cloud Enterprise</a></span> » <span class="breadcrumb-node">Manage Security Certificates</span></div><div class="navheader"><span class="prev"><a href="ece-monitoring-ece.html">
+    </a></span> » <span class="breadcrumb-link"><a href="ece-securing-ece.html">Securing Your Installation</a></span> » <span class="breadcrumb-node">Manage Security Certificates</span></div><div class="navheader"><span class="prev"><a href="ece-revoke-roles-token.html">
               « 
-              Monitor Your Installation</a>
+              Revoke Roles Tokens</a>
            
         </span><span class="next">
            
-          <a href="ece-administering-clusters.html">Working with Clusters
+          <a href="ece-retrieve-passwords.html">Retrieve User Passwords
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="ece-manage-certificates"></a>Manage Security Certificates</h2></div></div></div><p>During installation, Elastic Cloud Enterprise generates certificates so that you can connect to your installation securely. In order to connect securely, you must first download and trust the CA certificates generated during installation before issuing any requests to Elastic Cloud Enterprise. If your organization operates as its own certificate authority, you can provide your certificates for Elastic Cloud Enterprise to avoid a security warning when connecting to the Cloud UI over HTTPS.</p><p>In these instructions, we show you how you can download the security certificate that gets generated during the Elastic Cloud Enterprise install and use it to add your own TLS/SSL certificates. You can add your TLS/SSL certificates any time after you have installed Elastic Cloud Enterprise on your hosts. In addition to the steps shown here, you might also need to import your CA certificate into your browser certificate chain, if you don’t already use the same certificate within your organization.</p><p>You can change the certificates for the following Elastic Cloud Enterprise components separately:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Cloud UI certificate
+</span></dt><dd>
+  Used to connect securely to the Cloud UI and to make RESTful API calls.
+</dd><dt><span class="term">
 Proxy certificate
 </span></dt><dd>
   Used to connect securely to Elasticsearch clusters and Kibana. You should use a wildcard certificate rooted at the <a class="link" href="ece-administering-endpoints.html" title="Change Endpoints URLs">cluster endpoint that you set</a> (<code class="literal">*.example.com</code>, for example). A wildcard certificate is required, because the first label of the DNS address is distinct for Elasticsearch clusters and Kibana (<code class="literal">bc898abb421843918ebc31a513169a.example.com</code>, for example).
-</dd><dt><span class="term">
-Cloud UI certificate
-</span></dt><dd>
-  Used to connect securely to the Cloud UI.
 </dd></dl></div><p>After the certificates have been installed, connecting securely to Elasticsearch, Kibana, and the Cloud UI or making secure RESTful API calls to Elastic Cloud Enterprise should not result in any security warnings or errors.</p><p>Before you begin:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 If your organization already uses a CA certificate and X.509 certificate chain, you need to have these files ready. You also need your unencrypted RSA private key.
 </li><li class="listitem"><p class="simpara">
@@ -758,26 +758,38 @@ Create a certificate signing request (CSR) for server certificate with the commo
 Sign the server CSR with CA key pair.
 </li><li class="listitem">
 Concatenate the PEM encode server RSA private key, the server certificate, and the CA certificate into a single file.
-</li></ol></div><p>Use the concatenated file containing the unencrypted RSA private key, server certificate, and CA certificate when adding your own TLS/SSL certificates in subsequent steps.</p><h3><a id="ece-tls-proxy"></a>Add a Proxy Certificate</h3><p>To add a proxy certificate:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Add the wildcard certificate chain for the proxy to your Elastic Cloud Enterprise installation, where <code class="literal">CA_CERTIFICATE_FILENAME</code> is the name of the CA certificate you downloaded earlier and <code class="literal">PROXY_PEM_FILENAME</code> is the name of the concatenated file containing your RSA private key, server certificate, and CA certificate:
-</p><pre class="literallayout">curl --cacert CA_CERTIFICATE_FILENAME -H 'Content-Type: application/json' --data-binary @PROXY_PEM_FILENAME --user "root:PASSWORD" "https://admin:12343/api/v1/platform/tls/proxy"</pre></li><li class="listitem">
-Log out of any Kibana instances you might be logged into and log in again.
+</li></ol></div><p>Use the concatenated file containing the unencrypted RSA private key, server certificate, and CA certificate when adding your own TLS/SSL certificates in subsequent steps.</p><h3><a id="ece-tls-ui"></a>Add a Cloud UI Certificate</h3><p>To add a Cloud UI certificate from the Cloud UI:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+<a class="link" href="ece-provisioning.html#ece-login" title="Log into the Cloud UI">Log into the Cloud UI</a>.
+</li><li class="listitem">
+Go to <span class="strong emphasis"><strong>Platform</strong></span>, select a Elastic Cloud Enterprise installation and click <span class="strong emphasis"><strong>Settings</strong></span>.
 </li><li class="listitem"><p class="simpara">
-Verify that you are now using the new certificate chain. There should be no security warnings when you connect to the Kibana endpoint over HTTPS in your web browser.
-</p><p class="simpara">Alternatively, you can also use the openssl command to check the proxy certificates, where HOSTNAME_OR_IP is the hostname or IP address of the proxy host:</p><pre class="literallayout">openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect HOSTNAME_OR_IP:9243 &lt; /dev/zero
-openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect HOSTNAME_OR_IP:9343 &lt; /dev/zero</pre></li></ol></div><h3><a id="ece-tls-ui"></a>Add a Cloud UI Certificate</h3><p>To add a Cloud UI certificate:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Under <span class="strong emphasis"><strong>TLS settings</strong></span> for the Cloud UI, click <span class="strong emphasis"><strong>Upload new certificate</strong></span> and select a concatenated file containing your RSA private key, server certificate, and CA certificate. Upload the selected file.
+</p><p class="simpara">To see the details of the certificate you added, click <span class="strong emphasis"><strong>Show certificate chain</strong></span>.</p></li></ol></div><p>To add a Cloud UI certificate from the command line:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Add the certificate for the Cloud UI to your Elastic Cloud Enterprise installation, where <code class="literal">CA_CERTIFICATE_FILENAME</code> is the name of the CA certificate you downloaded earlier and <code class="literal">CLOUDUI_PEM_FILENAME</code> is the name of the concatenated file containing your RSA private key, server certificate, and CA certificate:
 </p><pre class="literallayout">curl --cacert CA_CERTIFICATE_FILENAME -H 'Content-Type: application/json' --data-binary @CLOUDUI_PEM_FILENAME --user "root:PASSWORD" "http://admin:12443/api/v1/platform/tls/ui"</pre></li><li class="listitem">
 Log out of the Cloud UI and log in again.
 </li><li class="listitem"><p class="simpara">
 Verify that you are now using the new certificate chain. There should be no security warnings when you connect to the  Cloud UI over HTTPS in your web browser.
-</p><p class="simpara">Alternatively, you can also check the certificate using the openssl command:</p><pre class="literallayout">openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect containerhost:12443 &lt; /dev/zero</pre></li></ol></div><p>After adding your certificate, API requests made through the Cloud UI should use your certificate. When you use the <code class="literal">curl</code> command, include the path to your CA certificate with the <code class="literal">--cacert</code> parameter.</p></div><div class="navfooter"><span class="prev"><a href="ece-monitoring-ece.html">
+</p><p class="simpara">Alternatively, you can also check the certificate using the openssl command:</p><pre class="literallayout">openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect containerhost:12443 &lt; /dev/zero</pre></li></ol></div><p>After adding your certificate, API requests made through the Cloud UI should use your certificate. When you use the <code class="literal">curl</code> command, include the path to your CA certificate with the <code class="literal">--cacert</code> parameter.</p><h3><a id="ece-tls-proxy"></a>Add a Proxy Certificate</h3><p>To add a proxy certificate from the Cloud UI:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+<a class="link" href="ece-provisioning.html#ece-login" title="Log into the Cloud UI">Log into the Cloud UI</a>.
+</li><li class="listitem">
+Go to <span class="strong emphasis"><strong>Platform</strong></span>, select a Elastic Cloud Enterprise installation and click <span class="strong emphasis"><strong>Settings</strong></span>.
+</li><li class="listitem"><p class="simpara">
+Under <span class="strong emphasis"><strong>TLS settings</strong></span> for the proxy, click <span class="strong emphasis"><strong>Upload new certificate</strong></span> and select a concatenated file containing your RSA private key, server certificate, and CA certificate. Upload the file.
+</p><p class="simpara">To see the details of the certificate you added, click <span class="strong emphasis"><strong>Show certificate chain</strong></span>.</p></li></ol></div><p>To add a proxy certificate from the command line:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Add the wildcard certificate chain for the proxy to your Elastic Cloud Enterprise installation, where <code class="literal">CA_CERTIFICATE_FILENAME</code> is the name of the CA certificate you downloaded earlier and <code class="literal">PROXY_PEM_FILENAME</code> is the name of the concatenated file containing your RSA private key, server certificate, and CA certificate:
+</p><pre class="literallayout">curl --cacert CA_CERTIFICATE_FILENAME -H 'Content-Type: application/json' --data-binary @PROXY_PEM_FILENAME --user "root:PASSWORD" "https://admin:12343/api/v1/platform/tls/proxy"</pre></li><li class="listitem">
+Log out of any Kibana instances you might be logged into and log in again.
+</li><li class="listitem"><p class="simpara">
+Verify that you are now using the new certificate chain. There should be no security warnings when you connect to the Elasticsearch or Kibana endpoints over HTTPS in your web browser.
+</p><p class="simpara">Alternatively, you can also use the openssl command to check the proxy certificates, where HOSTNAME_OR_IP is the hostname or IP address of the proxy host:</p><pre class="literallayout">openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect HOSTNAME_OR_IP:9243 &lt; /dev/zero
+openssl s_client -CAfile CA_CERTIFICATE_FILENAME -showcerts -connect HOSTNAME_OR_IP:9343 &lt; /dev/zero</pre></li></ol></div></div><div class="navfooter"><span class="prev"><a href="ece-revoke-roles-token.html">
               « 
-              Monitor Your Installation</a>
+              Revoke Roles Tokens</a>
            
         </span><span class="next">
            
-          <a href="ece-administering-clusters.html">Working with Clusters
+          <a href="ece-retrieve-passwords.html">Retrieve User Passwords
                »
             </a></span></div>
 <!-- end body -->
