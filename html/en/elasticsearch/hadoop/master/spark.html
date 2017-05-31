@@ -1462,72 +1462,225 @@ Elasticsearch query backing the elasticsearch-hadoop <code class="literal">DataF
 </p></td></tr></table></div><h4><a id="spark-sql-type-conversion"></a>Spark SQL Type conversion<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>When dealing with multi-value/array fields, please see <a class="link" href="mapping.html#mapping-multi-values" title="Handling array/multi-values fieldsedit">this</a> section and in particular <a class="link" href="configuration.html#cfg-field-info" title="Field information (when reading from Elasticsearch)edit">these</a> configuration options.
 IMPORTANT: If automatic index creation is used, please review <a class="link" href="mapping.html#auto-mapping-type-loss">this</a> section for more information.</p></div></div><p>elasticsearch-hadoop automatically converts Spark built-in types to Elasticsearch <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.0/mapping-types.html" target="_top">types</a> (and back) as shown in the table below:</p><p>While Spark SQL <a class="ulink" href="https://spark.apache.org/docs/latest/sql-programming-guide.html#data-types" target="_top"><code class="literal">DataType</code>s</a> have an equivalent in both Scala and Java and thus the <a class="link" href="spark.html#spark-type-conversion" title="Type conversionedit">RDD</a> conversion can apply, there are slightly different semantics - in particular with the <code class="literal">java.sql</code> types due to the way Spark SQL handles them:</p><div class="table"><a id="id-1.3.16.277"></a><p class="title"><strong>Table 9. Spark SQL 1.3+ Conversion Table</strong></p><div class="table-contents"><table summary="Spark SQL 1.3+ Conversion Table" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th class="entry" align="center" valign="top"> Spark SQL <code class="literal">DataType</code> </th><th class="entry" align="center" valign="top"> Elasticsearch type</th></tr></thead><tbody><tr><td class="entry" align="center" valign="top"><p><code class="literal">null</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">null</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">ByteType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">byte</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">ShortType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">short</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">IntegerType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">int</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">LongType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">long</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">FloatType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">float</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">DoubleType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">double</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">StringType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">string</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">BinaryType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">string</code> (BASE64)</p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">BooleanType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">boolean</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">DateType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">date</code> (<code class="literal">string</code> format)</p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">TimestampType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">long</code> (unix time)</p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">ArrayType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">array</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">MapType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">object</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">StructType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">object</code></p></td></tr></tbody></table></div></div><br class="table-break" /><p class="formalpara"><strong>Geo Types Conversion Table. </strong>In addition to the table above, for Spark SQL 1.3 or higher, elasticsearch-hadoop performs automatic schema detection for geo types, namely Elasticsearch <code class="literal">geo_point</code> and <code class="literal">geo_shape</code>.
  Since each type allows multiple formats (<code class="literal">geo_point</code> accepts latitude and longitude to be specified in 4 different ways, while <code class="literal">geo_shape</code> allows a variety of types (currently 9)) and the mapping does not provide such information, elasticsearch-hadoop will <span class="emphasis"><em>sample</em></span> the determined geo fields at startup and retrieve an arbitrary document that contains all the relevant fields; it will parse it and thus determine the necessary schema (so for example it can tell whether a <code class="literal">geo_point</code> is
- specified as a <code class="literal">StringType</code> or as an <code class="literal">ArrayType</code>).</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Since Spark SQL is strongly-typed, each geo field needs to have the same format across <span class="emphasis"><em>all</em></span> documents. Shy of that, the returned data will not fit the detected schema and thus lead to errors.</p></div></div><h3><a id="spark-mr"></a>Using the Map/Reduce layer<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Another way of using Spark with Elasticsearch is through the Map/Reduce layer, that is by leveraging the dedicated <code class="literal">Input/OuputFormat</code> in elasticsearch-hadoop. However, unless one is stuck on
+ specified as a <code class="literal">StringType</code> or as an <code class="literal">ArrayType</code>).</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Since Spark SQL is strongly-typed, each geo field needs to have the same format across <span class="emphasis"><em>all</em></span> documents. Shy of that, the returned data will not fit the detected schema and thus lead to errors.</p></div></div><h3><a id="spark-sql-streaming"></a>Spark Structured Streaming support [Alpha]<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Added in 6.0. </p></div></div><div class="blockquote"><table border="0" class="blockquote" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p><a class="ulink" href="http://spark.apache.org/docs/latest/structured-streaming-programming-guide.html" target="_top">Structured Streaming</a> provides fast,
+scalable, fault-tolerant, end-to-end exactly-once stream processing without the user having to reason about streaming.</p></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">
+Spark documentation
+</span></td></tr></table></div><p>Released as an alpha feature in Spark 2.0, Spark Structured Streaming provides a unified streaming and batch interface
+built into the Spark SQL integration. As of elasticsearch-hadoop 6.0, we provide native functionality to index streaming data into Elasticsearch.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Spark Structured Streaming (available in Spark SQL 2.0+) is still in alpha as of 2.1.1. As such, elasticsearch-hadoop support for
+Structured Streaming (available in elasticsearch-hadoop 6.0+) is considered an alpha feature. It is not advised to use this for
+production code.</p></div></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Like Spark SQL, Structured Streaming works with <span class="emphasis"><em>structured</em></span> data. All entries are expected to have the
+<span class="emphasis"><em>same</em></span> structure (same number of fields, of the same type and name). Using unstructured data (documents with different
+structures) is <span class="emphasis"><em>not</em></span> supported and will cause problems. For such cases, use <code class="literal">DStream</code>s.</p></div></div><h4><a id="spark-sql-streaming-versions"></a>Supported Spark Structured Streaming versions<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Spark Structured Streaming was introduced in Spark 2.0 and is still in alpha as of Spark 2.1.1. Similar to Spark SQL
+before it, Structured Streaming may be subject to significant changes between releases. While elasticsearch-hadoop supports Spark
+versions 1.3-1.6 as compatibility releases, Spark Structured Streaming is only supported in the
+<code class="literal">elasticsearch-spark-20-&lt;version&gt;.jar</code> artifact.</p><p>Spark Structured Streaming support is available under the <code class="literal">org.elasticsearch.spark.sql</code> and
+<code class="literal">org.elasticsearch.spark.sql.streaming</code> packages. It shares a unified interface with Spark SQL in the form of the
+<code class="literal">Dataset[_]</code> api. Clients can interact with streaming <code class="literal">Dataset</code>s in almost exactly the same way as regular batch
+<code class="literal">Dataset</code>s with only a
+<a class="ulink" href="http://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#unsupported-operations" target="_top">few exceptions</a>.</p><h4><a id="spark-sql-streaming-write"></a>Writing Streaming <code class="literal">Datasets</code> (Spark SQL 2.0+) to Elasticsearch<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>With elasticsearch-hadoop, Stream-backed <code class="literal">Dataset</code>s can be indexed to Elasticsearch.</p><h5><a id="spark-sql-streaming-write-scala"></a>Scala<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>In Scala, to save your streaming based <code class="literal">Dataset</code>s and <code class="literal">DataFrame</code>s to Elasticsearch, simply configure the stream to
+write out using the <code class="literal">"es"</code> format, like so:</p><div class="pre_wrapper"><pre class="programlisting">import org.apache.spark.sql.SparkSession    <a id="CO85-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+
+...
+
+val spark = SparkSession.builder()
+   .appName("EsStreamingExample")           <a id="CO85-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+   .getOrCreate()
+
+// case class used to define the DataFrame
+case class Person(name: String, surname: String, age: Int)
+
+//  create DataFrame
+val people = spark.readStream                   <a id="CO85-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        .textFile("/path/to/people/files/*")    <a id="CO85-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+        .map(_.split(","))
+        .map(p =&gt; Person(p(0), p(1), p(2).trim.toInt))
+
+people.writeStream
+      .option("checkpointLocation", "/save/location")      <a id="CO85-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+      .format("es")
+      .start("spark/people")                               <a id="CO85-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO85-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Spark SQL import
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO85-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Create <code class="literal">SparkSession</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO85-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Instead of calling <code class="literal">read</code>, call <code class="literal">readStream</code> to get instance of <code class="literal">DataStreamReader</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO85-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Read a directory of text files continuously and convert them into <code class="literal">Person</code> objects
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO85-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Provide a location to save the offsets and commit logs for the streaming query
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO85-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Start the stream using the <code class="literal">"es"</code> format to index the contents of the <code class="literal">Dataset</code> continuously to Elasticsearch
+</p></td></tr></table></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Spark makes no type-based differentiation between batch and streaming based <code class="literal">Dataset</code>s. While you may be
+able to import the <code class="literal">org.elasticsearch.spark.sql</code> package to add <code class="literal">saveToEs</code> methods to your <code class="literal">Dataset</code> or
+<code class="literal">DataFrame</code>, it will throw an illegal argument exception if those methods are called on streaming based <code class="literal">Dataset</code>s
+or <code class="literal">DataFrame</code>s.</p></div></div><h5><a id="spark-sql-streaming-write-java"></a>Java<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>In a similar fashion, the <code class="literal">"es"</code> format is available for Java usage as well:</p><div class="pre_wrapper"><pre class="programlisting">import org.apache.spark.sql.SparkSession    <a id="CO86-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+
+...
+
+SparkSession spark = SparkSession
+  .builder()
+  .appName("JavaStructuredNetworkWordCount")     <a id="CO86-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  .getOrCreate();
+
+// java bean style class
+public static class PersonBean {
+  private String name;
+  private String surname;                        <a id="CO86-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+  private int age;
+
+  ...
+}
+
+Dataset&lt;PersonBean&gt; people = spark.readStream()         <a id="CO86-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+        .textFile("/path/to/people/files/*")
+        .map(new MapFunction&lt;String, PersonBean&gt;() {
+            @Override
+            public PersonBean call(String value) throws Exception {
+                return someFunctionThatParsesStringToJavaBeans(value.split(","));         <a id="CO86-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+            }
+        }, Encoders.&lt;PersonBean&gt;bean(PersonBean.class));
+
+people.writeStream()
+    .option("checkpointLocation", "/save/location")       <a id="CO86-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+    .format("es")
+    .start("spark/people");                               <a id="CO86-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Spark SQL Java imports. Can use the same session class as Scala
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Create SparkSession. Can also use the legacy <code class="literal">SQLContext</code> api
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+We create a java bean class to be used as our data format
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Use the <code class="literal">readStream()</code> method to get a <code class="literal">DataStreamReader</code> to begin building our stream
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Convert our string data into our PersonBean
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Set a place to save the state of our stream
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Using the <code class="literal">"es"</code> format, we continuously index the <code class="literal">Dataset</code> in Elasticsearch under <code class="literal">spark/people</code>
+</p></td></tr></table></div><h4><a id="spark-sql-streaming-json"></a>Writing existing JSON to Elasticsearch<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When using Spark SQL, if the input data is in JSON format, simply convert it to a <code class="literal">Dataset</code> (for Spark SQL 2.0) (as
+described in Spark
+<a class="ulink" href="http://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#input-sources" target="_top">documentation</a>) through
+the <code class="literal">DataStreamReader</code>'s <code class="literal">json</code> format.</p><h4><a id="spark-sql-streaming-commit-log"></a>Sink commit log in Spark Structured Streaming<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Spark Structured Streaming advertises an end-to-end fault-tolerant exactly-once processing model that is made possible
+through the usage of offset checkpoints and maintaining commit logs for each streaming query. When executing a
+streaming query, most sources and sinks require you to specify a "checkpointLocation" in order to persist the state of
+your job. In the event of an interruption, launching a new streaming query with the same checkpoint location will
+recover the state of the job and pick up where it left off. We maintain a commit log for elasticsearch-hadoop’s Elasticsearch sink
+implementation in a special directory under the configured checkpoint location:</p><div class="pre_wrapper"><pre class="programlisting">$&gt; ls /path/to/checkpoint/location
+metadata  offsets/  sinks/
+$&gt; ls /path/to/checkpoint/location/sinks
+elasticsearch/
+$&gt; ls /path/to/checkpoint/location/sinks/elasticsearch
+12.compact  13  14  15 16  17  18</pre></div><p>Each file in the commit log directory corresponds to a batch id that has been committed. The log implementation
+periodically compacts the logs down to avoid clutter. You can set the location for the log directory a number of ways:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Set the explicit log location with <code class="literal">es.spark.sql.streaming.sink.log.path</code> (see below).
+</li><li class="listitem">
+If that is not set, then the path specified by <code class="literal">checkpointLocation</code> will be used.
+</li><li class="listitem">
+If that is not set, then a path will be constructed by combining the value of <code class="literal">spark.sql.streaming.checkpointLocation</code>
+from the SparkSession with the <code class="literal">Dataset</code>'s given query name.
+</li><li class="listitem">
+If no query name is present, then a random UUID will be used in the above case instead of the query name
+</li><li class="listitem">
+If none of the above settings are provided then the <code class="literal">start</code> call will throw an exception
+</li></ol></div><p>Here is a list of configurations that affect the behavior of Elasticsearch’s commit log:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.spark.sql.streaming.sink.log.enabled</code> (default <code class="literal">true</code>)
+</span></dt><dd>
+Enables or disables the commit log for a streaming job. By default, the log is enabled, and output batches with the
+same batch id will be skipped to avoid double-writes. When this is set to <code class="literal">false</code>, the commit log is disabled, and
+all outputs will be sent to Elasticsearch, regardless if they have been sent in a previous execution.
+</dd><dt><span class="term">
+<code class="literal">es.spark.sql.streaming.sink.log.path</code>
+</span></dt><dd>
+Sets the location to store the log data for this streaming query. If this value is not set, then the Elasticsearch sink will
+store its commit logs under the path given in <code class="literal">checkpointLocation</code>. Any HDFS Client compatible URI is acceptable.
+</dd><dt><span class="term">
+<code class="literal">es.spark.sql.streaming.sink.log.cleanupDelay</code> (default <code class="literal">10m</code>)
+</span></dt><dd>
+The commit log is managed through Spark’s HDFS Client. Some HDFS compatible filesystems (like Amazon’s S3) propagate
+file changes in an asynchronous manner. To get around this, after a set of log files have been compacted, the client
+will wait for this amount of time before cleaning up the old files.
+</dd><dt><span class="term">
+<code class="literal">es.spark.sql.streaming.sink.log.deletion</code> (default <code class="literal">true</code>)
+</span></dt><dd>
+Determines if the log should delete old logs that are no longer needed. After every batch is committed, the client will
+check to see if there are any commit logs that have been compacted and are safe to be removed. If set to <code class="literal">false</code>, the
+log will skip this cleanup step, leaving behind a commit file for each batch.
+</dd><dt><span class="term">
+<code class="literal">es.spark.sql.streaming.sink.log.compactInterval</code> (default <code class="literal">10</code>)
+</span></dt><dd>
+Sets the number of batches to process before compacting the log files. By default, every 10 batches the commit log
+will be compacted down into a single file that contains all previously committed batch ids.
+</dd></dl></div><h4><a id="spark-sql-streaming-type-conversion"></a>Spark Structured Streaming Type conversion<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Structured Streaming uses the exact same type conversion rules as the Spark SQL integration.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>When dealing with multi-value/array fields, please see <a class="link" href="mapping.html#mapping-multi-values" title="Handling array/multi-values fieldsedit">this</a> section and in
+particular <a class="link" href="configuration.html#cfg-field-info" title="Field information (when reading from Elasticsearch)edit">these</a> configuration options.</p></div></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If automatic index creation is used, please review <a class="link" href="mapping.html#auto-mapping-type-loss">this</a> section for more
+information.</p></div></div><p>elasticsearch-hadoop automatically converts Spark built-in types to Elasticsearch <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.0/mapping-types.html" target="_top">types</a> as shown in the
+table below:</p><p>While Spark SQL <a class="ulink" href="https://spark.apache.org/docs/latest/sql-programming-guide.html#data-types" target="_top"><code class="literal">DataType</code>s</a> have an
+equivalent in both Scala and Java and thus the <a class="link" href="spark.html#spark-type-conversion" title="Type conversionedit">RDD</a> conversion can apply, there are slightly
+different semantics - in particular with the <code class="literal">java.sql</code> types due to the way Spark SQL handles them:</p><div class="table"><a id="id-1.3.16.315"></a><p class="title"><strong>Table 10. Spark SQL 1.3+ Conversion Table</strong></p><div class="table-contents"><table summary="Spark SQL 1.3+ Conversion Table" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th class="entry" align="center" valign="top"> Spark SQL <code class="literal">DataType</code> </th><th class="entry" align="center" valign="top"> Elasticsearch type</th></tr></thead><tbody><tr><td class="entry" align="center" valign="top"><p><code class="literal">null</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">null</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">ByteType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">byte</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">ShortType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">short</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">IntegerType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">int</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">LongType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">long</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">FloatType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">float</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">DoubleType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">double</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">StringType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">string</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">BinaryType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">string</code> (BASE64)</p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">BooleanType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">boolean</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">DateType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">date</code> (<code class="literal">string</code> format)</p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">TimestampType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">long</code> (unix time)</p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">ArrayType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">array</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">MapType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">object</code></p></td></tr><tr><td class="entry" align="center" valign="top"><p><code class="literal">StructType</code></p></td><td class="entry" align="center" valign="top"><p><code class="literal">object</code></p></td></tr></tbody></table></div></div><br class="table-break" /><h3><a id="spark-mr"></a>Using the Map/Reduce layer<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Another way of using Spark with Elasticsearch is through the Map/Reduce layer, that is by leveraging the dedicated <code class="literal">Input/OuputFormat</code> in elasticsearch-hadoop. However, unless one is stuck on
 elasticsearch-hadoop 2.0, we <span class="emphasis"><em>strongly</em></span> recommend using the native integration as it offers significantly better performance and flexibility.</p><h4><a id="_configuration_3"></a>Configuration<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Through elasticsearch-hadoop, Spark can integrate with Elasticsearch through its dedicated <code class="literal">InputFormat</code>, and in case of writing, through <code class="literal">OutputFormat</code>. These are described at length in the <a class="link" href="mapreduce.html" title="Map/Reduce integration">Map/Reduce</a> chapter so please refer to that for an in-depth explanation.</p><p>In short, one needs to setup a basic Hadoop <code class="literal">Configuration</code> object with the target Elasticsearch cluster and index, potentially a query, and she’s good to go.</p><p>From Spark’s perspective, the only thing required is setting up serialization - Spark relies by default on Java serialization which is convenient but fairly inefficient. This is the reason why Hadoop itself introduced its own serialization mechanism and its own types - namely <code class="literal">Writable</code>s. As such, <code class="literal">InputFormat</code> and <code class="literal">OutputFormat</code>s are required to return <code class="literal">Writables</code> which, out of the box, Spark does not understand.
 The good news is, one can easily enable a different serialization (<a class="ulink" href="https://github.com/EsotericSoftware/kryo" target="_top">Kryo</a>) which handles the conversion automatically and also does this quite efficiently.</p><div class="pre_wrapper"><pre class="programlisting">SparkConf sc = new SparkConf(); //.setMaster("local");
-sc.set("spark.serializer", KryoSerializer.class.getName()); <a id="CO85-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+sc.set("spark.serializer", KryoSerializer.class.getName()); <a id="CO87-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
 // needed only when using the Java API
-JavaSparkContext jsc = new JavaSparkContext(sc);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO85-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+JavaSparkContext jsc = new JavaSparkContext(sc);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO87-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
 Enable the Kryo serialization support with Spark
 </p></td></tr></table></div><p>Or if you prefer Scala</p><div class="pre_wrapper"><pre class="programlisting">val sc = new SparkConf(...)
-sc.set("spark.serializer", classOf[KryoSerializer].getName) <a id="CO86-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+sc.set("spark.serializer", classOf[KryoSerializer].getName) <a id="CO88-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO88-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
 Enable the Kryo serialization support with Spark
-</p></td></tr></table></div><p>Note that the Kryo serialization is used as a work-around for dealing with <code class="literal">Writable</code> types; one can choose to convert the types directly (from <code class="literal">Writable</code> to <code class="literal">Serializable</code> types) - which is fine however for getting started, the one liner above seems to be the most effective.</p><h4><a id="_reading_data_from_elasticsearch_4"></a>Reading data from Elasticsearch<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To read data, simply pass in the <code class="literal">org.elasticsearch.hadoop.mr.EsInputFormat</code> class - since it supports both the <code class="literal">old</code> and the <code class="literal">new</code> Map/Reduce APIs, you are free to use either method on <code class="literal">SparkContext</code>'s, <code class="literal">hadoopRDD</code> (which we recommend for conciseness reasons) or <code class="literal">newAPIHadoopRDD</code>. Which ever you chose, stick with it to avoid confusion and problems down the road.</p><h5><a id="_emphasis_old_emphasis_literal_org_apache_hadoop_mapred_literal_api_3"></a><span class="emphasis"><em>Old</em></span> (<code class="literal">org.apache.hadoop.mapred</code>) API<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="pre_wrapper"><pre class="programlisting">JobConf conf = new JobConf();                             <a id="CO87-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-conf.set("es.resource", "radio/artists");                 <a id="CO87-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-conf.set("es.query", "?q=me*");                           <a id="CO87-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+</p></td></tr></table></div><p>Note that the Kryo serialization is used as a work-around for dealing with <code class="literal">Writable</code> types; one can choose to convert the types directly (from <code class="literal">Writable</code> to <code class="literal">Serializable</code> types) - which is fine however for getting started, the one liner above seems to be the most effective.</p><h4><a id="_reading_data_from_elasticsearch_4"></a>Reading data from Elasticsearch<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To read data, simply pass in the <code class="literal">org.elasticsearch.hadoop.mr.EsInputFormat</code> class - since it supports both the <code class="literal">old</code> and the <code class="literal">new</code> Map/Reduce APIs, you are free to use either method on <code class="literal">SparkContext</code>'s, <code class="literal">hadoopRDD</code> (which we recommend for conciseness reasons) or <code class="literal">newAPIHadoopRDD</code>. Which ever you chose, stick with it to avoid confusion and problems down the road.</p><h5><a id="_emphasis_old_emphasis_literal_org_apache_hadoop_mapred_literal_api_3"></a><span class="emphasis"><em>Old</em></span> (<code class="literal">org.apache.hadoop.mapred</code>) API<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="pre_wrapper"><pre class="programlisting">JobConf conf = new JobConf();                             <a id="CO89-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+conf.set("es.resource", "radio/artists");                 <a id="CO89-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+conf.set("es.query", "?q=me*");                           <a id="CO89-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
 
 JavaPairRDD esRDD = jsc.hadoopRDD(conf, EsInputFormat.class,
-                          Text.class, MapWritable.class); <a id="CO87-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-long docCount = esRDD.count();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO87-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Create the Hadoop object (use the old API)
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO87-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Configure the source (index)
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO87-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Setup the query (optional)
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO87-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Create a Spark <code class="literal">RDD</code> on top of Elasticsearch through <code class="literal">EsInputFormat</code> - the key represents the doc id, the value the doc itself
-</p></td></tr></table></div><p>The Scala version is below:</p><div class="pre_wrapper"><pre class="programlisting">val conf = new JobConf()                                   <a id="CO88-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-conf.set("es.resource", "radio/artists")                   <a id="CO88-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-conf.set("es.query", "?q=me*")                             <a id="CO88-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-val esRDD = sc.hadoopRDD(conf,
-                classOf[EsInputFormat[Text, MapWritable]], <a id="CO88-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-                classOf[Text], classOf[MapWritable]))
-val docCount = esRDD.count();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO88-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Create the Hadoop object (use the old API)
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO88-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Configure the source (index)
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO88-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Setup the query (optional)
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO88-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Create a Spark <code class="literal">RDD</code> on top of Elasticsearch through <code class="literal">EsInputFormat</code>
-</p></td></tr></table></div><h5><a id="_emphasis_new_emphasis_literal_org_apache_hadoop_mapreduce_literal_api_3"></a><span class="emphasis"><em>New</em></span> (<code class="literal">org.apache.hadoop.mapreduce</code>) API<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>As expected, the <code class="literal">mapreduce</code> API version is strikingly similar - replace <code class="literal">hadoopRDD</code> with <code class="literal">newAPIHadoopRDD</code> and <code class="literal">JobConf</code> with <code class="literal">Configuration</code>. That’s about it.</p><div class="pre_wrapper"><pre class="programlisting">Configuration conf = new Configuration();       <a id="CO89-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-conf.set("es.resource", "radio/artists");       <a id="CO89-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-conf.set("es.query", "?q=me*");                 <a id="CO89-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-
-JavaPairRDD esRDD = jsc.newAPIHadoopRDD(conf, EsInputFormat.class,
-                Text.class, MapWritable.class); <a id="CO89-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+                          Text.class, MapWritable.class); <a id="CO89-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
 long docCount = esRDD.count();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO89-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Create the Hadoop object (use the new API)
+Create the Hadoop object (use the old API)
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO89-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
 Configure the source (index)
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO89-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
 Setup the query (optional)
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO89-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Create a Spark <code class="literal">RDD</code> on top of Elasticsearch through <code class="literal">EsInputFormat</code> - the key represent the doc id, the value the doc itself
-</p></td></tr></table></div><p>The Scala version is below:</p><div class="pre_wrapper"><pre class="programlisting">val conf = new Configuration()                             <a id="CO90-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+Create a Spark <code class="literal">RDD</code> on top of Elasticsearch through <code class="literal">EsInputFormat</code> - the key represents the doc id, the value the doc itself
+</p></td></tr></table></div><p>The Scala version is below:</p><div class="pre_wrapper"><pre class="programlisting">val conf = new JobConf()                                   <a id="CO90-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 conf.set("es.resource", "radio/artists")                   <a id="CO90-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
 conf.set("es.query", "?q=me*")                             <a id="CO90-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-val esRDD = sc.newAPIHadoopRDD(conf,
+val esRDD = sc.hadoopRDD(conf,
                 classOf[EsInputFormat[Text, MapWritable]], <a id="CO90-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
                 classOf[Text], classOf[MapWritable]))
 val docCount = esRDD.count();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO90-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Create the Hadoop object (use the new API)
+Create the Hadoop object (use the old API)
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO90-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
 Configure the source (index)
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO90-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
 Setup the query (optional)
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO90-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Create a Spark <code class="literal">RDD</code> on top of Elasticsearch through <code class="literal">EsInputFormat</code>
+</p></td></tr></table></div><h5><a id="_emphasis_new_emphasis_literal_org_apache_hadoop_mapreduce_literal_api_3"></a><span class="emphasis"><em>New</em></span> (<code class="literal">org.apache.hadoop.mapreduce</code>) API<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>As expected, the <code class="literal">mapreduce</code> API version is strikingly similar - replace <code class="literal">hadoopRDD</code> with <code class="literal">newAPIHadoopRDD</code> and <code class="literal">JobConf</code> with <code class="literal">Configuration</code>. That’s about it.</p><div class="pre_wrapper"><pre class="programlisting">Configuration conf = new Configuration();       <a id="CO91-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+conf.set("es.resource", "radio/artists");       <a id="CO91-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+conf.set("es.query", "?q=me*");                 <a id="CO91-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+
+JavaPairRDD esRDD = jsc.newAPIHadoopRDD(conf, EsInputFormat.class,
+                Text.class, MapWritable.class); <a id="CO91-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+long docCount = esRDD.count();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO91-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Create the Hadoop object (use the new API)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO91-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Configure the source (index)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO91-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Setup the query (optional)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO91-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Create a Spark <code class="literal">RDD</code> on top of Elasticsearch through <code class="literal">EsInputFormat</code> - the key represent the doc id, the value the doc itself
+</p></td></tr></table></div><p>The Scala version is below:</p><div class="pre_wrapper"><pre class="programlisting">val conf = new Configuration()                             <a id="CO92-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+conf.set("es.resource", "radio/artists")                   <a id="CO92-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+conf.set("es.query", "?q=me*")                             <a id="CO92-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+val esRDD = sc.newAPIHadoopRDD(conf,
+                classOf[EsInputFormat[Text, MapWritable]], <a id="CO92-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+                classOf[Text], classOf[MapWritable]))
+val docCount = esRDD.count();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO92-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Create the Hadoop object (use the new API)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO92-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Configure the source (index)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO92-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Setup the query (optional)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO92-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
 Create a Spark <code class="literal">RDD</code> on top of Elasticsearch through <code class="literal">EsInputFormat</code>
 </p></td></tr></table></div><h3><a id="spark-python"></a>Using the connector from PySpark<a href="https://github.com/elastic/elasticsearch-hadoop/edit/master/docs/src/reference/asciidoc/core/spark.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Thanks to its <a class="link" href="mapreduce.html" title="Map/Reduce integration">Map/Reduce</a> layer, elasticsearch-hadoop can be used from PySpark as well to both read and write data to Elasticsearch.
 To wit, below is a snippet from the <a class="ulink" href="https://spark.apache.org/docs/1.5.1/programming-guide.html#external-datasets" target="_top">Spark documentation</a> (make sure to switch to the Python snippet):</p><div class="pre_wrapper"><pre class="programlisting">$ ./bin/pyspark --driver-class-path=/path/to/elasticsearch-hadoop.jar
