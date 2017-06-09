@@ -602,7 +602,7 @@ Not what you want? See the
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-template"></a>Search Template<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">/_search/template</code> endpoint allows to use the mustache language to pre render search requests,
 before they are executed and fill existing templates with template parameters.</p><div class="pre_wrapper"><pre class="programlisting">GET _search/template
 {
-    "inline" : {
+    "source" : {
       "query": { "match" : { "{{my_field}}" : "{{my_value}}" } },
       "size" : "{{my_size}}"
     },
@@ -618,7 +618,7 @@ scripting language, hence it obeys settings that may be used to enable or
 disable scripts per type and context as described in the
 <a class="link" href="modules-scripting-security.html#allowed-script-types-setting" title="Allowed script types settingedit">scripting docs</a></p></div></div><h4><a id="_more_template_examples"></a>More template examples<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><h5><a id="_filling_in_a_query_string_with_a_single_value"></a>Filling in a query string with a single value<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="pre_wrapper"><pre class="programlisting">GET _search/template
 {
-    "inline": {
+    "source": {
         "query": {
             "term": {
                 "message": "{{query_string}}"
@@ -631,7 +631,7 @@ disable scripts per type and context as described in the
 }</pre></div><div class="console_widget" data-snippet="snippets/search-template/2.json"></div><h5><a id="_converting_parameters_to_json"></a>Converting parameters to JSON<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">{{#toJson}}parameter{{/toJson}}</code> function can be used to convert parameters
 like maps and array to their JSON representation:</p><div class="pre_wrapper"><pre class="programlisting">GET _search/template
 {
-  "inline": "{ \"query\": { \"terms\": {{#toJson}}statuses{{/toJson}} }}",
+  "source": "{ \"query\": { \"terms\": {{#toJson}}statuses{{/toJson}} }}",
   "params": {
     "statuses" : {
         "status": [ "pending", "published" ]
@@ -648,7 +648,7 @@ like maps and array to their JSON representation:</p><div class="pre_wrapper"><p
   }
 }</pre></div><p>A more complex example substitutes an array of JSON objects:</p><div class="pre_wrapper"><pre class="programlisting">GET _search/template
 {
-    "inline": "{\"query\":{\"bool\":{\"must\": {{#toJson}}clauses{{/toJson}} }}}",
+    "source": "{\"query\":{\"bool\":{\"must\": {{#toJson}}clauses{{/toJson}} }}}",
     "params": {
         "clauses": [
             { "term": { "user" : "foo" } },
@@ -675,7 +675,7 @@ like maps and array to their JSON representation:</p><div class="pre_wrapper"><p
 }</pre></div><h5><a id="_concatenating_array_of_values"></a>Concatenating array of values<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">{{#join}}array{{/join}}</code> function can be used to concatenate the
 values of an array as a comma delimited string:</p><div class="pre_wrapper"><pre class="programlisting">GET _search/template
 {
-  "inline": {
+  "source": {
     "query": {
       "match": {
         "emails": "{{#join}}emails{{/join}}"
@@ -693,7 +693,7 @@ values of an array as a comma delimited string:</p><div class="pre_wrapper"><pre
     }
 }</pre></div><p>The function also accepts a custom delimiter:</p><div class="pre_wrapper"><pre class="programlisting">GET _search/template
 {
-  "inline": {
+  "source": {
     "query": {
       "range": {
         "born": {
@@ -722,7 +722,7 @@ values of an array as a comma delimited string:</p><div class="pre_wrapper"><pre
       }
     }
 }</pre></div><h5><a id="_default_values"></a>Default values<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>A default value is written as <code class="literal">{{var}}{{^var}}default{{/var}}</code> for instance:</p><div class="pre_wrapper"><pre class="programlisting">{
-  "inline": {
+  "source": {
     "query": {
       "range": {
         "line_no": {
@@ -804,10 +804,10 @@ Fill in the value of param <code class="literal">line_no.end</code>
 </p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>As written above, this template is not valid JSON because it includes the
 <span class="emphasis"><em>section</em></span> markers like <code class="literal">{{#line_no}}</code>.  For this reason, the template should
 either be stored in a file (see <a class="xref" href="search-template.html#pre-registered-templates" title="Pre-registered templateedit">the section called “Pre-registered template<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>”</a>) or, when used
-via the REST API, should be written as a string:</p><div class="pre_wrapper"><pre class="programlisting">"inline": "{\"query\":{\"bool\":{\"must\":{\"match\":{\"line\":\"{{text}}\"}},\"filter\":{{{#line_no}}\"range\":{\"line_no\":{{{#start}}\"gte\":\"{{start}}\"{{#end}},{{/end}}{{/start}}{{#end}}\"lte\":\"{{end}}\"{{/end}}}}{{/line_no}}}}}}"</pre></div></div></div><h5><a id="_encoding_urls"></a>Encoding URLs<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">{{#url}}value{{/url}}</code> function can be used to encode a string value
+via the REST API, should be written as a string:</p><div class="pre_wrapper"><pre class="programlisting">"source": "{\"query\":{\"bool\":{\"must\":{\"match\":{\"line\":\"{{text}}\"}},\"filter\":{{{#line_no}}\"range\":{\"line_no\":{{{#start}}\"gte\":\"{{start}}\"{{#end}},{{/end}}{{/start}}{{#end}}\"lte\":\"{{end}}\"{{/end}}}}{{/line_no}}}}}}"</pre></div></div></div><h5><a id="_encoding_urls"></a>Encoding URLs<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">{{#url}}value{{/url}}</code> function can be used to encode a string value
 in a HTML encoding form as defined in by the <a class="ulink" href="http://www.w3.org/TR/html4/" target="_top">HTML specification</a>.</p><p>As an example, it is useful to encode a URL:</p><div class="pre_wrapper"><pre class="programlisting">GET _render/template
 {
-    "inline" : {
+    "source" : {
         "query" : {
             "term": {
                 "http_access_log": "{{#url}}{{host}}/{{page}}{{/url}}"
@@ -851,7 +851,7 @@ There are REST APIs to manage these stored templates.</p><div class="pre_wrapper
 Name of the stored template script.
 </p></td></tr></table></div><h4><a id="_validating_templates"></a>Validating templates<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/search-template.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A template can be rendered in a response with given parameters using</p><div class="pre_wrapper"><pre class="programlisting">GET _render/template
 {
-  "inline": "{ \"query\": { \"terms\": {{#toJson}}statuses{{/toJson}} }}",
+  "source": "{ \"query\": { \"terms\": {{#toJson}}statuses{{/toJson}} }}",
   "params": {
     "statuses" : {
         "status": [ "pending", "published" ]
