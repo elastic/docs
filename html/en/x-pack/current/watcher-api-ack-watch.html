@@ -647,73 +647,72 @@ watch definition when you call the <a class="link" href="watcher-api-get-watch.h
 }</pre></div><p>When the watch executes and the condition matches, the value of the <code class="literal">ack.state</code>
 changes to <code class="literal">ackable</code>. Let’s force execution of the watch and fetch it again to
 check the status:</p><div class="pre_wrapper"><pre class="programlisting">POST _xpack/watcher/watch/my_watch/_execute
-GET _xpack/watcher/watch/my_watch</pre></div><p>and the action is now in <code class="literal">ackable</code> state:</p><div class="pre_wrapper"><pre class="programlisting">{
+{
+  "record_execution" : true
+}
+
+GET _xpack/watcher/watch/my_watch</pre></div><div class="console_widget" data-snippet="snippets/watcher-api-ack-watch/3.json"></div><p>and the action is now in <code class="literal">ackable</code> state:</p><div class="pre_wrapper"><pre class="programlisting">{
   "found": true,
   "_id": "my_watch",
   "_status": {
-    "version": 1,
+    "version": 2,
     "actions": {
       "test_index": {
         "ack": {
           "timestamp": "2015-05-26T18:04:27.723Z",
           "state": "ackable"
+        },
+        "last_execution" : {
+          "timestamp": "2015-05-25T18:04:27.723Z",
+          "successful": true
+        },
+        "last_successful_execution" : {
+          "timestamp": "2015-05-25T18:04:27.723Z",
+          "successful": true
         }
       }
     },
-    "state": ...
+    "state": ...,
+    "last_checked": ...,
+    "last_met_condition": ...
   },
   "watch": ...
 }</pre></div><p>Now we can acknowledge it:</p><div class="pre_wrapper"><pre class="programlisting">PUT _xpack/watcher/watch/my_watch/_ack/test_index
-GET _xpack/watcher/watch/my_watch</pre></div><div class="console_widget" data-snippet="snippets/watcher-api-ack-watch/3.json"></div><div class="pre_wrapper"><pre class="programlisting">{
+GET _xpack/watcher/watch/my_watch</pre></div><div class="console_widget" data-snippet="snippets/watcher-api-ack-watch/4.json"></div><div class="pre_wrapper"><pre class="programlisting">{
   "found": true,
   "_id": "my_watch",
   "_status": {
-    "version": 1,
+    "version": 3,
     "actions": {
       "test_index": {
         "ack": {
           "timestamp": "2015-05-26T18:04:27.723Z",
-          "state": "acknowledged"
+          "state": "acked"
+        },
+        "last_execution" : {
+          "timestamp": "2015-05-25T18:04:27.723Z",
+          "successful": true
+        },
+        "last_successful_execution" : {
+          "timestamp": "2015-05-25T18:04:27.723Z",
+          "successful": true
         }
       }
     },
-    "state": ...
+    "state": ...,
+    "last_checked": ...,
+    "last_met_condition": ...
   },
   "watch": ...
 }</pre></div><p>Acknowledging an action throttles further executions of that action until its
 <code class="literal">ack.state</code> is reset to <code class="literal">awaits_successful_execution</code>. This happens when the
 condition of the watch is not met (the condition evaluates to <code class="literal">false</code>).</p><p>You can acknowledge multiple actions by assigning the <code class="literal">actions</code> parameter a
-comma-separated list of action ids:</p><div class="pre_wrapper"><pre class="programlisting">POST _xpack/watcher/watch/my_watch/_ack/action1,action2</pre></div><div class="console_widget" data-snippet="snippets/watcher-api-ack-watch/4.json"></div><p>To acknowledge all of the actions of a watch, simply omit the <code class="literal">actions</code>
-parameter:</p><div class="pre_wrapper"><pre class="programlisting">POST _xpack/watcher/watch/my_watch/_ack</pre></div><div class="console_widget" data-snippet="snippets/watcher-api-ack-watch/5.json"></div><h4><a id="_timeouts_3"></a>Timeouts</h4><p>If you acknowledge a watch while it is executing, the request blocks and waits
+comma-separated list of action ids:</p><div class="pre_wrapper"><pre class="programlisting">POST _xpack/watcher/watch/my_watch/_ack/action1,action2</pre></div><div class="console_widget" data-snippet="snippets/watcher-api-ack-watch/5.json"></div><p>To acknowledge all of the actions of a watch, simply omit the <code class="literal">actions</code>
+parameter:</p><div class="pre_wrapper"><pre class="programlisting">POST _xpack/watcher/watch/my_watch/_ack</pre></div><div class="console_widget" data-snippet="snippets/watcher-api-ack-watch/6.json"></div><h4><a id="_timeouts_3"></a>Timeouts</h4><p>If you acknowledge a watch while it is executing, the request blocks and waits
 for the watch execution to finish. For some watches, this can take a significant
 amount of time. By default, the acknowledge action has a timeout of 10 seconds.
 You can change the timeout setting by specifying the <code class="literal">master_timeout</code> parameter.</p><p>The following snippet shows how to change the default timeout of the acknowledge
-action to 30 seconds:</p><div class="pre_wrapper"><pre class="programlisting">POST _xpack/watcher/watch/my_watch/_ack?master_timeout=30s</pre></div><div class="console_widget" data-snippet="snippets/watcher-api-ack-watch/6.json"></div><h4><a id="_response_format"></a>Response format</h4><div class="pre_wrapper"><pre class="programlisting">The response format looks like:</pre></div><div class="pre_wrapper"><pre class="programlisting">{
-   "_status": {
-      "last_checked": "2015-05-26T18:21:08.630Z",
-      "last_met_condition": "2015-05-26T18:21:08.630Z",
-      "actions": {
-         "my-action": {
-            "ack_status": {
-               "timestamp": "2015-05-26T18:21:09.982Z",
-               "state": "acked"
-            },
-            "last_execution": {
-               "timestamp": "2015-05-26T18:21:04.106Z",
-               "successful": true
-            },
-            "last_successful_execution": {
-               "timestamp": "2015-05-26T18:21:04.106Z",
-               "successful": true
-            },
-            "last_throttle": {
-               "timestamp": "2015-05-26T18:21:08.630Z",
-               "reason": "throttling interval is set to [5 seconds] but time elapsed since last execution is [4 seconds and 530 milliseconds]"
-            }
-         }
-      }
-   }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="watcher-api-execute-watch.html">
+action to 30 seconds:</p><div class="pre_wrapper"><pre class="programlisting">POST _xpack/watcher/watch/my_watch/_ack?master_timeout=30s</pre></div><div class="console_widget" data-snippet="snippets/watcher-api-ack-watch/7.json"></div></div><div class="navfooter"><span class="prev"><a href="watcher-api-execute-watch.html">
               « 
               Execute Watch API</a>
            
