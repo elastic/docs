@@ -133,7 +133,8 @@ sub index_titles {
                             title         => $_->{title},
                             url           => $part_url,
                             page_group    => $page_group,
-                            is_main_title => $is_main
+                            is_main_title => $is_main,
+                            content       => $_->{content}
                         }
                     }
                 );

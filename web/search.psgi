@@ -280,9 +280,8 @@ sub _add_suggest_query {
         {
         "match" => {
             "title.autocomplete" => {
-                "minimum_should_match" => "2<80%",
-                "fuzziness"            => 'auto',
-                "query"                => $text,
+                "fuzziness" => 'auto',
+                "query"     => $text,
             }
         }
         };
@@ -291,9 +290,12 @@ sub _add_suggest_query {
         {
         "multi_match" => {
             "query"  => $text,
-            "type"   => "most_fields",
+            "type"   => "cross_fields",
             "boost"  => 1.5,
-            "fields" => [ "title^1.5", "title.shingles" ]
+            "fields" => [
+                "title^10",    "title.shingles^5",
+                "content^1.5", "content.shingles"
+            ]
         }
         };
 
