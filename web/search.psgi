@@ -293,7 +293,7 @@ sub _add_suggest_query {
             "type"   => "cross_fields",
             "boost"  => 1.5,
             "fields" => [
-                "title^10",    "title.shingles^5",
+                "title^15",    "title.shingles^10",
                 "content^1.5", "content.shingles"
             ]
         }
