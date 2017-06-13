@@ -297,7 +297,11 @@ sub _add_suggest_query {
         }
         };
 
-    push @should, ( { term => { is_main_title => \1 } }, _weighting() );
+    push @should,
+        (
+        { term => { is_main_title => { value => \1, boost => 5 } } },
+        _weighting()
+        );
 
     $request->{sort} = _text_sort();
 }
