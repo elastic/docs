@@ -786,7 +786,33 @@ Elasticsearch indexes numbers optimizes for <code class="literal">range</code> q
 fields are better at <code class="literal">term</code> queries. Since identifiers are never used in <code class="literal">range</code>
 queries, they should be mapped as a <code class="literal">keyword</code>.</p><h3><a id="_use_index_sorting_to_speed_up_conjunctions"></a>Use index sorting to speed up conjunctions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p><a class="link" href="index-modules-index-sorting.html" title="Index Sorting">Index sorting</a> can be useful in order to make
 conjunctions faster at the cost of slightly slower indexing. Read more about it
-in the <a class="link" href="index-modules-index-sorting-conjunctions.html" title="Use index sorting to speed up conjunctions">index sorting documentation</a>.</p></div><div class="navfooter"><span class="prev"><a href="tune-for-indexing-speed.html">
+in the <a class="link" href="index-modules-index-sorting-conjunctions.html" title="Use index sorting to speed up conjunctions">index sorting documentation</a>.</p><h3><a id="_use_literal_preference_literal_to_optimize_cache_utilization"></a>Use <code class="literal">preference</code> to optimize cache utilization<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>There are multiple caches that can help with search performance, such as the
+<a class="ulink" href="https://en.wikipedia.org/wiki/Page_cache" target="_top">filesystem cache</a>, the
+<a class="link" href="shard-request-cache.html" title="Shard request cache">request cache</a> or the <a class="link" href="query-cache.html" title="Node Query Cache">query cache</a>. Yet
+all these caches are maintained at the node level, meaning that if you run the
+same request twice in a row, have 1 <a class="link" href="glossary.html#glossary-replica-shard">replica</a> or more
+and use <a class="ulink" href="https://en.wikipedia.org/wiki/Round-robin_DNS" target="_top">round-robin</a>, the default
+routing algorithm, then those two requests will go to different shard copies,
+preventing node-level caches from helping.</p><p>Since it is common for users of a search application to run similar requests
+one after another, for instance in order to analyze a narrower subset of the
+index, using a preference value that identifies the current user or session
+could help optimize usage of the caches.</p><h3><a id="_replicas_might_help_with_throughput_but_not_always"></a>Replicas might help with throughput, but not always<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In addition to improving resiliency, replicas can help improve throughput. For
+instance if you have a single-shard index and three nodes, you will need to
+set the number of replicas to 2 in order to have 3 copies of your shard in
+total so that all nodes are utilized.</p><p>Now imagine that you have a 2-shards index and two nodes. In one case, the
+number of replicas is 0, meaning that each node holds a single shard. In the
+second case the number of replicas is 1, meaning that each node has two shards.
+Which setup is going to perform best in terms of search performance? Usually,
+the setup that has fewer shards per node in total will perform better. The
+reason for that is that it gives a greater share of the available filesystem
+cache to each shard, and the filesystem cache is probably Elasticsearch’s
+number 1 performance factor. At the same time, beware that a setup that does
+not have replicas is subject to failure in case of a single node failure, so
+there is a trade-off between throughput and availability.</p><p>So what is the right number of replicas? If you have a cluster that has
+<code class="literal">num_nodes</code> nodes, <code class="literal">num_primaries</code> primary shards <span class="emphasis"><em>in total</em></span> and if you want to
+be able to cope with <code class="literal">max_failures</code> node failures at once at most, then the
+right number of replicas for you is
+<code class="literal">max(max_failures, ceil(num_nodes / num_primaries) - 1)</code>.</p></div><div class="navfooter"><span class="prev"><a href="tune-for-indexing-speed.html">
               « 
               Tune for indexing speed</a>
            

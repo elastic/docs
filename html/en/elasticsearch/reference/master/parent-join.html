@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>How to use scripts
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>join datatype
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-scripting.html" title="Scripting" /><link rel="next" href="modules-scripting-fields.html" title="Accessing document fields and special variables" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="mapping-types.html" title="Field datatypes" /><link rel="prev" href="percolator.html" title="Percolator type" /><link rel="next" href="mapping-fields.html" title="Meta-Fields" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
     <!-- RTP tag -->
    <script type='text/javascript'> (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)}; c[a].a=i;c[a].e=e;h.write('<script src="'+f+'?aid='+i+'" type="text/javascript"><\/script>'); })(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js ","elasticco" ); rtp('send','view'); rtp('get', 'campaign',true); </script>
     <!-- End of RTP tag -->
@@ -591,122 +591,336 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-scripting.html">Scripting</a></span> » <span class="breadcrumb-node">How to use scripts</span></div><div class="navheader"><span class="prev"><a href="modules-scripting.html">
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-link"><a href="mapping-types.html">Field datatypes</a></span> » <span class="breadcrumb-node"><code class="literal">join</code> datatype</span></div><div class="navheader"><span class="prev"><a href="percolator.html">
               « 
-              Scripting</a>
+              Percolator type</a>
            
         </span><span class="next">
            
-          <a href="modules-scripting-fields.html">Accessing document fields and special variables
+          <a href="mapping-fields.html">Meta-Fields
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-using"></a>How to use scripts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Wherever scripting is supported in the Elasticsearch API, the syntax follows
-the same pattern:</p><div class="pre_wrapper"><pre class="programlisting">  "script": {
-    "lang":   "...",  <a id="CO306-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    "source" | "id": "...", <a id="CO306-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    "params": { ... } <a id="CO306-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-  }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO306-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-The language the script is written in, which defaults to <code class="literal">painless</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO306-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-The script itself which may be specified as <code class="literal">source</code> for an inline script or <code class="literal">id</code> for a stored script.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO306-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-Any named parameters that should be passed into the script.
-</p></td></tr></table></div><p>For example, the following script is used in a search request to return a
-<a class="link" href="search-request-script-fields.html" title="Script Fields">scripted field</a>:</p><div class="pre_wrapper"><pre class="programlisting">PUT my_index/my_type/1
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="parent-join"></a><code class="literal">join</code> datatype<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/parent-join.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">join</code> datatype is a special field that creates
+parent/child relation within documents of the same index.
+This <code class="literal">relations</code> section defines a set of possible relations within the documents,
+each relation being a parent name and a child name.
+A parent/child relation can be defined as follows:</p><div class="pre_wrapper"><pre class="programlisting">PUT my_index
 {
-  "my_field": 5
+  "mappings": {
+    "doc": {
+      "properties": {
+        "my_join_field": { <a id="CO186-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "type": "join",
+          "relations": {
+            "my_parent": "my_child" <a id="CO186-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/parent-join/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO186-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+The name for the field
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO186-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Defines a single relation where <code class="literal">my_parent</code> is parent of <code class="literal">my_child</code>.
+</p></td></tr></table></div><p>To index a document with a join, the name of the relation and the optional parent
+of the document must be provided in the <code class="literal">source</code>.
+For instance the following creates a parent document in the <code class="literal">my_parent</code> context:</p><div class="pre_wrapper"><pre class="programlisting">PUT my_index/doc/1?refresh
+{
+  "text": "This is a parent document",
+  "my_join_field": "my_parent" <a id="CO187-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 }
 
-GET my_index/_search
+PUT my_index/doc/2?refresh
 {
-  "script_fields": {
-    "my_doubled_field": {
-      "script": {
-        "lang":   "expression",
-        "source": "doc['my_field'] * multiplier",
-        "params": {
-          "multiplier": 2
-        }
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/1.json"></div><h3><a id="_script_parameters"></a>Script Parameters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">lang</code>
-</span></dt><dd>
-    Specifies the language the script is written in.  Defaults to <code class="literal">painless</code> but
-    may be set to any of languages listed in <a class="xref" href="modules-scripting.html" title="Scripting"><em>Scripting</em></a>. The
-    default language may be changed in the <code class="literal">elasticsearch.yml</code> config file by
-    setting <code class="literal">script.default_lang</code> to the appropriate language.
-</dd><dt><span class="term">
-<code class="literal">source</code>, <code class="literal">id</code>
-</span></dt><dd>
-    Specifies the source of the script.  An <code class="literal">inline</code> script is specified
-    <code class="literal">source</code> as in the example above. A <code class="literal">stored</code> script is specified <code class="literal">id</code>
-    and is retrieved from the cluster state (see <a class="link" href="modules-scripting-using.html#modules-scripting-stored-scripts" title="Stored Scriptsedit">Stored Scripts</a>).
-</dd><dt><span class="term">
-<code class="literal">params</code>
-</span></dt><dd>
-    Specifies any named parameters that are passed into the script as
-    variables.
-</dd></dl></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h3>Prefer parameters<a id="prefer-params"></a></h3><p>The first time Elasticsearch sees a new script, it compiles it and stores the
-compiled version in a cache. Compilation can be a heavy process.</p><p>If you need to pass variables into the script, you should pass them in as
-named <code class="literal">params</code> instead of hard-coding values into the script itself.  For
-example, if you want to be able to multiply a field value by different
-multipliers, don’t hard-code the multiplier into the script:</p><div class="pre_wrapper"><pre class="programlisting">  "source": "doc['my_field'] * 2"</pre></div><p>Instead, pass it in as a named parameter:</p><div class="pre_wrapper"><pre class="programlisting">  "source": "doc['my_field'] * multiplier",
-  "params": {
-    "multiplier": 2
-  }</pre></div><p>The first version has to be recompiled every time the multiplier changes.  The
-second version is only compiled once.</p><p>If you compile too many unique scripts within a small amount of time,
-Elasticsearch will reject the new dynamic scripts with a
-<code class="literal">circuit_breaking_exception</code> error. By default, up to 15 inline scripts per
-minute will be compiled. You can change this setting dynamically by setting
-<code class="literal">script.max_compilations_per_minute</code>.</p></div></div><h3><a id="modules-scripting-stored-scripts"></a>Stored Scripts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Scripts may be stored in and retrieved from the cluster state using the
-<code class="literal">_scripts</code> end-point.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_deprecated_namespace"></a>Deprecated Namespace<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The namespace for stored scripts using both <code class="literal">lang</code> and <code class="literal">id</code> as a unique
-identifier has been deprecated.  The new namespace for stored scripts will
-only use <code class="literal">id</code>. Stored scripts with the same <code class="literal">id</code>, but different <code class="literal">lang</code>'s
-will no longer be allowed in 6.0.  To comply with the new namespace for
-stored scripts, existing stored scripts should be deleted and put again.
-Any scripts that share an <code class="literal">id</code> but have different `lang`s will need to
-be re-named.  For example, take the following:</p><p>"id": "example", "lang": "painless"
-"id": "example", "lang": "expressions"</p><p>The above scripts will conflict under the new namespace since the id’s are
-the same.  At least one will have to be re-named to comply with the new
-namespace of only <code class="literal">id</code>.</p><p>As a final caveat, stored search templates and stored scripts share
-the same namespace, so if a search template has the same <code class="literal">id</code> as a
-stored script, one of the two will have to be re-named as well using
-delete and put requests.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_request_examples"></a>Request Examples<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following are examples of using a stored script that lives at
-<code class="literal">/_scripts/{id}</code>.</p><p>First, create the script called <code class="literal">calculate-score</code> in the cluster state:</p><div class="pre_wrapper"><pre class="programlisting">POST _scripts/calculate-score
+  "text": "This is a another parent document",
+  "my_join_field": "my_parent"
+}</pre></div><div class="console_widget" data-snippet="snippets/parent-join/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO187-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+This document is a <code class="literal">my_parent</code> document.
+</p></td></tr></table></div><p>When indexing a child, the name of the relation as well as the parent id of the document
+must be added in the <code class="literal">_source</code>.
+It is required to index the lineage of a parent in the same shard so you must
+always route child documents using their greater parent id.
+For instance the following index two children documents pointing to the same parent
+with a <code class="literal">routing</code> value equals to the <code class="literal">id</code> of the parent:</p><div class="pre_wrapper"><pre class="programlisting">PUT my_index/doc/3?routing=1&amp;refresh <a id="CO188-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 {
-  "script": {
-    "lang": "painless",
-    "source": "Math.log(_score * 2) + params.my_modifier"
+  "text": "This is a child document",
+  "my_join_field": {
+    "name": "my_child", <a id="CO188-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    "parent": "1" <a id="CO188-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/2.json"></div><p>This same script can be retrieved with:</p><div class="pre_wrapper"><pre class="programlisting">GET _scripts/calculate-score</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/3.json"></div><p>Stored scripts can be used by specifying the <code class="literal">id</code> parameters as follows:</p><div class="pre_wrapper"><pre class="programlisting">GET _search
+}
+
+PUT my_index/doc/4?routing=1&amp;refresh <a id="CO188-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+{
+  "text": "This is a another child document",
+  "my_join_field": {
+    "name": "my_child",
+    "parent": "1"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/parent-join/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO188-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO188-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+This child document must be on the same shard than its parent
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO188-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+<code class="literal">my_child</code> is the name of the join for this document
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO188-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+The parent id of this child document
+</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_parent_join_restrictions"></a>Parent-join restrictions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/parent-join.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Only one <code class="literal">join</code> field is allowed per index mapping.
+</li><li class="listitem">
+An element can have multiple children but only one parent.
+</li><li class="listitem">
+Parent and child documents must be indexed on the same shard.
+  This means that the same <code class="literal">routing</code> value needs to be provided when
+  <a class="link" href="docs-get.html" title="Get API">getting</a>, <a class="link" href="docs-delete.html" title="Delete API">deleting</a>, or <a class="link" href="docs-update.html" title="Update API">updating</a>
+  a child document.
+</li><li class="listitem">
+It is possible to add a new relation to an existing <code class="literal">join</code> field.
+</li><li class="listitem">
+It is also possible to add a child to an existing element
+  but only if the element is already a parent.
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_searching_with_parent_join"></a>Searching with parent-join<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/parent-join.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The parent-join creates one field to index the name of the relation
+within the document (<code class="literal">my_parent</code>, <code class="literal">my_child</code>, …).
+It also creates one field per parent/child relation. The name of this field is
+the name of the <code class="literal">join</code> field followed by <code class="literal">#</code> and the name of the parent in the relation.
+So for instance for the <code class="literal">my_parent</code> ⇒ [<code class="literal">my_child</code>, <code class="literal">another_child</code>] relation,
+the <code class="literal">join</code> field creates an additional field named <code class="literal">my_join_field#my_parent</code>.
+This field contains the parent <code class="literal">_id</code> that the document links to
+if the document is a child (<code class="literal">my_child</code> or <code class="literal">another_child</code>) and the <code class="literal">_id</code> of
+document if it’s a parent (<code class="literal">my_parent</code>).
+When searching an index that contains a <code class="literal">join</code> field, these two fields are always
+returned in the search response:</p><div class="pre_wrapper"><pre class="programlisting">GET my_index/_search
 {
   "query": {
-    "script": {
+    "match_all": {}
+  },
+  "sort": ["_id"]
+}</pre></div><div class="console_widget" data-snippet="snippets/parent-join/4.json"></div><div class="pre_wrapper"><pre class="programlisting">{
+    ...,
+    "hits": {
+        "total": 4,
+        "max_score": null,
+        "hits": [
+            {
+                "_index": "my_index",
+                "_type": "doc",
+                "_id": "1",
+                "_score": null,
+                "_source": {
+                    "text": "This is a parent document",
+                    "my_join_field": "my_parent"
+                },
+                "fields": {
+                    "my_join_field": [
+                        "my_parent"   <a id="CO189-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    ]
+                },
+                "sort": [
+                    "1"
+                ]
+            },
+            {
+                "_index": "my_index",
+                "_type": "doc",
+                "_id": "2",
+                "_score": null,
+                "_source": {
+                    "text": "This is a another parent document",
+                    "my_join_field": "my_parent"
+                },
+                "fields": {
+                    "my_join_field": [
+                        "my_parent"  <a id="CO189-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                    ]
+                },
+                "sort": [
+                    "2"
+                ]
+            },
+            {
+                "_index": "my_index",
+                "_type": "doc",
+                "_id": "3",
+                "_score": null,
+                "_routing": "1",
+                "_source": {
+                    "text": "This is a child document",
+                    "my_join_field": {
+                        "name": "my_child", <a id="CO189-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+                        "parent": "1"  <a id="CO189-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+                    }
+                },
+                "fields": {
+                    "my_join_field": [
+                        "my_child"
+                    ],
+                    "my_join_field#my_parent": [
+                        "1"
+                    ]
+                },
+                "sort": [
+                    "3"
+                ]
+            },
+            {
+                "_index": "my_index",
+                "_type": "doc",
+                "_id": "4",
+                "_score": null,
+                "_routing": "1",
+                "_source": {
+                    "text": "This is a another child document",
+                    "my_join_field": {
+                        "name": "my_child",
+                        "parent": "1"
+                    }
+                },
+                "fields": {
+                    "my_join_field": [
+                        "my_child"
+                    ],
+                    "my_join_field#my_parent": [
+                        "1"
+                    ]
+                },
+                "sort": [
+                    "4"
+                ]
+            }
+        ]
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO189-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+This document belongs to the <code class="literal">my_parent</code> join
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO189-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+This document belongs to the <code class="literal">my_parent</code> join
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO189-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+This document belongs to the <code class="literal">my_child</code> join
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO189-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+The linked parent id for the child document
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_parent_join_queries_and_aggregations"></a>Parent-join queries and aggregations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/parent-join.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>See the <a class="link" href="query-dsl-has-child-query.html" title="Has Child Query"><code class="literal">has_child</code></a> and
+<a class="link" href="query-dsl-has-parent-query.html" title="Has Parent Query"><code class="literal">has_parent</code></a> queries,
+the <a class="link" href="search-aggregations-bucket-children-aggregation.html" title="Children Aggregation"><code class="literal">children</code></a> aggregation,
+and <a class="link" href="search-request-inner-hits.html#parent-child-inner-hits" title="Parent/child inner hits">inner hits</a> for more information.</p><p>The value of the <code class="literal">join</code> field is accessible in aggregations
+and scripts, and may be queried with the
+<a class="link" href="query-dsl-parent-id-query.html" title="Parent Id Query"><code class="literal">parent_id</code> query</a>:</p><div class="pre_wrapper"><pre class="programlisting">GET my_index/_search
+{
+  "query": {
+    "parent_id": { <a id="CO190-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "type": "my_child",
+      "id": "1"
+    }
+  },
+  "aggs": {
+    "parents": {
+      "terms": {
+        "field": "my_join_field#my_parent", <a id="CO190-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        "size": 10
+      }
+    }
+  },
+  "script_fields": {
+    "parent": {
       "script": {
-        "id": "calculate-score",
-        "params": {
-          "my_modifier": 2
+         "source": "doc['my_join_field#my_parent']" <a id="CO190-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/parent-join/5.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO190-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Querying the <code class="literal">parent id</code> field (also see the <a class="link" href="query-dsl-has-parent-query.html" title="Has Parent Query"><code class="literal">has_parent</code> query</a> and the <a class="link" href="query-dsl-has-child-query.html" title="Has Child Query"><code class="literal">has_child</code> query</a>)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO190-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Aggregating on the <code class="literal">parent id</code> field (also see the <a class="link" href="search-aggregations-bucket-children-aggregation.html" title="Children Aggregation"><code class="literal">children</code></a> aggregation)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO190-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+Accessing the parent id` field in scripts
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_global_ordinals"></a>Global ordinals<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/parent-join.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">join</code> field uses <a class="link" href="eager-global-ordinals.html" title="eager_global_ordinals">global ordinals</a> to speed up joins.
+Global ordinals need to be rebuilt after any change to a shard. The more
+parent id values are stored in a shard, the longer it takes to rebuild the
+global ordinals for the <code class="literal">join</code> field.</p><p>Global ordinals, by default, are built eagerly: if the index has changed,
+global ordinals for the <code class="literal">join</code> field will be rebuilt as part of the refresh.
+This can add significant time to the refresh. However most of the times this is the
+right trade-off, otherwise global ordinals are rebuilt when the first parent-join
+query or aggregation is used. This can introduce a significant latency spike for
+your users and usually this is worse as multiple global ordinals for the <code class="literal">join</code>
+field may be attempt rebuilt within a single refresh interval when many writes
+are occurring.</p><p>When the <code class="literal">join</code> field is used infrequently and writes occur frequently it may
+make sense to disable eager loading:</p><div class="pre_wrapper"><pre class="programlisting">PUT my_index
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "my_join_field": {
+          "type": "join",
+          "relations": {
+             "my_parent": "my_child"
+          },
+          "eager_global_ordinals": false
         }
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/4.json"></div><p>And deleted with:</p><div class="pre_wrapper"><pre class="programlisting">DELETE _scripts/calculate-score</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/5.json"></div><h3><a id="modules-scripting-using-caching"></a>Script Caching<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>All scripts are cached by default so that they only need to be recompiled
-when updates occur. File scripts keep a static cache and will always reside
-in memory. Both inline and stored scripts are stored in a cache that can evict
-residing scripts. By default, scripts do not have a time-based expiration, but
-you can change this behavior by using the <code class="literal">script.cache.expire</code> setting.
-You can configure the size of this cache by using the <code class="literal">script.cache.max_size</code> setting.
-By default, the cache size is <code class="literal">100</code>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The size of stored scripts is limited to 65,535 bytes. This can be
-changed by setting <code class="literal">script.max_size_in_bytes</code> setting to increase that soft
-limit, but if scripts are really large then alternatives like
-<a class="link" href="modules-scripting-native.html" title="Native scripting">native</a> scripts should be considered instead.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="modules-scripting.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/parent-join/6.json"></div><p>The amount of heap used by global ordinals can be checked per parent relation
+as follows:</p><div class="pre_wrapper"><pre class="programlisting"># Per-index
+GET _stats/fielddata?human&amp;fields=my_join_field#my_parent
+
+# Per-node per-index
+GET _nodes/stats/indices/fielddata?human&amp;fields=my_join_field#my_parent</pre></div><div class="console_widget" data-snippet="snippets/parent-join/7.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multiple_levels_of_parent_join"></a>Multiple levels of parent join<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/parent-join.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It is also possible to define multiple children for a single parent:</p><div class="pre_wrapper"><pre class="programlisting">PUT my_index
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "my_join_field": {
+          "type": "join",
+          "relations": {
+            "my_parent": ["my_child", "another_child"]  <a id="CO191-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/parent-join/8.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO191-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+<code class="literal">my_parent</code> is parent of <code class="literal">my_child</code>.
+</p><div class="orderedlist"><ol class="orderedlist" type="i"><li class="listitem">
+and multiple levels of parent/child:
+</li></ol></div></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting">PUT my_index
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "my_join_field": {
+          "type": "join",
+          "relations": {
+            "my_parent": ["my_child", "another_child"],  <a id="CO192-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "another_child": "grand_child" <a id="CO192-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/parent-join/9.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO192-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+<code class="literal">my_parent</code> is parent of <code class="literal">my_child</code> and <code class="literal">another_child</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO192-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+<code class="literal">another_child</code> is parent of <code class="literal">grand_child</code>
+</p></td></tr></table></div><p>The mapping above represents the following tree:</p><pre class="literallayout">     my_parent
+     /    \
+    /      \
+my_child  another_child
+              |
+              |
+         grand_child</pre><p>Indexing a grand child document requires a <code class="literal">routing</code> value equals
+to the grand-parent (the greater parent of the lineage):</p><div class="pre_wrapper"><pre class="programlisting">PUT my_index/doc/3?routing=1&amp;refresh <a id="CO193-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+{
+  "text": "This is a grand child document",
+  "my_join_field": {
+    "name": "grand_child",
+    "parent": "2" <a id="CO193-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/parent-join/10.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO193-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+This child document must be on the same shard than its grandparent and parent
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO193-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+The parent id of this document (must points to an <code class="literal">another_child</code> document)
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="percolator.html">
               « 
-              Scripting</a>
+              Percolator type</a>
            
         </span><span class="next">
            
-          <a href="modules-scripting-fields.html">Accessing document fields and special variables
+          <a href="mapping-fields.html">Meta-Fields
                »
             </a></span></div>
 <!-- end body -->
