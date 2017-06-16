@@ -603,7 +603,24 @@ prone to bugs. Due to this, we have elected to make a breaking change in a
 minor release to remove this feature with the exception of <code class="literal">default.path.conf</code>,
 <code class="literal">default.path.data</code>, and <code class="literal">default.path.logs</code> which remain to support packaging.
 A future version of Elasticsearch will remove support for these as well, so
-users should stop relying on this functionality.</p></div><div class="navfooter"><span class="prev"><a href="breaking-changes.html">
+users should stop relying on this functionality.</p><h3><a id="breaking_54_rest_changes"></a>Checking if indices exist<a href="https://github.com/elastic/elasticsearch/edit/5.4/docs/reference/migration/migrate_5_4.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The endpoint <code class="literal">/{index}</code> with the verb <code class="literal">HEAD</code> can be used to check if an index
+matching <code class="literal">index</code> exists (<code class="literal">index</code> can be a comma-delimited list of index names or
+index patterns). This verb behaved differently than <code class="literal">GET</code> on the same endpoint
+in two ways. The first is that sending the same request to <code class="literal">GET</code> and <code class="literal">HEAD</code>
+could in some cases return different status codes (e.g., <code class="literal">GET
+/pattern-that-has-no-matches*</code> would 200 with an empty response and <code class="literal">HEAD
+/pattern-that-has-no-matches*</code> would 404 with an empty body (and a
+<code class="literal">content-length</code> header of zero). The second is that any <code class="literal">HEAD</code> request on this
+endpoint would return a <code class="literal">content-length</code> header of zero. Both of these are
+violations of the HTTP specification: if <code class="literal">HEAD</code> is supported, a <code class="literal">HEAD</code> request
+must return the same status as the same <code class="literal">GET</code> request would, and it must return
+a <code class="literal">content-length</code> header that is equal to the <code class="literal">content-length</code> header as the
+same <code class="literal">GET</code> request would. This behavior has been addressed so that <code class="literal">HEAD</code> always
+returns the same status code as a <code class="literal">GET</code> would have, and with the correct
+<code class="literal">content-length</code>. However, this means that <code class="literal">HEAD /pattern-that-has-no-matches*</code>
+which served as an index existence check no longer 404s, instead 200s as if it
+was a <code class="literal">GET</code> request. To obtain the previous behavior, you must add the parameter
+<code class="literal">?allow_no_indices=false</code> (this parameter defaults to <code class="literal">true</code>).</p></div><div class="navfooter"><span class="prev"><a href="breaking-changes.html">
               « 
               Breaking changes</a>
            

@@ -599,7 +599,7 @@ Not what you want? See the
            
           <a href="search-request-collapse.html">Field Collapsing
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-inner-hits"></a>Inner hits<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <a class="link" href="mapping-parent-field.html" title="_parent field">parent/child</a> and <a class="link" href="nested.html" title="Nested datatype">nested</a> features allow the return of documents that
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-inner-hits"></a>Inner hits<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <a class="link" href="parent-join.html" title="join datatype">parent-join&gt; and &lt;&lt;nested</a> features allow the return of documents that
 have matches in a different scope. In the parent/child case, parent documents are returned based on matches in child
 documents or child documents are returned based on matches in parent documents. In the nested case, documents are returned
 based on matches in nested inner objects.</p><p>In both cases, the actual matches in the different scopes that caused a document to be returned is hidden. In many cases,
@@ -699,11 +699,11 @@ PUT test/doc/1?refresh
   "comments": [
     {
       "author": "kimchy",
-      "text": "comment text"
+      "number": 1
     },
     {
       "author": "nik9000",
-      "text": "words words words"
+      "number": 2
     }
   ]
 }
@@ -714,7 +714,7 @@ POST test/_search
     "nested": {
       "path": "comments",
       "query": {
-        "match": {"comments.text" : "words"}
+        "match": {"comments.number" : 2}
       },
       "inner_hits": {} <a id="CO19-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
@@ -725,29 +725,29 @@ The inner hit definition in the nested query. No other options need to be define
   ...,
   "hits": {
     "total": 1,
-    "max_score": 0.9651416,
+    "max_score": 1.0,
     "hits": [
       {
         "_index": "test",
         "_type": "doc",
         "_id": "1",
-        "_score": 0.9651416,
+        "_score": 1.0,
         "_source": ...,
         "inner_hits": {
           "comments": { <a id="CO20-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
             "hits": {
               "total": 1,
-              "max_score": 0.9651416,
+              "max_score": 1.0,
               "hits": [
                 {
                   "_nested": {
                     "field": "comments",
                     "offset": 1
                   },
-                  "_score": 0.9651416,
+                  "_score": 1.0,
                   "_source": {
                     "author": "nik9000",
-                    "text": "words words words"
+                    "number": 2
                   }
                 }
               ]
@@ -916,29 +916,38 @@ POST test/_search
       }
     ]
   }
-}</pre></div><p>This indirect referencing is only supported for nested inner hits.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="parent-child-inner-hits"></a>Parent/child inner hits<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The parent/child <code class="literal">inner_hits</code> can be used to include parent or child</p><div class="pre_wrapper"><pre class="programlisting">PUT test
+}</pre></div><p>This indirect referencing is only supported for nested inner hits.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="parent-child-inner-hits"></a>Parent/child inner hits<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The parent/child <code class="literal">inner_hits</code> can be used to include parent or child:</p><div class="pre_wrapper"><pre class="programlisting">PUT test
 {
   "settings": {
-    "mapping.single_type": false
+    "mapping.single_type": true
   },
   "mappings": {
-    "my_parent": {},
-    "my_child": {
-      "_parent": {
-        "type": "my_parent"
+    "doc": {
+      "properties": {
+        "my_join_field": {
+          "type": "join",
+          "relations": {
+            "my_parent": "my_child"
+          }
+        }
       }
     }
   }
 }
 
-PUT test/my_parent/1?refresh
+PUT test/doc/1?refresh
 {
-  "test": "test"
+  "number": 1,
+  "my_join_field": "my_parent"
 }
 
-PUT test/my_child/1?parent=1&amp;refresh
+PUT test/doc/2?routing=1&amp;refresh
 {
-  "test": "test"
+  "number": 1,
+  "my_join_field": {
+    "name": "my_child",
+    "parent": "1"
+  }
 }
 
 POST test/_search
@@ -948,7 +957,7 @@ POST test/_search
       "type": "my_child",
       "query": {
         "match": {
-          "test": "test"
+          "number": 1
         }
       },
       "inner_hits": {}    <a id="CO21-2"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
@@ -957,40 +966,59 @@ POST test/_search
 }</pre></div><div class="console_widget" data-snippet="snippets/search-request-inner-hits/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO21-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO21-2"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
 The inner hit definition like in the nested example.
 </p></td></tr></table></div><p>An example of a response snippet that could be generated from the above search request:</p><div class="pre_wrapper"><pre class="programlisting">{
-  ...,
-  "hits": {
-    "total": 1,
-    "max_score": 1.0,
-    "hits": [
-      {
-        "_index": "test",
-        "_type": "my_parent",
-        "_id": "1",
-        "_score": 1.0,
-        "_source": ...,
-        "inner_hits": {
-          "my_child": {
-            "hits": {
-              "total": 1,
-              "max_score": 0.18232156,
-              "hits": [
-                {
-                  "_type": "my_child",
-                  "_id": "1",
-                  "_score": 0.18232156,
-                  "_routing": "1",
-                  "_parent": "1",
-                  "_source": {
-                    "test": "test"
-                  }
+    ...,
+    "hits": {
+        "total": 1,
+        "max_score": 1.0,
+        "hits": [
+            {
+                "_index": "test",
+                "_type": "doc",
+                "_id": "1",
+                "_score": 1.0,
+                "_source": {
+                    "number": 1,
+                    "my_join_field": "my_parent"
+                },
+                "fields": {
+                    "my_join_field": [
+                        "my_parent"
+                    ]
+                },
+                "inner_hits": {
+                    "my_child": {
+                        "hits": {
+                            "total": 1,
+                            "max_score": 1.0,
+                            "hits": [
+                                {
+                                    "_type": "doc",
+                                    "_id": "2",
+                                    "_score": 1.0,
+                                    "_routing": "1",
+                                    "_source": {
+                                        "number": 1,
+                                        "my_join_field": {
+                                            "name": "my_child",
+                                            "parent": "1"
+                                        }
+                                    },
+                                    "fields": {
+                                        "my_join_field": [
+                                            "my_child"
+                                        ],
+                                        "my_join_field#my_parent": [
+                                            "1"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
                 }
-              ]
             }
-          }
-        }
-      }
-    ]
-  }
+        ]
+    }
 }</pre></div></div></div><div class="navfooter"><span class="prev"><a href="search-request-named-queries-and-filters.html">
               « 
               Named Queries</a>
