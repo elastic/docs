@@ -464,7 +464,7 @@ sub _run_request {
             # explain => 'true'
         );
     }
-        || do { warn $@; return _as_json( 200, {} ) };
+        || do { warn $@; return _as_text( 502, "502 Bad Gateway\n" ) };
 
     my $last_page = int( $result->{hits}{total} / $Page_Size ) + 1;
     $last_page = $Max_Page if $last_page > $Max_Page;
