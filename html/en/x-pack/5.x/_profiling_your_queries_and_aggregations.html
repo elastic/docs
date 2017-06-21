@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Profiling a more complicated query
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Profiling your Queries and Aggregations
         | X-Pack for the Elastic Stack [5.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [5.x]" /><link rel="up" href="xpack-profiler.html" title="Profiling your Queries and Aggregations" /><link rel="prev" href="profiler-getting-started.html" title="Getting Started" /><link rel="next" href="_aggregations.html" title="Aggregations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/5.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [5.x]" /><link rel="up" href="xpack-features.html" title="More X-Pack Features in Kibana" /><link rel="prev" href="_reporting_from_kibana.html" title="Reporting from Kibana" /><link rel="next" href="xpack-settings.html" title="X-Pack Settings" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/5.x" />
     <!-- RTP tag -->
    <script type='text/javascript'> (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)}; c[a].a=i;c[a].e=e;h.write('<script src="'+f+'?aid='+i+'" type="text/javascript"><\/script>'); })(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js ","elasticco" ); rtp('send','view'); rtp('get', 'campaign',true); </script>
     <!-- End of RTP tag -->
@@ -589,89 +589,22 @@
 <div class="page_header">Why not take our <a href="https://www.elastic.co/products/x-pack/machine-learning">machine learning</a> beta for a spin and join us in the <a href="https://discuss.elastic.co/c/x-pack">public X-Pack forum</a>?
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">X-Pack for the Elastic Stack
       [5.x]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-profiler.html">Profiling your Queries and Aggregations</a></span> » <span class="breadcrumb-node">Profiling a more complicated query</span></div><div class="navheader"><span class="prev"><a href="profiler-getting-started.html">
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-features.html">More X-Pack Features in Kibana</a></span> » <span class="breadcrumb-node">Profiling your Queries and Aggregations</span></div><div class="navheader"><span class="prev"><a href="_reporting_from_kibana.html">
               « 
-              Getting Started</a>
+              Reporting from Kibana</a>
            
         </span><span class="next">
            
-          <a href="_aggregations.html">Aggregations
+          <a href="xpack-settings.html">X-Pack Settings
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="_profiling_a_more_complicated_query"></a>Profiling a more complicated query</h2></div></div></div><p>To understand how the query trees are displayed inside the Search Profiler,
-let’s look at a more complicated query.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Index the following data:
-</p><div class="pre_wrapper"><pre class="programlisting">POST test/test/_bulk
-{"index":{}}
-{"name":"aaron","age":23,"hair":"brown"}
-{"index":{}}
-{"name":"sue","age":19,"hair":"red"}
-{"index":{}}
-{"name":"sally","age":19,"hair":"blonde"}
-{"index":{}}
-{"name":"george","age":19,"hair":"blonde"}
-{"index":{}}
-{"name":"fred","age":69,"hair":"blonde"}</pre></div></li></ol></div><div class="console_widget" data-snippet=":CONSOLE:"></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Enter "test" in the Index filter above the query editor (the input box with a
- grayed-out <code class="literal">_all</code>).  This restricts profiled queries to the <code class="literal">test</code> index.
-</p><div class="informalfigure"><div class="mediaobject"><img src="images/gs7.png" alt="Using the index filter" /></div></div></li><li class="listitem"><p class="simpara">
-Replace the default <code class="literal">match_all</code> query with a query that has two sub-query
-components and includes a simple aggregation. For example, copy and paste
-the following query into the query editor.
-</p><div class="pre_wrapper"><pre class="programlisting">{
-   "query": {
-      "bool": {
-         "should": [
-            {
-               "match": {
-                  "name": "fred"
-               }
-            },
-            {
-               "terms": {
-                  "name": [
-                      "sue",
-                      "sally"
-                  ]
-               }
-            }
-         ]
-      }
-   },
-   "aggs": {
-      "stats": {
-         "stats": {
-            "field": "price"
-         }
-      }
-   }
-}</pre></div></li></ol></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Click <span class="strong emphasis"><strong>Profile</strong></span> to profile the query and visualize the results.
-</p><div class="informalfigure"><div class="mediaobject"><img src="images/gs8.png" alt="Profiling the more complicated query" /></div></div><p class="simpara">As before, you’ll see a list of shards appear in the center panel.  You’ll notice
-that the query was slightly slower (15ms vs 0.13ms) because it actually had to do
-a bit of work this time, unlike the <code class="literal">match_all</code> query.</p></li><li class="listitem"><p class="simpara">
-Click the first shard’s Expand button to view the query details.
-</p><div class="informalfigure"><div class="mediaobject"><img src="images/gs9.png" alt="Drilling into the first shard's details" /></div></div><p class="simpara">You’ll notice several interesting things in the results.  The shard details
-contain a row for each query component:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-The top-level <code class="literal">BooleanQuery</code> component corresponds to the bool in the query.
-</li><li class="listitem">
-The second <code class="literal">BooleanQuery</code> corresponds to the terms query, which is internally
- converted to a <code class="literal">Boolean</code> of should clauses. It has two child queries that correspond
- to "sue" and "sally" from the terms query.
-</li><li class="listitem">
-The <code class="literal">TermQuery</code> that’s labeled with <span class="emphasis"><em>"name:fred"</em></span> corresponds to match: fred in the query.
-</li></ul></div></li></ol></div><p>If you look at the timings, you can see that "Self Time" and "Total Time" are no longer
-identical on all the rows.  Self time represents how long the query component took to execute.
-Total time is the time a query component <span class="emphasis"><em>and all its children</em></span> took to execute.
-Therefore, queries like the Boolean queries often have larger Total than Self.</p><p>+
-In particular, you can see that the <code class="literal">BooleanQuery</code> for "name:sue name:sally" took 3.8ms total,
-but 2.8ms of that was "self" time.  That means 2.8ms was spent by the <code class="literal">BooleanQuery</code> itself, processing
-the should clauses</p></div><div class="navfooter"><span class="prev"><a href="profiler-getting-started.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="_profiling_your_queries_and_aggregations"></a>Profiling your Queries and Aggregations</h2></div></div></div><p>X-Pack includes the Search Profiler tool, which can transform the output from
+the profiler API into a visualization that is easy to navigate.</p></div><div class="navfooter"><span class="prev"><a href="_reporting_from_kibana.html">
               « 
-              Getting Started</a>
+              Reporting from Kibana</a>
            
         </span><span class="next">
            
-          <a href="_aggregations.html">Aggregations
+          <a href="xpack-settings.html">X-Pack Settings
                »
             </a></span></div>
 <!-- end body -->
