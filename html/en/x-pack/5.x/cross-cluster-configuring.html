@@ -698,7 +698,43 @@ cluster <code class="literal">two</code> as follows:</p><div class="pre_wrapper"
   "query": {
     "match_all": {}
   }
-}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="ccs-tribe-clients-integrations.html">
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cross-cluster-kibana"></a>Cross Cluster Search and Kibana</h3></div></div></div><p>When Kibana is used to search across multiple clusters, a two-step authorization
+process determines whether or not the user can access indices on a remote
+cluster:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+First, the loal cluster determines if the user is authorized to access remote
+clusters. (The local cluster is the cluster Kibana is connected to.)
+</li><li class="listitem">
+If they are, the remote cluster then determines if the user has access
+to the specified indices.
+</li></ul></div><p>To grant Kibana users access to remote clusters, assign them a local role
+with read privileges to indices on the remote cluster(s). You specify remote
+cluster indices as <code class="literal">&lt;remote_cluster_name&gt;:&lt;index_name&gt;</code>.</p><p>To enable users to actually read the remote indices, you must create a matching
+role on the remote cluster(s) that grants the <code class="literal">read_cross_cluster</code> privilege
+and access to the appropriate indices.</p><p>For example, if Kibana is connected to the cluster where you’re actively
+indexing Logstash data (your <span class="emphasis"><em>local cluster</em></span>) and you’re periodically
+offloading older time-based indices to an archive cluster
+(your <span class="emphasis"><em>remote cluster</em></span>) and you want to enable Kibana users to search both
+clusters:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+On the local cluster, create a <code class="literal">logstash_reader</code> role that grants
+<code class="literal">read</code> and <code class="literal">view_index_metadata</code> privileges on the local <code class="literal">logstash-*</code> indices
+as well as the remote Logstash indices, <code class="literal">remote_cluster_name:logstash-*</code>.
+</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you configure the local cluster as another remote in
+Elasticsearch, you can grant access to <code class="literal">*:logstash-*</code> to enable users to access
+both the local cluster and all of your remote clusters. In this case, the
+<code class="literal">logstash_reader</code> role on your local cluster also needs to grant the
+<code class="literal">read_cross_cluster</code> privilege.</p></div></div></li><li class="listitem">
+Assign your Kibana users the <code class="literal">kibana_user</code> role and your <code class="literal">logstash_reader</code>
+role.
+</li><li class="listitem">
+On the remote cluster, create a <code class="literal">logstash_reader</code> role that grants the
+<code class="literal">read_cross_cluster</code> privilege and <code class="literal">read</code> and <code class="literal">view_index_metadata</code> privileges
+for the <code class="literal">logstash-*</code> indices.
+</li></ol></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Currently, Kibana shows an error when users without super user access
+attempt to create cross-cluster index patterns; however, they are not blocked
+from doing so. Granting users read access to <code class="literal">*:*</code> on the local cluster will
+eliminate these error messages. This does <span class="emphasis"><em>not</em></span> grant access to everything on
+a remote cluster, that is controlled by the corresponding role on the
+remote cluster(s).</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="ccs-tribe-clients-integrations.html">
               « 
               Cross Cluster Search, Tribe, Clients and Integrations</a>
            
