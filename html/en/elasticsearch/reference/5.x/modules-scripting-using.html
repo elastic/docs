@@ -607,12 +607,12 @@ Not what you want? See the
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-using"></a>How to use scripts<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Wherever scripting is supported in the Elasticsearch API, the syntax follows
 the same pattern:</p><div class="pre_wrapper"><pre class="programlisting">  "script": {
     "lang":   "...",  <a id="CO305-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    "inline" | "stored" | "file": "...", <a id="CO305-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    "source" | "id" | "file": "...", <a id="CO305-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     "params": { ... } <a id="CO305-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
   }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO305-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
 The language the script is written in, which defaults to <code class="literal">painless</code>.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO305-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
-The script itself which may be specified as <code class="literal">inline</code>, <code class="literal">stored</code>, or <code class="literal">file</code>.
+The script itself which may be specified as <code class="literal">source</code>, <code class="literal">id</code>, or <code class="literal">file</code>.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO305-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
 Any named parameters that should be passed into the script.
 </p></td></tr></table></div><p>For example, the following script is used in a search request to return a
@@ -627,7 +627,7 @@ GET my_index/_search
     "my_doubled_field": {
       "script": {
         "lang":   "expression",
-        "inline": "doc['my_field'] * multiplier",
+        "source": "doc['my_field'] * multiplier",
         "params": {
           "multiplier": 2
         }
@@ -642,10 +642,10 @@ GET my_index/_search
     default language may be changed in the <code class="literal">elasticsearch.yml</code> config file by
     setting <code class="literal">script.default_lang</code> to the appropriate language.
 </dd><dt><span class="term">
-<code class="literal">inline</code>, <code class="literal">stored</code>, <code class="literal">file</code>
+<code class="literal">source</code>, <code class="literal">id</code>, <code class="literal">file</code>
 </span></dt><dd><p class="simpara">
-    Specifies the source of the script.  An <code class="literal">inline</code> script is specified
-    <code class="literal">inline</code> as in the example above, a <code class="literal">stored</code> script is specified <code class="literal">stored</code>
+    Specifies the source of the script.  An <code class="literal">inline</code> script is specified with
+    <code class="literal">source</code> as in the example above, a <code class="literal">stored</code> script is specified with <code class="literal">id</code>
     and is retrieved from the cluster state (see <a class="link" href="modules-scripting-using.html#modules-scripting-stored-scripts" title="Stored Scriptsedit">Stored Scripts</a>),
     and a <code class="literal">file</code> script is retrieved from a file in the <code class="literal">config/scripts</code>
     directory (see <a class="link" href="modules-scripting-using.html#modules-scripting-file-scripts" title="File-based Scriptsedit">File Scripts</a>).
@@ -661,7 +661,7 @@ specified as <code class="literal">file</code> unless you first adjust the defau
 compiled version in a cache. Compilation can be a heavy process.</p><p>If you need to pass variables into the script, you should pass them in as
 named <code class="literal">params</code> instead of hard-coding values into the script itself.  For
 example, if you want to be able to multiply a field value by different
-multipliers, don’t hard-code the multiplier into the script:</p><div class="pre_wrapper"><pre class="programlisting">  "inline": "doc['my_field'] * 2"</pre></div><p>Instead, pass it in as a named parameter:</p><div class="pre_wrapper"><pre class="programlisting">  "inline": "doc['my_field'] * multiplier",
+multipliers, don’t hard-code the multiplier into the script:</p><div class="pre_wrapper"><pre class="programlisting">  "source": "doc['my_field'] * 2"</pre></div><p>Instead, pass it in as a named parameter:</p><div class="pre_wrapper"><pre class="programlisting">  "source": "doc['my_field'] * multiplier",
   "params": {
     "multiplier": 2
   }</pre></div><p>The first version has to be recompiled every time the multiplier changes.  The
@@ -718,14 +718,14 @@ delete and put requests.</p></div><div class="section"><div class="titlepage"><d
 {
   "script": {
     "lang": "painless",
-    "code": "Math.log(_score * 2) + params.my_modifier"
+    "source": "Math.log(_score * 2) + params.my_modifier"
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/3.json"></div><p>This same script can be retrieved with:</p><div class="pre_wrapper"><pre class="programlisting">GET _scripts/calculate-score</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/4.json"></div><p>Stored scripts can be used by specifying the <code class="literal">stored</code> parameters as follows:</p><div class="pre_wrapper"><pre class="programlisting">GET _search
 {
   "query": {
     "script": {
       "script": {
-        "stored": "calculate-score",
+        "id": "calculate-score",
         "params": {
           "my_modifier": 2
         }
