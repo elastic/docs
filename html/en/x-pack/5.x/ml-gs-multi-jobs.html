@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Exploring Job Results
-        | X-Pack for the Elastic Stack [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Creating Multi-metric Jobs
+        | X-Pack for the Elastic Stack [5.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [master]" /><link rel="up" href="ml-getting-started.html" title="Getting Started" /><link rel="prev" href="ml-gs-job1-manage.html" title="Managing Jobs" /><link rel="next" href="ml-configuring.html" title="Configuring Machine Learning" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [5.x]" /><link rel="up" href="ml-getting-started.html" title="Getting Started" /><link rel="prev" href="ml-gs-job1-analyze.html" title="Exploring Single Metric Job Results" /><link rel="next" href="ml-gs-job2-analyze.html" title="Exploring Multi-metric Job Results" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/5.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -591,80 +591,110 @@
 				
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
-<div class="page_header">You are looking at preliminary documentation for a future release.
-Not what you want? See the
-<a href="../current/index.html">current release documentation</a>.
+<div class="page_header">Why not take our <a href="https://www.elastic.co/products/x-pack/machine-learning">machine learning</a> beta for a spin and join us in the <a href="https://discuss.elastic.co/c/x-pack">public X-Pack forum</a>?
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">X-Pack for the Elastic Stack
-      [master]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-ml.html">Machine Learning in the Elastic Stack</a></span> » <span class="breadcrumb-link"><a href="ml-getting-started.html">Getting Started</a></span> » <span class="breadcrumb-node">Exploring Job Results</span></div><div class="navheader"><span class="prev"><a href="ml-gs-job1-manage.html">
+      [5.x]
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-ml.html">Machine Learning in the Elastic Stack</a></span> » <span class="breadcrumb-link"><a href="ml-getting-started.html">Getting Started</a></span> » <span class="breadcrumb-node">Creating Multi-metric Jobs</span></div><div class="navheader"><span class="prev"><a href="ml-gs-job1-analyze.html">
               « 
-              Managing Jobs</a>
+              Exploring Single Metric Job Results</a>
            
         </span><span class="next">
            
-          <a href="ml-configuring.html">Configuring Machine Learning
+          <a href="ml-gs-job2-analyze.html">Exploring Multi-metric Job Results
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ml-gs-jobresults"></a>Exploring Job Results</h2></div></div></div><p>The X-Pack machine learning features analyze the input stream of data, model its behavior,
-and perform analysis based on the detectors you defined in your job. When an
-event occurs outside of the model, that event is identified as an anomaly.</p><p>Result records for each anomaly are stored in <code class="literal">.ml-anomalies-*</code> indices in Elasticsearch.
-By default, the name of the index where machine learning results are stored is labelled
-<code class="literal">shared</code>, which corresponds to the <code class="literal">.ml-anomalies-shared</code> index.</p><p>You can use the <span class="strong emphasis"><strong>Anomaly Explorer</strong></span> or the <span class="strong emphasis"><strong>Single Metric Viewer</strong></span> in Kibana to
-view the analysis results.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Anomaly Explorer
-</span></dt><dd>
-  This view contains swim lanes showing the maximum anomaly score over time.
-  There is an overall swim lane that shows the overall score for the job, and
-  also swim lanes for each influencer. By selecting a block in a swim lane, the
-  anomaly details are displayed alongside the original source data (where
-  applicable).
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ml-gs-multi-jobs"></a>Creating Multi-metric Jobs</h2></div></div></div><p>The multi-metric job wizard in Kibana provides a simple way to create more
+complex jobs with multiple detectors. For example, in the single metric job, you
+were tracking total requests versus time. You might also want to track other
+metrics like average response time or the maximum number of denied requests.
+Instead of creating jobs for each of those metrics, you can combine them in a
+multi-metric job.</p><p>You can also use multi-metric jobs to split a single time series into multiple
+time series based on a categorical field. For example, you can split the data
+based on its hostnames, locations, or users. Each time series is modeled
+independently. By looking at temporal patterns on a per entity basis, you might
+spot things that might have otherwise been hidden in the lumped view.</p><p>Conceptually, you can think of this as running many independent single metric
+jobs. By bundling them together in a multi-metric job, however, you can see an
+overall score and shared influencers for all the metrics and all the entities in
+the job. Multi-metric jobs therefore scale better than having many independent
+single metric jobs and provide better results when you have influencers that are
+shared across the detectors.</p><p>The sample data for this tutorial contains information about the requests that
+are received by various applications and services in a system. Let’s assume that
+you want to monitor the requests received and the response time.  In particular,
+you might want to track those metrics on a per service basis to see if any
+services have unusual patterns.</p><p>To create a multi-metric job in Kibana:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Open Kibana in your web browser and log in. If you are running Kibana locally,
+go to <code class="literal">http://localhost:5601/</code>.
+</li><li class="listitem"><p class="simpara">
+Click <span class="strong emphasis"><strong>Machine Learning</strong></span> in the side navigation, then click <span class="strong emphasis"><strong>Create new job</strong></span>.
+</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-kibana.jpg" alt="Job Management" /></div></div></li><li class="listitem"><p class="simpara">
+Click <span class="strong emphasis"><strong>Create multi metric job</strong></span>.
+</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-create-job2.jpg" alt="Create a multi metric job" /></div></div></li><li class="listitem"><p class="simpara">
+Click the <code class="literal">server-metrics</code> index.
+</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-index.jpg" alt="Select an index" /></div></div></li><li class="listitem"><p class="simpara">
+Configure the job by providing the following job settings:
+</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-multi-job.jpg" alt="Create a new job from the server-metrics index" /></div></div><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
+For the <span class="strong emphasis"><strong>Fields</strong></span>, select <code class="literal">high mean(response)</code> and <code class="literal">sum(total)</code>. This
+creates two detectors and specifies the analysis function and field that each
+detector uses. The first detector uses the high mean function to detect
+unusually high average values for the <code class="literal">response</code> field in each bucket. The
+second detector uses the sum function to detect when the sum of the <code class="literal">total</code>
+field is anomalous in each bucket. For more information about any of the
+analytical functions, see <a class="xref" href="ml-functions.html" title="Function Reference"><em>Function Reference</em></a>.
+</li><li class="listitem">
+For the <span class="strong emphasis"><strong>Bucket span</strong></span>, enter <code class="literal">10m</code>. This value specifies the size of the
+interval that the analysis is aggregated into. As was the case in the single
+metric example, this value has a significant impact on the analysis. When you’re
+creating jobs for your own data, you might need to experiment with different
+bucket spans depending on the frequency of the input data, the duration of
+typical anomalies, and the frequency at which alerting is required.
+</li><li class="listitem"><p class="simpara">
+For the <span class="strong emphasis"><strong>Split Data</strong></span>, select <code class="literal">service</code>. When you specify this
+option, the analysis is segmented such that you have completely independent
+baselines for each distinct value of this field.
 
+There are seven unique service keyword values in the sample data. Thus for each
+of the seven services, you will see the high mean response metrics and sum
+total metrics.
+</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you are creating a job by using the machine learning APIs or the advanced job
+wizard in Kibana, you can accomplish this split by using the
+<code class="literal">partition_field_name</code> property.</p></div></div></li><li class="listitem"><p class="simpara">
+For the <span class="strong emphasis"><strong>Key Fields</strong></span>, select <code class="literal">host</code>. Note that the <code class="literal">service</code> field
+is also automatically selected because you used it to split the data. These key
+fields are also known as <span class="emphasis"><em>influencers</em></span>.
+When you identify a field as an influencer, you are indicating that you think
+it contains information about someone or something that influences or
+contributes to anomalies.
+</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Picking an influencer is strongly recommended for the following reasons:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+It allows you to more easily assign blame for the anomaly
+</li><li class="listitem">
+It simplifies and aggregates the results
+</li></ul></div><p>The best influencer is the person or thing that you want to blame for the
+anomaly. In many cases, users or client IP addresses make excellent influencers.
+Influencers can be any field in your data; they do not need to be fields that
+are specified in your detectors, though they often are.</p><p>As a best practice, do not pick too many influencers. For example, you generally
+do not need more than three. If you pick many influencers, the results can be
+overwhelming and there is a small overhead to the analysis.</p></div></div></li></ol></div></li><li class="listitem">
+Click <span class="strong emphasis"><strong>Use full server-metrics* data</strong></span>. Two graphs are generated for each
+<code class="literal">service</code> value, which represent the high mean <code class="literal">response</code> values and
+sum <code class="literal">total</code> values over time.
 
-
-
-
-</dd><dt><span class="term">
-Single Metric Viewer
-</span></dt><dd>
-  This view contains a chart that represents the actual and expected values over
-  time. This is only available for jobs that analyze a single time series and
-  where <code class="literal">model_plot_config</code> is enabled. As in the <span class="strong emphasis"><strong>Anomaly Explorer</strong></span>, anomalous
-  data points are shown in different colors depending on their score.
-</dd></dl></div><h4><a id="ml-gs-job1-analyze"></a>Exploring Single Metric Job Results</h4><p>By default when you view the results for a single metric job, the
-<span class="strong emphasis"><strong>Single Metric Viewer</strong></span> opens:</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-job1-analysis.jpg" alt="Single Metric Viewer for total-requests job" /></div></div><p>The blue line in the chart represents the actual data values. The shaded blue
-area represents the bounds for the expected values. The area between the upper
-and lower bounds are the most likely values for the model. If a value is outside
-of this area then it can be said to be anomalous.</p><p>If you slide the time selector from the beginning of the data to the end of the
-data, you can see how the model improves as it processes more data. At the
-beginning, the expected range of values is pretty broad and the model is not
-capturing the periodicity in the data. But it quickly learns and begins to
-reflect the daily variation.</p><p>Any data points outside the range that was predicted by the model are marked
-as anomalies. When you have high volumes of real-life data, many anomalies
-might be found. These vary in probability from very likely to highly unlikely,
-that is to say, from not particularly anomalous to highly anomalous. There
-can be none, one or two or tens, sometimes hundreds of anomalies found within
-each bucket. There can be many thousands found per job. In order to provide
-a sensible view of the results, an <span class="emphasis"><em>anomaly score</em></span> is calculated for each bucket
-time interval. The anomaly score is a value from 0 to 100, which indicates
-the significance of the observed anomaly compared to previously seen anomalies.
-The highly anomalous values are shown in red and the low scored values are
-indicated in blue. An interval with a high anomaly score is significant and
-requires investigation.</p><p>Slide the time selector to a section of the time series that contains a red
-anomaly data point. If you hover over the point, you can see more information
-about that data point. You can also see details in the <span class="strong emphasis"><strong>Anomalies</strong></span> section
-of the viewer. For example:</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-job1-anomalies.jpg" alt="Single Metric Viewer Anomalies for total-requests job" /></div></div><p>For each anomaly you can see key details such as the time, the actual and
-expected ("typical") values, and their probability.</p><p>You can see the same information in a different format by using the
-<span class="strong emphasis"><strong>Anomaly Explorer</strong></span>:</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-job1-explorer.jpg" alt="Anomaly Explorer for total-requests job" /></div></div><p>Click one of the red blocks in the swim lane to see details about the anomalies
-that occurred in that time interval. For example:</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-job1-explorer-anomaly.jpg" alt="Anomaly Explorer details for total-requests job" /></div></div><p>After you have identified anomalies, often the next step is to try to determine
-the context of those situations. For example, are there other factors that are
-contributing to the problem? Are the anomalies confined to particular
-applications or servers? You can begin to troubleshoot these situations by
-layering additional jobs or creating multi-metric jobs.</p></div><div class="navfooter"><span class="prev"><a href="ml-gs-job1-manage.html">
+</li><li class="listitem">
+Provide a name for the job, for example <code class="literal">response_requests_by_app</code>. The job
+name must be unique in your cluster. You can also optionally provide a
+description of the job.
+</li><li class="listitem"><p class="simpara">
+Click <span class="strong emphasis"><strong>Create Job</strong></span>. As the job is created, the graphs are updated to give a
+visual representation of the progress of machine learning as the data is processed. For
+example:
+</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-job2-results.jpg" alt="Job results updating as data is processed" /></div></div></li></ol></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">create_multi_metic.sh</code> script creates a similar job and datafeed by
+using the machine learning APIs. You can download that script by clicking
+here: <a class="ulink" href="https://download.elastic.co/demos/machine_learning/gettingstarted/create_multi_metric.sh" target="_top">create_multi_metric.sh</a>
+For API reference information, see <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.x/ml-apis.html" target="_top">Machine Learning APIs</a>.</p></div></div></div><div class="navfooter"><span class="prev"><a href="ml-gs-job1-analyze.html">
               « 
-              Managing Jobs</a>
+              Exploring Single Metric Job Results</a>
            
         </span><span class="next">
            
-          <a href="ml-configuring.html">Configuring Machine Learning
+          <a href="ml-gs-job2-analyze.html">Exploring Multi-metric Job Results
                »
             </a></span></div>
 <!-- end body -->
