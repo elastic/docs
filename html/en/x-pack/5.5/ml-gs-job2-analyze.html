@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Identifying Data for Analysis
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Exploring Multi-metric Job Results
         | X-Pack for the Elastic Stack [5.5]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [5.5]" /><link rel="up" href="ml-getting-started.html" title="Getting Started" /><link rel="prev" href="ml-getting-started.html" title="Getting Started" /><link rel="next" href="ml-gs-jobs.html" title="Creating Single Metric Jobs" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/5.5" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [5.5]" /><link rel="up" href="ml-getting-started.html" title="Getting Started" /><link rel="prev" href="ml-gs-multi-jobs.html" title="Creating Multi-metric Jobs" /><link rel="next" href="ml-gs-next.html" title="Next Steps" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/XPack/Reference/5.5" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -594,146 +594,58 @@
 <div class="page_header">Why not take our <a href="https://www.elastic.co/products/x-pack/machine-learning">machine learning</a> beta for a spin and join us in the <a href="https://discuss.elastic.co/c/x-pack">public X-Pack forum</a>?
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">X-Pack for the Elastic Stack
       [5.5]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-ml.html">Machine Learning in the Elastic Stack</a></span> » <span class="breadcrumb-link"><a href="ml-getting-started.html">Getting Started</a></span> » <span class="breadcrumb-node">Identifying Data for Analysis</span></div><div class="navheader"><span class="prev"><a href="ml-getting-started.html">
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-ml.html">Machine Learning in the Elastic Stack</a></span> » <span class="breadcrumb-link"><a href="ml-getting-started.html">Getting Started</a></span> » <span class="breadcrumb-node">Exploring Multi-metric Job Results</span></div><div class="navheader"><span class="prev"><a href="ml-gs-multi-jobs.html">
               « 
-              Getting Started</a>
+              Creating Multi-metric Jobs</a>
            
         </span><span class="next">
            
-          <a href="ml-gs-jobs.html">Creating Single Metric Jobs
+          <a href="ml-gs-next.html">Next Steps
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ml-gs-data"></a>Identifying Data for Analysis</h2></div></div></div><p>For the purposes of this tutorial, we provide sample data that you can play with
-and search in Elasticsearch. When you consider your own data, however, it’s important to
-take a moment and think about where the X-Pack machine learning features will be most
-impactful.</p><p>The first consideration is that it must be time series data. The machine learning features
-are designed to model and detect anomalies in time series data.</p><p>The second consideration, especially when you are first learning to use machine learning,
-is the importance of the data and how familiar you are with it. Ideally, it is
-information that contains key performance indicators (KPIs) for the health,
-security, or success of your business or system. It is information that you need
-to monitor and act on when anomalous behavior occurs. You might even have Kibana
-dashboards that you’re already using to watch this data. The better you know the
-data, the quicker you will be able to create machine learning jobs that generate useful
-insights.</p><p>The final consideration is where the data is located. This tutorial assumes that
-your data is stored in Elasticsearch. It guides you through the steps required to create
-a <span class="emphasis"><em>datafeed</em></span> that passes data to a job. If your own data is outside of Elasticsearch,
-analysis is still possible by using a post data API.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If you want to create machine learning jobs in Kibana, you must use datafeeds.
-That is to say, you must store your input data in Elasticsearch. When you create
-a job, you select an existing index pattern and Kibana configures the datafeed
-for you under the covers.</p></div></div><h4><a id="ml-gs-sampledata"></a>Obtaining a Sample Data Set</h4><p>In this step we will upload some sample data to Elasticsearch. This is standard
-Elasticsearch functionality, and is needed to set the stage for using machine learning.</p><p>The sample data for this tutorial contains information about the requests that
-are received by various applications and services in a system. A system
-administrator might use this type of information to track the total number of
-requests across all of the infrastructure. If the number of requests increases
-or decreases unexpectedly, for example, this might be an indication that there
-is a problem or that resources need to be redistributed. By using the X-Pack
-machine learning features to model the behavior of this data, it is easier to identify
-anomalies and take appropriate action.</p><p>Download this sample data by clicking here:
-<a class="ulink" href="https://download.elastic.co/demos/machine_learning/gettingstarted/server_metrics.tar.gz" target="_top">server_metrics.tar.gz</a></p><p>Use the following commands to extract the files:</p><div class="pre_wrapper"><pre class="programlisting">tar -zxvf server_metrics.tar.gz</pre></div><p>Each document in the server-metrics data set has the following schema:</p><div class="pre_wrapper"><pre class="programlisting">{
-  "index":
-  {
-    "_index":"server-metrics",
-    "_type":"metric",
-    "_id":"1177"
-  }
-}
-{
-  "@timestamp":"2017-03-23T13:00:00",
-  "accept":36320,
-  "deny":4156,
-  "host":"server_2",
-  "response":2.4558210155,
-  "service":"app_3",
-  "total":40476
-}</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The sample data sets include summarized data. For example, the <code class="literal">total</code>
-value is a sum of the requests that were received by a specific service at a
-particular time. If your data is stored in Elasticsearch, you can generate
-this type of sum or average by using aggregations. One of the benefits of
-summarizing data this way is that Elasticsearch automatically distributes
-these calculations across your cluster. You can then feed this summarized data
-into X-Pack machine learning instead of raw results, which reduces the volume
-of data that must be considered while detecting anomalies. For the purposes of
-this tutorial, however, these summary values are stored in Elasticsearch. For more
-information, see <a class="xref" href="ml-configuring-aggregation.html" title="Aggregating Data For Faster Performance">Aggregating Data For Faster Performance</a>.</p></div></div><p>Before you load the data set, you need to set up <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.x/mapping.html" target="_top"><span class="emphasis"><em>mappings</em></span></a>
-for the fields. Mappings divide the documents in the index into logical groups
-and specify a field’s characteristics, such as the field’s searchability or
-whether or not it’s <span class="emphasis"><em>tokenized</em></span>, or broken up into separate words.</p><p>The sample data includes an <code class="literal">upload_server-metrics.sh</code> script, which you can use
-to create the mappings and load the data set. You can download it by clicking
-here: <a class="ulink" href="https://download.elastic.co/demos/machine_learning/gettingstarted/upload_server-metrics.sh" target="_top">upload_server-metrics.sh</a>
-Before you run it, however, you must edit the USERNAME and PASSWORD variables
-with your actual user ID and password.</p><p>The script runs a command similar to the following example, which sets up a
-mapping for the data set:</p><div class="pre_wrapper"><pre class="programlisting">curl -u elastic:changeme -X PUT -H 'Content-Type: application/json'
-http://localhost:9200/server-metrics -d '{
-   "settings":{
-      "number_of_shards":1,
-      "number_of_replicas":0
-   },
-   "mappings":{
-      "metric":{
-         "properties":{
-            "@timestamp":{
-               "type":"date"
-            },
-            "accept":{
-               "type":"long"
-            },
-            "deny":{
-               "type":"long"
-            },
-            "host":{
-               "type":"keyword"
-            },
-            "response":{
-               "type":"float"
-            },
-            "service":{
-               "type":"keyword"
-            },
-            "total":{
-               "type":"long"
-            }
-         }
-      }
-   }
-}'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you run this command, you must replace <code class="literal">changeme</code> with your
-actual password.</p></div></div><p>You can then use the Elasticsearch <code class="literal">bulk</code> API to load the data set. The
-<code class="literal">upload_server-metrics.sh</code> script runs commands similar to the following
-example, which loads the four JSON files:</p><div class="pre_wrapper"><pre class="programlisting">curl -u elastic:changeme -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_1.json"
-
-curl -u elastic:changeme -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_2.json"
-
-curl -u elastic:changeme -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_3.json"
-
-curl -u elastic:changeme -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_4.json"</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>This will upload 200MB of data. This is split into 4 files as there is a
-maximum 100MB limit when using the <code class="literal">_bulk</code> API.</p></div></div><p>These commands might take some time to run, depending on the computing resources
-available.</p><p>You can verify that the data was loaded successfully with the following command:</p><div class="pre_wrapper"><pre class="programlisting">curl 'http://localhost:9200/_cat/indices?v' -u elastic:changeme</pre></div><p>You should see output similar to the following:</p><div class="pre_wrapper"><pre class="programlisting">health status index ... pri rep docs.count  ...
-green  open   server-metrics ... 1 0 905940  ...</pre></div><p>Next, you must define an index pattern for this data set:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-Open Kibana in your web browser and log in. If you are running Kibana
-locally, go to <code class="literal">http://localhost:5601/</code>.
-</li><li class="listitem">
-Click the <span class="strong emphasis"><strong>Management</strong></span> tab, then <span class="strong emphasis"><strong>Index Patterns</strong></span>.
-</li><li class="listitem">
-If you already have index patterns, click the plus sign (+) to define a new
-one. Otherwise, the <span class="strong emphasis"><strong>Configure an index pattern</strong></span> wizard is already open.
-</li><li class="listitem">
-For this tutorial, any pattern that matches the name of the index you’ve
-loaded will work. For example, enter <code class="literal">server-metrics*</code> as the index pattern.
-</li><li class="listitem">
-Verify that the <span class="strong emphasis"><strong>Index contains time-based events</strong></span> is checked.
-</li><li class="listitem">
-Select the <code class="literal">@timestamp</code> field from the <span class="strong emphasis"><strong>Time-field name</strong></span> list.
-</li><li class="listitem">
-Click <span class="strong emphasis"><strong>Create</strong></span>.
-</li></ol></div><p>This data set can now be analyzed in machine learning jobs in Kibana.</p></div><div class="navfooter"><span class="prev"><a href="ml-getting-started.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ml-gs-job2-analyze"></a>Exploring Multi-metric Job Results</h2></div></div></div><p>The X-Pack machine learning features analyze the input stream of data, model its behavior, and
+perform analysis based on the two detectors you defined in your job. When an
+event occurs outside of the model, that event is identified as an anomaly.</p><p>You can use the <span class="strong emphasis"><strong>Anomaly Explorer</strong></span> in Kibana to view the analysis results:</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-job2-explorer.jpg" alt="Job results in the Anomaly Explorer" /></div></div><p>You can explore the overall anomaly time line, which shows the maximum anomaly
+score for each section in the specified time period. You can change the time
+period by using the time picker in the Kibana toolbar. Note that the sections in
+this time line do not necessarily correspond to the bucket span. If you change
+the time period, the sections change size too. The smallest possible size for
+these sections is a bucket. If you specify a large time period, the sections can
+span many buckets.</p><p>On the left is a list of the top influencers for all of the detected anomalies
+in that same time period. The list includes maximum anomaly scores, which in
+this case are aggregated for each influencer, for each bucket, across all
+detectors. There is also a total sum of the anomaly scores for each influencer.
+You can use this list to help you narrow down the contributing factors and focus
+on the most anomalous entities.</p><p>If your job contains influencers, you can also explore swim lanes that
+correspond to the values of an influencer. In this example, the swim lanes
+correspond to the values for the <code class="literal">service</code> field that you used to split the data.
+Each lane represents a unique application or service name. Since you specified
+the <code class="literal">host</code> field as an influencer, you can also optionally view the results in
+swim lanes for each host name:</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-job2-explorer-host.jpg" alt="Job results sorted by host" /></div></div><p>By default, the swim lanes are ordered by their maximum anomaly score values.
+You can click on the sections in the swim lane to see details about the
+anomalies that occurred in that time interval.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The anomaly scores that you see in each section of the <span class="strong emphasis"><strong>Anomaly Explorer</strong></span>
+might differ slightly. This disparity occurs because for each job we generate
+bucket results, influencer results, and record results. Anomaly scores are
+generated for each type of result. The anomaly timeline uses the bucket-level
+anomaly scores. The list of top influencers uses the influencer-level anomaly
+scores. The list of anomalies uses the record-level anomaly scores. For more
+information about these different result types, see
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.x/ml-results-resource.html" target="_top">Results Resources</a>.</p></div></div><p>Click on a section in the swim lanes to obtain more information about the
+anomalies in that time period. For example, click on the red section in the swim
+lane for <code class="literal">server_2</code>:</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-job2-explorer-anomaly.jpg" alt="Job results for an anomaly" /></div></div><p>You can see exact times when anomalies occurred and which detectors or metrics
+caught the anomaly. Also note that because you split the data by the <code class="literal">service</code>
+field, you see separate charts for each applicable service. In particular, you
+see charts for each service for which there is data on the specified host in the
+specified time interval.</p><p>Below the charts, there is a table that provides more information, such as the
+typical and actual values and the influencers that contributed to the anomaly.</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-job2-explorer-table.jpg" alt="Job results table" /></div></div><p>Notice that there are anomalies for both detectors, that is to say for both the
+<code class="literal">high_mean(response)</code> and the <code class="literal">sum(total)</code> metrics in this time interval. By
+investigating multiple metrics in a single job, you might see relationships
+between events in your data that would otherwise be overlooked.</p></div><div class="navfooter"><span class="prev"><a href="ml-gs-multi-jobs.html">
               « 
-              Getting Started</a>
+              Creating Multi-metric Jobs</a>
            
         </span><span class="next">
            
-          <a href="ml-gs-jobs.html">Creating Single Metric Jobs
+          <a href="ml-gs-next.html">Next Steps
                »
             </a></span></div>
 <!-- end body -->
