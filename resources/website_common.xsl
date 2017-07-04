@@ -350,11 +350,14 @@
     <!--  Add classes to images -->
 
     <xsl:template match="*" mode="class.value">
+      <xsl:param name="class">
+        <xsl:value-of select="local-name(.)" />
+      </xsl:param>
       <xsl:if test="@role">
         <xsl:value-of select="@role"/>
         <xsl:value-of select="' '"/>
       </xsl:if>
-      <xsl:value-of select="local-name(.)" />
+      <xsl:value-of select="$class" />
     </xsl:template>
 
 </xsl:stylesheet>
