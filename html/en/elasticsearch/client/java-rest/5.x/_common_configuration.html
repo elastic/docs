@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Common configuration
         | Java REST Client [5.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java REST Client [5.x]" /><link rel="up" href="java-rest-low.html" title="Java Low Level REST Client" /><link rel="prev" href="java-rest-low-usage.html" title="Getting started" /><link rel="next" href="sniffer.html" title="Sniffer" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/JavaREST/5.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java REST Client [5.x]" /><link rel="up" href="java-rest-low.html" title="Java Low Level REST Client" /><link rel="prev" href="java-rest-low-usage-logging.html" title="Logging" /><link rel="next" href="_timeouts.html" title="Timeouts" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Clients/JavaREST/5.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -596,107 +596,27 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Java REST Client
       [5.x]
-    </a></span> » <span class="breadcrumb-link"><a href="java-rest-low.html">Java Low Level REST Client</a></span> » <span class="breadcrumb-node">Common configuration</span></div><div class="navheader"><span class="prev"><a href="java-rest-low-usage.html">
+    </a></span> » <span class="breadcrumb-link"><a href="java-rest-low.html">Java Low Level REST Client</a></span> » <span class="breadcrumb-node">Common configuration</span></div><div class="navheader"><span class="prev"><a href="java-rest-low-usage-logging.html">
               « 
-              Getting started</a>
+              Logging</a>
            
         </span><span class="next">
            
-          <a href="sniffer.html">Sniffer
+          <a href="_timeouts.html">Timeouts
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_common_configuration"></a>Common configuration<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/java-rest/low-level/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">RestClientBuilder</code> supports providing both a <code class="literal">RequestConfigCallback</code> and
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="_common_configuration"></a>Common configuration<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/java-rest/low-level/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">RestClientBuilder</code> supports providing both a <code class="literal">RequestConfigCallback</code> and
 an <code class="literal">HttpClientConfigCallback</code> which allow for any customization that the Apache
 Async Http Client exposes. Those callbacks make it possible to modify some
 specific behaviour of the client without overriding every other default
 configuration that the <code class="literal">RestClient</code> is initialized with. This section
 describes some common scenarios that require additional configuration for the
-low-level Java REST Client.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_timeouts"></a>Timeouts<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/java-rest/low-level/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Configuring requests timeouts can be done by providing an instance of
-<code class="literal">RequestConfigCallback</code> while building the <code class="literal">RestClient</code> through its builder.
-The interface has one method that receives an instance of
-<a class="ulink" href="https://hc.apache.org/httpcomponents-client-ga/httpclient/apidocs/org/apache/http/client/config/RequestConfig.Builder.html" target="_top"><code class="literal">org.apache.http.client.config.RequestConfig.Builder</code></a>
- as an argument and has the same return type. The request config builder can
-be modified and then returned. In the following example we increase the
-connect timeout (defaults to 1 second) and the socket timeout (defaults to 30
-seconds). Also we adjust the max retry timeout accordingly (defaults to 30
-seconds too).</p><div class="pre_wrapper"><pre class="programlisting">RestClient restClient = RestClient.builder(new HttpHost("localhost", 9200))
-        .setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
-            @Override
-            public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder) {
-                return requestConfigBuilder.setConnectTimeout(5000)
-                        .setSocketTimeout(60000);
-            }
-        })
-        .setMaxRetryTimeoutMillis(60000)
-        .build();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_number_of_threads"></a>Number of threads<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/java-rest/low-level/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Apache Http Async Client starts by default one dispatcher thread, and a
-number of worker threads used by the connection manager, as many as the number
-of locally detected processors (depending on what
-<code class="literal">Runtime.getRuntime().availableProcessors()</code> returns). The number of threads
-can be modified as follows:</p><div class="pre_wrapper"><pre class="programlisting">RestClient restClient = RestClient.builder(new HttpHost("localhost", 9200))
-        .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-            @Override
-            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                return httpClientBuilder.setDefaultIOReactorConfig(
-                        IOReactorConfig.custom().setIoThreadCount(1).build());
-            }
-        })
-        .build();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_basic_authentication"></a>Basic authentication<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/java-rest/low-level/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Configuring basic authentication can be done by providing an
-<code class="literal">HttpClientConfigCallback</code> while building the <code class="literal">RestClient</code> through its builder.
-The interface has one method that receives an instance of
-<a class="ulink" href="https://hc.apache.org/httpcomponents-asyncclient-dev/httpasyncclient/apidocs/org/apache/http/impl/nio/client/HttpAsyncClientBuilder.html" target="_top"><code class="literal">org.apache.http.impl.nio.client.HttpAsyncClientBuilder</code></a>
- as an argument and has the same return type. The http client builder can be
-modified and then returned. In the following example we set a default
-credentials provider that requires basic authentication.</p><div class="pre_wrapper"><pre class="programlisting">final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-credentialsProvider.setCredentials(AuthScope.ANY,
-        new UsernamePasswordCredentials("user", "password"));
-
-RestClient restClient = RestClient.builder(new HttpHost("localhost", 9200))
-        .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-            @Override
-            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-            }
-        })
-        .build();</pre></div><p>You can disable Preemptive Authentication, which means that every request will be sent without
-authorization headers to see if it is accepted and, upon receiving a HTTP 401 response, it will
-resend the exact same request with the basic authentication header. If you wish to do this, then
-you can do so by disabling it via the <code class="literal">HttpAsyncClientBuilder</code>:</p><div class="pre_wrapper"><pre class="programlisting">final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-credentialsProvider.setCredentials(AuthScope.ANY,
-        new UsernamePasswordCredentials("user", "password"));
-
-RestClient restClient = RestClient.builder(new HttpHost("localhost", 9200))
-        .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-            @Override
-            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                // disable preemptive authentication
-                httpClientBuilder.disableAuthCaching();
-                return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-            }
-        })
-        .build();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_encrypted_communication"></a>Encrypted communication<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/java-rest/low-level/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Encrypted communication can also be configured through the
-<code class="literal">HttpClientConfigCallback</code>. The
-<a class="ulink" href="https://hc.apache.org/httpcomponents-asyncclient-dev/httpasyncclient/apidocs/org/apache/http/impl/nio/client/HttpAsyncClientBuilder.html" target="_top"><code class="literal">org.apache.http.impl.nio.client.HttpAsyncClientBuilder</code></a>
- received as an argument exposes multiple methods to configure encrypted
- communication: <code class="literal">setSSLContext</code>, <code class="literal">setSSLSessionStrategy</code> and
- <code class="literal">setConnectionManager</code>, in order of precedence from the least important.
- The following is an example:</p><div class="pre_wrapper"><pre class="programlisting">KeyStore keystore = KeyStore.getInstance("jks");
-try (InputStream is = Files.newInputStream(keyStorePath)) {
-    keystore.load(is, keyStorePass.toCharArray());
-}
-RestClient restClient = RestClient.builder(new HttpHost("localhost", 9200))
-        .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-            @Override
-            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                return httpClientBuilder.setSSLContext(sslcontext);
-            }
-        })
-        .build();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_others"></a>Others<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/java-rest/low-level/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For any other required configuration needed, the Apache HttpAsyncClient docs
-should be consulted: <a class="ulink" href="https://hc.apache.org/httpcomponents-asyncclient-4.1.x/" target="_top">https://hc.apache.org/httpcomponents-asyncclient-4.1.x/</a> .</p></div></div><div class="navfooter"><span class="prev"><a href="java-rest-low-usage.html">
+low-level Java REST Client.</p></div><div class="navfooter"><span class="prev"><a href="java-rest-low-usage-logging.html">
               « 
-              Getting started</a>
+              Logging</a>
            
         </span><span class="next">
            
-          <a href="sniffer.html">Sniffer
+          <a href="_timeouts.html">Timeouts
                »
             </a></span></div>
 <!-- end body -->
