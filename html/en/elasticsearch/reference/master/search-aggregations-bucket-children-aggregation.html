@@ -604,50 +604,64 @@ Not what you want? See the
            
           <a href="search-aggregations-bucket-datehistogram-aggregation.html">Date Histogram Aggregation
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-bucket-children-aggregation"></a>Children Aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/children-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A special single bucket aggregation that enables aggregating from buckets on parent document types to buckets on child documents.</p><p>This aggregation relies on the <a class="link" href="mapping-parent-field.html" title="_parent field">_parent field</a> in the mapping. This aggregation has a single option:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">type</code> - The child type that the buckets in the parent space should be mapped to.
-</li></ul></div><p>For example, let’s say we have an index of questions and answers. The answer type has the following <code class="literal">_parent</code> field in the mapping:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT child_example
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-bucket-children-aggregation"></a>Children Aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/children-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A special single bucket aggregation that selects child documents that have the specified type, as defined in a <a class="link" href="parent-join.html" title="join datatype"><code class="literal">join</code> field</a>.</p><p>This aggregation has a single option:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">type</code> - The child type that should be selected.
+</li></ul></div><p>For example, let’s say we have an index of questions and answers. The answer type has the following <code class="literal">join</code> field in the mapping:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT child_example
 {
-    "settings": {
-        "mapping.single_type": false
-    },
-    "mappings": {
-        "answer" : {
-            "_parent" : {
-                "type" : "question"
-            }
+  "mappings": {
+    "doc": {
+      "properties": {
+        "join": {
+          "type": "join",
+          "relations": {
+            "question": "answer"
+          }
         }
+      }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-children-aggregation/1.json"></div><p>The question typed document contain a tag field and the answer typed documents contain an owner field. With the <code class="literal">children</code>
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-children-aggregation/1.json"></div><p>The <code class="literal">question</code> document contain a tag field and the <code class="literal">answer</code> documents contain an owner field. With the <code class="literal">children</code>
 aggregation the tag buckets can be mapped to the owner buckets in a single request even though the two fields exist in
-two different kinds of documents.</p><p>An example of a question typed document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT child_example/question/1
+two different kinds of documents.</p><p>An example of a question document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT child_example/doc/1
 {
-    "body": "&lt;p&gt;I have Windows 2003 server and i bought a new Windows 2008 server...",
-    "title": "Whats the best way to file transfer my site from server to a newer one?",
-    "tags": [
-        "windows-server-2003",
-        "windows-server-2008",
-        "file-transfer"
-    ]
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-children-aggregation/2.json"></div><p>Examples of <code class="literal">answer</code> typed documents:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT child_example/answer/1?parent=1&amp;refresh
+  "join": {
+    "name": "question"
+  },
+  "body": "&lt;p&gt;I have Windows 2003 server and i bought a new Windows 2008 server...",
+  "title": "Whats the best way to file transfer my site from server to a newer one?",
+  "tags": [
+    "windows-server-2003",
+    "windows-server-2008",
+    "file-transfer"
+  ]
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-children-aggregation/2.json"></div><p>Examples of <code class="literal">answer</code> documents:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT child_example/doc/2?routing=1
 {
-    "owner": {
-        "location": "Norfolk, United Kingdom",
-        "display_name": "Sam",
-        "id": 48
-    },
-    "body": "&lt;p&gt;Unfortunately you're pretty much limited to FTP...",
-    "creation_date": "2009-05-04T13:45:37.030"
+  "join": {
+    "name": "answer",
+    "parent": "1"
+  },
+  "owner": {
+    "location": "Norfolk, United Kingdom",
+    "display_name": "Sam",
+    "id": 48
+  },
+  "body": "&lt;p&gt;Unfortunately you're pretty much limited to FTP...",
+  "creation_date": "2009-05-04T13:45:37.030"
 }
-PUT child_example/answer/2?parent=1&amp;refresh
+
+PUT child_example/doc/3?routing=1&amp;refresh
 {
-    "owner": {
-        "location": "Norfolk, United Kingdom",
-        "display_name": "Troll",
-        "id": 49
-    },
-    "body": "&lt;p&gt;Use Linux...",
-    "creation_date": "2009-05-05T13:45:37.030"
+  "join": {
+    "name": "answer",
+    "parent": "1"
+  },
+  "owner": {
+    "location": "Norfolk, United Kingdom",
+    "display_name": "Troll",
+    "id": 49
+  },
+  "body": "&lt;p&gt;Use Linux...",
+  "creation_date": "2009-05-05T13:45:37.030"
 }</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-children-aggregation/3.json"></div><p>The following request can be built that connects the two together:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST child_example/_search?size=0
 {
   "aggs": {
@@ -676,10 +690,18 @@ PUT child_example/answer/2?parent=1&amp;refresh
 }</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-children-aggregation/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO73-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO73-2"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">type</code> points to type / mapping with the name <code class="literal">answer</code>.
 </p></td></tr></table></div><p>The above example returns the top question tags and per tag the top answer owners.</p><p>Possible response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "timed_out": false,
   "took": 25,
-  "_shards": { "total": 5, "successful": 5, "failed": 0 },
-  "hits": { "total": 3, "max_score": 0.0, hits: [] },
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "failed": 0
+  },
+  "hits": {
+    "total": 3,
+    "max_score": 0.0,
+    "hits": []
+  },
   "aggregations": {
     "top-tags": {
       "doc_count_error_upper_bound": 0,
