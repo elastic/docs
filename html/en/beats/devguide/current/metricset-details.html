@@ -602,12 +602,12 @@
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="metricset-details"></a>Metricset Details<a href="https://github.com/elastic/beats/edit/master/docs/devguide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This topic provides additional details about creating metricsets.</p><h3><a id="_adding_special_configuration_options"></a>Adding Special Configuration Options<a href="https://github.com/elastic/beats/edit/master/docs/devguide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each metricset can have its own configuration variables defined. To make use of
 these variables, you must extend the <code class="literal">New</code> method. For example, let’s assume that
 you want to add a <code class="literal">password</code> config option to the metricset. You would extend
-<code class="literal">beat.yml</code> in the following way:</p><div class="pre_wrapper"><pre class="programlisting">metricbeat.modules:
+<code class="literal">beat.yml</code> in the following way:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat.modules:
 - module: {module}
   metricsets: ["{metricset}"]
   password: "test1234"</pre></div><p>To read in the new <code class="literal">password</code> config option, you need to modify the <code class="literal">New</code> method. First you define a config
 struct that contains the value types to be read. You can set default values, as needed. Then you pass the config to
-the <code class="literal">UnpackConfig</code> method for loading the configuration.</p><p>Your implementation should look something like this:</p><div class="pre_wrapper"><pre class="programlisting">type MetricSet struct {
+the <code class="literal">UnpackConfig</code> method for loading the configuration.</p><p>Your implementation should look something like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">type MetricSet struct {
         mb.BaseMetricSet
         password string
 }
@@ -651,7 +651,7 @@ Creates the Kibana index pattern configuration
 Creates the Exported Fields documentation for the metricset
 </li></ul></div><p>To make sure the Elasticsearch template is correct, it’s important to keep this file up-to-date
 with all the changes. There is a <code class="literal">fields.yml</code> file under <code class="literal">module/{module}/_meta/fields.yml</code> that contains
-the general top level structure for all metricsets. Normally you only need to modify the description in this file.</p><p>Here an example for the <code class="literal">fields.yml</code> file from the MySQL module.</p><div class="pre_wrapper"><pre class="programlisting">- key: mysql
+the general top level structure for all metricsets. Normally you only need to modify the description in this file.</p><p>Here an example for the <code class="literal">fields.yml</code> file from the MySQL module.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- key: mysql
   title: "MySQL"
   description: &gt;
     MySQL server status metrics collected from MySQL.
@@ -664,7 +664,7 @@ the general top level structure for all metricsets. Normally you only need to mo
         query.
       fields:</pre></div><p>There is another <code class="literal">fields.yml</code> file under <code class="literal">module/{module}/{metricset}/_meta/fields.yml</code> that contains all fields retrieved
 by the metricset. As field types, each field must have a core data type
-<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/mapping-types.html#_core_datatypes" target="_top">supported by elasticsearch</a>. Here’s a very basic example that shows one group from the MySQL <code class="literal">status</code> metricset:</p><div class="pre_wrapper"><pre class="programlisting">- name: status
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/mapping-types.html#_core_datatypes" target="_top">supported by elasticsearch</a>. Here’s a very basic example that shows one group from the MySQL <code class="literal">status</code> metricset:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- name: status
   type: group
   description: &gt;
     `status` contains the metrics that were obtained by the status SQL query.
@@ -706,16 +706,16 @@ Update the <code class="literal">docker-compose.yml</code> file with your enviro
 </li><li class="listitem">
 Update the <code class="literal">docker-entrypoint.sh</code> script
 </li></ul></div><p>The <code class="literal">docker-compose.yml</code> file is at the root of Metricbeat. Most services have
-existing Docker modules and can be added as simply as Redis:</p><div class="pre_wrapper"><pre class="programlisting">redis:
+existing Docker modules and can be added as simply as Redis:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">redis:
   image: redis:3.2.3</pre></div><p>To allow the Beat to access your service, make sure that you define the environment
-variables in the docker-compose file and add the link to the container:</p><div class="pre_wrapper"><pre class="programlisting">beat:
+variables in the docker-compose file and add the link to the container:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">beat:
   links:
     - redis
   environment:
     - REDIS_HOST=redis
     - REDIS_PORT=6379</pre></div><p>To make sure the service is running before the tests are started, modify the
 <code class="literal">docker-entrypoint.sh</code> script to add a check that verifies your service is
-running. For example, the check for Redis looks like this:</p><div class="pre_wrapper"><pre class="programlisting">waitFor ${REDIS_HOST} ${REDIS_PORT} Redis</pre></div><p>The environment expects your service to be available as soon as it receives a response from
+running. For example, the check for Redis looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">waitFor ${REDIS_HOST} ${REDIS_PORT} Redis</pre></div><p>The environment expects your service to be available as soon as it receives a response from
 the given address and port.</p><h5><a id="_running_the_tests"></a>Running the Tests<a href="https://github.com/elastic/beats/edit/master/docs/devguide/metricset-details.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>To run all the tests, run <code class="literal">make testsuite</code>. To only run unit tests, run
 <code class="literal">make unit-tests</code> or for integration tests <code class="literal">make integration-tests-environment</code>. Be aware that
 a running Docker environment is needed for integration and system tests.</p><p>Sometimes you may want to run a single integration test, for example, to test a
