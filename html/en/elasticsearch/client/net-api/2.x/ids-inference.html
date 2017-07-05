@@ -613,7 +613,7 @@ This is a special type that you can implicitly convert to from the following typ
 <code class="literal">String</code>
 </li><li class="listitem">
 <code class="literal">Guid</code>
-</li></ul></div><p>Methods that take an <code class="literal">Id</code> can be passed any of these types and it will be implicitly converted to an instance of <code class="literal">Id</code></p><div class="pre_wrapper"><pre class="programlisting">Id idFromInt = 1;
+</li></ul></div><p>Methods that take an <code class="literal">Id</code> can be passed any of these types and it will be implicitly converted to an instance of <code class="literal">Id</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Id idFromInt = 1;
 Id idFromLong = 2L;
 Id idFromString = "hello-world";
 Id idFromGuid = new Guid("D70BD3CF-4E38-46F3-91CA-FCBEF29B148E");
@@ -622,13 +622,13 @@ Expect(1).WhenSerializing(idFromInt);
 Expect(2).WhenSerializing(idFromLong);
 Expect("hello-world").WhenSerializing(idFromString);
 Expect("d70bd3cf-4e38-46f3-91ca-fcbef29b148e").WhenSerializing(idFromGuid);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_inferring_from_a_type"></a>Inferring from a type<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/inference/ids-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Sometimes a method takes an object and we need an Id from that object to build up a path.
-There is no implicit conversion from any object to <code class="literal">Id</code>, but we can call <code class="literal">Id.From</code>.</p><p>Imagine your codebase has the following type that we want to index into Elasticsearch</p><div class="pre_wrapper"><pre class="programlisting">class MyDTO
+There is no implicit conversion from any object to <code class="literal">Id</code>, but we can call <code class="literal">Id.From</code>.</p><p>Imagine your codebase has the following type that we want to index into Elasticsearch</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">class MyDTO
 {
     public Guid Id { get; set; }
     public string Name { get; set; }
     public string OtherName { get; set; }
 }</pre></div><p>By default NEST will try to find a property called <code class="literal">Id</code> on the class using reflection
-and create a cached delegate based on the property getter</p><div class="pre_wrapper"><pre class="programlisting">var dto = new MyDTO
+and create a cached delegate based on the property getter</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var dto = new MyDTO
 {
     Id = new Guid("D70BD3CF-4E38-46F3-91CA-FCBEF29B148E"),
     Name = "x",
@@ -636,32 +636,32 @@ and create a cached delegate based on the property getter</p><div class="pre_wra
 };
 
 Expect("d70bd3cf-4e38-46f3-91ca-fcbef29b148e").WhenInferringIdOn(dto);</pre></div><p>Using connection settings, you can specify a different property that NEST should use to infer Id for the document.
-Here we instruct NEST to infer the Id for <code class="literal">MyDTO</code> based on its <code class="literal">Name</code> property</p><div class="pre_wrapper"><pre class="programlisting">WithConnectionSettings(x =&gt; x
+Here we instruct NEST to infer the Id for <code class="literal">MyDTO</code> based on its <code class="literal">Name</code> property</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">WithConnectionSettings(x =&gt; x
     .InferMappingFor&lt;MyDTO&gt;(m =&gt; m
         .IdProperty(p =&gt; p.Name)
     )
 ).Expect("x").WhenInferringIdOn(dto);</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Inference rules are cached <span class="emphasis"><em>per</em></span> <code class="literal">ConnectionSettings</code> instance.</p></div></div><p>Because the cache is per <code class="literal">ConnectionSettings</code> instance, we can create another <code class="literal">ConnectionSettings</code> instance
-with different inference rules</p><div class="pre_wrapper"><pre class="programlisting">WithConnectionSettings(x =&gt; x
+with different inference rules</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">WithConnectionSettings(x =&gt; x
     .InferMappingFor&lt;MyDTO&gt;(m =&gt; m
         .IdProperty(p =&gt; p.OtherName)
     )
 ).Expect("y").WhenInferringIdOn(dto);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_the_elasticsearchtype_attribute"></a>Using the ElasticsearchType attribute<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/inference/ids-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Another way is to mark the type with an <code class="literal">ElasticsearchType</code> attribute, setting <code class="literal">IdProperty</code>
-to the name of the property that should be used for the document id</p><div class="pre_wrapper"><pre class="programlisting">[ElasticsearchType(IdProperty = nameof(Name))]
+to the name of the property that should be used for the document id</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">[ElasticsearchType(IdProperty = nameof(Name))]
 class MyOtherDTO
 {
     public Guid Id { get; set; }
     public string Name { get; set; }
     public string OtherName { get; set; }
-}</pre></div><p>Now when we infer the id we expect it to be the value of the <code class="literal">Name</code> property without doing any configuration on the <code class="literal">ConnectionSettings</code></p><div class="pre_wrapper"><pre class="programlisting">var dto = new MyOtherDTO
+}</pre></div><p>Now when we infer the id we expect it to be the value of the <code class="literal">Name</code> property without doing any configuration on the <code class="literal">ConnectionSettings</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var dto = new MyOtherDTO
 {
     Id = new Guid("D70BD3CF-4E38-46F3-91CA-FCBEF29B148E"),
     Name = "x",
     OtherName = "y"
 };
 
-Expect("x").WhenInferringIdOn(dto);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_mapping_inference_on_connectionsettings"></a>Using Mapping inference on ConnectionSettings<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/inference/ids-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This attribute <span class="strong emphasis"><strong>is</strong></span> cached statically/globally, however an inference rule on the <code class="literal">ConnectionSettings</code> for the type will
+Expect("x").WhenInferringIdOn(dto);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_mapping_inference_on_connectionsettings"></a>Using Mapping inference on ConnectionSettings<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/inference/ids-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This attribute <span class="strong strong"><strong>is</strong></span> cached statically/globally, however an inference rule on the <code class="literal">ConnectionSettings</code> for the type will
 still win over the attribute. Here we demonstrate this by creating a different <code class="literal">ConnectionSettings</code> instance
-that will infer the document id from the property <code class="literal">OtherName</code>:</p><div class="pre_wrapper"><pre class="programlisting">WithConnectionSettings(x =&gt; x
+that will infer the document id from the property <code class="literal">OtherName</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">WithConnectionSettings(x =&gt; x
     .InferMappingFor&lt;MyOtherDTO&gt;(m =&gt; m
         .IdProperty(p =&gt; p.OtherName)
     )

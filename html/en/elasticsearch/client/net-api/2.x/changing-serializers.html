@@ -606,7 +606,7 @@ Not what you want? See the
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="changing-serializers"></a>Changing serializers<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/serialization/changing-serializers.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>NEST uses <a class="ulink" href="http://www.newtonsoft.com/json" target="_top">JSON.Net</a> to serialize requests to and deserialize responses from JSON.</p><p>Whilst JSON.Net does a good job of serialization, you may wish to use your own JSON serializer for a particular
 reason. Elasticsearch.Net and NEST make it easy to replace the default serializer with your own.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you are looking to change how the default serializer works, check out
-<a class="link" href="modifying-default-serializer.html" title="Modifying the default serializer">Modifying the default serializer</a>.</p></div></div><p>The main component needed is to provide an implementation of <code class="literal">IElasticsearchSerializer</code></p><div class="pre_wrapper"><pre class="programlisting">public class CustomSerializer : IElasticsearchSerializer
+<a class="link" href="modifying-default-serializer.html" title="Modifying the default serializer">Modifying the default serializer</a>.</p></div></div><p>The main component needed is to provide an implementation of <code class="literal">IElasticsearchSerializer</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class CustomSerializer : IElasticsearchSerializer
 {
     public T Deserialize&lt;T&gt;(Stream stream)
     {
@@ -633,22 +633,22 @@ reason. Elasticsearch.Net and NEST make it easy to replace the default serialize
         return null;
     }
 }</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_changing_serializers_in_elasticsearch_net"></a>Changing serializers in Elasticsearch.Net<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/serialization/changing-serializers.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For Elasticsearch.Net, an implementation of <code class="literal">IElasticsearchSerializer</code> is all that is needed and a delegate can
-be passed to <code class="literal">ConnectionConfiguration</code> that will be called to construct an instance of the serializer</p><div class="pre_wrapper"><pre class="programlisting">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+be passed to <code class="literal">ConnectionConfiguration</code> that will be called to construct an instance of the serializer</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
 var connection = new HttpConnection();
 var connectionConfiguration =
     new ConnectionConfiguration(pool, connection, configuration =&gt; new CustomSerializer()); <a id="CO33-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
-var lowlevelClient = new ElasticLowLevelClient(connectionConfiguration);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO33-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+var lowlevelClient = new ElasticLowLevelClient(connectionConfiguration);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO33-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 delegate gets passed <code class="literal">ConnectionConfiguration</code> and creates a serializer.
 </p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_changing_serializers_in_nest"></a>Changing serializers in NEST<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/high-level/serialization/changing-serializers.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>With NEST however, an implementation of <code class="literal">ISerializerFactory</code> in addition to an implementation
-of <code class="literal">IElasticsearchSerializer</code> is required.</p><div class="pre_wrapper"><pre class="programlisting">public class CustomSerializerFactory : ISerializerFactory
+of <code class="literal">IElasticsearchSerializer</code> is required.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class CustomSerializerFactory : ISerializerFactory
 {
     public IElasticsearchSerializer Create(IConnectionSettingsValues settings) =&gt; new CustomSerializer();
 
     public IElasticsearchSerializer CreateStateful(IConnectionSettingsValues settings, JsonConverter converter) =&gt;
         new CustomSerializer();
 }</pre></div><p>With an implementation of <code class="literal">ISerializerFactory</code> that can create instances of our custom serializer,
-hooking this into <code class="literal">ConnectionSettings</code> is straightfoward</p><div class="pre_wrapper"><pre class="programlisting">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+hooking this into <code class="literal">ConnectionSettings</code> is straightfoward</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
 var connection = new HttpConnection();
 var connectionSettings =
     new ConnectionSettings(pool, connection, new CustomSerializerFactory());

@@ -612,7 +612,7 @@ and can handle by trying a ping on another node. On the contrary, a bad authenti
 exception, and the client understands that an exception under these circumstances should be handled by not retrying,
 but by exiting the pipeline.</p></div></div><p>By default, the client won’t throw on any <code class="literal">ElasticsearchClientException</code> but instead return an invalid response
 that can be detected by checking the <code class="literal">.IsValid</code> property on the response. You can change this behaviour with
-by using <code class="literal">ThrowExceptions()</code> on <a class="link" href="configuration-options.html" title="Configuration options"><code class="literal">ConnectionSettings</code></a>.</p><p>The following is a collection of unrecoverable exceptions</p><div class="pre_wrapper"><pre class="programlisting">var unrecoverableExceptions = new[]
+by using <code class="literal">ThrowExceptions()</code> on <a class="link" href="configuration-options.html" title="Configuration options"><code class="literal">ConnectionSettings</code></a>.</p><p>The following is a collection of unrecoverable exceptions</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var unrecoverableExceptions = new[]
 {
     new PipelineException(PipelineFailure.CouldNotStartSniffOnStartup),
     new PipelineException(PipelineFailure.SniffFailure),
@@ -623,18 +623,18 @@ by using <code class="literal">ThrowExceptions()</code> on <a class="link" href=
 };
 
 unrecoverableExceptions.Should().OnlyContain(e =&gt; !e.Recoverable);</pre></div><p>As an example, let’s use our Virtual cluster test framework to set up a 10 node cluster
-that always succeeds when pinged but fails with a 401 response when making client calls</p><div class="pre_wrapper"><pre class="programlisting">var audit = new Auditor(() =&gt; Framework.Cluster
+that always succeeds when pinged but fails with a 401 response when making client calls</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
     .Ping(r =&gt; r.SucceedAlways()) <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     .ClientCalls(r =&gt; r.FailAlways(401)) <a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     .StaticConnectionPool()
     .AllDefaults()
-);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Always succeed on ping
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 …but always fail on calls with a 401 Bad Authentication response
 </p></td></tr></table></div><p>Now, let’s make a client call. We’ll see that the first audit event is a successful ping
-followed by a bad response as a result of the 401 bad authentication response</p><div class="pre_wrapper"><pre class="programlisting">audit = await audit.TraceElasticsearchException(
+followed by a bad response as a result of the 401 bad authentication response</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">audit = await audit.TraceElasticsearchException(
     new ClientCall {
         { AuditEvent.PingSuccess, 9200 }, <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         { AuditEvent.BadResponse, 9200 }, <a id="CO6-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
@@ -644,16 +644,16 @@ followed by a bad response as a result of the 401 bad authentication response</p
         exception.FailureReason
             .Should().Be(PipelineFailure.BadAuthentication); <a id="CO6-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
     }
-);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 First call results in a successful ping
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Second call results in a bad response
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The reason for the bad response is Bad Authentication
 </p></td></tr></table></div><p>When a bad authentication response occurs, the client does not attempt to deserialize the response body returned;
 The response may or may not have a body and even when it does, it may not even be JSON.</p><p>In the following couple of examples, we set up a cluster that always returns a typical nginx HTML response body
 with 401 response to client calls. In this first example, we assert that the failure is because of a 401 Bad Authentication
-response but the response body is not captured on the response</p><div class="pre_wrapper"><pre class="programlisting">var audit = new Auditor(() =&gt; Framework.Cluster
+response but the response body is not captured on the response</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
     .Ping(r =&gt; r.SucceedAlways())
     .ClientCalls(r =&gt; r.FailAlways(401).ReturnResponse(HtmlNginx401Response)) <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
@@ -672,12 +672,12 @@ audit = await audit.TraceElasticsearchException(
         e.Response.HttpStatusCode.Should().Be(401);
         e.Response.ResponseBodyInBytes.Should().BeNull(); <a id="CO7-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     }
-);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Always return a 401 bad response with a HTML response on client calls
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Assert that the response body bytes are null
 </p></td></tr></table></div><p>Now in this example, by turning on <code class="literal">DisableDirectStreaming()</code> on <code class="literal">ConnectionSettings</code>, we see the same behaviour exhibited
-as before, but this time however, the response body bytes are captured in the response and can be inspected.</p><div class="pre_wrapper"><pre class="programlisting">var audit = new Auditor(() =&gt; Framework.Cluster
+as before, but this time however, the response body bytes are captured in the response and can be inspected.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
     .Ping(r =&gt; r.SucceedAlways())
     .ClientCalls(r =&gt; r.FailAlways(401).ReturnResponse(HtmlNginx401Response))
@@ -699,9 +699,9 @@ audit = await audit.TraceElasticsearchException(
         responseString.Should().Contain("nginx/"); <a id="CO8-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
         e.DebugInformation.Should().Contain("nginx/");
     }
-);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Response bytes are set on the response
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Assert that the response contains <code class="literal">"nginx/"</code>
 </p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="unexpected-exceptions.html">
               « 

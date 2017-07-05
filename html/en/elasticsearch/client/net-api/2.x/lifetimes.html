@@ -607,9 +607,9 @@ Not what you want? See the
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="lifetimes"></a>Lifetimes<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/low-level/lifetimes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you are using an IOC/Dependency Injection container, it’s always useful to know the best practices around
 the lifetime of your objects.</p><p>In general, we advise folks to register an <code class="literal">ElasticClient</code> instance as a singleton; the client is thread safe,
 so sharing an instance across threads is fine.</p><p>The actual moving part that benefits from being a singleton is <code class="literal">ConnectionSettings</code> because
-<span class="strong emphasis"><strong>caches are <span class="emphasis"><em>per</em></span> <code class="literal">ConnectionSettings</code></strong></span>.</p><p>In some applications ,it could make perfect sense to have multiple <code class="literal">ElasticClient</code> instances registered with different
+<span class="strong strong"><strong>caches are <span class="emphasis"><em>per</em></span> <code class="literal">ConnectionSettings</code></strong></span>.</p><p>In some applications ,it could make perfect sense to have multiple <code class="literal">ElasticClient</code> instances registered with different
 connection settings such as when your application connects to two different Elasticsearch clusters.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Due to the semantic versioning of Elasticsearch.Net and NEST and their alignment to versions of Elasticsearch, all instances of <code class="literal">ElasticClient</code> and
-Elasticsearch clusters that are connected to must be on the <span class="strong emphasis"><strong>same major version</strong></span></p></div></div><p>Let’s demonstrate which components are disposed by creating our own derived <code class="literal">ConnectionSettings</code>, <code class="literal">IConnectionPool</code> and <code class="literal">IConnection</code> types</p><div class="pre_wrapper"><pre class="programlisting">class AConnectionSettings : ConnectionSettings
+Elasticsearch clusters that are connected to must be on the <span class="strong strong"><strong>same major version</strong></span></p></div></div><p>Let’s demonstrate which components are disposed by creating our own derived <code class="literal">ConnectionSettings</code>, <code class="literal">IConnectionPool</code> and <code class="literal">IConnection</code> types</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">class AConnectionSettings : ConnectionSettings
 {
     public AConnectionSettings(IConnectionPool pool, IConnection connection)
         : base(pool, connection)
@@ -646,18 +646,18 @@ class AConnection : InMemoryConnection
         this.IsDisposed = true;
         base.DisposeManagedResources();
     }
-}</pre></div><p><code class="literal">ConnectionSettings</code>, <code class="literal">IConnectionPool</code> and <code class="literal">IConnection</code> all explictily implement <code class="literal">IDisposable</code></p><div class="pre_wrapper"><pre class="programlisting">var connection = new AConnection();
+}</pre></div><p><code class="literal">ConnectionSettings</code>, <code class="literal">IConnectionPool</code> and <code class="literal">IConnection</code> all explictily implement <code class="literal">IDisposable</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var connection = new AConnection();
 var connectionPool = new AConnectionPool(new Uri("http://localhost:9200"));
 var settings = new AConnectionSettings(connectionPool, connection);
 settings.IsDisposed.Should().BeFalse();
 connectionPool.IsDisposed.Should().BeFalse();
-connection.IsDisposed.Should().BeFalse();</pre></div><p>Disposing an instance of <code class="literal">ConnectionSettings</code> will also dispose the <code class="literal">IConnectionPool</code> and <code class="literal">IConnection</code> it uses</p><div class="pre_wrapper"><pre class="programlisting">var connection = new AConnection();
+connection.IsDisposed.Should().BeFalse();</pre></div><p>Disposing an instance of <code class="literal">ConnectionSettings</code> will also dispose the <code class="literal">IConnectionPool</code> and <code class="literal">IConnection</code> it uses</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var connection = new AConnection();
 var connectionPool = new AConnectionPool(new Uri("http://localhost:9200"));
 var settings = new AConnectionSettings(connectionPool, connection);
 using (settings) { } <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 settings.IsDisposed.Should().BeTrue();
 connectionPool.IsDisposed.Should().BeTrue();
-connection.IsDisposed.Should().BeTrue();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+connection.IsDisposed.Should().BeTrue();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 force the settings to be disposed
 </p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="api-conventions.html">
               « 

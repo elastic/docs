@@ -608,7 +608,7 @@ Not what you want? See the
 The only connection pool we ship with that allows this is the <a class="link" href="connection-pooling.html#sniffing-connection-pool" title="SniffingConnectionPool">Sniffing connection pool</a>.</p><p>This can be very handy to force a refresh of the connection pool’s known healthy nodes by asking the Elasticsearch cluster itself, and
 a sniff tries to get the nodes by asking each node it currently knows about, until one responds.</p><p>Here we seed our connection with 5 known nodes on ports 9200-9204, of which we think
 9202, 9203, 9204 are master eligible nodes. Our virtualized cluster will throw once when doing
-a search on 9201. This should cause a sniff to be kicked off.</p><div class="pre_wrapper"><pre class="programlisting">var audit = new Auditor(() =&gt; Framework.Cluster
+a search on 9201. This should cause a sniff to be kicked off.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(5)
     .MasterEligible(9202, 9203, 9204)
     .ClientCalls(r =&gt; r.SucceedAlways())
@@ -657,18 +657,18 @@ audit = await audit.TraceCalls(
     new ClientCall { { HealthyResponse, 9211 } },
     new ClientCall { { HealthyResponse, 9212 } },
     new ClientCall { { HealthyResponse, 9210 } }
-);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 When the call fails on 9201, the following sniff succeeds and returns a new cluster state of healthy nodes. This cluster only has 3 nodes and the known masters are 9200 and 9202. A search on 9201 is setup to still fail once
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 After this second failure on 9201, another sniff will happen which returns a cluster state that no longer fails but looks completely different; It’s now three nodes on ports 9210 - 9212, with 9210 and 9212 being master eligible.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 We assert we do a sniff on our first known master node 9202 after the failed call on 9201
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Our pool should now have three nodes
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 We assert we do a sniff on the first master node in our updated cluster
 </p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sniffing_after_ping_failure"></a>Sniffing after ping failure<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/client-concepts/connection-pooling/sniffing/on-connection-failure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Here we set up our cluster exactly the same as the previous setup
-Only we enable pinging (default is <code class="literal">true</code>) and make the ping fail</p><div class="pre_wrapper"><pre class="programlisting">var audit = new Auditor(() =&gt; Framework.Cluster
+Only we enable pinging (default is <code class="literal">true</code>) and make the ping fail</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(5)
     .MasterEligible(9202, 9203, 9204)
     .Ping(r =&gt; r.OnPort(9201).Fails(Once))
@@ -721,13 +721,13 @@ audit = await audit.TraceCalls(
     new ClientCall { { HealthyResponse, 9211 } },
     new ClientCall { { HealthyResponse, 9212 } },
     new ClientCall { { HealthyResponse, 9210 } }
-);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 We assert we do a sniff on our first known master node 9202
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Our pool should now have three nodes
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 We assert we do a sniff on the first master node in our updated cluster
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 9210 was already pinged after the sniff returned the new nodes
 </p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="sniffing-on-startup.html">
               « 
