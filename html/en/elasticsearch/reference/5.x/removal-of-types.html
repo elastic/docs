@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>doc_values
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Removal of mapping types
         | Elasticsearch Reference [5.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="mapping-params.html" title="Mapping parameters" /><link rel="prev" href="copy-to.html" title="copy_to" /><link rel="next" href="dynamic.html" title="dynamic" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/5.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.x]" /><link rel="up" href="mapping.html" title="Mapping" /><link rel="prev" href="mapping.html" title="Mapping" /><link rel="next" href="mapping-types.html" title="Field datatypes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/5.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -596,52 +596,331 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [5.x]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-link"><a href="mapping-params.html">Mapping parameters</a></span> » <span class="breadcrumb-node"><code class="literal">doc_values</code></span></div><div class="navheader"><span class="prev"><a href="copy-to.html">
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-node">Removal of mapping types</span></div><div class="navheader"><span class="prev"><a href="mapping.html">
               « 
-              <code class="literal">copy_to</code></a>
+              Mapping</a>
            
         </span><span class="next">
            
-          <a href="dynamic.html"><code class="literal">dynamic</code>
+          <a href="mapping-types.html">Field datatypes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="doc-values"></a><code class="literal">doc_values</code><a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/params/doc-values.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Most fields are <a class="link" href="mapping-index.html" title="index">indexed</a> by default, which makes them
-searchable. The inverted index allows queries to look up the search term in
-unique sorted list of terms, and from that immediately have access to the list
-of documents that contain the term.</p><p>Sorting, aggregations, and access to field values in scripts requires a
-different data access pattern.  Instead of looking up the term and finding
-documents, we need to be able to look up the document and find the terms that
-it has in a field.</p><p>Doc values are the on-disk data structure, built at document index time, which
-makes this data access pattern possible. They store the same values as the
-<code class="literal">_source</code> but in a column-oriented fashion that is way more efficient for
-sorting and aggregations. Doc values are supported on almost all field types,
-with the <span class="emphasis"><em>notable exception of <code class="literal">analyzed</code> string fields</em></span>.</p><p>All fields which support doc values have them enabled by default. If you are
-sure that you don’t need to sort or aggregate on a field, or access the field
-value from a script, you can disable doc values in order to save disk space:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="removal-of-types"></a>Removal of mapping types<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Indices created in Elasticsearch 6.0.0 or later may only contain a
+single <a class="link" href="mapping.html#mapping-type" title="Mapping Typesedit">mapping type</a>.  Indices created in 5.x with multiple
+mapping types will continue to function as before in Elasticsearch 6.x.
+Mapping types will be completely removed in Elasticsearch 7.0.0.</p></div></div><h3><a id="_what_are_mapping_types"></a>What are mapping types?<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Since the first release of Elasticsearch, each document has been stored in a
+single index and assigned a single mapping type.  A mapping type was used to
+represent the type of document or entity being indexed, for instance a
+<code class="literal">twitter</code> index might have a <code class="literal">user</code> type and a <code class="literal">tweet</code> type.</p><p>Each mapping type could have its own fields, so the <code class="literal">user</code> type might have a
+<code class="literal">full_name</code> field, a <code class="literal">user_name</code> field, and an <code class="literal">email</code> field, while the
+<code class="literal">tweet</code> type could have a <code class="literal">content</code> field, a <code class="literal">tweeted_at</code> field and, like the
+<code class="literal">user</code> type, a <code class="literal">user_name</code> field.</p><p>Each document had a <code class="literal">_type</code> meta-field containing the type name, and searches
+could be limited to one or more types by specifying the type name(s) in the
+URL:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/user,tweet/_search
+{
+  "query": {
+    "match": {
+      "user_name": "kimchy"
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/removal-of-types/1.json"></div><p>The <code class="literal">_type</code> field was combined with the document’s <code class="literal">_id</code> to generate a <code class="literal">_uid</code>
+field, so documents of different types with the same <code class="literal">_id</code> could exist in a
+single index.</p><p>Mapping types were also used to establish a
+/guide/en/elasticsearch/reference/5.4/mapping-parent-field.html[parent-child relationship]
+between documents, so documents of type <code class="literal">question</code> could be parents to
+documents of type <code class="literal">answer</code>.</p><h3><a id="_why_are_mapping_types_being_removed"></a>Why are mapping types being removed?<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Initially, we spoke about an “index” being similar to a “database” in an
+SQL database, and a “type” being equivalent to a
+“table”.</p><p>This was a bad analogy that led to incorrect assumptions. In an SQL database,
+tables are independent of each other.  The columns in one table have no
+bearing on columns with the same name in another table.  This is not the case
+for fields in a mapping type.</p><p>In an Elasticsearch index, fields that have the same name in different mapping
+types are backed by the same Lucene field internally.  In other words, using
+the example above, the <code class="literal">user_name</code> field in the <code class="literal">user</code> type is stored in
+exactly the same field as the <code class="literal">user_name</code> field in the <code class="literal">tweet</code> type, and both
+<code class="literal">user_name</code> fields must have the same mapping (definition) in both types.</p><p>This can lead to frustration when, for example, you want <code class="literal">deleted</code> to be a
+<code class="literal">date</code> field in one type and a <code class="literal">boolean</code> field in another type in the same
+index.</p><p>On top of that, storing different entities that have few or no fields in
+common in the same index leads to sparse data and interferes with Lucene’s
+ability to compress documents efficiently.</p><p>For these reasons, we have decided to remove the concept of mapping types from
+Elasticsearch.</p><h3><a id="_alternatives_to_mapping_types"></a>Alternatives to mapping types<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><h4><a id="_index_per_document_type"></a>Index per document type<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The first alternative is to have an index per document type.  Instead of
+storing tweets and users in a single <code class="literal">twitter</code> index, you could store tweets
+in the <code class="literal">tweets</code> index and users in the <code class="literal">user</code> index. Indices are completely
+independent of each other and so there will be no conflict of field types
+between indices.</p><p>This approach has two benefits:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Data is more likely to be dense and so benefit from compression techniques
+  used in Lucene.
+</li><li class="listitem">
+The term statistics used for scoring in full text search are more likely to
+  be accurate because all documents in the same index represent a single
+  entity.
+</li></ul></div><p>Each index can be sized appropriately for the number of documents it will
+contain: you can use a smaller number of primary shards for <code class="literal">users</code> and a
+larger number of primary shards for <code class="literal">tweets</code>.</p><h4><a id="_custom_type_field"></a>Custom type field<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Of course, there is a limit to how many primary shards can exist in a cluster
+so you many not want to waste an entire shard for a collection of only a few
+thousand documents.  In this case, you can implement your own custom <code class="literal">type</code>
+field which will work in a similar way to the old <code class="literal">_type</code>.</p><p>Let’s take the <code class="literal">user</code>/<code class="literal">tweet</code> example above.  Originally, the workflow would
+have looked something like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter
 {
   "mappings": {
-    "my_type": {
+    "user": {
       "properties": {
-        "status_code": { <a id="CO217-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-          "type":       "keyword"
-        },
-        "session_id": { <a id="CO217-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-          "type":       "keyword",
-          "doc_values": false
+        "name": { "type": "text" },
+        "user_name": { "type": "keyword" },
+        "email": { "type": "keyword" }
+      }
+    },
+    "tweet": {
+      "properties": {
+        "content": { "type": "text" },
+        "user_name": { "type": "keyword" },
+        "tweeted_at": { "type": "date" }
+      }
+    }
+  }
+}
+
+PUT twitter/user/kimchy
+{
+  "name": "Shay Banon",
+  "user_name": "kimchy",
+  "email": "shay@kimchy.com"
+}
+
+PUT twitter/tweet/1
+{
+  "user_name": "kimchy",
+  "tweeted_at": "2017-10-24T09:00:00Z",
+  "content": "Types are going away"
+}
+
+GET twitter/tweet/_search
+{
+  "query": {
+    "match": {
+      "user_name": "kimchy"
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/removal-of-types/2.json"></div><p>You could achieve the same thing by adding a custom <code class="literal">type</code> field as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "type": { "type": "keyword" }, <a id="CO172-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "name": { "type": "text" },
+        "user_name": { "type": "keyword" },
+        "email": { "type": "keyword" },
+        "content": { "type": "text" },
+        "tweeted_at": { "type": "date" }
+      }
+    }
+  }
+}
+
+PUT twitter/doc/user-kimchy
+{
+  "type": "user", <a id="CO172-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  "name": "Shay Banon",
+  "user_name": "kimchy",
+  "email": "shay@kimchy.com"
+}
+
+PUT twitter/doc/tweet-1
+{
+  "type": "tweet", <a id="CO172-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+  "user_name": "kimchy",
+  "tweeted_at": "2017-10-24T09:00:00Z",
+  "content": "Types are going away"
+}
+
+GET twitter/_search
+{
+  "query": {
+    "bool": {
+      "must": {
+        "match": {
+          "user_name": "kimchy"
+        }
+      },
+      "filter": {
+        "match": {
+          "type": "tweet" <a id="CO172-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
         }
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/doc-values/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO217-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">status_code</code> field has <code class="literal">doc_values</code> enabled by default.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO217-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">session_id</code> has <code class="literal">doc_values</code> disabled, but can still be queried.
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="copy-to.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/removal-of-types/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO172-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO172-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO172-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> <a href="#CO172-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The explicit <code class="literal">type</code> field takes the place of the implicit <code class="literal">_type</code> field.
+</p></td></tr></table></div><h4><a id="_parent_child_without_mapping_types"></a>Parent/Child without mapping types<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Previously, a parent-child relationship was represented by making one mapping
+type the parent, and one or more other mapping types the children.  Without
+types, we can no longer use this syntax.  The parent-child feature will
+continue to function as before, except that the way of expressing the
+relationship between documents has been changed to use the new
+<a class="link" href="parent-join.html" title="join datatype"><code class="literal">join</code> field</a>.</p><h3><a id="_schedule_for_removal_of_mapping_types"></a>Schedule for removal of mapping types<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This is a big change for our users, so we have tried to make it as painless as
+possible.  The change will roll out as follows:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Elasticsearch 5.6.0
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Setting <code class="literal">index.mapping.single_type: true</code> on an index will enable the
+  single-type-per-index behaviour which will be enforced in 6.0.
+</li><li class="listitem">
+The <a class="link" href="parent-join.html" title="join datatype"><code class="literal">join</code> field</a> replacement for parent-child is available
+  on indices created in 5.6.
+</li></ul></div></dd><dt><span class="term">
+Elasticsearch 6.x
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Indices created in 5.x will continue to function in 6.x as they did in 5.x.
+</li><li class="listitem">
+Indices created in 6.x only allow a single-type per index.  Any name
+  can be used for the type, but there can be only one.
+</li><li class="listitem">
+The <code class="literal">_type</code> name can no longer be combined with the <code class="literal">_id</code> to form the <code class="literal">_uid</code>
+  field. The <code class="literal">_uid</code> field has become an alias for the <code class="literal">_id</code> field.
+</li><li class="listitem">
+New indices no longer support the old-style of parent/child and should
+  use the <a class="link" href="parent-join.html" title="join datatype"><code class="literal">join</code> field</a> instead.
+</li><li class="listitem">
+The <code class="literal">_default_</code> mapping type is deprecated.
+</li></ul></div></dd><dt><span class="term">
+Elasticsearch 7.x
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The <code class="literal">type</code> parameter in URLs are optional.  For instance, indexing
+  a document no longer requires a document <code class="literal">type</code>.
+</li><li class="listitem">
+The <code class="literal">GET|PUT _mapping</code> APIs support a query string parameter
+  (<code class="literal">include_type_name</code>) which indicates whether the body should include
+  a layer for the type name. It defaults to <code class="literal">true</code>. 7.x indices which
+  don’t have an explicit type will use the dummy type name <code class="literal">_doc</code>.
+</li><li class="listitem">
+The <code class="literal">_default_</code> mapping type is removed.
+</li></ul></div></dd><dt><span class="term">
+Elasticsearch 8.x
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The <code class="literal">type</code> parameter is no longer supported in URLs.
+</li><li class="listitem">
+The <code class="literal">include_in_type</code> parameter defaults to <code class="literal">false</code>.
+</li></ul></div></dd><dt><span class="term">
+Elasticsearch 9.x
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The <code class="literal">include_in_type</code> parameter is removed.
+</li></ul></div></dd></dl></div><h3><a id="_migrating_multi_type_indices_to_single_type"></a>Migrating multi-type indices to single-type<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <a class="link" href="docs-reindex.html" title="Reindex API">Reindex API</a> can be used to convert multi-type indices to
+single-type indices. The following examples can be used in Elasticsearch 5.6
+or Elasticsearch 6.x.  In 6.x, there is no need to specify
+<code class="literal">index.mapping.single_type</code> as that is the default.</p><h4><a id="_index_per_document_type_2"></a>Index per document type<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>This first example splits our <code class="literal">twitter</code> index into a <code class="literal">tweets</code> index and a
+<code class="literal">users</code> index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT users
+{
+  "settings": {
+    "index.mapping.single_type": true
+  },
+  "mappings": {
+    "user": {
+      "properties": {
+        "name": {
+          "type": "text"
+        },
+        "user_name": {
+          "type": "keyword"
+        },
+        "email": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}
+
+PUT tweets
+{
+  "settings": {
+    "index.mapping.single_type": true
+  },
+  "mappings": {
+    "tweet": {
+      "properties": {
+        "content": {
+          "type": "text"
+        },
+        "user_name": {
+          "type": "keyword"
+        },
+        "tweeted_at": {
+          "type": "date"
+        }
+      }
+    }
+  }
+}
+
+POST _reindex
+{
+  "source": {
+    "index": "twitter",
+    "type": "user"
+  },
+  "dest": {
+    "index": "users"
+  }
+}
+
+POST _reindex
+{
+  "source": {
+    "index": "twitter",
+    "type": "tweet"
+  },
+  "dest": {
+    "index": "tweets"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/removal-of-types/4.json"></div><h4><a id="_custom_type_field_2"></a>Custom type field<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>This next example adds a custom <code class="literal">type</code> field and sets it to the value of the
+original <code class="literal">_type</code>.  It also adds the type to the <code class="literal">_id</code> in case there are any
+documents of different types which have conflicting IDs:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT new_twitter
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "type": {
+          "type": "keyword"
+        },
+        "name": {
+          "type": "text"
+        },
+        "user_name": {
+          "type": "keyword"
+        },
+        "email": {
+          "type": "keyword"
+        },
+        "content": {
+          "type": "text"
+        },
+        "tweeted_at": {
+          "type": "date"
+        }
+      }
+    }
+  }
+}
+
+
+POST _reindex
+{
+  "source": {
+    "index": "twitter"
+  },
+  "dest": {
+    "index": "new_twitter"
+  },
+  "script": {
+    "source": """
+      ctx._source.type = ctx._type;
+      ctx._id = ctx._type + '-' + ctx._id;
+      ctx._type = 'doc';
+    """
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/removal-of-types/5.json"></div></div><div class="navfooter"><span class="prev"><a href="mapping.html">
               « 
-              <code class="literal">copy_to</code></a>
+              Mapping</a>
            
         </span><span class="next">
            
-          <a href="dynamic.html"><code class="literal">dynamic</code>
+          <a href="mapping-types.html">Field datatypes
                »
             </a></span></div>
 <!-- end body -->
