@@ -608,13 +608,13 @@ Not what you want? See the
 searchable. Sorting, aggregations, and accessing field values in scripts,
 however, requires a different access pattern from search.</p><p>Search needs to answer the question <span class="emphasis"><em>"Which documents contain this term?"</em></span>,
 while sorting and aggregations need to answer a different question: <span class="emphasis"><em>"What is
-the value of this field for <span class="strong emphasis"><strong>this</strong></span> document?"</em></span>.</p><p>Most fields can use index-time, on-disk <a class="link" href="doc-values.html" title="doc_values"><code class="literal">doc_values</code></a> for this
-data access pattern, but <a class="link" href="text.html" title="Text datatype"><code class="literal">text</code></a> fields do not support <code class="literal">doc_values</code>.</p><p>Instead, <code class="literal">text</code> fields use a query-time <span class="strong emphasis"><strong>in-memory</strong></span> data structure called
+the value of this field for <span class="strong strong"><strong>this</strong></span> document?"</em></span>.</p><p>Most fields can use index-time, on-disk <a class="link" href="doc-values.html" title="doc_values"><code class="literal">doc_values</code></a> for this
+data access pattern, but <a class="link" href="text.html" title="Text datatype"><code class="literal">text</code></a> fields do not support <code class="literal">doc_values</code>.</p><p>Instead, <code class="literal">text</code> fields use a query-time <span class="strong strong"><strong>in-memory</strong></span> data structure called
 <code class="literal">fielddata</code>.  This data structure is built on demand the first time that a
 field is used for aggregations, sorting, or in a script.  It is built by
 reading the entire inverted index for each segment from disk, inverting the
 term ↔︎ document relationship, and storing the result in memory, in the JVM
-heap.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fielddata_is_disabled_on_literal_text_literal_fields_by_default"></a>Fielddata is disabled on <code class="literal">text</code> fields by default<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/params/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Fielddata can consume a <span class="strong emphasis"><strong>lot</strong></span> of heap space, especially when loading high
+heap.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fielddata_is_disabled_on_literal_text_literal_fields_by_default"></a>Fielddata is disabled on <code class="literal">text</code> fields by default<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/params/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Fielddata can consume a <span class="strong strong"><strong>lot</strong></span> of heap space, especially when loading high
 cardinality <code class="literal">text</code> fields.  Once fielddata has been loaded into the heap, it
 remains there for the lifetime of the segment. Also, loading fielddata is an
 expensive process which can cause users to experience latency hits.  This is
@@ -628,7 +628,7 @@ so.</p><p>A text field is analyzed before indexing so that a value like
 aggregation on this field will return a <code class="literal">new</code> bucket and a <code class="literal">york</code> bucket, when
 you probably want a single bucket called <code class="literal">New York</code>.</p><p>Instead, you should have a <code class="literal">text</code> field for full text searches, and an
 unanalyzed <a class="link" href="keyword.html" title="Keyword datatype"><code class="literal">keyword</code></a> field with <a class="link" href="doc-values.html" title="doc_values"><code class="literal">doc_values</code></a>
-enabled for aggregations, as follows:</p><div class="pre_wrapper"><pre class="programlisting">PUT my_index
+enabled for aggregations, as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
   "mappings": {
     "my_type": {
@@ -644,12 +644,12 @@ enabled for aggregations, as follows:</p><div class="pre_wrapper"><pre class="pr
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/fielddata/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO221-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+}</pre></div><div class="console_widget" data-snippet="snippets/fielddata/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO221-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Use the <code class="literal">my_field</code> field for searches.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO221-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO221-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Use the <code class="literal">my_field.keyword</code> field for aggregations, sorting, or in scripts.
 </p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_enabling_fielddata_on_literal_text_literal_fields"></a>Enabling fielddata on <code class="literal">text</code> fields<a href="https://github.com/elastic/elasticsearch/edit/5.x/docs/reference/mapping/params/fielddata.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can enable fielddata on an existing <code class="literal">text</code> field using the
-<a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a> as follows:</p><div class="pre_wrapper"><pre class="programlisting">PUT my_index/_mapping/my_type
+<a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a> as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/_mapping/my_type
 {
   "properties": {
     "my_field": { <a id="CO222-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
@@ -657,7 +657,7 @@ Use the <code class="literal">my_field.keyword</code> field for aggregations, so
       "fielddata": true
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/fielddata/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO222-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+}</pre></div><div class="console_widget" data-snippet="snippets/fielddata/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO222-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The mapping that you specify for <code class="literal">my_field</code> should consist of the existing
     mapping for that field, plus the <code class="literal">fielddata</code> parameter.
 </p></td></tr></table></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">fielddata.*</code> parameter must have the same settings for fields of the
@@ -685,9 +685,9 @@ memory, and thus reduce memory usage. Terms can be filtered by <span class="emph
 between a <code class="literal">min</code> and <code class="literal">max</code> value, which can be expressed an absolute
 number (when the number is bigger than 1.0) or as a percentage
 (eg <code class="literal">0.01</code> is <code class="literal">1%</code> and <code class="literal">1.0</code> is <code class="literal">100%</code>). Frequency is calculated
-<span class="strong emphasis"><strong>per segment</strong></span>. Percentages are based on the number of docs which have a
+<span class="strong strong"><strong>per segment</strong></span>. Percentages are based on the number of docs which have a
 value for the field, as opposed to all docs in the segment.</p><p>Small segments can be excluded completely by specifying the minimum
-number of docs that the segment should contain with <code class="literal">min_segment_size</code>:</p><div class="pre_wrapper"><pre class="programlisting">PUT my_index
+number of docs that the segment should contain with <code class="literal">min_segment_size</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
   "mappings": {
     "my_type": {

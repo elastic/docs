@@ -613,7 +613,7 @@ sufficient to see that a particular component of a query is slow, and not necess
 the <code class="literal">advance</code> phase of that query is the cause, for example.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_query_literal_section"></a><code class="literal">query</code> Section<a href="https://github.com/elastic/elasticsearch/edit/5.5/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">query</code> section contains detailed timing of the query tree executed by Lucene on a particular shard.
 The overall structure of this query tree will resemble your original Elasticsearch query, but may be slightly
 (or sometimes very) different.  It will also use similar but not always identical naming.  Using our previous
-<code class="literal">match</code> query example, let’s analyze the <code class="literal">query</code> section:</p><div class="pre_wrapper"><pre class="programlisting">"query": [
+<code class="literal">match</code> query example, let’s analyze the <code class="literal">query</code> section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"query": [
     {
        "type": "BooleanQuery",
        "description": "message:message message:number",
@@ -637,7 +637,7 @@ The overall structure of this query tree will resemble your original Elasticsear
           }
        ]
     }
-]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO41-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p class="para">
+]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO41-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The breakdown timings are omitted for simplicity
 </p></td></tr></table></div><p>Based on the profile structure, we can see that our <code class="literal">match</code> query was rewritten by Lucene into a BooleanQuery with two
 clauses (both holding a TermQuery).  The <code class="literal">type</code> field displays the Lucene class name, and often aligns with
@@ -649,7 +649,7 @@ that in a moment.  Finally, the <code class="literal">children</code> array list
 values ("search test"), our BooleanQuery holds two children TermQueries.  They have identical information (type, time,
 breakdown, etc).  Children are allowed to have their own children.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">time</code> field is only intended for human consumption. If you need exact timing values use <code class="literal">time_in nanos</code>. The <code class="literal">time</code>
 field is currently printed by default, but this will change with the next major version (6.0.0) where <code class="literal">time_in_nanos</code> will be
-printed by default.</p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_timing_breakdown"></a>Timing Breakdown<a href="https://github.com/elastic/elasticsearch/edit/5.5/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">breakdown</code> component lists detailed timing statistics about low-level Lucene execution:</p><div class="pre_wrapper"><pre class="programlisting">"breakdown": {
+printed by default.</p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_timing_breakdown"></a>Timing Breakdown<a href="https://github.com/elastic/elasticsearch/edit/5.5/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">breakdown</code> component lists detailed timing statistics about low-level Lucene execution:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"breakdown": {
    "score": 51306,
    "score_count": 4,
    "build_scorer": 2935582,
@@ -665,11 +665,11 @@ printed by default.</p></div></div><div class="section"><div class="titlepage"><
 }</pre></div><p>Timings are listed in wall-clock nanoseconds and are not normalized at all.  All caveats about the overall
 <code class="literal">time</code> apply here.  The intention of the breakdown is to give you a feel for A) what machinery in Lucene is
 actually eating time, and B) the magnitude of differences in times between the various components.  Like the overall time,
-the breakdown is inclusive of all children times.</p><p>The meaning of the stats are as follows:</p><h4><a id="_all_parameters_3"></a>All parameters:<a href="https://github.com/elastic/elasticsearch/edit/5.5/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td class="entry" valign="top">
+the breakdown is inclusive of all children times.</p><p>The meaning of the stats are as follows:</p><h4><a id="_all_parameters_3"></a>All parameters:<a href="https://github.com/elastic/elasticsearch/edit/5.5/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">create_weight</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     A Query in Lucene must be capable of reuse across multiple IndexSearchers (think of it as the engine that
     executes a search against a specific Lucene Index).  This puts Lucene in a tricky spot, since many queries
@@ -681,11 +681,11 @@ the breakdown is inclusive of all children times.</p><p>The meaning of the stats
     object to hold state associated with this particular (IndexSearcher, Query) tuple.  The <code class="literal">weight</code> metric
     shows how long this process takes
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">build_scorer</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     This parameter shows how long it takes to build a Scorer for the query.  A Scorer is the mechanism that
     iterates over matching documents generates a score per-document (e.g. how well does "foo" match the document?).
@@ -695,22 +695,22 @@ the breakdown is inclusive of all children times.</p><p>The meaning of the stats
     
     This may also showing timing associated with caching, if enabled and/or applicable for the query
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">next_doc</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     The Lucene method <code class="literal">next_doc</code> returns Doc ID of the next document matching the query.  This statistic shows
     the time it takes to determine which document is the next match, a process that varies considerably depending
     on the nature of the query.   Next_doc is a specialized form of advance() which is more convenient for many
     queries in Lucene.  It is equivalent to advance(docId() + 1)
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">advance</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     <code class="literal">advance</code> is the "lower level" version of next_doc: it serves the same purpose of finding the next matching
     doc, but requires the calling query to perform extra tasks such as identifying and moving past skips, etc.
@@ -719,11 +719,11 @@ the breakdown is inclusive of all children times.</p><p>The meaning of the stats
     
     Conjunctions (e.g. <code class="literal">must</code> clauses in a boolean) are typical consumers of <code class="literal">advance</code>
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">matches</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     Some queries, such as phrase queries, match documents using a "Two Phase" process.  First, the document is
     "approximately" matched, and if it matches approximately, it is checked a second time with a more rigorous
@@ -738,19 +738,19 @@ the breakdown is inclusive of all children times.</p><p>The meaning of the stats
     
     Because this two-phase process is only used by a handful of queries, the <code class="literal">metric</code> statistic will often be zero
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">score</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     This records the time taken to score a particular document via it’s Scorer
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">*_count</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     Records the number of invocations of the particular method.  For example, <code class="literal">"next_doc_count": 2,</code>
     means the <code class="literal">nextDoc()</code> method was called on two different documents.  This can be used to help judge
@@ -759,7 +759,7 @@ the breakdown is inclusive of all children times.</p><p>The meaning of the stats
 </td></tr></tbody></table></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_collectors_literal_section"></a><code class="literal">collectors</code> Section<a href="https://github.com/elastic/elasticsearch/edit/5.5/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Collectors portion of the response shows high-level execution details. Lucene works by defining a "Collector"
 which is responsible for coordinating the traversal, scoring and collection of matching documents.  Collectors
 are also how a single query can record aggregation results, execute unscoped "global" queries, execute post-query
-filters, etc.</p><p>Looking at the previous example:</p><div class="pre_wrapper"><pre class="programlisting">"collector": [
+filters, etc.</p><p>Looking at the previous example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"collector": [
    {
       "name": "CancellableCollector",
       "reason": "search_cancelled",
@@ -778,77 +778,77 @@ filters, etc.</p><p>Looking at the previous example:</p><div class="pre_wrapper"
 <code class="literal">Collector</code> used by Elasticsearch.  The <code class="literal">reason</code> field attempts to give a plain english description of the class name.  The
 <code class="literal">time</code> is similar to the time in the Query tree: a wall-clock time inclusive of all children.  Similarly, <code class="literal">children</code> lists
 all sub-collectors. The <code class="literal">CancellableCollector</code> that wraps <code class="literal">SimpleTopScoreDocCollector</code> is used by elasticsearch to detect if the current
-search was cancelled and stop collecting documents as soon as it occurs.</p><p>It should be noted that Collector times are <span class="strong emphasis"><strong>independent</strong></span> from the Query times.  They are calculated, combined
+search was cancelled and stop collecting documents as soon as it occurs.</p><p>It should be noted that Collector times are <span class="strong strong"><strong>independent</strong></span> from the Query times.  They are calculated, combined
 and normalized independently!  Due to the nature of Lucene’s execution, it is impossible to "merge" the times
-from the Collectors into the Query section, so they are displayed in separate portions.</p><p>For reference, the various collector reason’s are:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td class="entry" valign="top">
+from the Collectors into the Query section, so they are displayed in separate portions.</p><p>For reference, the various collector reason’s are:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">search_sorted</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     A collector that scores and sorts documents.  This is the most common collector and will be seen in most
     simple searches
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">search_count</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     A collector that only counts the number of documents that match the query, but does not fetch the source.
     This is seen when <code class="literal">size: 0</code> is specified
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">search_terminate_after_count</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     A collector that terminates search execution after <code class="literal">n</code> matching documents have been found.  This is seen
     when the <code class="literal">terminate_after_count</code> query parameter has been specified
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">search_min_score</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     A collector that only returns matching documents that have a score greater than <code class="literal">n</code>.  This is seen when
     the top-level parameter <code class="literal">min_score</code> has been specified.
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">search_multi</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     A collector that wraps several other collectors.  This is seen when combinations of search, aggregations,
     global aggs and post_filters are combined in a single search.
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">search_timeout</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     A collector that halts execution after a specified period of time.  This is seen when a <code class="literal">timeout</code> top-level
     parameter has been specified.
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">aggregation</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     A collector that Elasticsearch uses to run aggregations against the query scope.  A single <code class="literal">aggregation</code>
-    collector is used to collect documents for <span class="strong emphasis"><strong>all</strong></span> aggregations, so you will see a list of aggregations
+    collector is used to collect documents for <span class="strong strong"><strong>all</strong></span> aggregations, so you will see a list of aggregations
     in the name rather.
 </p>
-</td></tr><tr><td class="entry" valign="top">
+</td></tr><tr><td valign="top">
 <p>
 <code class="literal">global_aggregation</code>
 </p>
-</td><td class="entry" valign="top">
+</td><td valign="top">
 <p>
     A collector that executes an aggregation against the global query scope, rather than the specified query.
     Because the global scope is necessarily different from the executed query, it must execute it’s own
@@ -860,7 +860,7 @@ optimizations, such as removing redundant clauses, replacing one query for a mor
 etc.  For example a Boolean → Boolean → TermQuery can be rewritten to a TermQuery, because all the Booleans
 are unnecessary in this case.</p><p>The rewriting process is complex and difficult to display, since queries can change drastically.  Rather than
 showing the intermediate results, the total rewrite time is simply displayed as a value (in nanoseconds).  This
-value is cumulative and contains the total time for all queries being rewritten.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_a_more_complex_example"></a>A more complex example<a href="https://github.com/elastic/elasticsearch/edit/5.5/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To demonstrate a slightly more complex query and the associated results, we can profile the following query:</p><div class="pre_wrapper"><pre class="programlisting">GET /test/_search
+value is cumulative and contains the total time for all queries being rewritten.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_a_more_complex_example"></a>A more complex example<a href="https://github.com/elastic/elasticsearch/edit/5.5/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To demonstrate a slightly more complex query and the associated results, we can profile the following query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /test/_search
 {
   "profile": true,
   "query": {
@@ -912,7 +912,7 @@ A scoped aggregation
 A global aggregation
 </li><li class="listitem">
 A post_filter
-</li></ul></div><p>And the response:</p><div class="pre_wrapper"><pre class="programlisting">{
+</li></ul></div><p>And the response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
    "profile": {
          "shards": [
             {
