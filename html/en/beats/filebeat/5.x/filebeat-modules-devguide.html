@@ -614,14 +614,14 @@ and so on) and a fileset for each type of log that the service creates. For
 example, the Nginx module has <code class="literal">access</code> and <code class="literal">error</code> filesets. You can contribute
 a new module (with at least one fileset), or a new fileset for an existing
 module.</p><h3><a id="_creating_a_new_fileset"></a>Creating a new fileset<a href="https://github.com/elastic/beats/edit/5.x/filebeat/docs/modules-dev-guide.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Regardless of whether you are creating a fileset in a new or existing module,
-the procedure is similar. Run the following command in the <code class="literal">filebeat</code> folder:</p><div class="pre_wrapper"><pre class="programlisting">make create-fileset</pre></div><p>You’ll be prompted to enter a module and fileset name. Only use characters
+the procedure is similar. Run the following command in the <code class="literal">filebeat</code> folder:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">make create-fileset</pre></div><p>You’ll be prompted to enter a module and fileset name. Only use characters
 <code class="literal">[a-z]</code> and, if required, underscores (<code class="literal">_</code>). No other characters are allowed.
 For the module name, you can us either a new module name or an existing module
 name. If the module doesn’t exist, it will be created.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>In this guide we use <code class="literal">{fileset}</code> and <code class="literal">{module}</code> as placeholders for the
 fileset and module names. You need to replace these with the actual names you
 entered when your created the module and fileset.</p></div></div><p>After running the <code class="literal">make create-fileset</code> command, you’ll find the fileset,
 along with its generated files, under <code class="literal">module/{module}/{fileset}</code>. This
-directory contains the following files:</p><div class="pre_wrapper"><pre class="programlisting">module/{module}/{fileset}
+directory contains the following files:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">module/{module}/{fileset}
 ├── manifest.yml
 ├── config
 │   └── {fileset}.yml
@@ -636,10 +636,10 @@ places in the file, you can use built-in or defined variables by using the
 values. The module variables can be referenced in other configuration files,
 and their value can be overridden at runtime by the Filebeat configuration.</p><p>As the fileset creator, you can use any names for the variables you define. Each
 variable must have a default value. So in it’s simplest form, this is how you
-can define a new variable:</p><div class="pre_wrapper"><pre class="programlisting">var:
+can define a new variable:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">var:
   - name: pipeline
     default: with_plugins</pre></div><p>Most fileset should have a <code class="literal">paths</code> variable defined, which sets the default
-paths where the log files are located:</p><div class="pre_wrapper"><pre class="programlisting">var:
+paths where the log files are located:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">var:
   - name: paths
     default:
       - /example/test.log*
@@ -664,16 +664,16 @@ Besides the <code class="literal">default</code> value, the file defines values 
   Filebeat is executed on the respective OS.
 </li></ul></div><p>Besides the variable definition, the <code class="literal">manifest.yml</code> file also contains
 references to the ingest pipeline and prospector configuration to use (see next
-sections):</p><div class="pre_wrapper"><pre class="programlisting">ingest_pipeline: ingest/pipeline.json
+sections):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">ingest_pipeline: ingest/pipeline.json
 prospector: config/testfileset.yml</pre></div><p>These should point to the respective files from the fileset.</p><p>Note that when evaluating the contents of these files, the variables are
 expanded, which enables you to select one file or the other depending on the
-value of a variable. For example:</p><div class="pre_wrapper"><pre class="programlisting">ingest_pipeline: ingest/{{.pipeline}}.json</pre></div><p>This example selects the ingest pipeline file based on the value of the
+value of a variable. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">ingest_pipeline: ingest/{{.pipeline}}.json</pre></div><p>This example selects the ingest pipeline file based on the value of the
 <code class="literal">pipeline</code> variable. For the <code class="literal">pipeline</code> variable shown earlier, the path would
 resolve to <code class="literal">ingest/with_plugins.json</code> (assuming the variable value isn’t
 overridden at runtime.)</p><h4><a id="_config_yml"></a>config/*.yml<a href="https://github.com/elastic/beats/edit/5.x/filebeat/docs/modules-dev-guide.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">config/</code> folder contains template files that generate Filebeat prospector
 configurations. The Filebeat prospectors are primarily responsible for tailing
 files, filtering, and multi-line stitching, so that’s what you configure in the
-template files.</p><p>A typical example looks like this:</p><div class="pre_wrapper"><pre class="programlisting">input_type: log
+template files.</p><p>A typical example looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">input_type: log
 paths:
 {{ range $i, $path := .paths }}
  - {{$path}}
@@ -684,7 +684,7 @@ used to construct the <code class="literal">paths</code> list for the <a class="
 Filebeat prospector configuration in YAML format. The options accepted by the
 prospector configuration are documented in this
 <a class="link" href="configuration-filebeat-options.html" title="Filebeat Prospectors">section</a>.</p><p>The template files use the templating language defined by the
-<a class="ulink" href="https://golang.org/pkg/text/template/" target="_top">Golang standard library</a>.</p><p>Here is another example that also configures multiline stitching:</p><div class="pre_wrapper"><pre class="programlisting">input_type: log
+<a class="ulink" href="https://golang.org/pkg/text/template/" target="_top">Golang standard library</a>.</p><p>Here is another example that also configures multiline stitching:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">input_type: log
 paths:
 {{ range $i, $path := .paths }}
  - {{$path}}
@@ -701,7 +701,7 @@ Node pipelines are responsible for parsing the log lines and doing other
 manipulations on the data.</p><p>The files in this folder are JSON documents representing
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.4/pipeline.html" target="_top">pipeline definitions</a>. Just like with the <code class="literal">config/</code>
 folder, you can define multiple pipelines, but a single one is loaded at runtime
-based on the information from <code class="literal">manifest.yml</code>.</p><p>The generator creates a JSON object similar to this one:</p><div class="pre_wrapper"><pre class="programlisting">{
+based on the information from <code class="literal">manifest.yml</code>.</p><p>The generator creates a JSON object similar to this one:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
   "description": "Pipeline for parsing {module} {fileset} logs",
   "processors": [
     ],
@@ -716,7 +716,7 @@ the actual parsing. For details on how to use ingest node processors, see the
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.4/ingest-processors.html" target="_top">ingest node documentation</a>. In
 particular, you will likely find the
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.4/grok-processor.html" target="_top">Grok processor</a> to be useful for parsing.
-Here is an example for parsing the Nginx access logs.</p><div class="pre_wrapper"><pre class="programlisting">{
+Here is an example for parsing the Nginx access logs.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
   "grok": {
     "field": "message",
     "patterns":[
@@ -753,7 +753,7 @@ about which versions of the service were tested and the variables that are
 defined in each fileset.</p><h4><a id="_meta_fields_yml_2"></a>_meta/fields.yml<a href="https://github.com/elastic/beats/edit/5.x/filebeat/docs/modules-dev-guide.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The module level <code class="literal">fields.yml</code> contains descriptions for the module-level fields.
 Please review and update the title and the descriptions in this file. The title
 is used as a title in the docs, so it’s best to capitalize it.</p><h4><a id="_meta_kibana"></a>_meta/kibana<a href="https://github.com/elastic/beats/edit/5.x/filebeat/docs/modules-dev-guide.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>This folder contains the sample Kibana dashboards for this module. To create
-them, you can build them visually in Kibana and then run the following command:</p><div class="pre_wrapper"><pre class="programlisting">$ cd filebeat/module/{module}/
+them, you can build them visually in Kibana and then run the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">$ cd filebeat/module/{module}/
 python ../../../dev-tools/export_dashboards.py --regex {module} --dir _meta/kibana</pre></div><p>Where the <code class="literal">--regex</code> parameter should match the dashboard you want to export.</p><p>You can find more details about the process of creating and exporting the Kibana
 dashboards by reading <a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/5.4/new-dashboards.html" target="_top">this guide</a>.</p></div><div class="navfooter"><span class="prev"><a href="filebeat-module-system.html">
               « 
