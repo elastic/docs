@@ -606,90 +606,121 @@ Not what you want? See the
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-rest-low-usage-requests"></a>Performing requests<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/low-level/usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Once the <code class="literal">RestClient</code> has been created, requests can be sent by calling one of
 the available <code class="literal">performRequest</code> or <code class="literal">performRequestAsync</code> method variants.
-The <code class="literal">performRequest</code> methods are synchronous and they return the <code class="literal">Response</code>
-directly, meaning that the client will block and wait for a response to be returned.
-The <code class="literal">performRequestAsync</code> variants, which return <code class="literal">void</code> and accept an extra
-<code class="literal">ResponseListener</code> as an argument, are executed asynchronously. The provided
-listener will be notified upon completion or failure.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// Synchronous variants
-Response performRequest(String method, String endpoint,
-                        Header... headers)
-    throws IOException;
+The <code class="literal">performRequest</code> methods are synchronous and return the <code class="literal">Response</code> directly,
+meaning that the client will block and wait for a response to be returned.
+The <code class="literal">performRequestAsync</code> variants return <code class="literal">void</code> and accept an extra
+<code class="literal">ResponseListener</code> as an argument instead, meaning that they are executed
+asynchronously. The provided listener will be notified upon request completion
+or failure.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Response response = restClient.performRequest("GET", "/"); <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Send a request by providing only the verb and the endpoint, minimum set
+of required arguments
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map&lt;String, String&gt; params = Collections.singletonMap("pretty", "true");
+Response response = restClient.performRequest("GET", "/", params); <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Send a request by providing the verb, the endpoint, and some querystring
+parameter
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map&lt;String, String&gt; params = Collections.emptyMap();
+String jsonString = "{" +
+            "\"user\":\"kimchy\"," +
+            "\"postDate\":\"2013-01-30\"," +
+            "\"message\":\"trying out Elasticsearch\"" +
+        "}";
+HttpEntity entity = new NStringEntity(jsonString, ContentType.APPLICATION_JSON);
+Response response = restClient.performRequest("PUT", "/posts/doc/1", params, entity); <a id="CO8-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Send a request by providing the verb, the endpoint, optional querystring
+parameters and the request body enclosed in an <code class="literal">org.apache.http.HttpEntity</code>
+object
+</p></td></tr></table></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The <code class="literal">ContentType</code> specified for the <code class="literal">HttpEntity</code> is important
+because it will be used to set the <code class="literal">Content-Type</code> header so that Elasticsearch
+can properly parse the content.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map&lt;String, String&gt; params = Collections.emptyMap();
+HttpAsyncResponseConsumerFactory.HeapBufferedResponseConsumerFactory consumerFactory =
+        new HttpAsyncResponseConsumerFactory.HeapBufferedResponseConsumerFactory(30 * 1024 * 1024);
+Response response = restClient.performRequest("GET", "/posts/_search", params, null, consumerFactory); <a id="CO9-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Send a request by providing the verb, the endpoint, optional querystring
+parameters, optional request body and the optional factory that is used to
+create an <a class="ulink" href="http://hc.apache.org/httpcomponents-core-ga/httpcore-nio/apidocs/org/apache/http/nio/protocol/HttpAsyncResponseConsumer.html" target="_top"><code class="literal">org.apache.http.nio.protocol.HttpAsyncResponseConsumer</code></a>
+callback instance per request attempt. Controls how the response body gets
+streamed from a non-blocking HTTP connection on the client side. When not
+provided, the default implementation is used which buffers the whole response
+body in heap memory, up to 100 MB.
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ResponseListener responseListener = new ResponseListener() {
+    @Override
+    public void onSuccess(Response response) {
+        <a id="CO10-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    }
 
-Response performRequest(String method, String endpoint,
-                        Map&lt;String, String&gt; params, Header... headers)
-    throws IOException;
+    @Override
+    public void onFailure(Exception exception) {
+        <a id="CO10-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    }
+};
+restClient.performRequestAsync("GET", "/", responseListener); <a id="CO10-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Define what needs to happen when the request is successfully performed
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Define what needs to happen when the request fails, meaning whenever
+there’s a connection error or a response with error status code is returned.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Send an async request by providing only the verb, the endpoint, and the
+response listener to be notified once the request is completed, minimum set
+of required arguments
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map&lt;String, String&gt; params = Collections.singletonMap("pretty", "true");
+restClient.performRequestAsync("GET", "/", params, responseListener); <a id="CO11-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO11-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Send an async request by providing the verb, the endpoint, some querystring
+parameter and the response listener to be notified once the request is completed
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">String jsonString = "{" +
+        "\"user\":\"kimchy\"," +
+        "\"postDate\":\"2013-01-30\"," +
+        "\"message\":\"trying out Elasticsearch\"" +
+        "}";
+HttpEntity entity = new NStringEntity(jsonString, ContentType.APPLICATION_JSON);
+restClient.performRequestAsync("PUT", "/posts/doc/1", params, entity, responseListener); <a id="CO12-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Send an async request by providing the verb, the endpoint, optional
+querystring parameters, the request body enclosed in an
+<code class="literal">org.apache.http.HttpEntity</code> object and the response listener to be
+notified once the request is completed
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">HttpAsyncResponseConsumerFactory.HeapBufferedResponseConsumerFactory consumerFactory =
+        new HttpAsyncResponseConsumerFactory.HeapBufferedResponseConsumerFactory(30 * 1024 * 1024);
+restClient.performRequestAsync("GET", "/posts/_search", params, null, consumerFactory, responseListener); <a id="CO13-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Send an async request by providing the verb, the endpoint, optional
+querystring parameters, optional request body and the optional factory that is
+used to create an <a class="ulink" href="http://hc.apache.org/httpcomponents-core-ga/httpcore-nio/apidocs/org/apache/http/nio/protocol/HttpAsyncResponseConsumer.html" target="_top"><code class="literal">org.apache.http.nio.protocol.HttpAsyncResponseConsumer</code></a>
+callback instance per request attempt. Controls how the response body gets
+streamed from a non-blocking HTTP connection on the client side. When not
+provided, the default implementation is used which buffers the whole response
+body in heap memory, up to 100 MB.
+</p></td></tr></table></div><p>The following is a basic example of how async requests can be sent:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">final CountDownLatch latch = new CountDownLatch(documents.length);
+for (int i = 0; i &lt; documents.length; i++) {
+    restClient.performRequestAsync(
+            "PUT",
+            "/posts/doc/" + i,
+            Collections.&lt;String, String&gt;emptyMap(),
+            //let's assume that the documents are stored in an HttpEntity array
+            documents[i],
+            new ResponseListener() {
+                @Override
+                public void onSuccess(Response response) {
+                    <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    latch.countDown();
+                }
 
-Response performRequest(String method, String endpoint,
-                        Map&lt;String, String&gt; params,
-                        HttpEntity entity,
-                        Header... headers)
-    throws IOException;
-
-Response performRequest(String method, String endpoint,
-                        Map&lt;String, String&gt; params,
-                        HttpEntity entity,
-                        HttpAsyncResponseConsumerFactory responseConsumerFactory,
-                        Header... headers)
-    throws IOException;
-
-// Asynchronous variants
-void performRequestAsync(String method, String endpoint,
-                         ResponseListener responseListener,
-                         Header... headers);
-
-void performRequestAsync(String method, String endpoint,
-                         Map&lt;String, String&gt; params,
-                         ResponseListener responseListener,
-                         Header... headers);
-
-void performRequestAsync(String method, String endpoint,
-                         Map&lt;String, String&gt; params,
-                         HttpEntity entity,
-                         ResponseListener responseListener,
-                         Header... headers);
-
-void performRequestAsync(String method, String endpoint,
-                         Map&lt;String, String&gt; params,
-                         HttpEntity entity,
-                         HttpAsyncResponseConsumerFactory responseConsumerFactory,
-                         ResponseListener responseListener,
-                         Header... headers);</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-low-usage-requests-arguments"></a>Request Arguments<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/low-level/usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following are the arguments accepted by the different methods:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">method</code>
-</span></dt><dd>
-the http method or verb
-</dd><dt><span class="term">
-<code class="literal">endpoint</code>
-</span></dt><dd>
-the request path, which identifies the Elasticsearch API to
-call (e.g. <code class="literal">/_cluster/health</code>)
-</dd><dt><span class="term">
-<code class="literal">params</code>
-</span></dt><dd>
-the optional parameters to be sent as querystring parameters
-</dd><dt><span class="term">
-<code class="literal">entity</code>
-</span></dt><dd>
-the optional request body enclosed in an
-<code class="literal">org.apache.http.HttpEntity</code> object
-</dd><dt><span class="term">
-<code class="literal">responseConsumerFactory</code>
-</span></dt><dd>
-the optional factory that is used to create an
-<a class="ulink" href="http://hc.apache.org/httpcomponents-core-ga/httpcore-nio/apidocs/org/apache/http/nio/protocol/HttpAsyncResponseConsumer.html" target="_top"><code class="literal">org.apache.http.nio.protocol.HttpAsyncResponseConsumer</code></a>
- callback instance per request attempt. Controls how the response body gets
- streamed from a non-blocking HTTP connection on the client side. When not
- provided, the default implementation is used which buffers the whole response
- body in heap memory, up to 100 MB
-</dd><dt><span class="term">
-<code class="literal">responseListener</code>
-</span></dt><dd>
-the listener to be notified upon asynchronous
-request success or failure
-</dd><dt><span class="term">
-<code class="literal">headers</code>
-</span></dt><dd>
-optional request headers
-</dd></dl></div></div></div><div class="navfooter"><span class="prev"><a href="java-rest-low-usage-initialization.html">
+                @Override
+                public void onFailure(Exception exception) {
+                    <a id="CO14-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                    latch.countDown();
+                }
+            }
+    );
+}
+latch.await();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Process the returned response
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Handle the returned exception, due to communication error or a response
+with status code that indicates an error
+</p></td></tr></table></div><p>Each of the above listed method supports sending headers along with the
+request through a <code class="literal">Header</code> varargs argument as in the following examples:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Response response = restClient.performRequest("GET", "/", new BasicHeader("header", "value"));</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Header[] headers = {
+        new BasicHeader("header1", "value1"),
+        new BasicHeader("header2", "value2")
+};
+restClient.performRequestAsync("GET", "/", responseListener, headers);</pre></div></div><div class="navfooter"><span class="prev"><a href="java-rest-low-usage-initialization.html">
               « 
               Initialization</a>
            

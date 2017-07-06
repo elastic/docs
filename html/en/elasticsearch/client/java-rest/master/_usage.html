@@ -604,30 +604,21 @@ Not what you want? See the
            
           <a href="_license.html">License
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_usage"></a>Usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/low-level/sniffer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Once a <code class="literal">RestClient</code> instance has been created, a <code class="literal">Sniffer</code> can be associated
-to it. The <code class="literal">Sniffer</code> will make use of the provided <code class="literal">RestClient</code> to periodically
-(every 5 minutes by default) fetch the list of current nodes from the cluster
-and update them by calling <code class="literal">RestClient#setHosts</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Sniffer sniffer = Sniffer.builder(restClient).build();</pre></div><p>It is important to close the <code class="literal">Sniffer</code> so that its background thread gets
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_usage"></a>Usage<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/low-level/sniffer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Once a <code class="literal">RestClient</code> instance has been created as shown in <a class="xref" href="java-rest-low-usage-initialization.html" title="Initialization">Initialization</a>,
+a <code class="literal">Sniffer</code> can be associated to it. The <code class="literal">Sniffer</code> will make use of the provided <code class="literal">RestClient</code>
+to periodically (every 5 minutes by default) fetch the list of current nodes from the cluster
+and update them by calling <code class="literal">RestClient#setHosts</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestClient restClient = RestClient.builder(
+        new HttpHost("localhost", 9200, "http"))
+        .build();
+Sniffer sniffer = Sniffer.builder(restClient).build();</pre></div><p>It is important to close the <code class="literal">Sniffer</code> so that its background thread gets
 properly shutdown and all of its resources are released. The <code class="literal">Sniffer</code>
 object should have the same lifecycle as the <code class="literal">RestClient</code> and get closed
 right before the client:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">sniffer.close();
-restClient.close();</pre></div><p>The Elasticsearch Nodes Info api doesn’t return the protocol to use when
-connecting to the nodes but only their <code class="literal">host:port</code> key-pair, hence <code class="literal">http</code>
-is used by default. In case <code class="literal">https</code> should be used instead, the
-<code class="literal">ElasticsearchHostsSniffer</code> object has to be manually created and provided
-as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">HostsSniffer hostsSniffer = new ElasticsearchHostsSniffer(restClient,
-        ElasticsearchHostsSniffer.DEFAULT_SNIFF_REQUEST_TIMEOUT,
-        ElasticsearchHostsSniffer.Scheme.HTTPS);
+restClient.close();</pre></div><p>The <code class="literal">Sniffer</code> updates the nodes by default every 5 minutes. This interval can
+be customized by providing it (in milliseconds) as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestClient restClient = RestClient.builder(
+        new HttpHost("localhost", 9200, "http"))
+        .build();
 Sniffer sniffer = Sniffer.builder(restClient)
-        .setHostsSniffer(hostsSniffer).build();</pre></div><p>In the same way it is also possible to customize the <code class="literal">sniffRequestTimeout</code>,
-which defaults to one second. That is the <code class="literal">timeout</code> parameter provided as a
-querystring parameter when calling the Nodes Info api, so that when the
-timeout expires on the server side, a valid response is still returned
-although it may contain only a subset of the nodes that are part of the
-cluster, the ones that have responsed until then.
-Also, a custom <code class="literal">HostsSniffer</code> implementation can be provided for advanced
-use-cases that may require fetching the hosts from external sources.</p><p>The <code class="literal">Sniffer</code> updates the nodes by default every 5 minutes. This interval can
-be customized by providing it (in milliseconds) as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Sniffer sniffer = Sniffer.builder(restClient)
         .setSniffIntervalMillis(60000).build();</pre></div><p>It is also possible to enable sniffing on failure, meaning that after each
 failure the nodes list gets updated straightaway rather than at the following
 ordinary sniffing round. In this case a <code class="literal">SniffOnFailureListener</code> needs to
@@ -636,15 +627,63 @@ be created at first and provided at <code class="literal">RestClient</code> crea
 <code class="literal">SniffOnFailureListener</code> instance, which will be notified at each failure
 and use the <code class="literal">Sniffer</code> to perform the additional sniffing round as described.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">SniffOnFailureListener sniffOnFailureListener = new SniffOnFailureListener();
 RestClient restClient = RestClient.builder(new HttpHost("localhost", 9200))
-        .setFailureListener(sniffOnFailureListener).build();
-Sniffer sniffer = Sniffer.builder(restClient).build();
-sniffOnFailureListener.setSniffer(sniffer);</pre></div><p>When using sniffing on failure, not only do the nodes get updated after each
+        .setFailureListener(sniffOnFailureListener) <a id="CO17-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        .build();
+Sniffer sniffer = Sniffer.builder(restClient)
+        .setSniffAfterFailureDelayMillis(30000) <a id="CO17-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        .build();
+sniffOnFailureListener.setSniffer(sniffer); <a id="CO17-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set the failure listener to the <code class="literal">RestClient</code> instance
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+When sniffing on failure, not only do the nodes get updated after each
 failure, but an additional sniffing round is also scheduled sooner than usual,
 by default one minute after the failure, assuming that things will go back to
-normal and we want  to detect that as soon as possible. Said interval can be
-customized  at <code class="literal">Sniffer</code> creation time as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Sniffer sniffer = Sniffer.builder(restClient)
-        .setSniffAfterFailureDelayMillis(30000).build();</pre></div><p>Note that this last configuration parameter has no effect in case sniffing
-on failure is not enabled like explained above.</p></div><div class="navfooter"><span class="prev"><a href="_maven_repository.html">
+normal and we want to detect that as soon as possible. Said interval can be
+customized  at <code class="literal">Sniffer</code> creation time through the <code class="literal">setSniffAfterFailureDelayMillis</code>
+method. Note that this last configuration parameter has no effect in case sniffing
+on failure is not enabled like explained above.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set the <code class="literal">Sniffer</code> instance to the failure listener
+</p></td></tr></table></div><p>The Elasticsearch Nodes Info api doesn’t return the protocol to use when
+connecting to the nodes but only their <code class="literal">host:port</code> key-pair, hence <code class="literal">http</code>
+is used by default. In case <code class="literal">https</code> should be used instead, the
+<code class="literal">ElasticsearchHostsSniffer</code> instance has to be manually created and provided
+as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestClient restClient = RestClient.builder(
+        new HttpHost("localhost", 9200, "http"))
+        .build();
+HostsSniffer hostsSniffer = new ElasticsearchHostsSniffer(
+        restClient,
+        ElasticsearchHostsSniffer.DEFAULT_SNIFF_REQUEST_TIMEOUT,
+        ElasticsearchHostsSniffer.Scheme.HTTPS);
+Sniffer sniffer = Sniffer.builder(restClient)
+        .setHostsSniffer(hostsSniffer).build();</pre></div><p>In the same way it is also possible to customize the <code class="literal">sniffRequestTimeout</code>,
+which defaults to one second. That is the <code class="literal">timeout</code> parameter provided as a
+querystring parameter when calling the Nodes Info api, so that when the
+timeout expires on the server side, a valid response is still returned
+although it may contain only a subset of the nodes that are part of the
+cluster, the ones that have responded until then.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestClient restClient = RestClient.builder(
+        new HttpHost("localhost", 9200, "http"))
+        .build();
+HostsSniffer hostsSniffer = new ElasticsearchHostsSniffer(
+        restClient,
+        TimeUnit.SECONDS.toMillis(5),
+        ElasticsearchHostsSniffer.Scheme.HTTP);
+Sniffer sniffer = Sniffer.builder(restClient)
+        .setHostsSniffer(hostsSniffer).build();</pre></div><p>Also, a custom <code class="literal">HostsSniffer</code> implementation can be provided for advanced
+use-cases that may require fetching the hosts from external sources rather
+than from Elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestClient restClient = RestClient.builder(
+        new HttpHost("localhost", 9200, "http"))
+        .build();
+HostsSniffer hostsSniffer = new HostsSniffer() {
+    @Override
+    public List&lt;HttpHost&gt; sniffHosts() throws IOException {
+        return null; <a id="CO18-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    }
+};
+Sniffer sniffer = Sniffer.builder(restClient)
+        .setHostsSniffer(hostsSniffer).build();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Fetch the hosts from the external source
+</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="_maven_repository.html">
               « 
               Maven Repository</a>
            
