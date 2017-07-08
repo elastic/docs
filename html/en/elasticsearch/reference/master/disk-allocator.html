@@ -629,12 +629,18 @@ file or updated dynamically on a live cluster with the
     the node.
 </dd><dt><span class="term">
 <code class="literal">cluster.routing.allocation.disk.watermark.floodstage</code>
-</span></dt><dd><pre class="literallayout">Controls the floodstage watermark. It defaults to 95%, meaning ES enforces a read-only
-index block (`index.blocks.read_only_allow_delete`) on every index that has
-one or more shards allocated on the node that has at least one disk exceeding the floodstage.
-This is a last resort to prevent nodes from running out of disk space.
-The index block must be released manually once there is enough disk space available
-to allow indexing operations to continue.</pre><p class="simpara">An example of resetting the read-only index block on the <code class="literal">twitter</code> index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /twitter/_settings
+</span></dt><dd><pre class="literallayout">Controls the flood stage watermark. It defaults to 95%, meaning ES enforces
+a read-only index block (`index.blocks.read_only_allow_delete`) on every
+index that has one or more shards allocated on the node that has at least
+one disk exceeding the flood stage.  This is a last resort to prevent nodes
+from running out of disk space.  The index block must be released manually
+once there is enough disk space available to allow indexing operations to
+continue.</pre><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You can not mix the usage of percentage values and byte values within
+these settings. Either all are set to percentage values, or all are set to byte
+values. This is so that we can we validate that the settings are internally
+consistent (that is, the low disk threshold is not more than the high disk
+threshold, and the high disk threshold is not more than the flood stage
+threshold).</p></div></div><p class="simpara">An example of resetting the read-only index block on the <code class="literal">twitter</code> index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /twitter/_settings
 {
   "index.blocks.read_only_allow_delete": null
 }</pre></div><div class="console_widget" data-snippet="snippets/disk-allocator/1.json"></div></dd><dt><span class="term">
@@ -655,13 +661,12 @@ to allow indexing operations to continue.</pre><p class="simpara">An example of 
 </dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Percentage values refer to used disk space, while byte values refer to
 free disk space. This can be confusing, since it flips the meaning of high and
 low. For example, it makes sense to set the low watermark to 10gb and the high
-watermark to 5gb, but not the other way around.</p></div></div><p>An example of updating the low watermark to no more than 80% of the disk size,
-a high watermark of at least 50 gigabytes free, and a floodstage watermark of
-10 gigabytes free, and updating the information about the cluster every
-minute:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
+watermark to 5gb, but not the other way around.</p></div></div><p>An example of updating the low watermark to at least 100 gigabytes free, a high
+watermark of at least 50 gigabytes free, and a flood stage watermark of 10
+gigabytes free, and updating the information about the cluster every minute:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
 {
   "transient": {
-    "cluster.routing.allocation.disk.watermark.low": "80%",
+    "cluster.routing.allocation.disk.watermark.low": "100gb",
     "cluster.routing.allocation.disk.watermark.high": "50gb",
     "cluster.routing.allocation.disk.watermark.floodstage": "10gb",
     "cluster.info.update.interval": "1m"
