@@ -658,22 +658,35 @@ TermsAggregationBuilder aggregation = AggregationBuilders.terms("by_company")
         .field("company.keyword");
 aggregation.subAggregation(AggregationBuilders.avg("average_age")
         .field("age"));
-searchSourceBuilder.aggregation(aggregation);</pre></div><p>We will later see how to <a class="link" href="java-rest-high-search.html#java-rest-high-retrieve-aggs" title="Retrieving Aggregations">access aggregations</a> in the <code class="literal">SearchResponse</code>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-document-search-sync"></a>Synchronous Execution<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When executing a <code class="literal">SearchRequest</code> in the following manner, the client waits
+searchSourceBuilder.aggregation(aggregation);</pre></div><p>We will later see how to <a class="link" href="java-rest-high-search.html#java-rest-high-retrieve-aggs" title="Retrieving Aggregations">access aggregations</a> in the <code class="literal">SearchResponse</code>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_requesting_suggestions"></a>Requesting Suggestions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>To add Suggestions to the search request, use one of the <code class="literal">SuggestionBuilder</code> implementations
+that are easily accessible from the <code class="literal">SuggestBuilders</code> factory class. Suggestion builders
+need to be added to the top level <code class="literal">SuggestBuilder</code>, which itself can be set on the  <code class="literal">SearchSourceBuilder</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+SuggestionBuilder termSuggestionBuilder =
+    SuggestBuilders.termSuggestion("user").text("kmichy"); <a id="CO109-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+SuggestBuilder suggestBuilder = new SuggestBuilder();
+suggestBuilder.addSuggestion("suggest_user", termSuggestionBuilder); <a id="CO109-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+searchSourceBuilder.suggest(suggestBuilder);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO109-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Creates a new <code class="literal">TermSuggestionBuilder</code> for the <code class="literal">user</code> field and
+the text <code class="literal">kmichy</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO109-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Adds the suggestion builder and names it <code class="literal">suggest_user</code>
+</p></td></tr></table></div><p>We will later see how to <a class="link" href="java-rest-high-search.html#java-rest-high-retrieve-suggestions" title="Retrieving Suggestions">retrieve suggestions</a> from the
+<code class="literal">SearchResponse</code>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-document-search-sync"></a>Synchronous Execution<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When executing a <code class="literal">SearchRequest</code> in the following manner, the client waits
 for the <code class="literal">SearchResponse</code> to be returned before continuing with code execution:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">SearchResponse searchResponse = client.search(searchRequest);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-document-search-async"></a>Asynchronous Execution<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Executing a <code class="literal">SearchRequest</code> can also be done in an asynchronous fashion so that
 the client can return directly. Users need to specify how the response or
 potential failures will be handled by passing in appropriate listeners:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">client.searchAsync(searchRequest, new ActionListener&lt;SearchResponse&gt;() {
     @Override
     public void onResponse(SearchResponse searchResponse) {
-        <a id="CO109-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        <a id="CO110-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
 
     @Override
     public void onFailure(Exception e) {
-        <a id="CO109-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        <a id="CO110-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     }
-});</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO109-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+});</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO110-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Called when the execution is successfully completed.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO109-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO110-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Called when the whole <code class="literal">SearchRequest</code> fails.
 </p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_searchresponse"></a>SearchResponse<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">SearchResponse</code> that is returned by executing the search provides details
 about the search execution itself as well as access to the documents returned.
@@ -713,18 +726,18 @@ List&lt;Object&gt; users = (List&lt;Object&gt;) sourceAsMap.get("user");
 Map&lt;String, Object&gt; innerObject = (Map&lt;String, Object&gt;) sourceAsMap.get("innerObject");</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="java-rest-high-retrieve-aggs"></a>Retrieving Aggregations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Aggregations can be retrieved from the <code class="literal">SearchResponse</code> by first getting the
 root of the aggregation tree, the <code class="literal">Aggregations</code> object, and then getting the
 aggregation by name.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Aggregations aggregations = searchResponse.getAggregations();
-Terms byCompanyAggregation = aggregations.get("by_company"); <a id="CO110-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-Bucket elasticBucket = byCompanyAggregation.getBucketByKey("Elastic"); <a id="CO110-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-Avg averageAge = elasticBucket.getAggregations().get("average_age"); <a id="CO110-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-double avg = averageAge.getValue();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO110-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Terms byCompanyAggregation = aggregations.get("by_company"); <a id="CO111-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+Bucket elasticBucket = byCompanyAggregation.getBucketByKey("Elastic"); <a id="CO111-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+Avg averageAge = elasticBucket.getAggregations().get("average_age"); <a id="CO111-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+double avg = averageAge.getValue();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO111-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Get the <code class="literal">by_company</code> terms aggregation
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO110-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO111-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Get the buckets that is keyed with <code class="literal">Elastic</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO110-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO111-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Get the <code class="literal">average_age</code> sub-aggregation from that bucket
 </p></td></tr></table></div><p>Note that if you access aggregations by name, you need to specify the
 aggregation interface according to the type of aggregation you requested,
-otherwise a <code class="literal">ClassCastException</code> will be thrown:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Range range = aggregations.get("by_company"); <a id="CO111-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO111-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+otherwise a <code class="literal">ClassCastException</code> will be thrown:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Range range = aggregations.get("by_company"); <a id="CO112-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO112-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This will throw an exception because "by_company" is a <code class="literal">terms</code> aggregation
 but we try to retrieve it as a <code class="literal">range</code> aggregation
 </p></td></tr></table></div><p>It is also possible to access all aggregations as a map that is keyed by the
@@ -737,7 +750,22 @@ decide how to further process them based on their type:</p><div class="pre_wrapp
         Bucket elasticBucket = ((Terms) agg).getBucketByKey("Elastic");
         long numberOfDocs = elasticBucket.getDocCount();
     }
-}</pre></div></div></div></div><div class="navfooter"><span class="prev"><a href="java-rest-high-document-bulk.html">
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="java-rest-high-retrieve-suggestions"></a>Retrieving Suggestions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>To get back the suggestions from a <code class="literal">SearchResponse</code>, use the <code class="literal">Suggest</code> object as an entry point and then retrieve the nested suggestion objects:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Suggest suggest = searchResponse.getSuggest(); <a id="CO113-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+TermSuggestion termSuggestion = suggest.getSuggestion("suggest_user"); <a id="CO113-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+for (TermSuggestion.Entry entry : termSuggestion.getEntries()) { <a id="CO113-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    for (TermSuggestion.Entry.Option option : entry) { <a id="CO113-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+        String suggestText = option.getText().string();
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO113-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Use the <code class="literal">Suggest</code> class to access suggestions
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO113-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Suggestions can be retrieved by name. You need to assign them to the correct
+type of Suggestion class (here <code class="literal">TermSuggestion</code>), otherwise a <code class="literal">ClassCastException</code> is thrown
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO113-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Iterate over the suggestion entries
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO113-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Iterate over the options in one entry
+</p></td></tr></table></div></div></div></div><div class="navfooter"><span class="prev"><a href="java-rest-high-document-bulk.html">
               « 
               Bulk API</a>
            
