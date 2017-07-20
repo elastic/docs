@@ -71,7 +71,7 @@ sub build_chunked {
                 "local.book.version"       => $version,
                 "local.book.multi_version" => $multi,
                 "local.page.header"        => $page_header,
-                "local.book.section.title" => "Docs/$section",
+                "local.book.section.title" => "Learn/Docs/$section",
             ),
             $index
         );
@@ -133,7 +133,7 @@ sub build_single {
                 "local.book.version"       => $version,
                 "local.book.multi_version" => $multi,
                 "local.page.header"        => $page_header,
-                "local.book.section.title" => "Docs/$section",
+                "local.book.section.title" => "Learn/Docs/$section",
             ),
             $index
         );

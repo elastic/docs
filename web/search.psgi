@@ -51,8 +51,9 @@ sub _parse_request {
         page    => $page,
     );
 
-    if ( $section =~ /^Docs/ ) {
-        my ( undef, $product, $book, $version ) = split /\//, $section;
+    if ( $section =~ /^Learn\/Docs/ ) {
+        my ( undef, undef, $product, $book, $version ) = split /\//,
+            $section;
         if ( $version && $version eq 'current' ) {
             $section =~ s{current/?$}{};
             $query{section} = $section;

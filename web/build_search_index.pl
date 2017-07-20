@@ -205,8 +205,8 @@ sub _index_book {
         my @files   = _files_to_index($version_dir);
         my $section
             = @versions > 1
-            ? 'Docs/' . $tags . '/' . $version
-            : 'Docs/' . $tags;
+            ? 'Learn/Docs/' . $tags . '/' . $version
+            : 'Learn/Docs/' . $tags;
 
         for my $file (@files) {
             my $url = $Guide_Prefix . substr( $file, $length_dir );

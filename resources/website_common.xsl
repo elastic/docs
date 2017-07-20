@@ -7,7 +7,7 @@
   <xsl:param name="local.book.version">test build</xsl:param>
   <xsl:param name="local.book.multi_version" select="0"/>
   <xsl:param name="local.page.header"></xsl:param>
-  <xsl:param name="local.book.section.title">Docs/</xsl:param>
+  <xsl:param name="local.book.section.title">Learn/Docs/</xsl:param>
 
   <!-- css -->
   <xsl:param name="generate.consistent.ids" select="1"/>
