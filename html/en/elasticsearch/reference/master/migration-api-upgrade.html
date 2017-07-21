@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Restart API
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Migration Upgrade API
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="watcher-api.html" title="Watcher APIs" /><link rel="prev" href="watcher-api-start.html" title="Start API" /><link rel="next" href="migration-api.html" title="Migration APIs" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="migration-api.html" title="Migration APIs" /><link rel="prev" href="migration-api-assistance.html" title="Migration Assistance API" /><link rel="next" href="ml-api-definitions.html" title="Definitions" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Docs/Elasticsearch/Reference/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -596,24 +596,75 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-api.html">X-Pack APIs</a></span> » <span class="breadcrumb-link"><a href="watcher-api.html">Watcher APIs</a></span> » <span class="breadcrumb-node">Restart API</span></div><div class="navheader"><span class="prev"><a href="watcher-api-start.html">
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-api.html">X-Pack APIs</a></span> » <span class="breadcrumb-link"><a href="migration-api.html">Migration APIs</a></span> » <span class="breadcrumb-node">Migration Upgrade API</span></div><div class="navheader"><span class="prev"><a href="migration-api-assistance.html">
               « 
-              Start API</a>
+              Migration Assistance API</a>
            
         </span><span class="next">
            
-          <a href="migration-api.html">Migration APIs
+          <a href="ml-api-definitions.html">Definitions
                »
-            </a></span></div><div class="xpack section"><div class="titlepage"><div><div><h2 class="title"><a id="watcher-api-restart"></a>Restart API</h2></div></div></div><p>The <code class="literal">restart</code> API stops, then starts the Watcher service, as in the
-following example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _xpack/watcher/_restart</pre></div><div class="console_widget" data-snippet="snippets/watcher-api-restart/1.json"></div><p>Watcher returns the following response if the request is successful:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   "acknowledged": true
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="watcher-api-start.html">
+            </a></span></div><div class="xpack section"><div class="titlepage"><div><div><h2 class="title"><a id="migration-api-upgrade"></a>Migration Upgrade API</h2></div></div></div><p>The Migration Upgrade API performs the upgrade of internal indices to make them compatible with the next major version.</p><p>Indices need to be upgraded one at a time by submitting a POST request to the
+<code class="literal">/_xpack/migration/upgrade/index_name</code> endpoint:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_xpack/migration/upgrade/.watches</pre></div><div class="console_widget" data-snippet="snippets/migration-api-upgrade/1.json"></div><p>A successful call returns the statistics about the upgrade process:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "took" : 127,
+  "timed_out" : false,
+  "total" : 4,
+  "updated" : 0,
+  "created" : 4,
+  "deleted" : 0,
+  "batches" : 1,
+  "version_conflicts" : 0,
+  "noops" : 0,
+  "retries" : {
+    "bulk" : 0,
+    "search" : 0
+  },
+  "throttled_millis" : 0,
+  "failures" : [ ]
+}</pre></div><p>By default, the upgrade call blocks until the upgrade process is finished. For large indices the upgrade can be
+performed asynchronously by specifying <code class="literal">wait_for_completion=false</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_xpack/migration/upgrade/.watches?wait_for_completion=false</pre></div><div class="console_widget" data-snippet="snippets/migration-api-upgrade/2.json"></div><p>This call should return the id of the upgrade process task:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "task" : "PFvgv7T6TGumRyFF3vqTFg:1137"
+}</pre></div><p>The status of the running or finished upgrade requests can be obtained using <a class="link" href="tasks.html" title="Task Management API">Task API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks/PFvgv7T6TGumRyFF3vqTFg:1137?detailed=true</pre></div><div class="console_widget" data-snippet="snippets/migration-api-upgrade/3.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "completed" : true, <a id="CO327-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  "task" : {
+    "node" : "PFvgv7T6TGumRyFF3vqTFg",
+    "id" : 1137,
+    "type" : "transport",
+    "action" : "cluster:admin/xpack/upgrade",
+    "description" : "",
+    "start_time_in_millis" : 1500650625413,
+    "running_time_in_nanos" : 947456819,
+    "cancellable" : true
+  },
+  "response" : { <a id="CO327-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    "took" : 212,
+    "timed_out" : false,
+    "total" : 4,
+    "updated" : 0,
+    "created" : 4,
+    "deleted" : 0,
+    "batches" : 1,
+    "version_conflicts" : 0,
+    "noops" : 0,
+    "retries" : {
+      "bulk" : 0,
+      "search" : 0
+    },
+    "throttled_millis" : 0,
+    "failures" : [ ]
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO327-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">true</code> in the <code class="literal">completed</code> field indicates that the upgrade request has finished, <code class="literal">false</code> means that
+request is still executing
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO327-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the <code class="literal">response</code> field contains the status of the upgrade request
+</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="migration-api-assistance.html">
               « 
-              Start API</a>
+              Migration Assistance API</a>
            
         </span><span class="next">
            
-          <a href="migration-api.html">Migration APIs
+          <a href="ml-api-definitions.html">Definitions
                »
             </a></span></div>
 <!-- end body -->
