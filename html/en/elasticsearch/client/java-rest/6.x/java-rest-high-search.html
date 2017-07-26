@@ -698,7 +698,10 @@ the text <code class="literal">kmichy</code>
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO111-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Adds the suggestion builder and names it <code class="literal">suggest_user</code>
 </p></td></tr></table></div><p>We will later see how to <a class="link" href="java-rest-high-search.html#java-rest-high-retrieve-suggestions" title="Retrieving Suggestions">retrieve suggestions</a> from the
-<code class="literal">SearchResponse</code>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-document-search-sync"></a>Synchronous Execution<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When executing a <code class="literal">SearchRequest</code> in the following manner, the client waits
+<code class="literal">SearchResponse</code>.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_profiling_queries_and_aggregations"></a>Profiling Queries and Aggregations<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/search-profile.html" target="_top">Profile API</a> can be used to profile the execution of queries and aggregations for
+a specific search request. in order to use it, the profile flag must be set to true on the <code class="literal">SearchSourceBuilder</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+searchSourceBuilder.profile(true);</pre></div><p>Once the <code class="literal">SearchRequest</code> is executed the corresponding <code class="literal">SearchResponse</code> will
+<a class="link" href="java-rest-high-search.html#java-rest-high-retrieve-profile-results" title="Retrieving Profiling Results">contain the profiling results</a>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-document-search-sync"></a>Synchronous Execution<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When executing a <code class="literal">SearchRequest</code> in the following manner, the client waits
 for the <code class="literal">SearchResponse</code> to be returned before continuing with code execution:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">SearchResponse searchResponse = client.search(searchRequest);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-document-search-async"></a>Asynchronous Execution<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Executing a <code class="literal">SearchRequest</code> can also be done in an asynchronous fashion so that
 the client can return directly. Users need to specify how the response or
 potential failures will be handled by passing in appropriate listeners:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">client.searchAsync(searchRequest, new ActionListener&lt;SearchResponse&gt;() {
@@ -804,7 +807,73 @@ type of Suggestion class (here <code class="literal">TermSuggestion</code>), oth
 Iterate over the suggestion entries
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO116-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Iterate over the options in one entry
-</p></td></tr></table></div></div></div></div><div class="navfooter"><span class="prev"><a href="java-rest-high-document-bulk.html">
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="java-rest-high-retrieve-profile-results"></a>Retrieving Profiling Results<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/apis/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Profiling results are retrieved from a <code class="literal">SearchResponse</code> using the <code class="literal">getProfileResults()</code> method. This
+ method returns a <code class="literal">Map</code> containing a <code class="literal">ProfileShardResult</code> object for every shard involved in the
+ <code class="literal">SearchRequest</code> execution. <code class="literal">ProfileShardResult</code> are stored in the <code class="literal">Map</code> using a key that uniquely
+ identifies the shard the profile result corresponds to.</p><p>Here is a sample code that shows how to iterate over all the profiling results of every shard:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map&lt;String, ProfileShardResult&gt; profilingResults = searchResponse.getProfileResults(); <a id="CO117-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+for (Map.Entry&lt;String, ProfileShardResult&gt; profilingResult : profilingResults.entrySet()) {  <a id="CO117-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    String key = profilingResult.getKey(); <a id="CO117-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    ProfileShardResult profileShardResult = profilingResult.getValue(); <a id="CO117-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO117-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the <code class="literal">Map</code> of <code class="literal">ProfileShardResult</code> from the <code class="literal">SearchResponse</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO117-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Profiling results can be retrieved by shard’s key if the key is known, otherwise it might be simpler
+ to iterate over all the profiling results
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO117-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the key that identifies which shard the <code class="literal">ProfileShardResult</code> belongs to
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO117-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the <code class="literal">ProfileShardResult</code> for the given shard
+</p></td></tr></table></div><p>The <code class="literal">ProfileShardResult</code> object itself contains one or more query profile results, one for each query
+executed against the underlying Lucene index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">List&lt;QueryProfileShardResult&gt; queryProfileShardResults = profileShardResult.getQueryProfileResults(); <a id="CO118-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+for (QueryProfileShardResult queryProfileResult : queryProfileShardResults) { <a id="CO118-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO118-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the list of <code class="literal">QueryProfileShardResult</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO118-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Iterate over each <code class="literal">QueryProfileShardResult</code>
+</p></td></tr></table></div><p>Each <code class="literal">QueryProfileShardResult</code> gives access to the detailed query tree execution, returned as a list of
+<code class="literal">ProfileResult</code> objects:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">for (ProfileResult profileResult : queryProfileResult.getQueryResults()) { <a id="CO119-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    String queryName = profileResult.getQueryName(); <a id="CO119-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    long queryTimeInMillis = profileResult.getTime(); <a id="CO119-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    List&lt;ProfileResult&gt; profiledChildren = profileResult.getProfiledChildren(); <a id="CO119-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO119-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Iterate over the profile results
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO119-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the name of the Lucene query
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO119-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the time in millis spent executing the Lucene query
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO119-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the profile results for the sub-queries (if any)
+</p></td></tr></table></div><p>The Rest API documentation contains more information about <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/_profiling_queries.html" target="_top">Profiling Queries</a> with
+a description of the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/_profiling_queries.html#_literal_query_literal_section" target="_top">query profiling information</a></p><p>The <code class="literal">QueryProfileShardResult</code> also gives access to the profiling information for the Lucene collectors:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">CollectorResult collectorResult = queryProfileResult.getCollectorResult();  <a id="CO120-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+String collectorName = collectorResult.getName();  <a id="CO120-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+Long collectorTimeInMillis = collectorResult.getTime(); <a id="CO120-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+List&lt;CollectorResult&gt; profiledChildren = collectorResult.getProfiledChildren(); <a id="CO120-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO120-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the profiling result of the Lucene collector
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO120-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the name of the Lucene collector
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO120-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the time in millis spent executing the Lucene collector
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO120-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the profile results for the sub-collectors (if any)
+</p></td></tr></table></div><p>The Rest API documentation contains more information about profiling information
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/_profiling_queries.html#_literal_collectors_literal_section" target="_top">for Lucene collectors</a>.</p><p>In a very similar manner to the query tree execution, the <code class="literal">QueryProfileShardResult</code> objects gives access
+to the detailed aggregations tree execution:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">AggregationProfileShardResult aggsProfileResults = profileShardResult.getAggregationProfileResults(); <a id="CO121-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+for (ProfileResult profileResult : aggsProfileResults.getProfileResults()) { <a id="CO121-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    String aggName = profileResult.getQueryName(); <a id="CO121-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    long aggTimeInMillis = profileResult.getTime(); <a id="CO121-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    List&lt;ProfileResult&gt; profiledChildren = profileResult.getProfiledChildren(); <a id="CO121-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO121-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the <code class="literal">AggregationProfileShardResult</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO121-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Iterate over the aggregation profile results
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO121-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the type of the aggregation (corresponds to Java class used to execute the aggregation)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO121-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the time in millis spent executing the Lucene collector
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO121-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Retrieve the profile results for the sub-aggregations (if any)
+</p></td></tr></table></div><p>The Rest API documentation contains more information about <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/_profiling_aggregations.html" target="_top">Profiling Aggregations</a></p></div></div></div><div class="navfooter"><span class="prev"><a href="java-rest-high-document-bulk.html">
               « 
               Bulk API</a>
            
