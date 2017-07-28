@@ -760,7 +760,129 @@ If you have an alias don’t forget to point it to the new index.
   }
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO178-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Percolator query hit is now being presented from the new index.
-</p></td></tr></table></div><h4><a id="_dedicated_percolator_index"></a>Dedicated Percolator Index<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/mapping/types/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Percolate queries can be added to any index. Instead of adding percolate queries to the index the data resides in,
+</p></td></tr></table></div><h4><a id="_optimizing_query_time_text_analysis"></a>Optimizing query time text analysis<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/mapping/types/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When the percolator verifies a percolator candidate match it is going to parse, perform query time text analysis and actually run
+the percolator query on the document being percolated. This is done for each candidate match and every time the <code class="literal">percolate</code> query executes.
+If your query time text analysis is relatively expensive part of query parsing then text analysis can become the
+dominating factor time is being spent on when percolating. This query parsing overhead can become noticeable when the
+percolator ends up verifying many candidate percolator query matches.</p><p>To avoid the most expensive part of text analysis at percolate time. One can choose to do the expensive part of text analysis
+when indexing the percolator query. This requires using two different analyzers. The first analyzer actually performs
+text analysis that needs be performed (expensive part). The second analyzer (usually whitespace) just splits the generated tokens
+that the first analyzer has produced. Then before indexing a percolator query, the analyze api should be used to analyze the query
+text with the more expensive analyzer. The result of the analyze api, the tokens, should be used to substitute the original query
+text in the percolator query. It is important that the query should now be configured to override the analyzer from the mapping and
+just the second analyzer. Most text based queries support an <code class="literal">analyzer</code> option (<code class="literal">match</code>, <code class="literal">query_string</code>, <code class="literal">simple_query_string</code>).
+Using this approach the expensive text analysis is performed once instead of many times.</p><p>Lets demonstrate this workflow via a simplified example.</p><p>Lets say we want to index the following percolator query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "query" : {
+    "match" : {
+      "body" : {
+        "query" : "missing bicycles"
+      }
+    }
+  }
+}</pre></div><p>with these settings and mapping:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test_index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_analyzer" : {
+          "tokenizer": "standard",
+          "filter" : ["lowercase", "porter_stem"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "doc" : {
+      "properties": {
+        "query" : {
+          "type": "percolator"
+        },
+        "body" : {
+          "type": "text",
+          "analyzer": "my_analyzer" <a id="CO179-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/percolator/6.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO179-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+For the purpose of this example, this analyzer is considered expensive.
+</p></td></tr></table></div><p>First we need to use the analyze api to perform the text analysis prior to indexing:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /test_index/_analyze
+{
+  "analyzer" : "my_analyzer",
+  "text" : "missing bicycles"
+}</pre></div><div class="console_widget" data-snippet="snippets/percolator/7.json"></div><p>This results the following response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "tokens": [
+    {
+      "token": "miss",
+      "start_offset": 0,
+      "end_offset": 7,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 0
+    },
+    {
+      "token": "bicycl",
+      "start_offset": 8,
+      "end_offset": 16,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 1
+    }
+  ]
+}</pre></div><p>All the tokens in the returned order need to replace the query text in the percolator query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test_index/doc/1?refresh
+{
+  "query" : {
+    "match" : {
+      "body" : {
+        "query" : "miss bicycl",
+        "analyzer" : "whitespace" <a id="CO180-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/percolator/8.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO180-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+It is important to select a whitespace analyzer here, otherwise the analyzer defined in the mapping will be used,
+which defeats the point of using this workflow. Note that <code class="literal">whitespace</code> is a built-in analyzer, if a different analyzer
+needs to be used, it needs to be configured first in the index’s settings.
+</p></td></tr></table></div><p>The analyze api prior to the indexing the percolator flow should be done for each percolator query.</p><p>At percolate time nothing changes and the <code class="literal">percolate</code> query can be defined normally:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /test_index/_search
+{
+  "query": {
+    "percolate" : {
+      "field" : "query",
+      "document" : {
+        "body" : "Bycicles are missing"
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/percolator/9.json"></div><p>This results in a response like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "took": 6,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped" : 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 1,
+    "max_score": 0.2876821,
+    "hits": [
+      {
+        "_index": "test_index",
+        "_type": "doc",
+        "_id": "1",
+        "_score": 0.2876821,
+        "_source": {
+          "query": {
+            "match": {
+              "body": {
+                "query": "miss bicycl",
+                "analyzer": "whitespace"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}</pre></div><h4><a id="_dedicated_percolator_index"></a>Dedicated Percolator Index<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/mapping/types/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Percolate queries can be added to any index. Instead of adding percolate queries to the index the data resides in,
 these queries can also be added to a dedicated index. The advantage of this is that this dedicated percolator index
 can have its own index settings (For example the number of primary and replica shards). If you choose to have a dedicated
 percolate index, you need to make sure that the mappings from the normal index are also available on the percolate index.
