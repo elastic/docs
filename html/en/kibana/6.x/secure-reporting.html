@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuring Reporting
-        | Kibana User Guide [6.0]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Reporting and Security
+        | Kibana User Guide [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Kibana User Guide [6.0]" /><link rel="up" href="xpack-reporting.html" title="Reporting from Kibana" /><link rel="prev" href="_deprecated_report_urls.html" title="Deprecated Report URLs" /><link rel="next" href="secure-reporting.html" title="Reporting and Security" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Kibana/Reference/6.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Kibana User Guide [6.x]" /><link rel="up" href="configuring-reporting.html" title="Configuring Reporting" /><link rel="prev" href="configuring-reporting.html" title="Configuring Reporting" /><link rel="next" href="securing-reporting.html" title="Securing the Reporting Endpoints" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Kibana/Reference/6.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -596,32 +596,49 @@
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Kibana User Guide
-      [6.0]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-reporting.html">Reporting from Kibana</a></span> » <span class="breadcrumb-node">Configuring Reporting</span></div><div class="navheader"><span class="prev"><a href="_deprecated_report_urls.html">
+      [6.x]
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-reporting.html">Reporting from Kibana</a></span> » <span class="breadcrumb-link"><a href="configuring-reporting.html">Configuring Reporting</a></span> » <span class="breadcrumb-node">Reporting and Security</span></div><div class="navheader"><span class="prev"><a href="configuring-reporting.html">
               « 
-              Deprecated Report URLs</a>
+              Configuring Reporting</a>
            
         </span><span class="next">
            
-          <a href="secure-reporting.html">Reporting and Security
+          <a href="securing-reporting.html">Securing the Reporting Endpoints
                »
-            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-reporting"></a>Configuring Reporting</h2></div></div></div><p>By default, a new encryption key is generated for X-Pack reporting each time
-you start Kibana. This means any pending reports will fail if you
-restart Kibana.</p><p>To set a static encryption key for reporting, set the
-<code class="literal">xpack.reporting.encryptionKey</code> property in the <code class="literal">kibana.yml</code>
-configuration file. You can use any text string as the encryption key.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.reporting.encryptionKey: "something_secret"</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you are load balancing across multiple Kibana instances, they need
-to have the same reporting encryption key. Otherwise, report generation
-will fail if a report is requested through one instance and another instance
-picks up the job from the report queue.</p></div></div><p>You can also configure settings in <code class="literal">kibana.yml</code> to control how X-Pack reporting
-communicates with the Kibana server, manages background jobs, and captures
-screenshots. See <a class="link" href="reporting-settings-kb.html" title="Reporting Settings">Reporting Settings</a> for the complete
-list of settings.</p></div><div class="navfooter"><span class="prev"><a href="_deprecated_report_urls.html">
+            </a></span></div><div class="xpack section"><div class="titlepage"><div><div><h2 class="title"><a id="secure-reporting"></a>Reporting and Security</h2></div></div></div><p>Reporting operates by creating and updating documents in Elasticsearch in response to
+user actions in Kibana.</p><p>To use X-Pack reporting with X-Pack security enabled, you need to
+<a class="ulink" href="https://www.elastic.co/guide/en/x-pack/6.x/kibana.html" target="_top">set up Kibana to work with X-Pack security</a>.
+If you are automatically generating reports with
+<a class="ulink" href="https://www.elastic.co/guide/en/x-pack/6.x/xpack-alerting.html" target="_top">Watcher</a>, you also need to configure Watcher
+to trust the Kibana server’s certificate. For more information, see
+<a class="xref" href="securing-reporting.html" title="Securing the Reporting Endpoints">Securing the Reporting Endpoints</a>.</p><p><a id="reporting-app-users"></a>To enable users to generate reports, assign them the built in <code class="literal">reporting_user</code>
+and <code class="literal">kibana_user</code> roles:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+If you’re using the <code class="literal">native</code> realm, you can assign roles through
+<span class="strong strong"><strong>Management / Users</strong></span> UI in Kibana or with the <code class="literal">user</code> API. For example,
+the following request creates a <code class="literal">reporter</code> user that has the
+<code class="literal">reporting_user</code> and <code class="literal">kibana_user</code> roles:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /_xpack/security/user/reporter
+{
+  "password" : "x-pack-test-password",
+  "roles" : ["kibana_user", "reporting_user"],
+  "full_name" : "Reporting User"
+}</pre></div></li><li class="listitem"><p class="simpara">
+If you are using an LDAP or Active Directory realm, you can either assign
+roles on a per user basis, or assign roles to groups of users. By default, role
+mappings are configured in
+<a class="ulink" href="https://www.elastic.co/guide/en/x-pack/6.x/mapping-roles.html" target="_top"><code class="literal">config/shield/role_mapping.yml</code></a>.
+For example, the following snippet assigns the user named Bill Murray the
+<code class="literal">kibana_user</code> and <code class="literal">reporting_user</code> roles:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">kibana_user:
+  - "cn=Bill Murray,dc=example,dc=com"
+reporting_user:
+  - "cn=Bill Murray,dc=example,dc=com"</pre></div></li></ul></div></div><div class="navfooter"><span class="prev"><a href="configuring-reporting.html">
               « 
-              Deprecated Report URLs</a>
+              Configuring Reporting</a>
            
         </span><span class="next">
            
-          <a href="secure-reporting.html">Reporting and Security
+          <a href="securing-reporting.html">Securing the Reporting Endpoints
                »
             </a></span></div>
 <!-- end body -->
