@@ -607,55 +607,89 @@ subject to the support SLA of official GA features.
           <a href="auditbeat-metricset-audit-kernel.html">Audit kernel metricset
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="auditbeat-metricset-audit-file"></a>Audit file metricset<a href="https://github.com/elastic/beats/edit/6.0/auditbeat/module/audit/file/_meta/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">file</code> metricset sends events when a file is changed (created, updated, or
-deleted) on disk. The events contain file metadata and hashes (MD5, SHA1, and
-SHA256).</p><h3><a id="_configuration_options_11"></a>Configuration options<a href="https://github.com/elastic/beats/edit/6.0/auditbeat/module/audit/file/_meta/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This metricset has some configuration options for tuning its behavior. The
-following example shows all configuration options with their default values.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: audit
+deleted) on disk. The events contain file metadata and hashes.</p><p>The metricset is implemented for Linux, macOS (Darwin), and Windows.</p><h3><a id="_how_it_works"></a>How it works<a href="https://github.com/elastic/beats/edit/6.0/auditbeat/module/audit/file/_meta/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This metricset uses features of the operating system to monitor file changes in
+realtime. When the metricset starts it creates a subscription with the OS to
+receive notifications of changes to the specified files or directories. Upon
+receiving notification of a change the metricset will read the file’s metadata
+and the compute a hash of the file’s contents.</p><p>This metricset does not perform an initial scan of the given paths to generate
+events for the files as they existed at start time. It is strictly driven by
+change notifications from the OS.</p><p>The operating system features that power this feature are as follows.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Linux - <code class="literal">inotify</code> is used, and therefore the kernel must have inotify support.
+Inotify was initially merged into the 2.6.13 Linux kernel.
+</li><li class="listitem">
+macOS (Darwin) - <code class="literal">kqueue</code> is used. It requires one file descriptor for each
+file so please check the <code class="literal">ulimit</code> values used with Auditbeat. The FSEvents
+API was considered for the implementation, but FSEvents coalesces multiple
+notifications into a single event which is inconsistent with the metricset’s
+behavior on other operating systems.
+</li><li class="listitem">
+Windows - <code class="literal">ReadDirectoryChangesW</code> is used.
+</li></ul></div><p>The file metricset should not be used to monitor paths on network file systems.</p><h3><a id="_configuration_options_11"></a>Configuration options<a href="https://github.com/elastic/beats/edit/6.0/auditbeat/module/audit/file/_meta/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This metricset has some configuration options for tuning its behavior. The
+following example shows all configuration options with their default values for
+Linux.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: audit
   metricsets: [file]
   file.paths:
-    binaries:
-    - /bin
-    - /usr/bin
-    - /sbin
-    - /usr/sbin
-    conf:
-    - /etc</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+  - /bin
+  - /usr/bin
+  - /sbin
+  - /usr/sbin
+  - /etc
+  file.max_file_size: 100 MiB
+  file.hash_types: [sha1]</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <span class="strong strong"><strong><code class="literal">file.paths</code></strong></span>
 </span></dt><dd>
-A dictionary of arbitrary names (strings) to a list of paths
-(directories or files).
+A list of paths (directories or files) to watch. The watches
+are non-recursive and globs are not supported. The specified paths should exist
+when the metricset is started.
+</dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">file.max_file_size</code></strong></span>
+</span></dt><dd>
+The maximum size of a file in bytes for which
+Auditbeat will compute hashes. Files larger than this size will not be
+hashed. The default value is 100 MiB. For convenience units can be specified as
+a suffix to the value. The supported units are <code class="literal">b</code>, <code class="literal">kib</code>, <code class="literal">kb</code>, <code class="literal">mib</code>, <code class="literal">mb</code>,
+<code class="literal">gib</code>, <code class="literal">gb</code>, <code class="literal">tib</code>, <code class="literal">tb</code>, <code class="literal">pib</code>, <code class="literal">pb</code>, <code class="literal">eib</code>, and <code class="literal">eb</code>.
+</dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">file.hash_types</code></strong></span>
+</span></dt><dd>
+A list of hash types to compute when the file changes.
+The supported hash types are md5, sha1, sha224, sha256, sha384, sha512,
+sha512_224, and sha512_256. The default value is sha1.
 </dd></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fields"></a>Fields<a href="https://github.com/elastic/beats/edit/6.0/auditbeat/docs/modules/audit/file.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For a description of each field in the metricset, see the
 <a class="link" href="exported-fields-audit.html" title="Audit Fields">exported fields</a> section.</p><p>Here is an example document generated by this metricset:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-    "@timestamp": "2017-07-10T18:13:08.197Z",
-    "audit": {
-        "file": {
-            "action": "created",
-            "atime": "2017-07-10T18:13:08Z",
-            "ctime": "2017-07-10T18:13:08Z",
-            "gid": 20,
-            "group": "staff",
-            "hashed": true,
-            "inode": "11706872",
-            "md5": "5eb63bbbe01eeed093cb22bb8f5acdc3",
-            "mode": "0600",
-            "mtime": "2017-07-10T18:13:08Z",
-            "owner": "akroh",
-            "path": "/var/folders/8x/rnyk6yxn6w97lddn3bs02gf00000gn/T/audit-file232876074/file.data",
-            "sha1": "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed",
-            "sha256": "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
-            "size": 11,
-            "type": "file",
-            "uid": 501
-        }
-    },
-    "beat": {
-        "hostname": "host.example.com",
-        "name": "host.example.com"
-    },
-    "metricset": {
-        "module": "audit",
-        "name": "file",
-        "rtt": 115
+  "@timestamp": "2017-07-31T14:40:28.173Z",
+  "@metadata": {
+    "beat": "noindex",
+    "type": "doc"
+  },
+  "audit": {
+    "file": {
+      "hashed": true,
+      "group": "staff",
+      "path": "/var/folders/8x/rnyk6yxn6w97lddn3bs02gf00000gn/T/audit-file927187403/file.data",
+      "inode": "12512120",
+      "size": 11,
+      "ctime": "2017-07-31T14:40:28.000Z",
+      "mode": "0600",
+      "owner": "akroh",
+      "atime": "2017-07-31T14:40:28.000Z",
+      "sha1": "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed",
+      "action": "created",
+      "mtime": "2017-07-31T14:40:28.000Z",
+      "type": "file",
+      "uid": 501,
+      "gid": 20
     }
+  },
+  "metricset": {
+    "module": "audit",
+    "name": "file",
+    "rtt": 115
+  },
+  "beat": {
+    "name": "host.example.com",
+    "hostname": "host.example.com"
+  }
 }</pre></div></div></div><div class="navfooter"><span class="prev"><a href="auditbeat-module-audit.html">
               « 
               Audit Module</a>
