@@ -616,7 +616,9 @@ mean.  Any data which falls outside three standard deviations is often considere
 an anomaly.</p><p>When a range of percentiles are retrieved, they can be used to estimate the
 data distribution and determine if the data is skewed, bimodal, etc.</p><p>Assume your data consists of website load times.  The average and median
 load times are not overly useful to an administrator.  The max may be interesting,
-but it can be easily skewed by a single slow response.</p><p>Let’s look at a range of percentiles representing load time:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+but it can be easily skewed by a single slow response.</p><p>Let’s look at a range of percentiles representing load time:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET latency/data/_search
+{
+    "size": 0,
     "aggs" : {
         "load_time_outlier" : {
             "percentiles" : {
@@ -624,7 +626,7 @@ but it can be easily skewed by a single slow response.</p><p>Let’s look at a r
             }
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO51-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-percentile-aggregation/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO51-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The field <code class="literal">load_time</code> must be a numeric field
 </p></td></tr></table></div><p>By default, the <code class="literal">percentile</code> metric will generate a range of
 percentiles: <code class="literal">[ 1, 5, 25, 50, 75, 95, 99 ]</code>.  The response will look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
@@ -633,13 +635,13 @@ percentiles: <code class="literal">[ 1, 5, 25, 50, 75, 95, 99 ]</code>.  The res
    "aggregations": {
       "load_time_outlier": {
          "values" : {
-            "1.0": 15,
-            "5.0": 20,
-            "25.0": 23,
-            "50.0": 25,
-            "75.0": 29,
-            "95.0": 60,
-            "99.0": 150
+            "1.0": 9.9,
+            "5.0": 29.500000000000004,
+            "25.0": 167.5,
+            "50.0": 445.0,
+            "75.0": 722.5,
+            "95.0": 940.5,
+            "99.0": 980.1000000000001
          }
       }
    }
@@ -648,7 +650,9 @@ in the default range.  If we assume response times are in milliseconds, it is
 immediately obvious that the webpage normally loads in 15-30ms, but occasionally
 spikes to 60-150ms.</p><p>Often, administrators are only interested in outliers — the extreme percentiles.
 We can specify just the percents we are interested in (requested percentiles
-must be a value between 0-100 inclusive):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+must be a value between 0-100 inclusive):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET latency/data/_search
+{
+    "size": 0,
     "aggs" : {
         "load_time_outlier" : {
             "percentiles" : {
@@ -657,58 +661,61 @@ must be a value between 0-100 inclusive):</p><div class="pre_wrapper"><pre class
             }
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO52-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-percentile-aggregation/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO52-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Use the <code class="literal">percents</code> parameter to specify particular percentiles to calculate
-</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_keyed_response"></a>Keyed Response<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/metrics/percentile-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default the <code class="literal">keyed</code> flag is set to <code class="literal">true</code> which associates a unique string key with each bucket and returns the ranges as a hash rather than an array. Setting the <code class="literal">keyed</code> flag to <code class="literal">false</code> will disable this behavior:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST bank/account/_search?size=0
+</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_keyed_response"></a>Keyed Response<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/metrics/percentile-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default the <code class="literal">keyed</code> flag is set to <code class="literal">true</code> which associates a unique string key with each bucket and returns the ranges as a hash rather than an array. Setting the <code class="literal">keyed</code> flag to <code class="literal">false</code> will disable this behavior:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET latency/data/_search
 {
+    "size": 0,
     "aggs": {
-        "balance_outlier": {
+        "load_time_outlier": {
             "percentiles": {
-                "field": "balance",
+                "field": "load_time",
                 "keyed": false
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-percentile-aggregation/1.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-percentile-aggregation/3.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     ...
 
     "aggregations": {
-        "balance_outlier": {
+        "load_time_outlier": {
             "values": [
                 {
                     "key": 1.0,
-                    "value": 1462.8400000000001
+                    "value": 9.9
                 },
                 {
                     "key": 5.0,
-                    "value": 3591.85
+                    "value": 29.500000000000004
                 },
                 {
                     "key": 25.0,
-                    "value": 13709.333333333334
+                    "value": 167.5
                 },
                 {
                     "key": 50.0,
-                    "value": 26020.11666666667
+                    "value": 445.0
                 },
                 {
                     "key": 75.0,
-                    "value": 38139.648148148146
+                    "value": 722.5
                 },
                 {
                     "key": 95.0,
-                    "value": 47551.549999999996
+                    "value": 940.5
                 },
                 {
                     "key": 99.0,
-                    "value": 49339.16
+                    "value": 980.1000000000001
                 }
             ]
         }
     }
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_script_6"></a>Script<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/metrics/percentile-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The percentile metric supports scripting.  For example, if our load times
 are in milliseconds but we want percentiles calculated in seconds, we could use
-a script to convert them on-the-fly:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+a script to convert them on-the-fly:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET latency/data/_search
+{
+    "size": 0,
     "aggs" : {
         "load_time_outlier" : {
             "percentiles" : {
@@ -722,25 +729,27 @@ a script to convert them on-the-fly:</p><div class="pre_wrapper"><pre class="pro
             }
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO53-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-percentile-aggregation/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO53-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">field</code> parameter is replaced with a <code class="literal">script</code> parameter, which uses the
 script to generate values which percentiles are calculated on
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO53-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Scripting supports parameterized input just like any other script
-</p></td></tr></table></div><p>This will interpret the <code class="literal">script</code> parameter as an <code class="literal">inline</code> script with the <code class="literal">painless</code> script language and no script parameters. To use a stored script use the following syntax:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+</p></td></tr></table></div><p>This will interpret the <code class="literal">script</code> parameter as an <code class="literal">inline</code> script with the <code class="literal">painless</code> script language and no script parameters. To use a stored script use the following syntax:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET latency/data/_search
+{
+    "size": 0,
     "aggs" : {
         "load_time_outlier" : {
             "percentiles" : {
                 "script" : {
                     "id": "my_script",
-                    "params" : {
-                        "timeUnit" : 1000
+                    "params": {
+                        "field": "load_time"
                     }
                 }
             }
         }
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="search-aggregations-metrics-percentile-aggregation-approximation"></a>Percentiles are (usually) approximate<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/metrics/percentile-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There are many different algorithms to calculate percentiles.  The naive
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-percentile-aggregation/5.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="search-aggregations-metrics-percentile-aggregation-approximation"></a>Percentiles are (usually) approximate<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/metrics/percentile-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There are many different algorithms to calculate percentiles.  The naive
 implementation simply stores all the values in a sorted array.  To find the 50th
 percentile, you simply find the value that is at <code class="literal">my_array[count(my_array) * 0.5]</code>.</p><p>Clearly, the naive implementation does not scale — the sorted array grows
 linearly with the number of values in your dataset.  To calculate percentiles
@@ -763,7 +772,9 @@ on the number of collected values and the requested percentile:</p><p><span clas
 for large number of values is that the law of large numbers makes the distribution of
 values more and more uniform and the t-digest tree can do a better job at summarizing
 it. It would not be the case on more skewed distributions.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="search-aggregations-metrics-percentile-aggregation-compression"></a>Compression<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/metrics/percentile-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Approximate algorithms must balance memory utilization with estimation accuracy.
-This balance can be controlled using a <code class="literal">compression</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+This balance can be controlled using a <code class="literal">compression</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET latency/data/_search
+{
+    "size": 0,
     "aggs" : {
         "load_time_outlier" : {
             "percentiles" : {
@@ -774,7 +785,7 @@ This balance can be controlled using a <code class="literal">compression</code> 
             }
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO54-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-percentile-aggregation/6.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO54-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Compression controls memory usage and approximation error
 </p></td></tr></table></div><p>The TDigest algorithm uses a number of "nodes" to approximate percentiles — the
 more nodes available, the higher the accuracy (and large memory footprint) proportional
@@ -791,7 +802,9 @@ that can be useful when calculating percentiles for latency measurements as it c
 with the trade-off of a larger memory footprint. This implementation maintains a fixed worse-case percentage error (specified
 as a number of significant digits). This means that if data is recorded with values from 1 microsecond up to 1 hour
 (3,600,000,000 microseconds) in a histogram set to 3 significant digits, it will maintain a value resolution of 1 microsecond
-for values up to 1 millisecond and 3.6 seconds (or better) for the maximum tracked value (1 hour).</p><p>The HDR Histogram can be used by specifying the <code class="literal">method</code> parameter in the request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+for values up to 1 millisecond and 3.6 seconds (or better) for the maximum tracked value (1 hour).</p><p>The HDR Histogram can be used by specifying the <code class="literal">method</code> parameter in the request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET latency/data/_search
+{
+    "size": 0,
     "aggs" : {
         "load_time_outlier" : {
             "percentiles" : {
@@ -803,14 +816,16 @@ for values up to 1 millisecond and 3.6 seconds (or better) for the maximum track
             }
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO55-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-percentile-aggregation/7.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO55-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 <code class="literal">hdr</code> object indicates that HDR Histogram should be used to calculate the percentiles and specific settings for this algorithm can be specified inside the object
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO55-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 <code class="literal">number_of_significant_value_digits</code> specifies the resolution of values for the histogram in number of significant digits
 </p></td></tr></table></div><p>The HDRHistogram only supports positive values and will error if it is passed a negative value. It is also not a good idea to use
 the HDRHistogram if the range of values is unknown as this could lead to high memory usage.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_missing_value_6"></a>Missing value<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/metrics/percentile-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">missing</code> parameter defines how documents that are missing a value should be treated.
 By default they will be ignored but it is also possible to treat them as if they
-had a value.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+had a value.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET latency/data/_search
+{
+    "size": 0,
     "aggs" : {
         "grade_percentiles" : {
             "percentiles" : {
@@ -819,7 +834,7 @@ had a value.</p><div class="pre_wrapper"><pre class="programlisting prettyprint 
             }
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO56-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-percentile-aggregation/8.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO56-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Documents without a value in the <code class="literal">grade</code> field will fall into the same bucket as documents that have the value <code class="literal">10</code>.
 </p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-metrics-min-aggregation.html">
               « 
