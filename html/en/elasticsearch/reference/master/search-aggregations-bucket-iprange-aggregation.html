@@ -605,7 +605,9 @@ Not what you want? See the
            
           <a href="search-aggregations-bucket-missing-aggregation.html">Missing Aggregation
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-bucket-iprange-aggregation"></a>IP Range Aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/iprange-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Just like the dedicated <a class="link" href="search-aggregations-bucket-daterange-aggregation.html" title="Date Range Aggregation">date</a> range aggregation, there is also a dedicated range aggregation for IP typed fields:</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-bucket-iprange-aggregation"></a>IP Range Aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/iprange-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Just like the dedicated <a class="link" href="search-aggregations-bucket-daterange-aggregation.html" title="Date Range Aggregation">date</a> range aggregation, there is also a dedicated range aggregation for IP typed fields:</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /ip_addresses/data/_search
+{
+    "size": 10,
     "aggs" : {
         "ip_ranges" : {
             "ip_range" : {
@@ -617,7 +619,7 @@ Not what you want? See the
             }
         }
     }
-}</pre></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-iprange-aggregation/1.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     ...
 
     "aggregations": {
@@ -625,16 +627,18 @@ Not what you want? See the
             "buckets" : [
                 {
                     "to": "10.0.0.5",
-                    "doc_count": 4
+                    "doc_count": 10
                 },
                 {
                     "from": "10.0.0.5",
-                    "doc_count": 6
+                    "doc_count": 260
                 }
             ]
         }
     }
-}</pre></div><p>IP ranges can also be defined as CIDR masks:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><p>IP ranges can also be defined as CIDR masks:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /ip_addresses/data/_search
+{
+    "size": 0,
     "aggs" : {
         "ip_ranges" : {
             "ip_range" : {
@@ -646,30 +650,34 @@ Not what you want? See the
             }
         }
     }
-}</pre></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-iprange-aggregation/2.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    ...
+
     "aggregations": {
         "ip_ranges": {
             "buckets": [
                 {
                     "key": "10.0.0.0/25",
                     "from": "10.0.0.0",
-                    "to": "10.0.0.127",
-                    "doc_count": 127
+                    "to": "10.0.0.128",
+                    "doc_count": 128
                 },
                 {
                     "key": "10.0.0.127/25",
                     "from": "10.0.0.0",
-                    "to": "10.0.0.127",
-                    "doc_count": 127
+                    "to": "10.0.0.128",
+                    "doc_count": 128
                 }
             ]
         }
     }
-}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_keyed_response_6"></a>Keyed Response<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/iprange-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Setting the <code class="literal">keyed</code> flag to <code class="literal">true</code> will associate a unique string key with each bucket and return the ranges as a hash rather than an array:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_keyed_response_6"></a>Keyed Response<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/iprange-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Setting the <code class="literal">keyed</code> flag to <code class="literal">true</code> will associate a unique string key with each bucket and return the ranges as a hash rather than an array:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /ip_addresses/data/_search
+{
+    "size": 0,
     "aggs": {
         "ip_ranges": {
             "ip_range": {
-                "field": "remote_ip",
+                "field": "ip",
                 "ranges": [
                     { "to" : "10.0.0.5" },
                     { "from" : "10.0.0.5" }
@@ -678,7 +686,7 @@ Not what you want? See the
             }
         }
     }
-}</pre></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-iprange-aggregation/3.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     ...
 
     "aggregations": {
@@ -686,20 +694,22 @@ Not what you want? See the
             "buckets": {
                 "*-10.0.0.5": {
                     "to": "10.0.0.5",
-                    "doc_count": 1462
+                    "doc_count": 10
                 },
                 "10.0.0.5-*": {
                     "from": "10.0.0.5",
-                    "doc_count": 50000
+                    "doc_count": 260
                 }
             }
         }
     }
-}</pre></div><p>It is also possible to customize the key for each range:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><p>It is also possible to customize the key for each range:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /ip_addresses/data/_search
+{
+    "size": 0,
     "aggs": {
         "ip_ranges": {
             "ip_range": {
-                "field": "remote_ip",
+                "field": "ip",
                 "ranges": [
                     { "key": "infinity", "to" : "10.0.0.5" },
                     { "key": "and-beyond", "from" : "10.0.0.5" }
@@ -708,7 +718,7 @@ Not what you want? See the
             }
         }
     }
-}</pre></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-iprange-aggregation/4.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     ...
 
     "aggregations": {
@@ -716,11 +726,11 @@ Not what you want? See the
             "buckets": {
                 "infinity": {
                     "to": "10.0.0.5",
-                    "doc_count": 1462
+                    "doc_count": 10
                 },
                 "and-beyond": {
                     "from": "10.0.0.5",
-                    "doc_count": 50000
+                    "doc_count": 260
                 }
             }
         }
