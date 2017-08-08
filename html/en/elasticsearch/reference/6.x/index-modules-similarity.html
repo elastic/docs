@@ -747,7 +747,171 @@ Jelinek Mercer similarity</a> . The algorithm attempts to capture important patt
 The optimal value depends on both the collection and the query. The optimal value is around <code class="literal">0.1</code>
 for title queries and <code class="literal">0.7</code> for long queries. Default to <code class="literal">0.1</code>. When value approaches <code class="literal">0</code>, documents that match more query terms will be ranked higher than those that match fewer terms.
 </p>
-</td></tr></tbody></table></div><p>Type name: <code class="literal">LMJelinekMercer</code></p><h4><a id="default-base"></a>Default Similarity<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/index-modules/similarity.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default, Elasticsearch will use whatever similarity is configured as
+</td></tr></tbody></table></div><p>Type name: <code class="literal">LMJelinekMercer</code></p><h4><a id="scripted_similarity"></a>Scripted similarity<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/index-modules/similarity.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A similarity that allows you to use a script in order to specify how scores
+should be computed. For instance, the below example shows how to reimplement
+TF-IDF:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT index
+{
+  "settings": {
+    "number_of_shards": 1,
+    "similarity": {
+      "scripted_tfidf": {
+        "type": "scripted",
+        "script": {
+          "source": "double tf = Math.sqrt(doc.freq); double idf = Math.log((field.docCount+1.0)/(term.docFreq+1.0)) + 1.0; double norm = 1/Math.sqrt(doc.length); return query.boost * tf * idf * norm;"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "doc": {
+      "properties": {
+        "field": {
+          "type": "text",
+          "similarity": "scripted_tfidf"
+        }
+      }
+    }
+  }
+}
+
+PUT index/doc/1
+{
+  "field": "foo bar foo"
+}
+
+PUT index/doc/2
+{
+  "field": "bar baz"
+}
+
+POST index/_refresh
+
+GET index/_search?explain=true
+{
+  "query": {
+    "query_string": {
+      "query": "foo^1.7",
+      "default_field": "field"
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/index-modules-similarity/1.json"></div><p>Which yields:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "took": 12,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 1,
+    "max_score": 1.9508477,
+    "hits": [
+      {
+        "_shard": "[index][0]",
+        "_node": "OzrdjxNtQGaqs4DmioFw9A",
+        "_index": "index",
+        "_type": "doc",
+        "_id": "1",
+        "_score": 1.9508477,
+        "_source": {
+          "field": "foo bar foo"
+        },
+        "_explanation": {
+          "value": 1.9508477,
+          "description": "weight(field:foo in 0) [PerFieldSimilarity], result of:",
+          "details": [
+            {
+              "value": 1.9508477,
+              "description": "score from ScriptedSimilarity(weightScript=[null], script=[Script{type=inline, lang='painless', idOrCode='double tf = Math.sqrt(doc.freq); double idf = Math.log((field.docCount+1.0)/(term.docFreq+1.0)) + 1.0; double norm = 1/Math.sqrt(doc.length); return query.boost * tf * idf * norm;', options={}, params={}}]) computed from:",
+              "details": [
+                {
+                  "value": 1.0,
+                  "description": "weight",
+                  "details": []
+                },
+                {
+                  "value": 1.7,
+                  "description": "query.boost",
+                  "details": []
+                },
+                {
+                  "value": 2.0,
+                  "description": "field.docCount",
+                  "details": []
+                },
+                {
+                  "value": 4.0,
+                  "description": "field.sumDocFreq",
+                  "details": []
+                },
+                {
+                  "value": 5.0,
+                  "description": "field.sumTotalTermFreq",
+                  "details": []
+                },
+                {
+                  "value": 1.0,
+                  "description": "term.docFreq",
+                  "details": []
+                },
+                {
+                  "value": 2.0,
+                  "description": "term.totalTermFreq",
+                  "details": []
+                },
+                {
+                  "value": 2.0,
+                  "description": "doc.freq",
+                  "details": []
+                },
+                {
+                  "value": 3.0,
+                  "description": "doc.length",
+                  "details": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}</pre></div><p>You might have noticed that a significant part of the script depends on
+statistics that are the same for every document. It is possible to make the
+above slightly more efficient by providing an <code class="literal">weight_script</code> which will
+compute the document-independent part of the score and will be available
+under the <code class="literal">weight</code> variable. When no <code class="literal">weight_script</code> is provided, <code class="literal">weight</code>
+is equal to <code class="literal">1</code>. The <code class="literal">weight_script</code> has access to the same variables as
+the <code class="literal">script</code> except <code class="literal">doc</code> since it is supposed to compute a
+document-independent contribution to the score.</p><p>The below configuration will give the same tf-idf scores but is slightly
+more efficient:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT index
+{
+  "settings": {
+    "number_of_shards": 1,
+    "similarity": {
+      "scripted_tfidf": {
+        "type": "scripted",
+        "weight_script": {
+          "source": "double idf = Math.log((field.docCount+1.0)/(term.docFreq+1.0)) + 1.0; return query.boost * idf;"
+        },
+        "script": {
+          "source": "double tf = Math.sqrt(doc.freq); double norm = 1/Math.sqrt(doc.length); return weight * tf * norm;"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "doc": {
+      "properties": {
+        "field": {
+          "type": "text",
+          "similarity": "scripted_tfidf"
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/index-modules-similarity/2.json"></div><p>Type name: <code class="literal">scripted</code></p><h4><a id="default-base"></a>Default Similarity<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/index-modules/similarity.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default, Elasticsearch will use whatever similarity is configured as
 <code class="literal">default</code>.</p><p>You can change the default similarity for all fields in an index when
 it is <a class="link" href="indices-create-index.html" title="Create Index">created</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_index
 {
