@@ -605,41 +605,22 @@ Not what you want? See the
            
           <a href="repository-s3.html">S3 Repository Plugin
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="repository-azure-usage"></a>Azure Repository<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/plugins/repository-azure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To enable Azure repositories, you have first to set your azure storage settings in <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
-    azure:
-        storage:
-            my_account:
-                account: your_azure_storage_account
-                key: your_azure_storage_key</pre></div><p>Note that you can also define more than one account:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
-    azure:
-        storage:
-            my_account1:
-                account: your_azure_storage_account1
-                key: your_azure_storage_key1
-                default: true
-            my_account2:
-                account: your_azure_storage_account2
-                key: your_azure_storage_key2</pre></div><p><code class="literal">my_account1</code> is the default account which will be used by a repository unless you set an explicit one.</p><p>You can set the client side timeout to use when making any single request. It can be defined globally, per account or both.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="repository-azure-usage"></a>Azure Repository<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/plugins/repository-azure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To enable Azure repositories, you have first to define your azure storage settings as
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/secure-settings.html" target="_top">secured settings</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/elasticsearch-keystore add azure.client.default.account
+bin/elasticsearch-keystore add azure.client.default.key</pre></div><p>Where <code class="literal">account</code> is the azure account name and <code class="literal">key</code> the azure secret key.</p><p>Note that you can also define more than one account:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/elasticsearch-keystore add azure.client.default.account
+bin/elasticsearch-keystore add azure.client.default.key
+bin/elasticsearch-keystore add azure.client.secondary.account
+bin/elasticsearch-keystore add azure.client.secondary.key</pre></div><p><code class="literal">default</code> is the default account name which will be used by a repository unless you set an explicit one.</p><p>You can set the client side timeout to use when making any single request. It can be defined globally, per account or both.
 It’s not set by default which means that elasticsearch is using the
 <a class="ulink" href="http://azure.github.io/azure-storage-java/com/microsoft/azure/storage/RequestOptions.html#setTimeoutIntervalInMs(java.lang.Integer)" target="_top">default value</a>
 set by the azure client (known as 5 minutes).</p><p><code class="literal">max_retries</code> can help to control the exponential backoff policy. It will fix the number of retries
 in case of failures before considering the snapshot is failing. Defaults to <code class="literal">3</code> retries.
 The initial backoff period is defined by Azure SDK as <code class="literal">30s</code>. Which means <code class="literal">30s</code> of wait time
 before retrying after a first timeout or failure. The maximum backoff period is defined by Azure SDK as
-<code class="literal">90s</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud:
-    azure:
-        storage:
-            timeout: 10s
-            my_account1:
-                account: your_azure_storage_account1
-                key: your_azure_storage_key1
-                default: true
-                max_retries: 7
-            my_account2:
-                account: your_azure_storage_account2
-                key: your_azure_storage_key2
-                timeout: 30s</pre></div><p>In this example, timeout will be <code class="literal">10s</code> per try for <code class="literal">my_account1</code> with <code class="literal">7</code> retries before failing
-and <code class="literal">30s</code> per try for <code class="literal">my_account2</code> with <code class="literal">3</code> retries.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h3>Supported Azure Storage Account types</h3><p>The Azure Repository plugin works with all Standard storage accounts</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">90s</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud.azure.storage.timeout: 10s
+azure.client.default.max_retries: 7
+azure.client.secondary.timeout: 30s</pre></div><p>In this example, timeout will be <code class="literal">10s</code> per try for <code class="literal">default</code> with <code class="literal">7</code> retries before failing
+and <code class="literal">30s</code> per try for <code class="literal">secondary</code> with <code class="literal">3</code> retries.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h3>Supported Azure Storage Account types</h3><p>The Azure Repository plugin works with all Standard storage accounts</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Standard Locally Redundant Storage - <code class="literal">Standard_LRS</code>
 </li><li class="listitem">
 Standard Zone-Redundant Storage - <code class="literal">Standard_ZRS</code>
@@ -648,10 +629,9 @@ Standard Geo-Redundant Storage - <code class="literal">Standard_GRS</code>
 </li><li class="listitem">
 Standard Read Access Geo-Redundant Storage - <code class="literal">Standard_RAGRS</code>
 </li></ul></div><p><a class="ulink" href="https://azure.microsoft.com/en-gb/documentation/articles/storage-premium-storage" target="_top">Premium Locally Redundant Storage</a> (<code class="literal">Premium_LRS</code>) is <span class="strong strong"><strong>not supported</strong></span> as it is only usable as VM disk storage, not as general storage.</p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="repository-azure-repository-settings"></a>Repository settings<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/plugins/repository-azure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The Azure repository supports following settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">account</code>
+<code class="literal">client</code>
 </span></dt><dd>
-    Azure account settings to use. Defaults to the only one if you set a single
-    account or to the one marked as <code class="literal">default</code> if you have more than one.
+    Azure named client to use. Defaults to <code class="literal">default</code>.
 </dd><dt><span class="term">
 <code class="literal">container</code>
 </span></dt><dd>
@@ -707,14 +687,14 @@ PUT _snapshot/my_backup3
 {
     "type": "azure",
     "settings": {
-        "account": "my_account1"
+        "client": "secondary"
     }
 }
 PUT _snapshot/my_backup4
 {
     "type": "azure",
     "settings": {
-        "account": "my_account2",
+        "client": "secondary",
         "location_mode": "primary_only"
     }
 }</pre></div><div class="console_widget" data-snippet="snippets/repository-azure-usage/1.json"></div><p>Example using Java:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">client.admin().cluster().preparePutRepository("my_backup_java1")
