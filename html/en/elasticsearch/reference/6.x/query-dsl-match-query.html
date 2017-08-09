@@ -680,7 +680,19 @@ documents if in the range <code class="literal">[0..1)</code> or absolute if gre
     }
 }</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-match-query/4.json"></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The <code class="literal">cutoff_frequency</code> option operates on a per-shard-level. This means
 that when trying it out on test indexes with low document numbers you
-should follow the advice in <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/master/relevance-is-broken.html" target="_top">Relevance is broken</a>.</p></div></div><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Comparison to query_string / field</strong></p></div></div></div><p>The match family of queries does not go through a "query parsing"
+should follow the advice in <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/master/relevance-is-broken.html" target="_top">Relevance is broken</a>.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="query-dsl-match-query-synonyms"></a>Synonyms<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/query-dsl/match-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">match</code> query supports multi-terms synonym expansion with the <a class="link" href="analysis-synonym-graph-tokenfilter.html" title="Synonym Graph Token Filter">synonym_graph</a> token filter. When this filter is used, the parser creates a phrase query for each multi-terms synonyms.
+For example, the following synonym: <code class="literal">"ny, new york" would produce:</code></p><p><code class="literal">(ny OR ("new york"))</code></p><p>It is also possible to match multi terms synonyms with conjunctions instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
+   "query": {
+       "match" : {
+           "message": {
+               "query" : "ny city",
+               "auto_generate_synonyms_phrase_query" : false
+           }
+       }
+   }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-match-query/5.json"></div><p>The example above creates a boolean query:</p><p><code class="literal">(ny OR (new AND york)) city)</code></p><p>that matches documents with the term <code class="literal">ny</code> or the conjunction <code class="literal">new AND york</code>.
+By default the parameter <code class="literal">auto_generate_synonyms_phrase_query</code> is set to <code class="literal">true</code>.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Comparison to query_string / field</strong></p></div></div></div><p>The match family of queries does not go through a "query parsing"
 process. It does not support field name prefixes, wildcard characters,
 or other "advanced" features. For this reason, chances of it failing are
 very small / non existent, and it provides an excellent behavior when it

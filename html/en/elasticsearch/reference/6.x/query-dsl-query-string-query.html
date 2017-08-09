@@ -655,7 +655,8 @@ providing text to a numeric field) to be ignored.</p></td></tr><tr><td align="le
 <a class="ulink" href="http://www.joda.org/joda-time/apidocs/org/joda/time/DateTimeZone.html" target="_top">JODA timezone</a>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">quote_field_suffix</code></p></td><td align="left" valign="top"><p>A suffix to append to fields for quoted parts of
 the query string. This allows to use a field that has a different analysis chain
 for exact matching. Look <a class="link" href="mixing-exact-search-with-stemming.html" title="Mixing exact search with stemming">here</a> for a
-comprehensive example.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">all_fields</code></p></td><td align="left" valign="top"><p><span class="deprecated">
+comprehensive example.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">auto_generate_synonyms_phrase_query</code></p></td><td align="left" valign="top"><p>Whether phrase queries should be automatically generated for multi terms synonyms.
+Defaults to <code class="literal">true</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">all_fields</code></p></td><td align="left" valign="top"><p><span class="deprecated">
       [<span class="version">6.0.0</span>]
       <span class="detail">Deprecated in 6.0.0. 
 set <code class="literal">default_field</code> to <code class="literal">*</code> instead
@@ -734,7 +735,18 @@ introduced fields included). For example:</p><div class="pre_wrapper"><pre class
             "query" : "this AND that OR thus"
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-query-string-query/8.json"></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="query-string-syntax"></a>Query string syntax<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/query-dsl/query-string-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The query string “mini-language” is used by the
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-query-string-query/8.json"></div><h4><a id="_synonyms"></a>Synonyms<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/query-dsl/query-string-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">query_string</code> query supports multi-terms synonym expansion with the <a class="link" href="analysis-synonym-graph-tokenfilter.html" title="Synonym Graph Token Filter">synonym_graph</a> token filter. When this filter is used, the parser creates a phrase query for each multi-terms synonyms.
+For example, the following synonym: <code class="literal">"ny, new york" would produce:</code></p><p><code class="literal">(ny OR ("new york"))</code></p><p>It is also possible to match multi terms synonyms with conjunctions instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
+   "query": {
+       "query_string" : {
+           "default_field": "title",
+           "query" : "ny city",
+           "auto_generate_synonyms_phrase_query" : false
+       }
+   }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-query-string-query/9.json"></div><p>The example above creates a boolean query:</p><p><code class="literal">(ny OR (new AND york)) city)</code></p><p>that matches documents with the term <code class="literal">ny</code> or the conjunction <code class="literal">new AND york</code>.
+By default the parameter <code class="literal">auto_generate_synonyms_phrase_query</code> is set to <code class="literal">true</code>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="query-string-syntax"></a>Query string syntax<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/query-dsl/query-string-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The query string “mini-language” is used by the
 <a class="xref" href="query-dsl-query-string-query.html" title="Query String Query">Query String Query</a> and by the
 <code class="literal">q</code> query string parameter in the <a class="link" href="search-search.html" title="Search"><code class="literal">search</code> API</a>.</p><p>The query string is parsed into a series of <span class="emphasis"><em>terms</em></span> and <span class="emphasis"><em>operators</em></span>. A
 term can be a single word — <code class="literal">quick</code> or <code class="literal">brown</code> — or a phrase, surrounded by
