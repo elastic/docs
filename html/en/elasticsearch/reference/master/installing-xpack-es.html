@@ -677,16 +677,59 @@ require additional index names in your <code class="literal">action.auto_create_
 the exact value will depend on your local configuration. If you are unsure of
 the correct value for your environment, you may consider setting the value to
  <code class="literal">*</code> which will allow automatic creation of all indices.</p></div></div></li><li class="listitem"><p class="simpara">
+Change the passwords for the built-in users. For more information,
+see <a class="ulink" href="https://www.elastic.co/guide/en/x-pack/master/setting-up-authentication.html" target="_top">Setting Up User Authentication</a>.
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+If you have not already done so, bootstrap the password for the <code class="literal">elastic</code>
+user by placing a password in the keystore of at least one node.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch-keystore create
+bin/elasticsearch-keystore add "bootstrap.password"</pre></div><p class="simpara">After you run the "add" command, you will be prompted to enter a password. This
+bootstrap password is only intended to be a transient password that is used to
+help you set all the built-in user passwords.</p></li><li class="listitem"><p class="simpara">
+If you have more than one node, you must configure SSL/TLS for inter-node
+communication. For more information, see
+<a class="ulink" href="https://www.elastic.co/guide/en/x-pack/master/encrypting-communications.html" target="_top">Encrypting Communications</a>.
+</p><div class="orderedlist"><ol class="orderedlist" type="i"><li class="listitem"><p class="simpara">
+Generate node certificates. For example, you can use the <code class="literal">certgen</code> command
+line tool to generate a certificate authority and signed certificates for your
+nodes.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/x-pack/certgen</pre></div><p class="simpara">This command generates a zip file with the CA certificate, private key, and
+signed certificates and keys in the PEM format for each node that you specify.
+If you want to use a commercial or organization-specific CA, you can use the
+<code class="literal">-csr</code> parameter to generate certificate signing requests (CSR) for the nodes
+in your cluster.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>For easier setup, use the node name as the instance name when you run
+this tool.</p></div></div></li><li class="listitem">
+Copy the certificate data into a directory within the Elasticsearch configuration
+directory. For example,
+<code class="literal">/home/es/config/certs</code>.
+</li><li class="listitem"><p class="simpara">
+Add the following information to the <code class="literal">elasticsearch.yml</code> on all nodes:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.ssl.key: certs/${node.name}/${node.name}.key <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+xpack.ssl.certificate: certs/${node.name}/${node.name}.crt <a id="CO7-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+xpack.ssl.certificate_authorities: certs/ca/ca.crt <a id="CO7-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+xpack.security.authc.token.enabled: false <a id="CO7-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+If this path does not exist on every node or the file name does not match
+the <code class="literal">node.name</code> configuration setting, you must specify the full path to the
+node key file.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Alternatively, specify the full path to the node certificate.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Alternatively specify the full path to the CA certificate.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Disables the built-in token service.
+</p></td></tr></table></div></li></ol></div></li><li class="listitem"><p class="simpara">
 Start Elasticsearch.
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch</pre></div></li></ol></div><p>For information, see
-<a class="ulink" href="https://www.elastic.co/guide/en/kibana/master/installing-xpack-kb.html" target="_top">Installing X-Pack on Kibana</a> and
-<a class="ulink" href="http://www.elastic.co/guide/en/logstash/master/installing-xpack-log.html" target="_top">Installing X-Pack on Logstash</a>.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>SSL/TLS encryption is disabled by default, which means user credentials are
-passed in the clear. <span class="strong strong"><strong>Do not deploy to production without enabling encryption!</strong></span>
-For more information, see <a class="ulink" href="https://www.elastic.co/guide/en/x-pack/master/encrypting-communications.html" target="_top">Encrypting
-Communications</a>.</p><p>You must also <span class="strong strong"><strong>change the passwords for the built-in <code class="literal">elastic</code> user and the
-<code class="literal">kibana</code> user that enables Kibana to communicate with Elasticsearch before
-deploying to production</strong></span>. For more information,
-see <a class="ulink" href="https://www.elastic.co/guide/en/x-pack/master/setting-up-authentication.html" target="_top">Setting Up User Authentication</a>.</p></div></div><h3><a id="xpack-package-installation"></a>Installing X-Pack on a DEB/RPM Package Installation</h3><p>If you use the DEB/RPM packages to install Elasticsearch, by default Elasticsearch is installed
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch</pre></div></li><li class="listitem"><p class="simpara">
+Set the passwords for all built-in users. You can update passwords from the
+<span class="strong strong"><strong>Management &gt; Users</strong></span> UI in Kibana, use the <code class="literal">setup-passwords</code> tool, or use the
+security user API. For example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/x-pack/setup-passwords interactive</pre></div><p class="simpara">If you prefer to have randomly generated passwords, specify <code class="literal">auto</code> instead of
+<code class="literal">interactive</code>. If the node is not listening on "http://localhost:9200", use the
+<code class="literal">-u</code> parameter to specify the appropriate URL.</p></li></ol></div></li><li class="listitem">
+<a class="ulink" href="https://www.elastic.co/guide/en/kibana/master/installing-xpack-kb.html" target="_top">Install X-Pack on Kibana</a>.
+</li><li class="listitem">
+<a class="ulink" href="http://www.elastic.co/guide/en/logstash/master/installing-xpack-log.html" target="_top">Install X-Pack on Logstash</a>.
+</li></ol></div><h3><a id="xpack-package-installation"></a>Installing X-Pack on a DEB/RPM Package Installation</h3><p>If you use the DEB/RPM packages to install Elasticsearch, by default Elasticsearch is installed
 in <code class="literal">/usr/share/elasticsearch</code> and the configuration files are stored
 in <code class="literal">/etc/elasticsearch</code>. (For the complete list of default paths, see
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/deb.html#deb-layout" target="_top">Debian Directory Layout</a> and
