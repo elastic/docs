@@ -821,8 +821,10 @@ can be either <code class="literal">-1</code> to disable throttling or any decim
 like <code class="literal">1.7</code> or <code class="literal">12</code> to throttle to that level. Rethrottling that speeds up the
 query takes effect immediately but rethrotting that slows down the query will
 take effect on after completing the current batch. This prevents scroll
-timeouts.</p><h4><a id="docs-update-by-query-manual-slice"></a>Manual slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Update-by-query supports <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> allowing you to manually parallelize
-the process relatively easily:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query
+timeouts.</p><h3><a id="docs-update-by-query-slice"></a>Slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Update-by-query supports <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> to parallelize the updating process.
+This parallelization can improve efficiency and provide a convenient way to
+break the request down into smaller parts.</p><h4><a id="docs-update-by-query-manual-slice"></a>Manual slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Slice an update-by-query manually by providing a slice id and total number of
+slices to each request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query
 {
   "slice": {
     "id": 0,
@@ -846,8 +848,9 @@ POST twitter/_search?size=0&amp;q=extra:test&amp;filter_path=hits.total</pre></d
   "hits": {
     "total": 120
   }
-}</pre></div><h3><a id="docs-update-by-query-automatic-slice"></a>Automatic slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can also let update-by-query automatically parallelize using
-<a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> to slice on <code class="literal">_uid</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query?refresh&amp;slices=5
+}</pre></div><h4><a id="docs-update-by-query-automatic-slice"></a>Automatic slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>You can also let update-by-query automatically parallelize using
+<a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> to slice on <code class="literal">_uid</code>. Use <code class="literal">slices</code> to specify the number of
+slices to use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_update_by_query?refresh&amp;slices=5
 {
   "script": {
     "source": "ctx._source['extra'] = 'test'"
@@ -856,7 +859,10 @@ POST twitter/_search?size=0&amp;q=extra:test&amp;filter_path=hits.total</pre></d
   "hits": {
     "total": 120
   }
-}</pre></div><p>Adding <code class="literal">slices</code> to <code class="literal">_update_by_query</code> just automates the manual process used in
+}</pre></div><p>Setting <code class="literal">slices</code> to <code class="literal">auto</code> will let Elasticsearch choose the number of slices
+to use. This setting will use one slice per shard, up to a certain limit. If
+there are multiple source indices, it will choose the number of slices based
+on the index with the smallest number of shards.</p><p>Adding <code class="literal">slices</code> to <code class="literal">_update_by_query</code> just automates the manual process used in
 the section above, creating sub-requests which means it has some quirks:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 You can see these requests in the
 <a class="link" href="docs-update-by-query.html#docs-update-by-query-task-api" title="Works with the Task APIedit">Tasks APIs</a>. These sub-requests are "child"
@@ -885,23 +891,15 @@ above about distribution being uneven and you should conclude that the using
 </li><li class="listitem">
 Each sub-requests gets a slightly different snapshot of the source index
 though these are all taken at approximately the same time.
-</li></ul></div><h3><a id="docs-update-by-query-picking-slices"></a>Picking the number of slices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>At this point we have a few recommendations around the number of <code class="literal">slices</code> to
-use (the <code class="literal">max</code> parameter in the slice API if manually parallelizing):</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Don’t use large numbers. <code class="literal">500</code> creates fairly massive CPU thrash.
-</li><li class="listitem">
-It is more efficient from a query performance standpoint to use some multiple
-of the number of shards in the source index.
-</li><li class="listitem">
-Using exactly as many shards as are in the source index is the most efficient
-from a query performance standpoint.
-</li><li class="listitem">
-Indexing performance should scale linearly across available resources with
-the number of <code class="literal">slices</code>.
-</li><li class="listitem">
-Whether indexing or query performance dominates that process depends on lots
-of factors like the documents being reindexed and the cluster doing the
-reindexing.
-</li></ul></div><h3><a id="picking-up-a-new-property"></a>Pick up a new property<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Say you created an index without dynamic mapping, filled it with data, and then
+</li></ul></div><h5><a id="docs-update-by-query-picking-slices"></a>Picking the number of slices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>If slicing automatically, setting <code class="literal">slices</code> to <code class="literal">auto</code> will choose a reasonable
+number for most indices. If you’re slicing manually or otherwise tuning
+automatic slicing, use these guidelines.</p><p>Query performance is most efficient when the number of <code class="literal">slices</code> is equal to the
+number of shards in the index. If that number is large, (for example,
+500) choose a lower number as too many <code class="literal">slices</code> will hurt performance. Setting
+<code class="literal">slices</code> higher than the number of shards generally does not improve efficiency
+and adds overhead.</p><p>Update performance scales linearly across available resources with the
+number of slices.</p><p>Whether query or update performance dominates the runtime depends on the
+documents being reindexed and cluster resources.</p><h3><a id="picking-up-a-new-property"></a>Pick up a new property<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Say you created an index without dynamic mapping, filled it with data, and then
 added a mapping value to pick up more fields from the data:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test
 {
   "mappings": {
