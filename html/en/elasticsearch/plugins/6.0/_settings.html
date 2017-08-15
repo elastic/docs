@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Best Practices in AWS
-        | Elasticsearch Plugins and Integrations [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Settings
+        | Elasticsearch Plugins and Integrations [6.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="discovery-ec2.html" title="EC2 Discovery Plugin" /><link rel="prev" href="_settings.html" title="Settings" /><link rel="next" href="discovery-azure-classic.html" title="Azure Classic Discovery Plugin" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Plugins/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [6.0]" /><link rel="up" href="discovery-ec2.html" title="EC2 Discovery Plugin" /><link rel="prev" href="discovery-ec2-usage.html" title="Getting started with AWS" /><link rel="next" href="cloud-aws-best-practices.html" title="Best Practices in AWS" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Plugins/6.0" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -596,40 +596,126 @@
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
-      [master]
-    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="discovery-ec2.html">EC2 Discovery Plugin</a></span> » <span class="breadcrumb-node">Best Practices in AWS</span></div><div class="navheader"><span class="prev"><a href="_settings.html">
+      [6.0]
+    </a></span> » <span class="breadcrumb-link"><a href="discovery.html">Discovery Plugins</a></span> » <span class="breadcrumb-link"><a href="discovery-ec2.html">EC2 Discovery Plugin</a></span> » <span class="breadcrumb-node">Settings</span></div><div class="navheader"><span class="prev"><a href="discovery-ec2-usage.html">
               « 
-              Settings</a>
+              Getting started with AWS</a>
            
         </span><span class="next">
            
-          <a href="discovery-azure-classic.html">Azure Classic Discovery Plugin
+          <a href="cloud-aws-best-practices.html">Best Practices in AWS
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cloud-aws-best-practices"></a>Best Practices in AWS<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Collection of best practices and other information around running Elasticsearch on AWS.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_instance_disk"></a>Instance/Disk<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>When selecting disk please be aware of the following order of preference:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="ulink" href="https://aws.amazon.com/efs/" target="_top">EFS</a> - Avoid as the sacrifices made to offer durability, shared storage, and grow/shrink come at performance cost, such file systems have been known to cause corruption of indices, and due to Elasticsearch being distributed and having built-in replication, the benefits that EFS offers are not needed.
-</li><li class="listitem">
-<a class="ulink" href="https://aws.amazon.com/ebs/" target="_top">EBS</a> - Works well if running a small cluster (1-2 nodes) and cannot tolerate the loss all storage backing a node easily or if running indices with no replicas. If EBS is used, then leverage provisioned IOPS to ensure performance.
-</li><li class="listitem">
-<a class="ulink" href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html" target="_top">Instance Store</a> - When running clusters of larger size and with replicas the ephemeral nature of Instance Store is ideal since Elasticsearch can tolerate the loss of shards. With Instance Store one gets the performance benefit of having disk physically attached to the host running the instance and also the cost benefit of avoiding paying extra for EBS.
-</li></ul></div><p>Prefer <a class="ulink" href="https://aws.amazon.com/amazon-linux-ami/" target="_top">Amazon Linux AMIs</a> as since Elasticsearch runs on the JVM, OS dependencies are very minimal and one can benefit from the lightweight nature, support, and performance tweaks specific to EC2 that the Amazon Linux AMIs offer.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_networking"></a>Networking<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Networking throttling takes place on smaller instance types in both the form of <a class="ulink" href="https://lab.getbase.com/how-we-discovered-limitations-on-the-aws-tcp-stack/" target="_top">bandwidth and number of connections</a>. Therefore if large number of connections are needed and networking is becoming a bottleneck, avoid <a class="ulink" href="https://aws.amazon.com/ec2/instance-types/" target="_top">instance types</a> with networking labeled as <code class="literal">Moderate</code> or <code class="literal">Low</code>.
-</li><li class="listitem">
-Multicast is not supported, even when in an VPC; the aws cloud plugin which joins by performing a security group lookup.
-</li><li class="listitem">
-When running in multiple <a class="ulink" href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html" target="_top">availability zones</a> be sure to leverage <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/allocation-awareness.html" target="_top">shard allocation awareness</a> so that not all copies of shard data reside in the same availability zone.
-</li><li class="listitem">
-Do not span a cluster across regions.  If necessary, use a tribe node.
-</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_misc"></a>Misc<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-If you have split your nodes into roles, consider <a class="ulink" href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html" target="_top">tagging the EC2 instances</a> by role to make it easier to filter and view your EC2 instances in the AWS console.
-</li><li class="listitem">
-Consider <a class="ulink" href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/terminating-instances.html#Using_ChangingDisableAPITermination" target="_top">enabling termination protection</a> for all of your instances to avoid accidentally terminating a node in the cluster and causing a potentially disruptive reallocation.
-</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="_settings.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_settings"></a>Settings<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>EC2 host discovery supports a number of settings.
+Some settings are sensitive and must be stored in the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/secure-settings.html" target="_top">elasticsearch keystore</a>.
+For example, to use explicit AWS access keys:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/elasticsearch-keystore add discovery.ec2.access_key
+bin/elasticsearch-keystore add discovery.ec2.secret_key</pre></div><p>The following are the available discovery settings. All should be prefixed with <code class="literal">discovery.ec2.</code>.
+Those that must be stored in the keystore are marked as <code class="literal">Secure</code>.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">access_key</code>
+</span></dt><dd>
+    An s3 access key. The <code class="literal">secret_key</code> setting must also be specified. (Secure)
+</dd><dt><span class="term">
+<code class="literal">secret_key</code>
+</span></dt><dd>
+    An s3 secret key. The <code class="literal">access_key</code> setting must also be specified. (Secure)
+</dd><dt><span class="term">
+<code class="literal">endpoint</code>
+</span></dt><dd>
+    The ec2 service endpoint to connect to. This will be automatically
+    figured out by the ec2 client based on the instance location, but
+    can be specified explicitly. See <a class="ulink" href="http://docs.aws.amazon.com/general/latest/gr/rande.html#ec2_region" target="_top">http://docs.aws.amazon.com/general/latest/gr/rande.html#ec2_region</a>.
+</dd><dt><span class="term">
+<code class="literal">protocol</code>
+</span></dt><dd>
+    The protocol to use to connect to ec2. Valid values are either <code class="literal">http</code>
+    or <code class="literal">https</code>. Defaults to <code class="literal">https</code>.
+</dd><dt><span class="term">
+<code class="literal">proxy.host</code>
+</span></dt><dd>
+    The host name of a proxy to connect to ec2 through.
+</dd><dt><span class="term">
+<code class="literal">proxy.port</code>
+</span></dt><dd>
+    The port of a proxy to connect to ec2 through.
+</dd><dt><span class="term">
+<code class="literal">proxy.username</code>
+</span></dt><dd>
+    The username to connect to the <code class="literal">proxy.host</code> with. (Secure)
+</dd><dt><span class="term">
+<code class="literal">proxy.password</code>
+</span></dt><dd>
+    The password to connect to the <code class="literal">proxy.host</code> with. (Secure)
+</dd><dt><span class="term">
+<code class="literal">read_timeout</code>
+</span></dt><dd>
+    The socket timeout for connecting to ec2. The value should specify the unit. For example,
+    a value of <code class="literal">5s</code> specifies a 5 second timeout. The default value is 50 seconds.
+</dd><dt><span class="term">
+<code class="literal">groups</code>
+</span></dt><dd>
+    Either a comma separated list or array based list of (security) groups.
+    Only instances with the provided security groups will be used in the
+    cluster discovery. (NOTE: You could provide either group NAME or group
+    ID.)
+</dd><dt><span class="term">
+<code class="literal">host_type</code>
+</span></dt><dd><p class="simpara">The type of host type to use to communicate with other instances. Can be
+one of <code class="literal">private_ip</code>, <code class="literal">public_ip</code>, <code class="literal">private_dns</code>, <code class="literal">public_dns</code> or <code class="literal">tag:TAGNAME</code> where
+<code class="literal">TAGNAME</code> refers to a name of a tag configured for all EC2 instances. Instances which don’t
+have this tag set will be ignored by the discovery process.</p><p class="simpara">For example if you defined a tag <code class="literal">my-elasticsearch-host</code> in ec2 and set it to <code class="literal">myhostname1.mydomain.com</code>, then
+setting <code class="literal">host_type: tag:my-elasticsearch-host</code> will tell Discovery Ec2 plugin to read the host name from the
+<code class="literal">my-elasticsearch-host</code> tag. In this case, it will be resolved to <code class="literal">myhostname1.mydomain.com</code>.
+<a class="ulink" href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html" target="_top">Read more about EC2 Tags</a>.</p><p class="simpara">Defaults to <code class="literal">private_ip</code>.</p></dd><dt><span class="term">
+<code class="literal">availability_zones</code>
+</span></dt><dd>
+    Either a comma separated list or array based list of availability zones.
+    Only instances within the provided availability zones will be used in the
+    cluster discovery.
+</dd><dt><span class="term">
+<code class="literal">any_group</code>
+</span></dt><dd>
+    If set to <code class="literal">false</code>, will require all security groups to be present for the
+    instance to be used for the discovery. Defaults to <code class="literal">true</code>.
+</dd><dt><span class="term">
+<code class="literal">node_cache_time</code>
+</span></dt><dd>
+    How long the list of hosts is cached to prevent further requests to the AWS API.
+    Defaults to <code class="literal">10s</code>.
+</dd></dl></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h3>Binding the network host</h3><p>It’s important to define <code class="literal">network.host</code> as by default it’s bound to <code class="literal">localhost</code>.</p><p>You can use <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/modules-network.html" target="_top">core network host settings</a> or
+<a class="link" href="_settings.html#discovery-ec2-network-host" title="EC2 Network Host">ec2 specific host settings</a>:</p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-ec2-network-host"></a>EC2 Network Host<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>When the <code class="literal">discovery-ec2</code> plugin is installed, the following are also allowed
+as valid network host settings:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">EC2 Host Value </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">_ec2:privateIpv4_</code></p></td><td align="left" valign="top"><p>The private IP address (ipv4) of the machine.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">_ec2:privateDns_</code></p></td><td align="left" valign="top"><p>The private host of the machine.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">_ec2:publicIpv4_</code></p></td><td align="left" valign="top"><p>The public IP address (ipv4) of the machine.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">_ec2:publicDns_</code></p></td><td align="left" valign="top"><p>The public host of the machine.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">_ec2:privateIp_</code></p></td><td align="left" valign="top"><p>equivalent to <code class="literal">_ec2:privateIpv4_</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">_ec2:publicIp_</code></p></td><td align="left" valign="top"><p>equivalent to <code class="literal">_ec2:publicIpv4_</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">_ec2_</code></p></td><td align="left" valign="top"><p>equivalent to <code class="literal">_ec2:privateIpv4_</code>.</p></td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-ec2-permissions"></a>Recommended EC2 Permissions<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>EC2 discovery requires making a call to the EC2 service. You’ll want to setup
+an IAM policy to allow this. You can create a custom policy via the IAM
+Management Console. It should look similar to this.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "Statement": [
+    {
+      "Action": [
+        "ec2:DescribeInstances"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "*"
+      ]
+    }
+  ],
+  "Version": "2012-10-17"
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-ec2-filtering"></a>Filtering by Tags<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The ec2 discovery can also filter machines to include in the cluster based on tags (and not just groups). The settings
+to use include the <code class="literal">discovery.ec2.tag.</code> prefix. For example, setting <code class="literal">discovery.ec2.tag.stage</code> to <code class="literal">dev</code> will only
+filter instances with a tag key set to <code class="literal">stage</code>, and a value of <code class="literal">dev</code>. Several tags set will require all of those tags
+to be set for the instance to be included.</p><p>One practical use for tag filtering is when an ec2 cluster contains many nodes that are not running elasticsearch. In
+this case (particularly with high <code class="literal">discovery.zen.ping_timeout</code> values) there is a risk that a new node’s discovery phase
+will end before it has found the cluster (which will result in it declaring itself master of a new cluster with the same
+name - highly undesirable). Tagging elasticsearch ec2 nodes and then filtering by that tag will resolve this issue.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="discovery-ec2-attributes"></a>Automatic Node Attributes<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/plugins/discovery-ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Though not dependent on actually using <code class="literal">ec2</code> as discovery (but still requires the <code class="literal">discovery-ec2</code> plugin installed), the
+plugin can automatically add node attributes relating to ec2. In the future this may support other attributes, but this will
+currently only add an <code class="literal">aws_availability_zone</code> node attribute, which is the availability zone of the current node. Attributes
+can be used to isolate primary and replica shards across availability zones by using the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/allocation-awareness.html" target="_top">Allocation Awareness</a> feature.</p><p>In order to enable it, set <code class="literal">cloud.node.auto_attributes</code> to <code class="literal">true</code> in the settings. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cloud.node.auto_attributes: true
+
+cluster.routing.allocation.awareness.attributes: aws_availability_zone</pre></div></div></div><div class="navfooter"><span class="prev"><a href="discovery-ec2-usage.html">
               « 
-              Settings</a>
+              Getting started with AWS</a>
            
         </span><span class="next">
            
-          <a href="discovery-azure-classic.html">Azure Classic Discovery Plugin
+          <a href="cloud-aws-best-practices.html">Best Practices in AWS
                »
             </a></span></div>
 <!-- end body -->
