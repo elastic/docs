@@ -714,14 +714,16 @@ before proceeding with the request. See <a class="link" href="docs-index_.html#i
 for details. <code class="literal">timeout</code> controls how long each write request waits for unavailable
 shards to become available. Both work exactly how they work in the
 <a class="link" href="docs-bulk.html" title="Bulk API">Bulk API</a>.</p><p><code class="literal">requests_per_second</code> can be set to any positive decimal number (<code class="literal">1.4</code>, <code class="literal">6</code>,
-<code class="literal">1000</code>, etc) and throttles the number of requests per second that the update-by-query
-issues or it can be set to <code class="literal">-1</code> to disabled throttling. The throttling is done
-waiting between bulk batches so that it can manipulate the scroll timeout. The
-wait time is the difference between the time it took the batch to complete and
-the time <code class="literal">requests_per_second * requests_in_the_batch</code>. Since the batch isn’t
-broken into multiple bulk requests large batch sizes will cause Elasticsearch
-to create many requests and then wait for a while before starting the next set.
-This is "bursty" instead of "smooth". The default is <code class="literal">-1</code>.</p><h3><a id="docs-update-by-query-response-body"></a>Response body<a href="https://github.com/elastic/elasticsearch/edit/5.5/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The JSON response looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+<code class="literal">1000</code>, etc) and throttles rate at which <code class="literal">_update_by_query</code> issues batches of
+index operations by padding each batch with a wait time. The throttling can be
+disabled by setting <code class="literal">requests_per_second</code> to <code class="literal">-1</code>.</p><p>The throttling is done by waiting between batches so that scroll that
+<code class="literal">_update_by_query</code> uses internally can be given a timeout that takes into
+account the padding. The padding time is the difference between the batch size
+divided by the <code class="literal">requests_per_second</code> and the time spent writing. By default the
+batch size is <code class="literal">1000</code>, so if the <code class="literal">requests_per_second</code> is set to <code class="literal">500</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">target_time = 1000 / 500 per second = 2 seconds
+wait_time = target_time - delete_time = 2 seconds - .5 seconds = 1.5 seconds</pre></div><p>Since the batch is issued as a single <code class="literal">_bulk</code> request large batch sizes will
+cause Elasticsearch to create many requests and then wait for a while before
+starting the next set. This is "bursty" instead of "smooth". The default is <code class="literal">-1</code>.</p><h3><a id="docs-update-by-query-response-body"></a>Response body<a href="https://github.com/elastic/elasticsearch/edit/5.5/docs/reference/docs/update-by-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The JSON response looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "took" : 639,
   "updated": 0,
   "batches": 1,
