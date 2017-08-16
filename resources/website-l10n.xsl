@@ -23,6 +23,18 @@
         <l:template name="part"    text="%t"/>
         <l:template name="chapter" text="%t"/>
         <l:template name="section" text="%t"/>
+        <l:template name="bridgehead" text="%t"/>
+        <l:template name="refsection" text="%t"/>
+        <l:template name="refsect1" text="%t"/>
+        <l:template name="refsect2" text="%t"/>
+        <l:template name="refsect3" text="%t"/>
+        <l:template name="sect1" text="%t"/>
+        <l:template name="sect2" text="%t"/>
+        <l:template name="sect3" text="%t"/>
+        <l:template name="sect4" text="%t"/>
+        <l:template name="sect5" text="%t"/>
+        <l:template name="section" text="%t"/>
+        <l:template name="simplesect" text="%t"/>
       </l:context>
       <l:context name="xref-number">
         <l:template name="part"    text="%t"/>
@@ -73,6 +85,18 @@
         <l:template name="part"    text="%t"/>
         <l:template name="chapter" text="%t"/>
         <l:template name="section" text="%t"/>
+        <l:template name="bridgehead" text="%t"/>
+        <l:template name="refsection" text="%t"/>
+        <l:template name="refsect1" text="%t"/>
+        <l:template name="refsect2" text="%t"/>
+        <l:template name="refsect3" text="%t"/>
+        <l:template name="sect1" text="%t"/>
+        <l:template name="sect2" text="%t"/>
+        <l:template name="sect3" text="%t"/>
+        <l:template name="sect4" text="%t"/>
+        <l:template name="sect5" text="%t"/>
+        <l:template name="section" text="%t"/>
+        <l:template name="simplesect" text="%t"/>
       </l:context>
       <l:context name="xref-number">
         <l:template name="part"    text="%t"/>
