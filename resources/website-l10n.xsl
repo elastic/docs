@@ -127,5 +127,128 @@
       </l:context>
     </l:l10n>
 
+    <l:l10n language="ja">
+      <l:context name="title">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+      </l:context>
+      <l:context name="title-unnumbered">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+      </l:context>
+      <l:context name="title-numbered">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+      </l:context>
+      <l:context name="xref">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+        <l:template name="bridgehead" text="%t"/>
+        <l:template name="refsection" text="%t"/>
+        <l:template name="refsect1" text="%t"/>
+        <l:template name="refsect2" text="%t"/>
+        <l:template name="refsect3" text="%t"/>
+        <l:template name="sect1" text="%t"/>
+        <l:template name="sect2" text="%t"/>
+        <l:template name="sect3" text="%t"/>
+        <l:template name="sect4" text="%t"/>
+        <l:template name="sect5" text="%t"/>
+        <l:template name="section" text="%t"/>
+        <l:template name="simplesect" text="%t"/>
+      </l:context>
+      <l:context name="xref-number">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+      </l:context>
+      <l:context name="xref-number-and-title">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+      </l:context>
+      <l:context name="edit-me">
+        <l:template name="edit-me-title" text="イン GitHub 編集このページでは" />
+        <l:template name="edit-me-text" text="編集します" />
+      </l:context>
+      <l:context name="meta">
+        <l:template name="meta-description" text="使用方法について Elasticsearch、Kibana、Logstash、Beats、X-Pack、Elastic Cloud、Elasticsearch for Apache Hadoop そして、さまざまな言語のクライアント。" />
+      </l:context>
+      <l:context name="annotation">
+        <l:template name="added" text="に追加された" />
+        <l:template name="beta" text="beta" />
+        <l:template name="beta-text" text="この機能は現在テスト段階にあり、いつでも変更することができます。 正式なGA特性と比較して未熟な設計とコードとみなされます。 Elasticは問題を解決するために最善を尽くしますが、ベータ版の機能は公式のSLAサポートリスト（GAのみ）では利用できません。" />
+        <l:template name="coming" text="来たる" />
+        <l:template name="deprecated" text="置き換えられた" />
+        <l:template name="experimental" text="実験的" />
+        <l:template name="experimental-text" text="この機能は実験的なものであり、将来のバージョンでは完全に変更または削除される可能性があります。 Elasticは問題を解決するために最善を尽くしますが、実験的な機能は公式SLAサポートリスト（GAのみ）では利用できません。" />
+        <l:template name="sentence-separator" text="。" />
+      </l:context>
+    </l:l10n>
+
+    <l:l10n language="ko">
+      <l:context name="title">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+      </l:context>
+      <l:context name="title-unnumbered">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+      </l:context>
+      <l:context name="title-numbered">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+      </l:context>
+      <l:context name="xref">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+        <l:template name="bridgehead" text="%t"/>
+        <l:template name="refsection" text="%t"/>
+        <l:template name="refsect1" text="%t"/>
+        <l:template name="refsect2" text="%t"/>
+        <l:template name="refsect3" text="%t"/>
+        <l:template name="sect1" text="%t"/>
+        <l:template name="sect2" text="%t"/>
+        <l:template name="sect3" text="%t"/>
+        <l:template name="sect4" text="%t"/>
+        <l:template name="sect5" text="%t"/>
+        <l:template name="section" text="%t"/>
+        <l:template name="simplesect" text="%t"/>
+      </l:context>
+      <l:context name="xref-number">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+      </l:context>
+      <l:context name="xref-number-and-title">
+        <l:template name="part"    text="%t"/>
+        <l:template name="chapter" text="%t"/>
+        <l:template name="section" text="%t"/>
+      </l:context>
+      <l:context name="edit-me">
+        <l:template name="edit-me-title" text="GitHub에서 편집" />
+        <l:template name="edit-me-text" text="편집" />
+      </l:context>
+      <l:context name="meta">
+        <l:template name="meta-description" text="Elasticsearch、Kibana、Logstash、Beats、X-Pack、Elastic Cloud、Elasticsearch for Apache Hadoop, 그 밖에 다양한 언어용 클라이언트 소개" />
+      </l:context>
+      <l:context name="annotation">
+        <l:template name="added" text="추가" />
+        <l:template name="beta" text="beta" />
+        <l:template name="beta-text" text="이 기능은 현재 테스트 단계에 있으며 언제든지 변경될 수 있습니다. 정식 GA 기능에 비해 미숙한 설계와 코드로 간주됩니다. Elastic은 문제를 해결하기 위해 최선을 다하고 있지만 베타 기능은 공식적인 기능(GA)과 달리 지원 SLA에 따르지 않습니다." />
+        <l:template name="coming" text="오는" />
+        <l:template name="deprecated" text="Deprecated" />
+        <l:template name="experimental" text="실험적" />
+        <l:template name="experimental-text" text="이 기능은 실험적인 것이며, 향후 버전에서는 완전히 변경되거나 삭제될 수 있습니다. Elastic은 문제를 해결하기 위해 최선을 다하고 있지만, 실험적인 기능은 공식적인 기능(GA)과 달리 지원 SLA에 따르지 않습니다." />
+        <l:template name="sentence-separator" text=". " />
+      </l:context>
+    </l:l10n>
   </l:i18n>
 </xsl:stylesheet>
