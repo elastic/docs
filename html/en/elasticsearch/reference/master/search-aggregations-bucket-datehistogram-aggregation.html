@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Date Histogram Aggregation
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-aggregations-bucket.html" title="Bucket Aggregations" /><link rel="prev" href="search-aggregations-bucket-children-aggregation.html" title="Children Aggregation" /><link rel="next" href="_use_of_a_script_to_aggregate_by_day_of_the_week.html" title="Use of a script to aggregate by day of the week" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-aggregations-bucket.html" title="Bucket Aggregations" /><link rel="prev" href="search-aggregations-bucket-children-aggregation.html" title="Children Aggregation" /><link rel="next" href="search-aggregations-bucket-daterange-aggregation.html" title="Date Range Aggregation" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -603,7 +603,7 @@ Not what you want? See the
            
         </span><span class="next">
            
-          <a href="_use_of_a_script_to_aggregate_by_day_of_the_week.html">Use of a script to aggregate by day of the week
+          <a href="search-aggregations-bucket-daterange-aggregation.html">Date Range Aggregation
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-bucket-datehistogram-aggregation"></a>Date Histogram Aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A multi-bucket aggregation similar to the <a class="link" href="search-aggregations-bucket-histogram-aggregation.html" title="Histogram Aggregation">histogram</a> except it can
 only be applied on date values. Since dates are represented in elasticsearch internally as long values, it is possible
@@ -857,13 +857,46 @@ Documents without a value in the <code class="literal">publish_date</code> field
 </p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_order"></a>Order<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default the returned buckets are sorted by their <code class="literal">key</code> ascending, though the order behaviour can be controlled using
 the <code class="literal">order</code> setting. Supports the same <code class="literal">order</code> functionality as the <a class="link" href="search-aggregations-bucket-terms-aggregation.html#search-aggregations-bucket-terms-aggregation-order" title="Order"><code class="literal">Terms Aggregation</code></a>.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><h3>Deprecated in 6.0.0. </h3>
  Use _key instead of _time to order buckets by their dates/keys
-</div></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-children-aggregation.html">
+</div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_use_of_a_script_to_aggregate_by_day_of_the_week"></a>Use of a script to aggregate by day of the week<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/datehistogram-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There are some cases where date histogram can’t help us, like for example, when we need
+to aggregate the results by day of the week.
+In this case to overcame the problem, we can use a script that returns the day of the week:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /sales/_search?size=0
+{
+    "aggs": {
+        "dayOfWeek": {
+            "terms": {
+                "script": {
+                    "lang": "painless",
+                    "source": "doc['date'].value.dayOfWeek"
+                }
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-datehistogram-aggregation/9.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  ...
+  "aggregations": {
+    "dayOfWeek": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "7",
+          "doc_count": 4
+        },
+        {
+          "key": "4",
+          "doc_count": 3
+        }
+      ]
+    }
+  }
+}</pre></div><p>The response will contain all the buckets having as key the relative day of
+the week: 1 for Monday, 2 for Tuesday… 7 for Sunday.</p></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-children-aggregation.html">
               « 
               Children Aggregation</a>
            
         </span><span class="next">
            
-          <a href="_use_of_a_script_to_aggregate_by_day_of_the_week.html">Use of a script to aggregate by day of the week
+          <a href="search-aggregations-bucket-daterange-aggregation.html">Date Range Aggregation
                »
             </a></span></div>
 <!-- end body -->
