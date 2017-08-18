@@ -605,17 +605,15 @@ Not what you want? See the
            
           <a href="configuring-output.html">Configure the output
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="filebeat-configuration-reloading"></a>Reload the configuration dynamically<a href="https://github.com/elastic/beats/edit/6.0/filebeat/docs/reload-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. The design and code is considered to be less mature than official GA features. Elastic will take a best effort approach to fix any issues, but beta features are not subject to the support SLA of official GA features.</p></div></div><p>You can configure Filebeat to dynamically reload prospector configuration files
-when there are changes. To do this, you specify a path
-(<a class="ulink" href="https://golang.org/pkg/path/filepath/#Glob" target="_top">Glob</a>) to watch for prospector
-configuration changes. When the files found by the Glob change, new prospectors
-are started/stopped according to changes in the configuration files.</p><p>This feature is especially useful in container environments where one container
-is used to tail logs for services running in other containers on the same host.</p><p>To enable dynamic config reloading, you specify the <code class="literal">path</code> and <code class="literal">reload</code> options
-in the <code class="literal">filebeat.config.prospectors</code> section of the main <code class="literal">filebeat.yml</code> config
-file. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.config.prospectors:
-  path: configs/*.yml
-  reload.enabled: true
-  reload.period: 10s</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="filebeat-configuration-reloading"></a>Reload the configuration dynamically<a href="https://github.com/elastic/beats/edit/6.0/filebeat/docs/reload-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. The design and code is considered to be less mature than official GA features. Elastic will take a best effort approach to fix any issues, but beta features are not subject to the support SLA of official GA features.</p></div></div><p>You can configure Filebeat to dynamically reload configuration files when there
+are changes. This feature is available for prospector and module configuration
+files only.</p><p>To configure this feature, you specify a path
+(<a class="ulink" href="https://golang.org/pkg/path/filepath/#Glob" target="_top">Glob</a>) to watch for configuration
+changes. When the files found by the Glob change, new prospectors and/or
+modules are started and stopped according to changes in the configuration files.</p><p>This feature is especially useful in container environments where one container
+is used to tail logs for services running in other containers on the same host.</p><p>To enable dynamic config reloading, you specify the following options under
+<code class="literal">filebeat.config.prospectors</code> (for prospector configs) or
+<code class="literal">filebeat.config.modules</code> (for module configs):</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">path</code>
 </span></dt><dd>
 A Glob that defines the files to check for changes.
@@ -630,7 +628,13 @@ Specifies how often the files are checked for changes. Do not
 set the <code class="literal">period</code> to less than 1s because the modification time of files is often
 stored in seconds. Setting the <code class="literal">period</code> to less than 1s will result in
 unnecessary overhead.
-</dd></dl></div><p>Each file found by the Glob must contain a list of one or more prospector
+</dd></dl></div><p>See <a class="xref" href="filebeat-configuration-reloading.html#reload-prospector-config" title="Prospector configedit">Prospector config<a href="https://github.com/elastic/beats/edit/6.0/filebeat/docs/reload-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a> and <a class="xref" href="filebeat-configuration-reloading.html#reload-module-config" title="Module configedit">Module config<a href="https://github.com/elastic/beats/edit/6.0/filebeat/docs/reload-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a> for examples.</p><h3><a id="reload-prospector-config"></a>Prospector config<a href="https://github.com/elastic/beats/edit/6.0/filebeat/docs/reload-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For prospector configurations, you specify reload options in the
+<code class="literal">filebeat.config.prospectors</code> section of the <code class="literal">filebeat.yml</code> file. For
+example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.config.prospectors:
+  enabled: true
+  path: configs/*.yml
+  reload.enabled: true
+  reload.period: 10s</pre></div><p>Each file found by the Glob must contain a list of one or more prospector
 definitions. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- type: log
   paths:
     - /var/log/mysql.log
@@ -641,7 +645,23 @@ definitions. For example:</p><div class="pre_wrapper"><pre class="programlisting
     - /var/log/apache.log
   scan_frequency: 5s</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>It is critical that two running prospectors DO NOT have overlapping
 file paths defined. If more than one prospector harvests the same file at the
-same time, it can lead to unexpected behaviour.</p></div></div></div><div class="navfooter"><span class="prev"><a href="configuration-general-options.html">
+same time, it can lead to unexpected behaviour.</p></div></div><h3><a id="reload-module-config"></a>Module config<a href="https://github.com/elastic/beats/edit/6.0/filebeat/docs/reload-configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>For module configurations, you specify reload options in the
+<code class="literal">filebeat.config.modules</code> section of the <code class="literal">filebeat.yml</code> file. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.config.modules:
+  enabled: true
+  path: prospectors.d/*.yml <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  reload.enabled: true
+  reload.period: 10s</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+If you change the path setting to look for config changes in a different
+directory, you will not be able to use the <a class="link" href="command-line-options.html#modules-command" title="modules command"><code class="literal">modules</code></a> command
+to enable and disable module configurations.
+</p></td></tr></table></div><p>Each file found by the Glob must contain a list of one or more module
+definitions. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: apache2
+  access:
+    enabled: true
+    var.paths: [/var/log/apache2/access.log*]
+  error:
+    enabled: true
+    var.paths: [/var/log/apache2/error.log*]</pre></div></div><div class="navfooter"><span class="prev"><a href="configuration-general-options.html">
               « 
               Specify general settings</a>
            
