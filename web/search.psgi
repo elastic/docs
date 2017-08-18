@@ -36,7 +36,7 @@ sub _parse_language_header {
   my %locales = ();
   foreach my $locale (split /\s*\,\s*/, $header) {
     my ($lang, $weight) = ($locale =~ /;\s*q\s*=/) ? split /\s*;\s*q\s*=\s*/, $locale : ($locale, 1);
-    $locales{$lang} = int($weight * 500);
+    $locales{$lang} = int($weight * 300);
     last if ($langcount++ > 20);
   }
   return \%locales;
@@ -269,7 +269,7 @@ sub _add_search_query {
 
     push @should,
         (
-          { term => { locale => { value => $_, boost => $q->{locales}->{$_} } } }
+          { constant_score => { filter => { term => { locale => { value => $_ } } }, boost => $q->{locales}->{$_} } }
         ) foreach (keys $q->{locales});
 
     $request->{sort}      = _text_sort();
@@ -332,7 +332,7 @@ sub _add_suggest_query {
 
     push @should,
         (
-          { term => { locale => { value => $_, boost => $q->{locales}->{$_} } } }
+          { constant_score => { filter => { term => { locale => { value => $_ } } }, boost => $q->{locales}->{$_} } }
         ) foreach (keys $q->{locales});
 
     $request->{sort} = _text_sort();

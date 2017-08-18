@@ -199,6 +199,9 @@ sub _index_book {
         max_count => 100
     );
 
+    my $locale = $book->{lang} ? $book->{lang} : 'en';
+    $locale =~ tr/_/-/;
+
     for my $version_dir (@versions) {
 
         my $version = $version_dir->basename;
@@ -228,6 +231,7 @@ sub _index_book {
                             tags       => $product,
                             section    => $section,
                             version    => $version,
+                            locale     => $locale,
                             is_current => $version eq $current ? \1 : \0,
                         }
                     }
