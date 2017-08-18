@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Executing Filters
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Batch Processing
         | Elasticsearch Reference [5.3]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.3]" /><link rel="up" href="_exploring_your_data.html" title="Exploring Your Data" /><link rel="prev" href="_executing_searches.html" title="Executing Searches" /><link rel="next" href="_executing_aggregations.html" title="Executing Aggregations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/5.3" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.3]" /><link rel="up" href="gs-modifying-data.html" title="Modifying Your Data" /><link rel="prev" href="gs-delete-docs.html" title="Deleting Documents" /><link rel="next" href="gs-exploring-data.html" title="Exploring Your Data" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/5.3" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -597,36 +597,28 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [5.3]
-    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started</a></span> » <span class="breadcrumb-link"><a href="_exploring_your_data.html">Exploring Your Data</a></span> » <span class="breadcrumb-node">Executing Filters</span></div><div class="navheader"><span class="prev"><a href="_executing_searches.html">
+    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started</a></span> » <span class="breadcrumb-link"><a href="gs-modifying-data.html">Modifying Your Data</a></span> » <span class="breadcrumb-node">Batch Processing</span></div><div class="navheader"><span class="prev"><a href="gs-delete-docs.html">
               « 
-              Executing Searches</a>
+              Deleting Documents</a>
            
         </span><span class="next">
            
-          <a href="_executing_aggregations.html">Executing Aggregations
+          <a href="gs-exploring-data.html">Exploring Your Data
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_executing_filters"></a>Executing Filters<a href="https://github.com/elastic/elasticsearch/edit/5.3/docs/reference/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In the previous section, we skipped over a little detail called the document score (<code class="literal">_score</code> field in the search results). The score is a numeric value that is a relative measure of how well the document matches the search query that we specified. The higher the score, the more relevant the document is, the lower the score, the less relevant the document is.</p><p>But queries do not always need to produce scores, in particular when they are only used for "filtering" the document set. Elasticsearch detects these situations and automatically optimizes query execution in order not to compute useless scores.</p><p>The <a class="link" href="query-dsl-bool-query.html" title="Bool Query"><code class="literal">bool</code> query</a> that we introduced in the previous section also supports <code class="literal">filter</code> clauses which allow to use a query to restrict the documents that will be matched by other clauses, without changing how scores are computed. As an example, let’s introduce the <a class="link" href="query-dsl-range-query.html" title="Range Query"><code class="literal">range</code> query</a>, which allows us to filter documents by a range of values. This is generally used for numeric or date filtering.</p><p>This example uses a bool query to return all accounts with balances between 20000 and 30000, inclusive. In other words, we want to find accounts with a balance that is greater than or equal to 20000 and less than or equal to 30000.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search
-{
-  "query": {
-    "bool": {
-      "must": { "match_all": {} },
-      "filter": {
-        "range": {
-          "balance": {
-            "gte": 20000,
-            "lte": 30000
-          }
-        }
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/_executing_filters/1.json"></div><p>Dissecting the above, the bool query contains a <code class="literal">match_all</code> query (the query part) and a <code class="literal">range</code> query (the filter part). We can substitute any other queries into the query and the filter parts. In the above case, the range query makes perfect sense since documents falling into the range all match "equally", i.e., no document is more relevant than another.</p><p>In addition to the <code class="literal">match_all</code>, <code class="literal">match</code>, <code class="literal">bool</code>, and <code class="literal">range</code> queries, there are a lot of other query types that are available and we won’t go into them here. Since we already have a basic understanding of how they work, it shouldn’t be too difficult to apply this knowledge in learning and experimenting with the other query types.</p></div><div class="navfooter"><span class="prev"><a href="_executing_searches.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="gs-batch"></a>Batch Processing<a href="https://github.com/elastic/elasticsearch/edit/5.3/docs/reference/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In addition to being able to index, update, and delete individual documents, Elasticsearch also provides the ability to perform any of the above operations in batches using the <a class="link" href="docs-bulk.html" title="Bulk API"><code class="literal">_bulk</code> API</a>. This functionality is important in that it provides a very efficient mechanism to do multiple operations as fast as possible with as few network roundtrips as possible.</p><p>As a quick example, the following call indexes two documents (ID 1 - John Doe and ID 2 - Jane Doe) in one bulk operation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /customer/external/_bulk?pretty
+{"index":{"_id":"1"}}
+{"name": "John Doe" }
+{"index":{"_id":"2"}}
+{"name": "Jane Doe" }</pre></div><div class="console_widget" data-snippet="snippets/gs-batch/1.json"></div><p>This example updates the first document (ID of 1) and then deletes the second document (ID of 2) in one bulk operation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /customer/external/_bulk?pretty
+{"update":{"_id":"1"}}
+{"doc": { "name": "John Doe becomes Jane Doe" } }
+{"delete":{"_id":"2"}}</pre></div><div class="console_widget" data-snippet="snippets/gs-batch/2.json"></div><p>Note above that for the delete action, there is no corresponding source document after it since deletes only require the ID of the document to be deleted.</p><p>The Bulk API does not fail due to failures in one of the actions. If a single action fails for whatever reason, it will continue to process the remainder of the actions after it. When the bulk API returns, it will provide a status for each action (in the same order it was sent in) so that you can check if a specific action failed or not.</p></div><div class="navfooter"><span class="prev"><a href="gs-delete-docs.html">
               « 
-              Executing Searches</a>
+              Deleting Documents</a>
            
         </span><span class="next">
            
-          <a href="_executing_aggregations.html">Executing Aggregations
+          <a href="gs-exploring-data.html">Exploring Your Data
                »
             </a></span></div>
 <!-- end body -->

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Updating Documents
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Executing Aggregations
         | Elasticsearch Reference [5.3]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.3]" /><link rel="up" href="_modifying_your_data.html" title="Modifying Your Data" /><link rel="prev" href="_modifying_your_data.html" title="Modifying Your Data" /><link rel="next" href="_deleting_documents.html" title="Deleting Documents" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/5.3" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.3]" /><link rel="up" href="gs-exploring-data.html" title="Exploring Your Data" /><link rel="prev" href="gs-executing-filters.html" title="Executing Filters" /><link rel="next" href="gs-conclusion.html" title="Conclusion" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/5.3" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -597,30 +597,157 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [5.3]
-    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started</a></span> » <span class="breadcrumb-link"><a href="_modifying_your_data.html">Modifying Your Data</a></span> » <span class="breadcrumb-node">Updating Documents</span></div><div class="navheader"><span class="prev"><a href="_modifying_your_data.html">
+    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started</a></span> » <span class="breadcrumb-link"><a href="gs-exploring-data.html">Exploring Your Data</a></span> » <span class="breadcrumb-node">Executing Aggregations</span></div><div class="navheader"><span class="prev"><a href="gs-executing-filters.html">
               « 
-              Modifying Your Data</a>
+              Executing Filters</a>
            
         </span><span class="next">
            
-          <a href="_deleting_documents.html">Deleting Documents
+          <a href="gs-conclusion.html">Conclusion
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_updating_documents"></a>Updating Documents<a href="https://github.com/elastic/elasticsearch/edit/5.3/docs/reference/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In addition to being able to index and replace documents, we can also update documents. Note though that Elasticsearch does not actually do in-place updates under the hood. Whenever we do an update, Elasticsearch deletes the old document and then indexes a new document with the update applied to it in one shot.</p><p>This example shows how to update our previous document (ID of 1) by changing the name field to "Jane Doe":</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /customer/external/1/_update?pretty
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="gs-executing-aggregations"></a>Executing Aggregations<a href="https://github.com/elastic/elasticsearch/edit/5.3/docs/reference/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Aggregations provide the ability to group and extract statistics from your data. The easiest way to think about aggregations is by roughly equating it to the SQL GROUP BY and the SQL aggregate functions. In Elasticsearch, you have the ability to execute searches returning hits and at the same time return aggregated results separate from the hits all in one response. This is very powerful and efficient in the sense that you can run queries and multiple aggregations and get the results back of both (or either) operations in one shot avoiding network roundtrips using a concise and simplified API.</p><p>To start with, this example groups all the accounts by state, and then returns the top 10 (default) states sorted by count descending (also default):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search
 {
-  "doc": { "name": "Jane Doe" }
-}</pre></div><div class="console_widget" data-snippet="snippets/_updating_documents/1.json"></div><p>This example shows how to update our previous document (ID of 1) by changing the name field to "Jane Doe" and at the same time add an age field to it:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /customer/external/1/_update?pretty
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword"
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/gs-executing-aggregations/1.json"></div><p>In SQL, the above aggregation is similar in concept to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">SELECT state, COUNT(*) FROM bank GROUP BY state ORDER BY COUNT(*) DESC</pre></div><p>And the response (partially shown):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "took": 29,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "failed": 0
+  },
+  "hits" : {
+    "total" : 1000,
+    "max_score" : 0.0,
+    "hits" : [ ]
+  },
+  "aggregations" : {
+    "group_by_state" : {
+      "doc_count_error_upper_bound": 20,
+      "sum_other_doc_count": 770,
+      "buckets" : [ {
+        "key" : "ID",
+        "doc_count" : 27
+      }, {
+        "key" : "TX",
+        "doc_count" : 27
+      }, {
+        "key" : "AL",
+        "doc_count" : 25
+      }, {
+        "key" : "MD",
+        "doc_count" : 25
+      }, {
+        "key" : "TN",
+        "doc_count" : 23
+      }, {
+        "key" : "MA",
+        "doc_count" : 21
+      }, {
+        "key" : "NC",
+        "doc_count" : 21
+      }, {
+        "key" : "ND",
+        "doc_count" : 21
+      }, {
+        "key" : "ME",
+        "doc_count" : 20
+      }, {
+        "key" : "MO",
+        "doc_count" : 20
+      } ]
+    }
+  }
+}</pre></div><p>We can see that there are 27 accounts in <code class="literal">ID</code> (Idaho), followed by 27 accounts
+in <code class="literal">TX</code> (Texas), followed by 25 accounts in <code class="literal">AL</code> (Alabama), and so forth.</p><p>Note that we set <code class="literal">size=0</code> to not show search hits because we only want to see the aggregation results in the response.</p><p>Building on the previous aggregation, this example calculates the average account balance by state (again only for the top 10 states sorted by count in descending order):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search
 {
-  "doc": { "name": "Jane Doe", "age": 20 }
-}</pre></div><div class="console_widget" data-snippet="snippets/_updating_documents/2.json"></div><p>Updates can also be performed by using simple scripts. This example uses a script to increment the age by 5:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /customer/external/1/_update?pretty
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword"
+      },
+      "aggs": {
+        "average_balance": {
+          "avg": {
+            "field": "balance"
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/gs-executing-aggregations/2.json"></div><p>Notice how we nested the <code class="literal">average_balance</code> aggregation inside the <code class="literal">group_by_state</code> aggregation. This is a common pattern for all the aggregations. You can nest aggregations inside aggregations arbitrarily to extract pivoted summarizations that you require from your data.</p><p>Building on the previous aggregation, let’s now sort on the average balance in descending order:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search
 {
-  "script" : "ctx._source.age += 5"
-}</pre></div><div class="console_widget" data-snippet="snippets/_updating_documents/3.json"></div><p>In the above example, <code class="literal">ctx._source</code> refers to the current source document that is about to be updated.</p><p>Note that as of this writing, updates can only be performed on a single document at a time. In the future, Elasticsearch might provide the ability to update multiple documents given a query condition (like an <code class="literal">SQL UPDATE-WHERE</code> statement).</p></div><div class="navfooter"><span class="prev"><a href="_modifying_your_data.html">
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword",
+        "order": {
+          "average_balance": "desc"
+        }
+      },
+      "aggs": {
+        "average_balance": {
+          "avg": {
+            "field": "balance"
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/gs-executing-aggregations/3.json"></div><p>This example demonstrates how we can group by age brackets (ages 20-29, 30-39, and 40-49), then by gender, and then finally get the average account balance, per age bracket, per gender:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search
+{
+  "size": 0,
+  "aggs": {
+    "group_by_age": {
+      "range": {
+        "field": "age",
+        "ranges": [
+          {
+            "from": 20,
+            "to": 30
+          },
+          {
+            "from": 30,
+            "to": 40
+          },
+          {
+            "from": 40,
+            "to": 50
+          }
+        ]
+      },
+      "aggs": {
+        "group_by_gender": {
+          "terms": {
+            "field": "gender.keyword"
+          },
+          "aggs": {
+            "average_balance": {
+              "avg": {
+                "field": "balance"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/gs-executing-aggregations/4.json"></div><p>There are many other aggregations capabilities that we won’t go into detail here. The <a class="link" href="search-aggregations.html" title="Aggregations">aggregations reference guide</a> is a great starting point if you want to do further experimentation.</p></div><div class="navfooter"><span class="prev"><a href="gs-executing-filters.html">
               « 
-              Modifying Your Data</a>
+              Executing Filters</a>
            
         </span><span class="next">
            
-          <a href="_deleting_documents.html">Deleting Documents
+          <a href="gs-conclusion.html">Conclusion
                »
             </a></span></div>
 <!-- end body -->
