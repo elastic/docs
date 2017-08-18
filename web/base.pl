@@ -16,9 +16,12 @@ our $Pages_Index   = 'pages';
 our $Titles_Index  = 'titles';
 our $Base_URL      = 'https://www.elastic.co/';
 our @Sitemap_Paths = (
-    '/sitemap.xml',    '/sitemap-cn.xml',
-    '/sitemap-de.xml', '/sitemap-fr.xml',
-    '/sitemap-jp.xml', '/sitemap-kr.xml',
+    { 'locale' => 'en', 'path' => '/sitemap.xml' },
+    { 'locale' => 'cn', 'path' => '/sitemap-cn.xml' },
+    { 'locale' => 'de', 'path' => '/sitemap-de.xml' },
+    { 'locale' => 'fr', 'path' => '/sitemap-fr.xml' },
+    { 'locale' => 'jp', 'path' => '/sitemap-jp.xml' },
+    { 'locale' => 'kr', 'path' => '/sitemap-kr.xml' }
 );
 our $Guide_Prefix         = '/guide';
 our $Max_Page             = 10;

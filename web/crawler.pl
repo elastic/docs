@@ -39,7 +39,7 @@ sub index_changes {
             $bulk->delete_ids($_);
             print "Deleting doc ($_)\n";
         }
-        elsif ( !$force and $new->{$_} eq $old->{$_} ) {
+        elsif ( !$force and $new->{$_}->{'lastmod'} eq $old->{$_} ) {
             delete $new->{$_};
         }
     }
@@ -50,7 +50,7 @@ sub index_changes {
     my $i = 0;
     for my $url ( keys %$new ) {
         push @{ $entries[ $i++ ] },
-            { url => $url, published_at => $new->{$url} };
+            { url => $url, published_at => $new->{$url}->{'lastmod'}, locale => $new->{$url}->{'locale'} };
         $i = $i % $Procs;
     }
 
@@ -83,7 +83,7 @@ sub index_urls {
     );
 
     for (@$urls) {
-        my ( $url, $published_at ) = @{$_}{ 'url', 'published_at' };
+        my ( $url, $published_at, $locale ) = @{$_}{ 'url', 'published_at', 'locale' };
         print "Indexing ($url)\n";
         my $html = eval { get_url( $Base_URL . $url ) } || do {
             print "[WARN] $@";
@@ -98,6 +98,7 @@ sub index_urls {
         my $doc = $parser->output;
         $doc->{published_at} = $published_at;
         $doc->{title} =~ s/\s*\|\s*Elastic\s*$//;
+        $doc->{locale} = $locale unless ($doc->{locale});
 
         my @tags = @{ $doc->{tags} };
         my $section = $doc->{section} || '';
@@ -138,12 +139,13 @@ sub index_urls {
 #===================================
 sub get_sitemap {
 #===================================
-    my ( $hostname, @paths ) = @_;
+    my ( $hostname, @sitemap_objs ) = @_;
 
     my %entries;
 
-    for my $path (@paths) {
-        my $sitemap = $hostname . $path;
+    for my $sitemap_obj (@sitemap_objs) {
+        my $sitemap = $hostname . $sitemap_obj->{'path'};
+        my $locale  = $sitemap_obj->{'locale'};
         my $xml     = get_url($sitemap);
         my $count   = () = ( $xml =~ /<url>/g );
         die "No <url> elements found in the sitemap ($sitemap)\n"
@@ -166,7 +168,7 @@ sub get_sitemap {
 
             #        die "URL ($url) already exists in sitemap"
             #            if $entries{$url};
-            $entries{$url} = $lastmod;
+            $entries{$url} = { 'locale' => $locale, 'lastmod' => $lastmod };
         }
     }
 

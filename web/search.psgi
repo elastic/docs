@@ -29,10 +29,25 @@ builder {
 };
 
 #===================================
+sub _parse_language_header {
+#===================================
+  my ( $header ) = @_;
+  my $langcount = 0;
+  my %locales = ();
+  foreach my $locale (split /\s*\,\s*/, $header) {
+    my ($lang, $weight) = ($locale =~ /;\s*q\s*=/) ? split /\s*;\s*q\s*=\s*/, $locale : ($locale, 1);
+    $locales{$lang} = int($weight * 500);
+    last if ($langcount++ > 20);
+  }
+  return \%locales;
+}
+
+#===================================
 sub _parse_request {
 #===================================
     my $req     = Plack::Request->new(@_);
     my $qs      = $req->query_parameters;
+    my $langs   = $req->{'env'}->{'HTTP_ACCEPT_LANGUAGE'};
     my $q       = decode_utf8( eval { $qs->get_one('q') } || '' );
     my $section = eval { $qs->get_one('section') } || '';
     my @tags    = grep {$_} $qs->get_all('tags');
@@ -50,6 +65,10 @@ sub _parse_request {
         tags    => \@tags,
         page    => $page,
     );
+
+    if ( $langs ) {
+      $query{locales} = _parse_language_header($langs);
+    }
 
     if ( $section =~ /^Learn\/Docs/ ) {
         my ( undef, undef, $product, $book, $version ) = split /\//,
@@ -145,7 +164,7 @@ sub _add_search_query {
         }
     };
     $request->{collapse} = { field => 'page_group' };
-    $request->{_source} = [qw(url title breadcrumbs)];
+    $request->{_source} = [qw(url title breadcrumbs locale)];
 
     push @filter, (
         _current_filter($q),    #
@@ -248,6 +267,11 @@ sub _add_search_query {
         }
         };
 
+    push @should,
+        (
+          { term => { locale => { value => $_, boost => $q->{locales}->{$_} } } }
+        ) foreach (keys $q->{locales});
+
     $request->{sort}      = _text_sort();
     $request->{highlight} = _highlight('content.stemmed');
 }
@@ -267,7 +291,7 @@ sub _add_suggest_query {
         }
     };
     $request->{collapse}  = { field => 'page_group' };
-    $request->{_source}   = [qw(url breadcrumbs )];
+    $request->{_source}   = [qw(url breadcrumbs locale )];
     $request->{highlight} = _highlight("title.autocomplete");
 
     push @filter, (
@@ -305,6 +329,11 @@ sub _add_suggest_query {
         { term => { is_main_title => { value => \1, boost => 5 } } },
         _weighting()
         );
+
+    push @should,
+        (
+          { term => { locale => { value => $_, boost => $q->{locales}->{$_} } } }
+        ) foreach (keys $q->{locales});
 
     $request->{sort} = _text_sort();
 }
@@ -505,6 +534,7 @@ sub _format_hit {
         page_url    => $page_url,
         url         => $page_url,
         breadcrumbs => encode_entities( $hit->{_source}{breadcrumbs} ),
+        language    => $hit->{_source}{locale},
         $title ? ( page_title => $title, title => $title ) : (),
         @$inner
         ? ( _format_inner_hit( $page_url, shift @$inner ),
