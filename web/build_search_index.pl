@@ -199,7 +199,7 @@ sub _index_book {
         max_count => 100
     );
 
-    my $locale = $book->{lang} ? $book->{lang} : 'en';
+    my $locale = $book->{lang} ? lc($book->{lang}) : 'en';
     $locale =~ tr/_/-/;
 
     for my $version_dir (@versions) {
