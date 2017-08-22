@@ -171,18 +171,18 @@
         <l:template name="section" text="%t"/>
       </l:context>
       <l:context name="edit-me">
-        <l:template name="edit-me-title" text="イン GitHub 編集このページでは" />
-        <l:template name="edit-me-text" text="編集します" />
+        <l:template name="edit-me-title" text="GitHub上で編集" />
+        <l:template name="edit-me-text" text="編集" />
       </l:context>
       <l:context name="meta">
-        <l:template name="meta-description" text="使用方法について Elasticsearch、Kibana、Logstash、Beats、X-Pack、Elastic Cloud、Elasticsearch for Apache Hadoop そして、さまざまな言語のクライアント。" />
+        <l:template name="meta-description" text="Elasticsearch、Kibana、Logstash、Beats、X-Pack、Elastic Cloud、Elasticsearch for Apache Hadoop そして、さまざまな言語のクライアントの使用方法に関するドキュメント。" />
       </l:context>
       <l:context name="annotation">
-        <l:template name="added" text="に追加された" />
-        <l:template name="beta" text="beta" />
-        <l:template name="beta-text" text="この機能は現在テスト段階にあり、いつでも変更することができます。 正式なGA特性と比較して未熟な設計とコードとみなされます。 Elasticは問題を解決するために最善を尽くしますが、ベータ版の機能は公式のSLAサポートリスト（GAのみ）では利用できません。" />
-        <l:template name="coming" text="来たる" />
-        <l:template name="deprecated" text="置き換えられた" />
+        <l:template name="added" text="追加されたバージョン：" />
+        <l:template name="beta" text="ベータ版：" />
+        <l:template name="beta-text" text="この機能は現在テスト段階にあり、変更される可能性があります。 正式なGAの機能と比較して未熟な設計とコードとみなされます。 Elasticは問題を解決するために最善を尽くしますが、ベータ版の機能は公式のSLAサポートリスト（GAのみ）の対象ではありません。" />
+        <l:template name="coming" text="導入予定：" />
+        <l:template name="deprecated" text="廃止予定：" />
         <l:template name="experimental" text="実験的" />
         <l:template name="experimental-text" text="この機能は実験的なものであり、将来のバージョンでは完全に変更または削除される可能性があります。 Elasticは問題を解決するために最善を尽くしますが、実験的な機能は公式SLAサポートリスト（GAのみ）では利用できません。" />
         <l:template name="sentence-separator" text="。" />
