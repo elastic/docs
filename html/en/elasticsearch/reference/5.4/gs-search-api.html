@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Executing Filters
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>The Search API
         | Elasticsearch Reference [5.4]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.4]" /><link rel="up" href="_exploring_your_data.html" title="Exploring Your Data" /><link rel="prev" href="_executing_searches.html" title="Executing Searches" /><link rel="next" href="_executing_aggregations.html" title="Executing Aggregations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/5.4" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.4]" /><link rel="up" href="gs-exploring-data.html" title="Exploring Your Data" /><link rel="prev" href="gs-exploring-data.html" title="Exploring Your Data" /><link rel="next" href="gs-query-lang.html" title="Introducing the Query Language" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/5.4" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -597,36 +597,71 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [5.4]
-    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started</a></span> » <span class="breadcrumb-link"><a href="_exploring_your_data.html">Exploring Your Data</a></span> » <span class="breadcrumb-node">Executing Filters</span></div><div class="navheader"><span class="prev"><a href="_executing_searches.html">
+    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started</a></span> » <span class="breadcrumb-link"><a href="gs-exploring-data.html">Exploring Your Data</a></span> » <span class="breadcrumb-node">The Search API</span></div><div class="navheader"><span class="prev"><a href="gs-exploring-data.html">
               « 
-              Executing Searches</a>
+              Exploring Your Data</a>
            
         </span><span class="next">
            
-          <a href="_executing_aggregations.html">Executing Aggregations
+          <a href="gs-query-lang.html">Introducing the Query Language
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_executing_filters"></a>Executing Filters<a href="https://github.com/elastic/elasticsearch/edit/5.4/docs/reference/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In the previous section, we skipped over a little detail called the document score (<code class="literal">_score</code> field in the search results). The score is a numeric value that is a relative measure of how well the document matches the search query that we specified. The higher the score, the more relevant the document is, the lower the score, the less relevant the document is.</p><p>But queries do not always need to produce scores, in particular when they are only used for "filtering" the document set. Elasticsearch detects these situations and automatically optimizes query execution in order not to compute useless scores.</p><p>The <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.4/query-dsl-bool-query.html" target="_top"><code class="literal">bool</code> query</a> that we introduced in the previous section also supports <code class="literal">filter</code> clauses which allow to use a query to restrict the documents that will be matched by other clauses, without changing how scores are computed. As an example, let’s introduce the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.4/query-dsl-range-query.html" target="_top"><code class="literal">range</code> query</a>, which allows us to filter documents by a range of values. This is generally used for numeric or date filtering.</p><p>This example uses a bool query to return all accounts with balances between 20000 and 30000, inclusive. In other words, we want to find accounts with a balance that is greater than or equal to 20000 and less than or equal to 30000.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search
-{
-  "query": {
-    "bool": {
-      "must": { "match_all": {} },
-      "filter": {
-        "range": {
-          "balance": {
-            "gte": 20000,
-            "lte": 30000
-          }
-        }
-      }
-    }
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="gs-search-api"></a>The Search API<a href="https://github.com/elastic/elasticsearch/edit/5.4/docs/reference/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Now let’s start with some simple searches. There are two basic ways to run searches: one is by sending search parameters through the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.4/search-uri-request.html" target="_top">REST request URI</a> and the other by sending them through the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.4/search-request-body.html" target="_top">REST request body</a>. The request body method allows you to be more expressive and also to define your searches in a more readable JSON format. We’ll try one example of the request URI method but for the remainder of this tutorial, we will exclusively be using the request body method.</p><p>The REST API for search is accessible from the <code class="literal">_search</code> endpoint. This example returns all documents in the bank index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search?q=*&amp;sort=account_number:asc&amp;pretty</pre></div><div class="console_widget" data-snippet="snippets/gs-search-api/1.json"></div><p>Let’s first dissect the search call. We are searching (<code class="literal">_search</code> endpoint) in the bank index, and the <code class="literal">q=*</code> parameter instructs Elasticsearch to match all documents in the index. The <code class="literal">sort=account_number:asc</code> parameter indicates to sort the results using the <code class="literal">account_number</code> field of each document in an ascending order. The <code class="literal">pretty</code> parameter, again, just tells Elasticsearch to return pretty-printed JSON results.</p><p>And the response (partially shown):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "took" : 63,
+  "timed_out" : false,
+  "_shards" : {
+    "total" : 5,
+    "successful" : 5,
+    "failed" : 0
+  },
+  "hits" : {
+    "total" : 1000,
+    "max_score" : null,
+    "hits" : [ {
+      "_index" : "bank",
+      "_type" : "account",
+      "_id" : "0",
+      "sort": [0],
+      "_score" : null,
+      "_source" : {"account_number":0,"balance":16623,"firstname":"Bradshaw","lastname":"Mckenzie","age":29,"gender":"F","address":"244 Columbus Place","employer":"Euron","email":"bradshawmckenzie@euron.com","city":"Hobucken","state":"CO"}
+    }, {
+      "_index" : "bank",
+      "_type" : "account",
+      "_id" : "1",
+      "sort": [1],
+      "_score" : null,
+      "_source" : {"account_number":1,"balance":39225,"firstname":"Amber","lastname":"Duke","age":32,"gender":"M","address":"880 Holmes Lane","employer":"Pyrami","email":"amberduke@pyrami.com","city":"Brogan","state":"IL"}
+    }, ...
+    ]
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/_executing_filters/1.json"></div><p>Dissecting the above, the bool query contains a <code class="literal">match_all</code> query (the query part) and a <code class="literal">range</code> query (the filter part). We can substitute any other queries into the query and the filter parts. In the above case, the range query makes perfect sense since documents falling into the range all match "equally", i.e., no document is more relevant than another.</p><p>In addition to the <code class="literal">match_all</code>, <code class="literal">match</code>, <code class="literal">bool</code>, and <code class="literal">range</code> queries, there are a lot of other query types that are available and we won’t go into them here. Since we already have a basic understanding of how they work, it shouldn’t be too difficult to apply this knowledge in learning and experimenting with the other query types.</p></div><div class="navfooter"><span class="prev"><a href="_executing_searches.html">
+}</pre></div><p>As for the response, we see the following parts:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">took</code> – time in milliseconds for Elasticsearch to execute the search
+</li><li class="listitem">
+<code class="literal">timed_out</code> – tells us if the search timed out or not
+</li><li class="listitem">
+<code class="literal">_shards</code> – tells us how many shards were searched, as well as a count of the successful/failed searched shards
+</li><li class="listitem">
+<code class="literal">hits</code> – search results
+</li><li class="listitem">
+<code class="literal">hits.total</code> – total number of documents matching our search criteria
+</li><li class="listitem">
+<code class="literal">hits.hits</code> – actual array of search results (defaults to first 10 documents)
+</li><li class="listitem">
+<code class="literal">hits.sort</code> - sort key for results (missing if sorting by score)
+</li><li class="listitem">
+<code class="literal">hits._score</code> and <code class="literal">max_score</code> - ignore these fields for now
+</li></ul></div><p>Here is the same exact search above using the alternative request body method:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search
+{
+  "query": { "match_all": {} },
+  "sort": [
+    { "account_number": "asc" }
+  ]
+}</pre></div><div class="console_widget" data-snippet="snippets/gs-search-api/2.json"></div><p>The difference here is that instead of passing <code class="literal">q=*</code> in the URI, we POST a JSON-style query request body to the <code class="literal">_search</code> API. We’ll discuss this JSON query in the next section.</p><p>It is important to understand that once you get your search results back, Elasticsearch is completely done with the request and does not maintain any kind of server-side resources or open cursors into your results. This is in stark contrast to many other platforms such as SQL wherein you may initially get a partial subset of your query results up-front and then you have to continuously go back to the server if you want to fetch (or page through) the rest of the results using some kind of stateful server-side cursor.</p></div><div class="navfooter"><span class="prev"><a href="gs-exploring-data.html">
               « 
-              Executing Searches</a>
+              Exploring Your Data</a>
            
         </span><span class="next">
            
-          <a href="_executing_aggregations.html">Executing Aggregations
+          <a href="gs-query-lang.html">Introducing the Query Language
                »
             </a></span></div>
 <!-- end body -->

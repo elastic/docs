@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Executing Aggregations
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>List All Indices
         | Elasticsearch Reference [5.4]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.4]" /><link rel="up" href="_exploring_your_data.html" title="Exploring Your Data" /><link rel="prev" href="_executing_filters.html" title="Executing Filters" /><link rel="next" href="_conclusion.html" title="Conclusion" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/5.4" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [5.4]" /><link rel="up" href="gs-exploring-cluster.html" title="Exploring Your Cluster" /><link rel="prev" href="gs-cluster-health.html" title="Cluster Health" /><link rel="next" href="gs-create-index.html" title="Create an Index" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/5.4" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -597,157 +597,21 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [5.4]
-    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started</a></span> » <span class="breadcrumb-link"><a href="_exploring_your_data.html">Exploring Your Data</a></span> » <span class="breadcrumb-node">Executing Aggregations</span></div><div class="navheader"><span class="prev"><a href="_executing_filters.html">
+    </a></span> » <span class="breadcrumb-link"><a href="getting-started.html">Getting Started</a></span> » <span class="breadcrumb-link"><a href="gs-exploring-cluster.html">Exploring Your Cluster</a></span> » <span class="breadcrumb-node">List All Indices</span></div><div class="navheader"><span class="prev"><a href="gs-cluster-health.html">
               « 
-              Executing Filters</a>
+              Cluster Health</a>
            
         </span><span class="next">
            
-          <a href="_conclusion.html">Conclusion
+          <a href="gs-create-index.html">Create an Index
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_executing_aggregations"></a>Executing Aggregations<a href="https://github.com/elastic/elasticsearch/edit/5.4/docs/reference/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Aggregations provide the ability to group and extract statistics from your data. The easiest way to think about aggregations is by roughly equating it to the SQL GROUP BY and the SQL aggregate functions. In Elasticsearch, you have the ability to execute searches returning hits and at the same time return aggregated results separate from the hits all in one response. This is very powerful and efficient in the sense that you can run queries and multiple aggregations and get the results back of both (or either) operations in one shot avoiding network roundtrips using a concise and simplified API.</p><p>To start with, this example groups all the accounts by state, and then returns the top 10 (default) states sorted by count descending (also default):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search
-{
-  "size": 0,
-  "aggs": {
-    "group_by_state": {
-      "terms": {
-        "field": "state.keyword"
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/_executing_aggregations/1.json"></div><p>In SQL, the above aggregation is similar in concept to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">SELECT state, COUNT(*) FROM bank GROUP BY state ORDER BY COUNT(*) DESC</pre></div><p>And the response (partially shown):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "took": 29,
-  "timed_out": false,
-  "_shards": {
-    "total": 5,
-    "successful": 5,
-    "failed": 0
-  },
-  "hits" : {
-    "total" : 1000,
-    "max_score" : 0.0,
-    "hits" : [ ]
-  },
-  "aggregations" : {
-    "group_by_state" : {
-      "doc_count_error_upper_bound": 20,
-      "sum_other_doc_count": 770,
-      "buckets" : [ {
-        "key" : "ID",
-        "doc_count" : 27
-      }, {
-        "key" : "TX",
-        "doc_count" : 27
-      }, {
-        "key" : "AL",
-        "doc_count" : 25
-      }, {
-        "key" : "MD",
-        "doc_count" : 25
-      }, {
-        "key" : "TN",
-        "doc_count" : 23
-      }, {
-        "key" : "MA",
-        "doc_count" : 21
-      }, {
-        "key" : "NC",
-        "doc_count" : 21
-      }, {
-        "key" : "ND",
-        "doc_count" : 21
-      }, {
-        "key" : "ME",
-        "doc_count" : 20
-      }, {
-        "key" : "MO",
-        "doc_count" : 20
-      } ]
-    }
-  }
-}</pre></div><p>We can see that there are 27 accounts in <code class="literal">ID</code> (Idaho), followed by 27 accounts
-in <code class="literal">TX</code> (Texas), followed by 25 accounts in <code class="literal">AL</code> (Alabama), and so forth.</p><p>Note that we set <code class="literal">size=0</code> to not show search hits because we only want to see the aggregation results in the response.</p><p>Building on the previous aggregation, this example calculates the average account balance by state (again only for the top 10 states sorted by count in descending order):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search
-{
-  "size": 0,
-  "aggs": {
-    "group_by_state": {
-      "terms": {
-        "field": "state.keyword"
-      },
-      "aggs": {
-        "average_balance": {
-          "avg": {
-            "field": "balance"
-          }
-        }
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/_executing_aggregations/2.json"></div><p>Notice how we nested the <code class="literal">average_balance</code> aggregation inside the <code class="literal">group_by_state</code> aggregation. This is a common pattern for all the aggregations. You can nest aggregations inside aggregations arbitrarily to extract pivoted summarizations that you require from your data.</p><p>Building on the previous aggregation, let’s now sort on the average balance in descending order:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search
-{
-  "size": 0,
-  "aggs": {
-    "group_by_state": {
-      "terms": {
-        "field": "state.keyword",
-        "order": {
-          "average_balance": "desc"
-        }
-      },
-      "aggs": {
-        "average_balance": {
-          "avg": {
-            "field": "balance"
-          }
-        }
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/_executing_aggregations/3.json"></div><p>This example demonstrates how we can group by age brackets (ages 20-29, 30-39, and 40-49), then by gender, and then finally get the average account balance, per age bracket, per gender:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /bank/_search
-{
-  "size": 0,
-  "aggs": {
-    "group_by_age": {
-      "range": {
-        "field": "age",
-        "ranges": [
-          {
-            "from": 20,
-            "to": 30
-          },
-          {
-            "from": 30,
-            "to": 40
-          },
-          {
-            "from": 40,
-            "to": 50
-          }
-        ]
-      },
-      "aggs": {
-        "group_by_gender": {
-          "terms": {
-            "field": "gender.keyword"
-          },
-          "aggs": {
-            "average_balance": {
-              "avg": {
-                "field": "balance"
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/_executing_aggregations/4.json"></div><p>There are many other aggregations capabilities that we won’t go into detail here. The  <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.4/search-aggregations.html" target="_top">aggregations reference guide</a> is a great starting point if you want to do further experimentation.</p></div><div class="navfooter"><span class="prev"><a href="_executing_filters.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="gs-list-all-indices"></a>List All Indices<a href="https://github.com/elastic/elasticsearch/edit/5.4/docs/reference/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Now let’s take a peek at our indices:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_cat/indices?v</pre></div><div class="console_widget" data-snippet="snippets/gs-list-all-indices/1.json"></div><p>And the response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">health status index uuid pri rep docs.count docs.deleted store.size pri.store.size</pre></div><p>Which simply means we have no indices yet in the cluster.</p></div><div class="navfooter"><span class="prev"><a href="gs-cluster-health.html">
               « 
-              Executing Filters</a>
+              Cluster Health</a>
            
         </span><span class="next">
            
-          <a href="_conclusion.html">Conclusion
+          <a href="gs-create-index.html">Create an Index
                »
             </a></span></div>
 <!-- end body -->
