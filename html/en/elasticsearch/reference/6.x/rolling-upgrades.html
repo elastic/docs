@@ -605,60 +605,77 @@ Not what you want? See the
            
           <a href="restart-upgrade.html">Full cluster restart upgrade
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="rolling-upgrades"></a>Rolling upgrades<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/setup/rolling_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A rolling upgrade allows the Elasticsearch cluster to be upgraded one node at
-a time, with no downtime for end users.  Running multiple versions of
-Elasticsearch in the same cluster for any length of time beyond that required
-for an upgrade is not supported, as shards will not be replicated from the
-more recent version to the older version.</p><p>Consult this <a class="link" href="setup-upgrade.html" title="Upgrading Elasticsearch">table</a> to verify that rolling upgrades are
-supported for your version of Elasticsearch.</p><p>To perform a rolling upgrade:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Disable shard allocation</strong></span>
-</p><p class="simpara">When you shut down a node, the allocation process will wait for one minute
-before starting to replicate the shards that were on that node to other nodes
-in the cluster, causing a lot of wasted I/O.  This can be avoided by disabling
-allocation before shutting down a node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="rolling-upgrades"></a>Rolling upgrades<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/setup/upgrade/rolling_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A rolling upgrade allows an Elasticsearch cluster to be upgraded one node at
+a time so upgrading does not interrupt service. Running multiple versions of
+Elasticsearch in the same cluster beyond the duration of an upgrade is
+not supported, as shards cannot be replicated from upgraded nodes to nodes
+running the older version.</p><p>Rolling upgrades can be performed between minor versions. Elasticsearch
+6.x supports rolling upgrades from <span class="strong strong"><strong>Elasticsearch 5.6</strong></span>.
+Upgrading from earlier 5.x versions requires a <a class="link" href="restart-upgrade.html" title="Full cluster restart upgrade">full cluster restart</a>. You must <a class="link" href="reindex-upgrade.html" title="Reindex before upgrading">reindex to upgrade</a> from
+versions prior to 5.x.</p><p>To perform a rolling upgrade:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+<span class="strong strong"><strong>Disable shard allocation</strong></span>.
+</p><p class="simpara">When you shut down a node, the allocation process waits for one minute
+before starting to replicate the shards on that node to other nodes
+in the cluster, causing a lot of wasted I/O. You can avoid racing the clock
+by disabling allocation before shutting down the node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
 {
-  "transient": {
+  "persistent": {
     "cluster.routing.allocation.enable": "none"
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/1.json"></div></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Stop non-essential indexing and perform a synced flush (Optional)</strong></span>
-</p><p class="simpara">You may happily continue indexing during the upgrade.  However, shard recovery
-will be much faster if you temporarily stop non-essential indexing and issue a
-<a class="link" href="indices-synced-flush.html" title="Synced Flush">synced-flush</a> request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _flush/synced</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/2.json"></div><p class="simpara">A synced flush request is a “best effort” operation. It will fail if there
-are any pending indexing operations, but it is safe to reissue the request
-multiple times if necessary.</p></li><li class="listitem"><p class="simpara">
-<a id="upgrade-node"></a> <span class="strong strong"><strong>Stop and upgrade a single node</strong></span>
-</p><p class="simpara">Shut down one of the nodes in the cluster <span class="strong strong"><strong>before</strong></span> starting the upgrade.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>When using the zip or tarball packages, the <code class="literal">config</code>, <code class="literal">data</code>, <code class="literal">logs</code> and
-<code class="literal">plugins</code> directories are placed within the Elasticsearch home directory by
-default.</p><p>It is a good idea to place these directories in a different location so that
-there is no chance of deleting them when upgrading Elasticsearch.  These custom
-paths can be <a class="link" href="important-settings.html#path-settings" title="path.data and path.logsedit">configured</a> with the <code class="literal">ES_PATH_CONF</code> environment
-variable, and the <code class="literal">path.logs</code>, and <code class="literal">path.data</code> settings.</p><p>The <a class="link" href="deb.html" title="Install Elasticsearch with Debian Package">Debian</a> and <a class="link" href="rpm.html" title="Install Elasticsearch with RPM">RPM</a> packages place these directories in the
-appropriate place for each operating system.</p></div></div><p class="simpara">To upgrade using a <a class="link" href="deb.html" title="Install Elasticsearch with Debian Package">Debian</a> or <a class="link" href="rpm.html" title="Install Elasticsearch with RPM">RPM</a> package:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Use <code class="literal">rpm</code> or <code class="literal">dpkg</code> to install the new package.  All files should be
-    placed in their proper locations, and config files should not be
-    overwritten.
-</li></ul></div><p class="simpara">To upgrade using a zip or compressed tarball:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract the zip or tarball to a new directory, to be sure that you don’t
-    overwrite the <code class="literal">config</code> or <code class="literal">data</code> directories.
+<span class="strong strong"><strong>Stop non-essential indexing and perform a synced flush.</strong></span> (Optional)
+</p><p class="simpara">While you can continue indexing during the upgrade, shard recovery
+is much faster if you temporarily stop non-essential indexing and perform a
+<a class="link" href="indices-synced-flush.html" title="Synced Flush">synced-flush</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST _flush/synced</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/2.json"></div><p class="simpara">When you perform a synced flush, check the response to make sure there are
+no failures. Synced flush operations that fail due to pending indexing
+operations are listed in the response body, although the request itself
+still returns a 200 OK status. If there are failures, reissue the request.</p></li><li class="listitem"><p class="simpara">
+<a id="upgrade-node"></a> <span class="strong strong"><strong>Shut down a single node</strong></span>.
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+If you are running Elasticsearch with <code class="literal">systemd</code>:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo systemctl stop elasticsearch.service</pre></div></li><li class="listitem"><p class="simpara">
+If you are running Elasticsearch with SysV <code class="literal">init</code>:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo -i service elasticsearch stop</pre></div></li><li class="listitem"><p class="simpara">
+If you are running Elasticsearch as a daemon:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">kill $(cat pid)</pre></div></li></ul></div></li><li class="listitem"><p class="simpara">
+<span class="strong strong"><strong>Upgrade the node you shut down.</strong></span>
+</p><p class="simpara">To upgrade using a <a class="link" href="deb.html" title="Install Elasticsearch with Debian Package">Debian</a> or <a class="link" href="rpm.html" title="Install Elasticsearch with RPM">RPM</a> package:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Use <code class="literal">rpm</code> or <code class="literal">dpkg</code> to install the new package.  All files are
+    installed in the appropriate location for the operating system
+    and Elasticsearch config files are not overwritten.
+</li></ul></div><p class="simpara">To upgrade using a zip or compressed tarball:</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
+Extract the zip or tarball to a <span class="emphasis"><em>new</em></span> directory. This is critical if you
+   are not using external <code class="literal">config</code> and <code class="literal">data</code> directories.
 </li><li class="listitem">
-Either copy the files in the <code class="literal">config</code> directory from your old installation
-    to your new installation, or set the environment variable
-    <a class="link" href="settings.html#config-files-location" title="Config files locationedit"><code class="literal">ES_PATH_CONF</code></a> to point to a custom config
-    directory.
+Set the the <code class="literal">ES_PATH_CONF</code> environment variable to specify the location of
+   your external <code class="literal">config</code> directory and <code class="literal">jvm.options</code> file. If you are not
+   using an external <code class="literal">config</code> directory, copy your old configuration
+   over to the new installation.
 </li><li class="listitem">
-Either copy the files in the <code class="literal">data</code> directory from your old installation
-    to your new installation, or configure the location of the data directory
-    in the <code class="literal">config/elasticsearch.yml</code> file, with the <code class="literal">path.data</code> setting.
-</li></ul></div></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Upgrade any plugins</strong></span>
-</p><p class="simpara">Elasticsearch plugins must be upgraded when upgrading a node.  Use the
-<code class="literal">elasticsearch-plugin</code> script to install the correct version of any plugins
-that you need.</p></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Start the upgraded node</strong></span>
-</p><p class="simpara">Start the now upgraded node and confirm that it joins the cluster by checking
-the log file or by checking the output of this request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/nodes</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/3.json"></div></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Reenable shard allocation</strong></span>
+Set <code class="literal">path.data</code> in <code class="literal">config/elasticsearch.yml</code> to point to your external
+   data directory. If you are not using an external <code class="literal">data</code> directory, copy
+   your old data directory over to the new installation.
+</li><li class="listitem">
+Set <code class="literal">path.logs</code> in <code class="literal">config/elasticsearch.yml</code> to point to the location
+   where you want to store your logs. If you do not specify this setting,
+   logs are stored in the directory you extracted the archive to.
+</li></ol></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>When you extract the zip or tarball packages, the <code class="literal">elasticsearch-n.n.n</code>
+directory contains the Elasticsearh <code class="literal">config</code>, <code class="literal">data</code>, <code class="literal">logs</code> and
+<code class="literal">plugins</code> directories.</p><p>We recommend moving these directories out of the Elasticsearch directory
+so that there is no chance of deleting them when you upgrade Elasticsearch.
+To specify the new locations, use the <code class="literal">ES_PATH_CONF</code> environment
+variable and the <code class="literal">path.data</code> and <code class="literal">path.logs</code> settings. For more information,
+see <a class="link" href="important-settings.html" title="Important Elasticsearch configuration">Important Elasticsearch configuration</a>.</p><p>The <a class="link" href="deb.html" title="Install Elasticsearch with Debian Package">Debian</a> and <a class="link" href="rpm.html" title="Install Elasticsearch with RPM">RPM</a> packages place these directories in the
+appropriate place for each operating system. In production, we recommend
+installing using the deb or rpm package.</p></div></div></li><li class="listitem"><p class="simpara">
+<span class="strong strong"><strong>Upgrade any plugins.</strong></span>
+</p><p class="simpara">Use the <code class="literal">elasticsearch-plugin</code> script to install the upgraded version of each
+installed Elasticsearch plugin. All plugins must be upgraded when you upgrade
+a node.</p></li><li class="listitem"><p class="simpara">
+<span class="strong strong"><strong>Start the upgraded node.</strong></span>
+</p><p class="simpara">Start the newly-upgraded node and confirm that it joins the cluster by checking
+the log file or by submitting a <code class="literal">_cat/nodes</code> request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/nodes</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/3.json"></div></li><li class="listitem"><p class="simpara">
+<span class="strong strong"><strong>Reenable shard allocation.</strong></span>
 </p><p class="simpara">Once the node has joined the cluster, reenable shard allocation to start using
 the node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
 {
@@ -666,34 +683,31 @@ the node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lan
     "cluster.routing.allocation.enable": "all"
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/4.json"></div></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Wait for the node to recover</strong></span>
-</p><p class="simpara">You should wait for the cluster to finish shard allocation before upgrading
-the next node.  You can check on progress with the <a class="link" href="cat-health.html" title="cat health"><code class="literal">_cat/health</code></a>
-request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/health</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/5.json"></div><p class="simpara">Wait for the <code class="literal">status</code> column to move from <code class="literal">yellow</code> to <code class="literal">green</code>.  Status <code class="literal">green</code>
-means that all primary and replica shards have been allocated.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>During a rolling upgrade, primary shards assigned to a node with the higher
-version will never have their replicas assigned to a node with the lower
-version, because the newer version may have a different data format which is
-not understood by the older version.</p><p>If it is not possible to assign the replica shards to another node with the
-higher version — e.g. if there is only one node with the higher version in
-the cluster — then the replica shards will remain unassigned and the
-cluster health will remain status <code class="literal">yellow</code>.</p><p>In this case, check that there are no initializing or relocating shards (the
-<code class="literal">init</code> and <code class="literal">relo</code> columns) before proceding.</p><p>As soon as another node is upgraded, the replicas should be assigned and the
-cluster health will reach status <code class="literal">green</code>.</p></div></div><p class="simpara">Shards that have not been <a class="link" href="indices-synced-flush.html" title="Synced Flush">sync-flushed</a> may take some time to
-recover.  The recovery status of individual shards can be monitored with the
-<a class="link" href="cat-recovery.html" title="cat recovery"><code class="literal">_cat/recovery</code></a> request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/recovery</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/6.json"></div><p class="simpara">If you stopped indexing, then it is safe to resume indexing as soon as
-recovery has completed.</p></li><li class="listitem"><p class="simpara">
+<span class="strong strong"><strong>Wait for the node to recover.</strong></span>
+</p><p class="simpara">Before upgrading the next node, wait for the cluster to finish shard allocation.
+You can check progress by submitting a <a class="link" href="cat-health.html" title="cat health"><code class="literal">_cat/health</code></a> request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/health</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/5.json"></div><p class="simpara">Wait for the <code class="literal">status</code> column to switch from <code class="literal">yellow</code> to <code class="literal">green</code>. Once the
+node is <code class="literal">green</code>, all primary and replica shards have been allocated.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>During a rolling upgrade, primary shards assigned to a node running the new
+version cannot have their replicas assigned to a node with the old
+version. The new version might have a different data format that is
+not understood by the old version.</p><p>If it is not possible to assign the replica shards to another node
+(there is only one upgraded node in the cluster), the replica
+shards remain unassigned and status stays <code class="literal">yellow</code>.</p><p>In this case, you can proceed once there are no initializing or relocating shards
+(check the <code class="literal">init</code> and <code class="literal">relo</code> columns).</p><p>As soon as another node is upgraded, the replicas can be assigned and the
+status will change to <code class="literal">green</code>.</p></div></div><p class="simpara">Shards that were not <a class="link" href="indices-synced-flush.html" title="Synced Flush">sync-flushed</a> might take longer to
+recover.  You can monitor the recovery status of individual shards by
+submitting a <a class="link" href="cat-recovery.html" title="cat recovery"><code class="literal">_cat/recovery</code></a> request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/recovery</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/6.json"></div><p class="simpara">If you stopped indexing, it is safe to resume indexing as soon as
+recovery completes.</p></li><li class="listitem"><p class="simpara">
 <span class="strong strong"><strong>Repeat</strong></span>
-</p><p class="simpara">When the cluster is stable and the node has recovered, repeat the above steps
-for all remaining nodes.</p></li></ol></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>During a rolling upgrade the cluster will continue to operate as normal. Any
-new functionality will be disabled or work in a backward compatible manner
-until all nodes of the cluster have been upgraded. Once the upgrade is
-completed and all nodes are on the new version, the new functionality will
-become operational. Once that has happened, it is practically impossible to
-go back to operating in a backward compatible mode. To protect against such a
-scenario, nodes from the previous major version (e.g. 5.x) will not be allowed
-to join a cluster where all nodes are of a higher major version (e.g. 6.x).</p><p>In the unlikely case of a network malfunction during upgrades, where all
-remaining old nodes are isolated from the cluster, you will have to take all
-old nodes offline and upgrade them before they can rejoin the cluster.</p></div></div></div><div class="navfooter"><span class="prev"><a href="setup-upgrade.html">
+</p><p class="simpara">When  the node has recovered and the cluster is stable, repeat these steps
+for each node that needs to be updated.</p></li></ol></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>During a rolling upgrade, the cluster continues to operate normally. However,
+any new functionality is disabled or operates in a backward compatible mode
+until all nodes in the cluster are upgraded. New functionality
+becomes operational once the upgrade is complete and all nodes are running the
+new version. Once that has happened, there’s no way to return to operating
+in a backward compatible mode. Nodes running the previous major version will
+not be allowed to join the fully-updated cluster.</p><p>In the unlikely case of a network malfunction during the upgrade process that
+isolates all remaining old nodes from the cluster, you must take the
+old nodes offline and upgrade them to enable them to join the cluster.</p></div></div></div><div class="navfooter"><span class="prev"><a href="setup-upgrade.html">
               « 
               Upgrading Elasticsearch</a>
            

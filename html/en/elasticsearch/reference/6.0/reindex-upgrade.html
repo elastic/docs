@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Reindex to upgrade
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Reindex before upgrading
         | Elasticsearch Reference [6.0]
       | Elastic
     </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.0]" /><link rel="up" href="setup-upgrade.html" title="Upgrading Elasticsearch" /><link rel="prev" href="restart-upgrade.html" title="Full cluster restart upgrade" /><link rel="next" href="stopping-elasticsearch.html" title="Stopping Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.0" />
@@ -597,7 +597,7 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [6.0]
-    </a></span> » <span class="breadcrumb-link"><a href="setup.html">Set up Elasticsearch</a></span> » <span class="breadcrumb-link"><a href="setup-upgrade.html">Upgrading Elasticsearch</a></span> » <span class="breadcrumb-node">Reindex to upgrade</span></div><div class="navheader"><span class="prev"><a href="restart-upgrade.html">
+    </a></span> » <span class="breadcrumb-link"><a href="setup.html">Set up Elasticsearch</a></span> » <span class="breadcrumb-link"><a href="setup-upgrade.html">Upgrading Elasticsearch</a></span> » <span class="breadcrumb-node">Reindex before upgrading</span></div><div class="navheader"><span class="prev"><a href="restart-upgrade.html">
               « 
               Full cluster restart upgrade</a>
            
@@ -605,68 +605,110 @@ Not what you want? See the
            
           <a href="stopping-elasticsearch.html">Stopping Elasticsearch
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="reindex-upgrade"></a>Reindex to upgrade<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/setup/reindex_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch is able to use indices created in the previous major version
-only.  For instance, Elasticsearch 6.x can use indices created in
-Elasticsearch 5.x, but not those created in Elasticsearch 2.x or before.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Elasticsearch 6.x nodes will fail to start in the presence of too old indices.</p></div></div><p>If you are running an Elasticsearch 5.x cluster which contains indices that
-were created before 5.x, you will either need to delete those old indices or
-to reindex them before upgrading to 6.x.  See <a class="xref" href="reindex-upgrade.html#reindex-upgrade-inplace" title="Reindex in place">Reindex in place</a>.</p><p>If you are running an Elasticsearch 2.x cluster or older, you have two options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-First upgrade to Elasticsearch 5.x, reindex the old indices, then upgrade
-  to 6.x. See <a class="xref" href="reindex-upgrade.html#reindex-upgrade-inplace" title="Reindex in place">Reindex in place</a>.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="reindex-upgrade"></a>Reindex before upgrading<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/setup/upgrade/reindex_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch can read indices created in the <span class="strong strong"><strong>previous major version</strong></span>.
+Older indices must be reindexed or deleted. Elasticsearch 6.x
+can use indices created in Elasticsearch 5.x, but not those created in
+Elasticsearch 2.x or before. Elasticsearch 5.x can use indices created in
+Elasticsearch 2.x, but not those created in 1.x or before.</p><p>Elasticsearch nodes will fail to start if incompatible indices are present.</p><p>To upgrade an Elasticsearch 5.x cluster that contains indices created in 2.x,
+you must reindex or delete them before upgrading to 6.x.
+For more information, see <a class="link" href="reindex-upgrade.html#reindex-upgrade-inplace" title="Reindex in place">Reindex in place</a>.</p><p>To upgrade an Elasticsearch cluster running 2.x, you have two options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Perform a <a class="link" href="restart-upgrade.html" title="Full cluster restart upgrade">full cluster restart upgrade</a> to 5.6,
+  <a class="link" href="reindex-upgrade.html#reindex-upgrade-inplace" title="Reindex in place">reindex</a> the 2.x indices, then perform a
+  <a class="link" href="rolling-upgrades.html" title="Rolling upgrades">rolling upgrade</a> to 6.x. If your Elasticsearch 2.x
+  cluster contains indices that were created before 2.x, you must either
+  delete or reindex them before upgrading to 5.6. For more information about
+  upgrading from 2.x to 5.6, see <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.6/setup-upgrade.html" target="_top">
+  Upgrading Elasticsearch</a> in the Elasticsearch 5.6 Reference.
 </li><li class="listitem">
-Create a new 6.x cluster and use reindex-from-remote to import indices
-  directly from the 2.x cluster. See <a class="xref" href="reindex-upgrade.html#reindex-upgrade-remote" title="Upgrading with reindex-from-remote">Upgrading with reindex-from-remote</a>.
-</li></ul></div><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Time-based indices and retention periods</strong></p></div></div></div><p>For many use cases with time-based indices, you will not need to worry about
-carrying old 2.x indices with you to 6.x.  Data in time-based indices usually
-becomes less interesting as time passes. Old indices can be deleted once they
-fall outside of your retention period.</p><p>Users in this position can continue to use 5.x until all old 2.x indices have
-been deleted, then upgrade to 6.x directly.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="reindex-upgrade-inplace"></a>Reindex in place<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/setup/reindex_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you are running a 5.x cluster which contains indices created in
-Elasticsearch 2.x, you will need to reindex (or delete) those indices before
-upgrading to Elasticsearch 6.x.</p><p>The reindex process works as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Create a new index, copying the mappings and settings from the old index.
-  Set the <code class="literal">refresh_interval</code> to <code class="literal">-1</code> and the <code class="literal">number_of_replicas</code> to <code class="literal">0</code> for
+Create a new 6.x cluster and <a class="link" href="reindex-upgrade.html#reindex-upgrade-remote" title="Reindex from a remote cluster">reindex from   remote</a> to import indices directly from the 2.x cluster.
+</li></ul></div><p>To upgrade an Elasticsearch 1.x cluster, you have two options:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Perform a <a class="link" href="restart-upgrade.html" title="Full cluster restart upgrade">full cluster restart upgrade</a> to Elasticsearch
+  2.4.x and <a class="link" href="reindex-upgrade.html#reindex-upgrade-inplace" title="Reindex in place">reindex</a> or delete the 1.x indices.
+  Then, perform a full cluster restart upgrade to 5.6 and reindex or delete
+  the 2.x indices. Finally, perform a <a class="link" href="rolling-upgrades.html" title="Rolling upgrades">rolling upgrade</a>
+  to 6.x. For more information about upgrading from 1.x to 2.4, see <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.4/setup-upgrade.html" target="_top">
+  Upgrading Elasticsearch</a> in the Elasticsearch 2.4 Reference.
+  For more information about upgrading from 2.4 to 5.6, see <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.6/setup-upgrade.html" target="_top">
+  Upgrading Elasticsearch</a> in the Elasticsearch 5.6 Reference.
+</li><li class="listitem">
+Create a new 6.x cluster and <a class="link" href="reindex-upgrade.html#reindex-upgrade-remote" title="Reindex from a remote cluster">reindex from   remote</a> to import indices directly from the 1.x cluster.
+</li></ul></div><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Upgrading time-based indices</strong></p></div></div></div><p>If you use time-based indices, you likely won’t need to carry
+pre-5.x indices forward to 6.x. Data in time-based indices
+generally becomes less useful as time passes and are
+deleted as they age past your retention period.</p><p>Unless you have an unusally long retention period, you can just
+wait to upgrade to 6.x until all of your pre-5.x indices have
+been deleted.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="reindex-upgrade-inplace"></a>Reindex in place<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/setup/upgrade/reindex_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To manually reindex your old indices with the <a class="link" href="docs-reindex.html" title="Reindex API"><code class="literal">reindex</code> API</a>:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Create a new index and copy the mappings and settings from the old index.
+</li><li class="listitem">
+Set the <code class="literal">refresh_interval</code> to <code class="literal">-1</code> and the <code class="literal">number_of_replicas</code> to <code class="literal">0</code> for
   efficient reindexing.
 </li><li class="listitem">
-Reindex all documents from the old index to the new index using the
+Reindex all documents from the old index into the new index using the
   <a class="link" href="docs-reindex.html" title="Reindex API">reindex API</a>.
 </li><li class="listitem">
 Reset the <code class="literal">refresh_interval</code> and <code class="literal">number_of_replicas</code> to the values
-  used in the old index, and wait for the index to become green.
+  used in the old index.
 </li><li class="listitem">
+Wait for the index status to change to <code class="literal">green</code>.
+</li><li class="listitem"><p class="simpara">
 In a single <a class="link" href="indices-aliases.html" title="Index Aliases">update aliases</a> request:
-</li><li class="listitem">
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
 Delete the old index.
 </li><li class="listitem">
 Add an alias with the old index name to the new index.
 </li><li class="listitem">
 Add any aliases that existed on the old index to the new index.
-</li></ul></div><p>At the end of this process, you will have a new 5.x index which can be used
-by an Elasticsearch 6.x cluster.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="reindex-upgrade-remote"></a>Upgrading with reindex-from-remote<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/setup/reindex_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you are running a 1.x or 2.x cluster and would like to migrate directly to 6.x
-without first migrating to 5.x, you can do so using
-<a class="link" href="docs-reindex.html#reindex-from-remote" title="Reindex from Remoteedit">reindex-from-remote</a>.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Elasticsearch includes backwards compatibility code that allows indices from
-the previous major version to be upgraded to the current major version.  By
-moving directly from Elasticsearch 2.x or before to 6.x, you will have to solve any
-backwards compatibility issues yourself.</p></div></div><p>You will need to set up a 6.x cluster alongside your existing old cluster.
-The 6.x cluster needs to have access to the REST API of the old cluster.</p><p>For each old index that you want to transfer to the 6.x cluster, you will need
-to:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Create a new index in 6.x with the appropriate mappings and settings.  Set
-  the <code class="literal">refresh_interval</code> to <code class="literal">-1</code> and set <code class="literal">number_of_replicas</code> to <code class="literal">0</code> for
+</li></ol></div></li></ol></div><div class="xpack sidebar"><div class="titlepage"><div><div><p class="title"><strong>Migration assistance and upgrade tools</strong></p></div></div></div><p>X-Pack 5.6 provides migration assistance and upgrade tools that simplify
+reindexing and upgrading to 6.x. These tools are free with the X-Pack trial
+and Basic licenses and you can use them to upgrade whether or not X-Pack is a
+regular part of your Elastic Stack. For more information, see</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="reindex-upgrade-remote"></a>Reindex from a remote cluster<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/setup/upgrade/reindex_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can use <a class="link" href="docs-reindex.html#reindex-from-remote" title="Reindex from Remoteedit">reindex from remote</a> to migrate indices from
+your old cluster to a new 6.x cluster. This enables you move to 6.x from a
+pre-5.6 cluster without interrupting service.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Elasticsearch provides backwards compatibility support that enables
+indices from the previous major version to be upgraded to the
+current major version. Skipping a major version means that you must
+resolve any backward compatibility issues yourself.</p></div></div><p>To migrate your indices:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Set up a new 6.x cluster alongside your old cluster. Enable it to access
+your old cluster by adding your old cluster to the <code class="literal">reindex.remote.whitelist</code> in <code class="literal">elasticsearch.yml</code>:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">reindex.remote.whitelist: oldhost:9200</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The new cluster doesn’t have to start fully-scaled out. As you migrate
+indices and shift the load to the new cluster, you can add nodes to the new
+cluster and remove nodes from the old one.</p></div></div></li><li class="listitem"><p class="simpara">
+For each index that you need to migrate to the 6.x cluster:
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
+Create a new index in 6.x with the appropriate mappings and settings. Set the
+  <code class="literal">refresh_interval</code> to <code class="literal">-1</code> and set <code class="literal">number_of_replicas</code> to <code class="literal">0</code> for
   faster reindexing.
+</li><li class="listitem"><p class="simpara">
+<a class="link" href="docs-reindex.html#reindex-from-remote" title="Reindex from Remoteedit">Reindex from remote</a> to pull documents from the
+  old index into the new 6.x index:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
+{
+  "source": {
+    "remote": {
+      "host": "http://oldhost:9200",
+      "username": "user",
+      "password": "pass"
+    },
+    "index": "source",
+    "query": {
+      "match": {
+        "test": "data"
+      }
+    }
+  },
+  "dest": {
+    "index": "dest"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/reindex-upgrade/1.json"></div><p class="simpara">If you run the reindex job in the background by setting <code class="literal">wait_for_completion</code>
+to <code class="literal">false</code>, the reindex request returns a <code class="literal">task_id</code> you can use to
+monitor progress of the reindex job with the <a class="link" href="tasks.html" title="Task Management API">task API</a>:
+<code class="literal">GET _tasks/TASK_ID</code>.</p></li><li class="listitem">
+When the reindex job completes, set the <code class="literal">refresh_interval</code> and
+  <code class="literal">number_of_replicas</code> to the desired values (the default settings are
+  <code class="literal">30s</code> and <code class="literal">1</code>).
 </li><li class="listitem">
-Use <a class="link" href="docs-reindex.html#reindex-from-remote" title="Reindex from Remoteedit">reindex-from-remote</a> to pull documents from the
-  old index into the new 6.x index.
-</li><li class="listitem">
-If you run the reindex job in the background (with <code class="literal">wait_for_completion</code> set
-  to <code class="literal">false</code>), the reindex request will return a <code class="literal">task_id</code> which can be used to
-  monitor progress of the reindex job in the <a class="link" href="tasks.html" title="Task Management API">task API</a>:
-  <code class="literal">GET _tasks/TASK_ID</code>.
-</li><li class="listitem">
-Once reindex has completed, set the <code class="literal">refresh_interval</code> and
-  <code class="literal">number_of_replicas</code> to the desired values (the defaults are <code class="literal">30s</code> and <code class="literal">1</code>
-  respectively).
-</li><li class="listitem">
-Once the new index has finished replication, you can delete the old index.
-</li></ul></div><p>The 6.x cluster can start out small, and you can gradually move nodes from the
-old cluster to the 6.x cluster as you migrate indices across.</p></div></div><div class="navfooter"><span class="prev"><a href="restart-upgrade.html">
+Once replication is complete and the status of the new index is <code class="literal">green</code>,
+  you can delete the old index.
+</li></ol></div></li></ol></div></div></div><div class="navfooter"><span class="prev"><a href="restart-upgrade.html">
               « 
               Full cluster restart upgrade</a>
            
