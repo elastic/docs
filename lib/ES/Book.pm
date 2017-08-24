@@ -32,7 +32,32 @@ HEADER
         new => <<"HEADER"
 你当前正在查看的是未发布版本的预览版文档。如果不是你要找的，请点击查看 <a href="../current/index.html">当前发布版本的文档</a>。
 HEADER
+        },
+    ja => {
+        old => <<"HEADER",
+You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        new => <<"HEADER"
+You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        },
+    ko => {
+        old => <<"HEADER",
+You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        new => <<"HEADER"
+You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
         }
+
 
 );
 
