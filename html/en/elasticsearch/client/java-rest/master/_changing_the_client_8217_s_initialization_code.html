@@ -609,16 +609,18 @@ Not what you want? See the
         .put("cluster.name", "prod").build();
 
 TransportClient transportClient = new PreBuiltTransportClient(settings)
-        .addTransportAddress(new TransportAddress(InetAddress.getByName("host"), 9300));</pre></div><p>The initialization of a <code class="literal">RestHighLevelClient</code> is different. It first requires the initialization
-of a <a class="link" href="java-rest-low-usage-initialization.html" title="Initialization">low-level client</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestClient lowLevelRestClient = RestClient.builder(
-                new HttpHost("host", 9200, "http")).build();</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">RestClient</code> uses Elasticsearch’s HTTP service which is
+        .addTransportAddress(new TransportAddress(InetAddress.getByName("localhost"), 9300))
+        .addTransportAddress(new TransportAddress(InetAddress.getByName("localhost"), 9301));</pre></div><p>The initialization of a <code class="literal">RestHighLevelClient</code> is different. It requires to provide
+a <a class="link" href="java-rest-low-usage-initialization.html" title="Initialization">low-level client builder</a> as a constructor
+argument:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestHighLevelClient client = new RestHighLevelClient(
+        RestClient.builder(
+                new HttpHost("localhost", 9200, "http"),
+                new HttpHost("localhost", 9201, "http")));</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">RestClient</code> uses Elasticsearch’s HTTP service which is
  bounded by default on <code class="literal">9200</code>. This port is different from the port
- used to connect to Elasticsearch with a <code class="literal">TransportClient</code>.</p></div></div><p>Which is then passed to the constructor of the <code class="literal">RestHighLevelClient</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestHighLevelClient client =
-    new RestHighLevelClient(lowLevelRestClient);</pre></div><p>Both <code class="literal">RestClient</code> and <code class="literal">RestHighLevelClient</code> are thread safe. They are
- typically instantiated by the application at startup time or when the
- first request is executed.</p><p>Once the <code class="literal">RestHighLevelClient</code> is initialized, it can then be used to
-execute any of the <a class="link" href="java-rest-high-supported-apis.html" title="Supported APIs">supported APIs</a>.</p><p>As with the <code class="literal">TransportClient</code>, the <code class="literal">RestClient</code> must be closed when it
-is not needed anymore or when the application is stopped.</p><p>So the code that closes the <code class="literal">TransportClient</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">transportClient.close();</pre></div><p>Must be replaced with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">lowLevelRestClient.close();</pre></div></div><div class="navfooter"><span class="prev"><a href="_updating_the_dependencies.html">
+ used to connect to Elasticsearch with a <code class="literal">TransportClient</code>.</p></div></div><p>The <code class="literal">RestHighLevelClient</code> is thread-safe. It is typically instantiated by the
+application at startup time or when the first request is executed.</p><p>Once the <code class="literal">RestHighLevelClient</code> is initialized, it can be used to execute any
+of the <a class="link" href="java-rest-high-supported-apis.html" title="Supported APIs">supported APIs</a>.</p><p>As with the <code class="literal">TransportClient</code>, the <code class="literal">RestHighLevelClient</code> must be closed when it
+is not needed anymore or when the application is stopped.</p><p>The code that closes the <code class="literal">TransportClient</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">transportClient.close();</pre></div><p>must be replaced with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">client.close();</pre></div></div><div class="navfooter"><span class="prev"><a href="_updating_the_dependencies.html">
               « 
               Updating the dependencies</a>
            
