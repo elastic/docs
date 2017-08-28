@@ -606,8 +606,8 @@ Not what you want? See the
           <a href="cluster-nodes-usage.html">Nodes Feature Usage
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="cluster-nodes-info"></a>Nodes Info<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cluster/nodes-info.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The cluster nodes info API allows to retrieve one or more (or all) of
-the cluster nodes information.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/_nodes'
-curl -XGET 'http://localhost:9200/_nodes/nodeId1,nodeId2'</pre></div><p>The first command retrieves information of all the nodes in the cluster.
+the cluster nodes information.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_nodes
+GET /_nodes/nodeId1,nodeId2</pre></div><div class="console_widget" data-snippet="snippets/cluster-nodes-info/1.json"></div><p>The first command retrieves information of all the nodes in the cluster.
 The second command selectively retrieves nodes information of only
 <code class="literal">nodeId1</code> and <code class="literal">nodeId2</code>. All the nodes selective options are explained
 <a class="link" href="cluster.html#cluster-nodes" title="Node specificationedit">here</a>.</p><p>By default, it just returns all attributes and core settings for a node:</p><div class="variablelist"><a id="core-info"></a><dl class="variablelist"><dt><span class="term">
@@ -646,13 +646,20 @@ The second command selectively retrieves nodes information of only
 </span></dt><dd>
         Elasticsearch version running on this node.
 </dd></dl></div><p>It also allows to get only information on <code class="literal">settings</code>, <code class="literal">os</code>, <code class="literal">process</code>, <code class="literal">jvm</code>,
-<code class="literal">thread_pool</code>, <code class="literal">transport</code>, <code class="literal">http</code>, <code class="literal">plugins</code>, <code class="literal">ingest</code> and <code class="literal">indices</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">curl -XGET 'http://localhost:9200/_nodes/process'
-curl -XGET 'http://localhost:9200/_nodes/_all/process'
-curl -XGET 'http://localhost:9200/_nodes/nodeId1,nodeId2/jvm,process'
-# same as above
-curl -XGET 'http://localhost:9200/_nodes/nodeId1,nodeId2/info/jvm,process'
+<code class="literal">thread_pool</code>, <code class="literal">transport</code>, <code class="literal">http</code>, <code class="literal">plugins</code>, <code class="literal">ingest</code> and <code class="literal">indices</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"># return just process
+GET /_nodes/process
 
-curl -XGET 'http://localhost:9200/_nodes/nodeId1,nodeId2/_all</pre></div><p>The <code class="literal">_all</code> flag can be set to return all the information - or you can simply omit it.</p><h4><a id="os-info"></a>Operating System information<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cluster/nodes-info.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">os</code> flag can be set to retrieve information that concern
+# same as above
+GET /_nodes/_all/process
+
+# return just jvm and process of only nodeId1 and nodeId2
+GET /_nodes/nodeId1,nodeId2/jvm,process
+
+# same as above
+GET /_nodes/nodeId1,nodeId2/info/jvm,process
+
+# return all the information of only nodeId1 and nodeId2
+GET /_nodes/nodeId1,nodeId2/_all</pre></div><div class="console_widget" data-snippet="snippets/cluster-nodes-info/2.json"></div><p>The <code class="literal">_all</code> flag can be set to return all the information - or you can simply omit it.</p><h4><a id="os-info"></a>Operating System information<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cluster/nodes-info.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">os</code> flag can be set to retrieve information that concern
 the operating system:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">os.refresh_interval_in_millis</code>
 </span></dt><dd>
@@ -692,21 +699,23 @@ the current running process:</p><div class="variablelist"><dl class="variablelis
 <code class="literal">process.mlockall</code>
 </span></dt><dd>
         Indicates if the process address space has been successfully locked in memory
-</dd></dl></div><h4><a id="plugins-info"></a>Plugins information<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cluster/nodes-info.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p><code class="literal">plugins</code> - if set, the result will contain details about the installed plugins
- per node:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">name</code>: plugin name
-</li><li class="listitem">
-<code class="literal">version</code>: version of Elasticsearch the plugin was built for
-</li><li class="listitem">
-<code class="literal">description</code>: short description of the plugin’s purpose
-</li><li class="listitem">
-<code class="literal">classname</code>: fully-qualified class name of the plugin’s entry point
-</li><li class="listitem">
-<code class="literal">has_native_controller</code>: whether or not the plugin has a native controller process
-</li></ul></div><p>The result will look similar to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+</dd></dl></div><h4><a id="plugins-info"></a>Plugins information<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cluster/nodes-info.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p><code class="literal">plugins</code> - if set, the result will contain details about the installed plugins and modules per node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_nodes/plugins</pre></div><div class="console_widget" data-snippet="snippets/cluster-nodes-info/3.json"></div><p>The result will look similar to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "_nodes": ...
   "cluster_name": "elasticsearch",
   "nodes": {
-    "O70_wBv6S9aPPcAKdSUBtw": {
+    "USpTGYaBSIKbgSUJR2Z9lg": {
+      "name": "node-0",
+      "transport_address": "192.168.17:9300",
+      "host": "node-0.elastic.co",
+      "ip": "192.168.17",
+      "version": "{version}",
+      "build_hash": "587409e",
+      "roles": [
+        "master",
+        "data",
+        "ingest"
+      ],
+      "attributes": {},
       "plugins": [
         {
           "name": "analysis-icu",
@@ -729,16 +738,42 @@ the current running process:</p><div class="variablelist"><dl class="variablelis
           "classname": "org.elasticsearch.ingest.useragent.IngestUserAgentPlugin",
           "has_native_controller": false
         }
+      ],
+      "modules": [
+        {
+          "name": "lang-painless",
+          "version": "{version}",
+          "description": "An easy, safe and fast scripting language for Elasticsearch",
+          "classname": "org.elasticsearch.painless.PainlessPlugin",
+          "has_native_controller": false
+        }
       ]
     }
   }
-}</pre></div><h4><a id="ingest-info"></a>Ingest information<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cluster/nodes-info.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p><code class="literal">ingest</code> - if set, the result will contain details about the available
-processors per node:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">type</code>: the processor type
-</li></ul></div><p>The result will look similar to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><p>The following information are available for each plugin and module:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">name</code>: plugin name
+</li><li class="listitem">
+<code class="literal">version</code>: version of Elasticsearch the plugin was built for
+</li><li class="listitem">
+<code class="literal">description</code>: short description of the plugin’s purpose
+</li><li class="listitem">
+<code class="literal">classname</code>: fully-qualified class name of the plugin’s entry point
+</li><li class="listitem">
+<code class="literal">has_native_controller</code>: whether or not the plugin has a native controller process
+</li></ul></div><h4><a id="ingest-info"></a>Ingest information<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/cluster/nodes-info.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p><code class="literal">ingest</code> - if set, the result will contain details about the available
+processors per node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_nodes/ingest</pre></div><div class="console_widget" data-snippet="snippets/cluster-nodes-info/4.json"></div><p>The result will look similar to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "_nodes": ...
   "cluster_name": "elasticsearch",
   "nodes": {
-    "O70_wBv6S9aPPcAKdSUBtw": {
+    "USpTGYaBSIKbgSUJR2Z9lg": {
+      "name": "node-0",
+      "transport_address": "192.168.17:9300",
+      "host": "node-0.elastic.co",
+      "ip": "192.168.17",
+      "version": "{version}",
+      "build_hash": "587409e",
+      "roles": [],
+      "attributes": {},
       "ingest": {
         "processors": [
           {
@@ -787,7 +822,9 @@ processors per node:</p><div class="itemizedlist"><ul class="itemizedlist" type=
       }
     }
   }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="cluster-nodes-stats.html">
+}</pre></div><p>The following information are available for each ingest processor:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">type</code>: the processor type
+</li></ul></div></div><div class="navfooter"><span class="prev"><a href="cluster-nodes-stats.html">
               « 
               Nodes Stats</a>
            
