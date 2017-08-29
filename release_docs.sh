@@ -20,6 +20,15 @@ done
 if [ "$1" != "" ] ; then
 	DOCS_DIR=$PWD
 	DOCS_REMOTE=$1
+    printf  "This will delete the contents of the $PWD/html directory. Continue? y/N: "
+    read CONTINUE
+    if [ $CONTINUE == "y" ] ; then
+	    echo "Deleting contents of $PWD/html."
+ 	    rm -Rf html/*
+    else
+	    echo "Ok, then. I won't do anything."
+	    exit 1
+    fi    
 	echo "Fetching the latest changes from $DOCS_REMOTE master."
 	git pull $DOCS_REMOTE master
 elif [ "$1" == "" ] ; then
@@ -27,33 +36,24 @@ elif [ "$1" == "" ] ; then
 	echo "You must specify the name of the remote docs repo you want to push to: origin, upstream, docs."
 	echo "$USAGE"
     exit 1
-fi	
-  
-printf  "This will delete the contents of the $PWD/html directory. Continue? y/N: "
-read CONTINUE
-if [ $CONTINUE == "y" ] ; then
-	echo "Deleting contents of $PWD/html."
- 	rm -Rf html/*
-	echo "Building all docs. This is going to take a while...need a fresh cup of coffee?"
-	if ./build_docs.pl --all ; then
-		echo "Pushing docs to the remote repo: $DOCS_REMOTE."
-		git push --force $DOCS_REMOTE HEAD
-		if [ $? == 0 ] ; then
-			echo "Successfully pushed the docs!"
-			echo "It will take a bit for the changes to propagate to the webservers."
-			exit 0
-		else
-			echo "Error: Unable to push docs to the remote."
-			exit 1
-		fi		
-	else
-		read BUILD_ERROR
-		echo "Error: Doc build failed." 
-		echo $BUILD_ERROR
+fi
+
+echo "Building all docs. This is going to take a while...need a fresh cup of coffee?"
+if ./build_docs.pl --all ; then
+    echo "Pushing docs to the remote repo: $DOCS_REMOTE."
+    git push --force $DOCS_REMOTE master
+    if [ $? == 0 ] ; then
+		echo "Successfully pushed the docs!"
+		echo "It will take a bit for the changes to propagate to the webservers."
+		exit 0
+    else
+		echo "Error: Unable to push docs to the remote."
 		exit 1
-	fi			
+    fi
 else
-	echo "Ok, then. I won't do anything."
-	exit 1
+    read BUILD_ERROR
+    echo "Error: Doc build failed." 
+    echo $BUILD_ERROR
+    exit 1
 fi
 
