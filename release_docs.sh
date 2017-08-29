@@ -40,8 +40,9 @@ fi
 
 echo "Building all docs. This is going to take a while...need a fresh cup of coffee?"
 if ./build_docs.pl --all ; then
+    git commit -a -m "Forced update"
     echo "Pushing docs to the remote repo: $DOCS_REMOTE."
-    git push --force $DOCS_REMOTE master
+    git push -f $DOCS_REMOTE master
     if [ $? == 0 ] ; then
 		echo "Successfully pushed the docs!"
 		echo "It will take a bit for the changes to propagate to the webservers."
