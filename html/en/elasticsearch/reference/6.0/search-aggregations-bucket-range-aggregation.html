@@ -606,92 +606,119 @@ Not what you want? See the
           <a href="search-aggregations-bucket-reverse-nested-aggregation.html">Reverse nested Aggregation
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-aggregations-bucket-range-aggregation"></a>Range Aggregation<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/aggregations/bucket/range-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A multi-bucket value source based aggregation that enables the user to define a set of ranges - each representing a bucket. During the aggregation process, the values extracted from each document will be checked against each bucket range and "bucket" the relevant/matching document.
-Note that this aggregation includes the <code class="literal">from</code> value and excludes the <code class="literal">to</code> value for each range.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+Note that this aggregation includes the <code class="literal">from</code> value and excludes the <code class="literal">to</code> value for each range.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
     "aggs" : {
         "price_ranges" : {
             "range" : {
                 "field" : "price",
                 "ranges" : [
-                    { "to" : 50 },
-                    { "from" : 50, "to" : 100 },
-                    { "from" : 100 }
+                    { "to" : 100.0 },
+                    { "from" : 100.0, "to" : 200.0 },
+                    { "from" : 200.0 }
                 ]
             }
         }
     }
-}</pre></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-range-aggregation/1.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     ...
-
     "aggregations": {
         "price_ranges" : {
             "buckets": [
                 {
-                    "to": 50,
+                    "key": "*-100.0",
+                    "to": 100.0,
                     "doc_count": 2
                 },
                 {
-                    "from": 50,
-                    "to": 100,
-                    "doc_count": 4
+                    "key": "100.0-200.0",
+                    "from": 100.0,
+                    "to": 200.0,
+                    "doc_count": 2
                 },
                 {
-                    "from": 100,
-                    "doc_count": 4
+                    "key": "200.0-*",
+                    "from": 200.0,
+                    "doc_count": 3
                 }
             ]
         }
     }
-}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_keyed_response_7"></a>Keyed Response<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/aggregations/bucket/range-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Setting the <code class="literal">keyed</code> flag to <code class="literal">true</code> will associate a unique string key with each bucket and return the ranges as a hash rather than an array:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_keyed_response_7"></a>Keyed Response<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/aggregations/bucket/range-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Setting the <code class="literal">keyed</code> flag to <code class="literal">true</code> will associate a unique string key with each bucket and return the ranges as a hash rather than an array:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
     "aggs" : {
         "price_ranges" : {
             "range" : {
                 "field" : "price",
                 "keyed" : true,
                 "ranges" : [
-                    { "to" : 50 },
-                    { "from" : 50, "to" : 100 },
-                    { "from" : 100 }
+                    { "to" : 100 },
+                    { "from" : 100, "to" : 200 },
+                    { "from" : 200 }
                 ]
             }
         }
     }
-}</pre></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-range-aggregation/2.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     ...
-
     "aggregations": {
         "price_ranges" : {
             "buckets": {
-                "*-50.0": {
-                    "to": 50,
+                "*-100.0": {
+                    "to": 100.0,
                     "doc_count": 2
                 },
-                "50.0-100.0": {
-                    "from": 50,
-                    "to": 100,
-                    "doc_count": 4
+                "100.0-200.0": {
+                    "from": 100.0,
+                    "to": 200.0,
+                    "doc_count": 2
                 },
-                "100.0-*": {
-                    "from": 100,
-                    "doc_count": 4
+                "200.0-*": {
+                    "from": 200.0,
+                    "doc_count": 3
                 }
             }
         }
     }
-}</pre></div><p>It is also possible to customize the key for each range:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><p>It is also possible to customize the key for each range:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
     "aggs" : {
         "price_ranges" : {
             "range" : {
                 "field" : "price",
                 "keyed" : true,
                 "ranges" : [
-                    { "key" : "cheap", "to" : 50 },
-                    { "key" : "average", "from" : 50, "to" : 100 },
-                    { "key" : "expensive", "from" : 100 }
+                    { "key" : "cheap", "to" : 100 },
+                    { "key" : "average", "from" : 100, "to" : 200 },
+                    { "key" : "expensive", "from" : 200 }
                 ]
             }
         }
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_script_11"></a>Script<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/aggregations/bucket/range-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-range-aggregation/3.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    ...
+    "aggregations": {
+        "price_ranges" : {
+            "buckets": {
+                "cheap": {
+                    "to": 100.0,
+                    "doc_count": 2
+                },
+                "average": {
+                    "from": 100.0,
+                    "to": 200.0,
+                    "doc_count": 2
+                },
+                "expensive": {
+                    "from": 200.0,
+                    "doc_count": 3
+                }
+            }
+        }
+    }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_script_11"></a>Script<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/aggregations/bucket/range-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Range aggregation accepts a <code class="literal">script</code> parameter. This parameter allows to defined an inline <code class="literal">script</code> that
+will be executed during aggregation execution.</p><p>The following example shows how to use an <code class="literal">inline</code> script with the <code class="literal">painless</code> script language and no script parameters:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
     "aggs" : {
         "price_ranges" : {
             "range" : {
@@ -700,38 +727,49 @@ Note that this aggregation includes the <code class="literal">from</code> value 
                     "source": "doc['price'].value"
                 },
                 "ranges" : [
-                    { "to" : 50 },
-                    { "from" : 50, "to" : 100 },
-                    { "from" : 100 }
+                    { "to" : 100 },
+                    { "from" : 100, "to" : 200 },
+                    { "from" : 200 }
                 ]
             }
         }
     }
-}</pre></div><p>This will interpret the <code class="literal">script</code> parameter as an <code class="literal">inline</code> script with the <code class="literal">painless</code> script language and no script parameters. To use a stored script use the following syntax:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-range-aggregation/4.json"></div><p>It is also possible to use stored scripts. Here is a simple stored script:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_scripts/convert_currency
+{
+  "script": {
+    "lang": "painless",
+    "source": "doc[params.field].value * params.conversion_rate"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-range-aggregation/5.json"></div><p>And this new stored script can be used in the range aggregation like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
     "aggs" : {
         "price_ranges" : {
             "range" : {
                 "script" : {
-                    "id": "my_script",
-                    "params": {
-                        "field": "price"
+                    "id": "convert_currency", <a id="CO85-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    "params": { <a id="CO85-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                        "field": "price",
+                        "conversion_rate": 0.835526591
                     }
                 },
                 "ranges" : [
-                    { "to" : 50 },
-                    { "from" : 50, "to" : 100 },
+                    { "from" : 0, "to" : 100 },
                     { "from" : 100 }
                 ]
             }
         }
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_value_script_7"></a>Value Script<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/aggregations/bucket/range-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Lets say the product prices are in USD but we would like to get the price ranges in EURO. We can use value script to convert the prices prior the aggregation (assuming conversion rate of 0.8)</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-range-aggregation/6.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO85-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Id of the stored script
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO85-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Parameters to use when executing the stored script
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_value_script_7"></a>Value Script<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/aggregations/bucket/range-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Lets say the product prices are in USD but we would like to get the price ranges in EURO. We can use value script to convert the prices prior the aggregation (assuming conversion rate of 0.8)</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /sales/_search
+{
     "aggs" : {
         "price_ranges" : {
             "range" : {
                 "field" : "price",
                 "script" : {
-                    "lang": "painless",
                     "source": "_value * params.conversion_rate",
                     "params" : {
                         "conversion_rate" : 0.8
@@ -745,15 +783,16 @@ Note that this aggregation includes the <code class="literal">from</code> value 
             }
         }
     }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sub_aggregations"></a>Sub Aggregations<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/aggregations/bucket/range-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following example, not only "bucket" the documents to the different buckets but also computes statistics over the prices in each price range</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-range-aggregation/7.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_sub_aggregations"></a>Sub Aggregations<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/aggregations/bucket/range-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following example, not only "bucket" the documents to the different buckets but also computes statistics over the prices in each price range</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
     "aggs" : {
         "price_ranges" : {
             "range" : {
                 "field" : "price",
                 "ranges" : [
-                    { "to" : 50 },
-                    { "from" : 50, "to" : 100 },
-                    { "from" : 100 }
+                    { "to" : 100 },
+                    { "from" : 100, "to" : 200 },
+                    { "from" : 200 }
                 ]
             },
             "aggs" : {
@@ -763,66 +802,71 @@ Note that this aggregation includes the <code class="literal">from</code> value 
             }
         }
     }
-}</pre></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "aggregations": {
-        "price_ranges" : {
-            "buckets": [
-                {
-                    "to": 50,
-                    "doc_count": 2,
-                    "price_stats": {
-                        "count": 2,
-                        "min": 20,
-                        "max": 47,
-                        "avg": 33.5,
-                        "sum": 67
-                    }
-                },
-                {
-                    "from": 50,
-                    "to": 100,
-                    "doc_count": 4,
-                    "price_stats": {
-                        "count": 4,
-                        "min": 60,
-                        "max": 98,
-                        "avg": 82.5,
-                        "sum": 330
-                    }
-                },
-                {
-                    "from": 100,
-                    "doc_count": 4,
-                    "price_stats": {
-                        "count": 4,
-                        "min": 134,
-                        "max": 367,
-                        "avg": 216,
-                        "sum": 864
-                    }
-                }
-            ]
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-range-aggregation/8.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  ...
+  "aggregations": {
+    "price_ranges": {
+      "buckets": [
+        {
+          "key": "*-100.0",
+          "to": 100.0,
+          "doc_count": 2,
+          "price_stats": {
+            "count": 2,
+            "min": 10.0,
+            "max": 50.0,
+            "avg": 30.0,
+            "sum": 60.0
+          }
+        },
+        {
+          "key": "100.0-200.0",
+          "from": 100.0,
+          "to": 200.0,
+          "doc_count": 2,
+          "price_stats": {
+            "count": 2,
+            "min": 150.0,
+            "max": 175.0,
+            "avg": 162.5,
+            "sum": 325.0
+          }
+        },
+        {
+          "key": "200.0-*",
+          "from": 200.0,
+          "doc_count": 3,
+          "price_stats": {
+            "count": 3,
+            "min": 200.0,
+            "max": 200.0,
+            "avg": 200.0,
+            "sum": 600.0
+          }
         }
+      ]
     }
-}</pre></div><p>If a sub aggregation is also based on the same value source as the range aggregation (like the <code class="literal">stats</code> aggregation in the example above) it is possible to leave out the value source definition for it. The following will return the same response as above:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  }
+}</pre></div><p>If a sub aggregation is also based on the same value source as the range aggregation (like the <code class="literal">stats</code> aggregation in the example above) it is possible to leave out the value source definition for it. The following will return the same response as above:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+{
     "aggs" : {
         "price_ranges" : {
             "range" : {
                 "field" : "price",
                 "ranges" : [
-                    { "to" : 50 },
-                    { "from" : 50, "to" : 100 },
-                    { "from" : 100 }
+                    { "to" : 100 },
+                    { "from" : 100, "to" : 200 },
+                    { "from" : 200 }
                 ]
             },
             "aggs" : {
                 "price_stats" : {
-                    "stats" : {} <a id="CO83-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    "stats" : {} <a id="CO86-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
                 }
             }
         }
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO83-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-range-aggregation/9.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO86-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 We don’t need to specify the <code class="literal">price</code> as we "inherit" it by default from the parent <code class="literal">range</code> aggregation
 </p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="search-aggregations-bucket-nested-aggregation.html">
               « 
