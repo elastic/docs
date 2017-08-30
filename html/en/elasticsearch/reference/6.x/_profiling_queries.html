@@ -865,29 +865,17 @@ value is cumulative and contains the total time for all queries being rewritten.
     }
   },
   "aggs": {
-    "non_global_term": {
+    "my_scoped_agg": {
       "terms": {
-        "field": "agg"
-      },
-      "aggs": {
-        "second_term": {
-          "terms": {
-            "field": "sub_agg"
-          }
-        }
+        "field": "level"
       }
     },
-    "another_agg": {
-      "cardinality": {
-        "field": "aggB"
-      }
-    },
-    "global_agg": {
+    "my_global_agg": {
       "global": {},
       "aggs": {
-        "my_agg2": {
+        "my_level_agg": {
           "terms": {
-            "field": "globalAgg"
+            "field": "level"
           }
         }
       }
@@ -895,7 +883,7 @@ value is cumulative and contains the total time for all queries being rewritten.
   },
   "post_filter": {
     "term": {
-      "my_field": "foo"
+      "tag": "elastic"
     }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/_profiling_queries/1.json"></div><p>This example has:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
@@ -907,6 +895,7 @@ A global aggregation
 </li><li class="listitem">
 A post_filter
 </li></ul></div><p>And the response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+   ...
    "profile": {
          "shards": [
             {
@@ -920,15 +909,15 @@ A post_filter
                            "time_in_nanos": "409456",
                            "breakdown": {
                               "score": 0,
-                              "score_count": 1,
-                              "next_doc": 0,
-                              "next_doc_count": 2,
-                              "match": 0,
+                              "build_scorer_count": 1,
                               "match_count": 0,
                               "create_weight": 31584,
+                              "next_doc": 0,
+                              "match": 0,
                               "create_weight_count": 1,
+                              "next_doc_count": 2,
+                              "score_count": 1,
                               "build_scorer": 377872,
-                              "build_scorer_count": 1,
                               "advance": 0,
                               "advance_count": 0
                            }
@@ -939,15 +928,15 @@ A post_filter
                            "time_in_nanos": "303702",
                            "breakdown": {
                               "score": 0,
-                              "score_count": 1,
-                              "next_doc": 5936,
-                              "next_doc_count": 2,
-                              "match": 0,
+                              "build_scorer_count": 1,
                               "match_count": 0,
                               "create_weight": 185215,
+                              "next_doc": 5936,
+                              "match": 0,
                               "create_weight_count": 1,
+                              "next_doc_count": 2,
+                              "score_count": 1,
                               "build_scorer": 112551,
-                              "build_scorer_count": 1,
                               "advance": 0,
                               "advance_count": 0
                            }
@@ -956,59 +945,35 @@ A post_filter
                      "rewrite_time": 7208,
                      "collector": [
                         {
-                           "name": "MultiCollector",
-                           "reason": "search_multi",
-                           "time_in_nanos": "1378943",
-                           "children": [
-                              {
-                                 "name": "FilteredCollector",
-                                 "reason": "search_post_filter",
-                                 "time_in_nanos": "403659",
-                                 "children": [
+                          "name": "CancellableCollector",
+                          "reason": "search_cancelled",
+                          "time_in_nanos": 2390,
+                          "children": [
+                            {
+                              "name": "MultiCollector",
+                              "reason": "search_multi",
+                              "time_in_nanos": 1820,
+                              "children": [
+                                {
+                                  "name": "FilteredCollector",
+                                  "reason": "search_post_filter",
+                                  "time_in_nanos": 7735,
+                                  "children": [
                                     {
-                                       "name": "SimpleTopScoreDocCollector",
-                                       "reason": "search_top_hits",
-                                       "time_in_nanos": "6391"
+                                      "name": "SimpleTopScoreDocCollector",
+                                      "reason": "search_top_hits",
+                                      "time_in_nanos": 1328
                                     }
-                                 ]
-                              },
-                              {
-                                 "name": "BucketCollector: [[non_global_term, another_agg]]",
-                                 "reason": "aggregation",
-                                 "time_in_nanos": "954602"
-                              }
-                           ]
-                        }
-                     ]
-                  },
-                  {
-                     "query": [
-                        {
-                           "type": "MatchAllDocsQuery",
-                           "description": "*:*",
-                           "time_in_nanos": "48293",
-                           "breakdown": {
-                              "score": 0,
-                              "score_count": 1,
-                              "next_doc": 3672,
-                              "next_doc_count": 2,
-                              "match": 0,
-                              "match_count": 0,
-                              "create_weight": 6311,
-                              "create_weight_count": 1,
-                              "build_scorer": 38310,
-                              "build_scorer_count": 1,
-                              "advance": 0,
-                              "advance_count": 0
-                           }
-                        }
-                     ],
-                     "rewrite_time": 1067,
-                     "collector": [
-                        {
-                           "name": "GlobalAggregator: [global_agg]",
-                           "reason": "aggregation_global",
-                           "time_in_nanos": "122631"
+                                  ]
+                                },
+                                {
+                                  "name": "BucketCollector: [[org.elasticsearch.search.profile.aggregation.ProfilingAggregator@222b076, org.elasticsearch.search.profile.aggregation.ProfilingAggregator@3000ab31]]",
+                                  "reason": "aggregation",
+                                  "time_in_nanos": 8273
+                                }
+                              ]
+                            }
+                          ]
                         }
                      ]
                   }
@@ -1021,12 +986,9 @@ represented:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li cl
 The first <code class="literal">TermQuery</code> (message:search) represents the main <code class="literal">term</code> query
 </li><li class="listitem">
 The second <code class="literal">TermQuery</code> (my_field:foo) represents the <code class="literal">post_filter</code> query
-</li><li class="listitem">
-There is a  <code class="literal">MatchAllDocsQuery</code> (*:*) query which is being executed as a second, distinct search.  This was
-not part of the query specified by the user, but is auto-generated by the global aggregation to provide a global query scope
-</li></ol></div><p>The Collector tree is fairly straightforward, showing how a single MultiCollector wraps a FilteredCollector
-to execute the post_filter (and in turn wraps the normal scoring SimpleCollector), a BucketCollector to run
-all scoped aggregations.  In the MatchAll search, there is a single GlobalAggregator to run the global aggregation.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_understanding_multitermquery_output"></a>Understanding MultiTermQuery output<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A special note needs to be made about the <code class="literal">MultiTermQuery</code> class of queries.  This includes wildcards, regex and fuzzy
+</li></ol></div><p>The Collector tree is fairly straightforward, showing how a single CancellableCollector wraps a MultiCollector
+ which also wraps a FilteredCollector to execute the post_filter (and in turn wraps the normal scoring SimpleCollector),
+ a BucketCollector to run all scoped aggregations.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_understanding_multitermquery_output"></a>Understanding MultiTermQuery output<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A special note needs to be made about the <code class="literal">MultiTermQuery</code> class of queries.  This includes wildcards, regex and fuzzy
 queries.  These queries emit very verbose responses, and are not overly structured.</p><p>Essentially, these queries rewrite themselves on a per-segment basis.  If you imagine the wildcard query <code class="literal">b*</code>, it technically
 can match any token that begins with the letter "b".  It would be impossible to enumerate all possible combinations,
 so Lucene rewrites the query in context of the segment being evaluated.  E.g. one segment may contain the tokens

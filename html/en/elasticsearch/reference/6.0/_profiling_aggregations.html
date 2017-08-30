@@ -625,40 +625,49 @@ the following example aggregations request:</p><div class="pre_wrapper"><pre cla
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/_profiling_aggregations/1.json"></div><p>Which yields the following aggregation profile output</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggregations": [
-  {
-    "type": "org.elasticsearch.search.aggregations.bucket.terms.GlobalOrdinalsStringTermsAggregator",
-    "description": "property_type",
-    "time_in_nanos": "4280456978",
-    "breakdown": {
-      "reduce": 0,
-      "reduce_count": 0,
-      "build_aggregation": 49765,
-      "build_aggregation_count": 300,
-      "initialise": 52785,
-      "initialize_count": 300,
-      "collect": 3155490036,
-      "collect_count": 1800
-    },
-    "children": [
+}</pre></div><div class="console_widget" data-snippet="snippets/_profiling_aggregations/1.json"></div><p>Which yields the following aggregation profile output</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "profile": {
+    "shards": [
       {
-        "type": "org.elasticsearch.search.aggregations.metrics.avg.AvgAggregator",
-        "description": "avg_price",
-        "time_in_nanos": "1124864392",
-        "breakdown": {
-          "reduce": 0,
-          "reduce_count": 0,
-          "build_aggregation": 1394,
-          "build_aggregation_count": 150,
-          "initialise": 2883,
-          "initialize_count": 150,
-          "collect": 1124860115,
-          "collect_count": 900
-        }
+        ...
+        "aggregations": [
+          {
+            "type": "org.elasticsearch.search.aggregations.bucket.terms.TermsAggregatorFactory$1",
+            "description": "property_type",
+            "time_in_nanos": 26234,
+            "breakdown": {
+              "reduce": 0,
+              "build_aggregation": 817,
+              "build_aggregation_count": 1,
+              "initialize": 25415,
+              "initialize_count": 1,
+              "reduce_count": 0,
+              "collect": 0,
+              "collect_count": 0
+            },
+            "children": [
+              {
+                "type": "org.elasticsearch.search.aggregations.metrics.avg.AvgAggregator",
+                "description": "avg_price",
+                "time_in_nanos": 5610,
+                "breakdown": {
+                  "reduce": 0,
+                  "build_aggregation": 0,
+                  "build_aggregation_count": 0,
+                  "initialize": 5609,
+                  "initialize_count": 1,
+                  "reduce_count": 0,
+                  "collect": 0,
+                  "collect_count": 0
+                }
+              }
+            ]
+          }
+        ]
       }
     ]
   }
-]</pre></div><p>From the profile structure we can see our <code class="literal">property_type</code> terms aggregation which is internally represented by the
+}</pre></div><p>From the profile structure we can see our <code class="literal">property_type</code> terms aggregation which is internally represented by the
 <code class="literal">GlobalOrdinalsStringTermsAggregator</code> class and the sub aggregator <code class="literal">avg_price</code> which is internally represented by the <code class="literal">AvgAggregator</code> class. The <code class="literal">type</code> field displays the class used internally to represent the aggregation. The <code class="literal">description</code> field displays the name of the aggregation.</p><p>The <code class="literal">time_in_nanos</code> field shows that it took ~4 seconds for the entire aggregation to execute.  The recorded time is inclusive
 of all children.</p><p>The <code class="literal">breakdown</code> field will give detailed stats about how the time was spent, we’ll look at
 that in a moment.  Finally, the <code class="literal">children</code> array lists any sub-aggregations that may be present.  Because we have an <code class="literal">avg_price</code> aggregation as a sub-aggregation to the <code class="literal">property_type</code> aggregation we see it listed as a child of the <code class="literal">property_type</code> aggregation.  the two aggregation outputs have identical information (type, time,
@@ -667,8 +676,9 @@ breakdown, etc).  Children are allowed to have their own children.</p><div class
   "reduce_count": 0,
   "build_aggregation": 49765,
   "build_aggregation_count": 300,
-  "initialise": 52785,
+  "initialize": 52785,
   "initialize_count": 300,
+  "reduce_count": 0,
   "collect": 3155490036,
   "collect_count": 1800
 }</pre></div><p>Timings are listed in wall-clock nanoseconds and are not normalized at all.  All caveats about the overall
