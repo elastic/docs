@@ -3,7 +3,7 @@
 
 date
 
-USAGE="Usage: release_docs.sh [-r <remote_doc_repo>] [-n] [-h]."
+USAGE="Usage: release_docs.sh -r <remote_doc_repo> [-n] [-h]."
 DOCS_REMOTE=""
 PUSH="true"
 DOCS_DIR=$PWD
@@ -11,12 +11,12 @@ DOCS_DIR=$PWD
 while getopts "r:nh" opt; do
   case $opt in
     r)
-	  DOCS_REMOTE="$OPTARG"
-      echo "Will push to remote: $DOCS_REMOTE"
+      DOCS_REMOTE="$OPTARG"
+      echo "Remote docs repo: $DOCS_REMOTE"
       ;;
     n)
       PUSH="false"
-      echo "Building only, will not push to remote."
+      echo "Building only, will not push to $DOCS_REMOTE."
       ;;
     h)
       echo "$USAGE"
@@ -30,40 +30,47 @@ while getopts "r:nh" opt; do
   esac
 done
 
-if [[ $PUSH == "true" && $DOCS_REMOTE == "" ]] ; then
-  echo "Error: No remote specified. You must specify a remote repo with the -r option, or specify the -n option to skip pushing to the remote repo."
+if [[ $DOCS_REMOTE == "" ]] ; then
+  echo "Error: No remote specified. You must specify the remote docs repo with the -r option.
+       To build only and skip pushing to the specified remote, use the -n option."
   exit 1
 fi
 
-printf "Any local changes in your docs repo will be overwritten. Continue? y/N: "
+printf "Any local changes in your docs repo will be obliterated. Continue? y/N: "
 read CONTINUE
 if [[ $CONTINUE == "y" ]] ; then
-  date
-  echo "Syncing with docs/master"
-  git reset --hard docs/master
-  date
+  echo "Syncing with $DOCS_REMOTE/master"
+  git reset --hard $DOCS_REMOTE/master
   echo "Deleting contents of $PWD/html."
   rm -Rf html/*
-  date
-  echo "Building all docs. This is going to take a while...need a fresh cup of coffee? Or maybe a glass of wine?"
+  echo "Building all docs. This is going to take a while. Need a fresh cup of coffee? Or maybe a glass of wine?"
   if ./build_docs.pl --all ; then
     if [[ $PUSH == "true" ]] ; then
       git commit -a -m "Forced update"
-      date
-      echo "Pushing docs to the remote repo: $DOCS_REMOTE."
-      git push -f $DOCS_REMOTE master
-      if [[ $? == 0 ]] ; then
-        date
-		echo "Successfully built and pushed the docs!"
-		echo "It will take a bit for the changes to propagate to the webservers."
-        echo "If they don't show up in a timely fashion, try clearing the webserver cache."
-		exit 0
+      printf "Ready to push to $DOCS_REMOTE/master. Continue? y/N: "
+      read CONTINUE
+      if [[ $CONTINUE == "y" ]] ; then
+        git push -f $DOCS_REMOTE master
+        if [[ $? == 0 ]] ; then
+          echo "Successfully built and pushed the docs!"
+          echo "It will take a bit for the changes to propagate to the webservers."
+          echo "If they don't show up in a timely fashion, try clearing the webserver cache."
+          date
+          exit 0
+        else
+          read PUSH_ERROR
+          echo "Error: Unable to push docs to $DOCS_REMOTE."
+          echo $PUSH_ERROR
+          exit 1
+        fi
       else
-        echo "Error: Unable to push docs to the remote."
-		exit 1
+        echo "Successfully built the docs. Skipping the push to $DOCS_REMOTE and exiting."
+        date
+        exit 0
       fi
     elif [[ $PUSH == "false" ]] ; then
       echo "Successfully built the docs. Not pushing to remote."
+      date
     fi
   else
     read BUILD_ERROR
@@ -71,5 +78,9 @@ if [[ $CONTINUE == "y" ]] ; then
     echo $BUILD_ERROR
     exit 1
   fi
+else
+  echo "Okay, exiting without doing anything."
+  date
+  exit 0
 fi
 
