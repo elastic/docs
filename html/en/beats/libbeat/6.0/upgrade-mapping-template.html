@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Upgrade the Elasticsearch mapping template
         | Beats Platform Reference [6.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Beats Platform Reference [6.0]" /><link rel="up" href="upgrading.html" title="Upgrading" /><link rel="prev" href="upgrading-1-to-5.html" title="Upgrade from 1.x to 5.x" /><link rel="next" href="config-file-format.html" title="Config file format" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Libbeat/Reference/6.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Beats Platform Reference [6.0]" /><link rel="up" href="upgrading.html" title="Upgrading" /><link rel="prev" href="upgrading-5-to-6.html" title="Upgrade from 5.x to 6.x" /><link rel="next" href="config-file-format.html" title="Config file format" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Libbeat/Reference/6.0" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -599,46 +599,22 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Beats Platform Reference
       [6.0]
-    </a></span> » <span class="breadcrumb-link"><a href="upgrading.html">Upgrading</a></span> » <span class="breadcrumb-node">Upgrade the Elasticsearch mapping template</span></div><div class="navheader"><span class="prev"><a href="upgrading-1-to-5.html">
+    </a></span> » <span class="breadcrumb-link"><a href="upgrading.html">Upgrading</a></span> » <span class="breadcrumb-node">Upgrade the Elasticsearch mapping template</span></div><div class="navheader"><span class="prev"><a href="upgrading-5-to-6.html">
               « 
-              Upgrade from 1.x to 5.x</a>
+              Upgrade from 5.x to 6.x</a>
            
         </span><span class="next">
            
           <a href="config-file-format.html">Config file format
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="upgrade-mapping-template"></a>Upgrade the Elasticsearch mapping template<a href="https://github.com/elastic/beats/edit/6.0/libbeat/docs/upgrading.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>By default, the Elasticsearch mapping template that comes with the Beats is not
-re-installed if it already exists.  This means that if the new Beats version
-adds new fields (e.g. a new module in Metricbeat), they won’t be reflected in
-the Elasticsearch mapping, which can result in visualization problems or
-incorrect data.</p><p>You can set the <code class="literal">output.elasticsearch.template.overwrite</code> option to <code class="literal">true</code> to
-make the Beats install the new mapping template even if a template with the same
-name already exists. You can set this option in the configuration file or as a
-CLI flag, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">packetbeat -e -E output.elasticsearch.template.overwrite=true</pre></div><p>However, the mapping template is applied on index creation, so it won’t affect
-the current index if it was already created with the old version.</p><p>You can force the start of a new index by renaming the old index before starting
-the new version of the Beat. As of Elasticsearch 5.0, this can be done via the
-re-index API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">POST /_reindex
-{
-  "source": {
-    "index": "packetbeat-2016.09.20"
-  },
-  "dest": {
-    "index": "packetbeat-2016.09.20-old"
-  }
-}
-DELETE /packetbeat-2016.09.20</pre></div><p>Note that the reindex API command can take a long time, depending on the size of
-the index. It is recommended that you stop the Beat during this time, so the
-order of operations should be:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-Stop the old version of the Beat
-</li><li class="listitem">
-Rename the index of the current day
-</li><li class="listitem">
-Start the new version of the Beat
-</li></ol></div><p>If downtime is not acceptable, another possible approach is to configure a
-different index pattern in the new Beat version, but this will likely require
-adjustments to your Kibana dashboards.</p></div><div class="navfooter"><span class="prev"><a href="upgrading-1-to-5.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="upgrade-mapping-template"></a>Upgrade the Elasticsearch mapping template<a href="https://github.com/elastic/beats/edit/6.0/libbeat/docs/upgrading.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Starting with Beats 6.0, the mapping templates and the default index names are
+versioned. For example, Metricbeat 6.0.0 creates indices like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">metricbeat-6.0.0-2017-08-31</pre></div><p>And the corresponding Elasticsearch template is named <code class="literal">metricbeat-6.0.0</code>.</p><p>This means that each version of the Beat creates a new index, and it is
+guaranteed that the correct template for that version is applied.  With these
+changes in place, you generally don’t have to do anything to upgrade the mapping
+template when you move to a new version.</p><p>One exception is when upgrading from 5.x, in which case you should make sure to
+read the <a class="xref" href="upgrading-5-to-6.html#upgrading-to-5.6" title="Upgrade to 5.6">Upgrade to 5.6</a> section.</p></div><div class="navfooter"><span class="prev"><a href="upgrading-5-to-6.html">
               « 
-              Upgrade from 1.x to 5.x</a>
+              Upgrade from 5.x to 6.x</a>
            
         </span><span class="next">
            
