@@ -801,6 +801,10 @@ The name of the field on which to run the query (required).
 <code class="literal">size</code>
 </span></dt><dd>
 The number of suggestions to return (defaults to <code class="literal">5</code>).
+</dd><dt><span class="term">
+<code class="literal">skip_duplicates</code>
+</span></dt><dd>
+Whether duplicate suggestions should be filtered out (defaults to <code class="literal">false</code>).
 </dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The completion suggester considers all documents in the index.
 See <a class="xref" href="suggester-context.html" title="Context Suggester">Context Suggester</a> for an explanation of how to query a subset of
 documents instead.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>In case of completion queries spanning more than one shard, the suggest
@@ -810,7 +814,21 @@ more performant due to the document fetch overhead when the suggest spans
 multiple shards. To get best performance for completions, it is recommended to
 index completions into a single shard index. In case of high heap usage due to
 shard size, it is still recommended to break index into multiple shards instead
-of optimizing for completion performance.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="fuzzy"></a>Fuzzy queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The completion suggester also supports fuzzy queries - this means,
+of optimizing for completion performance.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="skip_duplicates"></a>Skip duplicate suggestions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Queries can return duplicate suggestions coming from different documents.
+It is possible to modify this behavior by setting <code class="literal">skip_duplicates</code> to true.
+When set, this option filters out documents with duplicate suggestions from the result.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_search?pretty
+{
+    "suggest": {
+        "song-suggest" : {
+            "prefix" : "nor",
+            "completion" : {
+                "field" : "suggest",
+                "skip_duplicates": true
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/7.json"></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>when set to true this option can slow down search because more suggestions
+need to be visited to find the top N.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="fuzzy"></a>Fuzzy queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/completion-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The completion suggester also supports fuzzy queries - this means,
 you can have a typo in your search and still get results back.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST music/_search?pretty
 {
     "suggest": {
@@ -824,7 +842,7 @@ you can have a typo in your search and still get results back.</p><div class="pr
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/7.json"></div><p>Suggestions that share the longest prefix to the query <code class="literal">prefix</code> will
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/8.json"></div><p>Suggestions that share the longest prefix to the query <code class="literal">prefix</code> will
 be scored higher.</p><p>The fuzzy query can take specific fuzzy parameters.
 The following parameters are supported:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
@@ -887,7 +905,7 @@ you can express a prefix as a regular expression</p><div class="pre_wrapper"><pr
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/8.json"></div><p>The regex query can take specific regex parameters.
+}</pre></div><div class="console_widget" data-snippet="snippets/search-suggesters-completion/9.json"></div><p>The regex query can take specific regex parameters.
 The following parameters are supported:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">flags</code>

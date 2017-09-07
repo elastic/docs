@@ -608,10 +608,11 @@ Not what you want? See the
           <a href="search-search.html">Search
                »
             </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="search"></a>Search APIs<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><p>Most search APIs are <a class="link" href="search-search.html#search-multi-index-type" title="Multi-Index, Multi-Typeedit">multi-index, multi-type</a>, with the
-exception of the <a class="xref" href="search-explain.html" title="Explain API"><em>Explain API</em></a> endpoints.</p><h2><a id="search-routing"></a>Routing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>When executing a search, it will be broadcast to all the index/indices
-shards (round robin between replicas). Which shards will be searched on
-can be controlled by providing the <code class="literal">routing</code> parameter. For example,
-when indexing tweets, the routing value can be the user name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /twitter/tweet?routing=kimchy
+exception of the <a class="xref" href="search-explain.html" title="Explain API"><em>Explain API</em></a> endpoints.</p><h2><a id="search-routing"></a>Routing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>When executing a search, Elasticsearch will pick the "best" copy of the data
+based on the <a class="link" href="search.html#search-adaptive-replica" title="Adaptive Replica Selectionedit">adaptive replica selection</a> formula.
+Which shards will be searched on can also be controlled by providing the
+<code class="literal">routing</code> parameter. For example, when indexing tweets, the routing value can be
+the user name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /twitter/tweet?routing=kimchy
 {
     "user" : "kimchy",
     "postDate" : "2009-11-15T14:12:12",
@@ -634,23 +635,24 @@ only the relevant shard:</p><div class="pre_wrapper"><pre class="programlisting 
     }
 }</pre></div><div class="console_widget" data-snippet="snippets/search/2.json"></div><p>The routing parameter can be multi valued represented as a comma
 separated string. This will result in hitting the relevant shards where
-the routing values match to.</p><h2><a id="search-adaptive-replica"></a>Adaptive Replica Selection<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>As an alternative to requests being sent to copies of the data in a round robin
-fashion, you may enable adaptive replica selection. This allows the coordinating
-node to send the request to the copy deemed "best" based on a number of
-criteria:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+the routing values match to.</p><h2><a id="search-adaptive-replica"></a>Adaptive Replica Selection<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>By default, Elasticsearch will use what is called adaptive replica selection.
+This allows the coordinating node to send the request to the copy deemed "best"
+based on a number of criteria:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Response time of past requests between the coordinating node and the node
   containing the copy of the data
 </li><li class="listitem">
 Time past search requests took to execute on the node containing the data
 </li><li class="listitem">
 The queue size of the search threadpool on the node containing the data
-</li></ul></div><p>This can be turned on by changing the dynamic cluster setting
-<code class="literal">cluster.routing.use_adaptive_replica_selection</code> from <code class="literal">false</code> to <code class="literal">true</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
+</li></ul></div><p>This can be turned off by changing the dynamic cluster setting
+<code class="literal">cluster.routing.use_adaptive_replica_selection</code> from <code class="literal">true</code> to <code class="literal">false</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
 {
     "transient": {
-        "cluster.routing.use_adaptive_replica_selection": true
+        "cluster.routing.use_adaptive_replica_selection": false
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search/3.json"></div><h2><a id="stats-groups"></a>Stats Groups<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>A search can be associated with stats groups, which maintains a
+}</pre></div><div class="console_widget" data-snippet="snippets/search/3.json"></div><p>If adaptive replica selection is turned off, searches are sent to the
+index/indices shards in a round robin fashion between all copies of the data
+(primaries and replicas).</p><h2><a id="stats-groups"></a>Stats Groups<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>A search can be associated with stats groups, which maintains a
 statistics aggregation per group. It can later be retrieved using the
 <a class="link" href="indices-stats.html" title="Indices Stats">indices stats</a> API
 specifically. For example, here is a search body request that associate
