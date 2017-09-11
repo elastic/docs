@@ -1,26 +1,35 @@
 PUT test
 {
   "settings": {
-    "mapping.single_type": false
+    "mapping.single_type": true
   },
   "mappings": {
-    "my_parent": {},
-    "my_child": {
-      "_parent": {
-        "type": "my_parent"
+    "doc": {
+      "properties": {
+        "my_join_field": {
+          "type": "join",
+          "relations": {
+            "my_parent": "my_child"
+          }
+        }
       }
     }
   }
 }
 
-PUT test/my_parent/1?refresh
+PUT test/doc/1?refresh
 {
-  "test": "test"
+  "number": 1,
+  "my_join_field": "my_parent"
 }
 
-PUT test/my_child/1?parent=1&refresh
+PUT test/doc/2?routing=1&refresh
 {
-  "test": "test"
+  "number": 1,
+  "my_join_field": {
+    "name": "my_child",
+    "parent": "1"
+  }
 }
 
 POST test/_search
@@ -30,7 +39,7 @@ POST test/_search
       "type": "my_child",
       "query": {
         "match": {
-          "test": "test"
+          "number": 1
         }
       },
       "inner_hits": {}    
