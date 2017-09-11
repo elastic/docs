@@ -46,7 +46,8 @@ if [[ $CONTINUE == "y" ]] ; then
   echo "Building all docs. This is going to take a while. Need a fresh cup of coffee? Or maybe a glass of wine?"
   if ./build_docs.pl --all ; then
     if [[ $PUSH == "true" ]] ; then
-      git commit -a -m "Forced update"
+      git add -A
+      git commit -m "Forced update"
       printf "Ready to push to $DOCS_REMOTE/master. Continue? y/N: "
       read CONTINUE
       if [[ $CONTINUE == "y" ]] ; then
