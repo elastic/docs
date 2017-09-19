@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>API Reference
         | APM Node.js Agent Reference (Experimental)
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Node.js Agent Reference (Experimental)" /><link rel="up" href="index.html" title="APM Node.js Agent Reference (Experimental)" /><link rel="prev" href="es-modules.html" title="Babel / ES Modules support" /><link rel="next" href="agent-api.html" title="Agent API" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Node.js Agent/Reference" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Node.js Agent Reference (Experimental)" /><link rel="up" href="index.html" title="APM Node.js Agent Reference (Experimental)" /><link rel="prev" href="advanced-setup.html" title="Advanced Setup and Configuration" /><link rel="next" href="custom-transactions.html" title="Custom Transactions" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Node.js Agent/Reference" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -595,21 +595,381 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="page_header">You are looking at preliminary documentation for a future release.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">APM Node.js Agent Reference (Experimental)</a></span> » <span class="breadcrumb-node">API Reference</span></div><div class="navheader"><span class="prev"><a href="es-modules.html">
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">APM Node.js Agent Reference (Experimental)</a></span> » <span class="breadcrumb-node">API Reference</span></div><div class="navheader"><span class="prev"><a href="advanced-setup.html">
               « 
-              Babel / ES Modules support</a>
+              Advanced Setup and Configuration</a>
            
         </span><span class="next">
            
-          <a href="agent-api.html"><code class="literal">Agent</code> API
+          <a href="custom-transactions.html">Custom Transactions
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="api"></a>API Reference<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div></div><div class="navfooter"><span class="prev"><a href="es-modules.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="api"></a>API Reference<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><h3><a id="agent-api"></a><code class="literal">Agent</code> API<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This is the API documentation for the Elastic APM Node.js Agent.
+For getting started,
+we recommend that you take a look at our framework specific documentation for either <a class="link" href="express.html" title="Getting started with Express">Express</a>, <a class="link" href="hapi.html" title="Getting started with hapi">hapi</a>, <a class="link" href="koa.html" title="Getting started with Koa">Koa</a>, or <a class="link" href="custom-stack.html" title="Getting started with a custom Node.js stack">custom frameworks</a>.</p></div></div><p>The Elastic APM agent for Node.js is a singleton.
+You get the agent instance by either requiring <code class="literal">elastic-apm</code> or <code class="literal">elastic-apm/start</code>.
+For details on the two approaches,
+see the <a class="link" href="advanced-setup.html" title="Advanced Setup and Configuration">Setup and Configuration</a> guide.</p><p>The agent is also returned by the <code class="literal">start()</code> function,
+which allows you to require and start the agent on the same line:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var apm = require('elastic-apm').start(...)</pre></div><p>If you need to access the <code class="literal">Agent</code> in any part of your codebase,
+you can simply require <code class="literal">elastic-apm</code> to access the already started singleton.
+You therefore don’t need to manage or pass around the started <code class="literal">Agent</code> yourself.</p><h4><a id="apm-start"></a><code class="literal">apm.start()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.start([options])</pre></div><p>Starts the Elastic APM agent for Node.js and returns itself.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Put the call to this function at the very top of your main app file - before requiring/importing any other modules.</p></div></div><p>The available configuration options are listed below.
+Most configuration options can be set either in the optional <code class="literal">options</code> object,
+by using environment variables,
+or via the <a class="link" href="advanced-setup.html#agent-configuration-file" title="Agent configuration fileedit">agent configuration file</a>.
+Their equivalent environment variable name is listed together with each option.</p><p>Properties on the <code class="literal">options</code> object will always take precedence over environment variables.</p><p>The only required parameter is <a class="link" href="api.html#app-name" title="appNameedit"><code class="literal">appName</code></a>.</p><p>Example usage configuring the agent to only be active in production:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">// Add this to the VERY top of the first file loaded in your app
+require('elastic-apm').start({
+  // Set required app name (allowed characters: a-z, A-Z, 0-9, -, _, and space)
+  appName: '',
+
+  // Use if APM Server requires a token
+  secretToken: '',
+
+  // Set custom APM Server URL (default: http://localhost:8200)
+  serverUrl: '',
+
+  // Only activate the agent if it's running in production
+  active: process.env.NODE_ENV === 'production'
+})</pre></div><h5><a id="app-name"></a><code class="literal">appName</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_APP_NAME</code>
+</li></ul></div><p>Your Elastic APM app name.
+Required unless set <a class="link" href="advanced-setup.html#configuring-the-agent" title="Configuring the agentedit">via other means</a>.</p><h5><a id="secret-token"></a><code class="literal">secretToken</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_SECRET_TOKEN</code>
+</li></ul></div><p>The secret token optionally expected by the APM Server.</p><h5><a id="server-url"></a><code class="literal">serverUrl</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">http://localhost:8200</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_SERVER_URL</code>
+</li></ul></div><p>The URL to where the APM Server is deployed.</p><h5><a id="app-version"></a><code class="literal">appVersion</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_APP_VERSION</code>
+</li></ul></div><p>The version of the app currently running.
+This could be the version from your <code class="literal">package.json</code> file,
+a git commit reference,
+or any other string that might help you pinpoint a specific version or deployment.</p><h5><a id="active"></a><code class="literal">active</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Boolean
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">true</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_ACTIVE</code>
+</li></ul></div><p>A boolean specifying if the agent should be active or not.
+If active,
+the agent will instrument incoming HTTP requests and track errors.
+Normally you would not want to run the agent in your development or testing environments.
+If you are using the <code class="literal">NODE_ENV</code> environment variable,
+you can use this to determine the state:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var options = {
+  active: process.env.NODE_ENV === 'production'
+}</pre></div><h5><a id="instrument"></a><code class="literal">instrument</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Boolean
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">true</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_INSTRUMENT</code>
+</li></ul></div><p>A boolean specifying if the agent should collect performance metrics for the app.</p><p>Note that both <code class="literal">active</code> and <code class="literal">instrument</code> needs to be <code class="literal">true</code> for instrumentation to be running.</p><h5><a id="ignore-urls"></a><code class="literal">ignoreUrls</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Array
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">undefined</code>
+</li></ul></div><p>Used to restrict requests to certain URL’s from being instrumented.</p><p>This property should be set to an array containing one or more strings or <code class="literal">RegExp</code> objects.
+When an incoming HTTP request is detected,
+its URL will be tested against each element in this list.
+If an element in the array is a <code class="literal">String</code>,
+an exact match will be performed.
+If an element in the array is a <code class="literal">RegExp</code> object,
+its test function will be called with the URL being tested.</p><p>Example usage:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">require('elastic-apm').start({
+  ignoreUrls: [
+    '/ping',
+    /^\/admin\//i,
+    new RegExp('^/api/v1')
+  ]
+})</pre></div><h5><a id="ignore-user-agents"></a><code class="literal">ignoreUserAgents</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Array
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">undefined</code>
+</li></ul></div><p>Used to restrict requests from certain User-Agents from being instrumented.</p><p>This property should be set to an array containing one or more strings or <code class="literal">RegExp</code> objects.
+When an incoming HTTP request is detected,
+the User-Agent from the request headers will be tested against each element in this list.
+If an element in the array is a <code class="literal">String</code>,
+it’s matched against the beginning of the User-Agent.
+If an element in the array is a <code class="literal">RegExp</code> object,
+its test function will be called with the User-Agent string being tested.</p><p>Example usage:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">require('elastic-apm').start({
+  ignoreUserAgents: [
+    'curl/',
+    /pingdom/i,
+    new RegExp('Safari/[0-9\.]+')
+  ]
+})</pre></div><h5><a id="log-body"></a><code class="literal">logBody</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Boolean
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">false</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_LOG_BODY</code>
+</li></ul></div><p>The HTTP body of incoming HTTP requests is not recorded and sent to the APM Server by default.
+If you wish to collect the HTTP request body,
+set this config option to <code class="literal">true</code>.</p><h5><a id="timeout"></a><code class="literal">timeout</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Boolean
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">true</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_TIMEOUT</code>
+</li></ul></div><p>A boolean specifying if the agent should monitor for aborted TCP connections with un-ended HTTP requests.
+An error will be generated and sent to the APM Server if this happens.</p><h5><a id="timeout-error-threshold"></a><code class="literal">timeoutErrorThreshold</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Number
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">25000</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_TIMEOUT_ERROR_THRESHOLD</code>
+</li></ul></div><p>Specify the threshold (in milliseconds) for when an aborted TCP connection with an un-ended HTTP request is considered an error.</p><p>If the <code class="literal">timeout</code> property is <code class="literal">false</code>, this property is ignored.</p><h5><a id="hostname"></a><code class="literal">hostname</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> OS hostname
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_HOSTNAME</code>
+</li></ul></div><p>The OS hostname is automatically logged along with all errors and transactions.
+If you want to overwrite this,
+use this option.</p><h5><a id="log-level"></a><code class="literal">logLevel</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">'info'</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_LOG_LEVEL</code>
+</li></ul></div><p>Set the verbosity level for the agent.
+Note that this does not have any influence on the types of errors that are sent to the APM Server.
+This only controls how chatty the agent is in your logs.</p><p>Possible levels are: <code class="literal">trace</code>, <code class="literal">debug</code>, <code class="literal">info</code>, <code class="literal">warn</code>, <code class="literal">error</code>, and <code class="literal">fatal</code>.</p><h5><a id="logger"></a><code class="literal">logger</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> object
+</li></ul></div><p>Set a custom logger, e.g. <a class="ulink" href="https://github.com/trentm/node-bunyan" target="_top">bunyan</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">require('elastic-apm').start({
+  logger: require('bunyan')({ level: 'info' })
+})</pre></div><p>If no custom logger is provided,
+the agent will use its built-in logger which will log to STDOUT and STDERR depending on the log level.</p><p>The logger should expose the following functions: <code class="literal">trace</code>, <code class="literal">debug</code>,<code class="literal">info</code>, <code class="literal">warn</code>, <code class="literal">error</code>, and <code class="literal">fatal</code>.</p><p>Note that if a custom logger is provided, the <code class="literal">logLevel</code> option will be ignored.</p><h5><a id="capture-exceptions"></a><code class="literal">captureExceptions</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Boolean
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">true</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_CAPTURE_EXCEPTIONS</code>
+</li></ul></div><p>Whether or not the agent should monitor for uncaught exceptions and send them to the APM Server automatically.</p><h5><a id="capture-trace-stack-traces"></a><code class="literal">captureTraceStackTraces</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Boolean
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">true</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_CAPTURE_TRACE_STACK_TRACES</code>
+</li></ul></div><p>Set this option to <code class="literal">false</code> to disable capture of stack traces for measured traces during instrumentation.</p><h5><a id="stack-trace-limit"></a><code class="literal">stackTraceLimit</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Number
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">Infinity</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_STACK_TRACE_LIMIT</code>
+</li></ul></div><p>Setting it to <code class="literal">0</code> will disable stack trace collection.
+Any finite integer value will be used as the maximum number of frames to collect.
+Setting it to <code class="literal">Infinity</code> means that all frames will be collected.</p><h5><a id="flush-interval"></a><code class="literal">flushInterval</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Number
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">60</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_FLUSH_INTERVAL</code>
+</li></ul></div><p>The agent maintains an in-memory queue to which recorded metrics and sampled transactions are added when they end.
+By default,
+this queue is flushed and sent to the APM Server for processing every 60 seconds.</p><p>Use this option to change that interval.
+The value is expected to be in seconds.</p><p>Lowering this interval can reduce memory usage on Node.js applications with a high number of transactions.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The queue is flushed only 5 seconds after the first transaction has ended on a newly started Node process.
+This ensures that you don’t have to wait for the entire <code class="literal">flushInterval</code> to pass for the first data to be sent to the APM Server.
+From there on the <code class="literal">flushInterval</code> option is used.</p></div></div><h5><a id="filter-http-headers"></a><code class="literal">filterHttpHeaders</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Boolean
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">true</code>
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_FILTER_HTTP_HEADERS</code>
+</li></ul></div><p>A boolean specifying if the agent should anonymize certain sensitive HTTP headers by default before they are sent to the APM Server.
+When anonymized,
+the header value will be set to <code class="literal">[REDACTED]</code></p><p>Currently the following HTTP headers are anonymized by default:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">Authorization</code> - The full value of this header is redacted
+</li><li class="listitem">
+<code class="literal">Cookie</code> - The cookies inside the <code class="literal">Cookie</code> header are analyzed and their values redacted if they appear sensitive (like a session cookie).
+See the <a class="ulink" href="https://github.com/watson/is-secret" target="_top">is-secret</a> module for details about which patterns are considered sensitive.
+</li></ul></div><h4><a id="apm-add-filter"></a><code class="literal">apm.addFilter()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.addFilter(callback)</pre></div><p>Use <code class="literal">addFilter()</code> to supply a filter function.</p><p>Each filter function will be called just before data is being sent to the APM Server.
+This will allow you to manipulate the data being sent,
+for instance to remove sensitive information like passwords etc.</p><p>Each filter function will be called in the order they were added,
+and will receive a <code class="literal">payload</code> object as the only argument,
+containing the data about to be sent to the APM Server.</p><p>For details on the format of the payload,
+see the <a class="ulink" href="https://github.com/elastic/apm-server/tree/master/docs/spec" target="_top">intake API JSON Schema</a> for the APM Server.</p><p>The filter function is synchronous and should return the manipulated payload object.
+If a filter function doesn’t return any value or returns a falsy value,
+the remaining filter functions will not be called and the payload <span class="strong strong"><strong>will not</strong></span> be sent to the APM Server.</p><p>Example usage:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.addFilter(function (payload) {
+  if (payload.context.request &amp;&amp; payload.context.request.headers) {
+    // remove sensitive data
+    delete payload.context.request.headers['x-secret-data']
+  }
+
+  // remember to return the modified payload
+  return payload
+})</pre></div><p>A set of built-in filters are added by default.
+See <a class="link" href="api.html#filter-http-headers" title="filterHttpHeadersedit"><code class="literal">filterHttpHeaders</code></a> for details.</p><p>Though you can also use filter functions to add new contextual information to the <code class="literal">user</code> and <code class="literal">custom</code> properties,
+it’s recommended that you use <a class="link" href="api.html#apm-set-user-context" title="apm.setUserContext()edit"><code class="literal">apm.setUserContext()</code></a> and <a class="link" href="api.html#apm-set-custom-context" title="apm.setCustomContext()edit"><code class="literal">apm.setCustomContext()</code></a> for that purpose.</p><h4><a id="apm-set-user-context"></a><code class="literal">apm.setUserContext()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.setUserContext(context)</pre></div><p>Call this to enrich collected performance data and errors with information about the user/client.
+This function can be called at any point during the request/response life cycle (i.e. while a transaction is active).</p><p>The given <code class="literal">context</code> argument must be an object and can contain the following properties (all optional):</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">id</code> - The users ID
+</li><li class="listitem">
+<code class="literal">username</code> - The users username
+</li><li class="listitem">
+<code class="literal">email</code> - The users e-mail
+</li></ul></div><p>The given <code class="literal">context</code> will be added to the active transaction.
+If no active transaction can be found,
+<code class="literal">false</code> is returned.
+Otherwise <code class="literal">true</code>.</p><p>It’s possible to call this function multiple times within the scope of the same active transaction.
+For each call, the properties of the <code class="literal">context</code> argument are shallow merged with the context previously given.</p><p>If an error is captured,
+the context from the active transaction is used as context for the captured error,
+and any custom context given as the 2nd argument to <a class="link" href="api.html#apm-capture-error" title="apm.captureError()edit"><code class="literal">apm.captureError</code></a> takes precedence and is shallow merged on top.</p><p>The provided user context is stored under <code class="literal">context.user</code> in Elasticsearch on both errors and transactions.</p><h4><a id="apm-set-custom-context"></a><code class="literal">apm.setCustomContext()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.setCustomContext(context)</pre></div><p>Call this to enrich collected errors and transactions with any information that you think will help you debug performance issues or errors.
+This function can be called at any point while a transaction is active (e.g. during the request/response life cycle of an incoming HTTP request).</p><p>The provided custom context is stored under <code class="literal">context.custom</code> in Elasticsearch on both errors and transactions.</p><p>The given <code class="literal">context</code> argument must be an object and can contain any property that can be JSON encoded.</p><p>The given <code class="literal">context</code> will be added to the active transaction.
+If no active transaction can be found,
+<code class="literal">false</code> is returned.
+Otherwise <code class="literal">true</code>.</p><p>It’s possible to call this function multiple times within the scope of the same active transaction.
+For each call, the properties of the <code class="literal">context</code> argument are shallow merged with the context previously given.</p><p>If an error is captured,
+the context from the active transaction is used as context for the captured error,
+and any custom context given as the 2nd argument to <a class="link" href="api.html#apm-capture-error" title="apm.captureError()edit"><code class="literal">apm.captureError</code></a> takes precedence and is shallow merged on top.</p><h4><a id="apm-set-tag"></a><code class="literal">apm.setTag()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.setTag(name, value)</pre></div><p>Set a tag on the current transaction.
+You can set multiple tags on the same transaction.
+If an error happens during the current transaction,
+it will also get tagged with the same tags.</p><p>Tags are key/value pairs that are indexed by Elasticsearch and therefore searchable (as opposed to data set via <code class="literal">setCustomContext()</code>).</p><p>Arguments:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">name</code> - Any string.
+Must not contain periods (<code class="literal">.</code>) as those have special meaning in Elasticsearch
+</li><li class="listitem">
+<code class="literal">value</code> - Any string.
+If a non-string data type is given,
+it’s converted to a string before being sent to the APM Server
+</li></ul></div><h4><a id="apm-capture-error"></a><code class="literal">apm.captureError()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.captureError(error[, options][, callback])</pre></div><p>Send an error to the APM Server:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.captureError(new Error('boom!'))</pre></div><p>The <code class="literal">error</code> argument can be either an <code class="literal">Error</code> object,
+a <a class="link" href="api.html#message-strings" title="Message stringsedit">message string</a> or a special parameterized object.</p><p>The optional <code class="literal">options</code> object can be used to log additional metadata with the error.
+For details see the <a class="link" href="api.html#metadata" title="Metadataedit">metadata section</a>.</p><p>The optional <code class="literal">callback</code> will be called after the error has been sent to the APM Server.</p><h5><a id="message-strings"></a>Message strings<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Instead of an <code class="literal">Error</code> object,
+you can log a plain text message:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.captureError('Something happened!')</pre></div><p>This will also be sent as an error to the APM Server,
+but will not be associated with an exception.</p><h5><a id="metadata"></a>Metadata<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>To ease debugging it’s possible to send some extra data with each error you send to the APM Server.
+The APM Server intake API supports a lot of different metadata fields,
+most of which are automatically managed by the Elastic APM Node.js Agent.
+But if you wish you can supply some extra details using <code class="literal">user</code> or <code class="literal">custom</code>.
+For more details on the properties accepted by the error intake API see the <a class="ulink" href="https://www.elastic.co/guide/en/apm/server/current/_error_api.html" target="_top">intake error API docs</a>.</p><p>To supply any of these extra fields,
+use the optional options argument when calling <code class="literal">apm.captureError()</code>.</p><p>Here are some examples:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">// Sending some extra details about the user
+apm.captureError(error, {
+  user: {
+    id: 'unique_id',
+    username: 'foo',
+    email: 'foo@example.com'
+  }
+})
+
+// Sending some arbitrary details using the `custom` field
+apm.captureError(error, {
+  custom: {
+    some_important_metric: 'foobar'
+  }
+})</pre></div><p>To supply per-request metadata to all errors captured in one central location,
+use <a class="link" href="api.html#apm-set-user-context" title="apm.setUserContext()edit"><code class="literal">apm.setUserContext()</code></a> and <a class="link" href="api.html#apm-set-custom-context" title="apm.setCustomContext()edit"><code class="literal">apm.setCustomContext()</code></a>.</p><h5><a id="http-requests"></a>HTTP requests<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Besides the options described in the <a class="link" href="api.html#metadata" title="Metadataedit">metadata section</a>,
+you can use the <code class="literal">options</code> argument to associate the error with an HTTP request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.captureError(err, {
+  request: req // an instance of http.IncomingMessage
+})</pre></div><p>This will log the URL that was requested,
+the HTTP headers,
+cookies and other useful details to help you debug the error.</p><p>In most cases this isn’t needed though,
+as the agent is pretty smart at figuring out if your Node.js app is an HTTP server and if an error occurred during an incoming request.
+In which case it will automate this processes for you.</p><h5><a id="http-responses"></a>HTTP responses<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Besides the options described in the <a class="link" href="api.html#metadata" title="Metadataedit">metadata section</a>,
+you can use the <code class="literal">options</code> argument to associate the error with an HTTP response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.captureError(err, {
+  response: res // an instance of http.ServerResponse
+})</pre></div><p>This will log the response status code,
+headers and other useful details to help you debug the error.</p><p>In most cases this isn’t needed though,
+as the agent is pretty smart at figuring out if your Node.js app is an HTTP server and if an error occurred during an incoming request.
+In which case it will automate this processes for you.</p><h4><a id="apm-middleware-connect"></a><code class="literal">apm.middleware.connect()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.middleware.connect()</pre></div><p>Alias: <code class="literal">apm.middleware.express()</code></p><p>Returns a middleware function used to collect and send errors to the APM Server.</p><p>The middleware can be used as-is with either Connect or Express in the same way.</p><p>The middleware must be added <span class="emphasis"><em>after</em></span> your router to pick up any errors that may result from handling a request.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var apm = require('elastic-apm').start()
+var connect = require('connect')
+
+var app = connect()
+
+// your regular middleware:
+app.use(...)
+app.use(...)
+
+// your main HTTP router
+app.use(function (req, res, next) {
+  throw new Error('Broke!')
+})
+
+// add Elastic APM in the bottom of the middleware stack
+app.use(apm.middleware.connect())
+
+app.listen(3000)</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p><code class="literal">apm.middleware.express</code> or <code class="literal">apm.middleware.connect</code> <span class="emphasis"><em>must</em></span> be added to the middleware stack <span class="emphasis"><em>before</em></span> any other error handling middleware functions or there’s a chance that the error will never get to the agent.</p></div></div><h4><a id="apm-start-transaction"></a><code class="literal">apm.startTransaction()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var transaction = apm.startTransaction([name][, type])</pre></div><p>Start a new transaction.</p><p>Arguments:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">name</code> - The name of the transaction (string).
+You can always set this later via <a class="link" href="api.html#transaction-name" title="transaction.nameedit"><code class="literal">transaction.name</code></a> or <a class="link" href="api.html#apm-set-transaction-name" title="apm.setTransactionName()edit"><code class="literal">apm.setTransactionName()</code></a>.
+Defaults to <code class="literal">unnamed</code>
+</li><li class="listitem">
+<code class="literal">type</code> - The type of transaction (string).
+You can always set this later via <a class="link" href="api.html#transaction-type" title="transaction.typeedit"><code class="literal">transaction.type</code></a>.
+Defaults to <code class="literal">custom</code>
+</li></ul></div><p>Use this function to create a custom transaction.
+Note that the agent will do this for you automatically when ever your application receives an incoming HTTP request.
+You only need to use this function to create custom transactions.</p><p>There’s a special <code class="literal">type</code> called <code class="literal">request</code> which is used by the agent for the transactions automatically created when an incoming HTTP request is detected.</p><p>See the <a class="link" href="api.html#transaction-api" title="Transaction APIedit">Transaction API</a> docs for details on how to use custom transactions.</p><h4><a id="apm-end-transaction"></a><code class="literal">apm.endTransaction()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.endTransaction()</pre></div><p>Ends the active transaction.
+If no transaction is currently active,
+nothing happens.</p><p>Note that the agent will do this for you automatically for all regular HTTP transactions.
+You only need to use this function to end custom transactions created by <a class="link" href="api.html#apm-start-transaction" title="apm.startTransaction()edit"><code class="literal">apm.startTransaction()</code></a> or if you wish the end a regular transaction prematurely.</p><p>Alternatively you can call <a class="link" href="api.html#transaction-end" title="transaction.end()edit"><code class="literal">end()</code></a> directly on an active transaction object.</p><h4><a id="apm-set-transaction-name"></a><code class="literal">apm.setTransactionName()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.setTransactionName(name)</pre></div><p>Set or overwrite the name of the current transaction.
+The <code class="literal">name</code> argument must be a string.</p><p>If you use a supported router/framework the agent will automatically set the transaction name for you.</p><p>If you do not use Express, hapi, or koa-router or if the agent for some reason cannot detect the name of the HTTP route,
+the transaction name will default to <code class="literal">METHOD unknown route</code> (e.g. <code class="literal">POST unknown route</code>).</p><p>Read more about naming routes manually in the <a class="link" href="custom-stack.html#custom-stack-route-naming" title="Route namingedit">Get started with a custom Node.js stack</a> article.</p><h4><a id="apm-build-trace"></a><code class="literal">apm.buildTrace()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var trace = apm.buildTrace()</pre></div><p>Prepare and return a new custom trace associated with the current active transaction.</p><p>See <a class="link" href="api.html#trace-api" title="Trace APIedit">Trace API</a> docs for details on how to use custom traces.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If there’s no active transaction available,
+<code class="literal">null</code> will be returned.</p></div></div><h4><a id="apm-handle-uncaught-exceptions"></a><code class="literal">apm.handleUncaughtExceptions()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.handleUncaughtExceptions([callback])</pre></div><p>By default the agent will terminate the Node.js process when an uncaught exception is detected.
+Use this function if you need to run any custom code before the process is terminated.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.handleUncaughtExceptions(function (err) {
+  // Do your own stuff... and then exit:
+  process.exit(1)
+})</pre></div><p>The callback is called <span class="strong strong"><strong>after</strong></span> the event has been sent to the APM Server with the following arguments:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">err</code> - the captured exception
+</li></ul></div><p>This function will also enable the uncaught exception handler if it was disabled using the <a class="link" href="api.html#capture-exceptions" title="captureExceptionsedit"><code class="literal">captureExceptions</code></a> configuration option.</p><p>If you don’t specify a callback,
+the node process is terminated automatically when an uncaught exception has been captured and sent to the APM Server.</p><p><a class="ulink" href="https://nodejs.org/api/process.html#process_event_uncaughtexception" target="_top">It is recommended</a> that you don’t leave the process running after receiving an uncaught exception,
+so if you are using the optional callback,
+remember to terminate the node process.</p><h3><a id="transaction-api"></a><code class="literal">Transaction</code> API<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A transaction groups multiple traces in a logical group.</p><p>To get a <code class="literal">Transaction</code> object,
+you need to call <a class="link" href="api.html#apm-start-transaction" title="apm.startTransaction()edit"><code class="literal">apm.startTransaction()</code></a>.</p><p>To see an example of using custom transactions,
+see the <a class="link" href="custom-transactions.html" title="Custom Transactions">Custom Transactions in Node.js</a> article.</p><h4><a id="transaction-name"></a><code class="literal">transaction.name</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">unnamed</code>
+</li></ul></div><p>The name of the transaction.</p><p>Can be used to set or overwrite the name of the transaction (visible in the performance monitoring breakdown).
+If you don’t have access to the current transaction,
+you can also set the name using <a class="link" href="api.html#apm-set-transaction-name" title="apm.setTransactionName()edit"><code class="literal">apm.setTransactionName()</code></a>.</p><p>Transactions with the same name and <a class="link" href="api.html#transaction-type" title="transaction.typeedit">type</a> are grouped together.</p><h4><a id="transaction-type"></a><code class="literal">transaction.type</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">custom</code>
+</li></ul></div><p>The type of the transaction.</p><p>There’s a special type called <code class="literal">request</code> which is used by the agent for the transactions automatically created when an incoming HTTP request is detected.</p><h4><a id="transaction-result"></a><code class="literal">transaction.result</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Number
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">200</code>
+</li></ul></div><p>The transaction result.</p><p>Think of the transaction result as equivalent to the status code of an HTTP response.</p><h4><a id="transaction-end"></a><code class="literal">transaction.end()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">transaction.end()</pre></div><p>Ends the transaction and <a class="link" href="api.html#trace-truncate" title="trace.truncate()edit">truncates</a> all un-ended child traces.
+If the transaction has already ended,
+nothing happens.</p><p>Alternatively you can call <a class="link" href="api.html#apm-end-transaction" title="apm.endTransaction()edit"><code class="literal">apm.endTransaction()</code></a> to end the active transaction.</p><h3><a id="trace-api"></a><code class="literal">Trace</code> API<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/trace-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A trace measures the duration of a single event.</p><p>To get a <code class="literal">Trace</code> object,
+you need to call <a class="link" href="api.html#apm-build-trace" title="apm.buildTrace()edit"><code class="literal">apm.buildTrace()</code></a>.</p><p>To see an example of using custom traces,
+see the <a class="link" href="custom-traces.html" title="Custom Traces">Custom Traces in Node.js</a> article.</p><h4><a id="trace-transaction"></a><code class="literal">trace.transaction</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/trace-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> Transaction
+</li></ul></div><p>A reference to the parent transaction object.</p><p>All traces belongs to a transaction.</p><h4><a id="trace-name"></a><code class="literal">trace.name</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/trace-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">unnamed</code>
+</li></ul></div><p>The name of the trace.
+This can also be set via <a class="link" href="api.html#trace-start" title="trace.start()edit"><code class="literal">trace.start()</code></a>.</p><h4><a id="trace-type"></a><code class="literal">trace.type</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/trace-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">custom</code>
+</li></ul></div><p>The type of trace.
+This can also be set via <a class="link" href="api.html#trace-start" title="trace.start()edit"><code class="literal">trace.start()</code></a>.</p><p>The type is a hierarchical string used to group similar traces together.
+For instance,
+all traces of MySQL queries are given the type <code class="literal">db.mysql.query</code>.</p><p>In the above example <code class="literal">db</code> is considered the type prefix.
+Though there are no naming restrictions for this prefix,
+the following are standardized across all Elastic APM agents:
+<code class="literal">app</code>, <code class="literal">db</code>, <code class="literal">cache</code>, <code class="literal">template</code>, and <code class="literal">ext</code>.</p><h4><a id="trace-start"></a><code class="literal">trace.start()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/trace-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">trace.start([name][, type])</pre></div><p>Start a trace.</p><p>Arguments:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">name</code> - The name of the trace (string).
+You can alternatively set this via <a class="link" href="api.html#trace-name" title="trace.nameedit"><code class="literal">trace.name</code></a>.
+Defaults to <code class="literal">unnamed</code>
+</li><li class="listitem">
+<code class="literal">type</code> - The type of trace (string).
+You can alternatively set this via <a class="link" href="api.html#trace-type" title="trace.typeedit"><code class="literal">trace.type</code></a>.
+Defaults to <code class="literal">custom.code</code>
+</li></ul></div><p>When a trace is started it will measure the time until <a class="link" href="api.html#trace-end" title="trace.end()edit"><code class="literal">trace.end()</code></a> or <a class="link" href="api.html#trace-truncate" title="trace.truncate()edit"><code class="literal">trace.truncate()</code></a> is called.</p><h4><a id="trace-end"></a><code class="literal">trace.end()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/trace-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">trace.end()</pre></div><p>End the trace.
+If the trace has already ended,
+nothing happens.</p><p>A trace that isn’t ended before the parent transaction ends will be <a class="link" href="api.html#trace-truncate" title="trace.truncate()edit">truncated</a>.</p><h4><a id="trace-truncate"></a><code class="literal">trace.truncate()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/trace-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">trace.truncate()</pre></div><p>Truncates and ends the trace.
+If the trace is already ended or truncated,
+nothing happens.</p><p>A truncated trace is a special type of ended trace.
+It’s used to indicate that the measured event took longer than the duration recorded by the trace.</p></div><div class="navfooter"><span class="prev"><a href="advanced-setup.html">
               « 
-              Babel / ES Modules support</a>
+              Advanced Setup and Configuration</a>
            
         </span><span class="next">
            
-          <a href="agent-api.html"><code class="literal">Agent</code> API
+          <a href="custom-transactions.html">Custom Transactions
                »
             </a></span></div>
 <!-- end body -->

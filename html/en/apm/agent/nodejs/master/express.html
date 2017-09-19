@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Getting started with Express
         | APM Node.js Agent Reference (Experimental)
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Node.js Agent Reference (Experimental)" /><link rel="up" href="index.html" title="APM Node.js Agent Reference (Experimental)" /><link rel="prev" href="_getting_started.html" title="Getting started" /><link rel="next" href="express-installation.html" title="Installation" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Node.js Agent/Reference" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Node.js Agent Reference (Experimental)" /><link rel="up" href="index.html" title="APM Node.js Agent Reference (Experimental)" /><link rel="prev" href="intro.html" title="Introduction" /><link rel="next" href="hapi.html" title="Getting started with hapi" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Node.js Agent/Reference" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -595,22 +595,144 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="page_header">You are looking at preliminary documentation for a future release.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">APM Node.js Agent Reference (Experimental)</a></span> » <span class="breadcrumb-node">Getting started with Express</span></div><div class="navheader"><span class="prev"><a href="_getting_started.html">
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">APM Node.js Agent Reference (Experimental)</a></span> » <span class="breadcrumb-node">Getting started with Express</span></div><div class="navheader"><span class="prev"><a href="intro.html">
               « 
-              Getting started</a>
+              Introduction</a>
            
         </span><span class="next">
            
-          <a href="express-installation.html">Installation
+          <a href="hapi.html">Getting started with hapi
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="express"></a>Getting started with Express<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Getting Elastic APM set up for your Express app is easy,
-and there are various ways you can tweak it to fit your needs.</p><p>Follow the guide below and refer to the <a class="link" href="api.html" title="API Reference">API documentation</a> for all the advanced stuff.</p></div><div class="navfooter"><span class="prev"><a href="_getting_started.html">
+and there are various ways you can tweak it to fit your needs.</p><p>Follow the guide below and refer to the <a class="link" href="api.html" title="API Reference">API documentation</a> for all the advanced stuff.</p><h3><a id="express-installation"></a>Installation<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Add the <code class="literal">elastic-apm</code> module as a dependency to your application:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">npm install elastic-apm --save</pre></div><h3><a id="express-initialization"></a>Initialization<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>It’s important that the agent is started before you require <span class="strong strong"><strong>any</strong></span> other modules in your Node.js application - i.e. before <code class="literal">express</code>, <code class="literal">http</code>, etc.</p><p>This means that you should probably require and start the agent in your application’s main file (usually <code class="literal">index.js</code>, <code class="literal">server.js</code> or <code class="literal">app.js</code>).</p><p>Here’s a simple Express example with the Elastic APM agent installed:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">// Add this to the VERY top of the first file loaded in your app
+var apm = require('elastic-apm').start({
+  // Set required app name (allowed characters: a-z, A-Z, 0-9, -, _, and space)
+  appName: '',
+
+  // Use if APM Server requires a token
+  secretToken: '',
+
+  // Set custom APM Server URL (default: http://localhost:8200)
+  serverUrl: '',
+})
+
+var app = require('express')()
+
+app.get('/', function (req, res) {
+  res.send('Hello World!')
+})
+
+// any errors caught by Express can be logged by the agent as well
+app.use(apm.middleware.express())
+
+app.listen(3000)</pre></div><p>The agent will now monitor the performance of your Express application and record any uncaught exceptions.</p><h4><a id="express-advanced-configuration"></a>Advanced configuration<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In the above example we initialize the agent by calling the <a class="link" href="api.html#apm-start" title="apm.start()edit"><code class="literal">start()</code></a> function.
+This function takes an optional options object used to configure the agent.
+Any option not supplied via the options object can instead be configured using environment variables.
+So if you prefer, you can set the same configuration options using environment variables:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">ELASTIC_APM_APP_NAME=&lt;app name&gt;
+ELASTIC_APM_SECRET_TOKEN=&lt;token&gt;
+ELASTIC_APM_SERVER_URL=&lt;server url&gt;</pre></div><p>And then just start the agent like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">// Start the agent before any thing else in your app
+var apm = require('elastic-apm').start()</pre></div><p>See all possible ways to configure the agent <a class="link" href="advanced-setup.html#configuring-the-agent" title="Configuring the agentedit">in the API documentation</a>.</p><h4><a id="express-full-documentation"></a>Full documentation<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="advanced-setup.html" title="Advanced Setup and Configuration">Setup and Configuration</a>
+</li><li class="listitem">
+<a class="link" href="api.html" title="API Reference">API Reference</a>
+</li></ul></div><h3><a id="express-performance-monitoring"></a>Performance monitoring<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elastic APM automatically measures the performance of your Express application.
+It records traces for database queries,
+external HTTP requests,
+and other slow operations that happen during requests to your Express app.</p><p>By default the agent will trace <a class="link" href="compatibility.html" title="Compatibility Overview">the most common modules</a>.
+To trace other events,
+you can use custom traces.
+For information about custom traces,
+see the <a class="link" href="custom-traces.html" title="Custom Traces">Custom Traces section</a>.</p><p>Traces are grouped in transactions - by default one for each incoming HTTP request.
+But it’s possible to create custom transactions not associated with an HTTP request.
+See the <a class="link" href="custom-transactions.html" title="Custom Transactions">Custom Transactions section</a> for details.</p><h4><a id="express-unknown-routes"></a>Unknown routes<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When viewing the performance metrics of your application in Elastic APM,
+you might see some transactions named "unknown route".
+This indicates that the agent detected an incoming HTTP request to your application,
+but didn’t know which route in your Express app the HTTP request matched.</p><p>This might simply be 404 requests,
+which by definition don’t match any route,
+or it might be a symptom that the agent wasn’t installed correctly.
+If you see this or can’t get any meaningful metrics to show up,
+please follow the <a class="link" href="troubleshooting.html" title="Troubleshooting">Troubleshooting Guide</a>.</p><h3><a id="express-error-logging"></a>Error logging<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Node.js agent will by default watch for uncaught exceptions and log these with Elastic APM.
+But in most cases you also want to log non-thrown errors.
+This section explains how.</p><h4><a id="express-error-handlers"></a>Express error handlers<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Express works by funneling all incoming http requests through a series of middleware functions (one of which being your router).
+If an error is either thrown synchronously inside one of the middleware functions or is
+passed as the first argument to the middleware <code class="literal">next()</code> function,
+it will be passed to the <a class="ulink" href="http://expressjs.com/en/guide/error-handling.html" target="_top">Express error handler</a>.</p><p>In the case where you have multiple Express error handlers,
+the Elastic APM error handler should be the first in the chain to ensure that it will receive the error correctly.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var apm = require('elastic-apm').start()
+var express = require('express')
+
+var app = express()
+
+// Your regular middleware and router...
+app.use(...)
+app.use(...)
+app.use(...)
+
+// Add the Elastic APM middleware after your regular middleware
+app.use(apm.middleware.express())
+
+// ...but before any other error handler
+app.use(function (err, req, res, next) {
+  // Custom error handling goes here
+})</pre></div><h4><a id="express-manual-error-logging"></a>Manual error logging<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default the Node.js agent will watch for uncaught exceptions and send them to Elastic APM automatically.
+But in most cases errors are not thrown but returned via a callback,
+caught by a promise,
+or simply manually created.
+Those errors will not automatically be sent to Elastic APM.
+To manually send an error to Elastic APM,
+simply call <code class="literal">apm.captureError()</code> with the error:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var err = new Error('Ups, something broke!')
+
+apm.captureError(err)</pre></div><p>For advanced logging of errors,
+including adding extra metadata to the error,
+see <a class="link" href="api.html#apm-capture-error" title="apm.captureError()edit">the API documentation</a>.</p><h4><a id="express-ignore-404-not-found-errors"></a>Ignore "404 Not Found" errors<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default Express will treat http requests that do not match any route as an error.
+This is a good idea in development,
+but usually not something you want in production.
+To avoid sending "404 Not Found" errors to Elastic APM,
+make sure you handle those <span class="strong strong"><strong>before</strong></span> they reach the Elastic APM middleware:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">// Your regular middleware and router...
+app.use(...)
+app.use(...)
+app.use(...)
+
+// Put a catch-all route handler as the very last route handler
+app.use(function (req, res) {
+  // If we reach this point it means that no prior route matched.
+  // This means that we should render a "404 Not Found" page. Notice
+  // that we do not call next() here as we don't want to forward the
+  // request to the error handler below.
+
+  // Send a 404 to the user
+  res.status(404).send('This isn\'t the page you\'re looking for..')
+})
+
+// After the 404 Not Found handler, add the Elastic APM error handler
+app.use(apm.middleware.express())</pre></div><h3><a id="express-filter-sensitive-information"></a>Filter sensitive information<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default the Node.js agent will filter common sensitive information before sending errors and metrics to the Elastic APM server.</p><p>It’s possible for you to tweak these defaults or remove any information you don’t want to send to Elastic APM:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+By default the Node.js agent will not log the body of HTTP requests.
+To enable this,
+use the <a class="link" href="api.html#log-body" title="logBodyedit"><code class="literal">logBody</code></a> config option
+</li><li class="listitem">
+By default the Node.js agent will filter certain HTTP headers known to contain sensitive information.
+To disable this,
+use the <a class="link" href="api.html#filter-http-headers" title="filterHttpHeadersedit"><code class="literal">filterHttpHeaders</code></a> config option
+</li><li class="listitem">
+To apply custom filters,
+use the <a class="link" href="api.html#apm-add-filter" title="apm.addFilter()edit"><code class="literal">apm.addFilter()</code></a> function
+</li></ul></div><h3><a id="express-add-your-own-data"></a>Add your own data<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Node.js agent will keep track of the active HTTP request and will link it to errors and recorded transaction metrics when they are sent to the Elastic APM server.
+This allows you to see details about which request resulted in a particular error or which requests cause a certain HTTP endpoint to be slow.</p><p>But in many cases,
+information about the HTTP request itself isn’t enough.
+To add even more metadata to errors and transactions,
+use one of the two functions below:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="api.html#apm-set-user-context" title="apm.setUserContext()edit"><code class="literal">apm.setUserContext()</code></a> - Call this to enrich collected performance data and errors with information about the user/client
+</li><li class="listitem">
+<a class="link" href="api.html#apm-set-custom-context" title="apm.setCustomContext()edit"><code class="literal">apm.setCustomContext()</code></a> - Call this to enrich collected performance data and errors with any information that you think will help you debug performance issues and errors (this data is only stored, but not indexed in Elasticsearch)
+</li><li class="listitem">
+<a class="link" href="api.html#apm-set-tag" title="apm.setTag()edit"><code class="literal">apm.setTag()</code></a> - Call this to enrich collected performance data and errors with simple key/value strings that you think will help you debug performance issues and errors (tags are indexed in Elasticsearch)
+</li></ul></div><h3><a id="express-compatibility"></a>Compatibility<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>See the <a class="link" href="compatibility.html" title="Compatibility Overview">Compatibility section</a> for details.</p><h3><a id="express-troubleshooting"></a>Troubleshooting<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you can’t get the Node.js agent to work as expected,
+please follow the <a class="link" href="troubleshooting.html" title="Troubleshooting">Troubleshooting Guide</a>.</p></div><div class="navfooter"><span class="prev"><a href="intro.html">
               « 
-              Getting started</a>
+              Introduction</a>
            
         </span><span class="next">
            
-          <a href="express-installation.html">Installation
+          <a href="hapi.html">Getting started with hapi
                »
             </a></span></div>
 <!-- end body -->
