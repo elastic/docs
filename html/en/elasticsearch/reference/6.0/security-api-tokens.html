@@ -608,30 +608,50 @@ Not what you want? See the
           <a href="watcher-api.html">Watcher APIs
                »
             </a></span></div><div class="xpack section"><div class="titlepage"><div><div><h2 class="title"><a id="security-api-tokens"></a>Token Management APIs</h2></div></div></div><p>The <code class="literal">token</code> API enables you to create and invalidate bearer tokens for access
-without requiring basic authentication. The get token API takes the same
-parameters as a typical OAuth 2.0 token API except for the use of a JSON
-request body.</p><p><a id="security-api-get-token"></a>To obtain a token, submit a POST request to the <code class="literal">/_xpack/security/oauth2/token</code>
+without requiring basic authentication.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_request_32"></a>Request</h3></div></div></div><p><code class="literal">POST /_xpack/security/oauth2/token</code></p><p><code class="literal">DELETE /_xpack/security/oauth2/token</code></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_description_20"></a>Description</h3></div></div></div><p>The Get Token API takes the same parameters as a typical OAuth 2.0 token API
+except for the use of a JSON request body.</p><p>A successful Get Token API call returns a JSON structure that contains the access
+token, the amount of time (seconds) that the token expires in, the type, and the
+scope if available.</p><p>The tokens returned by the Get Token API have a finite period of time for which
+they are valid and after that time period, they can no longer be used. However,
+if you want to invalidate a token immediately, you can do so by using the Delete
+Token API.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_request_body_21"></a>Request Body</h3></div></div></div><p>The following parameters can be specified in the body of a POST request and
+pertain to creating a token:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">grant_type</code>
+</span></dt><dd>
+(string) The type of grant. Currently only the <code class="literal">password</code> grant type is supported.
+</dd><dt><span class="term">
+<code class="literal">password</code> (required)
+</span></dt><dd>
+(string) The user’s password.
+</dd><dt><span class="term">
+<code class="literal">scope</code>
+</span></dt><dd>
+(string) The scope of the token. Currently tokens are only issued for a scope of
+<code class="literal">FULL</code> regardless of the value sent with the request.
+</dd><dt><span class="term">
+<code class="literal">username</code> (required)
+</span></dt><dd>
+(string) The username that identifies the user.
+</dd></dl></div><p>The following parameters can be specified in the body of a DELETE request and
+pertain to deleting a token:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">token</code>
+</span></dt><dd>
+(string) An access token.
+</dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_examples_36"></a>Examples</h3></div></div></div><p><a id="security-api-get-token"></a>To obtain a token, submit a POST request to the <code class="literal">/_xpack/security/oauth2/token</code>
 endpoint.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_xpack/security/oauth2/token
 {
   "grant_type" : "password",
   "username" : "test_admin",
   "password" : "x-pack-test-password"
-}</pre></div><div class="console_widget" data-snippet="snippets/security-api-tokens/1.json"></div><div class="table"><a id="id-1.19.6.10.6"></a><p class="title"><strong>Table 36. Token Request Fields</strong></p><div class="table-contents"><table summary="Token Request Fields" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Name</p></td><td align="center" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">username</code></p></td><td align="center" valign="top"><p>yes</p></td><td align="left" valign="top"><p>The username that identifies the user.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">password</code></p></td><td align="center" valign="top"><p>yes</p></td><td align="left" valign="top"><p>The user’s password.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">grant_type</code></p></td><td align="center" valign="top"><p>yes</p></td><td align="left" valign="top"><p>The type of grant. Currently only the <code class="literal">password</code>
-                            grant type is supported.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">scope</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>The scope of the token. Currently tokens are only
-                            issued for a scope of <code class="literal">FULL</code> regardless of the value
-                            sent with the request.</p></td></tr></tbody></table></div></div><br class="table-break" /><p>A successful call returns a JSON structure that contains the access token, the
-amount of time (seconds) that the token expires in, the type, and the scope if
-available.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/security-api-tokens/1.json"></div><p>The following example output contains the access token, the amount of time (in
+seconds) that the token expires in, and the type:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "access_token" : "dGhpcyBpcyBub3QgYSByZWFsIHRva2VuIGJ1dCBpdCBpcyBvbmx5IHRlc3QgZGF0YS4gZG8gbm90IHRyeSB0byByZWFkIHRva2VuIQ==",
   "type" : "Bearer",
   "expires_in" : 1200
-}</pre></div><p>A successful call returns a JSON structure that shows whether the user has been
-created or updated.</p><p>The token returned by this API can be used by sending a request with a
+}</pre></div><p>The token returned by this API can be used by sending a request with a
 <code class="literal">Authorization</code> header with a value having the prefix <code class="literal">Bearer ` followed
-by the value of the `access_token</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -H "Authorization: Bearer dGhpcyBpcyBub3QgYSByZWFsIHRva2VuIGJ1dCBpdCBpcyBvbmx5IHRlc3QgZGF0YS4gZG8gbm90IHRyeSB0byByZWFkIHRva2VuIQ==" http://localhost:9200/_cluster/health</pre></div><p><a id="security-api-invalidate-token"></a>The tokens returned from this API have a finite period of time for which they
-are valid and after that time period, they can no longer be used. However, if
-a token must be invalidated immediately, you can do so by submitting a DELETE
-request to <code class="literal">/_xpack/security/oauth2/token</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE /_xpack/security/oauth2/token
+by the value of the `access_token</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -H "Authorization: Bearer dGhpcyBpcyBub3QgYSByZWFsIHRva2VuIGJ1dCBpdCBpcyBvbmx5IHRlc3QgZGF0YS4gZG8gbm90IHRyeSB0byByZWFkIHRva2VuIQ==" http://localhost:9200/_cluster/health</pre></div><p><a id="security-api-invalidate-token"></a>If a token must be invalidated immediately, you can do so by submitting a DELETE
+request to <code class="literal">/_xpack/security/oauth2/token</code>.  For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE /_xpack/security/oauth2/token
 {
   "token" : "dGhpcyBpcyBub3QgYSByZWFsIHRva2VuIGJ1dCBpdCBpcyBvbmx5IHRlc3QgZGF0YS4gZG8gbm90IHRyeSB0byByZWFkIHRva2VuIQ=="
 }</pre></div><div class="console_widget" data-snippet="snippets/security-api-tokens/2.json"></div><p>A successful call returns a JSON structure that indicates whether the token
@@ -639,7 +659,7 @@ has already been invalidated.</p><div class="pre_wrapper"><pre class="programlis
   "created" : true <a id="CO331-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO331-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 When a token has already been invalidated, <code class="literal">created</code> is set to false.
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="security-api-privileges.html">
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="security-api-privileges.html">
               « 
               Privilege APIs</a>
            
