@@ -772,7 +772,21 @@ where the field <code class="literal">title</code> has any non-null value:
 </p><pre class="literallayout">_exists_:title</pre></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_wildcards"></a>Wildcards<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/query-string-syntax.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Wildcard searches can be run on individual terms, using <code class="literal">?</code> to replace
 a single character, and <code class="literal">*</code> to replace zero or more characters:</p><pre class="literallayout">qu?ck bro*</pre><p>Be aware that wildcard queries can use an enormous amount of memory and
 perform very badly — just think how many terms need to be queried to
-match the query string <code class="literal">"a* b* c*"</code>.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Allowing a wildcard at the beginning of a word (eg <code class="literal">"*ing"</code>) is particularly
+match the query string <code class="literal">"a* b* c*"</code>.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Pure wildcards <code class="literal">\*</code> are rewritten to <a class="link" href="query-dsl-exists-query.html" title="Exists Query"><code class="literal">exists</code></a> queries for efficiency.
+As a consequence, the wildcard <code class="literal">"field:*"</code> would match documents with an emtpy value
+ like the following:
+```
+{
+  "field": ""
+}
+```
+... and would <span class="strong strong"><strong>not</strong></span> match if the field is missing or set with an explicit null
+value like the following:
+```
+{
+  "field": null
+}
+```</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Allowing a wildcard at the beginning of a word (eg <code class="literal">"*ing"</code>) is particularly
 heavy, because all terms in the index need to be examined, just in case
 they match.  Leading wildcards can be disabled by setting
 <code class="literal">allow_leading_wildcard</code> to <code class="literal">false</code>.</p></div></div><p>Only parts of the analysis chain that operate at the character level are
