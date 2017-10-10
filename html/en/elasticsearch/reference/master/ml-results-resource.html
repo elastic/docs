@@ -608,7 +608,9 @@ Not what you want? See the
           <a href="xpack-commands.html">X-Pack Commands
                »
             </a></span></div><div class="xpack section"><div class="titlepage"><div><div><h2 class="title"><a id="ml-results-resource"></a>Results Resources</h2></div></div></div><p>Several different result types are created for each job. You can query anomaly
-results for <span class="emphasis"><em>buckets</em></span>, <span class="emphasis"><em>influencers</em></span>, and <span class="emphasis"><em>records</em></span> by using the results API.</p><p>Results are written for each <code class="literal">bucket_span</code>. The timestamp for the results is the
+results for <span class="emphasis"><em>buckets</em></span>, <span class="emphasis"><em>influencers</em></span>, and <span class="emphasis"><em>records</em></span> by using the results API.
+Summarized bucket results over multiple jobs can be queried as well; those
+results are called <span class="emphasis"><em>overall buckets</em></span>.</p><p>Results are written for each <code class="literal">bucket_span</code>. The timestamp for the results is the
 start of the bucket time interval.</p><p>The results include scores, which are calculated for each anomaly result type and
 each bucket interval. These scores are aggregated in order to reduce noise, and
 normalized in order to identify and rank the most mathematically significant
@@ -637,6 +639,8 @@ timestamp or any calculated scores. For more information, see
 <a class="link" href="ml-results-resource.html#ml-results-records" title="Records">Records</a>
 </li><li class="listitem">
 <a class="link" href="ml-results-resource.html#ml-results-categories" title="Categories">Categories</a>
+</li><li class="listitem">
+<a class="link" href="ml-results-resource.html#ml-results-overall-buckets" title="Overall Buckets">Overall Buckets</a>
 </li></ul></div><h4><a id="ml-results-buckets"></a>Buckets</h4><p>Bucket results provide the top level, overall view of the job and are best for
 alerting.</p><p>Each bucket has an <code class="literal">anomaly_score</code>, which is a statistically aggregated and
 normalized view of the combined anomalousness of all the record results within
@@ -994,6 +998,37 @@ examine the description and examples of that category.</p><p>A category resource
 </span></dt><dd>
   (string) A space separated list of the common tokens that are matched in
   values of the category.
+</dd></dl></div><h4><a id="ml-results-overall-buckets"></a>Overall Buckets</h4><p>Overall buckets provide a summary of bucket results over multiple jobs.
+Their <code class="literal">bucket_span</code> equals the longest <code class="literal">bucket_span</code> of the jobs in question.
+The <code class="literal">overall_score</code> is the <code class="literal">top_n</code> average of the max <code class="literal">anomaly_score</code> per job
+within the overall bucket time interval.
+This means that you can fine-tune the <code class="literal">overall_score</code> so that it is more
+or less sensitive to the number of jobs that detect an anomaly at the same time.</p><p>An overall bucket resource has the following properties:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">timestamp</code>
+</span></dt><dd>
+  (date) The start time of the overall bucket.
+</dd><dt><span class="term">
+<code class="literal">bucket_span</code>
+</span></dt><dd>
+  (number) The length of the bucket in seconds. Matches the <code class="literal">bucket_span</code>
+  of the job with the longest one.
+</dd><dt><span class="term">
+<code class="literal">overall_score</code>
+</span></dt><dd>
+  (number) The <code class="literal">top_n</code> average of the max bucket <code class="literal">anomaly_score</code> per job.
+</dd><dt><span class="term">
+<code class="literal">jobs</code>
+</span></dt><dd>
+  (array) An array of objects that contain the <code class="literal">max_anomaly_score</code> per <code class="literal">job_id</code>.
+</dd><dt><span class="term">
+<code class="literal">is_interim</code>
+</span></dt><dd>
+  (boolean) If true, this is an interim result. In other words, the anomaly
+  record is calculated based on partial input data.
+</dd><dt><span class="term">
+<code class="literal">result_type</code>
+</span></dt><dd>
+  (string) Internal. This is always set to <code class="literal">overall_bucket</code>.
 </dd></dl></div></div><div class="navfooter"><span class="prev"><a href="ml-snapshot-resource.html">
               « 
               Model Snapshot Resources</a>
