@@ -608,50 +608,51 @@ Not what you want? See the
           <a href="ml-get-category.html">Get Categories
                »
             </a></span></div><div class="xpack section"><div class="titlepage"><div><div><h2 class="title"><a id="ml-get-overall-buckets"></a>Get Overall Buckets</h2></div></div></div><p>This API enables you to retrieve overall bucket results
-that summarize the bucket results of multiple jobs.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_request_11"></a>Request</h3></div></div></div><p><code class="literal">GET _xpack/ml/anomaly_detectors/&lt;job_id&gt;/results/overall_buckets</code></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_description_10"></a>Description</h3></div></div></div><p>An overall bucket has a span equal to the largest job’s <code class="literal">bucket_span</code>.
-The <code class="literal">overall_score</code> is calculated by combining the scores of all the
-buckets within the overall bucket span. The max <code class="literal">anomaly_score</code> per
-job is calculated. Then the <code class="literal">top_n</code> of those scores are averaged to
-result into the <code class="literal">overall_score</code>. This means that you can fine-tune
+that summarize the bucket results of multiple jobs.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_request_11"></a>Request</h3></div></div></div><p><code class="literal">GET _xpack/ml/anomaly_detectors/&lt;job_id&gt;/results/overall_buckets</code></p><p><code class="literal">GET _xpack/ml/anomaly_detectors/&lt;job_id&gt;,&lt;job_id&gt;/results/overall_buckets</code></p><p><code class="literal">GET _xpack/ml/anomaly_detectors/_all/results/overall_buckets</code></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_description_10"></a>Description</h3></div></div></div><p>You can summarize the bucket results for all jobs by using <code class="literal">_all</code> or by
+specifying <code class="literal">*</code> as the <code class="literal">&lt;job_id&gt;</code>.</p><p>An overall bucket has a span equal to the largest <code class="literal">bucket_span</code> value for the
+specified jobs.</p><p>The <code class="literal">overall_score</code> is calculated by combining the scores of all
+the buckets within the overall bucket span. First, the maximum <code class="literal">anomaly_score</code> per
+job in the overall bucket is calculated. Then the <code class="literal">top_n</code> of those scores are
+averaged to result in the <code class="literal">overall_score</code>. This means that you can fine-tune
 the <code class="literal">overall_score</code> so that it is more or less sensitive to the number
-of jobs that detect an anomaly at the same time.</p><p>For example, set <code class="literal">top_n</code> to 1 and the <code class="literal">overall_score</code> will be the
-max bucket score in the overall bucket interval. To the contrary,
-set <code class="literal">top_n</code> to the number of jobs and the <code class="literal">overall_score</code> will
-only be high when all jobs present anomalies in that overall bucket.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_path_parameters_10"></a>Path Parameters</h3></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+of jobs that detect an anomaly at the same time. For example, if you set <code class="literal">top_n</code>
+to <code class="literal">1</code>, the <code class="literal">overall_score</code> is the maximum bucket
+score in the overall bucket. Alternatively, if you set <code class="literal">top_n</code> to the number of
+jobs, the <code class="literal">overall_score</code> is high only when all jobs detect anomalies in that
+overall bucket.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_path_parameters_10"></a>Path Parameters</h3></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">job_id</code>
 </span></dt><dd>
-  (string) Identifier for the job. It can be a job identifier, a group name,
-  or a wildcard expression. If set to <code class="literal">_all</code>, the API returns overall buckets
-  for all jobs.
+  (string) Identifier for the job. It can be a job identifier, a group name, a
+  comma-separated list of jobs or groups, or a wildcard expression.
 </dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_request_body_6"></a>Request Body</h3></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">top_n</code>
+<code class="literal">allow_no_jobs</code>
 </span></dt><dd>
-  (integer) The number of top job bucket scores to be used in the
-  <code class="literal">overall_score</code> calculation. The default value is <code class="literal">1</code>.
-</dd><dt><span class="term">
-<code class="literal">overall_score</code>
-</span></dt><dd>
-  (double) Returns overall buckets with overall scores higher than this value.
-</dd><dt><span class="term">
-<code class="literal">exclude_interim</code>
-</span></dt><dd>
-  (boolean) If true, the output excludes interim overall buckets.
-  Overall buckets are interim if any of the job buckets within
-  the overall bucket interval is interim.
-  By default, interim results are included.
-</dd><dt><span class="term">
-<code class="literal">start</code>
-</span></dt><dd>
-  (string) Returns overall buckets with timestamps after this time.
+  (boolean) If <code class="literal">false</code> and the <code class="literal">job_id</code> does not match any job an error will
+  be returned. The default value is <code class="literal">true</code>.
 </dd><dt><span class="term">
 <code class="literal">end</code>
 </span></dt><dd>
   (string) Returns overall buckets with timestamps earlier than this time.
 </dd><dt><span class="term">
-<code class="literal">allow_no_jobs</code>
+<code class="literal">exclude_interim</code>
 </span></dt><dd>
-  (boolean) If <code class="literal">false</code> and the <code class="literal">job_id</code> does not match any job an error will
-  be returned. The default value is <code class="literal">true</code>.
+  (boolean) If <code class="literal">true</code>, the output excludes interim overall buckets.
+  Overall buckets are interim if any of the job buckets within
+  the overall bucket interval are interim.
+  By default, interim results are included.
+</dd><dt><span class="term">
+<code class="literal">overall_score</code>
+</span></dt><dd>
+  (double) Returns overall buckets with overall scores higher than this value.
+</dd><dt><span class="term">
+<code class="literal">start</code>
+</span></dt><dd>
+  (string) Returns overall buckets with timestamps after this time.
+</dd><dt><span class="term">
+<code class="literal">top_n</code>
+</span></dt><dd>
+  (integer) The number of top job bucket scores to be used in the
+  <code class="literal">overall_score</code> calculation. The default value is <code class="literal">1</code>.
 </dd></dl></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_results_2"></a>Results</h4></div></div></div><p>The API returns the following information:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">overall_buckets</code>
 </span></dt><dd>
