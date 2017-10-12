@@ -607,58 +607,81 @@ Not what you want? See the
            
           <a href="configuration-general-options.html">Specify general settings
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-metricbeat"></a>Specify which modules to run<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To enable specific modules and metricsets, you add entries to the <code class="literal">modules</code> list in of the <code class="literal">metricbeat.yml</code> config file. Each entry in the list begins with a dash (-) and is followed by settings for that <a class="link" href="metricbeat-modules.html" title="Modules">module</a>.</p><p>The following example shows a basic configuration for the Apache module:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat:
-  modules:
-    - module: apache
-      metricsets: ["status"]
-      hosts: ["http://127.0.0.1/"]
-      period: 10s
-      enabled: true
-      fields:
-        dc: west
-      tags: ["tag"]
-      processors:
-        ....</pre></div><p>The following example shows a configuration where the Apache and MySQL modules are enabled:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat.modules:
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-metricbeat"></a>Specify which modules to run<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Metricbeat provides a couple different ways to enable modules and metricsets:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="xref" href="configuration-metricbeat.html#enable-modules-d-configs" title="Enable module configs in the modules.d directoryedit">Enable module configs in the <code class="literal">modules.d</code> directory<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
+</li><li class="listitem">
+<a class="xref" href="configuration-metricbeat.html#enable-modules-config-file" title="Enable module configs in the metricbeat.yml fileedit">Enable module configs in the <code class="literal">metricbeat.yml</code> file<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
+</li></ul></div><h3><a id="enable-modules-d-configs"></a>Enable module configs in the <code class="literal">modules.d</code> directory<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">modules.d</code> directory contains default configurations for all the modules
+available in Metricbeat. You can enable or disable specific module
+configurations  under <code class="literal">modules.d</code> by running the <a class="link" href="command-line-options.html#modules-command" title="modules command"><code class="literal">modules
+enable</code> or <code class="literal">modules disable</code></a> commands.</p><p>For example, to enable the <code class="literal">apache</code> and <code class="literal">mysql</code> configs in the <code class="literal">modules.d</code>
+directory, you use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">./metricbeat modules enable apache mysql</pre></div><p>Then when you run Metricbeat, it loads the corresponding module configurations
+specified in the <code class="literal">modules.d</code> directory (for example, <code class="literal">modules.d/apache.yml</code> and
+<code class="literal">modules.d/mysql.yml</code>).</p><p>To see a list of enabled and disabled modules, run:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">./metricbeat modules list</pre></div><p>You can change the default module configurations by modifying the <code class="literal">.yml</code> files
+in the <code class="literal">modules.d</code> directory.</p><p>The following example shows a basic configuration for the Apache module:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: apache
+  metricsets: ["status"]
+  hosts: ["http://127.0.0.1/"]
+  period: 10s
+  fields:
+    dc: west
+  tags: ["tag"]
+  processors:
+  ....</pre></div><p>See <a class="xref" href="configuration-metricbeat.html#config-combos" title="Configuration combinationsedit">Configuration combinations<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a> for additional configuration examples.</p><h3><a id="enable-modules-config-file"></a>Enable module configs in the <code class="literal">metricbeat.yml</code> file<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When possible, you should use the config files in the <code class="literal">modules.d</code> directory.</p><p>However, enabling modules directly in the config file is a practical approach if
+you have upgraded from a previous version of Metricbeat and don’t want to
+move your module configs to the <code class="literal">modules.d</code> directory. You can continue to
+configure modules in the <code class="literal">metricbeat.yml</code> file, but you won’t be able to use
+the <code class="literal">modules</code> command to enable and disable configurations because the command
+requires the <code class="literal">modules.d</code> layout.</p><p>To enable specific modules and metricsets in the <code class="literal">metricbeat.yml</code> config
+file, you can add entries to the <code class="literal">metricbeat.modules</code> list. Each entry in the
+list begins with a dash (-) and is followed by settings for that module.</p><p>The following example shows a configuration where the apache and mysql modules
+are enabled:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat.modules:
 
 #---------------------------- Apache Status Module ---------------------------
 - module: apache
   metricsets: ["status"]
-  enabled: true
   period: 1s
   hosts: ["http://127.0.0.1/"]
 
 #---------------------------- MySQL Status Module ----------------------------
 - module: mysql
   metricsets: ["status"]
-  enabled: true
   period: 2s
-  hosts: ["root@tcp(127.0.0.1:3306)/"]</pre></div><h2><a id="_configuration_combinations"></a>Configuration combinations<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>You can specify a configuration that uses different combinations of modules, metricsets, periods, and hosts. In the following example, the Redis host is crawled for <code class="literal">stats</code> information every second because this is critical data, but the full list of Apache metricsets is only fetched every 30 seconds because the metrics are less critical.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat:
-  modules:
-    - module: redis
-      metricsets: ["info"]
-      hosts: ["host1"]
-      period: 1s
-      enabled: true
-    - module: apache
-      metricsets: ["info"]
-      hosts: ["host1"]
-      period: 30s
-      enabled: true</pre></div><p>For a module with multiple metricsets defined, it’s possible to define the module twice and specify
-a different period to use for each metricset. For the following example, the <code class="literal">set1</code> metricset will be fetched every
-10 seconds, while the <code class="literal">set2</code> metricset will be fetched every 2 minutes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat:
-  modules:
-    - module: example
-      metricsets: ["set1"]
-      hosts: ["host1"]
-      period: 10s
-    - module: example
-      metricsets: ["set2"]
-      hosts: ["host1"]
-      period: 2m</pre></div><h3><a id="_standard_config_options"></a>Standard config options<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can specify the following options for any Metricbeat module. Some modules
-require additional configuration settings. See the <a class="xref" href="metricbeat-modules.html" title="Modules">Modules</a> section for more information.</p><h4><a id="_literal_module_literal"></a><code class="literal">module</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The name of the module to run. For documentation about each module, see the <a class="xref" href="metricbeat-modules.html" title="Modules">Modules</a> section.</p><h4><a id="_literal_metricsets_literal"></a><code class="literal">metricsets</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A list of metricsets to execute. Make sure that you only list metricsets
-that are available in the module. It is not possible to reference metricsets from other modules. For a list of available metricsets, see the documentation for the module.</p><h4><a id="_literal_enabled_literal"></a><code class="literal">enabled</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A Boolean value that specifies whether the module is enabled. If you use the default config file, <code class="literal">metricbeat.yml</code>,
-the System module is enabled (set to <code class="literal">enabled: true</code>) by default. If the <code class="literal">enabled</code> option is missing from the
-configuration block, the module is enabled by default.</p><h4><a id="metricset-period"></a><code class="literal">period</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>How often the metricsets are executed. If a system is not reachable, Metricbeat returns an error for each period. This setting is required.</p><h4><a id="_literal_hosts_literal"></a><code class="literal">hosts</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A list of hosts to fetch information from. For some metricsets, such as the System module, this setting is optional.</p><h4><a id="_literal_fields_literal"></a><code class="literal">fields</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A dictionary of fields that will be sent with the metricset event. This setting is optional.</p><h4><a id="_literal_tags_literal"></a><code class="literal">tags</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A list of tags that will be sent with the metricset event. This setting is optional.</p><h4><a id="_literal_processors_literal"></a><code class="literal">processors</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A list of processors to apply to the data generated by the metricset.</p><p>See <a class="xref" href="filtering-and-enhancing-data.html" title="Filter and enhance the exported data"><em>Filter and enhance the exported data</em></a> for information about specifying
+  hosts: ["root@tcp(127.0.0.1:3306)/"]</pre></div><p>In the following example, the Redis host is crawled for <code class="literal">stats</code> information
+every second because this is critical data, but the full list of Apache
+metricsets is only fetched every 30 seconds because the metrics are less
+critical.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat.modules:
+- module: redis
+  metricsets: ["info"]
+  hosts: ["host1"]
+  period: 1s
+- module: apache
+  metricsets: ["info"]
+  hosts: ["host1"]
+  period: 30s</pre></div><h2><a id="config-combos"></a>Configuration combinations<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>You can specify a module configuration that uses different combinations of
+metricsets, periods, and hosts.</p><p>For a module with multiple metricsets defined, it’s possible to define the
+module twice and specify a different period to use for each metricset. For the
+following example, the <code class="literal">set1</code> metricset will be fetched every 10 seconds, while
+the <code class="literal">set2</code> metricset will be fetched every 2 minutes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: example
+  metricsets: ["set1"]
+  hosts: ["host1"]
+  period: 10s
+- module: example
+  metricsets: ["set2"]
+  hosts: ["host1"]
+  period: 2m</pre></div><h3><a id="_standard_config_options"></a>Standard config options<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can specify the following options for any Metricbeat module. Some modules
+require additional configuration settings. See the <a class="xref" href="metricbeat-modules.html" title="Modules">Modules</a>
+section for more information.</p><h4><a id="_literal_module_literal"></a><code class="literal">module</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The name of the module to run. For documentation about each module, see the
+<a class="xref" href="metricbeat-modules.html" title="Modules">Modules</a> section.</p><h4><a id="_literal_metricsets_literal"></a><code class="literal">metricsets</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A list of metricsets to execute. Make sure that you only list metricsets that
+are available in the module. It is not possible to reference metricsets from
+other modules. For a list of available metricsets, see the documentation for the
+module.</p><h4><a id="_literal_enabled_literal"></a><code class="literal">enabled</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A Boolean value that specifies whether the module is enabled. If you use the
+default config file, <code class="literal">metricbeat.yml</code>, the System module is enabled (set to
+<code class="literal">enabled: true</code>) by default. If the <code class="literal">enabled</code> option is missing from the
+configuration block, the module is enabled by default.</p><h4><a id="metricset-period"></a><code class="literal">period</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>How often the metricsets are executed. If a system is not reachable, Metricbeat
+returns an error for each period. This setting is required.</p><h4><a id="_literal_hosts_literal"></a><code class="literal">hosts</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A list of hosts to fetch information from. For some metricsets, such as the
+System module, this setting is optional.</p><h4><a id="_literal_fields_literal"></a><code class="literal">fields</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A dictionary of fields that will be sent with the metricset event. This setting
+is optional.</p><h4><a id="_literal_tags_literal"></a><code class="literal">tags</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A list of tags that will be sent with the metricset event. This setting is
+optional.</p><h4><a id="_literal_processors_literal"></a><code class="literal">processors</code><a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A list of processors to apply to the data generated by the metricset.</p><p>See <a class="xref" href="filtering-and-enhancing-data.html" title="Filter and enhance the exported data"><em>Filter and enhance the exported data</em></a> for information about specifying
 processors in your config.</p></div><div class="navfooter"><span class="prev"><a href="configuring-howto-metricbeat.html">
               « 
               Configuring Metricbeat</a>
