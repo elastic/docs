@@ -658,7 +658,9 @@ If you have disabled automatic index creation in Elasticsearch, configure
 <code class="literal">elasticsearch.yml</code> to allow X-Pack to create the following indices:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">action.auto_create_index: .security,.monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*</pre></div></li><li class="listitem"><p class="simpara">
 Start Elasticsearch.
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch</pre></div></li><li class="listitem"><p class="simpara">
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch</pre></div></li><li class="listitem">
+Optional: <a class="link" href="installing-xpack.html#setup-xpack-client" title="Configuring X-Pack Java Clients">Configure the Java Client</a>.
+</li><li class="listitem"><p class="simpara">
 Install X-Pack into <a class="ulink" href="http://www.elastic.co/guide/en/kibana/5.4/setup.html" target="_top">Kibana</a> by running
 <code class="literal">bin/kibana-plugin</code> in your Kibana installation directory.
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/kibana-plugin install x-pack</pre></div></li><li class="listitem"><p class="simpara">
@@ -745,6 +747,90 @@ Restart Kibana.
 Remove X-Pack from Logstash:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash-plugin remove x-pack</pre></div></li><li class="listitem">
 Restart Logstash.
+</li></ol></div><h3><a id="setup-xpack-client"></a>Configuring X-Pack Java Clients</h3><p>If you want to use a Java <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/client/java-api/5.4/transport-client.html" target="_top">transport client</a> with a
+cluster where X-Pack is installed, then you must download and configure the
+X-Pack transport client.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The <code class="literal">TransportClient</code> is aimed to be replaced by the Java High Level REST
+Client, which executes HTTP requests instead of serialized Java requests. The
+<code class="literal">TransportClient</code> will be deprecated in upcoming versions of Elasticsearch.</p></div></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Add the X-Pack transport JAR file to your CLASSPATH. You can download the X-Pack
+distribution and extract the JAR file manually or you can get it from the
+<a class="ulink" href="https://artifacts.elastic.co/maven/org/elasticsearch/client/x-pack-transport/5.4.3/x-pack-transport-5.4.3.jar" target="_top">Elasticsearch Maven repository</a>.
+</p><p class="simpara">As with any dependency, you will also need its transitive dependencies. Refer to the
+<a class="ulink" href="https://artifacts.elastic.co/maven/org/elasticsearch/client/x-pack-transport/5.4.3/x-pack-transport-5.4.3.pom" target="_top">X-Pack POM file
+for your version</a> when downloading for offline usage.</p></li><li class="listitem"><p class="simpara">
+If you are using Maven, you need to add the X-Pack JAR file as a dependency in
+your project’s <code class="literal">pom.xml</code> file:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-xml">&lt;project ...&gt;
+
+   &lt;repositories&gt;
+      &lt;!-- add the elasticsearch repo --&gt;
+      &lt;repository&gt;
+         &lt;id&gt;elasticsearch-releases&lt;/id&gt;
+         &lt;url&gt;https://artifacts.elastic.co/maven&lt;/url&gt;
+         &lt;releases&gt;
+            &lt;enabled&gt;true&lt;/enabled&gt;
+         &lt;/releases&gt;
+         &lt;snapshots&gt;
+            &lt;enabled&gt;false&lt;/enabled&gt;
+         &lt;/snapshots&gt;
+      &lt;/repository&gt;
+      ...
+   &lt;/repositories&gt;
+   ...
+
+   &lt;dependencies&gt;
+      &lt;!-- add the x-pack jar as a dependency --&gt;
+      &lt;dependency&gt;
+         &lt;groupId&gt;org.elasticsearch.client&lt;/groupId&gt;
+         &lt;artifactId&gt;x-pack-transport&lt;/artifactId&gt;
+         &lt;version&gt;{version}&lt;/version&gt;
+      &lt;/dependency&gt;
+      ...
+   &lt;/dependencies&gt;
+   ...
+
+ &lt;/project&gt;</pre></div></li><li class="listitem"><p class="simpara">
+If you are using Gradle, you need to add the X-Pack JAR file as a dependency in
+your <code class="literal">build.gradle</code> file:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-groovy">repositories {
+  /* ... Any other repositories ... */
+
+  // Add the Elasticsearch Maven Repository
+  maven {
+    url "https://artifacts.elastic.co/maven"
+  }
+}
+
+dependencies {
+  compile "org.elasticsearch.client:x-pack-transport:{version}"
+
+  /* ... */
+}</pre></div></li><li class="listitem"><p class="simpara">
+If you are using a repository manager such as <a class="ulink" href="https://www.sonatype.com/nexus-repository-oss" target="_top">Nexus OSS</a> within your
+company, you need to add the repository as per the following screenshot:
+</p><div class="informalfigure"><div class="mediaobject"><img src="security/images/nexus.png" alt="Adding the Elastic repo in Nexus" /></div></div><p class="simpara">Then in your project’s <code class="literal">pom.xml</code> if using maven, add the following repositories and dependencies definitions:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-xml">&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.elasticsearch.client&lt;/groupId&gt;
+        &lt;artifactId&gt;x-pack-transport&lt;/artifactId&gt;
+        &lt;version&gt;{version}&lt;/version&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+
+&lt;repositories&gt;
+    &lt;repository&gt;
+        &lt;id&gt;local-nexus&lt;/id&gt;
+        &lt;name&gt;Elastic Local Nexus&lt;/name&gt;
+        &lt;url&gt;http://0.0.0.0:8081/repository/elasticsearch/&lt;/url&gt;
+        &lt;releases&gt;
+            &lt;enabled&gt;true&lt;/enabled&gt;
+        &lt;/releases&gt;
+        &lt;snapshots&gt;
+            &lt;enabled&gt;false&lt;/enabled&gt;
+        &lt;/snapshots&gt;
+    &lt;/repository&gt;
+&lt;/repositories&gt;</pre></div></li><li class="listitem">
+If you are using X-Pack security, there are more configuration steps. See
+<a class="xref" href="java-clients.html" title="Java Client and Security">Java Client and Security</a>.
 </li></ol></div></div><div class="navfooter"><span class="prev"><a href="xpack-introduction.html">
               « 
               Introduction</a>
