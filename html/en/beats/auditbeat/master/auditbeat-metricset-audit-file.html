@@ -613,9 +613,10 @@ deleted) on disk. The events contain file metadata and hashes.</p><p>The metrics
 realtime. When the metricset starts it creates a subscription with the OS to
 receive notifications of changes to the specified files or directories. Upon
 receiving notification of a change the metricset will read the file’s metadata
-and the compute a hash of the file’s contents.</p><p>This metricset does not perform an initial scan of the given paths to generate
-events for the files as they existed at start time. It is strictly driven by
-change notifications from the OS.</p><p>The operating system features that power this feature are as follows.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+and the compute a hash of the file’s contents.</p><p>At startup this metricset will perform an initial scan of the configured files
+and directories to generate baseline data for the monitored paths and detect
+changes since the last time it was run. It uses locally persisted data in order
+to only send events for new or modified files.</p><p>The operating system features that power this feature are as follows.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Linux - <code class="literal">inotify</code> is used, and therefore the kernel must have inotify support.
 Inotify was initially merged into the 2.6.13 Linux kernel.
 </li><li class="listitem">
@@ -636,6 +637,8 @@ Linux.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-y
   - /sbin
   - /usr/sbin
   - /etc
+  file.scan_at_start: true
+  file.scan_rate_per_sec: 50 MiB
   file.max_file_size: 100 MiB
   file.hash_types: [sha1]</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <span class="strong strong"><strong><code class="literal">file.paths</code></strong></span>
@@ -644,13 +647,32 @@ A list of paths (directories or files) to watch. The watches
 are non-recursive and globs are not supported. The specified paths should exist
 when the metricset is started.
 </dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">file.scan_at_start</code></strong></span>
+</span></dt><dd><p class="simpara">
+A boolean value that controls if Auditbeat scans
+over the configured file paths at startup and send events for the files
+that have been modified since the last time Auditbeat was running. The
+default value is true.
+</p><p class="simpara">This feature depends on data stored locally in <code class="literal">path.data</code> in order to determine
+if a file has changed. The first time Auditbeat runs it will send an event
+for each file it encounters.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">file.scan_rate_per_sec</code></strong></span>
+</span></dt><dd>
+When <code class="literal">file.scan_at_start</code> is enabled this sets an
+average read rate defined in bytes per second for the initial scan. This
+throttles the amount of CPU and I/O that Auditbeat consumes at startup.
+The default value is "50 MiB". Setting the value to "0" disables throttling.
+For convenience units can be specified as a suffix to the value. The supported
+units are <code class="literal">b</code> (default), <code class="literal">kib</code>, <code class="literal">kb</code>, <code class="literal">mib</code>, <code class="literal">mb</code>, <code class="literal">gib</code>, <code class="literal">gb</code>, <code class="literal">tib</code>, <code class="literal">tb</code>,
+<code class="literal">pib</code>, <code class="literal">pb</code>, <code class="literal">eib</code>, and <code class="literal">eb</code>.
+</dd><dt><span class="term">
 <span class="strong strong"><strong><code class="literal">file.max_file_size</code></strong></span>
 </span></dt><dd>
 The maximum size of a file in bytes for which
 Auditbeat will compute hashes. Files larger than this size will not be
 hashed. The default value is 100 MiB. For convenience units can be specified as
-a suffix to the value. The supported units are <code class="literal">b</code>, <code class="literal">kib</code>, <code class="literal">kb</code>, <code class="literal">mib</code>, <code class="literal">mb</code>,
-<code class="literal">gib</code>, <code class="literal">gb</code>, <code class="literal">tib</code>, <code class="literal">tb</code>, <code class="literal">pib</code>, <code class="literal">pb</code>, <code class="literal">eib</code>, and <code class="literal">eb</code>.
+a suffix to the value. The supported units are <code class="literal">b</code> (default), <code class="literal">kib</code>, <code class="literal">kb</code>, <code class="literal">mib</code>,
+<code class="literal">mb</code>, <code class="literal">gib</code>, <code class="literal">gb</code>, <code class="literal">tib</code>, <code class="literal">tb</code>, <code class="literal">pib</code>, <code class="literal">pb</code>, <code class="literal">eib</code>, and <code class="literal">eb</code>.
 </dd><dt><span class="term">
 <span class="strong strong"><strong><code class="literal">file.hash_types</code></strong></span>
 </span></dt><dd>
@@ -659,34 +681,33 @@ The supported hash types are md5, sha1, sha224, sha256, sha384, sha512,
 sha512_224, and sha512_256. The default value is sha1.
 </dd></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fields"></a>Fields<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/audit/file.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For a description of each field in the metricset, see the
 <a class="link" href="exported-fields-audit.html" title="Audit fields">exported fields</a> section.</p><p>Here is an example document generated by this metricset:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-  "@timestamp": "2017-07-31T14:40:28.173Z",
+  "@timestamp": "2017-10-06T17:35:33.773Z",
   "@metadata": {
     "beat": "noindex",
-    "type": "doc"
+    "type": "doc",
+    "version": "1.2.3"
   },
   "audit": {
     "file": {
       "hashed": true,
-      "group": "staff",
-      "path": "/var/folders/8x/rnyk6yxn6w97lddn3bs02gf00000gn/T/audit-file927187403/file.data",
-      "inode": "12512120",
-      "size": 11,
-      "ctime": "2017-07-31T14:40:28.000Z",
-      "mode": "0600",
-      "owner": "akroh",
-      "atime": "2017-07-31T14:40:28.000Z",
-      "sha1": "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed",
-      "action": "created",
-      "mtime": "2017-07-31T14:40:28.000Z",
-      "type": "file",
+      "inode": "15329399",
       "uid": 501,
-      "gid": 20
+      "group": "staff",
+      "ctime": "2017-10-06T17:35:33.000Z",
+      "gid": 20,
+      "path": "/private/var/folders/8x/rnyk6yxn6w97lddn3bs02gf00000gn/T/audit-file387158249/file.data",
+      "mode": "0600",
+      "action": "created",
+      "mtime": "2017-10-06T17:35:33.000Z",
+      "size": 11,
+      "owner": "akroh",
+      "sha1": "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed"
     }
   },
   "metricset": {
     "module": "audit",
     "name": "file",
-    "rtt": 115
+    "rtt": 5928
   },
   "beat": {
     "name": "host.example.com",
