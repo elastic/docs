@@ -270,7 +270,7 @@
             <h3>
               <xsl:value-of select="$revision_text" />
             </h3>
-            <xsl:value-of select="$content" />
+            <xsl:apply-templates/>
         </xsl:otherwise>
       </xsl:choose>
     </xsl:template>
@@ -290,7 +290,7 @@
             </p>
         </xsl:when>
         <xsl:otherwise>
-            <xsl:value-of select="$content" />
+          <xsl:apply-templates />
         </xsl:otherwise>
       </xsl:choose>
     </xsl:template>
