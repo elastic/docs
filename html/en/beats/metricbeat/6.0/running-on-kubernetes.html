@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting up and running Metricbeat
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Running Metricbeat on Kubernetes
         | Metricbeat Reference [6.0]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference [6.0]" /><link rel="up" href="index.html" title="Metricbeat Reference [6.0]" /><link rel="prev" href="setup-repositories.html" title="Repositories for APT and YUM" /><link rel="next" href="directory-layout.html" title="Directory layout" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Metricbeat/Reference/6.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference [6.0]" /><link rel="up" href="seting-up-and-running.html" title="Setting up and running Metricbeat" /><link rel="prev" href="running-on-docker.html" title="Running Metricbeat on Docker" /><link rel="next" href="upgrading-metricbeat.html" title="Upgrading Metricbeat" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Metricbeat/Reference/6.0" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -599,32 +599,46 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference
       [6.0]
-    </a></span> » <span class="breadcrumb-node">Setting up and running Metricbeat</span></div><div class="navheader"><span class="prev"><a href="setup-repositories.html">
+    </a></span> » <span class="breadcrumb-link"><a href="seting-up-and-running.html">Setting up and running Metricbeat</a></span> » <span class="breadcrumb-node">Running Metricbeat on Kubernetes</span></div><div class="navheader"><span class="prev"><a href="running-on-docker.html">
               « 
-              Repositories for APT and YUM</a>
+              Running Metricbeat on Docker</a>
            
         </span><span class="next">
            
-          <a href="directory-layout.html">Directory layout
+          <a href="upgrading-metricbeat.html">Upgrading Metricbeat
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="seting-up-and-running"></a>Setting up and running Metricbeat<a href="https://github.com/elastic/beats/edit/6.0/metricbeat/docs/setting-up-running.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Before reading this section, see the
-<a class="link" href="metricbeat-getting-started.html" title="Getting started with Metricbeat">getting started documentation</a> for basic
-installation instructions to get you started.</p><p>This section includes additional information on how to set up and run
-Metricbeat, including:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="xref" href="directory-layout.html" title="Directory layout">Directory layout</a>
-</li><li class="listitem">
-<a class="xref" href="command-line-options.html" title="Metricbeat commands">Metricbeat commands</a>
-</li><li class="listitem">
-<a class="xref" href="running-on-docker.html" title="Running Metricbeat on Docker">Running Metricbeat on Docker</a>
-</li><li class="listitem">
-<a class="xref" href="running-on-kubernetes.html" title="Running Metricbeat on Kubernetes">Running Metricbeat on Kubernetes</a>
-</li></ul></div></div><div class="navfooter"><span class="prev"><a href="setup-repositories.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="running-on-kubernetes"></a>Running Metricbeat on Kubernetes<a href="https://github.com/elastic/beats/edit/6.0/metricbeat/docs/running-on-kubernetes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Metricbeat <a class="link" href="running-on-docker.html" title="Running Metricbeat on Docker">Docker images</a> can be used on Kubernetes to
+retrieve cluster metrics.</p><h4><a id="_kubernetes_deploy_manifests"></a>Kubernetes deploy manifests<a href="https://github.com/elastic/beats/edit/6.0/metricbeat/docs/running-on-kubernetes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Metricbeat is deployed in two different ways at the same time:</p><p>By deploying Metricbeat as a <a class="ulink" href="https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/" target="_top">DaemonSet</a>
+we ensure we get a running instance on each node of the cluster. It will be used
+to retrieve most metrics from the host, like system metrics, Docker stats and
+metrics from all the services running on top of Kubernetes.</p><p>A single Metricbeat instance is also created using a <a class="ulink" href="https://kubernetes.io/docs/concepts/workloads/controllers/Deployment/" target="_top">Deployment</a>.
+It will retrieve metrics that are unique for the whole cluster, like
+Kubernetes events or <a class="ulink" href="https://github.com/kubernetes/kube-state-metrics" target="_top">kube-state-metrics</a>.</p><p>Everything is deployed under <code class="literal">kube-system</code> namespace, you can change that by
+updating the YAML file.</p><p>To get the manifests just run:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -L -O https://raw.githubusercontent.com/elastic/beats/6.0/deploy/kubernetes/metricbeat-kubernetes.yaml</pre></div><h4><a id="_settings"></a>Settings<a href="https://github.com/elastic/beats/edit/6.0/metricbeat/docs/running-on-kubernetes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Some parameters are exposed in the manifest to configure logs destination, by
+default they will use an existing Elasticsearch deploy if it’s present, but you
+may want to change that behavior, so just edit the YAML file and modify them:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- name: ELASTICSEARCH_HOST
+  value: elasticsearch
+- name: ELASTICSEARCH_PORT
+  value: "9200"
+- name: ELASTICSEARCH_USERNAME
+  value: elastic
+- name: ELASTICSEARCH_PASSWORD
+  value: changeme</pre></div><h4><a id="_deploy"></a>Deploy<a href="https://github.com/elastic/beats/edit/6.0/metricbeat/docs/running-on-kubernetes.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Metricbeat gets some metrics from <a class="ulink" href="https://github.com/kubernetes/kube-state-metrics#usage" target="_top">kube-state-metrics</a>,
+you will need to deploy it if it’s not already running.</p><p>To deploy Metricbeat to Kubernetes just run:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">kubectl deploy -f kubernetes/metricbeat-kubernetes.yaml</pre></div><p>Then you should be able to check the status by running:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">$ kubectl --namespace=kube-system  get ds/metricbeat
+
+NAME       DESIRED   CURRENT   READY     UP-TO-DATE   AVAILABLE   NODE-SELECTOR   AGE
+metricbeat   32        32        0         32           0           &lt;none&gt;          1m
+
+$ kubectl --namespace=kube-system  get deploy/metricbeat
+
+NAME                    DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+metricbeat                1         1         1            1           1m</pre></div><p>Metrics should start flowing to Elasticsearch.</p></div><div class="navfooter"><span class="prev"><a href="running-on-docker.html">
               « 
-              Repositories for APT and YUM</a>
+              Running Metricbeat on Docker</a>
            
         </span><span class="next">
            
-          <a href="directory-layout.html">Directory layout
+          <a href="upgrading-metricbeat.html">Upgrading Metricbeat
                »
             </a></span></div>
 <!-- end body -->
