@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Terms Query
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Terms Set Query
         | Elasticsearch Reference [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="term-level-queries.html" title="Term level queries" /><link rel="prev" href="query-dsl-term-query.html" title="Term Query" /><link rel="next" href="query-dsl-terms-set-query.html" title="Terms Set Query" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="term-level-queries.html" title="Term level queries" /><link rel="prev" href="query-dsl-terms-query.html" title="Terms Query" /><link rel="next" href="query-dsl-range-query.html" title="Range Query" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -599,116 +599,102 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [6.x]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL</a></span> » <span class="breadcrumb-link"><a href="term-level-queries.html">Term level queries</a></span> » <span class="breadcrumb-node">Terms Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-term-query.html">
+    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL</a></span> » <span class="breadcrumb-link"><a href="term-level-queries.html">Term level queries</a></span> » <span class="breadcrumb-node">Terms Set Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-terms-query.html">
               « 
-              Term Query</a>
+              Terms Query</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-terms-set-query.html">Terms Set Query
+          <a href="query-dsl-range-query.html">Range Query
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-terms-query"></a>Terms Query<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/query-dsl/terms-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Filters documents that have fields that match any of the provided terms
-(<span class="strong strong"><strong>not analyzed</strong></span>). For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-terms-set-query"></a>Terms Set Query<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/query-dsl/terms-set-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>
+The terms_set query is a new query and its syntax may change in the future
+</p></div></div><p>Returns any documents that match with at least one or more of the
+provided terms. The terms are not analyzed and thus must match exactly.
+The number of terms that must match varies per document and is either
+controlled by a minimum should match field or computed per document in
+a minimum should match script.</p><p>The field that controls the number of required terms that must match must
+be a number field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my-index
 {
-    "query": {
-        "terms" : { "user" : ["kimchy", "elasticsearch"]}
-    }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-terms-query/1.json"></div><h5><a id="query-dsl-terms-lookup"></a>Terms lookup mechanism<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/query-dsl/terms-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>When it’s needed to specify a <code class="literal">terms</code> filter with a lot of terms it can
-be beneficial to fetch those term values from a document in an index. A
-concrete example would be to filter tweets tweeted by your followers.
-Potentially the amount of user ids specified in the terms filter can be
-a lot. In this scenario it makes sense to use the terms filter’s terms
-lookup mechanism.</p><p>The terms lookup mechanism supports the following options:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">index</code>
-</p>
-</td><td valign="top">
-<p>
-    The index to fetch the term values from.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">type</code>
-</p>
-</td><td valign="top">
-<p>
-    The type to fetch the term values from.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">id</code>
-</p>
-</td><td valign="top">
-<p>
-    The id of the document to fetch the term values from.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">path</code>
-</p>
-</td><td valign="top">
-<p>
-    The field specified as path to fetch the actual values for the
-    <code class="literal">terms</code> filter.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">routing</code>
-</p>
-</td><td valign="top">
-<p>
-    A custom routing value to be used when retrieving the
-    external terms doc.
-</p>
-</td></tr></tbody></table></div><p>The values for the <code class="literal">terms</code> filter will be fetched from a field in a
-document with the specified id in the specified type and index.
-Internally a get request is executed to fetch the values from the
-specified path. At the moment for this feature to work the <code class="literal">_source</code>
-needs to be stored.</p><p>Also, consider using an index with a single shard and fully replicated
-across all nodes if the "reference" terms data is not large. The lookup
-terms filter will prefer to execute the get request on a local node if
-possible, reducing the need for networking.</p><h5><a id="_terms_lookup_twitter_example"></a>Terms lookup twitter example<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/query-dsl/terms-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>At first we index the information for user with id 2, specifically, its
-followers, then index a tweet from user with id 1. Finally we search on
-all the tweets that match the followers of user 2.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /users/user/2
-{
-    "followers" : ["1", "3"]
-}
-
-PUT /tweets/tweet/1
-{
-    "user" : "1"
-}
-
-GET /tweets/_search
-{
-    "query" : {
-        "terms" : {
-            "user" : {
-                "index" : "users",
-                "type" : "user",
-                "id" : "2",
-                "path" : "followers"
+    "mappings": {
+        "doc": {
+            "properties": {
+                "required_matches": {
+                    "type": "long"
+                }
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-terms-query/2.json"></div><p>The structure of the external terms document can also include an array of
-inner objects, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /users/user/2
+}
+
+PUT /my-index/doc/1?refresh
 {
- "followers" : [
-   {
-     "id" : "1"
-   },
-   {
-     "id" : "2"
-   }
- ]
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-terms-query/3.json"></div><p>In which case, the lookup path will be <code class="literal">followers.id</code>.</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-term-query.html">
+    "codes": ["ghi", "jkl"],
+    "required_matches": 2
+}
+
+PUT /my-index/doc/2?refresh
+{
+    "codes": ["def", "ghi"],
+    "required_matches": 2
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-terms-set-query/1.json"></div><p>An example that uses the minimum should match field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my-index/_search
+{
+    "query": {
+        "terms_set": {
+            "codes" : {
+                "terms" : ["abc", "def", "ghi"],
+                "minimum_should_match_field": "required_matches"
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-terms-set-query/2.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "took": 13,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped" : 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 1,
+    "max_score": 0.5753642,
+    "hits": [
+      {
+        "_index": "my-index",
+        "_type": "doc",
+        "_id": "2",
+        "_score": 0.5753642,
+        "_source": {
+          "codes": ["def", "ghi"],
+          "required_matches": 2
+        }
+      }
+    ]
+  }
+}</pre></div><p>Scripts can also be used to control how many terms are required to match
+in a more dynamic way. For example a create date or a popularity field
+can be used as basis for the number of required terms to match.</p><p>Also the <code class="literal">params.num_terms</code> parameter is available in the script to indicate the
+number of terms that have been specified.</p><p>An example that always limits the number of required terms to match to never
+become larger than the number of terms specified:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my-index/_search
+{
+    "query": {
+        "terms_set": {
+            "codes" : {
+                "terms" : ["abc", "def", "ghi"],
+                "minimum_should_match_script": {
+                   "source": "Math.min(params.num_terms, doc['required_matches'].value)"
+                }
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-terms-set-query/3.json"></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-terms-query.html">
               « 
-              Term Query</a>
+              Terms Query</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-terms-set-query.html">Terms Set Query
+          <a href="query-dsl-range-query.html">Range Query
                »
             </a></span></div>
 <!-- end body -->
