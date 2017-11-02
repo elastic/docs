@@ -627,9 +627,15 @@ master-eligible nodes in the cluster.</p><p>Unicast discovery provides the follo
           falling back to <code class="literal">transport.tcp.port</code> if not set). Note that IPv6 hosts must be bracketed. Defaults to <code class="literal">127.0.0.1, [::1]</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">hosts.resolve_timeout</code></p></td><td align="left" valign="top"><p>The amount of time to wait for DNS lookups on each round of pinging. Specified as
 <a class="link" href="common-options.html#time-units" title="Time unitsedit">time units</a>. Defaults to 5s.</p></td></tr></tbody></table></div><p>The unicast discovery uses the <a class="link" href="modules-transport.html" title="Transport">transport</a> module to perform the discovery.</p><h4><a id="master-election"></a>Master Election<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/modules/discovery/zen.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>As part of the ping process a master of the cluster is either
 elected or joined to. This is done automatically. The
-<code class="literal">discovery.zen.ping_timeout</code> (which defaults to <code class="literal">3s</code>) allows for the
-tweaking of election time to handle cases of slow or congested networks
-(higher values assure less chance of failure). Once a node joins, it
+<code class="literal">discovery.zen.ping_timeout</code> (which defaults to <code class="literal">3s</code>) determines how long the node
+will wait before deciding on starting an election or joining an existing cluster.
+Three pings will be sent over this timeout interval. In case where no decision can be
+reached after the timeout, the pinging process restarts.
+In slow or congested networks, three seconds might not be enough for a node to become
+aware of the other nodes in its environment before making an election decision.
+Increasing the timeout should be done with care in that case, as it will slow down the
+election process.
+Once a node decides to join an existing formed cluster, it
 will send a join request to the master (<code class="literal">discovery.zen.join_timeout</code>)
 with a timeout defaulting at 20 times the ping timeout.</p><p>When the master node stops or has encountered a problem, the cluster nodes
 start pinging again and will elect a new master. This pinging round also
