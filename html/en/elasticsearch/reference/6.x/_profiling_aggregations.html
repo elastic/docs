@@ -613,59 +613,87 @@ Not what you want? See the
           <a href="_profiling_considerations.html">Profiling Considerations
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_profiling_aggregations"></a>Profiling Aggregations<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_aggregations_literal_section"></a><code class="literal">aggregations</code> Section<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">aggregations</code> section contains detailed timing of the aggregation tree executed by a particular shard.
-The overall structure of this aggregation tree will resemble your original Elasticsearch request.  Let’s consider
-the following example aggregations request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /house-prices/_search
+The overall structure of this aggregation tree will resemble your original Elasticsearch request.  Let’s
+execute the previous query again and look at the aggregation profile this time:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /twitter/_search
 {
   "profile": true,
-  "size": 0,
+  "query": {
+    "term": {
+      "user": {
+        "value": "test"
+      }
+    }
+  },
   "aggs": {
-    "property_type": {
+    "my_scoped_agg": {
       "terms": {
-        "field": "propertyType"
-      },
+        "field": "likes"
+      }
+    },
+    "my_global_agg": {
+      "global": {},
       "aggs": {
-        "avg_price": {
-          "avg": {
-            "field": "price"
+        "my_level_agg": {
+          "terms": {
+            "field": "likes"
           }
         }
       }
     }
+  },
+  "post_filter": {
+    "match": {
+      "message": "some"
+    }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/_profiling_aggregations/1.json"></div><p>Which yields the following aggregation profile output</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "profile": {
-    "shards": [
+  "profile" : {
+    "shards" : [
       {
-        ...
-        "aggregations": [
+        "aggregations" : [
           {
-            "type": "org.elasticsearch.search.aggregations.bucket.terms.TermsAggregatorFactory$1",
-            "description": "property_type",
-            "time_in_nanos": 26234,
-            "breakdown": {
-              "reduce": 0,
-              "build_aggregation": 817,
-              "build_aggregation_count": 1,
-              "initialize": 25415,
-              "initialize_count": 1,
-              "reduce_count": 0,
-              "collect": 0,
-              "collect_count": 0
+            "type" : "LongTermsAggregator",
+            "description" : "my_scoped_agg",
+            "time_in_nanos" : 195386,
+            "breakdown" : {
+              "reduce" : 0,
+              "build_aggregation" : 81171,
+              "build_aggregation_count" : 1,
+              "initialize" : 22753,
+              "initialize_count" : 1,
+              "reduce_count" : 0,
+              "collect" : 91456,
+              "collect_count" : 4
+            }
+          },
+          {
+            "type" : "GlobalAggregator",
+            "description" : "my_global_agg",
+            "time_in_nanos" : 190430,
+            "breakdown" : {
+              "reduce" : 0,
+              "build_aggregation" : 59990,
+              "build_aggregation_count" : 1,
+              "initialize" : 29619,
+              "initialize_count" : 1,
+              "reduce_count" : 0,
+              "collect" : 100815,
+              "collect_count" : 4
             },
-            "children": [
+            "children" : [
               {
-                "type": "org.elasticsearch.search.aggregations.metrics.avg.AvgAggregator",
-                "description": "avg_price",
-                "time_in_nanos": 5610,
-                "breakdown": {
-                  "reduce": 0,
-                  "build_aggregation": 0,
-                  "build_aggregation_count": 0,
-                  "initialize": 5609,
-                  "initialize_count": 1,
-                  "reduce_count": 0,
-                  "collect": 0,
-                  "collect_count": 0
+                "type" : "LongTermsAggregator",
+                "description" : "my_level_agg",
+                "time_in_nanos" : 160329,
+                "breakdown" : {
+                  "reduce" : 0,
+                  "build_aggregation" : 55712,
+                  "build_aggregation_count" : 1,
+                  "initialize" : 10559,
+                  "initialize_count" : 1,
+                  "reduce_count" : 0,
+                  "collect" : 94052,
+                  "collect_count" : 4
                 }
               }
             ]
@@ -674,11 +702,10 @@ the following example aggregations request:</p><div class="pre_wrapper"><pre cla
       }
     ]
   }
-}</pre></div><p>From the profile structure we can see our <code class="literal">property_type</code> terms aggregation which is internally represented by the
-<code class="literal">GlobalOrdinalsStringTermsAggregator</code> class and the sub aggregator <code class="literal">avg_price</code> which is internally represented by the <code class="literal">AvgAggregator</code> class. The <code class="literal">type</code> field displays the class used internally to represent the aggregation. The <code class="literal">description</code> field displays the name of the aggregation.</p><p>The <code class="literal">time_in_nanos</code> field shows that it took ~4 seconds for the entire aggregation to execute.  The recorded time is inclusive
-of all children.</p><p>The <code class="literal">breakdown</code> field will give detailed stats about how the time was spent, we’ll look at
-that in a moment.  Finally, the <code class="literal">children</code> array lists any sub-aggregations that may be present.  Because we have an <code class="literal">avg_price</code> aggregation as a sub-aggregation to the <code class="literal">property_type</code> aggregation we see it listed as a child of the <code class="literal">property_type</code> aggregation.  the two aggregation outputs have identical information (type, time,
-breakdown, etc).  Children are allowed to have their own children.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_timing_breakdown_2"></a>Timing Breakdown<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">breakdown</code> component lists detailed timing statistics about low-level Lucene execution:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"breakdown": {
+}</pre></div><p>From the profile structure we can see that the <code class="literal">my_scoped_agg</code> is internally being run as a <code class="literal">LongTermsAggregator</code> (because the field it is
+aggregating, <code class="literal">likes</code>, is a numeric field).  At the same level, we see a <code class="literal">GlobalAggregator</code> which comes from <code class="literal">my_global_agg</code>.  That
+aggregation then has a child <code class="literal">LongTermsAggregator</code> which from the second terms aggregation on <code class="literal">likes</code>.</p><p>The <code class="literal">time_in_nanos</code> field shows the time executed by each aggregation, and is inclusive of all children.  While the overall time is useful,
+the <code class="literal">breakdown</code> field will give detailed stats about how the time was spent.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_timing_breakdown_2"></a>Timing Breakdown<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">breakdown</code> component lists detailed timing statistics about low-level Lucene execution:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"breakdown": {
   "reduce": 0,
   "reduce_count": 0,
   "build_aggregation": 49765,

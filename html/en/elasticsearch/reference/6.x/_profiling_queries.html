@@ -624,13 +624,13 @@ The overall structure of this query tree will resemble your original Elasticsear
 <code class="literal">match</code> query example, let’s analyze the <code class="literal">query</code> section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"query": [
     {
        "type": "BooleanQuery",
-       "description": "message:message message:number",
+       "description": "message:some message:number",
        "time_in_nanos": "1873811",
        "breakdown": {...},               <a id="CO43-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
        "children": [
           {
              "type": "TermQuery",
-             "description": "message:message",
+             "description": "message:some",
              "time_in_nanos": "391943",
              "breakdown": {...}
           },
@@ -861,20 +861,20 @@ optimizations, such as removing redundant clauses, replacing one query for a mor
 etc.  For example a Boolean → Boolean → TermQuery can be rewritten to a TermQuery, because all the Booleans
 are unnecessary in this case.</p><p>The rewriting process is complex and difficult to display, since queries can change drastically.  Rather than
 showing the intermediate results, the total rewrite time is simply displayed as a value (in nanoseconds).  This
-value is cumulative and contains the total time for all queries being rewritten.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_a_more_complex_example"></a>A more complex example<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To demonstrate a slightly more complex query and the associated results, we can profile the following query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /test/_search
+value is cumulative and contains the total time for all queries being rewritten.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_a_more_complex_example"></a>A more complex example<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To demonstrate a slightly more complex query and the associated results, we can profile the following query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /twitter/_search
 {
   "profile": true,
   "query": {
     "term": {
-      "message": {
-        "value": "search"
+      "user": {
+        "value": "test"
       }
     }
   },
   "aggs": {
     "my_scoped_agg": {
       "terms": {
-        "field": "level"
+        "field": "likes"
       }
     },
     "my_global_agg": {
@@ -882,15 +882,15 @@ value is cumulative and contains the total time for all queries being rewritten.
       "aggs": {
         "my_level_agg": {
           "terms": {
-            "field": "level"
+            "field": "likes"
           }
         }
       }
     }
   },
   "post_filter": {
-    "term": {
-      "tag": "elastic"
+    "match": {
+      "message": "some"
     }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/_profiling_queries/1.json"></div><p>This example has:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
@@ -912,7 +912,7 @@ A post_filter
                      "query": [
                         {
                            "type": "TermQuery",
-                           "description": "my_field:foo",
+                           "description": "message:some",
                            "time_in_nanos": "409456",
                            "breakdown": {
                               "score": 0,
@@ -931,7 +931,7 @@ A post_filter
                         },
                         {
                            "type": "TermQuery",
-                           "description": "message:search",
+                           "description": "user:test",
                            "time_in_nanos": "303702",
                            "breakdown": {
                               "score": 0,
@@ -974,7 +974,7 @@ A post_filter
                                   ]
                                 },
                                 {
-                                  "name": "BucketCollector: [[org.elasticsearch.search.profile.aggregation.ProfilingAggregator@222b076, org.elasticsearch.search.profile.aggregation.ProfilingAggregator@3000ab31]]",
+                                  "name": "BucketCollector: [[my_scoped_agg, my_global_agg]]",
                                   "reason": "aggregation",
                                   "time_in_nanos": 8273
                                 }
@@ -984,15 +984,18 @@ A post_filter
                         }
                      ]
                   }
-               ]
+               ],
+               "aggregations": [...] <a id="CO44-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
             }
          ]
       }
-}</pre></div><p>As you can see, the output is significantly verbose from before.  All the major portions of the query are
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The ``"aggregations"` portion has been omitted because it will be covered in the next section
+</p></td></tr></table></div><p>As you can see, the output is significantly verbose from before.  All the major portions of the query are
 represented:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-The first <code class="literal">TermQuery</code> (message:search) represents the main <code class="literal">term</code> query
+The first <code class="literal">TermQuery</code> (user:test) represents the main <code class="literal">term</code> query
 </li><li class="listitem">
-The second <code class="literal">TermQuery</code> (my_field:foo) represents the <code class="literal">post_filter</code> query
+The second <code class="literal">TermQuery</code> (message:some) represents the <code class="literal">post_filter</code> query
 </li></ol></div><p>The Collector tree is fairly straightforward, showing how a single CancellableCollector wraps a MultiCollector
  which also wraps a FilteredCollector to execute the post_filter (and in turn wraps the normal scoring SimpleCollector),
  a BucketCollector to run all scoped aggregations.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_understanding_multitermquery_output"></a>Understanding MultiTermQuery output<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A special note needs to be made about the <code class="literal">MultiTermQuery</code> class of queries.  This includes wildcards, regex and fuzzy
@@ -1004,7 +1007,7 @@ token <code class="literal">[bakery]</code>, so query rewrites to a single TermQ
 "lineage" showing how one query rewrites into the next.  At present time, all we can do is apologize, and suggest you
 collapse the details for that query’s children if it is too confusing.  Luckily, all the timing statistics are correct,
 just not the physical layout in the response, so it is sufficient to just analyze the top-level MultiTermQuery and
-ignore it’s children if you find the details too tricky to interpret.</p><p>Hopefully this will be fixed in future iterations, but it is a tricky problem to solve and still in-progress :)</p></div></div><div class="navfooter"><span class="prev"><a href="search-profile.html">
+ignore its children if you find the details too tricky to interpret.</p><p>Hopefully this will be fixed in future iterations, but it is a tricky problem to solve and still in-progress :)</p></div></div><div class="navfooter"><span class="prev"><a href="search-profile.html">
               « 
               Profile API</a>
            
