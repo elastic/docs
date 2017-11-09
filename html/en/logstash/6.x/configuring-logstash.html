@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Dead Letter Queues
-        | Logstash Reference [6.0]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuring Monitoring for Logstash Nodes
+        | Logstash Reference [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [6.0]" /><link rel="up" href="resiliency.html" title="Data Resiliency" /><link rel="prev" href="persistent-queues.html" title="Persistent Queues" /><link rel="next" href="transformation.html" title="Transforming Data" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Logstash/Reference/6.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [6.x]" /><link rel="up" href="setup-xpack.html" title="Setting Up X-Pack" /><link rel="prev" href="configuring-centralized-pipelines.html" title="Configuring Centralized Pipeline Configuration Management" /><link rel="next" href="ls-security.html" title="Configuring Security in Logstash" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Logstash/Reference/6.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -603,146 +603,120 @@
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Logstash Reference
-      [6.0]
-    </a></span> » <span class="breadcrumb-link"><a href="resiliency.html">Data Resiliency</a></span> » <span class="breadcrumb-node">Dead Letter Queues</span></div><div class="navheader"><span class="prev"><a href="persistent-queues.html">
+      [6.x]
+    </a></span> » <span class="breadcrumb-link"><a href="setup-xpack.html">Setting Up X-Pack</a></span> » <span class="breadcrumb-node">Configuring Monitoring for Logstash Nodes</span></div><div class="navheader"><span class="prev"><a href="configuring-centralized-pipelines.html">
               « 
-              Persistent Queues</a>
+              Configuring Centralized Pipeline Configuration Management</a>
            
         </span><span class="next">
            
-          <a href="transformation.html">Transforming Data
+          <a href="ls-security.html">Configuring Security in Logstash
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="dead-letter-queues"></a>Dead Letter Queues<a href="https://github.com/elastic/logstash/edit/6.0/docs/static/dead-letter-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The dead letter queue feature is currently supported for the
-<a class="xref" href="plugins-outputs-elasticsearch.html" title="Elasticsearch output plugin">elasticsearch</a> output only. Support for additional outputs
-will be available in future releases of the Logstash plugins. Before configuring
-Logstash to use this feature, refer to the output plugin documentation to
-verify that the plugin supports the dead letter queue feature.</p></div></div><p>By default, when Logstash encounters an event that it cannot process because the
-data contains a mapping error or some other issue, the Logstash pipeline
-either hangs or drops the unsuccessful event. In order to protect against data
-loss in this situation, you can <a class="link" href="dead-letter-queues.html#configuring-dlq" title="Configuring Logstash to Use Dead Letter Queues">configure Logstash</a> to write
-unsuccessful events to a dead letter queue instead of dropping them.</p><p>Each event written to the dead letter queue includes the original event, along
-with metadata that describes the reason the event could not be processed,
-information about the plugin that wrote the event, and the timestamp for when
-the event entered the dead letter queue.</p><p>To process events in the dead letter queue, you simply create a Logstash
-pipeline configuration that uses the
-<a class="link" href="plugins-inputs-dead_letter_queue.html" title="Dead_letter_queue input plugin"><code class="literal">dead_letter_queue</code> input plugin</a> to read
-from the queue.</p><div class="informalfigure"><div class="mediaobject"><img src="static/images/dead_letter_queue.png" alt="Diagram showing pipeline reading from the dead letter queue" /></div></div><p>See <a class="xref" href="dead-letter-queues.html#processing-dlq-events" title="Processing Events in the Dead Letter Queue">Processing Events in the Dead Letter Queue</a> for more information.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="configuring-dlq"></a>Configuring Logstash to Use Dead Letter Queues<a href="https://github.com/elastic/logstash/edit/6.0/docs/static/dead-letter-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Dead letter queues are disabled by default. To enable dead letter queues, set
-the <code class="literal">dead_letter_queue_enable</code> option in the <code class="literal">logstash.yml</code>
-<a class="link" href="logstash-settings-file.html" title="Settings File">settings file</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">dead_letter_queue.enable: true</pre></div><p>Dead letter queues are stored as files in the local directory of the Logstash
-instance. By default, the dead letter queue files are stored in
-<code class="literal">path.data/dead_letter_queue</code>. Each pipeline has a separate queue. For example,
-the dead letter queue for the <code class="literal">main</code> pipeline is stored in
-<code class="literal">LOGSTASH_HOME/data/dead_letter_queue/main</code> by default. The queue files are
-numbered sequentially: <code class="literal">1.log</code>, <code class="literal">2.log</code>, and so on.</p><p>You can set <code class="literal">path.dead_letter_queue</code> in the <code class="literal">logstash.yml</code> file to
-specify a different path for the files:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">path.dead_letter_queue: "path/to/data/dead_letter_queue"</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You may not use the same <code class="literal">dead_letter_queue</code> path for two different
-Logstash instances.</p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_file_rotation"></a>File Rotation<a href="https://github.com/elastic/logstash/edit/6.0/docs/static/dead-letter-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Dead letter queues have a built-in file rotation policy that manages the file
-size of the queue. When the file size reaches a preconfigured threshold, a new
-file is created automatically.</p><p>By default, the maximum size of each dead letter queue is set to 1024mb. To
-change this setting, use the <code class="literal">dead_letter_queue.max_bytes</code> option.  Entries
-will be dropped if they would increase the size of the dead letter queue beyond
-this setting.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="processing-dlq-events"></a>Processing Events in the Dead Letter Queue<a href="https://github.com/elastic/logstash/edit/6.0/docs/static/dead-letter-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When you are ready to process events in the dead letter queue, you create a
-pipeline that uses the
-<a class="link" href="plugins-inputs-dead_letter_queue.html" title="Dead_letter_queue input plugin"><code class="literal">dead_letter_queue</code> input plugin</a> to read
-from the dead letter queue. The pipeline configuration that you use depends, of
-course, on what you need to do. For example, if the dead letter queue contains
-events that resulted from a mapping error in Elasticsearch, you can create a
-pipeline that reads the "dead" events, removes the field that caused the mapping
-issue, and re-indexes the clean events into Elasticsearch.</p><p>The following example shows a simple pipeline that reads events from the dead
-letter queue and writes the events, including metadata, to standard output:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">input {
-  dead_letter_queue {
-    path =&gt; "/path/to/data/dead_letter_queue" <a id="CO8-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    commit_offsets =&gt; true <a id="CO8-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    pipeline_id =&gt; "main" <a id="CO8-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-  }
-}
-
-output {
-  stdout {
-    codec =&gt; rubydebug { metadata =&gt; true }
-  }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The path to the top-level directory containing the dead letter queue. This
-directory contains a separate folder for each pipeline that writes to the dead
-letter queue. To find the path to this directory, look at the <code class="literal">logstash.yml</code>
-<a class="link" href="logstash-settings-file.html" title="Settings File">settings file</a>. By default, Logstash creates the
-<code class="literal">dead_letter_queue</code> directory under the location used for persistent
-storage (<code class="literal">path.data</code>), for example, <code class="literal">LOGSTASH_HOME/data/dead_letter_queue</code>.
-However, if <code class="literal">path.dead_letter_queue</code> is set, it uses that location instead.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-When <code class="literal">true</code>, saves the offset. When the pipeline restarts, it will continue
-reading from the position where it left off rather than reprocessing all the
-items in the queue. You can set <code class="literal">commit_offsets</code> to <code class="literal">false</code> when you are
-exploring events in the dead letter queue and want to iterate over the events
-multiple times.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The ID of the pipeline that’s writing to the dead letter queue. The default
-is <code class="literal">"main"</code>.
-</p></td></tr></table></div><p>For another example, see <a class="xref" href="dead-letter-queues.html#dlq-example" title="Example: Processing Data That Has Mapping Errors">Example: Processing Data That Has Mapping Errors</a>.</p><p>When the pipeline has finished processing all the events in the dead letter
-queue, it will continue to run and process new events as they stream into the
-queue. This means that you do not need to stop your production system to handle
-events in the dead letter queue.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Events emitted from the
-<a class="link" href="plugins-inputs-dead_letter_queue.html" title="Dead_letter_queue input plugin"><code class="literal">dead_letter_queue</code> input plugin</a> plugin
-will not be resubmitted to the dead letter queue if they cannot be processed
-correctly.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="dlq-timestamp"></a>Reading From a Timestamp<a href="https://github.com/elastic/logstash/edit/6.0/docs/static/dead-letter-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When you read from the dead letter queue, you might not want to process all the
-events in the queue, especially if there are a lot of old events in the queue.
-You can start processing events at a specific point in the queue by using the
-<code class="literal">start_timestamp</code> option. This option configures the pipeline to start
-processing events based on the timestamp of when they entered the queue:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">input {
-  dead_letter_queue {
-    path =&gt; "/path/to/data/dead_letter_queue"
-    start_timestamp =&gt; 2017-06-06T23:40:37
-    pipeline_id =&gt; "main"
-  }
-}</pre></div><p>For this example, the pipeline starts reading all events that were delivered to
-the dead letter queue on or after June 6, 2017, at 23:40:37.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="dlq-example"></a>Example: Processing Data That Has Mapping Errors<a href="https://github.com/elastic/logstash/edit/6.0/docs/static/dead-letter-queues.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In this example, the user attempts to index a document that includes geo_ip data,
-but the data cannot be processed because it contains a mapping error:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{"geoip":{"location":"home"}}</pre></div><p>Indexing fails because the Logstash output plugin expects a <code class="literal">geo_point</code> object in
-the <code class="literal">location</code> field, but the value is a string. The failed event is written to
-the dead letter queue, along with metadata about the error that caused the
-failure:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-   "@metadata" =&gt; {
-    "dead_letter_queue" =&gt; {
-       "entry_time" =&gt; #&lt;Java::OrgLogstash::Timestamp:0x5b5dacd5&gt;,
-        "plugin_id" =&gt; "fb80f1925088497215b8d037e622dec5819b503e-4",
-      "plugin_type" =&gt; "elasticsearch",
-           "reason" =&gt; "Could not index event to Elasticsearch. status: 400, action: [\"index\", {:_id=&gt;nil, :_index=&gt;\"logstash-2017.06.22\", :_type=&gt;\"logs\", :_routing=&gt;nil}, 2017-06-22T01:29:29.804Z Suyogs-MacBook-Pro-2.local {\"geoip\":{\"location\":\"home\"}}], response: {\"index\"=&gt;{\"_index\"=&gt;\"logstash-2017.06.22\", \"_type\"=&gt;\"logs\", \"_id\"=&gt;\"AVzNayPze1iR9yDdI2MD\", \"status\"=&gt;400, \"error\"=&gt;{\"type\"=&gt;\"mapper_parsing_exception\", \"reason\"=&gt;\"failed to parse\", \"caused_by\"=&gt;{\"type\"=&gt;\"illegal_argument_exception\", \"reason\"=&gt;\"illegal latitude value [266.30859375] for geoip.location\"}}}}"
-    }
-  },
-  "@timestamp" =&gt; 2017-06-22T01:29:29.804Z,
-    "@version" =&gt; "1",
-       "geoip" =&gt; {
-    "location" =&gt; "home"
-  },
-        "host" =&gt; "Suyogs-MacBook-Pro-2.local",
-     "message" =&gt; "{\"geoip\":{\"location\":\"home\"}}"
-}</pre></div><p>To process the failed event, you create the following pipeline that reads from
-the dead letter queue and removes the mapping problem:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">input {
-  dead_letter_queue {
-    path =&gt; "/path/to/data/dead_letter_queue/" <a id="CO9-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-  }
-}
-filter {
-  mutate {
-    remove_field =&gt; "[geoip][location]" <a id="CO9-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-  }
-}
-output {
-  elasticsearch{
-    hosts =&gt; [ "localhost:9200" ] <a id="CO9-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-  }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <a class="link" href="plugins-inputs-dead_letter_queue.html" title="Dead_letter_queue input plugin"><code class="literal">dead_letter_queue</code> input</a> reads from the dead letter queue.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">mutate</code> filter removes the problem field called <code class="literal">location</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The clean event is sent to Elasticsearch, where it can be indexed because
-the mapping issue is resolved.
-</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="persistent-queues.html">
+            </a></span></div><div class="xpack section"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-logstash"></a>Configuring Monitoring for Logstash Nodes</h2></div></div></div><p>To monitor Logstash nodes:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+<a class="link" href="installing-xpack-log.html" title="Installing X-Pack in Logstash">Install X-Pack</a> in the Logstash
+installation directory on each node you want to monitor.
+</li><li class="listitem"><p class="simpara">
+Configure your Logstash nodes to send metrics to your Elasticsearch cluster by setting
+the <code class="literal">xpack.monitoring.elasticsearch.url</code> in <code class="literal">logstash.yml</code>. If security is
+enabled, you also need to specify the credentials for the built-in
+<code class="literal">logstash_system</code> user. For more information about these settings, see
+<a class="xref" href="configuring-logstash.html#monitoring-settings" title="Monitoring Settings in Logstash">Monitoring Settings</a>.
+</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>To visualize Logstash as part of the Stack (shown below in Step 5),
+send metrics to your <span class="emphasis"><em>production</em></span> cluster.
+Sending metrics to a dedicated monitoring cluster
+will show the Logstash metrics under the <span class="emphasis"><em>monitoring</em></span> cluster.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.url:
+["http://es-prod-node-1:9200", "http://es-prod-node-2:9200"] <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+xpack.monitoring.elasticsearch.username: "logstash_system" <a id="CO3-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+xpack.monitoring.elasticsearch.password: "changeme"</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+If SSL/TLS is enabled on the production cluster, you must connect through
+HTTPS. As of v5.2.1, you can specify multiple Elasticsearch hosts as an array as well as
+specifying a single host as a string. If multiple URLs are specified, Logstash
+can round-robin requests to these production nodes.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">logstash_system</code> user is automatically added when you
+install X-Pack. Don’t forget to change the default passwords for all of the
+<a class="ulink" href="https://www.elastic.co/guide/en/x-pack/6.x/setting-up-authentication.html#built-in-users" target="_top">built in users</a>. If
+X-Pack security is disabled on the production cluster, you can omit the <code class="literal">username</code>
+and <code class="literal">password</code> for the agent.
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+If SSL/TLS is enabled on the production Elasticsearch cluster, specify the trusted
+CA certificates that will be used to verify the identity of the nodes
+in the cluster.
+</p><p class="simpara">To add a CA certificate to a Logstash node’s trusted certificates, you
+can specify the location of the PEM encoded certificate with the
+<code class="literal">ca</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.ssl.ca: [ "/path/to/ca.crt" ]</pre></div><p class="simpara">Alternatively, you can configure trusted certificates using a truststore
+(a Java Keystore file that contains the certificates):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.ssl.truststore.path: /path/to/file
+xpack.monitoring.elasticsearch.ssl.truststore.password: password</pre></div><p class="simpara">Also, optionally, you can set up client certificate using a keystore
+(a Java Keystore file that contains the certificate):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.ssl.keystore.path: /path/to/file
+xpack.monitoring.elasticsearch.ssl.keystore.password: password</pre></div><p class="simpara">Set sniffing to <code class="literal">true</code> to enable discovery of other nodes of the
+elasticsearch cluster. Defaults to <code class="literal">false</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.sniffing: false</pre></div></li><li class="listitem">
+Restart your Logstash nodes.
+</li><li class="listitem"><p class="simpara">
+To verify your X-Pack monitoring configuration, point your web browser at your Kibana
+host, and select <span class="strong strong"><strong>Monitoring</strong></span> from the side navigation. Metrics reported from
+your Logstash nodes should be visible in the Logstash section. When security is
+enabled, to view the monitoring dashboards you must log in to Kibana as a user
+who has the <code class="literal">kibana_user</code> and <code class="literal">monitoring_user</code> roles.
+</p><p class="simpara"><span class="inlinemediaobject"><img src="monitoring/images/monitoring.jpg" alt="Monitoring" /></span></p></li></ol></div><h4><a id="monitoring-upgraded-logstash"></a>Re-enabling Logstash Monitoring After Upgrading</h4><p>When upgrading from older versions of X-Pack, the built-in <code class="literal">logstash_system</code>
+user is disabled for security reasons. To resume monitoring,
+<a class="link" href="monitoring-troubleshooting.html" title="Troubleshooting X-Pack monitoring in Logstash">change the password and re-enable the logstash_system user</a>.</p><div class="xpack section"><div class="titlepage"><div><div><h3 class="title"><a id="monitoring-settings"></a>Monitoring Settings in Logstash</h3></div></div></div><p>You can set the following <code class="literal">xpack.monitoring</code> settings in <code class="literal">logstash.yml</code> to
+control how monitoring data is collected from your Logstash nodes. However, the
+defaults work best in most circumstances. For more information about configuring
+Logstash, see <a class="xref" href="logstash-settings-file.html" title="Settings File">Settings File</a>.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">xpack.monitoring.enabled</code>
+</span></dt><dd>
+Set to <code class="literal">false</code> to disable X-Pack monitoring.
+</dd><dt><span class="term">
+<code class="literal">xpack.monitoring.collection.interval</code>
+</span></dt><dd>
+Controls how often data samples are collected and shipped on the Logstash side.
+Defaults to <code class="literal">10s</code>.
+</dd><dt><span class="term">
+<code class="literal">xpack.monitoring.elasticsearch.url</code>
+</span></dt><dd>
+The Elasticsearch instances that you want to ship your Logstash metrics to. This might be
+the same Elasticsearch instance specified in the <code class="literal">outputs</code> section in your Logstash
+configuration, or a different one. This is <span class="strong strong"><strong>not</strong></span> the URL of your dedicated
+monitoring cluster. Even if you are using a dedicated monitoring cluster, the
+Logstash metrics must be routed through your production cluster. You can specify
+a single host as a string, or specify multiple hosts as an array. Defaults to
+<code class="literal">http://localhost:9200</code>.
+</dd><dt><span class="term">
+<code class="literal">xpack.monitoring.elasticsearch.username</code> and <code class="literal">xpack.monitoring.elasticsearch.password</code>
+</span></dt><dd>
+If your Elasticsearch is protected with basic authentication, these settings provide the
+username and password that the Logstash instance uses to authenticate for
+shipping monitoring data.
+</dd><dt><span class="term">
+<code class="literal">xpack.monitoring.elasticsearch.ssl.ca</code>
+</span></dt><dd>
+Optional setting that enables you to specify a path to the <code class="literal">.pem</code> file for the
+certificate authority for your Elasticsearch instance.
+</dd><dt><span class="term">
+<code class="literal">xpack.monitoring.elasticsearch.ssl.truststore.path</code>
+</span></dt><dd>
+Optional settings that provide the paths to the Java keystore (JKS) to validate
+the server’s certificate.
+</dd><dt><span class="term">
+<code class="literal">xpack.monitoring.elasticsearch.ssl.truststore.password</code>
+</span></dt><dd>
+Optional settings that provide the password to the truststore.
+</dd><dt><span class="term">
+<code class="literal">xpack.monitoring.elasticsearch.ssl.keystore.path</code>
+</span></dt><dd>
+Optional settings that provide the paths to the Java keystore (JKS) to validate
+the client’s certificate.
+</dd><dt><span class="term">
+<code class="literal">xpack.monitoring.elasticsearch.ssl.keystore.password</code>
+</span></dt><dd>
+Optional settings that provide the password to the keystore.
+</dd></dl></div></div></div><div class="navfooter"><span class="prev"><a href="configuring-centralized-pipelines.html">
               « 
-              Persistent Queues</a>
+              Configuring Centralized Pipeline Configuration Management</a>
            
         </span><span class="next">
            
-          <a href="transformation.html">Transforming Data
+          <a href="ls-security.html">Configuring Security in Logstash
                »
             </a></span></div>
 <!-- end body -->
