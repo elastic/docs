@@ -642,52 +642,7 @@ query.</p><p>If the following mapping configures the <code class="literal">perco
 }</pre></div><div class="console_widget" data-snippet="snippets/percolator/2.json"></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Fields referred to in a percolator query must <span class="strong strong"><strong>already</strong></span> exist in the mapping
 associated with the index used for percolation. In order to make sure these fields exist,
 add or update a mapping via the <a class="link" href="indices-create-index.html" title="Create Index">create index</a> or <a class="link" href="indices-put-mapping.html" title="Put Mapping">put mapping</a> APIs.
-Fields referred in a percolator query may exist in any type of the index containing the <code class="literal">percolator</code> field type.</p></div></div><h4><a id="_influencing_query_extraction"></a>Influencing query extraction<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/mapping/types/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>As part of indexing the percolator query, the percolator field mapper extracts the query terms and numeric ranges from the provided
-query and indexes that alongside the query in separate internal fields. The <code class="literal">percolate</code> query uses these internal fields
-to build a candidate query from the document being percolated in order to reduce the number of document that need to be verified.</p><p>In case a percolator query contains a <code class="literal">bool</code> query with must or filter clauses, then the percolator field mapper only has to
-extract ranges or terms from a single clause. The percolator field mapper will prefer longer terms over shorter terms, because
-longer terms in general match with less documents. For the same reason it prefers smaller ranges over bigger ranges.</p><p>In general this behaviour works well. However sometimes there are fields in a bool query that shouldn’t be taken into account
-when selecting the best must or filter clause, or fields are known to be more selective than other fields.</p><p>For example a status like field may in fact not work well, because each status matches with many percolator queries and
-then the candidate query the <code class="literal">percolate</code> query generates may not be able to filter out that many percolator queries.</p><p>The percolator field mapping allows to configure <code class="literal">boost_fields</code> in order to indicate to the percolator what fields are
-important or not important when selecting the best must or filter clause in a <code class="literal">bool</code> query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT another_index
-{
-    "mappings": {
-        "doc": {
-            "properties": {
-                "query": {
-                    "type": "percolator",
-                    "boost_fields": {
-                        "status_field": 0, <a id="CO191-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                        "price_field": 2 <a id="CO191-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                    }
-                },
-                "status_field": {
-                    "type": "keyword"
-                },
-                "price_field": {
-                    "type": "long"
-                },
-                "field": {
-                    "type": "text"
-                }
-            }
-        }
-    }
-}</pre></div><div class="console_widget" data-snippet="snippets/percolator/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO191-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-A boost of zero hints to the percolator that if there are other clauses in a conjunction query then these should be
-    preferred over this one.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO191-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Any boost higher than 1 overrides the default behaviour when it comes to selecting the best clause. The clause
-    that has the field with the highest boost will be selected from a conjunction query for extraction.
-</p></td></tr></table></div><p>The steps the percolator field mapper takes when selecting a clause from a conjunction query:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-If there are clauses that have boosted fields then the clause with highest boost field is selected.
-</li><li class="listitem">
-If there are range based clauses and term based clauses then term based clauses are picked over range based clauses
-</li><li class="listitem">
-From all term based clauses the clause with longest term is picked.
-</li><li class="listitem">
-In the case when there are only range based clauses then the range clause with smallest range is picked over clauses with wider ranges.
-</li></ul></div><h4><a id="_reindexing_your_percolator_queries"></a>Reindexing your percolator queries<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/mapping/types/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Reindexing percolator queries is sometimes required to benefit from improvements made to the <code class="literal">percolator</code> field type in
+Fields referred in a percolator query may exist in any type of the index containing the <code class="literal">percolator</code> field type.</p></div></div><h4><a id="_reindexing_your_percolator_queries"></a>Reindexing your percolator queries<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/mapping/types/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Reindexing percolator queries is sometimes required to benefit from improvements made to the <code class="literal">percolator</code> field type in
 new releases.</p><p>Reindexing percolator queries can be reindexed by using the <a class="link" href="docs-reindex.html" title="Reindex API">reindex api</a>.
 Lets take a look at the following index with a percolator field type:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT index
 {
@@ -711,7 +666,7 @@ POST _aliases
     {
       "add": {
         "index": "index",
-        "alias": "queries" <a id="CO192-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "alias": "queries" <a id="CO193-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
       }
     }
   ]
@@ -724,7 +679,7 @@ PUT queries/doc/1?refresh
       "body" : "quick brown fox"
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/percolator/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO192-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/percolator/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO193-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 It is always recommended to define an alias for your index, so that in case of a reindex systems / applications
     don’t need to be changed to know that the percolator queries are now in a different index.
 </p></td></tr></table></div><p>Lets say you’re going to upgrade to a new major version and in order for the new Elasticsearch version to still be able
@@ -756,7 +711,7 @@ POST /_reindex?refresh
 
 POST _aliases
 {
-  "actions": [ <a id="CO193-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  "actions": [ <a id="CO194-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     {
       "remove": {
         "index" : "index",
@@ -770,7 +725,7 @@ POST _aliases
       }
     }
   ]
-}</pre></div><div class="console_widget" data-snippet="snippets/percolator/5.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO193-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/percolator/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO194-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 If you have an alias don’t forget to point it to the new index.
 </p></td></tr></table></div><p>Executing the <code class="literal">percolate</code> query via the <code class="literal">queries</code> alias:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /queries/_search
 {
@@ -782,7 +737,7 @@ If you have an alias don’t forget to point it to the new index.
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/percolator/6.json"></div><p>now returns matches from the new index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/percolator/5.json"></div><p>now returns matches from the new index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "took": 3,
   "timed_out": false,
   "_shards": {
@@ -796,7 +751,7 @@ If you have an alias don’t forget to point it to the new index.
     "max_score": 0.2876821,
     "hits": [
       {
-        "_index": "new_index", <a id="CO194-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "_index": "new_index", <a id="CO195-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         "_type": "doc",
         "_id": "1",
         "_score": 0.2876821,
@@ -813,7 +768,7 @@ If you have an alias don’t forget to point it to the new index.
       }
     ]
   }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO194-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO195-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Percolator query hit is now being presented from the new index.
 </p></td></tr></table></div><h4><a id="_optimizing_query_time_text_analysis"></a>Optimizing query time text analysis<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/mapping/types/percolator.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When the percolator verifies a percolator candidate match it is going to parse, perform query time text analysis and actually run
 the percolator query on the document being percolated. This is done for each candidate match and every time the <code class="literal">percolate</code> query executes.
@@ -854,18 +809,18 @@ Using this approach the expensive text analysis is performed once instead of man
         },
         "body" : {
           "type": "text",
-          "analyzer": "my_analyzer" <a id="CO195-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "analyzer": "my_analyzer" <a id="CO196-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         }
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/percolator/7.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO195-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/percolator/6.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO196-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 For the purpose of this example, this analyzer is considered expensive.
 </p></td></tr></table></div><p>First we need to use the analyze api to perform the text analysis prior to indexing:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /test_index/_analyze
 {
   "analyzer" : "my_analyzer",
   "text" : "missing bicycles"
-}</pre></div><div class="console_widget" data-snippet="snippets/percolator/8.json"></div><p>This results the following response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/percolator/7.json"></div><p>This results the following response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "tokens": [
     {
       "token": "miss",
@@ -888,11 +843,11 @@ For the purpose of this example, this analyzer is considered expensive.
     "match" : {
       "body" : {
         "query" : "miss bicycl",
-        "analyzer" : "whitespace" <a id="CO196-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "analyzer" : "whitespace" <a id="CO197-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/percolator/9.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO196-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/percolator/8.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO197-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 It is important to select a whitespace analyzer here, otherwise the analyzer defined in the mapping will be used,
 which defeats the point of using this workflow. Note that <code class="literal">whitespace</code> is a built-in analyzer, if a different analyzer
 needs to be used, it needs to be configured first in the index’s settings.
@@ -906,7 +861,7 @@ needs to be used, it needs to be configured first in the index’s settings.
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/percolator/10.json"></div><p>This results in a response like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/percolator/9.json"></div><p>This results in a response like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "took": 6,
   "timed_out": false,
   "_shards": {
