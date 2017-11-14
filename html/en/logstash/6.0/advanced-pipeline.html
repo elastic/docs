@@ -672,18 +672,20 @@ output {
 every time you modify the configuration file.</p><p>As Logstash starts up, you might see one or more warning messages about Logstash ignoring the <code class="literal">pipelines.yml</code> file. You
 can safely ignore this warning. The <code class="literal">pipelines.yml</code> file is used for running <a class="link" href="multiple-pipelines.html" title="Multiple Pipelines">multiple pipelines</a>
 in a single Logstash instance. For the examples shown here, you are running a single pipeline.</p><p>If your pipeline is working correctly, you should see a series of events like the following written to the console:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-    "@timestamp" =&gt; 2016-10-11T20:54:06.733Z,
+    "@timestamp" =&gt; 2017-11-09T01:44:20.071Z,
         "offset" =&gt; 325,
       "@version" =&gt; "1",
           "beat" =&gt; {
+            "name" =&gt; "My-MacBook-Pro.local",
         "hostname" =&gt; "My-MacBook-Pro.local",
-            "name" =&gt; "My-MacBook-Pro.local"
+         "version" =&gt; "6.0.0"
     },
-    "type" =&gt; "log",
           "host" =&gt; "My-MacBook-Pro.local",
+    "prospector" =&gt; {
+        "type" =&gt; "log"
+    },
         "source" =&gt; "/path/to/file/logstash-tutorial.log",
        "message" =&gt; "83.149.9.216 - - [04/Jan/2015:05:13:42 +0000] \"GET /presentations/logstash-monitorama-2013/images/kibana-search.png HTTP/1.1\" 200 203023 \"http://semicomplete.com/presentations/logstash-monitorama-2013/\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36\"",
-          "type" =&gt; "log",
           "tags" =&gt; [
         [0] "beats_input_codec_plain_applied"
     ]
@@ -821,23 +823,25 @@ config file.</p><p>After Logstash applies the grok pattern, the events will have
          "offset" =&gt; 325,
            "auth" =&gt; "-",
           "ident" =&gt; "-",
-     "type" =&gt; "log",
            "verb" =&gt; "GET",
+     "prospector" =&gt; {
+        "type" =&gt; "log"
+    },
          "source" =&gt; "/path/to/file/logstash-tutorial.log",
         "message" =&gt; "83.149.9.216 - - [04/Jan/2015:05:13:42 +0000] \"GET /presentations/logstash-monitorama-2013/images/kibana-search.png HTTP/1.1\" 200 203023 \"http://semicomplete.com/presentations/logstash-monitorama-2013/\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36\"",
-           "type" =&gt; "log",
            "tags" =&gt; [
         [0] "beats_input_codec_plain_applied"
     ],
        "referrer" =&gt; "\"http://semicomplete.com/presentations/logstash-monitorama-2013/\"",
-     "@timestamp" =&gt; 2016-10-11T21:04:36.167Z,
+     "@timestamp" =&gt; 2017-11-09T02:51:12.416Z,
        "response" =&gt; "200",
           "bytes" =&gt; "203023",
        "clientip" =&gt; "83.149.9.216",
        "@version" =&gt; "1",
            "beat" =&gt; {
+            "name" =&gt; "My-MacBook-Pro.local",
         "hostname" =&gt; "My-MacBook-Pro.local",
-            "name" =&gt; "My-MacBook-Pro.local"
+         "version" =&gt; "6.0.0"
     },
            "host" =&gt; "My-MacBook-Pro.local",
     "httpversion" =&gt; "1.1",
@@ -870,21 +874,20 @@ delete the registry file, and then restart Filebeat with the following command:<
           "geoip" =&gt; {
               "timezone" =&gt; "Europe/Moscow",
                     "ip" =&gt; "83.149.9.216",
-              "latitude" =&gt; 55.7522,
+              "latitude" =&gt; 55.7485,
         "continent_code" =&gt; "EU",
              "city_name" =&gt; "Moscow",
-         "country_code2" =&gt; "RU",
           "country_name" =&gt; "Russia",
-              "dma_code" =&gt; nil,
+         "country_code2" =&gt; "RU",
          "country_code3" =&gt; "RU",
            "region_name" =&gt; "Moscow",
-              "location" =&gt; [
-            [0] 37.6156,
-            [1] 55.7522
-        ],
+              "location" =&gt; {
+            "lon" =&gt; 37.6184,
+            "lat" =&gt; 55.7485
+        },
            "postal_code" =&gt; "101194",
-             "longitude" =&gt; 37.6156,
-           "region_code" =&gt; "MOW"
+           "region_code" =&gt; "MOW",
+             "longitude" =&gt; 37.6184
     },
     ...</pre></div><h4><a id="indexing-parsed-data-into-elasticsearch"></a>Indexing Your Data into Elasticsearch<a href="https://github.com/elastic/logstash/edit/6.0/docs/static/advanced-pipeline.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Now that the web logs are broken down into specific fields, the Logstash pipeline can index the data into an
 Elasticsearch cluster. Edit the <code class="literal">first-pipeline.conf</code> file and replace the entire <code class="literal">output</code> section with the following
@@ -918,135 +921,139 @@ Elasticsearch cluster, you can query Elasticsearch.</p><p>Try a test query to El
 Replace $DATE with the current date, in YYYY.MM.DD format:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/logstash-$DATE/_search?pretty&amp;q=response=200'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The date used in the index name is based on UTC, not the timezone where Logstash is running.
 If the query returns <code class="literal">index_not_found_exception</code>, make sure that <code class="literal">logstash-$DATE</code> reflects the actual
 name of the index. To see a list of available indexes, use this query: <code class="literal">curl 'localhost:9200/_cat/indices?v'</code>.</p></div></div><p>You should get multiple hits back. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-  "took" : 21,
-  "timed_out" : false,
-  "_shards" : {
-    "total" : 5,
-    "successful" : 5,
-    "failed" : 0
+  "took": 50,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
   },
-  "hits" : {
-    "total" : 98,
-    "max_score" : 3.745223,
-    "hits" : [
+  "hits": {
+    "total": 98,
+    "max_score": 2.793642,
+    "hits": [
       {
-        "_index" : "logstash-2016.10.11",
-        "_type" : "log",
-        "_id" : "AVe14gMiYMkU36o_eVsA",
-        "_score" : 3.745223,
-        "_source" : {
-          "request" : "/presentations/logstash-monitorama-2013/images/frontend-response-codes.png",
-          "agent" : "\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36\"",
-          "geoip" : {
-            "timezone" : "Europe/Moscow",
-            "ip" : "83.149.9.216",
-            "latitude" : 55.7522,
-            "continent_code" : "EU",
-            "city_name" : "Moscow",
-            "country_code2" : "RU",
-            "country_name" : "Russia",
-            "dma_code" : null,
-            "country_code3" : "RU",
-            "region_name" : "Moscow",
-            "location" : [
-              37.6156,
-              55.7522
-            ],
-            "postal_code" : "101194",
-            "longitude" : 37.6156,
-            "region_code" : "MOW"
+        "_index": "logstash-2017.11.09",
+        "_type": "doc",
+        "_id": "3IzDnl8BW52sR0fx5wdV",
+        "_score": 2.793642,
+        "_source": {
+          "request": "/presentations/logstash-monitorama-2013/images/frontend-response-codes.png",
+          "agent": """"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36"""",
+          "geoip": {
+            "timezone": "Europe/Moscow",
+            "ip": "83.149.9.216",
+            "latitude": 55.7485,
+            "continent_code": "EU",
+            "city_name": "Moscow",
+            "country_name": "Russia",
+            "country_code2": "RU",
+            "country_code3": "RU",
+            "region_name": "Moscow",
+            "location": {
+              "lon": 37.6184,
+              "lat": 55.7485
+            },
+            "postal_code": "101194",
+            "region_code": "MOW",
+            "longitude": 37.6184
           },
-          "offset" : 2932,
-          "auth" : "-",
-          "ident" : "-",
-          "type" : "log",
-          "verb" : "GET",
-          "source" : "/path/to/file/logstash-tutorial.log",
-          "message" : "83.149.9.216 - - [04/Jan/2015:05:13:45 +0000] \"GET /presentations/logstash-monitorama-2013/images/frontend-response-codes.png HTTP/1.1\" 200 52878 \"http://semicomplete.com/presentations/logstash-monitorama-2013/\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36\"",
-          "type" : "log",
-          "tags" : [
+          "offset": 2932,
+          "auth": "-",
+          "ident": "-",
+          "verb": "GET",
+          "prospector": {
+            "type": "log"
+          },
+          "source": "/path/to/file/logstash-tutorial.log",
+          "message": """83.149.9.216 - - [04/Jan/2015:05:13:45 +0000] "GET /presentations/logstash-monitorama-2013/images/frontend-response-codes.png HTTP/1.1" 200 52878 "http://semicomplete.com/presentations/logstash-monitorama-2013/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36"""",
+          "tags": [
             "beats_input_codec_plain_applied"
           ],
-          "referrer" : "\"http://semicomplete.com/presentations/logstash-monitorama-2013/\"",
-          "@timestamp" : "2016-10-11T22:34:25.317Z",
-          "response" : "200",
-          "bytes" : "52878",
-          "clientip" : "83.149.9.216",
-          "@version" : "1",
-          "beat" : {
-            "hostname" : "My-MacBook-Pro.local",
-            "name" : "My-MacBook-Pro.local"
+          "referrer": """"http://semicomplete.com/presentations/logstash-monitorama-2013/"""",
+          "@timestamp": "2017-11-09T03:11:35.304Z",
+          "response": "200",
+          "bytes": "52878",
+          "clientip": "83.149.9.216",
+          "@version": "1",
+          "beat": {
+            "name": "My-MacBook-Pro.local",
+            "hostname": "My-MacBook-Pro.local",
+            "version": "6.0.0"
           },
-          "host" : "My-MacBook-Pro.local",
-          "httpversion" : "1.1",
-          "timestamp" : "04/Jan/2015:05:13:45 +0000"
+          "host": "My-MacBook-Pro.local",
+          "httpversion": "1.1",
+          "timestamp": "04/Jan/2015:05:13:45 +0000"
         }
-      }
-    },
+      },
     ...</pre></div><p>Try another search for the geographic information derived from the IP address.
 Replace $DATE with the current date, in YYYY.MM.DD format:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -XGET 'localhost:9200/logstash-$DATE/_search?pretty&amp;q=geoip.city_name=Buffalo'</pre></div><p>A few log entries come from Buffalo, so the query produces the following response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-  "took" : 3,
-  "timed_out" : false,
-  "_shards" : {
-    "total" : 5,
-    "successful" : 5,
-    "failed" : 0
+  "took": 9,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
   },
-  "hits" : {
-    "total" : 3,
-    "max_score" : 2.6390574,
-    "hits" : [
+  "hits": {
+    "total": 2,
+    "max_score": 2.6390574,
+    "hits": [
       {
-        "_index" : "logstash-2016.10.11",
-        "_type" : "log",
-        "_id" : "AVe14gMjYMkU36o_eVtO",
-        "_score" : 2.6390574,
-        "_source" : {
-          "request" : "/?flav=rss20",
-          "agent" : "\"-\"",
-          "geoip" : {
-            "timezone" : "America/New_York",
-            "ip" : "108.174.55.234",
-            "latitude" : 42.9864,
-            "continent_code" : "NA",
-            "city_name" : "Buffalo",
-            "country_code2" : "US",
-            "country_name" : "United States",
-            "dma_code" : 514,
-            "country_code3" : "US",
-            "region_name" : "New York",
-            "location" : [
-              -78.7279,
-              42.9864
-            ],
-            "postal_code" : "14221",
-            "longitude" : -78.7279,
-            "region_code" : "NY"
+        "_index": "logstash-2017.11.09",
+        "_type": "doc",
+        "_id": "L4zDnl8BW52sR0fx5whY",
+        "_score": 2.6390574,
+        "_source": {
+          "request": "/blog/geekery/disabling-battery-in-ubuntu-vms.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+semicomplete%2Fmain+%28semicomplete.com+-+Jordan+Sissel%29",
+          "agent": """"Tiny Tiny RSS/1.11 (http://tt-rss.org/)"""",
+          "geoip": {
+            "timezone": "America/New_York",
+            "ip": "198.46.149.143",
+            "latitude": 42.8864,
+            "continent_code": "NA",
+            "city_name": "Buffalo",
+            "country_name": "United States",
+            "country_code2": "US",
+            "dma_code": 514,
+            "country_code3": "US",
+            "region_name": "New York",
+            "location": {
+              "lon": -78.8781,
+              "lat": 42.8864
+            },
+            "postal_code": "14202",
+            "region_code": "NY",
+            "longitude": -78.8781
           },
-          "offset" : 21471,
-          "auth" : "-",
-          "ident" : "-",
-          "type" : "log",
-          "verb" : "GET",
-          "source" : "/path/to/file/logstash-tutorial.log",
-          "message" : "108.174.55.234 - - [04/Jan/2015:05:27:45 +0000] \"GET /?flav=rss20 HTTP/1.1\" 200 29941 \"-\" \"-\"",
-          "type" : "log",
-          "tags" : [
+          "offset": 22795,
+          "auth": "-",
+          "ident": "-",
+          "verb": "GET",
+          "prospector": {
+            "type": "log"
+          },
+          "source": "/path/to/file/logstash-tutorial.log",
+          "message": """198.46.149.143 - - [04/Jan/2015:05:29:13 +0000] "GET /blog/geekery/disabling-battery-in-ubuntu-vms.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+semicomplete%2Fmain+%28semicomplete.com+-+Jordan+Sissel%29 HTTP/1.1" 200 9316 "-" "Tiny Tiny RSS/1.11 (http://tt-rss.org/)"""",
+          "tags": [
             "beats_input_codec_plain_applied"
           ],
-          "referrer" : "\"-\"",
-          "@timestamp" : "2016-10-11T22:34:25.318Z",
-          "response" : "200",
-          "bytes" : "29941",
-          "clientip" : "108.174.55.234",
-          "@version" : "1",
-          "beat" : {
-            "hostname" : "My-MacBook-Pro.local",
-            "name" : "My-MacBook-Pro.local"
+          "referrer": """"-"""",
+          "@timestamp": "2017-11-09T03:11:35.321Z",
+          "response": "200",
+          "bytes": "9316",
+          "clientip": "198.46.149.143",
+          "@version": "1",
+          "beat": {
+            "name": "My-MacBook-Pro.local",
+            "hostname": "My-MacBook-Pro.local",
+            "version": "6.0.0"
           },
-          "host" : "My-MacBook-Pro.local",
-          "httpversion" : "1.1",
-          "timestamp" : "04/Jan/2015:05:27:45 +0000"
+          "host": "My-MacBook-Pro.local",
+          "httpversion": "1.1",
+          "timestamp": "04/Jan/2015:05:29:13 +0000"
         }
       },
      ...</pre></div><p>If you are using Kibana to visualize your data, you can also explore the Filebeat data in Kibana:</p><div class="informalfigure"><div class="mediaobject"><img src="static/images/kibana-filebeat-data.png" alt="Discovering Filebeat data in Kibana" /></div></div><p>See the <a class="ulink" href="https://www.elastic.co/guide/en/beats/filebeat/6.0/filebeat-getting-started.html" target="_top">Filebeat getting started docs</a> for info about loading the Kibana
