@@ -881,6 +881,45 @@ GET _nodes/stats/indices/fielddata?human&amp;fields=my_join_field#question</pre>
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/parent-join/9.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO206-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 <code class="literal">question</code> is parent of <code class="literal">answer</code> and <code class="literal">comment</code>.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multiple_levels_of_parent_join"></a>Multiple levels of parent join<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/mapping/types/parent-join.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Using multiple levels of relations to replicate a relational model is not recommended.
+Each level of relation adds an overhead at query time in terms of memory and computation.
+You should de-normalize your data if you care about performance.</p></div></div><p>Multiple levels of parent/child:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "my_join_field": {
+          "type": "join",
+          "relations": {
+            "question": ["answer", "comment"],  <a id="CO207-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "answer": "vote" <a id="CO207-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/parent-join/10.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO207-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">question</code> is parent of <code class="literal">answer</code> and <code class="literal">comment</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO207-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">answer</code> is parent of <code class="literal">vote</code>
+</p></td></tr></table></div><p>The mapping above represents the following tree:</p><pre class="literallayout">   question
+    /    \
+   /      \
+comment  answer
+           |
+           |
+          vote</pre><p>Indexing a grand child document requires a <code class="literal">routing</code> value equals
+to the grand-parent (the greater parent of the lineage):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/doc/3?routing=1&amp;refresh <a id="CO208-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+{
+  "text": "This is a vote",
+  "my_join_field": {
+    "name": "vote",
+    "parent": "2" <a id="CO208-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/parent-join/11.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO208-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This child document must be on the same shard than its grand-parent and parent
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO208-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The parent id of this document (must points to an <code class="literal">answer</code> document)
 </p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="percolator.html">
               « 
               Percolator type</a>
