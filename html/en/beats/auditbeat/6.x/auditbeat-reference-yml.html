@@ -601,10 +601,10 @@
 				
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
-<div class="page_header">This functionality is in beta and is subject to change. The design and
-code is considered to be less mature than official GA features. Elastic will
-take a best effort approach to fix any issues, but beta features are not
-subject to the support SLA of official GA features.
+<div class="page_header">This functionality is experimental and may be changed or removed completely in a
+future release. Elastic will take a best effort approach to fix any issues, but
+experimental features are not subject to the support SLA of official GA
+features.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Auditbeat Reference
       [6.x]
     </a></span> » <span class="breadcrumb-link"><a href="configuring-howto-auditbeat.html">Configuring Auditbeat</a></span> » <span class="breadcrumb-node">auditbeat.reference.yml</span></div><div class="navheader"><span class="prev"><a href="yaml-tips.html">
@@ -661,10 +661,30 @@ auditbeat.modules:
   kernel.include_raw_message: false
   kernel.include_warnings: false
   kernel.audit_rules: |
-    # Define audit rules here.
-    # Create file watches (-w) or syscall audits (-a or -A). For example:
+    ## Define audit rules here.
+    ## Create file watches (-w) or syscall audits (-a or -A). Uncomment these
+    ## examples or add your own rules.
+
+    ## If you are on a 64 bit platform, everything should be running
+    ## in 64 bit mode. This rule will detect any use of the 32 bit syscalls
+    ## because this might be a sign of someone exploiting a hole in the 32
+    ## bit API.
+    #-a always,exit -F arch=b32 -S all -F key=32bit-abi
+
+    ## Executions.
+    #-a always,exit -F arch=b64 -S execve,execveat -k exec
+
+    ## External access.
+    #-a always,exit -F arch=b64 -S accept,bind,connect,recvfrom -F key=external-access
+
+    ## Identity changes.
+    #-w /etc/group -p wa -k identity
     #-w /etc/passwd -p wa -k identity
-    #-a always,exit -F arch=b32 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EPERM -k access
+    #-w /etc/gshadow -p wa -k identity
+
+    ## Unauthorized access attempts.
+    #-a always,exit -F arch=b64 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EACCES -k access
+    #-a always,exit -F arch=b64 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EPERM -k access
 
 # The file integrity metricset sends events when files are changed (created,
 # updated, deleted). The events contain file metadata and hashes.
