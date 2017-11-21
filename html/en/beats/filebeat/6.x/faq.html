@@ -642,7 +642,16 @@ config file. Setting <code class="literal">scan_frequency</code> to less than 1s
 you might need to refresh the index to make the fields available in Kibana. To refresh
 the index, use the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/indices-refresh.html" target="_top">refresh API</a>. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -XPOST 'http://localhost:9200/filebeat-2016.08.09/_refresh'</pre></div><h3><a id="newline-character-required-eof"></a>Filebeat isn’t shipping the last line of a file?<a href="https://github.com/elastic/beats/edit/6.x/filebeat/docs/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Filebeat uses a newline character to detect the end of an event. If lines are added incrementally to a file that’s being
 harvested, a newline character is required after the last line, or Filebeat will not read the last line of
-the file.</p><h3><a id="bandwidth-throttling"></a>Need to limit bandwidth used by Filebeat?<a href="https://github.com/elastic/beats/edit/6.x/libbeat/docs/faq-limit-bandwidth.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you need to limit bandwidth usage, we recommend that you configure the network stack on your OS to perform
+the file.</p><h3><a id="faq-deleted-files-are-not-freed"></a>Filebeat keeps open file handlers of deleted files for a long time?<a href="https://github.com/elastic/beats/edit/6.x/filebeat/docs/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In the default behaviour, Filebeat opens the files and keeps them open until it
+reaches the end of them.  In situations when the configured output is blocked
+(e.g. Elasticsearch or Logstash is unavailable) for a long time, this can cause
+Filebeat to keep file handlers to files that were deleted from the file system
+in the mean time. As long as Filebeat keeps the deleted files open, the
+operating system doesn’t free up the space on disk, which can lead to increase
+disk utilisation or even out of disk situations.</p><p>To mitigate this issue, you can set the <a class="xref" href="configuration-filebeat-options.html#close-timeout" title="close_timeoutedit"><code class="literal">close_timeout</code><a href="https://github.com/elastic/beats/edit/6.x/filebeat/docs/filebeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a> setting to <code class="literal">5m</code>. This
+will ensure every file handler is closed once every 5 minutes, regardless of
+whether it reached EOF or not. Note that this option can lead to data loss if the
+file is deleted before Filebeat reaches the end of the file.</p><h3><a id="bandwidth-throttling"></a>Need to limit bandwidth used by Filebeat?<a href="https://github.com/elastic/beats/edit/6.x/libbeat/docs/faq-limit-bandwidth.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you need to limit bandwidth usage, we recommend that you configure the network stack on your OS to perform
 bandwidth throttling.</p><p>For example, the following Linux commands cap the connection between Filebeat and Logstash by setting a
 limit of 50 kbps on TCP connections over port 5044:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">tc qdisc add dev $DEV root handle 1: htb
 tc class add dev $DEV parent 1:1 classid 1:10 htb rate 50kbps ceil 50kbps
