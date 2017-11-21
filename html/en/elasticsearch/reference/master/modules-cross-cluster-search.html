@@ -655,6 +655,11 @@ following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint la
           "seeds": [
             "127.0.0.1:9301"
           ]
+        },
+        "cluster_three": {
+          "seeds": [
+            "127.0.0.1:9302"
+          ]
         }
       }
     }
@@ -664,66 +669,175 @@ following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint la
   "persistent": {
     "search": {
       "remote": {
-        "cluster_one": {
+        "cluster_three": {
           "seeds": null <a id="CO318-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         }
       }
     }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/modules-cross-cluster-search/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO318-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-<code class="literal">cluster_one</code> would be removed from the cluster settings, leaving <code class="literal">cluster_two</code> intact.
-</p></td></tr></table></div><h3><a id="_using_cross_cluster_search"></a>Using cross cluster search<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cross-cluster-search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To search the <code class="literal">twitter</code> index on remote cluster <code class="literal">cluster_1</code> the index name must be prefixed with the cluster alias
-separated by a <code class="literal">:</code> character:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /cluster_one:twitter/tweet/_search
+<code class="literal">cluster_three</code> would be removed from the cluster settings, leaving <code class="literal">cluster_one</code> and <code class="literal">cluster_two</code> intact.
+</p></td></tr></table></div><h3><a id="_using_cross_cluster_search"></a>Using cross cluster search<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cross-cluster-search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To search the <code class="literal">twitter</code> index on remote cluster <code class="literal">cluster_one</code> the index name
+must be prefixed with the cluster alias separated by a <code class="literal">:</code> character:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /cluster_one:twitter/tweet/_search
 {
   "query": {
-    "match_all": {}
+    "match": {
+      "user": "kimchy"
+    }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-cross-cluster-search/3.json"></div><p>In contrast to the <code class="literal">tribe</code> feature cross cluster search can also search indices with the same name on different
-clusters:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /cluster_one:twitter,twitter/tweet/_search
+}</pre></div><div class="console_widget" data-snippet="snippets/modules-cross-cluster-search/3.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "took": 150,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "_clusters": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0
+  },
+  "hits": {
+    "total": 1,
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "cluster_one:twitter",
+        "_type": "tweet",
+        "_id": "0",
+        "_score": 1,
+        "_source": {
+          "user": "kimchy",
+          "date": "2009-11-15T14:12:12",
+          "message": "trying out Elasticsearch",
+          "likes": 0
+        }
+      }
+    ]
+  }
+}</pre></div><p>In contrast to the <code class="literal">tribe</code> feature cross cluster search can also search indices with the same name on different
+clusters:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /cluster_one:twitter,twitter/tweet/_search
 {
   "query": {
-    "match_all": {}
+    "match": {
+      "user": "kimchy"
+    }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/modules-cross-cluster-search/4.json"></div><p>Search results are disambiguated the same way as the indices are disambiguated in the request. Even if index names are
 identical these indices will be treated as different indices when results are merged. All results retrieved from a
 remote index
 will be prefixed with their remote cluster name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "took" : 89,
-  "timed_out" : false,
-  "_shards" : {
-    "total" : 10,
-    "successful" : 10,
-    "failed" : 0
+  "took": 150,
+  "timed_out": false,
+  "_shards": {
+    "total": 2,
+    "successful": 2,
+    "failed": 0,
+    "skipped": 0
   },
-  "hits" : {
-    "total" : 2,
-    "max_score" : 1.0,
-    "hits" : [
+  "_clusters": {
+    "total": 2,
+    "successful": 2,
+    "skipped": 0
+  },
+  "hits": {
+    "total": 2,
+    "max_score": 1,
+    "hits": [
       {
-        "_index" : "cluster_one:twitter",
-        "_type" : "tweet",
-        "_id" : "1",
-        "_score" : 1.0,
-        "_source" : {
-          "user" : "kimchy",
-          "postDate" : "2009-11-15T14:12:12",
-          "message" : "trying out Elasticsearch"
+        "_index": "cluster_one:twitter",
+        "_type": "tweet",
+        "_id": "0",
+        "_score": 1,
+        "_source": {
+          "user": "kimchy",
+          "date": "2009-11-15T14:12:12",
+          "message": "trying out Elasticsearch",
+          "likes": 0
         }
       },
       {
-        "_index" : "twitter",
-        "_type" : "tweet",
-        "_id" : "1",
-        "_score" : 1.0,
-        "_source" : {
-          "user" : "kimchy",
-          "postDate" : "2009-11-15T14:12:12",
-          "message" : "trying out Elasticsearch"
+        "_index": "twitter",
+        "_type": "tweet",
+        "_id": "0",
+        "_score": 2,
+        "_source": {
+          "user": "kimchy",
+          "date": "2009-11-15T14:12:12",
+          "message": "trying out Elasticsearch",
+          "likes": 0
         }
       }
     ]
   }
-}</pre></div><h3><a id="cross-cluster-search-settings"></a>Cross cluster search settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cross-cluster-search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+}</pre></div><h3><a id="_skipping_disconnected_clusters"></a>Skipping disconnected clusters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cross-cluster-search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default all remote clusters that are searched via Cross Cluster Search need to be available when
+the search request is executed, otherwise the whole request fails and no search results are returned
+despite some of the clusters are available. Remote clusters can be made optional through the
+boolean <code class="literal">skip_unavailable</code> setting, set to <code class="literal">false</code> by default.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
+{
+  "persistent": {
+    "search.remote.cluster_two.skip_unavailable": true <a id="CO319-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/modules-cross-cluster-search/5.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO319-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">cluster_two</code> is made optional
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /cluster_one:twitter,cluster_two:twitter,twitter/tweet/_search <a id="CO320-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+{
+  "query": {
+    "match": {
+      "user": "kimchy"
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/modules-cross-cluster-search/6.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO320-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Search against the <code class="literal">twitter</code> index in <code class="literal">cluster_one</code>, <code class="literal">cluster_two</code> and also locally
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "took": 150,
+  "timed_out": false,
+  "_shards": {
+    "total": 2,
+    "successful": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "_clusters": { <a id="CO321-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "total": 3,
+    "successful": 2,
+    "skipped": 1
+  },
+  "hits": {
+    "total": 2,
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "cluster_one:twitter",
+        "_type": "tweet",
+        "_id": "0",
+        "_score": 1,
+        "_source": {
+          "user": "kimchy",
+          "date": "2009-11-15T14:12:12",
+          "message": "trying out Elasticsearch",
+          "likes": 0
+        }
+      },
+      {
+        "_index": "twitter",
+        "_type": "tweet",
+        "_id": "0",
+        "_score": 2,
+        "_source": {
+          "user": "kimchy",
+          "date": "2009-11-15T14:12:12",
+          "message": "trying out Elasticsearch",
+          "likes": 0
+        }
+      }
+    ]
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO321-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">clusters</code> section indicates that one cluster was unavailable and got skipped
+</p></td></tr></table></div><h3><a id="cross-cluster-search-settings"></a>Cross cluster search settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cross-cluster-search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">search.remote.connections_per_cluster</code>
 </span></dt><dd>
   The number of nodes to connect to per remote cluster. The default is <code class="literal">3</code>.
@@ -746,6 +860,14 @@ will be prefixed with their remote cluster name:</p><div class="pre_wrapper"><pr
   to <code class="literal">false</code> (defaults to <code class="literal">true</code>) to prevent certain nodes from connecting to
   remote clusters. Cross-cluster search requests must be sent to a node that
   is allowed to act as a cross-cluster client.
+</dd><dt><span class="term">
+<code class="literal">search.remote.${cluster_alias}.skip_unavailable</code>
+</span></dt><dd>
+  Per cluster boolean setting that allows to skip specific clusters when no
+  nodes belonging to them are available and they are searched as part of a
+  cross cluster search request. Default is <code class="literal">false</code>, meaning that all clusters
+  are mandatory by default, but they can selectively be made optional by
+  setting this setting to <code class="literal">true</code>.
 </dd></dl></div><h3><a id="retrieve-remote-clusters-info"></a>Retrieving remote clusters info<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cross-cluster-search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <a class="link" href="cluster-remote-info.html" title="Remote Cluster Info">Remote Cluster Info API</a> allows to retrieve
 information about the configured remote clusters, as well as the remote
 nodes that the Cross Cluster Search node is connected to.</p></div><div class="navfooter"><span class="prev"><a href="modules-tribe.html">
