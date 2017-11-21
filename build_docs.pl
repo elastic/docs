@@ -51,7 +51,7 @@ GetOptions(
     $Opts,    #
     'all', 'push', 'update!',    #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
-    'open',    'skiplinkcheck', 'staging', 'procs=i',         'user=s', 'lang=s',
+    'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@'
 ) || exit usage();
 
@@ -180,16 +180,22 @@ sub build_all {
         or die "Missing <contents> configuration section";
 
     my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide' );
-    build_entries( $build_dir, $temp_dir, $toc, @$contents );
-    $temp_dir->rmtree;
 
-    say "Writing main TOC";
-    $toc->write( $build_dir, 0 );
+    if ( $Opts->{linkcheckonly} ){
+      say "Skipping documentation builds."
+    }
+    else {
+      build_entries( $build_dir, $temp_dir, $toc, @$contents );
+      $temp_dir->rmtree;
 
-    say "Writing extra HTML redirects";
-    for ( @{ $Conf->{redirects} } ) {
+      say "Writing main TOC";
+      $toc->write( $build_dir, 0 );
+
+      say "Writing extra HTML redirects";
+      for ( @{ $Conf->{redirects} } ) {
         write_html_redirect( $build_dir->subdir( $_->{prefix} ),
             $_->{redirect} );
+      }
     }
     if ( $Opts->{skiplinkcheck} ) {
       say "Skipped Checking links";
@@ -383,13 +389,17 @@ sub init_repos {
         );
         delete $child_dirs{ $repo->git_dir->absolute };
 
-        $pm->start($name) and next;
-        eval {
+        if ( $Opts->{linkcheckonly} ){
+          say "Skipping fetching repo $name."
+        }
+        else {
+          $pm->start($name) and next;
+          eval {
             $repo->update_from_remote();
             1;
-        } or do {
+          } or do {
 
-        # If creds are invalid, explcitily reject them to try to clear the cache
+          # If creds are invalid, explcitily reject them to try to clear the cache
             my $error = $@;
             if ( $error =~ /Invalid username or password/ ) {
                 revoke_github_creds();
@@ -397,6 +407,7 @@ sub init_repos {
             die $error;
         };
         $pm->finish;
+      }
     }
     $pm->wait_all_children;
 
@@ -629,6 +640,7 @@ sub usage {
           --lang            Defaults to 'en'
           --resource        Path to image dir - may be repeated
           --skiplinkcheck     Omit the step that checks for broken links
+          --linkcheckonly   Skips the documentation builds. Checks links only.
 
         WARNING: Anything in the `out` dir will be deleted!
 
