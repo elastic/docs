@@ -193,17 +193,13 @@ sub build_all {
     }
     if ( $Opts->{nolinkcheck} ) {
       say "Skipped Checking links";
-
-      push_changes($build_dir)
-      if $Opts->{push};
       }
      else {
        say "Checking links";
        check_links($build_dir);
-
-       push_changes($build_dir)
-           if $Opts->{push};
          }
+     push_changes($build_dir)
+     if $Opts->{push};
 }
 
 #===================================
