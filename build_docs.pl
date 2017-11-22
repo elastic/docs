@@ -51,7 +51,7 @@ GetOptions(
     $Opts,    #
     'all', 'push', 'update!',    #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
-    'open',    'nolinkcheck', 'staging', 'procs=i',         'user=s', 'lang=s',
+    'open',    'skiplinkcheck', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@'
 ) || exit usage();
 
@@ -191,7 +191,7 @@ sub build_all {
         write_html_redirect( $build_dir->subdir( $_->{prefix} ),
             $_->{redirect} );
     }
-    if ( $Opts->{nolinkcheck} ) {
+    if ( $Opts->{skiplinkcheck} ) {
       say "Skipped Checking links";
       }
      else {
@@ -199,7 +199,7 @@ sub build_all {
        check_links($build_dir);
          }
      push_changes($build_dir)
-     if $Opts->{push};
+       if $Opts->{push};
 }
 
 #===================================
@@ -628,7 +628,7 @@ sub usage {
           --lenient         Ignore linking errors
           --lang            Defaults to 'en'
           --resource        Path to image dir - may be repeated
-          --nolinkcheck     Omit the step that checks for broken links
+          --skiplinkcheck     Omit the step that checks for broken links
 
         WARNING: Anything in the `out` dir will be deleted!
 
