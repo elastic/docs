@@ -614,21 +614,23 @@ Not what you want? See the
            
           <a href="indices-rollover-index.html">Rollover Index
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-split-index"></a>Split Index<a href="https://github.com/elastic/elasticsearch/edit/6.1/docs/reference/indices/split-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>number_of_routing_shards</p><p>The split index API allows you to split an existing index into a new index
-with multiple of it’s primary shards. Similarly to the <a class="link" href="indices-shrink-index.html" title="Shrink Index">Shrink API</a>
-where the number of primary shards in the shrunk index must be a factor of the source index.
-The <code class="literal">_split</code> API requires the source index to be created with a specific number of routing shards
-in order to be split in the future. (Note: this requirement might be remove in future releases)
-The number of routing shards specify the hashing space that is used internally to distribute documents
-across shards, in oder to have a consistent hashing that is compatible with the method elasticsearch
-uses today.
-For example an index with <code class="literal">8</code> primary shards and a <code class="literal">index.number_of_routing_shards</code> of <code class="literal">32</code>
-can be split into <code class="literal">16</code> and <code class="literal">32</code> primary shards. An index with <code class="literal">1</code> primary shard
-and <code class="literal">index.number_of_routing_shards</code> of <code class="literal">64</code> can be split into <code class="literal">2</code>, <code class="literal">4</code>, <code class="literal">8</code>, <code class="literal">16</code>, <code class="literal">32</code> or <code class="literal">64</code>.
-The same works for non power of two routing shards ie. an index with <code class="literal">1</code> primary shard and
-<code class="literal">index.number_of_routing_shards</code> set to <code class="literal">15</code> can be split into <code class="literal">3</code> and <code class="literal">15</code> or alternatively`5` and <code class="literal">15</code>.
-The number of shards in the split index must always be a factor of <code class="literal">index.number_of_routing_shards</code>
-in the source index. Before splitting, a (primary) copy of every shard in the index must be active in the cluster.</p><p>Splitting works as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="indices-split-index"></a>Split Index<a href="https://github.com/elastic/elasticsearch/edit/6.1/docs/reference/indices/split-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The split index API allows you to split an existing index into a new index,
+where each original primary shard is split into two or more primary shards in
+the new index.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The <code class="literal">_split</code> API requires the source index to be created with a
+specific <code class="literal">number_of_routing_shards</code> in order to be split in the future. This
+requirement has been removed in Elasticsearch 7.0.</p></div></div><p>The number of times the index can be split (and the number of shards that each
+original shard can be split into) is determined by the
+<code class="literal">index.number_of_routing_shards</code> setting. The number of routing shards
+specifies the hashing space that is used internally to distribute documents
+across shards with consistent hashing. For instance, a 5 shard index with
+<code class="literal">number_of_routing_shards</code> set to <code class="literal">30</code> (<code class="literal">5 x 2 x 3</code>) could be split by a
+factor of <code class="literal">2</code> or <code class="literal">3</code>.  In other words, it could be split as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">5</code> → <code class="literal">10</code> → <code class="literal">30</code>  (split by 2, then by 3)
+</li><li class="listitem">
+<code class="literal">5</code> → <code class="literal">15</code> → <code class="literal">30</code> (split by 3, then by 2)
+</li><li class="listitem">
+<code class="literal">5</code> → <code class="literal">30</code> (split by 6)
+</li></ul></div><p>Splitting works as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 First, it creates a new target index with the same definition as the source
   index, but with a larger number of primary shards.
 </li><li class="listitem">
@@ -637,7 +639,7 @@ Then it hard-links segments from the source index into the target index. (If
   into the new index, which is a much more time consuming process.)
 </li><li class="listitem">
 Once the low level files are created all documents will be <code class="literal">hashed</code> again to delete
-  documents that belong in a different shard.
+  documents that belong to a different shard.
 </li><li class="listitem">
 Finally, it recovers the target index as though it were a closed index which
   had just been re-opened.
