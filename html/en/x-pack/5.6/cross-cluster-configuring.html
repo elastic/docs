@@ -58,7 +58,7 @@
 
 	<meta name="localized" content="true" />
 
-	<meta name="published_date" content="2017-04-06T11:42:52.124Z" />
+	<meta name="published_date" content="2017-04-06T11:42:52.148Z" />
 
 
 
@@ -622,9 +622,8 @@ sign the SSL/TLS key of the local cluster must be trusted by the remote
 clusters.</p><p>User authentication is performed on the local cluster and the user and user’s
 roles are passed to the remote clusters. A remote cluster checks the user’s
 roles against its local role definitions to determine which indices the user
-is allowed to access.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This feature was added as Beta in Elasticsearch <code class="literal">v5.3</code> with further
-improvements made in 5.4 and 5.5. It requires gateway eligible nodes to be on
-<code class="literal">v5.5</code> onwards.</p></div></div><p>To use cross cluster search with secured clusters:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+is allowed to access.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This feature was added as Beta in Elasticsearch <code class="literal">v5.3</code> with further improvements made in
+5.4 and 5.5. It requires gateway eligible nodes to be on <code class="literal">v5.5</code> onwards.</p></div></div><p>To use cross cluster search with secured clusters:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Install X-Pack on every node in each connected cluster.
 </li><li class="listitem">
 Enable encryption globally. To encrypt communications, you must enable
@@ -658,21 +657,21 @@ Configure the local cluster to connect to remote clusters as described
       }
     }
   }
-}</pre></div></li><li class="listitem">
+}</pre></div><div class="console_widget" data-snippet="snippets/cross-cluster-configuring/1.json"></div></li><li class="listitem">
 On the local cluster, ensure that users are assigned to (at least) one role
   that exists on the remote clusters.  On the remote clusters, use that role
   to define which indices the user may access.  (See <a class="xref" href="authorization.html" title="Configuring Role-based Access Control"><em>Configuring Role-based Access Control</em></a>).
 </li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_example_configuration_of_cross_cluster_search"></a>Example Configuration of Cross Cluster Search</h3></div></div></div><p>In the following example, we will configure the user <code class="literal">alice</code> to have permissions
 to search any index starting with <code class="literal">logs-</code> in cluster <code class="literal">two</code> from cluster <code class="literal">one</code>.</p><p>First, enable cluster <code class="literal">one</code> to perform cross cluster search on remote cluster
-<code class="literal">two</code> by running the following request as the superuser on cluster <code class="literal">one</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster_settings
+<code class="literal">two</code> by running the following request as the superuser on cluster <code class="literal">one</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
 {
   "persistent": {
-    "search.remote.two.seeds": [ "10.0.2.1:9300" ]
+    "search.remote.cluster_two.seeds": [ "10.0.2.1:9300" ]
   }
-}</pre></div><p>Next, set up a role called <code class="literal">cluster_two_logs</code> on both cluster <code class="literal">one</code> and
+}</pre></div><div class="console_widget" data-snippet="snippets/cross-cluster-configuring/2.json"></div><p>Next, set up a role called <code class="literal">cluster_two_logs</code> on both cluster <code class="literal">one</code> and
 cluster <code class="literal">two</code>.</p><p>On cluster <code class="literal">one</code>, this role does not need any special privileges:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_xpack/security/role/cluster_two_logs
 {
-}</pre></div><p>On cluster <code class="literal">two</code>, this role allows the user to query local indices called
+}</pre></div><div class="console_widget" data-snippet="snippets/cross-cluster-configuring/3.json"></div><p>On cluster <code class="literal">two</code>, this role allows the user to query local indices called
 <code class="literal">logs-</code> from a remote cluster:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_xpack/security/role/cluster_two_logs
 {
   "cluster": [
@@ -689,20 +688,20 @@ cluster <code class="literal">two</code>.</p><p>On cluster <code class="literal"
       ]
     }
   ]
-}</pre></div><p>Finally, create a user on cluster <code class="literal">one</code> and apply the <code class="literal">cluster_two_logs</code> role:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_xpack/security/user/alice
+}</pre></div><div class="console_widget" data-snippet="snippets/cross-cluster-configuring/4.json"></div><p>Finally, create a user on cluster <code class="literal">one</code> and apply the <code class="literal">cluster_two_logs</code> role:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_xpack/security/user/alice
 {
   "password" : "somepassword",
   "roles" : [ "cluster_two_logs" ],
   "full_name" : "Alice",
   "email" : "alice@example.com",
   "enabled": true
-}</pre></div><p>With all of the above setup, the user <code class="literal">alice</code> is able to search indices in
+}</pre></div><div class="console_widget" data-snippet="snippets/cross-cluster-configuring/5.json"></div><p>With all of the above setup, the user <code class="literal">alice</code> is able to search indices in
 cluster <code class="literal">two</code> as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET two:logs-2017.04/_search <a id="CO23-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 {
   "query": {
     "match_all": {}
   }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cross-cluster-kibana"></a>Cross Cluster Search and Kibana</h3></div></div></div><p>When Kibana is used to search across multiple clusters, a two-step authorization
+}</pre></div><div class="console_widget" data-snippet="snippets/cross-cluster-configuring/6.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="cross-cluster-kibana"></a>Cross Cluster Search and Kibana</h3></div></div></div><p>When Kibana is used to search across multiple clusters, a two-step authorization
 process determines whether or not the user can access indices on a remote
 cluster:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 First, the local cluster determines if the user is authorized to access remote
