@@ -196,6 +196,7 @@ sub _update_template {
 
         # remove meta date and DC.title
         $content =~ s{<meta name=.date.[^>]+>}{};
+        $content =~ s{<meta name=.published_date.[^>]+>}{};
         $content =~ s{<meta name=.DC.title.[^>]+>}{};
 
         # prehead
