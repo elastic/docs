@@ -49,6 +49,7 @@ if [[ $CONTINUE == "y" ]] ; then
     if [[ $PUSH == "true" ]] ; then
       git add -A
       git commit -m "Forced update"
+      git pull --rebase $DOCS_REMOTE master
       printf "Ready to push to $DOCS_REMOTE/master. Continue? y/N: "
       read CONTINUE
       if [[ $CONTINUE == "y" ]] ; then
