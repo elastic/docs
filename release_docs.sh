@@ -41,6 +41,7 @@ read CONTINUE
 if [[ $CONTINUE == "y" ]] ; then
   echo "Syncing with $DOCS_REMOTE/master"
   git reset --hard $DOCS_REMOTE/master
+  git pull $DOCS_REMOTE master
   echo "Deleting contents of $PWD/html."
   rm -Rf html/*
   echo "Building all docs. This is going to take a while. Need a fresh cup of coffee? Or maybe a glass of wine?"
