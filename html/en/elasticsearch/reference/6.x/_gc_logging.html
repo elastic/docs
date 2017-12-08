@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>search_analyzer
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>GC logging
         | Elasticsearch Reference [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="mapping-params.html" title="Mapping parameters" /><link rel="prev" href="properties.html" title="properties" /><link rel="next" href="similarity.html" title="similarity" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="breaking-changes-6.2.html" title="Breaking changes in 6.2" /><link rel="prev" href="_private_temporary_directory.html" title="Private temporary directory" /><link rel="next" href="breaking-changes-xes.html" title="X-Pack Breaking Changes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -607,87 +607,40 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [6.x]
-    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-link"><a href="mapping-params.html">Mapping parameters</a></span> » <span class="breadcrumb-node"><code class="literal">search_analyzer</code></span></div><div class="navheader"><span class="prev"><a href="properties.html">
+    </a></span> » <span class="breadcrumb-link"><a href="breaking-changes.html">Breaking changes</a></span> » <span class="breadcrumb-link"><a href="breaking-changes-6.2.html">Breaking changes in 6.2</a></span> » <span class="breadcrumb-node">GC logging</span></div><div class="navheader"><span class="prev"><a href="_private_temporary_directory.html">
               « 
-              <code class="literal">properties</code></a>
+              Private temporary directory</a>
            
         </span><span class="next">
            
-          <a href="similarity.html"><code class="literal">similarity</code>
+          <a href="breaking-changes-xes.html">X-Pack Breaking Changes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-analyzer"></a><code class="literal">search_analyzer</code><a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/mapping/params/search-analyzer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Usually, the same <a class="link" href="analyzer.html" title="analyzer">analyzer</a> should be applied at index time and at
-search time, to ensure that the terms in the query are in the same format as
-the terms in the inverted index.</p><p>Sometimes, though, it can make sense to use a different analyzer at search
-time, such as when using the  <a class="link" href="analysis-edgengram-tokenizer.html" title="Edge NGram Tokenizer"><code class="literal">edge_ngram</code></a>
-tokenizer for autocomplete.</p><p>By default, queries will use the <code class="literal">analyzer</code> defined in the field mapping, but
-this can be overridden with the <code class="literal">search_analyzer</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
-{
-  "settings": {
-    "analysis": {
-      "filter": {
-        "autocomplete_filter": {
-          "type": "edge_ngram",
-          "min_gram": 1,
-          "max_gram": 20
-        }
-      },
-      "analyzer": {
-        "autocomplete": { <a id="CO252-3"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-          "type": "custom",
-          "tokenizer": "standard",
-          "filter": [
-            "lowercase",
-            "autocomplete_filter"
-          ]
-        }
-      }
-    }
-  },
-  "mappings": {
-    "my_type": {
-      "properties": {
-        "text": {
-          "type": "text",
-          "analyzer": "autocomplete", <a id="CO252-4"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-          "search_analyzer": "standard" <a id="CO252-5"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-        }
-      }
-    }
-  }
-}
-
-PUT my_index/my_type/1
-{
-  "text": "Quick Brown Fox" <a id="CO252-6"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-}
-
-GET my_index/_search
-{
-  "query": {
-    "match": {
-      "text": {
-        "query": "Quick Br", <a id="CO252-7"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
-        "operator": "and"
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-analyzer/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO252-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO252-3"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Analysis settings to define the custom <code class="literal">autocomplete</code> analyzer.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO252-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO252-4"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> <a href="#CO252-5"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">text</code> field uses the <code class="literal">autocomplete</code> analyzer at index time, but the <code class="literal">standard</code> analyzer at search time.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO252-6"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This field is indexed as the terms: [ <code class="literal">q</code>, <code class="literal">qu</code>, <code class="literal">qui</code>, <code class="literal">quic</code>, <code class="literal">quick</code>, <code class="literal">b</code>, <code class="literal">br</code>, <code class="literal">bro</code>, <code class="literal">brow</code>, <code class="literal">brown</code>, <code class="literal">f</code>, <code class="literal">fo</code>, <code class="literal">fox</code> ]
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO252-7"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The query searches for both of these terms: [ <code class="literal">quick</code>, <code class="literal">br</code> ]
-</p></td></tr></table></div><p>See <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/master/_index_time_search_as_you_type.html" target="_top">Index time search-as-you-
-type</a> for a full explanation of this example.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The <code class="literal">search_analyzer</code> setting can be updated on existing fields
-using the <a class="link" href="indices-put-mapping.html" title="Put Mapping">PUT mapping API</a>.</p></div></div></div><div class="navfooter"><span class="prev"><a href="properties.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_gc_logging"></a>GC logging<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/migration/migrate_6_2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Starting in Elasticsearch 6.2.0, JVM <a class="link" href="important-settings.html#gc-logging" title="GC loggingedit">GC logging</a> is enabled out of
+the box. This lightweight facility gives insight into GC issues. The settings
+for this are in <a class="link" href="setting-system-settings.html#jvm-options" title="Setting JVM options"><code class="literal">jvm.options</code></a> and default to keeping 2 GB worth
+(rotating every 64 MB) of logs in the default logs directory. If you are
+upgrading from a previous version of Elasticsearch and preserve your existing
+<a class="link" href="setting-system-settings.html#jvm-options" title="Setting JVM options"><code class="literal">jvm.options</code></a>, you should add the following GC logging settings
+so that this valuable debugging information is available:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">-XX:+PrintGCDetails
+-XX:+PrintGCDateStamps
+-XX:+PrintTenuringDistribution
+-XX:+PrintGCApplicationStoppedTime
+-Xloggc:logs/gc.log or /var/log/elasticsearch/gc.log <a id="CO10-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+-XX:+UseGCLogFileRotation
+-XX:NumberOfGCLogFiles=32
+-XX:GCLogFileSize=64m</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+If you have installed Elasticsearch from the RPM or the Debian packaging
+distributions and use the default logging location use <code class="literal">/var/log/elasticsearch</code>
+otherwise if you have installed from the <code class="literal">tar.gz</code> or <code class="literal">zip</code> archive distributions
+and use the default logging location use <code class="literal">logs/gc.log</code>; otherwise, set the
+location to the absolute path to your log files.
+</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="_private_temporary_directory.html">
               « 
-              <code class="literal">properties</code></a>
+              Private temporary directory</a>
            
         </span><span class="next">
            
-          <a href="similarity.html"><code class="literal">similarity</code>
+          <a href="breaking-changes-xes.html">X-Pack Breaking Changes
                »
             </a></span></div>
 <!-- end body -->
