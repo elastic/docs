@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>metricbeat.reference.yml
-        | Metricbeat Reference [6.0]
+        | Metricbeat Reference [6.1]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference [6.0]" /><link rel="up" href="configuring-howto-metricbeat.html" title="Configuring Metricbeat" /><link rel="prev" href="regexp-support.html" title="Regular expression support" /><link rel="next" href="metricbeat-modules.html" title="Modules" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Metricbeat/Reference/6.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference [6.1]" /><link rel="up" href="configuring-howto-metricbeat.html" title="Configuring Metricbeat" /><link rel="prev" href="regexp-support.html" title="Regular expression support" /><link rel="next" href="metricbeat-modules.html" title="Modules" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Metricbeat/Reference/6.1" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -603,7 +603,7 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference
-      [6.0]
+      [6.1]
     </a></span> » <span class="breadcrumb-link"><a href="configuring-howto-metricbeat.html">Configuring Metricbeat</a></span> » <span class="breadcrumb-node">metricbeat.reference.yml</span></div><div class="navheader"><span class="prev"><a href="regexp-support.html">
               « 
               Regular expression support</a>
@@ -612,7 +612,7 @@
            
           <a href="metricbeat-modules.html">Modules
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="metricbeat-reference-yml"></a>metricbeat.reference.yml<a href="https://github.com/elastic/beats/edit/6.0/libbeat/docs/reference-yml.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The following reference file is available with your Metricbeat installation. It
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="metricbeat-reference-yml"></a>metricbeat.reference.yml<a href="https://github.com/elastic/beats/edit/6.1/libbeat/docs/reference-yml.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The following reference file is available with your Metricbeat installation. It
 shows all non-deprecated Metricbeat options. You can copy from this file and paste
 configurations into the <code class="literal">metricbeat.yml</code> file to customize it.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>For rpm and deb, you’ll find the reference configuration file at <code class="literal">/etc/metricbeat/metricbeat.reference.yml</code>. Under
 Docker, it’s located at <code class="literal">/usr/share/metricbeat/metricbeat.reference.yml</code>. For mac and win,
@@ -644,6 +644,24 @@ metricbeat.config.modules:
 # disable startup delay.
 metricbeat.max_start_delay: 10s
 
+#============================== Autodiscover ===================================
+
+# Autodiscover allows you to detect changes in the system and spawn new modules
+# as they happen.
+
+#metricbeat.autodiscover:
+  # List of enabled autodiscover providers
+#  providers:
+#    - type: docker
+#      templates:
+#        - condition:
+#            equals.docker.container.image: etcd
+#          config:
+#            - module: etcd
+#              metricsets: ["leader", "self", "store"]
+#              period: 10s
+#              hosts: ["${host}:2379"]
+
 #==========================  Modules configuration ============================
 metricbeat.modules:
 
@@ -658,6 +676,7 @@ metricbeat.modules:
     - network         # Network IO
     - process         # Per process metrics
     - process_summary # Process summary
+    - uptime          # System Uptime
     #- core           # Per CPU core usage
     #- diskio         # Disk IO
     #- socket         # Sockets and connection info (linux only)
@@ -736,7 +755,7 @@ metricbeat.modules:
 
 #-------------------------------- Ceph Module --------------------------------
 - module: ceph
-  metricsets: ["cluster_disk", "cluster_health", "monitor_health", "pool_disk"]
+  metricsets: ["cluster_disk", "cluster_health", "monitor_health", "pool_disk", "osd_tree"]
   period: 10s
   hosts: ["localhost:5000"]
 
@@ -772,6 +791,13 @@ metricbeat.modules:
   period: 10s
   hosts: ["localhost:9200"]
 
+#-------------------------------- Etcd Module --------------------------------
+- module: etcd
+  metricsets: ["leader", "self", "store"]
+  period: 10s
+  hosts: ["localhost:2379"]
+
+
 #------------------------------- Golang Module -------------------------------
 - module: golang
   metricsets: ["expvar","heap"]
@@ -781,6 +807,18 @@ metricbeat.modules:
   expvar:
     namespace: "example"
     path: "/debug/vars"
+
+#------------------------------ Graphite Module ------------------------------
+- module: graphite
+  metricsets: ["server"]
+  enabled: true
+#  protocol: "udp"
+#  templates:
+#    - filter: "test.*.bash.*" # This would match metrics like test.localhost.bash.stats
+#      namespace: "test"
+#      template: ".host.shell.metric*" # test.localhost.bash.stats would become metric=stats and tags host=localhost,shell=bash
+#      delimiter: "_"
+
 
 #------------------------------- HAProxy Module ------------------------------
 - module: haproxy
@@ -799,6 +837,17 @@ metricbeat.modules:
   #method: "GET"
   #request.enabled: false
   #response.enabled: false
+
+- module: http
+  metricsets: ["server"]
+  host: "localhost"
+  port: "8080"
+  enabled: false
+#  paths:
+#    - path: "/foo"
+#      namespace: "foo"
+#      fields: # added to the the response in root. overwrites existing fields
+#        key: "value"
 
 #------------------------------- Jolokia Module ------------------------------
 - module: jolokia
@@ -874,6 +923,14 @@ metricbeat.modules:
   metricsets:
     - event
 
+#------------------------------ Logstash Module ------------------------------
+- module: logstash
+  metricsets: ["node", "node_stats"]
+  enabled: false
+  period: 10s
+  hosts: ["localhost"]
+
+
 #------------------------------ Memcached Module -----------------------------
 - module: memcached
   metricsets: ["stats"]
@@ -929,7 +986,7 @@ metricbeat.modules:
   # Path to server status. Default server-status
   #server_status_path: "server-status"
 
-#------------------------------- PHP-FPM Module ------------------------------
+#------------------------------- PHP_FPM Module ------------------------------
 - module: php_fpm
   metricsets: ["pool"]
   period: 10s
@@ -972,7 +1029,7 @@ metricbeat.modules:
 
 #------------------------------ RabbitMQ Module ------------------------------
 - module: rabbitmq
-  metricsets: ["node"]
+  metricsets: ["node", "queue"]
   period: 10s
   hosts: ["localhost:15672"]
 
@@ -1028,6 +1085,10 @@ metricbeat.modules:
   metricsets: ["perfmon"]
   period: 10s
   perfmon.counters:
+
+- module: windows
+  metricsets: ["service"]
+  period: 60s
 
 #------------------------------ ZooKeeper Module -----------------------------
 - module: zookeeper
@@ -1254,6 +1315,10 @@ output.elasticsearch:
   # Configure curve types for ECDHE based cipher suites
   #ssl.curve_types: []
 
+  # Configure what types of renegotiation are supported. Valid options are
+  # never, once, and freely. Default is never.
+  #ssl.renegotiation: never
+
 
 #----------------------------- Logstash output ---------------------------------
 #output.logstash:
@@ -1276,19 +1341,19 @@ output.elasticsearch:
   # Not yet supported for async connections (i.e. with the "pipelining" option set)
   #ttl: 30s
 
-  # Optional load balance the events between the Logstash hosts
-  #loadbalance: true
+  # Optional load balance the events between the Logstash hosts. Default is false.
+  #loadbalance: false
 
   # Number of batches to be sent asynchronously to logstash while processing
   # new batches.
   #pipelining: 5
 
-  # If enabled only a subset of events in a batch of events is transfered per
-  # transaction.  The number of events to sent increases up to `bulk_max_size`
+  # If enabled only a subset of events in a batch of events is transferred per
+  # transaction.  The number of events to be sent increases up to `bulk_max_size`
   # if no error is encountered.
   #slow_start: false
 
-  # Optional index name. The default index name is set to name of the beat
+  # Optional index name. The default index name is set to metricbeat
   # in all lowercase.
   #index: 'metricbeat'
 
@@ -1329,6 +1394,10 @@ output.elasticsearch:
 
   # Configure curve types for ECDHE based cipher suites
   #ssl.curve_types: []
+
+  # Configure what types of renegotiation are supported. Valid options are
+  # never, once, and freely. Default is never.
+  #ssl.renegotiation: never
 
 #------------------------------- Kafka output ----------------------------------
 #output.kafka:
@@ -1462,6 +1531,10 @@ output.elasticsearch:
   # Configure curve types for ECDHE based cipher suites
   #ssl.curve_types: []
 
+  # Configure what types of renegotiation are supported. Valid options are
+  # never, once, and freely. Default is never.
+  #ssl.renegotiation: never
+
 #------------------------------- Redis output ----------------------------------
 #output.redis:
   # Boolean flag to enable or disable the output module.
@@ -1559,6 +1632,9 @@ output.elasticsearch:
   # Configure curve types for ECDHE based cipher suites
   #ssl.curve_types: []
 
+  # Configure what types of renegotiation are supported. Valid options are
+  # never, once, and freely. Default is never.
+  #ssl.renegotiation: never
 
 #------------------------------- File output -----------------------------------
 #output.file:
@@ -1582,6 +1658,9 @@ output.elasticsearch:
   # the oldest file is deleted and the rest are shifted from last to first. The
   # default is 7 files.
   #number_of_files: 7
+
+  # Permissions to use for file creation. The default is 0600.
+  #permissions: 0600
 
 
 #----------------------------- Console output ---------------------------------
@@ -1620,7 +1699,7 @@ output.elasticsearch:
 
 #============================== Dashboards =====================================
 # These settings control loading the sample dashboards to the Kibana index. Loading
-# the dashboards is disabled by default and can be enabled either by setting the
+# the dashboards are disabled by default and can be enabled either by setting the
 # options here, or by using the `-setup` CLI flag or the `setup` command.
 #setup.dashboards.enabled: false
 
@@ -1648,6 +1727,10 @@ output.elasticsearch:
 # dashboards and index pattern. Example: testbeat-*
 #setup.dashboards.index:
 
+# Always use the Kibana API for loading the dashboards instead of autodetecting
+# how to install the dashboards by first querying Elasticsearch.
+#setup.dashboards.always_kibana: false
+
 #============================== Template =====================================
 
 # A template is used to set the mapping in Elasticsearch
@@ -1661,8 +1744,8 @@ output.elasticsearch:
 # The template name and pattern has to be set in case the elasticsearch index pattern is modified.
 #setup.template.name: "metricbeat-%{[beat.version]}"
 
-# Template patttern. By default the template pattern is "-%{[beat.version]}-*" to apply to the default index settings.
-# The first part is the version of the beat and then -* is used to match all daily indicies.
+# Template pattern. By default the template pattern is "-%{[beat.version]}-*" to apply to the default index settings.
+# The first part is the version of the beat and then -* is used to match all daily indices.
 # The template name and pattern has to be set in case the elasticsearch index pattern is modified.
 #setup.template.pattern: "metricbeat-%{[beat.version]}-*"
 
@@ -1681,6 +1764,7 @@ setup.template.settings:
   #index:
     #number_of_shards: 1
     #codec: best_compression
+    #number_of_routing_shards: 30
 
   # A dictionary of settings for the _source field. For more details, please check
   # https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-source-field.html
@@ -1699,7 +1783,7 @@ setup.kibana:
   # IPv6 addresses should always be defined as: https://[2001:db8::1]:5601
   #host: "localhost:5601"
 
-  # Optional protocol and basic auth crendentials.
+  # Optional protocol and basic auth credentials.
   #protocol: "https"
   #username: "elastic"
   #password: "changeme"
@@ -1767,7 +1851,7 @@ setup.kibana:
 # The period after which to log the internal metrics. The default is 30s.
 #logging.metrics.period: 30s
 
-# Logging to rotating files files. Set logging.to_files to false to disable logging to
+# Logging to rotating files. Set logging.to_files to false to disable logging to
 # files.
 logging.to_files: true
 logging.files:

@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Audit Module
-        | Auditbeat Reference [6.0]
+        | Auditbeat Reference [6.1]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Auditbeat Reference [6.0]" /><link rel="up" href="auditbeat-modules.html" title="Modules" /><link rel="prev" href="auditbeat-modules.html" title="Modules" /><link rel="next" href="auditbeat-metricset-audit-file.html" title="Audit file metricset" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Auditbeat/Reference/6.0" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Auditbeat Reference [6.1]" /><link rel="up" href="auditbeat-modules.html" title="Modules" /><link rel="prev" href="auditbeat-modules.html" title="Modules" /><link rel="next" href="auditbeat-metricset-audit-file.html" title="Audit file metricset" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Auditbeat/Reference/6.1" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -607,7 +607,7 @@ future release. Elastic will take a best effort approach to fix any issues, but
 experimental features are not subject to the support SLA of official GA
 features.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Auditbeat Reference
-      [6.0]
+      [6.1]
     </a></span> » <span class="breadcrumb-link"><a href="auditbeat-modules.html">Modules</a></span> » <span class="breadcrumb-node">Audit Module</span></div><div class="navheader"><span class="prev"><a href="auditbeat-modules.html">
               « 
               Modules</a>
@@ -616,19 +616,39 @@ features.
            
           <a href="auditbeat-metricset-audit-file.html">Audit file metricset
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="auditbeat-module-audit"></a>Audit Module<a href="https://github.com/elastic/beats/edit/6.0/auditbeat/docs/modules/audit.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">audit</code> module reports security-relevant information based on data captured
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="auditbeat-module-audit"></a>Audit Module<a href="https://github.com/elastic/beats/edit/6.1/auditbeat/docs/modules/audit.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">audit</code> module reports security-relevant information based on data captured
 from the operating system (OS) or services running on the OS. Although this
 feature doesn’t provide additional security to your system, it does make it
-easier for you to discover and track security policy violations.</p><h3><a id="_example_configuration"></a>Example configuration<a href="https://github.com/elastic/beats/edit/6.0/auditbeat/docs/modules/audit.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Audit module supports the common configuration options that are
+easier for you to discover and track security policy violations.</p><h3><a id="_example_configuration"></a>Example configuration<a href="https://github.com/elastic/beats/edit/6.1/auditbeat/docs/modules/audit.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Audit module supports the common configuration options that are
 described under <a class="link" href="configuration-auditbeat.html" title="Specify which modules to run">configuring Auditbeat</a>. Here
 is an example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">auditbeat.modules:
 - module: audit
   metricsets: [kernel]
   kernel.audit_rules: |
-    # Define audit rules here.
-    # Create file watches (-w) or syscall audits (-a or -A). For example:
+    ## Define audit rules here.
+    ## Create file watches (-w) or syscall audits (-a or -A). Uncomment these
+    ## examples or add your own rules.
+
+    ## If you are on a 64 bit platform, everything should be running
+    ## in 64 bit mode. This rule will detect any use of the 32 bit syscalls
+    ## because this might be a sign of someone exploiting a hole in the 32
+    ## bit API.
+    #-a always,exit -F arch=b32 -S all -F key=32bit-abi
+
+    ## Executions.
+    #-a always,exit -F arch=b64 -S execve,execveat -k exec
+
+    ## External access.
+    #-a always,exit -F arch=b64 -S accept,bind,connect,recvfrom -F key=external-access
+
+    ## Identity changes.
+    #-w /etc/group -p wa -k identity
     #-w /etc/passwd -p wa -k identity
-    #-a always,exit -F arch=b32 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EPERM -k access
+    #-w /etc/gshadow -p wa -k identity
+
+    ## Unauthorized access attempts.
+    #-a always,exit -F arch=b64 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EACCES -k access
+    #-a always,exit -F arch=b64 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EPERM -k access
 
 - module: audit
   metricsets: [file]
@@ -637,7 +657,7 @@ is an example configuration:</p><div class="pre_wrapper"><pre class="programlist
   - /usr/bin
   - /sbin
   - /usr/sbin
-  - /etc</pre></div><h3><a id="_metricsets"></a>Metricsets<a href="https://github.com/elastic/beats/edit/6.0/auditbeat/docs/modules/audit.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following metricsets are available:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+  - /etc</pre></div><h3><a id="_metricsets"></a>Metricsets<a href="https://github.com/elastic/beats/edit/6.1/auditbeat/docs/modules/audit.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following metricsets are available:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <a class="link" href="auditbeat-metricset-audit-file.html" title="Audit file metricset">file</a>
 </li><li class="listitem">
 <a class="link" href="auditbeat-metricset-audit-kernel.html" title="Audit kernel metricset">kernel</a>
