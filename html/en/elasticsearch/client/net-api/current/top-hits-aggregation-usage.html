@@ -612,7 +612,7 @@
            
           <a href="value-count-aggregation-usage.html">Value Count Aggregation Usage
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="top-hits-aggregation-usage"></a>Top Hits Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_110"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="top-hits-aggregation-usage"></a>Top Hits Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_113"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
 .Aggregations(a =&gt; a
     .Terms("states", t =&gt; t
         .Field(p =&gt; p.State)
@@ -625,15 +625,19 @@
                 .Source(src =&gt; src
                     .Includes(fs =&gt; fs
                         .Field(p =&gt; p.Name)
-                        .Field(p =&gt; p.StartedOn)
+                        .Field(p =&gt; p.LastActivity)
                     )
                 )
                 .Size(1)
                 .Version()
+                .TrackScores()
                 .Explain()
                 .FielddataFields(fd =&gt; fd
                     .Field(p =&gt; p.State)
                     .Field(p =&gt; p.NumberOfCommits)
+                )
+                .StoredFields(f =&gt; f
+                    .Field(p =&gt; p.StartedOn)
                 )
                 .Highlight(h =&gt; h
                     .Fields(
@@ -650,7 +654,7 @@
             )
         )
     )
-)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_109"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
+)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_112"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
 {
     Aggregations = new TermsAggregation("states")
     {
@@ -663,12 +667,14 @@
             },
             Source = new SourceFilter
             {
-                Includes = new [] { "name", "startedOn" }
+                Includes = new [] { "name", "lastActivity" }
             },
             Size = 1,
             Version = true,
+            TrackScores = true,
             Explain = true,
             FielddataFields = new [] { "state", "numberOfCommits" },
+            StoredFields = new[] { "startedOn" },
             Highlight = new Highlight
             {
                 Fields = new Dictionary&lt;Nest.Field, IHighlightField&gt;
@@ -705,15 +711,19 @@
             "_source": {
               "includes": [
                 "name",
-                "startedOn"
+                "lastActivity"
               ]
             },
             "size": 1,
             "version": true,
+            "track_scores": true,
             "explain": true,
             "fielddata_fields": [
               "state",
               "numberOfCommits"
+            ],
+            "stored_fields": [
+              "startedOn"
             ],
             "highlight": {
               "fields": {
@@ -735,7 +745,7 @@
     }
   }
 }</pre></div><p>
-</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_25"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.IsValid.Should().BeTrue();
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_26"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 var states = response.Aggs.Terms("states");
 states.Should().NotBeNull();
 states.Buckets.Should().NotBeNullOrEmpty();
@@ -753,7 +763,11 @@ foreach(var state in states.Buckets)
     hits.All(h =&gt; h.Fields.ValuesOf&lt;StateOfBeing&gt;("state").Any()).Should().BeTrue();
     hits.All(h =&gt; h.Fields.ValuesOf&lt;int&gt;("numberOfCommits").Any()).Should().BeTrue();
     hits.All(h =&gt; h.Fields.ValuesOf&lt;int&gt;("commit_factor").Any()).Should().BeTrue();
-    topStateHits.Documents&lt;Project&gt;().Should().NotBeEmpty();
+    hits.All(h =&gt; h.Fields.ValuesOf&lt;DateTime&gt;("startedOn").Any()).Should().BeTrue();
+    var projects = topStateHits.Documents&lt;Project&gt;();
+    projects.Should().NotBeEmpty();
+    projects.Should().OnlyContain(p=&gt;!string.IsNullOrWhiteSpace(p.Name), "source filter included name");
+    projects.Should().OnlyContain(p=&gt;string.IsNullOrWhiteSpace(p.Description), "source filter does NOT include description");
 }</pre></div></div></div><div class="navfooter"><span class="prev"><a href="sum-aggregation-usage.html">
               « 
               Sum Aggregation Usage</a>

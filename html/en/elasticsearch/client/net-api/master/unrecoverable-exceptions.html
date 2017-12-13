@@ -661,15 +661,15 @@ First call results in a successful ping
 Second call results in a bad response
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The reason for the bad response is Bad Authentication
-</p></td></tr></table></div><p>When a bad authentication response occurs, the client does not attempt to deserialize the response body returned;
-The response may or may not have a body and even when it does, it may not even be JSON.</p><p>In the following couple of examples, we set up a cluster that always returns a typical nginx HTML response body
-with 401 response to client calls. In this first example, we assert that the failure is because of a 401 Bad Authentication
-response but the response body is not captured on the response</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+</p></td></tr></table></div><p>When a bad authentication response occurs, the client attempts to deserialize the response body returned;</p><p>In some setups you might be running behind a proxy and you might need to prevent the client from trying to deserialize
+bad json. In the following example an HTML response is return but with an application/json content type. If the proxy is not
+under your control you would need to be able to fix this in the client. Here we make the client aware that 401 responses
+should never be deserialized by calling <code class="literal">SkipDeserializationForStatusCodes()</code> on <code class="literal">ConnectionSettings</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
     .Ping(r =&gt; r.SucceedAlways())
-    .ClientCalls(r =&gt; r.FailAlways(401).ReturnResponse(HtmlNginx401Response)) <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    .ClientCalls(r =&gt; r.FailAlways(401).ReturnByteResponse(HtmlNginx401Response, "application/json")) <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     .StaticConnectionPool()
-    .AllDefaults()
+    .Settings(s=&gt;s.SkipDeserializationForStatusCodes(401))
 );
 
 audit = await audit.TraceElasticsearchException(
@@ -688,10 +688,12 @@ Always return a 401 bad response with a HTML response on client calls
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Assert that the response body bytes are null
 </p></td></tr></table></div><p>Now in this example, by turning on <code class="literal">DisableDirectStreaming()</code> on <code class="literal">ConnectionSettings</code>, we see the same behaviour exhibited
-as before, but this time however, the response body bytes are captured in the response and can be inspected.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
+as before, but this time however, the response body bytes are captured in the response and can be inspected.
+Also note that in this example the 401 returns the correct mime type for html so the client wont try to deserialize to json and
+we no longer need to set <code class="literal">SkipDeserializationForStatusCodes()</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
     .Ping(r =&gt; r.SucceedAlways())
-    .ClientCalls(r =&gt; r.FailAlways(401).ReturnResponse(HtmlNginx401Response))
+    .ClientCalls(r =&gt; r.FailAlways(401).ReturnByteResponse(HtmlNginx401Response, "text/html"))
     .StaticConnectionPool()
     .Settings(s =&gt; s.DisableDirectStreaming())
 );

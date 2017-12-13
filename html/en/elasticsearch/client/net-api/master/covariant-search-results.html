@@ -621,21 +621,23 @@ but the actual instance type of the result can be that of the subclass directly<
 <code class="literal">ISearchResult</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public interface ISearchResult
 {
     string Name { get; set; }
-}</pre></div><p>We have three implementations of <code class="literal">ISearchResult</code> namely <code class="literal">A</code>, <code class="literal">B</code> and <code class="literal">C</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class A : ISearchResult
+}
+
+public abstract class BaseX : ISearchResult
 {
     public string Name { get; set; }
+}</pre></div><p>We have three implementations of <code class="literal">ISearchResult</code> namely <code class="literal">A</code>, <code class="literal">B</code> and <code class="literal">C</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class A : BaseX
+{
     public int PropertyOnA { get; set; }
 }
 
-public class B : ISearchResult
+public class B : BaseX
 {
-    public string Name { get; set; }
     public int PropertyOnB { get; set; }
 }
 
-public class C : ISearchResult
+public class C : BaseX
 {
-    public string Name { get; set; }
     public int PropertyOnC { get; set; }
 }</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_types"></a>Using types<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/covariant-hits/covariant-search-results.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The most straightforward way to search over multiple types is to
 type the response to the parent interface or base class
@@ -644,7 +646,8 @@ and pass the actual types we want to search over using <code class="literal">.Ty
     .Size(100)
 );</pre></div><p>NEST will translate this to a search over <code class="literal">/index/a,b,c/_search</code>;
 hits that have <code class="literal">"_type" : "a"</code> will be serialized to <code class="literal">A</code> and so forth</p><p>Here we assume our response is valid and that we received the 100 documents
-we are expecting. Remember <code class="literal">result.Documents</code> is an <code class="literal">IReadOnlyCollection&lt;ISearchResult&gt;</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">result.ShouldBeValid();
+we are expecting. Remember <code class="literal">result.Documents</code> is an <code class="literal">IReadOnlyCollection&lt;ISearchResult&gt;</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">result.ApiCall.Should().NotBeNull();
+result.ShouldBeValid();
 result.Documents.Count.Should().Be(100);</pre></div><p>To prove the returned result set is covariant we filter the documents based on their
 actual type and assert the returned subsets are the expected sizes</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var aDocuments = result.Documents.OfType&lt;A&gt;();
 var bDocuments = result.Documents.OfType&lt;B&gt;();
@@ -703,6 +706,23 @@ var cDocuments = result.Documents.OfType&lt;C&gt;();
 aDocuments.Count().Should().Be(25);
 bDocuments.Count().Should().Be(25);
 cDocuments.Count().Should().Be(50);</pre></div><p>and assume that properties that only exist on the subclass itself are properly filled</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">aDocuments.Should().OnlyContain(a =&gt; a.PropertyOnA &gt; 0);
+bDocuments.Should().OnlyContain(a =&gt; a.PropertyOnB &gt; 0);
+cDocuments.Should().OnlyContain(a =&gt; a.PropertyOnC &gt; 0);</pre></div><p>Covariance also works over subclasses not just interfaces</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var result = this._client.Search&lt;BaseX&gt;(s =&gt; s
+    .Type(Types.Type(typeof(A), typeof(B), typeof(C)))
+    .Size(100)
+);
+result.ShouldBeValid();
+result.Documents.Count.Should().Be(100);
+
+var aDocuments = result.Documents.OfType&lt;A&gt;();
+var bDocuments = result.Documents.OfType&lt;B&gt;();
+var cDocuments = result.Documents.OfType&lt;C&gt;();
+
+aDocuments.Count().Should().Be(25);
+bDocuments.Count().Should().Be(25);
+cDocuments.Count().Should().Be(50);
+
+aDocuments.Should().OnlyContain(a =&gt; a.PropertyOnA &gt; 0);
 bDocuments.Should().OnlyContain(a =&gt; a.PropertyOnB &gt; 0);
 cDocuments.Should().OnlyContain(a =&gt; a.PropertyOnC &gt; 0);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="returned-fields.html">
               « 

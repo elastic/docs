@@ -672,7 +672,21 @@ pool = new StickyConnectionPool(nodes);</pre></div><p>This type of pool is hardw
 pool.SupportsPinging.Should().BeTrue();</pre></div><p>To create a client using the sticky connection pool pass
 the connection pool to the <code class="literal">ConnectionSettings</code> you pass to <code class="literal">ElasticClient</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var client = new ElasticClient(new ConnectionSettings(pool));
 client.ConnectionSettings.ConnectionPool
-    .Should().BeOfType&lt;StickyConnectionPool&gt;();</pre></div></div></div><div class="navfooter"><span class="prev"><a href="configuration-options.html">
+    .Should().BeOfType&lt;StickyConnectionPool&gt;();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sticky-sniffing-connection-pool"></a>Sticky Sniffing Connection Pool<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/client-concepts/connection-pooling/building-blocks/connection-pooling.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A type of connection pool that returns the first live node to issue a request against, such that the node is <span class="emphasis"><em>sticky</em></span> between requests.
+This implementation supports sniffing and sorting so that each instance of your application can favor a node in the same rack based
+on node attributes for instance.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var uris = Enumerable.Range(9200, 5)
+    .Select(port =&gt; new Uri($"http://localhost:{port}"));</pre></div><p>a sniffing sorted sticky pool takes a second parameter <code class="literal">Func</code> takes a Node and returns a weight.
+Nodes will be sorted descending by weight. In the following example we score nodes that are client nodes
+AND in rack_id <code class="literal">rack_one</code> the highest</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new StickySniffingConnectionPool(uris, n =&gt;
+    (n.ClientNode ? 10 : 0)
+    + (n.Settings.TryGetValue("node.attr.rack_id", out string rackId)
+               &amp;&amp; rackId == "rack_one" ? 10 : 0));
+
+pool.SupportsReseeding.Should().BeTrue();
+pool.SupportsPinging.Should().BeTrue();</pre></div><p>To create a client using the sticky sniffing connection pool pass
+the connection pool to the <code class="literal">ConnectionSettings</code> you pass to <code class="literal">ElasticClient</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var client = new ElasticClient(new ConnectionSettings(pool));
+client.ConnectionSettings.ConnectionPool
+    .Should().BeOfType&lt;StickySniffingConnectionPool&gt;();</pre></div></div></div><div class="navfooter"><span class="prev"><a href="configuration-options.html">
               « 
               Configuration options</a>
            

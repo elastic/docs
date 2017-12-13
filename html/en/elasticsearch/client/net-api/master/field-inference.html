@@ -752,7 +752,7 @@ Expect("naam").WhenSerializing(Field&lt;BuiltIn&gt;(p =&gt; p.Name));</pre></div
 Here we ask the default <code class="literal">JsonNetSerializer</code> to resolve a property name and it takes
 the <code class="literal">JsonPropertyAttribute</code> into account</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class SerializerSpecific
 {
-    [JsonProperty("nameInJson")]
+    [Rename("nameInJson"), JsonProperty("nameInJson")]
     public string Name { get; set; }
 }
 
@@ -760,7 +760,7 @@ Expect("nameInJson").WhenSerializing(Field&lt;SerializerSpecific&gt;(p =&gt; p.N
 <span class="strong strong"><strong>NEST attributes take precedence</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class Both
 {
     [Text(Name = "naam")]
-    [JsonProperty("nameInJson")]
+    [Rename("nameInJson"), JsonProperty("nameInJson")]
     public string Name { get; set; }
 }
 
@@ -811,17 +811,17 @@ Pass the MemberInfo’s Name to the DefaultFieldNameInferrer, which by default c
 </li></ol></div><p>The following example class will demonstrate this precedence</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">class Precedence
 {
     [Text(Name = "renamedIgnoresNest")]
-    [JsonProperty("renamedIgnoresJsonProperty")]
+    [Rename("renamedIgnoresJsonProperty"),JsonProperty("renamedIgnoresJsonProperty")]
     public string RenamedOnConnectionSettings { get; set; } <a id="CO64-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
     [Text(Name = "nestAtt")]
-    [JsonProperty("jsonProp")]
+    [Rename("jsonProp"),JsonProperty("jsonProp")]
     public string NestAttribute { get; set; } <a id="CO64-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
 
-    [JsonProperty("jsonProp")]
+    [Rename("jsonProp"),JsonProperty("jsonProp")]
     public string JsonProperty { get; set; } <a id="CO64-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
 
-    [JsonProperty("dontaskme")]
+    [Rename("dontaskme"),JsonProperty("dontaskme")]
     public string AskSerializer { get; set; } <a id="CO64-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
 
     public string DefaultFieldNameInferrer { get; set; } <a id="CO64-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
@@ -835,10 +835,8 @@ We should take the json property into account by itself
 This property we are going to special case in our custom serializer to resolve to ask
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO64-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 We are going to register a DefaultFieldNameInferrer on ConnectionSettings that will uppercase all properties.
-</p></td></tr></table></div><p>Here we create a custom serializer that renames any property named <code class="literal">AskSerializer</code> to <code class="literal">ask</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">class CustomSerializer : JsonNetSerializer
+</p></td></tr></table></div><p>Here we create a custom serializer that renames any property named <code class="literal">AskSerializer</code> to <code class="literal">ask</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">class CustomPropertyMappingProvider : PropertyMappingProvider
 {
-    public CustomSerializer(IConnectionSettingsValues settings) : base(settings) { }
-
     public override IPropertyMapping CreatePropertyMapping(MemberInfo memberInfo)
     {
         return memberInfo.Name == nameof(Precedence.AskSerializer)
@@ -852,7 +850,7 @@ and all properties that are not mapped verbatim should be uppercased</p><div cla
         .Rename(p =&gt; p.RenamedOnConnectionSettings, "renamed")
     )
     .DefaultFieldNameInferrer(p =&gt; p.ToUpperInvariant())
-).WithSerializer(s =&gt; new CustomSerializer(s));
+).WithPropertyMappingProvider(new CustomPropertyMappingProvider());
 
 usingSettings.Expect("renamed").ForField(Field&lt;Precedence&gt;(p =&gt; p.RenamedOnConnectionSettings));
 usingSettings.Expect("nestAtt").ForField(Field&lt;Precedence&gt;(p =&gt; p.NestAttribute));
