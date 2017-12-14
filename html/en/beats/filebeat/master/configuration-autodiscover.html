@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuring Metricbeat
-        | Metricbeat Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Autodiscover
+        | Filebeat Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference [master]" /><link rel="up" href="index.html" title="Metricbeat Reference [master]" /><link rel="prev" href="key-features.html" title="Key metricbeat features" /><link rel="next" href="configuration-metricbeat.html" title="Specify which modules to run" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Metricbeat/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Filebeat Reference [master]" /><link rel="up" href="configuring-howto-filebeat.html" title="Configuring Filebeat" /><link rel="prev" href="using-environ-vars.html" title="Use environment variables in the configuration" /><link rel="next" href="yaml-tips.html" title="YAML tips and gotchas" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Filebeat/Reference/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -605,67 +605,84 @@
 <div class="page_header">You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Metricbeat Reference
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Filebeat Reference
       [master]
-    </a></span> » <span class="breadcrumb-node">Configuring Metricbeat</span></div><div class="navheader"><span class="prev"><a href="key-features.html">
+    </a></span> » <span class="breadcrumb-link"><a href="configuring-howto-filebeat.html">Configuring Filebeat</a></span> » <span class="breadcrumb-node">Autodiscover</span></div><div class="navheader"><span class="prev"><a href="using-environ-vars.html">
               « 
-              Key metricbeat features</a>
+              Use environment variables in the configuration</a>
            
         </span><span class="next">
            
-          <a href="configuration-metricbeat.html">Specify which modules to run
+          <a href="yaml-tips.html">YAML tips and gotchas
                »
-            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="configuring-howto-metricbeat"></a>Configuring Metricbeat<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/configuring-howto.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><p>Before modifying configuration settings, make sure you’ve completed the
-<a class="link" href="metricbeat-configuration.html" title="Step 2: Configure Metricbeat">configuration steps</a> in the Getting Started.
-This section describes some common use cases for changing configuration options.</p><p>To configure Metricbeat, you edit the configuration file. For rpm and deb,
-you’ll find the configuration file at <code class="literal">/etc/metricbeat/metricbeat.yml</code>.
-There’s also a full example configuration file at
-<code class="literal">/etc/metricbeat/metricbeat.reference.yml</code> that shows all non-deprecated
-options. For mac and win, look in the archive that you extracted.</p><p>The Metricbeat configuration file uses <a class="ulink" href="http://yaml.org/" target="_top">YAML</a> for its syntax.
-See the <a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/master/config-file-format.html" target="_top">Config File Format</a> section of the
-<span class="emphasis"><em>Beats Platform Reference</em></span> for more about the structure of the config file.</p><p>The following topics describe how to configure Metricbeat:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="xref" href="configuration-metricbeat.html" title="Specify which modules to run"><em>Specify which modules to run</em></a>
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-autodiscover"></a>Autodiscover<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Autodiscover allows you to watch for system changes and dynamically adapt settings to them, as they happen.
+This is specially useful when running your infrastructure on containers.</p><p>When you run an application on containers it becomes a moving target to the monitoring system. Autodiscover
+allows you to automatically detect what’s running and update settings to monitor it.</p><p>You can define configuration templates for different containers. Autodiscover subsystem will use them
+to monitor services as they start running.</p><p>You define autodiscover settings in the  <code class="literal">filebeat.autodiscover</code> section of the <code class="literal">filebeat.yml</code>
+config file. To enable autodiscover, you specify a list of providers.</p><h3><a id="_providers"></a>Providers<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Autodiscover providers work by watching for events on the system and translating those events into internal autodiscover
+events with a common format. When you configure the provider, you can use fields from the autodiscover event to set
+conditions that, when met, launch specific configurations.</p><h5><a id="_docker_2"></a>Docker<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Docker autodiscover provider watches for Docker containers start and stop. These are the available fields on every
+event:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+host
 </li><li class="listitem">
-<a class="xref" href="configuration-general-options.html" title="Specify general settings"><em>Specify general settings</em></a>
+port
 </li><li class="listitem">
-<a class="xref" href="metricbeat-configuration-reloading.html" title="Load external configuration files"><em>Load external configuration files</em></a>
+docker.container.id
 </li><li class="listitem">
-<a class="xref" href="configuring-internal-queue.html" title="Configure the internal queue"><em>Configure the internal queue</em></a>
+docker.container.image
 </li><li class="listitem">
-<a class="xref" href="configuring-output.html" title="Configure the output"><em>Configure the output</em></a>
+docker.container.name
 </li><li class="listitem">
-<a class="xref" href="configuration-ssl.html" title="Specify SSL settings"><em>Specify SSL settings</em></a>
-</li><li class="listitem">
-<a class="xref" href="filtering-and-enhancing-data.html" title="Filter and enhance the exported data"><em>Filter and enhance the exported data</em></a>
-</li><li class="listitem">
-<a class="xref" href="configuring-ingest-node.html" title="Parse logs by using ingest node"><em>Parse logs by using ingest node</em></a>
-</li><li class="listitem">
-<a class="xref" href="configuration-path.html" title="Set up project paths"><em>Set up project paths</em></a>
-</li><li class="listitem">
-<a class="xref" href="setup-kibana-endpoint.html" title="Set up the Kibana endpoint"><em>Set up the Kibana endpoint</em></a>
-</li><li class="listitem">
-<a class="xref" href="configuration-dashboards.html" title="Load the Kibana dashboards"><em>Load the Kibana dashboards</em></a>
-</li><li class="listitem">
-<a class="xref" href="configuration-template.html" title="Load the Elasticsearch index template"><em>Load the Elasticsearch index template</em></a>
-</li><li class="listitem">
-<a class="xref" href="configuration-logging.html" title="Set up logging"><em>Set up logging</em></a>
-</li><li class="listitem">
-<a class="xref" href="using-environ-vars.html" title="Use environment variables in the configuration"><em>Use environment variables in the configuration</em></a>
-</li><li class="listitem">
-<a class="xref" href="configuration-autodiscover.html" title="Autodiscover"><em>Autodiscover</em></a>
-</li><li class="listitem">
-<a class="xref" href="yaml-tips.html" title="YAML tips and gotchas"><em>YAML tips and gotchas</em></a>
-</li><li class="listitem">
-<a class="xref" href="regexp-support.html" title="Regular expression support"><em>Regular expression support</em></a>
-</li><li class="listitem">
-<a class="xref" href="metricbeat-reference-yml.html" title="metricbeat.reference.yml"><em>metricbeat.reference.yml</em></a>
-</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="key-features.html">
+docker.container.labels
+</li></ul></div><p>For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">{
+  "host": "10.4.15.9",
+  "port": 6379,
+  "docker": {
+    "container": {
+      "id": "382184ecdb385cfd5d1f1a65f78911054c8511ae009635300ac28b4fc357ce51"
+      "name": "redis",
+      "image": "redis:3.2.11",
+      "labels": {
+        "io.kubernetes.pod.namespace": "default"
+        ...
+      }
+    }
+  }
+}</pre></div><p>You can define a set of configuration templates to be applied when the condition matches an event. Templates define
+a condition to match on autodiscover events, together with the list of configurations to launch when this condition
+happens.</p><p>Conditions match events from the provider. Providers use the same format for <a class="xref" href="defining-processors.html#conditions" title="Conditions">Conditions</a> that
+processors use.</p><p>Configuration templates can contain variables from the autodiscover event. They can be accessed under <code class="literal">data</code> namespace.
+For example, with the example event, "<code class="literal">${data.port}</code>" will resolves to <code class="literal">6379</code>.</p><p>Filebeat supports templates for both prospectors and modules.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.autodiscover:
+  providers:
+    - type: docker
+      templates:
+        - condition:
+            equals:
+              docker.container.image: redis
+          config:
+            - type: docker
+              container.ids:
+                - "${data.docker.container.id}"
+              exclude_lines: ["^\\s+[\\-`('.|_]"]  # drop asciiart lines</pre></div><p>This configuration launches a <code class="literal">docker</code> logs prospector for all containers running an image with <code class="literal">redis</code> in the name.</p><p>If you are using modules, you can override the default prospector and use the docker prospector instead.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.autodiscover:
+  providers:
+    - type: docker
+      templates:
+        - condition:
+            equals:
+              docker.container.image: "redis"
+          config:
+            - module: redis
+              log:
+                prospector:
+                  type: docker
+                  container.ids:
+                    - "${data.docker.container.id}"</pre></div></div><div class="navfooter"><span class="prev"><a href="using-environ-vars.html">
               « 
-              Key metricbeat features</a>
+              Use environment variables in the configuration</a>
            
         </span><span class="next">
            
-          <a href="configuration-metricbeat.html">Specify which modules to run
+          <a href="yaml-tips.html">YAML tips and gotchas
                »
             </a></span></div>
 <!-- end body -->
