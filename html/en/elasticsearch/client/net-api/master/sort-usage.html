@@ -631,20 +631,24 @@ The sort is defined on a per field level, with special field name for <code clas
         .NestedPath(p =&gt; p.Tags)
         .NestedFilter(q =&gt; q.MatchAll())
     )
+    .Field(f =&gt; f
+        .Field(p =&gt; p.NumberOfCommits)
+        .Order(SortOrder.Descending)
+        .Missing(-1)
+    )
     .GeoDistance(g =&gt; g
         .Field(p =&gt; p.Location)
         .DistanceType(GeoDistanceType.Arc)
         .Order(SortOrder.Ascending)
         .Unit(DistanceUnit.Centimeters)
         .Mode(SortMode.Min)
-        .PinTo(new GeoLocation(70, -70), new GeoLocation(-12, 12))
+        .Points(new GeoLocation(70, -70), new GeoLocation(-12, 12))
     )
     .Script(sc =&gt; sc
         .Type("number")
         .Ascending()
         .Script(script =&gt; script
-            .Inline("doc['numberOfCommits'].value * factor")
-            .Lang("groovy")
+            .Source("doc['numberOfCommits'].value * params.factor")
             .Params(p =&gt; p.Add("factor", 1.1))
         )
     )
@@ -666,6 +670,12 @@ The sort is defined on a per field level, with special field name for <code clas
             NestedPath = Field&lt;Project&gt;(p=&gt;p.Tags),
             NestedFilter = new MatchAllQuery(),
         },
+        new SortField
+        {
+            Field = Field&lt;Project&gt;(p=&gt;p.NumberOfCommits),
+            Order = SortOrder.Descending,
+            Missing = -1
+        },
         new GeoDistanceSort
         {
             Field = "location",
@@ -679,9 +689,8 @@ The sort is defined on a per field level, with special field name for <code clas
         {
             Type = "number",
             Order = SortOrder.Ascending,
-            Script =  new InlineScript("doc['numberOfCommits'].value * factor")
+            Script =  new InlineScript("doc['numberOfCommits'].value * params.factor")
             {
-                Lang = "groovy",
                 Params = new Dictionary&lt;string, object&gt;
                 {
                     { "factor", 1.1 }
@@ -725,6 +734,12 @@ The sort is defined on a per field level, with special field name for <code clas
       }
     },
     {
+      "numberOfCommits": {
+        "missing": -1,
+        "order": "desc"
+      }
+    },
+    {
       "_geo_distance": {
         "location": [
           {
@@ -750,8 +765,7 @@ The sort is defined on a per field level, with special field name for <code clas
           "params": {
             "factor": 1.1
           },
-          "inline": "doc['numberOfCommits'].value * factor",
-          "lang": "groovy"
+          "source": "doc['numberOfCommits'].value * params.factor"
         }
       }
     }

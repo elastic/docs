@@ -616,22 +616,32 @@ Not what you want? See the
           <a href="debugging.html">Debugging
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="deprecation-logging"></a>Deprecation logging<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/troubleshooting/deprecation-logging.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch will send back <code class="literal">Warn</code> HTTP Headers when you are using an API feature that is
-deprecated and will be removed or rewritten in a future release.</p><p>Elasticsearch.NET and NEST report these back to you so you can log and watch out for them.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var response = this.Client.Search&lt;Project&gt;(s =&gt; s
-    .FielddataFields(fd =&gt; fd
-        .Field(p =&gt; p.State)
-        .Field(p =&gt; p.NumberOfCommits)
-    )
-    .ScriptFields(sfs =&gt; sfs
-        .ScriptField("commit_factor", sf =&gt; sf
-            .Inline("doc['numberOfCommits'].value * 2")
-            .Lang("groovy")
-        )
-    )
-);
+deprecated and will be removed or rewritten in a future release.</p><p>Elasticsearch.NET and NEST report these back to you so you can log and watch out for them.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var request = new SearchRequest&lt;Project&gt;
+{
+    Size = 0,
+    Routing = new [] { "ignoredefaultcompletedhandler" },
+    Aggregations = new TermsAggregation("states")
+    {
+        Field = Field&lt;Project&gt;(p =&gt; p.State.Suffix("keyword")),
+        Order = new List&lt;TermsOrder&gt;
+        {
+            new TermsOrder { Key = "_term", Order = SortOrder.Ascending },
+        }
+    },
+    Query = new FunctionScoreQuery()
+    {
+        Query = new MatchAllQuery { },
+        Functions = new List&lt;IScoreFunction&gt;
+        {
+            new RandomScoreFunction {Seed = 1337},
+        }
+    }
+};
+var response = this.Client.Search&lt;Project&gt;(request);
 
 response.ApiCall.DeprecationWarnings.Should().NotBeNullOrEmpty();
-
-response.DebugInformation.Should().Contain("Server indicated deprecations:"); <a id="CO75-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO75-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+response.ApiCall.DeprecationWarnings.Should().HaveCount(2);
+response.DebugInformation.Should().Contain("Deprecated aggregation order key"); <a id="CO76-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO76-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 <code class="literal">DebugInformation</code> also contains the deprecation warnings
 </p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="logging-with-fiddler.html">
               « 

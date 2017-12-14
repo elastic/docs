@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Logging with OnRequestCompleted
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Custom Serialization
         | Elasticsearch.Net and NEST: the .NET clients [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="logging.html" title="Logging" /><link rel="prev" href="logging.html" title="Logging" /><link rel="next" href="logging-with-fiddler.html" title="Logging with Fiddler" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/.Net/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="nest.html" title="NEST - High level client" /><link rel="prev" href="changing-serializers.html" title="Changing serializers" /><link rel="next" href="modifying-default-serializer.html" title="Modifying the default serializer" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/.Net/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -607,210 +607,99 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="troubleshooting.html">Troubleshooting</a></span> » <span class="breadcrumb-link"><a href="logging.html">Logging</a></span> » <span class="breadcrumb-node">Logging with OnRequestCompleted</span></div><div class="navheader"><span class="prev"><a href="logging.html">
+    </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-node">Custom Serialization</span></div><div class="navheader"><span class="prev"><a href="changing-serializers.html">
               « 
-              Logging</a>
+              Changing serializers</a>
            
         </span><span class="next">
            
-          <a href="logging-with-fiddler.html">Logging with Fiddler
+          <a href="modifying-default-serializer.html">Modifying the default serializer
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="logging-with-on-request-completed"></a>Logging with OnRequestCompleted<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/troubleshooting/logging-with-on-request-completed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When constructing the connection settings to pass to the client, you can pass a callback of type
-<code class="literal">Action&lt;IApiCallDetails&gt;</code> to the <code class="literal">OnRequestCompleted</code> method that can eavesdrop every time a
-response(good or bad) is received.</p><p>If you have complex logging needs this is a good place to add that in
-since you have access to both the request and response details.</p><p>In this example, we’ll use <code class="literal">OnRequestCompleted</code> on connection settings to increment a counter each time
-it’s called.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var counter = 0;
-var client = TestClient.GetInMemoryClient(connectionSettings =&gt;
-    connectionSettings.OnRequestCompleted(r =&gt; counter++)); <a id="CO71-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-
-client.RootNodeInfo(); <a id="CO71-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-counter.Should().Be(1);
-
-await client.RootNodeInfoAsync(); <a id="CO71-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-counter.Should().Be(2);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO71-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Construct a client
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO71-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Make a synchronous call and assert the counter is incremented
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO71-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Make an asynchronous call and assert the counter is incremented
-</p></td></tr></table></div><p><code class="literal">OnRequestCompleted</code> is called even when an exception is thrown, so it can be used even if the client is
-configured to throw exceptions</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var counter = 0;
-var client = TestClient.GetFixedReturnClient( <a id="CO72-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    new { },
-    500,
-    connectionSettings =&gt; connectionSettings
-        .ThrowExceptions() <a id="CO72-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-        .OnRequestCompleted(r =&gt; counter++)
-);
-
-Assert.Throws&lt;ElasticsearchClientException&gt;(() =&gt; client.RootNodeInfo()); <a id="CO72-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-counter.Should().Be(1);
-
-await Assert.ThrowsAsync&lt;ElasticsearchClientException&gt;(async () =&gt; await client.RootNodeInfoAsync());
-counter.Should().Be(2);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO72-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Configure a client with a connection that **always returns a HTTP 500 response
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO72-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Always throw exceptions when a call results in an exception
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO72-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Assert an exception is thrown and the counter is incremented
-</p></td></tr></table></div><p>Here’s an example using <code class="literal">OnRequestCompleted()</code> for more complex logging</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>By default, the client writes directly to the request stream and deserializes directly from the
-response stream.</p><p>If you would also like to capture the request and/or response bytes,
-you also need to set <code class="literal">.DisableDirectStreaming()</code> to <code class="literal">true</code>.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var list = new List&lt;string&gt;();
-var connectionPool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
-
-var settings = new ConnectionSettings(connectionPool, new InMemoryConnection()) <a id="CO73-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    .DefaultIndex("default-index")
-    .DisableDirectStreaming() <a id="CO73-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    .OnRequestCompleted(apiCallDetails =&gt; <a id="CO73-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-    {
-        // log out the request and the request body, if one exists for the type of request
-        if (apiCallDetails.RequestBodyInBytes != null)
-        {
-            list.Add(
-                $"{apiCallDetails.HttpMethod} {apiCallDetails.Uri} " +
-                $"{Encoding.UTF8.GetString(apiCallDetails.RequestBodyInBytes)}");
-        }
-        else
-        {
-            list.Add($"{apiCallDetails.HttpMethod} {apiCallDetails.Uri}");
-        }
-
-        // log out the response and the response body, if one exists for the type of response
-        if (apiCallDetails.ResponseBodyInBytes != null)
-        {
-            list.Add($"Status: {apiCallDetails.HttpStatusCode}" +
-                     $"{Encoding.UTF8.GetString(apiCallDetails.ResponseBodyInBytes)}");
-        }
-        else
-        {
-            list.Add($"Status: {apiCallDetails.HttpStatusCode}");
-        }
-    });
-
-var client = new ElasticClient(settings);
-
-var syncResponse = client.Search&lt;object&gt;(s =&gt; s <a id="CO73-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-    .AllTypes()
-    .AllIndices()
-    .Scroll("2m")
-    .Sort(ss =&gt; ss
-        .Ascending(SortSpecialField.DocumentIndexOrder)
-    )
-);
-
-list.Count.Should().Be(2);
-
-var asyncResponse = await client.SearchAsync&lt;object&gt;(s =&gt; s <a id="CO73-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
-    .AllTypes()
-    .AllIndices()
-    .Scroll("10m")
-    .Sort(ss =&gt; ss
-        .Ascending(SortSpecialField.DocumentIndexOrder)
-    )
-);
-
-list.Count.Should().Be(4);
-list.ShouldAllBeEquivalentTo(new[] <a id="CO73-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="custom-serialization"></a>Custom Serialization<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/serialization/custom-serialization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Starting with 6.0 NEST ships with a shaded Json.NET dependency. Meaning we merged it into Nest’s dll
+internalized all Json.NET’s types and changed their namespace from <code class="literal">Newtonsoft.Json</code> to <code class="literal">Nest.Json</code>.</p><p>NEST has always isolated Json.NET as best as it could but this meant that we had to mandate some things.
+For instance NEST heavily relied on the fact that the <code class="literal">ContractConverter</code> was an instance of <code class="literal">ElasticContractConverter</code></p><p>If you wanted to deserialize your <code class="literal">_source</code> or <code class="literal">_fields</code> using your own <code class="literal">ContractConverter</code> you were out of luck.</p><p>So what did we do in 6.x and how does it affect you?</p><p>The <code class="literal">NEST</code> nuget package from 6.0.0 onwards on its own will use the internal Json.NET serializer and will in affect behave the same
+as it did in previous releases.</p><p>If you previously configured a custom Json.NET serializer with custom <code class="literal">JsonSerializerSettings</code>, <code class="literal">ContractConverter</code> things
+will change a bit, but for the better!</p><h3><a id="_injecting_a_new_serializer"></a>Injecting a new serializer<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/serialization/custom-serialization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Starting with NEST 6.x you can inject a serializer that is isolated to only be called
+for the (de)serialization of <code class="literal">_source</code> <code class="literal">_fields</code> and where ever a user provided value is expected
+to be written and returned.</p><p>Internally we call this the <code class="literal">RequestResponseSerializer</code> and the <code class="literal">SourceSerializer</code></p><p>If left unconfigured the internal <code class="literal">RequestResponseSerializer</code> is the <code class="literal">SourceSerializer</code> as well.</p><p>Implementing <code class="literal">IElasticsearchSerializer</code> is technically enough to inject your own <code class="literal">SourceSerialzier</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class VanillaSerializer : IElasticsearchSerializer
 {
-    @"POST http://localhost:9200/_search?scroll=2m {""sort"":[{""_doc"":{""order"":""asc""}}]}",
-    @"Status: 200",
-    @"POST http://localhost:9200/_search?scroll=10m {""sort"":[{""_doc"":{""order"":""asc""}}]}",
-    @"Status: 200"
-});</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO73-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Here we use <code class="literal">InMemoryConnection</code> but in a real application, you’d use an <code class="literal">IConnection</code> that <span class="emphasis"><em>actually</em></span> sends the request, such as <code class="literal">HttpConnection</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO73-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Disable direct streaming so we can capture the request and response bytes
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO73-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Perform some action when a request completes. Here, we’re just adding to a list, but in your application you may be logging to a file.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO73-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Make a synchronous call
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO73-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Make an asynchronous call
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO73-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Assert the list contains the contents written in the delegate passed to <code class="literal">OnRequestCompleted</code>
-</p></td></tr></table></div><p>When running an application in production, you probably don’t want to disable direct streaming for <span class="emphasis"><em>all</em></span>
-requests, since doing so will incur a performance overhead, due to buffering request and
-response bytes in memory. It can however be useful to capture requests and responses in an ad-hoc fashion,
-perhaps to troubleshoot an issue in production.</p><p><code class="literal">DisableDirectStreaming</code> can be enabled on a <span class="emphasis"><em>per-request</em></span> basis for this purpose. In using this feature,
-it is possible to configure a general logging mechanism in <code class="literal">OnRequestCompleted</code> and log out
-request and responses only when necessary</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var list = new List&lt;string&gt;();
-var connectionPool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+    public T Deserialize&lt;T&gt;(Stream stream) =&gt; throw new NotImplementedException();
 
-var settings = new ConnectionSettings(connectionPool, new InMemoryConnection())
-    .DefaultIndex("default-index")
-    .OnRequestCompleted(apiCallDetails =&gt;
-    {
-        // log out the request and the request body, if one exists for the type of request
-        if (apiCallDetails.RequestBodyInBytes != null)
-        {
-            list.Add(
-                $"{apiCallDetails.HttpMethod} {apiCallDetails.Uri} " +
-                $"{Encoding.UTF8.GetString(apiCallDetails.RequestBodyInBytes)}");
-        }
-        else
-        {
-            list.Add($"{apiCallDetails.HttpMethod} {apiCallDetails.Uri}");
-        }
+    public object Deserialize(Type type, Stream stream) =&gt; throw new NotImplementedException();
 
-        // log out the response and the response body, if one exists for the type of response
-        if (apiCallDetails.ResponseBodyInBytes != null)
-        {
-            list.Add($"Status: {apiCallDetails.HttpStatusCode}" +
-                     $"{Encoding.UTF8.GetString(apiCallDetails.ResponseBodyInBytes)}");
-        }
-        else
-        {
-            list.Add($"Status: {apiCallDetails.HttpStatusCode}");
-        }
-    });
+    public Task&lt;T&gt; DeserializeAsync&lt;T&gt;(Stream stream, CancellationToken cancellationToken = default(CancellationToken)) =&gt;
+        throw new NotImplementedException();
 
-var client = new ElasticClient(settings);
+    public Task&lt;object&gt; DeserializeAsync(Type type, Stream stream, CancellationToken cancellationToken = default(CancellationToken)) =&gt;
+        throw new NotImplementedException();
 
-var syncResponse = client.Search&lt;object&gt;(s =&gt; s <a id="CO74-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    .AllTypes()
-    .AllIndices()
-    .Scroll("2m")
-    .Sort(ss =&gt; ss
-        .Ascending(SortSpecialField.DocumentIndexOrder)
-    )
-);
+    public void Serialize&lt;T&gt;(T data, Stream stream, SerializationFormatting formatting = SerializationFormatting.Indented) =&gt;
+        throw new NotImplementedException();
 
-list.Count.Should().Be(2);
+    public Task SerializeAsync&lt;T&gt;(T data, Stream stream, SerializationFormatting formatting = SerializationFormatting.Indented,
+        CancellationToken cancellationToken = default(CancellationToken)) =&gt;
+        throw new NotImplementedException();
+}
 
-var asyncResponse = await client.SearchAsync&lt;object&gt;(s =&gt; s <a id="CO74-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    .RequestConfiguration(r =&gt; r
-        .DisableDirectStreaming()
-    )
-    .AllTypes()
-    .AllIndices()
-    .Scroll("10m")
-    .Sort(ss =&gt; ss
-        .Ascending(SortSpecialField.DocumentIndexOrder)
-    )
-);
-
-list.Count.Should().Be(4);
-list.ShouldAllBeEquivalentTo(new[]
+var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+var connectionSettings =
+        new ConnectionSettings(pool, sourceSerializer: (settings, builtin) =&gt; new VanillaSerializer()); <a id="CO41-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+var client = new ElasticClient(connectionSettings);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO41-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+what the Func?
+</p></td></tr></table></div><p>If implementing <code class="literal">IElasticsearchSerializer</code> is enough why do we need to provide its instance wrapped in a factory <code class="literal">Func</code>?</p><p>There are various cases where you need to provide a <code class="literal">_source</code> with <code class="literal">Nest</code> data type as part of that <code class="literal">_source</code>.</p><p>An example if you want to use percolation you need to store queries on your document which means you need to have something like
+this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyPercolationDocument
 {
-    @"POST http://localhost:9200/_search?scroll=2m", <a id="CO74-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-    @"Status: 200",
-    @"POST http://localhost:9200/_search?scroll=10m {""sort"":[{""_doc"":{""order"":""asc""}}]}", <a id="CO74-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-    @"Status: 200"
-});</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO74-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Make a synchronous call where the request and response bytes will not be buffered
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO74-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Make an asynchronous call where <code class="literal">DisableDirectStreaming()</code> is enabled
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO74-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Only the method and url for the first request is captured
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO74-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the body of the second request is captured
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="logging.html">
+    public QueryContainer Query { get; set; }
+    public string Category { get; set; }
+}</pre></div><h3><a id="_jsonnetserializer"></a>JsonNetSerializer<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/serialization/custom-serialization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A custom <code class="literal">SourceSerializer</code> would not know how to serialize <code class="literal">QueryContainer</code> or other NEST types that could appear as part of
+the source. Therefor we ship a separate <code class="literal">NEST.JsonNetSerializer</code> package that helps in composing a custom <code class="literal">SourceSerializer</code>
+using <code class="literal">Json.NET</code> that is smart enough to hand back the (de)serialization of known NEST types back to the builtin
+<code class="literal">RequestResponseSerializer</code>. This package is also useful if you want to control how your documents and values are stored
+and retreived from elasticsearch using <code class="literal">Json.NET</code> without intervering with the way NEST uses <code class="literal">Json.NET</code> internally.</p><p>The easiest way to hook this custom source serializer is as followed:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+var connectionSettings =
+    new ConnectionSettings(pool, sourceSerializer: JsonNetSerializer.Default);
+var client = new ElasticClient(connectionSettings);</pre></div><p><code class="literal">JsonNetSerializer.Default</code> is just syntactic helper which is equivalent to doing:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+var connectionSettings =
+    new ConnectionSettings(pool, sourceSerializer: (b, s) =&gt; new JsonNetSerializer(b, s));
+var client = new ElasticClient(connectionSettings);</pre></div><p><code class="literal">JsonNetSerializer</code>'s constructor takes several methods that allow you to control the <code class="literal">JsonSerializerSettings</code> and modify
+the contract resolver from <code class="literal">Json.NET</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+var connectionSettings =
+    new ConnectionSettings(pool, sourceSerializer: (b, s) =&gt; new JsonNetSerializer(
+        b, s,
+        () =&gt; new JsonSerializerSettings { NullValueHandling = NullValueHandling.Include },
+        (resolver) =&gt; resolver.NamingStrategy = new SnakeCaseNamingStrategy()
+    ));
+var client = new ElasticClient(connectionSettings);</pre></div><p>You can also subclass <code class="literal">ConnectionAwareSerializerBase</code> for a more explicit implementation.</p><p>Using this <code class="literal">MyCustomJsonNetSerializer</code> we can (de)serialize using a <code class="literal">NamingStrategy</code> that snake cases and <code class="literal">JsonSerializerSettings</code>
+that include null properties, without affecting how NEST’s own types are serialized.</p><p>Furthermore because this serializer is aware of the builtin serializer we can automatically inject a <code class="literal">JsonConverter</code> to handle
+known NEST types that could appear as part of the source such as the afformentioned <code class="literal">QueryContainer</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyCustomJsonNetSerializer : ConnectionSettingsAwareSerializerBase
+{
+    public MyCustomJsonNetSerializer(IElasticsearchSerializer builtinSerializer, IConnectionSettingsValues connectionSettings)
+        : base(builtinSerializer, connectionSettings) { }
+
+    protected override IEnumerable&lt;JsonConverter&gt; CreateJsonConverters() =&gt; Enumerable.Empty&lt;JsonConverter&gt;();
+
+    protected override JsonSerializerSettings CreateJsonSerializerSettings() =&gt; new JsonSerializerSettings()
+    {
+        NullValueHandling = NullValueHandling.Include
+    };
+
+    protected override void ModifyContractResolver(ConnectionSettingsAwareContractResolver resolver)
+    {
+        resolver.NamingStrategy = new SnakeCaseNamingStrategy();
+    }
+}
+
+var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+var connectionSettings =
+        new ConnectionSettings(pool, sourceSerializer: (builtin, settings) =&gt; new MyCustomJsonNetSerializer(builtin, settings));
+var client = new ElasticClient(connectionSettings);</pre></div><p>Using this <code class="literal">MyCustomJsonNetSerializer</code> we can (de)serialize using a <code class="literal">NamingStrategy</code> that snake cases and <code class="literal">JsonSerializerSettings</code>
+that include null properties, without affecting how NEST’s own types are serialized.</p></div><div class="navfooter"><span class="prev"><a href="changing-serializers.html">
               « 
-              Logging</a>
+              Changing serializers</a>
            
         </span><span class="next">
            
-          <a href="logging-with-fiddler.html">Logging with Fiddler
+          <a href="modifying-default-serializer.html">Modifying the default serializer
                »
             </a></span></div>
 <!-- end body -->

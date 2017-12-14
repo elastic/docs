@@ -654,10 +654,10 @@ Imagine we have the following <a class="ulink" href="http://en.wikipedia.org/wik
     LastName = "Laarman"
 };
 
-var indexResponse = lowlevelClient.Index&lt;byte[]&gt;("people", "person", "1", person); <a id="CO30-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+var indexResponse = lowlevelClient.Index&lt;BytesResponse&gt;("people", "person", "1", PostData.Serializable(person)); <a id="CO30-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 byte[] responseBytes = indexResponse.Body;
 
-var asyncIndexResponse = await lowlevelClient.IndexAsync&lt;string&gt;("people", "person", "1", person); <a id="CO30-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+var asyncIndexResponse = await lowlevelClient.IndexAsync&lt;StringResponse&gt;("people", "person", "1", PostData.Serializable(person)); <a id="CO30-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
 string responseString = asyncIndexResponse.Body;</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 synchronous method that returns an <code class="literal">IIndexResponse</code>
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO30-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
@@ -669,7 +669,7 @@ with the latter using the idiomatic *Async suffix for the method name.</p></div>
     LastName = "Laarman"
 };
 
-var indexResponse = await lowlevelClient.IndexAsync&lt;Stream&gt;("people", "person", "1", person);
+var indexResponse = await lowlevelClient.IndexAsync&lt;StreamResponse&gt;("people", "person", "1", PostData.Serializable(person));
 Stream responseStream = indexResponse.Body; <a id="CO31-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO31-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 If returning a <code class="literal">Stream</code>, be sure to properly <a class="ulink" href="https://msdn.microsoft.com/en-us/library/b1yfkh5e(v=vs.110).aspx" target="_top">dispose</a> of it when you are finished with it.
 </p></td></tr></table></div><p>Whether you use an instance of a class, anonymous type, <code class="literal">string</code>, etc. they all are implicitly converted to an instance of <code class="literal">PostData&lt;T&gt;</code> that
@@ -684,9 +684,9 @@ from Elasticsearch, forgoing any deserialization.</p><h4><a id="_bulk_indexing">
                 new { FirstName = "Russ", LastName = "Cam" },
             };
 
-var indexResponse = lowlevelClient.Bulk&lt;Stream&gt;(people);
+var indexResponse = lowlevelClient.Bulk&lt;StreamResponse&gt;(PostData.MultiJson(people));
 Stream responseStream = indexResponse.Body;</pre></div><p>The client will serialize each item seperately and join items up using the <code class="literal">\n</code> character as required by the Bulk API. Refer to the
-Elasticsearch Bulk API documentation for further details and supported operations.</p><h3><a id="_searching"></a>Searching<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Now that we have indexed some documents we can begin to search for them.</p><p>The Elasticsearch Query DSL can be expressed using an anonymous type within the request</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var searchResponse = lowlevelClient.Search&lt;string&gt;("people", "person", new
+Elasticsearch Bulk API documentation for further details and supported operations.</p><h3><a id="_searching"></a>Searching<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Now that we have indexed some documents we can begin to search for them.</p><p>The Elasticsearch Query DSL can be expressed using an anonymous type within the request</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var searchResponse = lowlevelClient.Search&lt;StringResponse&gt;("people", "person", PostData.Serializable(new
 {
     from = 0,
     size = 10,
@@ -698,12 +698,12 @@ Elasticsearch Bulk API documentation for further details and supported operation
             query = "Martijn"
         }
     }
-});
+}));
 
 var successful = searchResponse.Success;
 var responseJson = searchResponse.Body;</pre></div><p><code class="literal">responseJson</code> now holds a JSON string for the response. The search endpoint for this query is
 <code class="literal">/people/person/_search</code> and it’s possible to search over multiple indices and types by changing the arguments
-supplied in the request for <code class="literal">index</code> and <code class="literal">type</code>, respectively.</p><p>Strings can also be used to express the request</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var searchResponse = lowlevelClient.Search&lt;byte[]&gt;("people", "person", @"
+supplied in the request for <code class="literal">index</code> and <code class="literal">type</code>, respectively.</p><p>Strings can also be used to express the request</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var searchResponse = lowlevelClient.Search&lt;BytesResponse&gt;("people", "person", @"
 {
     ""from"": 0,
     ""size"": 10,
@@ -724,18 +724,15 @@ it understands how to deserialize your types, most likely by providing your own 
 to <code class="literal">ConnectionConfiguration</code>.</p></div></div><h3><a id="_handling_errors"></a>Handling Errors<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/low-level/getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default, Elasticsearch.Net is configured not to throw exceptions if a HTTP response status code is returned that is not in
 the 200-300 range, nor an expected response status code allowed for a given request e.g. checking if an index exists
 can return a 404.</p><p>The response from low level client calls provides a number of properties that can be used to determine if a call
-is successful</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var searchResponse = lowlevelClient.Search&lt;byte[]&gt;("people", "person", new { match_all = new {} });
+is successful</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var searchResponse = lowlevelClient.Search&lt;BytesResponse&gt;("people", "person", PostData.Serializable(new { match_all = new {} }));
 
 var success = searchResponse.Success; <a id="CO32-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 var successOrKnownError = searchResponse.SuccessOrKnownError; <a id="CO32-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-var serverError = searchResponse.ServerError; <a id="CO32-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-var exception = searchResponse.OriginalException; <a id="CO32-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO32-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+var exception = searchResponse.OriginalException; <a id="CO32-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO32-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Response is in the 200 range, or an expected response for the given request
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO32-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Response is successful, or has a response code between 400-599 that indicates the request cannot be retried.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO32-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Details of any error returned from Elasticsearch
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO32-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 If the response is unsuccessful, will hold the original exception.
 </p></td></tr></table></div><p>Using these details, it is possible to make decisions around what should be done in your application.</p><p>The default behaviour of not throwing exceptions can be changed by setting <code class="literal">.ThrowExceptions()</code> on <code class="literal">ConnectionConfiguration</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var settings = new ConnectionConfiguration(new Uri("http://example.com:9200"))
     .ThrowExceptions();

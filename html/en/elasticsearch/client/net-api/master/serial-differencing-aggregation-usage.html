@@ -615,7 +615,7 @@ Not what you want? See the
            
           <a href="stats-bucket-aggregation-usage.html">Stats Bucket Aggregation Usage
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="serial-differencing-aggregation-usage"></a>Serial Differencing Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/serial-differencing/serial-differencing-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_153"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/serial-differencing/serial-differencing-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="serial-differencing-aggregation-usage"></a>Serial Differencing Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/serial-differencing/serial-differencing-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_157"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/serial-differencing/serial-differencing-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
 .Size(0)
 .Aggregations(a =&gt; a
     .DateHistogram("projects_started_per_month", dh =&gt; dh
@@ -625,13 +625,13 @@ Not what you want? See the
             .Sum("commits", sm =&gt; sm
                 .Field(p =&gt; p.NumberOfCommits)
             )
-            .SerialDifferencing("thirtieth_difference", d =&gt; d
+            .SerialDifferencing("second_difference", d =&gt; d
                 .BucketsPath("commits")
-                .Lag(30)
+                .Lag(2)
             )
         )
     )
-)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_152"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/serial-differencing/serial-differencing-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
+)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_156"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/serial-differencing/serial-differencing-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
 {
     Size = 0,
     Aggregations = new DateHistogramAggregation("projects_started_per_month")
@@ -640,9 +640,9 @@ Not what you want? See the
         Interval = DateInterval.Month,
         Aggregations =
             new SumAggregation("commits", "numberOfCommits") &amp;&amp;
-            new SerialDifferencingAggregation("thirtieth_difference", "commits")
+            new SerialDifferencingAggregation("second_difference", "commits")
             {
-                Lag = 30
+                Lag = 2
             }
     }
 }</pre></div><p><strong>Example json output. </strong>
@@ -660,28 +660,45 @@ Not what you want? See the
             "field": "numberOfCommits"
           }
         },
-        "thirtieth_difference": {
+        "second_difference": {
           "serial_diff": {
             "buckets_path": "commits",
-            "lag": 30
+            "lag": 2
           }
         }
       }
     }
   }
 }</pre></div><p>
-</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_71"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/serial-differencing/serial-differencing-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_72"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/serial-differencing/serial-differencing-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 
 var projectsPerMonth = response.Aggs.DateHistogram("projects_started_per_month");
 projectsPerMonth.Should().NotBeNull();
 projectsPerMonth.Buckets.Should().NotBeNull();
 projectsPerMonth.Buckets.Count.Should().BeGreaterThan(0);
 
+var differenceCount = 0;
+
 foreach (var item in projectsPerMonth.Buckets)
 {
+    differenceCount++;
     var commits = item.Sum("commits");
     commits.Should().NotBeNull();
     commits.Value.Should().NotBe(null);
+
+    var secondDifference = item.SerialDifferencing("second_difference");
+
+    // serial differencing specified a lag of 2, so
+    // only expect values from the 3rd bucket onwards
+    if (differenceCount &lt;= 2)
+    {
+        secondDifference.Should().BeNull();
+    }
+    else
+    {
+        secondDifference.Should().NotBeNull();
+        secondDifference.Value.Should().NotBe(null);
+    }
 }</pre></div></div></div><div class="navfooter"><span class="prev"><a href="percentiles-bucket-aggregation-usage.html">
               « 
               Percentiles Bucket Aggregation Usage</a>
