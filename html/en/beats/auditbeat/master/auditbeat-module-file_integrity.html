@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Audit Module
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>File Integrity Module
         | Auditbeat Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Auditbeat Reference [master]" /><link rel="up" href="auditbeat-modules.html" title="Modules" /><link rel="prev" href="auditbeat-modules.html" title="Modules" /><link rel="next" href="auditbeat-metricset-audit-file.html" title="Audit file metricset" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Auditbeat/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Auditbeat Reference [master]" /><link rel="up" href="auditbeat-modules.html" title="Modules" /><link rel="prev" href="auditbeat-module-auditd.html" title="Auditd Module" /><link rel="next" href="exported-fields.html" title="Exported fields" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Auditbeat/Reference/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -608,66 +608,109 @@ experimental features are not subject to the support SLA of official GA
 features.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Auditbeat Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="auditbeat-modules.html">Modules</a></span> » <span class="breadcrumb-node">Audit Module</span></div><div class="navheader"><span class="prev"><a href="auditbeat-modules.html">
+    </a></span> » <span class="breadcrumb-link"><a href="auditbeat-modules.html">Modules</a></span> » <span class="breadcrumb-node">File Integrity Module</span></div><div class="navheader"><span class="prev"><a href="auditbeat-module-auditd.html">
               « 
-              Modules</a>
+              Auditd Module</a>
            
         </span><span class="next">
            
-          <a href="auditbeat-metricset-audit-file.html">Audit file metricset
+          <a href="exported-fields.html">Exported fields
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="auditbeat-module-audit"></a>Audit Module<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/audit.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">audit</code> module reports security-relevant information based on data captured
-from the operating system (OS) or services running on the OS. Although this
-feature doesn’t provide additional security to your system, it does make it
-easier for you to discover and track security policy violations.</p><h3><a id="_example_configuration"></a>Example configuration<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/audit.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Audit module supports the common configuration options that are
-described under <a class="link" href="configuration-auditbeat.html" title="Specify which modules to run">configuring Auditbeat</a>. Here
-is an example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">auditbeat.modules:
-- module: audit
-  metricsets: [kernel]
-  kernel.audit_rules: |
-    ## Define audit rules here.
-    ## Create file watches (-w) or syscall audits (-a or -A). Uncomment these
-    ## examples or add your own rules.
-
-    ## If you are on a 64 bit platform, everything should be running
-    ## in 64 bit mode. This rule will detect any use of the 32 bit syscalls
-    ## because this might be a sign of someone exploiting a hole in the 32
-    ## bit API.
-    #-a always,exit -F arch=b32 -S all -F key=32bit-abi
-
-    ## Executions.
-    #-a always,exit -F arch=b64 -S execve,execveat -k exec
-
-    ## External access.
-    #-a always,exit -F arch=b64 -S accept,bind,connect,recvfrom -F key=external-access
-
-    ## Identity changes.
-    #-w /etc/group -p wa -k identity
-    #-w /etc/passwd -p wa -k identity
-    #-w /etc/gshadow -p wa -k identity
-
-    ## Unauthorized access attempts.
-    #-a always,exit -F arch=b64 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EACCES -k access
-    #-a always,exit -F arch=b64 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EPERM -k access
-
-- module: audit
-  metricsets: [file]
-  file.paths:
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="auditbeat-module-file_integrity"></a>File Integrity Module<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/file_integrity.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">file_integrity</code> module sends events when a file is changed (created,
+updated, or deleted) on disk. The events contain file metadata and hashes.</p><p>The module is implemented for Linux, macOS (Darwin), and Windows.</p><h3><a id="_how_it_works_2"></a>How it works<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/file_integrity.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This module uses features of the operating system to monitor file changes in
+realtime. When the module starts it creates a subscription with the OS to
+receive notifications of changes to the specified files or directories. Upon
+receiving notification of a change the module will read the file’s metadata
+and the compute a hash of the file’s contents.</p><p>At startup this module will perform an initial scan of the configured files
+and directories to generate baseline data for the monitored paths and detect
+changes since the last time it was run. It uses locally persisted data in order
+to only send events for new or modified files.</p><p>The operating system features that power this feature are as follows.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Linux - <code class="literal">inotify</code> is used, and therefore the kernel must have inotify support.
+Inotify was initially merged into the 2.6.13 Linux kernel.
+</li><li class="listitem">
+macOS (Darwin) - Uses the <code class="literal">FSEvents</code> API, present since macOS 10.5. This API
+coalesces multiple changes to a file into a single event. Auditbeat translates
+this coalesced changes into a meaningful sequence of actions. However,
+in rare situations the reported events may have a different ordering than what
+actually happened.
+</li><li class="listitem">
+Windows - <code class="literal">ReadDirectoryChangesW</code> is used.
+</li></ul></div><p>The file integrity module should not be used to monitor paths on network file
+systems.</p><h3><a id="_configuration_options_14"></a>Configuration options<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/file_integrity.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This module has some configuration options for tuning its behavior. The
+following example shows all configuration options with their default values for
+Linux.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: file_integrity
+  paths:
   - /bin
   - /usr/bin
   - /sbin
   - /usr/sbin
-  - /etc</pre></div><h3><a id="_metricsets"></a>Metricsets<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/audit.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The following metricsets are available:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="link" href="auditbeat-metricset-audit-file.html" title="Audit file metricset">file</a>
-</li><li class="listitem">
-<a class="link" href="auditbeat-metricset-audit-kernel.html" title="Audit kernel metricset">kernel</a>
-</li></ul></div></div><div class="navfooter"><span class="prev"><a href="auditbeat-modules.html">
+  - /etc
+  scan_at_start: true
+  scan_rate_per_sec: 50 MiB
+  max_file_size: 100 MiB
+  hash_types: [sha1]
+  recursive: false</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">paths</code></strong></span>
+</span></dt><dd>
+A list of paths (directories or files) to watch. Globs are
+not supported. The specified paths should exist when the metricset is started.
+</dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">scan_at_start</code></strong></span>
+</span></dt><dd><p class="simpara">
+A boolean value that controls if Auditbeat scans
+over the configured file paths at startup and send events for the files
+that have been modified since the last time Auditbeat was running. The
+default value is true.
+</p><p class="simpara">This feature depends on data stored locally in <code class="literal">path.data</code> in order to determine
+if a file has changed. The first time Auditbeat runs it will send an event
+for each file it encounters.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">scan_rate_per_sec</code></strong></span>
+</span></dt><dd>
+When <code class="literal">scan_at_start</code> is enabled this sets an
+average read rate defined in bytes per second for the initial scan. This
+throttles the amount of CPU and I/O that Auditbeat consumes at startup.
+The default value is "50 MiB". Setting the value to "0" disables throttling.
+For convenience units can be specified as a suffix to the value. The supported
+units are <code class="literal">b</code> (default), <code class="literal">kib</code>, <code class="literal">kb</code>, <code class="literal">mib</code>, <code class="literal">mb</code>, <code class="literal">gib</code>, <code class="literal">gb</code>, <code class="literal">tib</code>, <code class="literal">tb</code>,
+<code class="literal">pib</code>, <code class="literal">pb</code>, <code class="literal">eib</code>, and <code class="literal">eb</code>.
+</dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">max_file_size</code></strong></span>
+</span></dt><dd>
+The maximum size of a file in bytes for which
+Auditbeat will compute hashes. Files larger than this size will not be
+hashed. The default value is 100 MiB. For convenience units can be specified as
+a suffix to the value. The supported units are <code class="literal">b</code> (default), <code class="literal">kib</code>, <code class="literal">kb</code>, <code class="literal">mib</code>,
+<code class="literal">mb</code>, <code class="literal">gib</code>, <code class="literal">gb</code>, <code class="literal">tib</code>, <code class="literal">tb</code>, <code class="literal">pib</code>, <code class="literal">pb</code>, <code class="literal">eib</code>, and <code class="literal">eb</code>.
+</dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">hash_types</code></strong></span>
+</span></dt><dd>
+A list of hash types to compute when the file changes.
+The supported hash types are md5, sha1, sha224, sha256, sha384, sha512,
+sha512_224, sha512_256, sha3_224, sha3_256, sha3_384 and sha3_512. The default
+value is sha1.
+</dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">recursive</code></strong></span>
+</span></dt><dd>
+By default, the watches set to the paths specified in
+<code class="literal">paths</code> are not recursive. This means that only changes to the contents
+of this directories are watched. If <code class="literal">recursive</code> is set to <code class="literal">true</code>, the file
+metric will watch for changes on this directories and all their subdirectories.
+</dd></dl></div><h3><a id="_example_configuration_2"></a>Example configuration<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/file_integrity.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The File Integrity module supports the common configuration options that are
+described under <a class="link" href="configuration-auditbeat.html" title="Specify which modules to run">configuring Auditbeat</a>. Here
+is an example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">auditbeat.modules:
+- module: file_integrity
+  paths:
+  - /bin
+  - /usr/bin
+  - /sbin
+  - /usr/sbin
+  - /etc</pre></div></div><div class="navfooter"><span class="prev"><a href="auditbeat-module-auditd.html">
               « 
-              Modules</a>
+              Auditd Module</a>
            
         </span><span class="next">
            
-          <a href="auditbeat-metricset-audit-file.html">Audit file metricset
+          <a href="exported-fields.html">Exported fields
                »
             </a></span></div>
 <!-- end body -->

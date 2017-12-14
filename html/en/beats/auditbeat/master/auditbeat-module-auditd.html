@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Audit file metricset
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Auditd Module
         | Auditbeat Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Auditbeat Reference [master]" /><link rel="up" href="auditbeat-module-audit.html" title="Audit Module" /><link rel="prev" href="auditbeat-module-audit.html" title="Audit Module" /><link rel="next" href="auditbeat-metricset-audit-kernel.html" title="Audit kernel metricset" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Auditbeat/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Auditbeat Reference [master]" /><link rel="up" href="auditbeat-modules.html" title="Modules" /><link rel="prev" href="auditbeat-modules.html" title="Modules" /><link rel="next" href="auditbeat-module-file_integrity.html" title="File Integrity Module" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Auditbeat/Reference/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -608,134 +608,164 @@ experimental features are not subject to the support SLA of official GA
 features.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Auditbeat Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="auditbeat-modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="auditbeat-module-audit.html">Audit Module</a></span> » <span class="breadcrumb-node">Audit file metricset</span></div><div class="navheader"><span class="prev"><a href="auditbeat-module-audit.html">
+    </a></span> » <span class="breadcrumb-link"><a href="auditbeat-modules.html">Modules</a></span> » <span class="breadcrumb-node">Auditd Module</span></div><div class="navheader"><span class="prev"><a href="auditbeat-modules.html">
               « 
-              Audit Module</a>
+              Modules</a>
            
         </span><span class="next">
            
-          <a href="auditbeat-metricset-audit-kernel.html">Audit kernel metricset
+          <a href="auditbeat-module-file_integrity.html">File Integrity Module
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="auditbeat-metricset-audit-file"></a>Audit file metricset<a href="https://github.com/elastic/beats/edit/master/auditbeat/module/audit/file/_meta/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">file</code> metricset sends events when a file is changed (created, updated, or
-deleted) on disk. The events contain file metadata and hashes.</p><p>The metricset is implemented for Linux, macOS (Darwin), and Windows.</p><h3><a id="_how_it_works"></a>How it works<a href="https://github.com/elastic/beats/edit/master/auditbeat/module/audit/file/_meta/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This metricset uses features of the operating system to monitor file changes in
-realtime. When the metricset starts it creates a subscription with the OS to
-receive notifications of changes to the specified files or directories. Upon
-receiving notification of a change the metricset will read the file’s metadata
-and the compute a hash of the file’s contents.</p><p>At startup this metricset will perform an initial scan of the configured files
-and directories to generate baseline data for the monitored paths and detect
-changes since the last time it was run. It uses locally persisted data in order
-to only send events for new or modified files.</p><p>The operating system features that power this feature are as follows.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Linux - <code class="literal">inotify</code> is used, and therefore the kernel must have inotify support.
-Inotify was initially merged into the 2.6.13 Linux kernel.
-</li><li class="listitem">
-macOS (Darwin) - Uses the <code class="literal">FSEvents</code> API, present since macOS 10.5. This API
-coalesces multiple changes to a file into a single event. Auditbeat translates
-this coalesced changes into a meaningful sequence of actions. However,
-in rare situations the reported events may have a different ordering than what
-actually happened.
-</li><li class="listitem">
-Windows - <code class="literal">ReadDirectoryChangesW</code> is used.
-</li></ul></div><p>The file metricset should not be used to monitor paths on network file systems.</p><h3><a id="_configuration_options_13"></a>Configuration options<a href="https://github.com/elastic/beats/edit/master/auditbeat/module/audit/file/_meta/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This metricset has some configuration options for tuning its behavior. The
-following example shows all configuration options with their default values for
-Linux.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: audit
-  metricsets: [file]
-  file.paths:
-  - /bin
-  - /usr/bin
-  - /sbin
-  - /usr/sbin
-  - /etc
-  file.scan_at_start: true
-  file.scan_rate_per_sec: 50 MiB
-  file.max_file_size: 100 MiB
-  file.hash_types: [sha1]
-  file.recursive: false</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<span class="strong strong"><strong><code class="literal">file.paths</code></strong></span>
-</span></dt><dd>
-A list of paths (directories or files) to watch. Globs are
-not supported. The specified paths should exist when the metricset is started.
-</dd><dt><span class="term">
-<span class="strong strong"><strong><code class="literal">file.scan_at_start</code></strong></span>
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="auditbeat-module-auditd"></a>Auditd Module<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/auditd.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">auditd</code> module receives audit events from the Linux Audit Framework that
+is a part of the Linux kernel.</p><p>This module is available only for Linux.</p><h3><a id="_how_it_works"></a>How it works<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/auditd.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This module establishes a subscription to the kernel to receive the events
+as they occur. So unlike most other modules, the <code class="literal">period</code> configuration
+option is unused because it is not implemented using polling.</p><p>The Linux Audit Framework can send multiple messages for a single auditable
+event. For example, a <code class="literal">rename</code> syscall causes the kernel to send eight separate
+messages. Each message describes a different aspect of the activity that is
+occurring (the syscall itself, file paths, current working directory, process
+title). This module will combine all of the data from each of the messages
+into a single event.</p><p>Messages for one event can be interleaved with messages from another event. This
+module will buffer the messages in order to combine related messages into a
+single event even if they arrive interleaved or out of order.</p><h3><a id="_useful_commands"></a>Useful commands<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/auditd.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When running Auditbeat with the <code class="literal">auditd</code> module enabled, you might find
+that other monitoring tools interfere with Auditbeat.</p><p>For example, you might encounter errors if another process, such as <code class="literal">auditd</code>, is
+registered to receive data from the Linux Audit Framework. You can use these
+commands to see if the <code class="literal">auditd</code> service is running and stop it:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+See if <code class="literal">auditd</code> is running:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">service auditd status</pre></div></li><li class="listitem"><p class="simpara">
+Stop the <code class="literal">auditd</code> service:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">service auditd stop</pre></div></li><li class="listitem"><p class="simpara">
+Disable <code class="literal">auditd</code> from starting on boot:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">chkconfig auditd off</pre></div></li></ul></div><p>To save CPU usage and disk space, you can use this command to stop <code class="literal">journald</code>
+from listening to audit messages:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">systemctl mask systemd-journald-audit.socket</pre></div><h3><a id="_configuration_options_13"></a>Configuration options<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/auditd.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This module has some configuration options for tuning its behavior. The
+following example shows all configuration options with their default values.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: auditd
+  resolve_ids: true
+  failure_mode: silent
+  backlog_limit: 8196
+  rate_limit: 0
+  include_raw_message: false
+  include_warnings: false</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">socket_type</code></strong></span>
 </span></dt><dd><p class="simpara">
-A boolean value that controls if Auditbeat scans
-over the configured file paths at startup and send events for the files
-that have been modified since the last time Auditbeat was running. The
-default value is true.
-</p><p class="simpara">This feature depends on data stored locally in <code class="literal">path.data</code> in order to determine
-if a file has changed. The first time Auditbeat runs it will send an event
-for each file it encounters.</p></dd><dt><span class="term">
-<span class="strong strong"><strong><code class="literal">file.scan_rate_per_sec</code></strong></span>
+This optional setting controls the type of
+socket that Auditbeat uses to receive events from the kernel. The two
+options are <code class="literal">unicast</code> and <code class="literal">multicast</code>.
+</p><p class="simpara"><code class="literal">unicast</code> should be used when Auditbeat is the primary userspace daemon for
+receiving audit events and managing the rules. Only a single process can receive
+audit events through the "unicast" connection so any other daemons should be
+stopped (e.g. stop <code class="literal">auditd</code>).</p><p class="simpara"><code class="literal">multicast</code> can be used in kernel versions 3.16 and newer. By using <code class="literal">multicast</code>
+Auditbeat will receive an audit event broadcast that is not exclusive to a
+a single process. This is ideal for situations where <code class="literal">auditd</code> is running and
+managing the rules. If <code class="literal">multicast</code> is specified, but the kernel version is less
+than 3.16 Auditbeat will automatically revert to <code class="literal">unicast</code>.</p><p class="simpara">By default Auditbeat will use <code class="literal">multicast</code> if the kernel version is 3.16 or
+newer and no rules have been defined. Otherwise <code class="literal">unicast</code> will be used.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">resolve_ids</code></strong></span>
 </span></dt><dd>
-When <code class="literal">file.scan_at_start</code> is enabled this sets an
-average read rate defined in bytes per second for the initial scan. This
-throttles the amount of CPU and I/O that Auditbeat consumes at startup.
-The default value is "50 MiB". Setting the value to "0" disables throttling.
-For convenience units can be specified as a suffix to the value. The supported
-units are <code class="literal">b</code> (default), <code class="literal">kib</code>, <code class="literal">kb</code>, <code class="literal">mib</code>, <code class="literal">mb</code>, <code class="literal">gib</code>, <code class="literal">gb</code>, <code class="literal">tib</code>, <code class="literal">tb</code>,
-<code class="literal">pib</code>, <code class="literal">pb</code>, <code class="literal">eib</code>, and <code class="literal">eb</code>.
+This boolean setting enables the resolution of UIDs and
+GIDs to their associated names. The default value is true.
 </dd><dt><span class="term">
-<span class="strong strong"><strong><code class="literal">file.max_file_size</code></strong></span>
+<span class="strong strong"><strong><code class="literal">failure_mode</code></strong></span>
 </span></dt><dd>
-The maximum size of a file in bytes for which
-Auditbeat will compute hashes. Files larger than this size will not be
-hashed. The default value is 100 MiB. For convenience units can be specified as
-a suffix to the value. The supported units are <code class="literal">b</code> (default), <code class="literal">kib</code>, <code class="literal">kb</code>, <code class="literal">mib</code>,
-<code class="literal">mb</code>, <code class="literal">gib</code>, <code class="literal">gb</code>, <code class="literal">tib</code>, <code class="literal">tb</code>, <code class="literal">pib</code>, <code class="literal">pb</code>, <code class="literal">eib</code>, and <code class="literal">eb</code>.
+This determines the kernel’s behavior on critical
+failures such as errors sending events to Auditbeat, the backlog limit was
+exceeded, the kernel ran out of memory, or the rate limit was exceeded. The
+options are <code class="literal">silent</code>, <code class="literal">log</code>, or <code class="literal">panic</code>. <code class="literal">silent</code> basically makes the kernel
+ignore the errors, <code class="literal">log</code> makes the kernel write the audit messages using
+<code class="literal">printk</code> so they show up in system’s syslog, and <code class="literal">panic</code> causes the kernel to
+panic to prevent use of the machine. Auditbeat’s default is <code class="literal">silent</code>.
 </dd><dt><span class="term">
-<span class="strong strong"><strong><code class="literal">file.hash_types</code></strong></span>
+<span class="strong strong"><strong><code class="literal">backlog_limit</code></strong></span>
 </span></dt><dd>
-A list of hash types to compute when the file changes.
-The supported hash types are md5, sha1, sha224, sha256, sha384, sha512,
-sha512_224, sha512_256, sha3_224, sha3_256, sha3_384 and sha3_512. The default
-value is sha1.
+This controls the maximum number of audit messages
+that will be buffered by the kernel.
 </dd><dt><span class="term">
-<span class="strong strong"><strong><code class="literal">file.recursive</code></strong></span>
+<span class="strong strong"><strong><code class="literal">rate_limit</code></strong></span>
 </span></dt><dd>
-By default, the watches set to the paths specified in
-<code class="literal">file.paths</code> are not recursive. This means that only changes to the contents
-of this directories are watched. If <code class="literal">file.recursive</code> is set to <code class="literal">true</code>, the file
-metric will watch for changes on this directories and all their subdirectories.
-</dd></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fields"></a>Fields<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/audit/file.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For a description of each field in the metricset, see the
-<a class="link" href="exported-fields-audit.html" title="Audit fields">exported fields</a> section.</p><p>Here is an example document generated by this metricset:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-  "@timestamp": "2017-10-06T17:35:33.773Z",
-  "@metadata": {
-    "beat": "noindex",
-    "type": "doc",
-    "version": "1.2.3"
-  },
-  "audit": {
-    "file": {
-      "hashed": true,
-      "inode": "15329399",
-      "uid": 501,
-      "group": "staff",
-      "ctime": "2017-10-06T17:35:33.000Z",
-      "gid": 20,
-      "path": "/private/var/folders/8x/rnyk6yxn6w97lddn3bs02gf00000gn/T/audit-file387158249/file.data",
-      "mode": "0600",
-      "action": "created",
-      "mtime": "2017-10-06T17:35:33.000Z",
-      "size": 11,
-      "owner": "akroh",
-      "sha1": "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed"
-    }
-  },
-  "metricset": {
-    "module": "audit",
-    "name": "file",
-    "rtt": 5928
-  },
-  "beat": {
-    "name": "host.example.com",
-    "hostname": "host.example.com"
-  }
-}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="auditbeat-module-audit.html">
+This sets a rate limit on the number of messages/sec
+delivered by the kernel. The default is 0, which disables rate limiting.
+Changing this value to anything other than zero can cause messages to be lost.
+The preferred approach to reduce the messaging rate is be more selective in the
+audit ruleset.
+</dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">include_raw_message</code></strong></span>
+</span></dt><dd>
+This boolean setting causes Auditbeat to
+include each of the raw messages that contributed to the event in the document
+as a field called <code class="literal">messages</code>. The default value is false. This setting is
+primarily used for development and debugging purposes.
+</dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">include_warnings</code></strong></span>
+</span></dt><dd>
+This boolean setting causes Auditbeat to
+include as warnings any issues that were encountered while parsing the raw
+messages. The default value is false. When this setting is enabled the raw
+messages will be included in the event regardless of the
+<code class="literal">include_raw_message</code> config setting. This setting is primarily used for
+development and debugging purposes.
+</dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">audit_rules</code></strong></span>
+</span></dt><dd>
+A string containing the audit rules that should be
+installed to the kernel. There should be one rule per line. Comments can be
+embedded in the string using <code class="literal">#</code> as a prefix. The format for rules is the same
+used by the Linux <code class="literal">auditctl</code> utility. Auditbeat supports adding file watches
+(<code class="literal">-w</code>) and syscall rules (<code class="literal">-a</code> or <code class="literal">-A</code>).
+</dd></dl></div><h3><a id="_audit_rules"></a>Audit rules<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/auditd.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The audit rules are where you configure the activities that are audited. These
+rules are configured as either syscalls or files that should be monitored. For
+example you can track all <code class="literal">connect</code> syscalls or file system writes to
+<code class="literal">/etc/passwd</code>.</p><p>Auditing a large number of syscalls can place a heavy load on the system so
+consider carefully the rules you define and try to apply filters in the rules
+themselves to be as selective as possible.</p><p>The kernel evaluates the rules in the order in which they were defined so place
+the most active rules first in order to speed up evaluation.</p><p>You can assign keys to each rule for better identification of the rule that
+triggered an event and easier filtering later in Elasticsearch.</p><p>Defining any audit rules in the config causes Auditbeat to purge all
+existing audit rules prior to adding the rules specified in the config.
+Therefore it is unnecessary and unsupported to include a <code class="literal">-D</code> (delete all) rule.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">auditbeat.modules:
+- module: auditd
+  audit_rules: |
+    # Things that affect identity.
+    -w /etc/group -p wa -k identity
+    -w /etc/passwd -p wa -k identity
+    -w /etc/gshadow -p wa -k identity
+    -w /etc/shadow -p wa -k identity
+
+    # Unauthorized access attempts to files (unsuccessful).
+    -a always,exit -F arch=b32 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EACCES -F auid&gt;=1000 -F auid!=4294967295 -F key=access
+    -a always,exit -F arch=b32 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EPERM -F auid&gt;=1000 -F auid!=4294967295 -F key=access
+    -a always,exit -F arch=b64 -S open,truncate,ftruncate,creat,openat,open_by_handle_at -F exit=-EACCES -F auid&gt;=1000 -F auid!=4294967295 -F key=access
+    -a always,exit -F arch=b64 -S open,truncate,ftruncate,creat,openat,open_by_handle_at -F exit=-EPERM -F auid&gt;=1000 -F auid!=4294967295 -F key=access</pre></div><h3><a id="_example_configuration"></a>Example configuration<a href="https://github.com/elastic/beats/edit/master/auditbeat/docs/modules/auditd.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Auditd module supports the common configuration options that are
+described under <a class="link" href="configuration-auditbeat.html" title="Specify which modules to run">configuring Auditbeat</a>. Here
+is an example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">auditbeat.modules:
+- module: auditd
+  audit_rules: |
+    ## Define audit rules here.
+    ## Create file watches (-w) or syscall audits (-a or -A). Uncomment these
+    ## examples or add your own rules.
+
+    ## If you are on a 64 bit platform, everything should be running
+    ## in 64 bit mode. This rule will detect any use of the 32 bit syscalls
+    ## because this might be a sign of someone exploiting a hole in the 32
+    ## bit API.
+    #-a always,exit -F arch=b32 -S all -F key=32bit-abi
+
+    ## Executions.
+    #-a always,exit -F arch=b64 -S execve,execveat -k exec
+
+    ## External access.
+    #-a always,exit -F arch=b64 -S accept,bind,connect,recvfrom -F key=external-access
+
+    ## Identity changes.
+    #-w /etc/group -p wa -k identity
+    #-w /etc/passwd -p wa -k identity
+    #-w /etc/gshadow -p wa -k identity
+
+    ## Unauthorized access attempts.
+    #-a always,exit -F arch=b64 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EACCES -k access
+    #-a always,exit -F arch=b64 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EPERM -k access</pre></div></div><div class="navfooter"><span class="prev"><a href="auditbeat-modules.html">
               « 
-              Audit Module</a>
+              Modules</a>
            
         </span><span class="next">
            
-          <a href="auditbeat-metricset-audit-kernel.html">Audit kernel metricset
+          <a href="auditbeat-module-file_integrity.html">File Integrity Module
                »
             </a></span></div>
 <!-- end body -->
