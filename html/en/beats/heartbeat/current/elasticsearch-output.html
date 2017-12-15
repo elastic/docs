@@ -618,7 +618,7 @@ subject to the support SLA of official GA features.
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="elasticsearch-output"></a>Configure the Elasticsearch output<a href="https://github.com/elastic/beats/edit/6.1/libbeat/docs/outputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When you specify Elasticsearch for the output, the Beat sends the transactions directly to Elasticsearch by using the Elasticsearch HTTP API.</p><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.elasticsearch:
   hosts: ["http://localhost:9200"]
-  index: "heartbeat"
+  index: "heartbeat-%{[beat.version]}-%{+yyyy.MM.dd}"
   ssl.certificate_authorities: ["/etc/pki/root/ca.pem"]
   ssl.certificate: "/etc/pki/client/cert.pem"
   ssl.key: "/etc/pki/client/cert.key"</pre></div><p>To enable SSL, just add <code class="literal">https</code> to all URLs defined under <span class="emphasis"><em>hosts</em></span>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.elasticsearch:
@@ -654,17 +654,23 @@ value may be either a complete URL or a "host[:port]", in which case the "http"
 scheme is assumed. If a value is not specified through the configuration file
 then proxy environment variables are used. See the
 <a class="ulink" href="https://golang.org/pkg/net/http/#ProxyFromEnvironment" target="_top">golang documentation</a>
-for more information about the environment variables.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_literal_index_literal"></a><code class="literal">index</code><a href="https://github.com/elastic/beats/edit/6.1/libbeat/docs/outputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The index name to write events to. The default is "heartbeat-%{+yyyy.MM.dd}" (for example, "heartbeat-2015.04.26").</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_literal_indices_literal"></a><code class="literal">indices</code><a href="https://github.com/elastic/beats/edit/6.1/libbeat/docs/outputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Array of index selector rules supporting conditionals, format string
+for more information about the environment variables.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="index-option-es"></a><code class="literal">index</code><a href="https://github.com/elastic/beats/edit/6.1/libbeat/docs/outputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The index name to write events to. The default is
+<code class="literal">"heartbeat-%{[beat.version]}-%{+yyyy.MM.dd}"</code> (for example,
+<code class="literal">"heartbeat-6.1.0-2017.04.26"</code>). If you change this setting, you also
+need to configure the <code class="literal">setup.template.name</code> and <code class="literal">setup.template.pattern</code> options
+(see <a class="xref" href="configuration-template.html" title="Load the Elasticsearch index template"><em>Load the Elasticsearch index template</em></a>). If you are using the pre-built Kibana
+dashboards, you also need to set the <code class="literal">setup.dashboards.index</code> option (see
+<a class="xref" href="configuration-dashboards.html" title="Load the Kibana dashboards"><em>Load the Kibana dashboards</em></a>).</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_literal_indices_literal"></a><code class="literal">indices</code><a href="https://github.com/elastic/beats/edit/6.1/libbeat/docs/outputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Array of index selector rules supporting conditionals, format string
 based field access and name mappings. The first rule matching will be used to
 set the <code class="literal">index</code> for the event to be published. If <code class="literal">indices</code> is missing or no
 rule matches, the <code class="literal">index</code> field will be used.</p><p>Rule settings:</p><p><span class="strong strong"><strong><code class="literal">index</code></strong></span>: The index format string to use. If the fields used are missing, the rule fails.</p><p><span class="strong strong"><strong><code class="literal">mapping</code></strong></span>: Dictionary mapping index names to new names</p><p><span class="strong strong"><strong><code class="literal">default</code></strong></span>: Default string value if <code class="literal">mapping</code> does not find a match.</p><p><span class="strong strong"><strong><code class="literal">when</code></strong></span>: Condition which must succeed in order to execute the current rule.</p><p>Examples elasticsearch output with <code class="literal">indices</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.elasticsearch:
   hosts: ["http://localhost:9200"]
-  index: "logs-%{+yyyy.MM.dd}"
+  index: "logs-%{[beat.version]}-%{+yyyy.MM.dd}"
   indices:
-    - index: "critical-%{+yyyy.MM.dd}"
+    - index: "critical-%{[beat.version]}-%{+yyyy.MM.dd}"
       when.contains:
         message: "CRITICAL"
-    - index: "error-%{+yyyy.MM.dd}"
+    - index: "error-%{[beat.version]}-%{+yyyy.MM.dd}"
       when.contains:
         message: "ERR"</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_literal_pipeline_literal"></a><code class="literal">pipeline</code><a href="https://github.com/elastic/beats/edit/6.1/libbeat/docs/outputconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>A format string value that specifies the ingest node pipeline to write events to.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.elasticsearch:
   hosts: ["http://localhost:9200"]
@@ -682,7 +688,7 @@ no rule matches, the <code class="literal">pipeline</code> field will be used.</
 
 output.elasticsearch:
   hosts: ["http://localhost:9200"]
-  index: "filebeat-%{+yyyy.MM.dd}"
+  index: "filebeat-%{[beat.version]}-%{+yyyy.MM.dd}"
   pipelines:
     - pipeline: critical_pipeline
       when.equals:
