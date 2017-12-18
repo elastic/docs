@@ -654,12 +654,22 @@ use the Logstash output and then use Logstash to pipe the events to multiple
 run multiple instances of the same Beat
 </li></ul></div><p>If you used the <code class="literal">file</code> or <code class="literal">console</code> outputs for debugging purposes, in addition
 to the main output, we recommend using the <code class="literal">-d "publish"</code> option which logs the
-published events in the Filebeat logs.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="breaking-changes-types"></a>Filebeat prospector type and document type changes<a href="https://github.com/elastic/beats/edit/6.x/libbeat/docs/breaking.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">document_type</code> setting, from the prospector configuration, was removed
+published events in the Filebeat logs.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="breaking-changes-ls-index"></a>Logstash index setting now requires version<a href="https://github.com/elastic/beats/edit/6.x/libbeat/docs/breaking.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you use the Logstash output to send data from Beats to Logstash, you need to
+update the <code class="literal">index</code> setting in your Logstash configuration to include the Beat
+version:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">output {
+  elasticsearch {
+    hosts =&gt; "localhost:9200"
+    manage_template =&gt; false
+    index =&gt; "%{[@metadata][beat]}-%{[@metadata][version]}-%{+YYYY.MM.dd}"
+  }
+}</pre></div><p>Prior to 6.0, the recommended setting was:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">    index =&gt; "%{[@metadata][beat]}-%{+YYYY.MM.dd}"</pre></div><p>The index templates that ship with 6.0 are applied to new indexes that match the
+pattern <code class="literal">[beat]-[version]-*</code>. You must update your Logstash config, or the
+templates will not be applied.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="breaking-changes-types"></a>Filebeat prospector type and document type changes<a href="https://github.com/elastic/beats/edit/6.x/libbeat/docs/breaking.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">document_type</code> setting, from the prospector configuration, was removed
 because the <code class="literal">_type</code> concept is being
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/removal-of-types.html" target="_top">removed from Elasticsearch</a>. Instead of
 the <code class="literal">document_type</code> setting, you can use a custom field.</p><p>This has led also to the rename of the <code class="literal">input_type</code> configuration setting to
 <code class="literal">type</code>. This change is backwards compatible because the old setting still
-works. However, the <code class="literal">input_type</code> output field was renamed to <code class="literal">prospector_type</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="breaking-changes-default-config"></a>Filebeat default prospector disabled in the configuration file<a href="https://github.com/elastic/beats/edit/6.x/libbeat/docs/breaking.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The default startup behaviour (based on the included sample configuration) of
+works. However, the <code class="literal">input_type</code> output field was renamed to <code class="literal">prospector.type</code>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="breaking-changes-default-config"></a>Filebeat default prospector disabled in the configuration file<a href="https://github.com/elastic/beats/edit/6.x/libbeat/docs/breaking.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The default startup behaviour (based on the included sample configuration) of
 Filebeat was to read all the files matching the <code class="literal">/var/log/*.log</code> pattern.
 Starting with version 6.0, Filebeat doesn’t read any files in its default
 configuration. However, you can easily enable the <code class="literal">system</code> module, for example
