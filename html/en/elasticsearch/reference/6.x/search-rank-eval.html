@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>How to use scripts
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Ranking Evaluation API
         | Elasticsearch Reference [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-scripting.html" title="Scripting" /><link rel="next" href="modules-scripting-fields.html" title="Accessing document fields and special variables" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="search.html" title="Search APIs" /><link rel="prev" href="search-field-caps.html" title="Field Capabilities API" /><link rel="next" href="search-aggregations.html" title="Aggregations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -607,108 +607,214 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [6.x]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-scripting.html">Scripting</a></span> » <span class="breadcrumb-node">How to use scripts</span></div><div class="navheader"><span class="prev"><a href="modules-scripting.html">
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs</a></span> » <span class="breadcrumb-node">Ranking Evaluation API</span></div><div class="navheader"><span class="prev"><a href="search-field-caps.html">
               « 
-              Scripting</a>
+              Field Capabilities API</a>
            
         </span><span class="next">
            
-          <a href="modules-scripting-fields.html">Accessing document fields and special variables
+          <a href="search-aggregations.html">Aggregations
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-using"></a>How to use scripts<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Wherever scripting is supported in the Elasticsearch API, the syntax follows
-the same pattern:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  "script": {
-    "lang":   "...",  <a id="CO325-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    "source" | "id": "...", <a id="CO325-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    "params": { ... } <a id="CO325-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-  }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO325-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The language the script is written in, which defaults to <code class="literal">painless</code>.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO325-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The script itself which may be specified as <code class="literal">source</code> for an inline script or <code class="literal">id</code> for a stored script.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO325-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Any named parameters that should be passed into the script.
-</p></td></tr></table></div><p>For example, the following script is used in a search request to return a
-<a class="link" href="search-request-script-fields.html" title="Script Fields">scripted field</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index/my_type/1
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="search-rank-eval"></a>Ranking Evaluation API<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The ranking evaluation API allows to evaluate the quality of ranked search
+results over a set of typical search queries. Given this set of queries and a
+list or manually rated documents, the <code class="literal">_rank_eval</code> endpoint calculates and
+returns typical information retrieval metrics like <span class="emphasis"><em>mean reciprocal rank</em></span>,
+<span class="emphasis"><em>precision</em></span> or <span class="emphasis"><em>discounted cumulative gain</em></span>.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>
+The ranking evaluation API is new and may change in non-backwards compatible ways in the future, even on minor versions updates.
+</p></div></div><h3><a id="_overview"></a>Overview<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Search quality evaluation starts with looking at the users of your search application, and the things that they are searching for.
+Users have a specific <span class="emphasis"><em>information need</em></span>, e.g. they are looking for gift in a web shop or want to book a flight for their next holiday.
+They usually enters some search terms into a search box or some other web form.
+All of this information, together with meta information about the user (e.g. the browser, location, earlier preferences etc…) then gets translated into a query to the underlying search system.</p><p>The challenge for search engineers is to tweak this translation process from user entries to a concrete query in such a way, that the search results contain the most relevant information with respect to the users information_need.
+This can only be done if the search result quality is evaluated constantly across a representative test suite of typical user queries, so that improvements in the rankings for one particular query doesn’t negatively effect the ranking for other types of queries.</p><p>In order to get started with search quality evaluation, three basic things are needed:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+a collection of documents you want to evaluate your query performance against, usually one or more indices
+</li><li class="listitem">
+a collection of typical search requests that users enter into your system
+</li><li class="listitem">
+a set of document ratings that judge the documents relevance with respect to a search request+
+  It is important to note that one set of document ratings is needed per test query, and that
+  the relevance judgements are based on the <span class="emphasis"><em>information_need</em></span> of the user that entered the query.
+</li></ol></div><p>The ranking evaluation API provides a convenient way to use this information in a ranking evaluation request to calculate different search evaluation metrics. This gives a first estimation of your overall search quality and give you a measurement to optimize against when fine-tuning various aspect of the query generation in your application.</p><h3><a id="_ranking_evaluation_request_structure"></a>Ranking evaluation request structure<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In its most basic form, a request to the <code class="literal">_rank_eval</code> endpoint has two sections:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_index/_rank_eval
 {
-  "my_field": 5
-}
-
-GET my_index/_search
-{
-  "script_fields": {
-    "my_doubled_field": {
-      "script": {
-        "lang":   "expression",
-        "source": "doc['my_field'] * multiplier",
-        "params": {
-          "multiplier": 2
+    "requests": [ ... ], <a id="CO49-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "metric": { <a id="CO49-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+      "reciprocal_rank": { ... } <a id="CO49-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+   }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO49-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+a set of typical search requests, together with their provided ratings
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO49-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+definition of the evaluation metric to calculate
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO49-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+a specific metric and its parameters
+</p></td></tr></table></div><p>The request section contains several search requests typical to your application, along with the document ratings for each particular search request, e.g.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">    "requests": [
+        {
+            "id": "amsterdam_query", <a id="CO50-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "request": { <a id="CO50-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                "query": { "match": { "text": "amsterdam" }}
+            },
+            "ratings": [ <a id="CO50-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+                 { "_index": "my_index", "_id": "doc1", "rating": 0 },
+                 { "_index": "my_index", "_id": "doc2", "rating": 3},
+                 { "_index": "my_index", "_id": "doc3", "rating": 1 }
+            ]
+        },
+        {
+            "id": "berlin_query",
+            "request": {
+                "query": { "match": { "text": "berlin" }}
+            },
+            "ratings": [
+                { "_index": "my_index", "_id": "doc1", "rating": 1 }
+            ]
         }
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/1.json"></div><h3><a id="_script_parameters"></a>Script Parameters<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">lang</code>
-</span></dt><dd>
-    Specifies the language the script is written in.  Defaults to <code class="literal">painless</code>.
-</dd><dt><span class="term">
-<code class="literal">source</code>, <code class="literal">id</code>
-</span></dt><dd>
-    Specifies the source of the script.  An <code class="literal">inline</code> script is specified
-    <code class="literal">source</code> as in the example above. A <code class="literal">stored</code> script is specified <code class="literal">id</code>
-    and is retrieved from the cluster state (see <a class="link" href="modules-scripting-using.html#modules-scripting-stored-scripts" title="Stored Scriptsedit">Stored Scripts</a>).
-</dd><dt><span class="term">
-<code class="literal">params</code>
-</span></dt><dd>
-    Specifies any named parameters that are passed into the script as
-    variables.
-</dd></dl></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h3>Prefer parameters<a id="prefer-params"></a></h3><p>The first time Elasticsearch sees a new script, it compiles it and stores the
-compiled version in a cache. Compilation can be a heavy process.</p><p>If you need to pass variables into the script, you should pass them in as
-named <code class="literal">params</code> instead of hard-coding values into the script itself.  For
-example, if you want to be able to multiply a field value by different
-multipliers, don’t hard-code the multiplier into the script:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  "source": "doc['my_field'] * 2"</pre></div><p>Instead, pass it in as a named parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  "source": "doc['my_field'] * multiplier",
-  "params": {
-    "multiplier": 2
-  }</pre></div><p>The first version has to be recompiled every time the multiplier changes.  The
-second version is only compiled once.</p><p>If you compile too many unique scripts within a small amount of time,
-Elasticsearch will reject the new dynamic scripts with a
-<code class="literal">circuit_breaking_exception</code> error. By default, up to 15 inline scripts per
-minute will be compiled. You can change this setting dynamically by setting
-<code class="literal">script.max_compilations_rate</code>.</p></div></div><h3><a id="modules-scripting-short-script-form"></a>Short Script Form<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A short script form can be used for brevity. In the short form, <code class="literal">script</code> is represented
-by a string instead of an object. This string contains the source of the script.</p><p>Short form:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  "script": "ctx._source.likes++"</pre></div><p>The same script in the normal form:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">  "script": {
-    "source": "ctx._source.likes++"
-  }</pre></div><h3><a id="modules-scripting-stored-scripts"></a>Stored Scripts<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Scripts may be stored in and retrieved from the cluster state using the
-<code class="literal">_scripts</code> end-point.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_request_examples"></a>Request Examples<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The following are examples of using a stored script that lives at
-<code class="literal">/_scripts/{id}</code>.</p><p>First, create the script called <code class="literal">calculate-score</code> in the cluster state:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _scripts/calculate-score
+    ]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO50-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the search requests id, used to group result details later
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO50-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the query that is being evaluated
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO50-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+a list of document ratings, each entry containing the documents <code class="literal">_index</code> and <code class="literal">_id</code> together with
+the rating of the documents relevance with regards to this search request
+</p></td></tr></table></div><p>A document <code class="literal">rating</code> can be any integer value that expresses the relevance of the document on a user defined scale. For some of the metrics, just giving a binary rating (e.g. <code class="literal">0</code> for irrelevant and <code class="literal">1</code> for relevant) will be sufficient, other metrics can use a more fine grained scale.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To use the ranking evaluation API with indices that use multiple types, you should add a filter on the <code class="literal">_type</code> field to
+the query in the request. Otherwise, if your index uses multiple types with the same id, the provided
+document rating might be ambiguous.</p></div></div><h3><a id="_template_based_ranking_evaluation"></a>Template based ranking evaluation<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>As an alternative to having to provide a single query per test request, it is possible to specify query templates in the evaluation request and later refer to them. Queries with similar structure that only differ in their parameters don’t have to be repeated all the time in the <code class="literal">requests</code> section this way. In typical search systems where user inputs usually get filled into a small set of query templates, this helps making the evaluation request more succinct.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /my_index/_rank_eval
 {
-  "script": {
-    "lang": "painless",
-    "source": "Math.log(_score * 2) + params.my_modifier"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/2.json"></div><p>This same script can be retrieved with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _scripts/calculate-score</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/3.json"></div><p>Stored scripts can be used by specifying the <code class="literal">id</code> parameters as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _search
-{
-  "query": {
-    "script": {
-      "script": {
-        "id": "calculate-score",
-        "params": {
-          "my_modifier": 2
+   [...]
+  "templates": [
+     {
+        "id": "match_one_field_query",  <a id="CO51-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "template": { <a id="CO51-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+            "inline": {
+                "query": {
+                  "match": { "{{field}}": { "query": "{{query_string}}" }}
+                }
+            }
         }
+     }
+  ],
+  "requests": [
+      {
+         "id": "amsterdam_query"
+         "ratings": [ ... ],
+         "template_id": "match_one_field_query", <a id="CO51-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+         "params": { <a id="CO51-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+            "query_string": "amsterdam",
+            "field": "text"
+          }
+     },
+    [...]
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO51-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the template id
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO51-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the template definition to use
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO51-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+a reference to a previously defined temlate
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO51-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the parameters to use to fill the template
+</p></td></tr></table></div><h3><a id="_available_evaluation_metrics"></a>Available evaluation metrics<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">metric</code> section determines which of the available evaluation metrics is going to be used.
+Currently, the following metrics are supported:</p><h4><a id="_precision_at_k_ulink_url_mailto_p_k_p_k_ulink"></a>Precision at K (<a class="ulink" href="mailto:P@k" target="_top">P@k</a>)<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>This metric measures the number of relevant results in the top k search results. Its a form of the well known <a class="ulink" href="https://en.wikipedia.org/wiki/Information_retrieval#Precision" target="_top">Precision</a> metric that only looks at the top k documents. It is the fraction of relevant documents in those first k
+search. A precision at 10 (<a class="ulink" href="mailto:P@10" target="_top">P@10</a>) value of 0.6 then means six out of the 10 top hits are relevant with respect to the users information need.</p><p><a class="ulink" href="mailto:P@k" target="_top">P@k</a> works well as a simple evaluation metric that has the benefit of being easy to understand and explain.
+Documents in the collection need to be rated either as relevant or irrelevant with respect to the current query.
+<a class="ulink" href="mailto:P@k" target="_top">P@k</a> does not take into account where in the top k results the relevant documents occur, so a ranking of ten results that
+contains one relevant result in position 10 is equally good as a ranking of ten results that contains one relevant result in position 1.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /twitter/_rank_eval
+{
+    "requests": [
+    {
+        "id": "JFK query",
+        "request": { "query": { "match_all": {}}},
+        "ratings": []
+    }],
+    "metric": {
+      "precision": {
+        "relevant_rating_threshold": 1,
+        "ignore_unlabeled": false
       }
+   }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-rank-eval/1.json"></div><p>The <code class="literal">precision</code> metric takes the following optional parameters</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Parameter </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">relevant_rating_threshold</code></p></td><td align="left" valign="top"><p>Sets the rating threshold above which documents are considered to be
+"relevant". Defaults to <code class="literal">1</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">ignore_unlabeled</code></p></td><td align="left" valign="top"><p>controls how unlabeled documents in the search results are counted.
+If set to <span class="emphasis"><em>true</em></span>, unlabeled documents are ignored and neither count as relevant or irrelevant. Set to <span class="emphasis"><em>false</em></span> (the default), they are treated as irrelevant.</p></td></tr></tbody></table></div><h4><a id="_mean_reciprocal_rank"></a>Mean reciprocal rank<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>For every query in the test suite, this metric calculates the reciprocal of the rank of the
+first relevant document. For example finding the first relevant result
+in position 3 means the reciprocal rank is 1/3. The reciprocal rank for each query
+is averaged across all queries in the test suite to give the <a class="ulink" href="https://en.wikipedia.org/wiki/Mean_reciprocal_rank" target="_top">mean reciprocal rank</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /twitter/_rank_eval
+{
+    "requests": [
+    {
+        "id": "JFK query",
+        "request": { "query": { "match_all": {}}},
+        "ratings": []
+    }],
+    "metric": {
+        "mean_reciprocal_rank": {
+            "relevant_rating_threshold" : 1
+        }
     }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/4.json"></div><p>And deleted with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">DELETE _scripts/calculate-score</pre></div><div class="console_widget" data-snippet="snippets/modules-scripting-using/5.json"></div><h3><a id="modules-scripting-using-caching"></a>Script Caching<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/modules/scripting/using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>All scripts are cached by default so that they only need to be recompiled
-when updates occur. By default, scripts do not have a time-based expiration, but
-you can change this behavior by using the <code class="literal">script.cache.expire</code> setting.
-You can configure the size of this cache by using the <code class="literal">script.cache.max_size</code> setting.
-By default, the cache size is <code class="literal">100</code>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The size of stored scripts is limited to 65,535 bytes. This can be
-changed by setting <code class="literal">script.max_size_in_bytes</code> setting to increase that soft
-limit, but if scripts are really large then a
-<a class="link" href="modules-scripting-engine.html" title="Advanced scripts using script engines">native script engine</a> should be considered.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="modules-scripting.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/search-rank-eval/2.json"></div><p>The <code class="literal">mean_reciprocal_rank</code> metric takes the following optional parameters</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Parameter </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">relevant_rating_threshold</code></p></td><td align="left" valign="top"><p>Sets the rating threshold above which documents are considered to be
+"relevant". Defaults to <code class="literal">1</code>.</p></td></tr></tbody></table></div><h4><a id="_discounted_cumulative_gain_dcg"></a>Discounted cumulative gain (DCG)<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In contrast to the two metrics above, <a class="ulink" href="https://en.wikipedia.org/wiki/Discounted_cumulative_gain" target="_top">discounted cumulative gain</a> takes both, the rank and the rating of the search results, into account.</p><p>The assumption is that highly relevant documents are more useful for the user when appearing at the top of the result list. Therefore, the DCG formula reduces the contribution that high ratings for documents on lower search ranks have on the overall DCG metric.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /twitter/_rank_eval
+{
+    "requests": [
+    {
+        "id": "JFK query",
+        "request": { "query": { "match_all": {}}},
+        "ratings": []
+    }],
+    "metric": {
+       "dcg": {
+            "normalize": false
+       }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-rank-eval/3.json"></div><p>The <code class="literal">dcg</code> metric takes the following optional parameters:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Parameter </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">normalize</code></p></td><td align="left" valign="top"><p>If set to <code class="literal">true</code>, this metric will calculate the <a class="ulink" href="https://en.wikipedia.org/wiki/Discounted_cumulative_gain#Normalized_DCG" target="_top">Normalized DCG</a>.</p></td></tr></tbody></table></div><h3><a id="_response_format_2"></a>Response format<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The response of the <code class="literal">_rank_eval</code> endpoint contains the overall calculated result for the defined quality metric,
+a <code class="literal">details</code> section with a breakdown of results for each query in the test suite and an optional <code class="literal">failures</code> section
+that shows potential errors of individual queries. The response has the following format:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "rank_eval": {
+        "quality_level": 0.4, <a id="CO52-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "details": {
+            "my_query_id1": { <a id="CO52-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                "quality_level": 0.6, <a id="CO52-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+                "unknown_docs": [ <a id="CO52-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+                    {
+                        "_index": "my_index",
+                        "_id": "1960795"
+                    }, [...]
+                ],
+                "hits": [
+                    {
+                        "hit": { <a id="CO52-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+                            "_index": "my_index",
+                            "_type": "page",
+                            "_id": "1528558",
+                            "_score": 7.0556192
+                        },
+                        "rating": 1
+                    }, [...]
+                ],
+                "metric_details": { <a id="CO52-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+                    "relevant_docs_retrieved": 6,
+                    "docs_retrieved": 10
+                }
+            },
+            "my_query_id2 : { [...]}
+        },
+        "failures": { [...] }
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO52-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the overall evaluation quality calculated by the defined metric
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO52-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the <code class="literal">details</code> section contains one entry for every query in the original <code class="literal">requests</code> section, keyed by the search request id
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO52-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the <code class="literal">quality_level</code> in the <code class="literal">details</code> section shows the contribution of this query to the global quality score
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO52-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the <code class="literal">unknown_docs</code> section contains an <code class="literal">_index</code> and <code class="literal">_id</code> entry for each document in the search result for this
+query that didn’t have a ratings value. This can be used to ask the user to supply ratings for these documents
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO52-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the <code class="literal">hits</code> section shows a grouping of the search results with their supplied rating
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO52-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the <code class="literal">metric_details</code> give additional information about the calculated quality metric (e.g. how many of the retrieved
+documents where relevant). The content varies for each metric but allows for better interpretation of the results
+</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="search-field-caps.html">
               « 
-              Scripting</a>
+              Field Capabilities API</a>
            
         </span><span class="next">
            
-          <a href="modules-scripting-fields.html">Accessing document fields and special variables
+          <a href="search-aggregations.html">Aggregations
                »
             </a></span></div>
 <!-- end body -->
