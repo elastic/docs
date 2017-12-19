@@ -626,6 +626,7 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
 .Highlight(h =&gt; h
     .PreTags("&lt;tag1&gt;")
     .PostTags("&lt;/tag1&gt;")
+    .Encoder("html")
     .Fields(
         fs =&gt; fs
             .Field(p =&gt; p.Name.Suffix("standard"))
@@ -637,9 +638,10 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
         fs =&gt; fs
             .Field(p =&gt; p.LeadDeveloper.FirstName)
             .Type(HighlighterType.Fvh)
-            .BoundaryMaxScan(50)
             .PreTags("&lt;name&gt;")
             .PostTags("&lt;/name&gt;")
+            .BoundaryMaxScan(50)
+            .PhraseLimit(10)
             .HighlightQuery(q =&gt; q
                 .Match(m =&gt; m
                     .Field(p =&gt; p.LeadDeveloper.FirstName)
@@ -647,20 +649,17 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
                 )
             ),
         fs =&gt; fs
-            .Field(p =&gt; p.State.Suffix("offsets"))
+            .Field(p =&gt; p.LeadDeveloper.LastName)
             .Type(HighlighterType.Postings)
-            .PreTags("&lt;state&gt;")
-            .PostTags("&lt;/state&gt;")
+            .PreTags("&lt;name&gt;")
+            .PostTags("&lt;/name&gt;")
             .HighlightQuery(q =&gt; q
-                .Terms(t =&gt; t
-                    .Field(f =&gt; f.State.Suffix("offsets"))
-                    .Terms(
-                        StateOfBeing.Stable.ToString().ToLowerInvariant(),
-                        StateOfBeing.BellyUp.ToString().ToLowerInvariant()
+                .Match(m =&gt; m
+                    .Field(p =&gt; p.LeadDeveloper.LastName)
+                    .Query(LastNameSearch)
                     )
                 )
             )
-    )
 )</pre></div><h3><a id="_object_initializer_syntax_example_7"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/2.x/docs/search/request/highlighting-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
 {
     Query = new MatchQuery
@@ -672,6 +671,7 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
     {
         PreTags = new[] { "&lt;tag1&gt;" },
         PostTags = new[] { "&lt;/tag1&gt;" },
+        Encoder = "html",
         Fields = new Dictionary&lt;Field, IHighlightField&gt;
         {
             { "name.standard", new HighlightField
@@ -685,7 +685,8 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
             },
             { "leadDeveloper.firstName", new HighlightField
                 {
-                    CustomType = "fvh",
+                    CustomType = "fvh", <a id="CO70-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    PhraseLimit = 10,
                     BoundaryMaxScan = 50,
                     PreTags = new[] { "&lt;name&gt;"},
                     PostTags = new[] { "&lt;/name&gt;"},
@@ -696,21 +697,23 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
                     }
                 }
             },
-            { "state.offsets", new HighlightField
+            { "leadDeveloper.lastName", new HighlightField
                 {
                     Type = HighlighterType.Postings,
-                    PreTags = new[] { "&lt;state&gt;"},
-                    PostTags = new[] { "&lt;/state&gt;"},
-                    HighlightQuery = new TermsQuery
+                    PreTags = new[] { "&lt;name&gt;"},
+                    PostTags = new[] { "&lt;/name&gt;"},
+                    HighlightQuery = new MatchQuery
                     {
-                        Field = "state.offsets",
-                        Terms = new [] { "stable", "bellyup" }
+                        Field = "leadDeveloper.lastName",
+                        Query = LastNameSearch
                     }
                 }
             }
         }
     }
-}</pre></div><p><strong>Example json output. </strong>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO70-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+<code class="literal">CustomType</code> can be used to define a custom highlighter
+</p></td></tr></table></div><p><strong>Example json output. </strong>
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
   "query": {
     "match": {
@@ -726,6 +729,7 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
     "post_tags": [
       "&lt;/tag1&gt;"
     ],
+    "encoder": "html",
     "fields": {
       "name.standard": {
         "type": "plain",
@@ -736,6 +740,7 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
       },
       "leadDeveloper.firstName": {
         "type": "fvh",
+        "phrase_limit": 10,
         "boundary_max_scan": 50,
         "pre_tags": [
           "&lt;name&gt;"
@@ -751,20 +756,19 @@ The implementation uses either the lucene <code class="literal">highlighter</cod
           }
         }
       },
-      "state.offsets": {
+      "leadDeveloper.lastName": {
         "type": "postings",
         "pre_tags": [
-          "&lt;state&gt;"
+          "&lt;name&gt;"
         ],
         "post_tags": [
-          "&lt;/state&gt;"
+          "&lt;/name&gt;"
         ],
         "highlight_query": {
-          "terms": {
-            "state.offsets": [
-              "stable",
-              "bellyup"
-            ]
+          "match": {
+            "leadDeveloper.lastName": {
+              "query": "Stokes"
+            }
           }
         }
       }
@@ -793,12 +797,12 @@ foreach (var highlightsByDocumentId in response.Highlights)
                 highlight.Should().Contain("&lt;/name&gt;");
             }
         }
-        else if (highlightHit.Key == "state.offsets")
+        else if (highlightHit.Key == "leadDeveloper.lastName")
         {
             foreach (var highlight in highlightHit.Value.Highlights)
             {
-                highlight.Should().Contain("&lt;state&gt;");
-                highlight.Should().Contain("&lt;/state&gt;");
+                highlight.Should().Contain("&lt;name&gt;");
+                highlight.Should().Contain("&lt;/name&gt;");
             }
         }
         else
