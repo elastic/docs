@@ -630,7 +630,53 @@ that you don’t need to specify algorithms, models, or other data science-relat
 configurations in order to get the benefits of machine learning.</p><p>You can view the machine learning results in Kibana where, for example, charts illustrate the
 actual data values, the bounds for the expected values, and the anomalies that
 occur outside these bounds.</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-job-analysis.jpg" alt="Example screenshot from the Machine Learning Single Metric Viewer in Kibana" /></div></div><p>For a more detailed walk-through of X-Pack machine learning features, see
-<a class="xref" href="ml-getting-started.html" title="Getting Started with Machine Learning"><em>Getting Started</em></a>.</p></div><div class="navfooter"><span class="prev"><a href="xpack-ml.html">
+<a class="xref" href="ml-getting-started.html" title="Getting Started with Machine Learning"><em>Getting Started</em></a>.</p><h3><a id="ml-forecasting"></a>Forecasting the Future</h3><p>After the X-Pack machine learning features create baselines of normal behavior for your data,
+you can use that information to extrapolate future behavior.</p><p>You can use a forecast to estimate a time series value at a specific future date.
+For example, you might want to determine how many users you can expect to visit
+your website next Sunday at 0900.</p><p>You can also use it to estimate the probability of a time series value occurring
+at a future date. For example, you might want to determine how likely it is that
+your disk utilization will reach 100% before the end of next week.</p><p>Each forecast has a unique ID, which you can use to distinguish between forecasts
+that you created at different times. You can create a forecast by using the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/ml-forecast.html" target="_top">Forecast Jobs API</a> or by using Kibana. For example:</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-gs-job-forecast.jpg" alt="Example screenshot from the Machine Learning Single Metric Viewer in Kibana" /></div></div><p>The yellow line in the chart represents the predicted data values. The
+shaded yellow area represents the bounds for the predicted values, which also
+gives an indication of the confidence of the predictions.</p><p>When you create a forecast, you specify its <span class="emphasis"><em>duration</em></span>, which indicates how far
+the forecast extends beyond the last record that was processed. By default, the
+duration is 1 day. Typically the farther into the future that you forecast, the
+lower the confidence levels become (that is to say, the bounds increase).
+Eventually if the confidence levels are too low, the forecast stops.</p><p>You can also optionally specify when the forecast expires. By default, it
+expires in 14 days and is deleted automatically thereafter. You can specify a
+different expiration period by using the <code class="literal">expires_in</code> parameter in the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/ml-forecast.html" target="_top">Forecast Jobs API</a>.</p><p>There are some limitations that affect your ability to create a forecast:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+You can generate only three forecasts concurrently. There is no limit to the
+number of forecasts that you retain. Existing forecasts are not overwritten when
+you create new forecasts. Rather, they are automatically deleted when they expire.
+</li><li class="listitem">
+If you use an <code class="literal">over_field_name</code> property in your job (that is to say, it’s a
+<span class="emphasis"><em>population job</em></span>), you cannot create a forecast.
+</li><li class="listitem"><p class="simpara">
+If you use any of the following analytical functions in your job, you
+cannot create a forecast:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+<code class="literal">lat_long</code>
+</li><li class="listitem">
+<code class="literal">rare</code> and <code class="literal">freq_rare</code>
+</li><li class="listitem"><p class="simpara">
+<code class="literal">time_of_day</code> and <code class="literal">time_of_week</code>
+</p><p class="simpara">For more information about any of these functions, see <a class="xref" href="ml-functions.html" title="Function Reference"><em>Function Reference</em></a>.</p></li></ul></div></li><li class="listitem">
+Forecasts run concurrently with real-time machine learning analysis. That is to say, machine learning
+analysis does not stop while forecasts are generated. Forecasts can have an
+impact on machine learning jobs, however, especially in terms of memory usage. For this
+reason, forecasts run only if the model memory status is acceptable and the
+snapshot models for the forecast do not require more than 20 MB. If these memory
+limits are reached, consider splitting the job into multiple smaller jobs and
+creating forecasts for these.
+</li><li class="listitem">
+The job must be open when you create a forecast. Otherwise, an error occurs.
+</li><li class="listitem">
+If there is insufficient data to generate any meaningful predictions, an
+error occurs. In general, forecasts that are created early in the learning phase
+of the data analysis are less accurate.
+</li></ul></div></div><div class="navfooter"><span class="prev"><a href="xpack-ml.html">
               « 
               Machine Learning in the Elastic Stack</a>
            
