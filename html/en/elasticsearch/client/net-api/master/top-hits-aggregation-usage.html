@@ -622,8 +622,18 @@ Not what you want? See the
         .Aggregations(aa =&gt; aa
             .TopHits("top_state_hits", th =&gt; th
                 .Sort(srt =&gt; srt
-                    .Field(p =&gt; p.StartedOn)
-                    .Order(SortOrder.Descending)
+                    .Field(sf =&gt; sf
+                        .Field(p =&gt; p.StartedOn)
+                        .Order(SortOrder.Descending)
+                    )
+                    .Script(ss =&gt; ss
+                        .Type("number")
+                        .Script(sss =&gt; sss
+                            .Source("Math.sin(34*(double)doc['numberOfCommits'].value)")
+                            .Lang("painless")
+                        )
+                        .Order(SortOrder.Descending)
+                    )
                 )
                 .Source(src =&gt; src
                     .Includes(fs =&gt; fs
@@ -662,7 +672,13 @@ Not what you want? See the
         {
             Sort = new List&lt;ISort&gt;
             {
-                new SortField { Field = Field&lt;Project&gt;(p =&gt; p.StartedOn), Order = SortOrder.Descending }
+                new SortField { Field = Field&lt;Project&gt;(p =&gt; p.StartedOn), Order = SortOrder.Descending },
+                new ScriptSort
+                {
+                    Type = "number",
+                    Script = new InlineScript("Math.sin(34*(double)doc['numberOfCommits'].value)") { Lang = "painless" },
+                    Order = SortOrder.Descending
+                },
             },
             Source = new SourceFilter
             {
@@ -702,6 +718,16 @@ Not what you want? See the
             "sort": [
               {
                 "startedOn": {
+                  "order": "desc"
+                }
+              },
+              {
+                "_script": {
+                  "type": "number",
+                  "script": {
+                    "lang": "painless",
+                    "source": "Math.sin(34*(double)doc['numberOfCommits'].value)"
+                  },
                   "order": "desc"
                 }
               }

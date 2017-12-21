@@ -619,8 +619,18 @@
         .Aggregations(aa =&gt; aa
             .TopHits("top_state_hits", th =&gt; th
                 .Sort(srt =&gt; srt
-                    .Field(p =&gt; p.StartedOn)
-                    .Order(SortOrder.Descending)
+                    .Field(sf =&gt; sf
+                        .Field(p =&gt; p.StartedOn)
+                        .Order(SortOrder.Descending)
+                    )
+                    .Script(ss =&gt; ss
+                        .Type("number")
+                        .Script(sss =&gt; sss
+                            .Inline("Math.sin(34*(double)doc['numberOfCommits'].value)")
+                            .Lang("painless")
+                        )
+                        .Order(SortOrder.Descending)
+                    )
                 )
                 .Source(src =&gt; src
                     .Includes(fs =&gt; fs
@@ -663,7 +673,13 @@
         {
             Sort = new List&lt;ISort&gt;
             {
-                new SortField { Field = Field&lt;Project&gt;(p =&gt; p.StartedOn), Order = SortOrder.Descending }
+                new SortField { Field = Field&lt;Project&gt;(p =&gt; p.StartedOn), Order = SortOrder.Descending },
+                new ScriptSort
+                {
+                    Type = "number",
+                    Script = new InlineScript("Math.sin(34*(double)doc['numberOfCommits'].value)") { Lang = "painless" },
+                    Order = SortOrder.Descending
+                },
             },
             Source = new SourceFilter
             {
@@ -704,6 +720,16 @@
             "sort": [
               {
                 "startedOn": {
+                  "order": "desc"
+                }
+              },
+              {
+                "_script": {
+                  "type": "number",
+                  "script": {
+                    "lang": "painless",
+                    "inline": "Math.sin(34*(double)doc['numberOfCommits'].value)"
+                  },
                   "order": "desc"
                 }
               }
