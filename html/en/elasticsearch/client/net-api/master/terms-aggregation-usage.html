@@ -615,79 +615,8 @@ Not what you want? See the
            
           <a href="pipeline-aggregations.html">Pipeline Aggregations
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="terms-aggregation-usage"></a>Terms Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A multi-bucket value source based aggregation where buckets are dynamically built - one per unique value.</p><p>See the Elasticsearch documentation on <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/search-aggregations-bucket-terms-aggregation.html" target="_top">terms aggregation</a> for more detail.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_138"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
-.Size(0)
-.Aggregations(a =&gt; a
-    .Terms("states", st =&gt; st
-        .Field(p =&gt; p.State)
-        .MinimumDocumentCount(2)
-        .Size(5)
-        .ShardSize(100)
-        .ExecutionHint(TermsAggregationExecutionHint.Map)
-        .Missing("n/a")
-        .Script(ss =&gt; ss.Source("'State of Being: '+_value"))
-        .Order(o =&gt; o
-            .KeyAscending()
-            .CountDescending()
-        )
-        .Meta(m =&gt; m
-            .Add("foo", "bar")
-        )
-    )
-)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_137"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
-{
-    Size = 0,
-    Aggregations = new TermsAggregation("states")
-    {
-        Field = Field&lt;Project&gt;(p =&gt; p.State),
-        MinimumDocumentCount = 2,
-        Size = 5,
-        ShardSize = 100,
-        ExecutionHint = TermsAggregationExecutionHint.Map,
-        Missing = "n/a",
-        Script = new InlineScript("'State of Being: '+_value"),
-        Order = new List&lt;TermsOrder&gt;
-        {
-            TermsOrder.KeyAscending,
-            TermsOrder.CountDescending
-        },
-        Meta = new Dictionary&lt;string, object&gt;
-        {
-            {"foo", "bar"}
-        }
-    }
-}</pre></div><p><strong>Example json output. </strong>
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "size": 0,
-  "aggs": {
-    "states": {
-      "meta": {
-        "foo": "bar"
-      },
-      "terms": {
-        "field": "state",
-        "min_doc_count": 2,
-        "size": 5,
-        "shard_size": 100,
-        "execution_hint": "map",
-        "missing": "n/a",
-        "script": {
-          "source": "'State of Being: '+_value"
-        },
-        "order": [
-          {
-            "_key": "asc"
-          },
-          {
-            "_count": "desc"
-          }
-        ]
-      }
-    }
-  }
-}</pre></div><p>
-</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_53"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
-var states = response.Aggs.Terms("states");
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="terms-aggregation-usage"></a>Terms Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A multi-bucket value source based aggregation where buckets are dynamically built - one per unique value.</p><p>See the Elasticsearch documentation on <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/search-aggregations-bucket-terms-aggregation.html" target="_top">terms aggregation</a> for more detail.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_45"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+var states = response.Aggregations.Terms("states");
 states.Should().NotBeNull();
 states.DocCountErrorUpperBound.Should().HaveValue();
 states.SumOtherDocCount.Should().HaveValue();
@@ -699,77 +628,8 @@ foreach (var item in states.Buckets)
     item.DocCount.Should().BeGreaterOrEqualTo(1);
 }
 states.Meta.Should().NotBeNull().And.HaveCount(1);
-states.Meta["foo"].Should().Be("bar");</pre></div><h2><a id="terms-pattern-filter"></a>Filtering with a regular expression pattern<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Using terms aggregation with filtering to include values using a regular expression pattern</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_139"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
-.Size(0)
-.Aggregations(a =&gt; a
-    .Terms("states", st =&gt; st
-        .Field(p =&gt; p.State.Suffix("keyword"))
-        .MinimumDocumentCount(2)
-        .Size(5)
-        .ShardSize(100)
-        .ExecutionHint(TermsAggregationExecutionHint.Map)
-        .Missing("n/a")
-        .Include("(Stable|VeryActive)")
-        .Order(o =&gt; o
-            .KeyAscending()
-            .CountDescending()
-        )
-        .Meta(m =&gt; m
-            .Add("foo", "bar")
-        )
-    )
-)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_138"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
-{
-    Size = 0,
-    Aggregations = new TermsAggregation("states")
-    {
-        Field = Field&lt;Project&gt;(p =&gt; p.State.Suffix("keyword")),
-        MinimumDocumentCount = 2,
-        Size = 5,
-        ShardSize = 100,
-        ExecutionHint = TermsAggregationExecutionHint.Map,
-        Missing = "n/a",
-        Include = new TermsInclude("(Stable|VeryActive)"),
-        Order = new List&lt;TermsOrder&gt;
-        {
-            TermsOrder.KeyAscending,
-            TermsOrder.CountDescending
-        },
-        Meta = new Dictionary&lt;string, object&gt;
-        {
-            {"foo", "bar"}
-        }
-    }
-}</pre></div><p><strong>Example json output. </strong>
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "size": 0,
-  "aggs": {
-    "states": {
-      "meta": {
-        "foo": "bar"
-      },
-      "terms": {
-        "field": "state.keyword",
-        "min_doc_count": 2,
-        "size": 5,
-        "shard_size": 100,
-        "execution_hint": "map",
-        "missing": "n/a",
-        "include": "(Stable|VeryActive)",
-        "order": [
-          {
-            "_key": "asc"
-          },
-          {
-            "_count": "desc"
-          }
-        ]
-      }
-    }
-  }
-}</pre></div><p>
-</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_54"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
-var states = response.Aggs.Terms("states");
+states.Meta["foo"].Should().Be("bar");</pre></div><h2><a id="terms-pattern-filter"></a>Filtering with a regular expression pattern<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Using terms aggregation with filtering to include values using a regular expression pattern</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+var states = response.Aggregations.Terms("states");
 states.Should().NotBeNull();
 states.DocCountErrorUpperBound.Should().HaveValue();
 states.SumOtherDocCount.Should().HaveValue();
@@ -781,80 +641,8 @@ foreach (var item in states.Buckets)
     item.DocCount.Should().BeGreaterOrEqualTo(1);
 }
 states.Meta.Should().NotBeNull().And.HaveCount(1);
-states.Meta["foo"].Should().Be("bar");</pre></div><h2><a id="terms-exact-value-filter"></a>Filtering with exact values<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Using terms aggregation with filtering to include only specific values</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_140"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
-.Size(0)
-.Aggregations(a =&gt; a
-    .Terms("states", st =&gt; st
-        .Field(p =&gt; p.State.Suffix("keyword"))
-        .MinimumDocumentCount(2)
-        .Size(5)
-        .ShardSize(100)
-        .ExecutionHint(TermsAggregationExecutionHint.Map)
-        .Missing("n/a")
-        .Include(new[] {StateOfBeing.Stable.ToString(), StateOfBeing.VeryActive.ToString()})
-        .Order(o =&gt; o
-            .KeyAscending()
-            .CountDescending()
-        )
-        .Meta(m =&gt; m
-            .Add("foo", "bar")
-        )
-    )
-)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_139"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
-{
-    Size = 0,
-    Aggregations = new TermsAggregation("states")
-    {
-        Field = Field&lt;Project&gt;(p =&gt; p.State.Suffix("keyword")),
-        MinimumDocumentCount = 2,
-        Size = 5,
-        ShardSize = 100,
-        ExecutionHint = TermsAggregationExecutionHint.Map,
-        Missing = "n/a",
-        Include = new TermsInclude(new[] { StateOfBeing.Stable.ToString(), StateOfBeing.VeryActive.ToString() }),
-        Order = new List&lt;TermsOrder&gt;
-        {
-            TermsOrder.KeyAscending,
-            TermsOrder.CountDescending
-        },
-        Meta = new Dictionary&lt;string, object&gt;
-        {
-            {"foo", "bar"}
-        }
-    }
-}</pre></div><p><strong>Example json output. </strong>
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "size": 0,
-  "aggs": {
-    "states": {
-      "meta": {
-        "foo": "bar"
-      },
-      "terms": {
-        "field": "state.keyword",
-        "min_doc_count": 2,
-        "size": 5,
-        "shard_size": 100,
-        "execution_hint": "map",
-        "missing": "n/a",
-        "include": [
-          "Stable",
-          "VeryActive"
-        ],
-        "order": [
-          {
-            "_key": "asc"
-          },
-          {
-            "_count": "desc"
-          }
-        ]
-      }
-    }
-  }
-}</pre></div><p>
-</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_55"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
-var states = response.Aggs.Terms("states");
+states.Meta["foo"].Should().Be("bar");</pre></div><h2><a id="terms-exact-value-filter"></a>Filtering with exact values<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Using terms aggregation with filtering to include only specific values</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+var states = response.Aggregations.Terms("states");
 states.Should().NotBeNull();
 states.DocCountErrorUpperBound.Should().HaveValue();
 states.SumOtherDocCount.Should().HaveValue();
@@ -867,41 +655,8 @@ foreach (var item in states.Buckets)
 }
 states.Meta.Should().NotBeNull().And.HaveCount(1);
 states.Meta["foo"].Should().Be("bar");</pre></div><h2><a id="_filtering_with_partitions"></a>Filtering with partitions<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>A terms aggregation that uses partitioning to filter the terms that are returned in the response. Further terms
-can be returned by issuing additional requests with an incrementing <code class="literal">partition</code> number.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Partitioning is available only in Elasticsearch 5.2.0+</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_141"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
-.Size(0)
-.Aggregations(a =&gt; a
-    .Terms("commits", st =&gt; st
-        .Field(p =&gt; p.NumberOfCommits)
-        .Include(partition: 0, numberOfPartitions: 10)
-        .Size(5)
-    )
-)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_140"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
-{
-    Size = 0,
-    Aggregations = new TermsAggregation("commits")
-    {
-        Field = Infer.Field&lt;Project&gt;(p =&gt; p.NumberOfCommits),
-        Include = new TermsInclude(0, 10),
-        Size = 5
-    }
-}</pre></div><p><strong>Example json output. </strong>
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "size": 0,
-  "aggs": {
-    "commits": {
-      "terms": {
-        "field": "numberOfCommits",
-        "size": 5,
-        "include": {
-          "partition": 0,
-          "num_partitions": 10
-        }
-      }
-    }
-  }
-}</pre></div><p>
-</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_56"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
-var commits = response.Aggs.Terms&lt;int&gt;("commits");
+can be returned by issuing additional requests with an incrementing <code class="literal">partition</code> number.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Partitioning is available only in Elasticsearch 5.2.0+</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+var commits = response.Aggregations.Terms&lt;int&gt;("commits");
 commits.Should().NotBeNull();
 commits.DocCountErrorUpperBound.Should().HaveValue();
 commits.SumOtherDocCount.Should().HaveValue();
@@ -911,39 +666,8 @@ foreach (var item in commits.Buckets)
 {
     item.Key.Should().BeGreaterThan(0);
     item.DocCount.Should().BeGreaterOrEqualTo(1);
-}</pre></div><h2><a id="_numeric_fields"></a>Numeric fields<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>A terms aggregation on a numeric field</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_142"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
-.Size(0)
-.Index(DefaultSeeder.ProjectsAliasFilter)
-.Aggregations(a =&gt; a
-    .Terms&lt;int&gt;("commits", st =&gt; st
-        .Field(p =&gt; p.NumberOfCommits)
-        .Missing(-1)
-        .ShowTermDocCountError()
-    )
-)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_141"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;(DefaultSeeder.ProjectsAliasFilter)
-{
-    Size = 0,
-    Aggregations = new TermsAggregation&lt;int&gt;("commits")
-    {
-        Field = Field&lt;Project&gt;(p =&gt; p.NumberOfCommits),
-        ShowTermDocCountError = true,
-        Missing = -1
-    }
-}</pre></div><p><strong>Example json output. </strong>
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "size": 0,
-  "aggs": {
-    "commits": {
-      "terms": {
-        "field": "numberOfCommits",
-        "missing": -1,
-        "show_term_doc_count_error": true
-      }
-    }
-  }
-}</pre></div><p>
-</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_57"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
-var commits = response.Aggs.Terms&lt;int&gt;("commits");
+}</pre></div><h2><a id="_numeric_fields"></a>Numeric fields<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>A terms aggregation on a numeric field</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+var commits = response.Aggregations.Terms&lt;int&gt;("commits");
 commits.Should().NotBeNull();
 commits.DocCountErrorUpperBound.Should().HaveValue();
 commits.SumOtherDocCount.Should().HaveValue();
@@ -954,7 +678,31 @@ foreach (var item in commits.Buckets)
     item.Key.Should().BeGreaterThan(0);
     item.DocCount.Should().BeGreaterOrEqualTo(1);
 }
-commits.Buckets.Should().Contain(b =&gt; b.DocCountErrorUpperBound.HasValue);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="significant-terms-aggregation-usage.html">
+commits.Buckets.Should().Contain(b =&gt; b.DocCountErrorUpperBound.HasValue);</pre></div><h2><a id="_nested_terms_aggregations"></a>Nested terms aggregations<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>A terms aggregation returns buckets that can contain more aggregations</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+var commits = response.Aggregations.Terms&lt;int&gt;("commits");
+commits.Should().NotBeNull();
+commits.DocCountErrorUpperBound.Should().HaveValue();
+commits.SumOtherDocCount.Should().HaveValue();
+commits.Buckets.Should().NotBeNull();
+commits.Buckets.Count.Should().BeGreaterThan(0);
+foreach (var item in commits.Buckets)
+{
+    item.Key.Should().BeGreaterThan(0);
+    item.DocCount.Should().BeGreaterOrEqualTo(1);
+    var states = item.Terms("state");
+    states.Should().NotBeNull();
+    states.Buckets.Should().NotBeEmpty();
+    states.Meta.Should().NotBeEmpty("meta").And.ContainKey("x");
+    foreach (var b in states.Buckets)
+    {
+        b.DocCount.Should().BeGreaterThan(0);
+        b.Key.Should().NotBeNullOrEmpty();
+    }
+}</pre></div><h2><a id="_typed_keys_aggregations"></a>Typed Keys aggregations<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Starting with Elasticsearch 6.x you can provide a <code class="literal">typed_keys</code> parameter which will prefix all the aggregation names
+with the type of aggregation that is returned. The following modifies the previous nested terms aggregation and sends it again
+but this time with the <code class="literal">typed_keys</code> option set. The client should treat this in a an opaque fashion so let’s assert that it does.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_98"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">f =&gt; base.Fluent(f.TypedKeys())</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_97"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/terms/terms-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var r = base.Initializer;
+r.TypedKeys = true;
+return r;</pre></div></div></div><div class="navfooter"><span class="prev"><a href="significant-terms-aggregation-usage.html">
               « 
               Significant Terms Aggregation Usage</a>
            

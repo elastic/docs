@@ -623,17 +623,34 @@ and can handle by trying a ping on another node. On the contrary, a bad authenti
 exception, and the client understands that an exception under these circumstances should be handled by not retrying,
 but by exiting the pipeline.</p></div></div><p>By default, the client won’t throw on any <code class="literal">ElasticsearchClientException</code> but instead return an invalid response
 that can be detected by checking the <code class="literal">.IsValid</code> property on the response. You can change this behaviour with
-by using <code class="literal">ThrowExceptions()</code> on <a class="link" href="configuration-options.html" title="Configuration options"><code class="literal">ConnectionSettings</code></a>.</p><p>The following is a collection of unrecoverable exceptions</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var unrecoverableExceptions = new[]
+by using <code class="literal">ThrowExceptions()</code> on <a class="link" href="configuration-options.html" title="Configuration options"><code class="literal">ConnectionSettings</code></a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var failures = Enum.GetValues(typeof(PipelineFailure)).Cast&lt;PipelineFailure&gt;();
+foreach (var failure in failures)
 {
-    new PipelineException(PipelineFailure.CouldNotStartSniffOnStartup),
-    new PipelineException(PipelineFailure.SniffFailure),
-    new PipelineException(PipelineFailure.Unexpected),
-    new PipelineException(PipelineFailure.BadAuthentication),
-    new PipelineException(PipelineFailure.MaxRetriesReached),
-    new PipelineException(PipelineFailure.MaxTimeoutReached)
-};
+    switch (failure)
+    {
+        /** The followinig pipeline failures are recoverable and will be retried */
+        case PipelineFailure.PingFailure:
+        case PipelineFailure.BadRequest:
+        case PipelineFailure.BadResponse:
+            var recoverable = new PipelineException(failure);
+            recoverable.Recoverable.Should().BeTrue(failure.GetStringValue());
+            break;
 
-unrecoverableExceptions.Should().OnlyContain(e =&gt; !e.Recoverable);</pre></div><p>As an example, let’s use our Virtual cluster test framework to set up a 10 node cluster
+        /** The followinig pipeline failures are NOT recoverable and won't be retried */
+        case PipelineFailure.BadAuthentication:
+        case PipelineFailure.SniffFailure:
+        case PipelineFailure.CouldNotStartSniffOnStartup:
+        case PipelineFailure.MaxTimeoutReached:
+        case PipelineFailure.MaxRetriesReached:
+        case PipelineFailure.Unexpected:
+        case PipelineFailure.NoNodesAttempted:
+            var unrecoverable = new PipelineException(failure);
+            unrecoverable.Recoverable.Should().BeFalse(failure.GetStringValue());
+            break;
+        default:
+            throw new ArgumentOutOfRangeException(failure.GetStringValue());
+    }
+}</pre></div><p>As an example, let’s use our Virtual cluster test framework to set up a 10 node cluster
 that always succeeds when pinged but fails with a 401 response when making client calls</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
     .Ping(r =&gt; r.SucceedAlways()) <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>

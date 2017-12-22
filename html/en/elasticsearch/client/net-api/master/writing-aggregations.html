@@ -713,7 +713,7 @@ to compose that <code class="literal">AggregationContainer</code>.</p><div class
 )</pre></div><h3><a id="_aggregating_over_a_collection_of_aggregations"></a>Aggregating over a collection of aggregations<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/writing-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>An advanced scenario may involve an existing collection of aggregation functions that should be set as aggregations
 on the request. Using LINQ’s <code class="literal">.Aggregate()</code> method, each function can be applied to the aggregation descriptor
 <code class="literal">childAggs</code> below) in turn, returning the descriptor after each function application.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var aggregations =
-        new List&lt;Func&lt;AggregationContainerDescriptor&lt;CommitActivity&gt;, IAggregationContainer&gt;&gt; <a id="CO61-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        new List&lt;Func&lt;AggregationContainerDescriptor&lt;CommitActivity&gt;, IAggregationContainer&gt;&gt; <a id="CO60-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         {
             a =&gt; a.Average("average_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor)),
             a =&gt; a.Max("max_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor)),
@@ -728,39 +728,28 @@ return s =&gt; s
                         {
                             agg(acc);
                             return acc;
-                        }) <a id="CO61-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                        }) <a id="CO60-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
                 )
             )
-        );</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO61-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+        );</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO60-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 a list of aggregation functions to apply
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO61-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO60-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Using LINQ’s <code class="literal">Aggregate()</code> function to accumulate/apply all of the aggregation functions
-</p></td></tr></table></div><h3><a id="aggs-vs-aggregations"></a>Aggs vs. Aggregations<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/writing-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The response exposes both <code class="literal">.Aggregations</code> and <code class="literal">.Aggs</code> properties for handling aggregations. Why two properties you ask?
-Well, the former is a dictionary of aggregation names to <code class="literal">IAggregate</code> types, a common interface for
-aggregation responses (termed <span class="emphasis"><em>Aggregates</em></span> in NEST), and the latter is a convenience helper to get the right type
-of aggregation response out of the dictionary based on a key name.</p><p>This is better illustrated with an example. Let’s imagine we make the following request</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
-.Aggregations(aggs =&gt; aggs
-    .Children&lt;CommitActivity&gt;("name_of_child_agg", child =&gt; child
-        .Aggregations(childAggs =&gt; childAggs
-            .Average("average_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
-            .Max("max_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
-            .Min("min_per_child", avg =&gt; avg.Field(p =&gt; p.ConfidenceFactor))
-        )
-    )
-)</pre></div><p>Now, using <code class="literal">.Aggs</code>, we can easily get the <code class="literal">Children</code> aggregation response out and from that,
+</p></td></tr></table></div><h3><a id="handling-aggregate-response"></a>Handling aggregate response<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/writing-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">SearchResponse</code> exposes an <code class="literal">AggregateDictionary</code> which is specialized dictionary over <code class="literal">&lt;string, IAggregate&gt;</code> that also
+exposes handy helper methods that automatically cast <code class="literal">IAggregate</code> to the expected aggregate response.</p><p>Let’s see this in action:</p><p>Now, using <code class="literal">.Aggregations</code>, we can easily get the <code class="literal">Children</code> aggregation response out and from that,
 the <code class="literal">Average</code> and <code class="literal">Max</code> sub aggregations.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/writing-aggregations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 
-var childAggregation = response.Aggs.Children("name_of_child_agg");
+var childAggregation = response.Aggregations.Children("name_of_child_agg");
 
 var averagePerChild = childAggregation.Average("average_per_child");
 
-averagePerChild.Should().NotBeNull(); <a id="CO62-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+averagePerChild.Should().NotBeNull(); <a id="CO61-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
 var maxPerChild = childAggregation.Max("max_per_child");
 
-maxPerChild.Should().NotBeNull(); <a id="CO62-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO62-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+maxPerChild.Should().NotBeNull(); <a id="CO61-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO61-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Do something with the average per child. Here we just assert it’s not null
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO62-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO61-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Do something with the max per child. Here we just assert it’s not null
 </p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="aggregations.html">
               « 
