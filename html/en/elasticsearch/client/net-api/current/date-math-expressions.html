@@ -653,9 +653,12 @@ Expect("2015-05-05T00:00:00").WhenSerializing&lt;Nest.DateMath&gt;(date)
 Again, multiple ranges can be chained</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("2015-05-05T00:00:00||+1d-1m").WhenSerializing(
     Nest.DateMath.Anchored(new DateTime(2015,05,05))
         .Add("1d")
-        .Subtract(TimeSpan.FromMinutes(1)));</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fractional_times"></a>Fractional times<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>DateMath expressions do not support fractional numbers so unlike <code class="literal">Time</code> DateMath will
-pick the biggest integer unit it can represent</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now+25h").WhenSerializing(
-    Nest.DateMath.Now.Add(TimeSpan.FromHours(25)));</pre></div><p>where as <code class="literal">Time</code> on its own serializes like this</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("1.04166666666667d").WhenSerializing(new Time(TimeSpan.FromHours(25)));
+        .Subtract(TimeSpan.FromMinutes(1)));</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fractional_times"></a>Fractional times<a href="https://github.com/elastic/elasticsearch-net/edit/5.x/docs/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>DateMath expressions do not support fractional numbers so will
+pick the largest unit in which the number can be expressed as an integer</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now+25h")
+    .WhenSerializing(Nest.DateMath.Now.Add(TimeSpan.FromHours(25)))
+    .WhenSerializing(Nest.DateMath.Now.Add(90000000))
+    .WhenSerializing(Nest.DateMath.Now.Add(new Time(25, Nest.TimeUnit.Hour)))
+    .WhenSerializing(Nest.DateMath.Now.Add("25h"));
 
 Expect("now+90001s").WhenSerializing(
     Nest.DateMath.Now.Add(TimeSpan.FromHours(25).Add(TimeSpan.FromSeconds(1))));
@@ -663,11 +666,22 @@ Expect("now+90001s").WhenSerializing(
 Expect("now+90000001ms").WhenSerializing(
     Nest.DateMath.Now.Add(TimeSpan.FromHours(25).Add(TimeSpan.FromMilliseconds(1))));
 
-Expect("now+1y").WhenSerializing(
-    Nest.DateMath.Now.Add("1y"));
+Expect("now+1y")
+    .WhenSerializing(Nest.DateMath.Now.Add("1y"))
+    .WhenSerializing(Nest.DateMath.Now.Add(new Time(1, Nest.TimeUnit.Year)));
 
-Expect("now+52w").WhenSerializing(
-    Nest.DateMath.Now.Add(TimeSpan.FromDays(7 * 52)));</pre></div></div></div><div class="navfooter"><span class="prev"><a href="distance-units.html">
+Expect("now+6M")
+    .WhenSerializing(Nest.DateMath.Now.Add("6M"))
+    .WhenSerializing(Nest.DateMath.Now.Add("0.5y"))
+    .WhenSerializing(Nest.DateMath.Now.Add(new Time(0.5, Nest.TimeUnit.Year)))
+    .WhenSerializing(Nest.DateMath.Now.Add(new Time(6, Nest.TimeUnit.Month)));
+
+Expect("now+364d")
+    .WhenSerializing(Nest.DateMath.Now.Add(TimeSpan.FromDays(7 * 52)));
+
+Expect("now+52w")
+    .WhenSerializing(Nest.DateMath.Now.Add(new Time("52w")))
+    .WhenSerializing(Nest.DateMath.Now.Add(new Time(52, Nest.TimeUnit.Week)));</pre></div></div></div><div class="navfooter"><span class="prev"><a href="distance-units.html">
               « 
               Distance units</a>
            
