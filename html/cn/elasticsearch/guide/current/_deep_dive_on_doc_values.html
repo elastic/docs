@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>深入文档值
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>深入理解 Doc Values
         | Elasticsearch: 权威指南
       | Elastic
     </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch: 权威指南" /><link rel="up" href="docvalues-and-fielddata.html" title="Doc Values and Fielddata" /><link rel="prev" href="docvalues.html" title="Doc Values" /><link rel="next" href="aggregations-and-analysis.html" title="聚合与分析" /><meta name="description" content="有关如何使用 Elasticsearch、Kibana、Logstash、Beats、X-Pack、Elastic Cloud、Elasticsearch for Apache Hadoop 及我们各种语言的客户端的文档。" /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Definitive Guide" />
@@ -602,7 +602,7 @@
 				
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch: 权威指南</a></span> » <span class="breadcrumb-link"><a href="aggregations.html">聚合</a></span> » <span class="breadcrumb-link"><a href="docvalues-and-fielddata.html">Doc Values and Fielddata</a></span> » <span class="breadcrumb-node">深入文档值</span></div><div class="navheader"><span class="prev"><a href="docvalues.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch: 权威指南</a></span> » <span class="breadcrumb-link"><a href="aggregations.html">聚合</a></span> » <span class="breadcrumb-link"><a href="docvalues-and-fielddata.html">Doc Values and Fielddata</a></span> » <span class="breadcrumb-node">深入理解 Doc Values</span></div><div class="navheader"><span class="prev"><a href="docvalues.html">
               « 
               Doc Values</a>
            
@@ -610,16 +610,11 @@
            
           <a href="aggregations-and-analysis.html">聚合与分析
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_deep_dive_on_doc_values"></a>深入文档值<a href="https://github.com/elasticsearch-cn/elasticsearch-definitive-guide/edit/cn/300_Aggregations/93_technical_docvalues.asciidoc" class="edit_me" title="在 GitHub 上编辑本页" rel="nofollow">编辑</a></h2></div></div></div><p>在上一节一开头我们就说文档值（doc values） 是 <span class="emphasis"><em>"更快、更高效并且内存友好"</em></span> 。
-听起来好像是不错的营销术语，不过话说回来文档值到底是如何工作的呢？</p><p>文档值是在索引时与倒排索引同时产生的。也就是说文档值是按段来产生的并且是不可变的，正如用于搜索的倒排索引一样。
-同样，和倒排索引一样，文档值也序列化到磁盘。这些对于性能和伸缩性很重要。</p><p>通过序列化一个持久化的数据结构到磁盘，我们可以依赖于操作系统的缓存来管理内存，而不是在 JVM 堆栈里驻留数据。
-当 “工作集（working set）” 数据要小于系统可用内存的情况下，操作系统会自然的将文档值驻留在内存，这将会带来和直接使用 JVM 堆栈数据结构相同的性能。</p><p>不过，如果你的工作集远大于可用内存，操作系统会开始根据需要对文档值进行分页开/关。这会显著慢于纯内存驻留的数据结构，当然，它也拥有使用远大于服务器内存容量的伸缩性的好处。
-如果这些数据结构是纯粹的存储于 JVM 堆内存，那么唯一的选项只能是随着内存溢出（OutOfMemory）而崩溃（或是实现一个分页模式，正如操作系统的那样）。</p><div class="note admon"><div class="icon"><img alt="注意" src="images/icons/note.png" /></div><div class="admon_content"><p>因为文档值不是由 JVM 来管理，所以 Elasticsearch 服务器可以配置一个很小的 JVM 堆栈。
-这会给操作系统带来更多的内存来做缓存。同时也带来一个好处就是让 JVM 的垃圾回收器工作在一个很小的堆栈，结果就是更快更高效的回收周期。</p><p>传统上，我们会建议分配机器内存的 50% 来给 JVM 堆栈。随着文档值的引入，这个建议开始不再适用。
-在 64gb 内存的机器上，也许可以考虑给堆栈分配 4-16gb 的内存，而不是之前建议的 32gb。</p><p>有关更详细的讨论，查看 <a class="xref" href="heap-sizing.html" title="堆内存:大小和交换">堆内存:大小和交换</a>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_列式存储的压缩"></a>列式存储的压缩<a href="https://github.com/elasticsearch-cn/elasticsearch-definitive-guide/edit/cn/300_Aggregations/93_technical_docvalues.asciidoc" class="edit_me" title="在 GitHub 上编辑本页" rel="nofollow">编辑</a></h3></div></div></div><p>从广义来说，文档值本质上是一个序列化的 <span class="emphasis"><em>列式存储</em></span> 。
-正如我们上一节所讨论的，<span class="emphasis"><em>列式存储</em></span> 擅长某些操作，因为这些数据的存储天然适合这些查询。</p><p>而且，他们也同样擅长数据压缩，特别是数字。
-这对于节省磁盘空间和快速访问很重要。现代 CPU 的处理速度要比磁盘快几个数量级（尽管即将到来的 NVMe 驱动器正在迅速缩小差距）。
-这意味着减少必须从磁盘读取的数据量总是有益的，尽管需要额外的 CPU 运算来进行解压。</p><p>要了解它如何帮助压缩数据，来看一组数字类型的文档值：</p><pre class="literallayout">Doc      Terms
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_deep_dive_on_doc_values"></a>深入理解 Doc Values<a href="https://github.com/elasticsearch-cn/elasticsearch-definitive-guide/edit/cn/300_Aggregations/93_technical_docvalues.asciidoc" class="edit_me" title="在 GitHub 上编辑本页" rel="nofollow">编辑</a></h2></div></div></div><p>在上一节一开头我们就说 <code class="literal">Doc Values</code> 是 <span class="emphasis"><em>"快速、高效并且内存友好"</em></span> 。
+这个口号听不起来不错，不过话说回来 <code class="literal">Doc Values</code> 到底是如何工作的呢？</p><p><code class="literal">Doc Values</code> 是在索引时与 <code class="literal">倒排索引</code> 同时生成。也就是说 <code class="literal">Doc Values</code> 和 <code class="literal">倒排索引</code> 一样，基于 <code class="literal">Segement</code> 生成并且是不可变的。同时 <code class="literal">Doc Values</code> 和 <code class="literal">倒排索引</code> 一样序列化到磁盘，这样对性能和扩展性有很大帮助。</p><p><code class="literal">Doc Values</code> 通过序列化把数据结构持久化到磁盘，我们可以充分利用操作系统的内存，而不是 <code class="literal">JVM</code> 的 <code class="literal">Heap</code> 。
+当 <code class="literal">working set</code> 远小于系统的可用内存，系统会自动将 <code class="literal">Doc Values</code> 驻留在内存中，使得其读写十分快速；不过，当其远大于可用内存时，系统会根据需要从磁盘读取 <code class="literal">Doc Values`，然后选择性放到分页缓存中。很显然，这样性能会比在内存中差很多，但是它的大小就不再局限于服务器的内存了。如果是使用 `JVM</code> 的 <code class="literal">Heap</code> 来实现那么只能是因为 <code class="literal">OutOfMemory</code> 导致程序崩溃了。  </p><div class="note admon"><div class="icon"><img alt="注意" src="images/icons/note.png" /></div><div class="admon_content"><p>因为 <code class="literal">Doc Values</code> 不是由 <code class="literal">JVM</code> 来管理，所以 <code class="literal">Elasticsearch</code> 实例可以配置一个很小的 <code class="literal">JVM Heap`，这样给系统留出来更多的内存。同时更小的  `Heap</code> 可以让 <code class="literal">JVM</code> 更加快速和高效的回收。</p><p>之前，我们会建议分配机器内存的 <code class="literal">50%</code> 来给 <code class="literal">JVM Heap`。但是对于 `Doc Values`，这样可能不是最合适的方案了。
+以 `64gb</code> 内存的机器为例，可能给 <code class="literal">Heap</code> 分配 <code class="literal">4-16gb</code> 的内存更合适，而不是 `32gb`。</p><p>有关更详细的讨论，查看 <a class="xref" href="heap-sizing.html" title="堆内存:大小和交换">堆内存:大小和交换</a>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_列式存储的压缩"></a>列式存储的压缩<a href="https://github.com/elasticsearch-cn/elasticsearch-definitive-guide/edit/cn/300_Aggregations/93_technical_docvalues.asciidoc" class="edit_me" title="在 GitHub 上编辑本页" rel="nofollow">编辑</a></h3></div></div></div><p>从广义来说，<code class="literal">Doc Values</code> 本质上是一个序列化的 <span class="emphasis"><em>列式存储</em></span> 。
+正如我们上一节所讨论的，<span class="emphasis"><em>列式存储</em></span> 适用于聚合、排序、脚本等操作。</p><p>而且，这种存储方式也非常便于压缩，特别是数字类型。这样可以减少磁盘空间并且提高访问速度。现代 <code class="literal">CPU</code> 的处理速度要比磁盘快几个数量级（尽管即将到来的 NVMe 驱动器正在迅速缩小差距）。所以我们必须减少直接存磁盘读取数据的大小，尽管需要额外消耗 <code class="literal">CPU</code>  运算用来进行解压。</p><p>要了解它如何压缩数据的，来看一组数字类型的 `Doc Values`：</p><pre class="literallayout">Doc      Terms
 -----------------------------------------------------------------
 Doc_1 | 100
 Doc_2 | 1000
@@ -628,8 +623,7 @@ Doc_4 | 1200
 Doc_5 | 300
 Doc_6 | 1900
 Doc_7 | 4200
------------------------------------------------------------------</pre><p>按列布局意味着我们有一个连续的数据块： <code class="literal">[100,1000,1500,1200,300,1900,4200]</code> 。因为我们已经知道他们都是数字（而不是像文档或行中看到的异构集合），所以我们可以使用统一的偏移来将他们紧紧排列。</p><p>而且，针对这样的数字有很多种压缩技巧。
-你会注意到这里每个数字都是 100 的倍数，文档值会检测一个段里面的所有数值，并使用一个 <span class="emphasis"><em>最大公约数</em></span> ，方便做进一步的数据压缩。</p><p>如果我们保存 <code class="literal">100</code> 作为此段的除数，我们可以对每个数字都除以 100，然后得到：  <code class="literal">[1,10,15,12,3,19,42]</code> 。现在这些数字变小了，只需要很少的位就可以存储下，也减少了磁盘存放的大小。</p><p>文档值正是使用了像这样的一些技巧。它会按依次检测以下压缩模式:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+-----------------------------------------------------------------</pre><p>按列布局意味着我们有一个连续的数据块： <code class="literal">[100,1000,1500,1200,300,1900,4200]</code> 。因为我们已经知道他们都是数字（而不是像文档或行中看到的异构集合），所以我们可以使用统一的偏移来将他们紧紧排列。</p><p>而且，针对这样的数字有很多种压缩技巧。你会注意到这里每个数字都是 100 的倍数，<code class="literal">Doc Values</code> 会检测一个段里面的所有数值，并使用一个 <span class="emphasis"><em>最大公约数</em></span> ，方便做进一步的数据压缩。</p><p>如果我们保存 <code class="literal">100</code> 作为此段的除数，我们可以对每个数字都除以 100，然后得到：  <code class="literal">[1,10,15,12,3,19,42]</code> 。现在这些数字变小了，只需要很少的位就可以存储下，也减少了磁盘存放的大小。</p><p><code class="literal">Doc Values</code> 在压缩过程中使用如下技巧。它会按依次检测以下压缩模式:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 如果所有的数值各不相同（或缺失），设置一个标记并记录这些值
 </li><li class="listitem">
 如果这些值小于 256，将使用一个简单的编码表
@@ -637,10 +631,10 @@ Doc_7 | 4200
 如果这些值大于 256，检测是否存在一个最大公约数
 </li><li class="listitem">
 如果没有存在最大公约数，从最小的数值开始，统一计算偏移量进行编码
-</li></ol></div><p>你会发现这些压缩模式不是传统的通用的压缩方式，比如 DEFLATE 或是 LZ4。
+</li></ol></div><p>你会发现这些压缩模式不是传统的通用的压缩方式，比如 <code class="literal">DEFLATE</code> 或是 `LZ4`。
 因为列式存储的结构是严格且良好定义的，我们可以通过使用专门的模式来达到比通用压缩算法（如 LZ4 ）更高的压缩效果。</p><div class="note admon"><div class="icon"><img alt="注意" src="images/icons/note.png" /></div><div class="admon_content"><p>你也许会想 <span class="emphasis"><em>"好吧，貌似对数字很好，不知道字符串怎么样？"</em></span>
-通过借助顺序表（ordinal table），字符类型也是类似进行编码的。字符类型是去重之后存放到顺序表的，通过分配一个 ID，然后这些 ID 和数值类型的文档值一样使用。
-也就是说，字符类型和数值类型一样拥有相同的压缩特性。</p><p>顺序表本身也有很多压缩技巧，比如固定长度、变长或是前缀字符编码等等。</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_禁用文档值"></a>禁用文档值<a href="https://github.com/elasticsearch-cn/elasticsearch-definitive-guide/edit/cn/300_Aggregations/93_technical_docvalues.asciidoc" class="edit_me" title="在 GitHub 上编辑本页" rel="nofollow">编辑</a></h3></div></div></div><p>文档值默认对所有字段启用，除了分析字符类型字段。也就是说所有的数字、地理坐标、日期、IP 和不分析（ <code class="literal">not_analyzed</code> ）字符类型。</p><p>分析字符类型暂时还不使用文档值。分析流程会产生很多新的 token，这会让文档值不能高效的工作。我们将在  <a class="xref" href="aggregations-and-analysis.html" title="聚合与分析">聚合与分析</a> 讨论如何使用分析字符类型来做聚合。</p><p>因为文档值默认启用，你可以选择对你数据集里面的大多数字段进行聚合和排序操作。但是如果你知道你永远也不会对某些字段进行聚合、排序或是使用脚本操作？</p><p>尽管罕见，但当这些情况出现时，你还是希望有办法来为特定的字段禁用文档值。这回为你节省磁盘空间（因为文档值再也没有序列化到磁盘），也许还能提升些许索引速度（因为不需要生成文档值）。</p><p>要禁用文档值，在字段的映射（mapping）设置 <code class="literal">doc_values: false</code> 即可。例如，这里我们创建了一个新的索引，字段 <code class="literal">"session_id"</code> 禁用了文档值：</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
+通过借助顺序表（ordinal table），<code class="literal">String</code> 类型也是类似进行编码的。<code class="literal">String</code> 类型是去重之后存放到顺序表的，通过分配一个 <code class="literal">ID`，然后通过数字类型的 `ID</code> 构建 <code class="literal">Doc Values`。这样 `String</code> 类型和数值类型可以达到同样的压缩效果。</p><p>顺序表本身也有很多压缩技巧，比如固定长度、变长或是前缀字符编码等等。</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_禁用_doc_values"></a>禁用 Doc Values<a href="https://github.com/elasticsearch-cn/elasticsearch-definitive-guide/edit/cn/300_Aggregations/93_technical_docvalues.asciidoc" class="edit_me" title="在 GitHub 上编辑本页" rel="nofollow">编辑</a></h3></div></div></div><p><code class="literal">Doc Values</code> 默认对所有字段启用，除了 <code class="literal">analyzed strings`。也就是说所有的数字、地理坐标、日期、IP 和不分析（ `not_analyzed</code> ）字符类型都会默认开启。</p><p><code class="literal">analyzed strings</code> 暂时还不能使用 <code class="literal">Doc Values`。文本经过分析流程生成很多 `Token`，使得 `Doc Values</code> 不能高效运行。我们将在  <a class="xref" href="aggregations-and-analysis.html" title="聚合与分析">聚合与分析</a> 讨论如何使用分析字符类型来做聚合。</p><p>因为 <code class="literal">Doc Values</code> 默认启用，你可以选择对你数据集里面的大多数字段进行聚合和排序操作。但是如果你知道你永远也不会对某些字段进行聚合、排序或是使用脚本操作？
+尽管这并不常见，但是你可以通过禁用特定字段的 <code class="literal">Doc Values</code> 。这样不仅节省磁盘空间，也许会提升索引的速度。</p><p>要禁用 <code class="literal">Doc Values</code> ，在字段的映射（mapping）设置 <code class="literal">doc_values: false</code> 即可。例如，这里我们创建了一个新的索引，字段 <code class="literal">"session_id"</code> 禁用了  `Doc Values`：</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
   "mappings": {
     "my_type": {
@@ -670,10 +664,10 @@ Doc_7 | 4200
     }
   }
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO216-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-文档值被启用来允许聚合
+<code class="literal">Doc Values</code> 被启用来允许聚合
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO216-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 索引被禁用了，这让该字段不能被查询/搜索
-</p></td></tr></table></div><p>通过设置 <code class="literal">doc_values: true</code> 和 <code class="literal">index: no</code> ，我们得到一个只能被用于聚合/排序/脚本的字段。无可否认，这是一个非常罕见的需求，但有时很有用。</p></div></div><div class="navfooter"><span class="prev"><a href="docvalues.html">
+</p></td></tr></table></div><p>通过设置 <code class="literal">doc_values: true</code> 和 <code class="literal">index: no</code> ，我们得到一个只能被用于聚合/排序/脚本的字段。无可否认，这是一个非常少见的情况，但有时很有用。</p></div></div><div class="navfooter"><span class="prev"><a href="docvalues.html">
               « 
               Doc Values</a>
            
