@@ -641,9 +641,6 @@ app.get('/', function (req, res) {
   res.send('Hello World!')
 })
 
-// any errors caught by Express can be logged by the agent as well
-app.use(apm.middleware.express())
-
 app.listen(3000)</pre></div><p>The agent will now monitor the performance of your Express application and record any uncaught exceptions.</p><h4><a id="express-advanced-configuration"></a>Advanced configuration<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In the above example we initialize the agent by calling the <a class="link" href="agent-api.html#apm-start" title="apm.start()"><code class="literal">start()</code></a> function.
 This function takes an optional options object used to configure the agent.
 Any option not supplied via the options object can instead be configured using environment variables.
@@ -670,29 +667,7 @@ but didn’t know which route in your Express app the HTTP request matched.</p><
 which by definition don’t match any route,
 or it might be a symptom that the agent wasn’t installed correctly.
 If you see this or can’t get any meaningful metrics to show up,
-please follow the <a class="link" href="troubleshooting.html" title="Troubleshooting">Troubleshooting Guide</a>.</p><h3><a id="express-error-logging"></a>Error logging<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Node.js agent will by default watch for uncaught exceptions and log these with Elastic APM.
-But in most cases you also want to log non-thrown errors.
-This section explains how.</p><h4><a id="express-error-handlers"></a>Express error handlers<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Express works by funneling all incoming http requests through a series of middleware functions (one of which being your router).
-If an error is either thrown synchronously inside one of the middleware functions or is
-passed as the first argument to the middleware <code class="literal">next()</code> function,
-it will be passed to the <a class="ulink" href="http://expressjs.com/en/guide/error-handling.html" target="_top">Express error handler</a>.</p><p>In the case where you have multiple Express error handlers,
-the Elastic APM error handler should be the first in the chain to ensure that it will receive the error correctly.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var apm = require('elastic-apm-node').start()
-var express = require('express')
-
-var app = express()
-
-// Your regular middleware and router...
-app.use(...)
-app.use(...)
-app.use(...)
-
-// Add the Elastic APM middleware after your regular middleware
-app.use(apm.middleware.express())
-
-// ...but before any other error handler
-app.use(function (err, req, res, next) {
-  // Custom error handling goes here
-})</pre></div><h4><a id="express-manual-error-logging"></a>Manual error logging<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default the Node.js agent will watch for uncaught exceptions and send them to Elastic APM automatically.
+please follow the <a class="link" href="troubleshooting.html" title="Troubleshooting">Troubleshooting Guide</a>.</p><h3><a id="express-error-logging"></a>Error logging<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default the Node.js agent will watch for uncaught exceptions and send them to Elastic APM automatically.
 But in most cases errors are not thrown but returned via a callback,
 caught by a promise,
 or simply manually created.
@@ -702,28 +677,7 @@ simply call <code class="literal">apm.captureError()</code> with the error:</p><
 
 apm.captureError(err)</pre></div><p>For advanced logging of errors,
 including adding extra metadata to the error,
-see <a class="link" href="agent-api.html#apm-capture-error" title="apm.captureError()">the API documentation</a>.</p><h4><a id="express-ignore-404-not-found-errors"></a>Ignore "404 Not Found" errors<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default Express will treat http requests that do not match any route as an error.
-This is a good idea in development,
-but usually not something you want in production.
-To avoid sending "404 Not Found" errors to Elastic APM,
-make sure you handle those <span class="strong strong"><strong>before</strong></span> they reach the Elastic APM middleware:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">// Your regular middleware and router...
-app.use(...)
-app.use(...)
-app.use(...)
-
-// Put a catch-all route handler as the very last route handler
-app.use(function (req, res) {
-  // If we reach this point it means that no prior route matched.
-  // This means that we should render a "404 Not Found" page. Notice
-  // that we do not call next() here as we don't want to forward the
-  // request to the error handler below.
-
-  // Send a 404 to the user
-  res.status(404).send('This isn\'t the page you\'re looking for..')
-})
-
-// After the 404 Not Found handler, add the Elastic APM error handler
-app.use(apm.middleware.express())</pre></div><h3><a id="express-filter-sensitive-information"></a>Filter sensitive information<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default the Node.js agent will filter common sensitive information before sending errors and metrics to the Elastic APM server.</p><p>It’s possible for you to tweak these defaults or remove any information you don’t want to send to Elastic APM:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+see <a class="link" href="agent-api.html#apm-capture-error" title="apm.captureError()">the API documentation</a>.</p><h3><a id="express-filter-sensitive-information"></a>Filter sensitive information<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/express.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default the Node.js agent will filter common sensitive information before sending errors and metrics to the Elastic APM server.</p><p>It’s possible for you to tweak these defaults or remove any information you don’t want to send to Elastic APM:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 By default the Node.js agent will not log the body of HTTP requests.
 To enable this,
 use the <a class="link" href="agent-api.html#log-body" title="logBody"><code class="literal">logBody</code></a> config option
