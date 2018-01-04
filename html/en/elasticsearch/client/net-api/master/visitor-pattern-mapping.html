@@ -746,6 +746,32 @@ var descriptor = new CreateIndexDescriptor("myindex")
       }
     }
   }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_skip_properties"></a>Skip properties<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/mapping/visitor-pattern-mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Through implementing <code class="literal">SkipProperty</code> on the visitor you can prevent certain properties from being mapped</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class DictionaryDocument : SortedDictionary&lt;string, dynamic&gt;
+{
+    public int Id { get; set; }
+}
+
+public class IgnoreInheritedPropertiesVisitor&lt;T&gt;  : NoopPropertyVisitor
+{
+    public override bool SkipProperty(PropertyInfo propertyInfo, ElasticsearchPropertyAttributeBase attribute)
+    {
+        return propertyInfo?.DeclaringType != typeof(T);
+    }
+}
+
+var descriptor = new CreateIndexDescriptor("myindex")
+        .Mappings(ms =&gt; ms
+            .Map&lt;DictionaryDocument&gt;(m =&gt; m.AutoMap(new IgnoreInheritedPropertiesVisitor&lt;DictionaryDocument&gt;()))
+        );</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "mappings": {
+    "dictionarydocument": {
+      "properties": {
+        "id": {
+          "type": "integer"
+        }
+      }
+    }
+  }
 }</pre></div></div></div><div class="navfooter"><span class="prev"><a href="fluent-mapping.html">
               « 
               Fluent mapping</a>
