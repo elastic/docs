@@ -626,124 +626,19 @@ Not what you want? See the
            
           <a href="secure-monitoring.html">Monitoring and Security
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="beats"></a>Beats and Security</h2></div></div></div><p>To send data to a secured cluster through the <code class="literal">elasticsearch</code> output,
-a Beat needs to authenticate as a user who can manage index templates,
-monitor the cluster, create indices, and read, and write to the indices
-it creates.</p><p>If encryption is enabled on the cluster, you also need to enable HTTPS in the
-Beat configuration.</p><p>In addition to configuring authentication credentials for the Beat itself, you
-need to grant authorized users permission to access the indices it creates.</p><h4><a id="beats-basic-auth"></a>Configuring Authentication Credentials for a Beat</h4><p>When sending data to a secured cluster through the <code class="literal">elasticsearch</code>
-output, a Beat must either provide basic authentication credentials
-or present a client certificate.</p><p>To configure authentication credentials for a Beat:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Create a role that has the <code class="literal">manage_index_templates</code> and
-<code class="literal">monitor</code> cluster privileges, and <code class="literal">read</code>, <code class="literal">write</code>, and <code class="literal">create_index</code>
-privileges for the indices the Beat creates. You can create roles from the
-<span class="strong strong"><strong>Management / Roles</strong></span> UI in Kibana or through the <code class="literal">role</code> API.
-For example, the following request creates a <code class="literal">packetbeat_writer</code> role:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST _xpack/security/role/packetbeat_writer
-{
-  "cluster": ["manage_index_templates", "monitor"],
-  "indices": [
-    {
-      "names": [ "packetbeat-*" ], <a id="CO23-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-      "privileges": ["write","create_index"]
-    }
-  ]
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO23-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-If you use a custom Packetbeat index pattern, specify that pattern
-instead of the default <code class="literal">packetbeat-*</code> pattern.
-</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
-Assign the writer role to the user the Beat is going to use to
-connect to Elasticsearch:
-</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
-To authenticate as a native user, create a user for the Beat
-to use internally and assign it the writer role. You can create
-users from the <span class="strong strong"><strong>Management / Users</strong></span> UI in Kibana or through the
-<code class="literal">user</code> API. For example, the following request creates a
-<code class="literal">packetbeat_internal</code> user that has the <code class="literal">packetbeat_writer</code> role:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /_xpack/security/user/packetbeat_internal
-{
-  "password" : "x-pack-test-password",
-  "roles" : [ "packetbeat_writer"],
-  "full_name" : "Internal Packetbeat User"
-}</pre></div></li><li class="listitem"><p class="simpara">
-To authenticate using PKI authentication, assign the writer role
-to the internal Beat user in the <a class="link" href="mapping-roles.html" title="Mapping Users and Groups to Roles"><code class="literal">role_mapping.yml</code></a>
-configuration file. Specify the user by the distinguished name that
-appears in its certificate.
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">packetbeat_writer:
-  - "cn=Internal Packetbeat User,ou=example,o=com"</pre></div></li></ol></div></li><li class="listitem"><p class="simpara">
-Configure authentication credentials for the <code class="literal">elasticsearch</code> output
-in the Beat configuration file:
-</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
-To use basic authentication, configure the <code class="literal">username</code> and <code class="literal">password</code>
-settings. For example, the following Packetbeat output configuration
-uses the native <code class="literal">packetbeat_internal</code> user to connect to Elasticsearch:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">output.elasticsearch:
-    hosts: ["localhost:9200"]
-    index: "packetbeat"
-    username: "packetbeat_internal"
-    password: "x-pack-test-password"</pre></div></li><li class="listitem"><p class="simpara">
-To use PKI authentication, configure the <code class="literal">certificate</code> and
-<code class="literal">key</code> settings:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">output.elasticsearch:
-    hosts: ["localhost:9200"]
-    index: "packetbeat"
-    ssl.certificate: "/etc/pki/client/cert.pem" <a id="CO24-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    ssl.key: "/etc/pki/client/cert.key"</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO24-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The distinguished name (DN) in the certificate must be mapped to
-the writer role in the <code class="literal">role_mapping.yml</code> configuration file on each
-node in the Elasticsearch cluster.
-</p></td></tr></table></div></li></ol></div></li></ol></div><h4><a id="beats-user-access"></a>Granting Users Access to Beats Indices</h4><p>To enable users to access the indices a Beat creates, grant them <code class="literal">read</code> and
-<code class="literal">view_index_metadata</code> privileges on the Beat indices:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Create a role that has the <code class="literal">read</code> and <code class="literal">view_index_metadata</code>
-privileges  for the Beat indices. You can create roles from the
-<span class="strong strong"><strong>Management &gt; Roles</strong></span> UI in Kibana or through the <code class="literal">role</code> API.
-For example, the following request creates a <code class="literal">packetbeat_reader</code>
-role:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST _xpack/security/role/packetbeat_reader
-{
-  "indices": [
-    {
-      "names": [ "packetbeat-*" ], <a id="CO25-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-      "privileges": ["read","view_index_metadata"]
-    }
-  ]
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO25-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-If you use a custom Packetbeat index pattern, specify that pattern
-instead of the default <code class="literal">packetbeat-*</code> pattern.
-</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
-Assign your users the reader role so they can access the Beat indices:
-</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
-If you’re using the <code class="literal">native</code> realm, you can assign roles with the
-<span class="strong strong"><strong>Management &gt; Users</strong></span> UI in Kibana or through the <code class="literal">user</code> API. For
-example, the following request grants <code class="literal">packetbeat_user</code>
-the <code class="literal">packetbeat_reader</code> role:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /_xpack/security/user/packetbeat_user
-{
-  "password" : "x-pack-test-password",
-  "roles" : [ "packetbeat_reader"],
-  "full_name" : "Packetbeat User"
-}</pre></div></li><li class="listitem"><p class="simpara">
-If you’re using the LDAP, Active Directory, or PKI realms, you
-assign the roles in the <a class="link" href="mapping-roles.html" title="Mapping Users and Groups to Roles"><code class="literal">role_mapping.yml</code></a> configuration
-file. For example, the following snippet grants <code class="literal">Packetbeat User</code>
-the <code class="literal">packetbeat_reader</code> role:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">packetbeat_reader:
-  - "cn=Packetbeat User,dc=example,dc=com"</pre></div></li></ol></div></li></ol></div><h5><a id="beats-tls"></a>Configuring Beats to use Encrypted Connections</h5><p>If encryption is enabled on the Elasticsearch cluster, you need to
-connect to Elasticsearch via HTTPS. If the CA that signed your node certificates
-is not in the host system’s trusted certificate authorities list, you also need
-to add the path to the <code class="literal">.pem</code> file that contains your CA’s certificate to the
-Beat configuration.</p><p>To configure a Beat to connect to Elasticsearch via HTTPS, add the <code class="literal">https</code> protocol
-to all host URLs:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">output.elasticsearch:
-    hosts: ["https://localhost:9200"] <a id="CO26-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    index: "packetbeat"
-    ssl.certificate_authorities: ["/etc/pki/root/ca.pem"] <a id="CO26-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO26-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Specify the <code class="literal">https</code> protocol to connect the Elasticsearch cluster.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO26-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Specify the path to the local <code class="literal">.pem</code> file that contains your Certificate
-Authority’s certificate. This is generally only needed if you use your
-own CA to sign your node certificates.
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="hadoop.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="beats"></a>Beats and Security</h2></div></div></div><p>See:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/auditbeat/master/securing-beats.html" target="_top">Auditbeat and X-Pack security</a>
+</li><li class="listitem">
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/filebeat/master/securing-beats.html" target="_top">Filebeat and X-Pack security</a>
+</li><li class="listitem">
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/heartbeat/master/securing-beats.html" target="_top">Heartbeat and X-Pack security</a>
+</li><li class="listitem">
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/metricbeat/master/securing-beats.html" target="_top">Metricbeat and X-Pack security</a>
+</li><li class="listitem">
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/packetbeat/master/securing-beats.html" target="_top">Packetbeat and X-Pack security</a>
+</li><li class="listitem">
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/winlogbeat/master/securing-beats.html" target="_top">Winlogbeat and X-Pack security</a>
+</li></ul></div></div><div class="navfooter"><span class="prev"><a href="hadoop.html">
               « 
               ES-Hadoop and Security</a>
            
