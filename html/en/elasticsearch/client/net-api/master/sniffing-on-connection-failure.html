@@ -764,19 +764,29 @@ We assert we do a sniff on the first master node in our updated cluster
         .Settings(s =&gt; s.SniffOnStartup(false))
 );
 
-Action&lt;Audit, string, int&gt; hostAssert = (a, host, expectedPort) =&gt;
+void HostAssert(Audit a, string host, int expectedPort)
 {
     a.Node.Uri.Host.Should().Be(host);
     a.Node.Uri.Port.Should().Be(expectedPort);
-};
+}
+void SniffUrlAssert(Audit a, string host, int expectedPort)
+{
+    HostAssert(a, host, expectedPort);
+    var sniffUri = new UriBuilder(a.Node.Uri)
+    {
+        Path = RequestPipeline.SniffPath,
+        Query = "?flat_settings=true&amp;timeout=2s"
+    }.Uri;
+    sniffUri.PathEquals(a.Path, nameof(SniffUrlAssert));
+}
 
 audit = await audit.TraceCalls(
     new ClientCall {
-        { PingFailure, a =&gt; hostAssert(a, "localhost", 9200)},
+        { PingFailure, a =&gt; HostAssert(a, "localhost", 9200)},
         { SniffOnFail },
-        { SniffSuccess, a =&gt; hostAssert(a, "localhost", 9200)},
-        { PingSuccess, a =&gt; hostAssert(a, "10.0.12.1", 9200)},
-        { HealthyResponse,  a =&gt; hostAssert(a, "10.0.12.1", 9200)},
+        { SniffSuccess, a =&gt; SniffUrlAssert(a, "localhost", 9200)},
+        { PingSuccess, a =&gt; HostAssert(a, "10.0.12.1", 9200)},
+        { HealthyResponse,  a =&gt; HostAssert(a, "10.0.12.1", 9200)},
         { pool =&gt;  pool.Nodes.Count.Should().Be(10) } <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
 );</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>

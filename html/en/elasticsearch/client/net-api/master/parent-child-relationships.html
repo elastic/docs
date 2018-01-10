@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Testing analyzers
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Parent/Child relationships
         | Elasticsearch.Net and NEST: the .NET clients [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="analysis.html" title="Analysis" /><link rel="prev" href="writing-analyzers.html" title="Writing analyzers" /><link rel="next" href="search.html" title="Search" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/.Net/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="mapping.html" title="Mapping" /><link rel="prev" href="visitor-pattern-mapping.html" title="Applying conventions through the Visitor pattern" /><link rel="next" href="ignoring-properties.html" title="Ignoring properties" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/.Net/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -618,215 +618,189 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-link"><a href="analysis.html">Analysis</a></span> » <span class="breadcrumb-node">Testing analyzers</span></div><div class="navheader"><span class="prev"><a href="writing-analyzers.html">
+    </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-node">Parent/Child relationships</span></div><div class="navheader"><span class="prev"><a href="visitor-pattern-mapping.html">
               « 
-              Writing analyzers</a>
+              Applying conventions through the Visitor pattern</a>
            
         </span><span class="next">
            
-          <a href="search.html">Search
+          <a href="ignoring-properties.html">Ignoring properties
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="testing-analyzers"></a>Testing analyzers<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/analysis/testing-analyzers.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When <a class="link" href="writing-analyzers.html" title="Writing analyzers">building your own analyzers</a>, it’s useful to test that the analyzer
-does what we expect it to. This is where the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.1/indices-analyze.html" target="_top">Analyze API</a> comes in.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_testing_in_built_analyzers"></a>Testing in-built analyzers<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/analysis/testing-analyzers.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To get started with the Analyze API, we can test to see how a built-in analyzer will analyze
-a piece of text</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var analyzeResponse = client.Analyze(a =&gt; a
-    .Analyzer("standard") <a id="CO53-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    .Text("F# is THE SUPERIOR language :)")
-);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO53-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Use the <code class="literal">standard</code> analyzer
-</p></td></tr></table></div><p>This returns the following response from Elasticsearch</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "tokens": [
-    {
-      "token": "f",
-      "start_offset": 0,
-      "end_offset": 1,
-      "type": "&lt;ALPHANUM&gt;",
-      "position": 0
-    },
-    {
-      "token": "is",
-      "start_offset": 3,
-      "end_offset": 5,
-      "type": "&lt;ALPHANUM&gt;",
-      "position": 1
-    },
-    {
-      "token": "the",
-      "start_offset": 6,
-      "end_offset": 9,
-      "type": "&lt;ALPHANUM&gt;",
-      "position": 2
-    },
-    {
-      "token": "superior",
-      "start_offset": 10,
-      "end_offset": 18,
-      "type": "&lt;ALPHANUM&gt;",
-      "position": 3
-    },
-    {
-      "token": "language",
-      "start_offset": 19,
-      "end_offset": 27,
-      "type": "&lt;ALPHANUM&gt;",
-      "position": 4
-    }
-  ]
-}</pre></div><p>which is deserialized to an instance of <code class="literal">IAnalyzeResponse</code> by NEST
-that we can work with</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">foreach (var analyzeToken in analyzeResponse.Tokens)
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="parent-child-relationships"></a>Parent/Child relationships<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/mapping/parent-child-relationships.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Prior to Elasticsearch 6.x you could have multiple types in a single index. Through the special <code class="literal">_parent</code> field mapping of a given type,
+one could create 1 to N relationships of parent ⇒ children documents. This worked because when indexing children, you passed a
+<code class="literal">_parent</code> id which acted as the routing key, ensuring a parent, its children and any ancestors all lived on the same shard.</p><p>Starting with 6.x indices, multiple types are no longer suppported in a single index. One reason for this is that if for instance
+two types have the same <code class="literal">name</code> property, this property needed to be mapped exactly the same for both types, but all the APIs act as if you can map
+them individually, often causing confusion. Essentially, <code class="literal">_type</code> always acted as a discriminating field within an index but was often explained
+as being more special than this.</p><p>So how do you create a parent join, now that indices no longer allow you store different types in the same index and therefor also
+not on the same shard?</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_parent_and_child_example"></a>Parent And Child example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/mapping/parent-child-relationships.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In the following contrived example we create two .NET types called <code class="literal">MyParent</code> and <code class="literal">MyChild</code> both extending from <code class="literal">MyDocument</code>.
+There is no requirement that the parent and child .NET types are related at all. The types could be plain POCO’s or <code class="literal">MyChild</code>
+could be a subclass of <code class="literal">MyParent</code>. The only requirement is that they have <span class="strong strong"><strong>a</strong></span> property where the property type is <code class="literal">JoinField</code>.</p><p>As per Elasticsearch’s constraints you should only have <span class="strong strong"><strong>a single</strong></span> property of type JoinField on your POCO.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public abstract class MyDocument
 {
-    Console.WriteLine($"{analyzeToken.Token}");
-}</pre></div><p>In testing the <code class="literal">standard</code> analyzer on our text, we’ve noticed that</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">F#</code> is tokenized as <code class="literal">"f"</code>
-</li><li class="listitem">
-stop word tokens <code class="literal">"is"</code> and <code class="literal">"the"</code> are included
-</li><li class="listitem">
-<code class="literal">"superior"</code> is included but we’d also like to tokenize <code class="literal">"great"</code> as a synonym for superior
-</li></ul></div><p>We’ll look at how we can test a combination of built-in analysis components next to
-build an analyzer to fit our needs.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_testing_built_in_analysis_components"></a>Testing built-in analysis components<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/analysis/testing-analyzers.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A <span class="emphasis"><em>transient</em></span> analyzer can be composed from built-in analysis components to test
-an analysis configuration</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var analyzeResponse = client.Analyze(a =&gt; a
-    .Tokenizer("standard")
-    .Filter("lowercase", "stop")
-    .Text("F# is THE SUPERIOR language :)")
-);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "tokens": [
-    {
-      "token": "f",
-      "start_offset": 0,
-      "end_offset": 1,
-      "type": "&lt;ALPHANUM&gt;",
-      "position": 0
-    },
-    {
-      "token": "superior",
-      "start_offset": 10,
-      "end_offset": 18,
-      "type": "&lt;ALPHANUM&gt;",
-      "position": 3
-    },
-    {
-      "token": "language",
-      "start_offset": 19,
-      "end_offset": 27,
-      "type": "&lt;ALPHANUM&gt;",
-      "position": 4
+    public int Id { get; set; }
+    public JoinField MyJoinField { get; set; }
+}
+
+public class MyParent : MyDocument
+{
+    [Text]
+    public string ParentProperty { get; set; }
+}
+
+public class MyChild : MyDocument
+{
+    [Text]
+    public string ChildProperty { get; set; }
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_parent_and_child_mapping"></a>Parent And Child mapping<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/mapping/parent-child-relationships.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In the following example we setup our client and give our types prefered index and type names.  Starting with NEST 6.x we can
+also give a type a preferred <code class="literal">RelationName</code> as can be seen on the <code class="literal">InferMappingFor&lt;MyParent&gt;</code>.</p><p>Also note that we give <code class="literal">MyChild</code> and <code class="literal">MyParent</code> the same default <code class="literal">doc</code> type name to make sure they end up in the same index
+under the same type.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var connectionPool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+var connectionSettings = new ConnectionSettings(connectionPool, new InMemoryConnection()) <a id="CO46-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    .InferMappingFor&lt;MyDocument&gt;(m =&gt; m.IndexName("index").TypeName("doc"))
+    .InferMappingFor&lt;MyChild&gt;(m =&gt; m.IndexName("index").TypeName("doc"))
+    .InferMappingFor&lt;MyParent&gt;(m =&gt; m.IndexName("index").TypeName("doc").RelationName("parent"));
+
+var client = new ElasticClient(connectionSettings);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO46-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+for the purposes of this example, an in memory connection is used which doesn’t actually send a request. In your application, you’d use the default connection or your own implementation that actually sends a request.
+</p></td></tr></table></div><p>With the <code class="literal">ConnectionSettings</code> set up, we can proceed to map <code class="literal">MyParent</code> and <code class="literal">MyChild</code> as part of the create index request.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var createIndexResponse = client.CreateIndex("index", c =&gt; c
+    .Index&lt;MyDocument&gt;()
+    .Mappings(ms =&gt; ms
+        .Map&lt;MyDocument&gt;(m =&gt; m
+            .RoutingField(r =&gt; r.Required()) <a id="CO47-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            .AutoMap&lt;MyParent&gt;() <a id="CO47-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+            .AutoMap&lt;MyChild&gt;() <a id="CO47-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+            .Properties(props =&gt; props
+                .Join(j =&gt; j <a id="CO47-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+                    .Name(p =&gt; p.MyJoinField)
+                    .Relations(r =&gt; r
+                        .Join&lt;MyParent, MyChild&gt;()
+                    )
+                )
+            )
+        )
+    )
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO47-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+recommended to make the routing field mandatory so you can not accidentally forget
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO47-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Map all of the <code class="literal">MyParent</code> properties
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO47-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Map all of the <code class="literal">MyChild</code> properties
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO47-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Additionally map the <code class="literal">JoinField</code> since it is not automatically mapped by <code class="literal">AutoMap()</code>
+</p></td></tr></table></div><p>We call <code class="literal">AutoMap()</code> for both types to discover properties of both .NET types. <code class="literal">AutoMap()</code> won’t automatically setup the
+join field mapping though because NEST can not infer all the <code class="literal">Relations</code> that are required by your domain.</p><p>In this case we setup <code class="literal">MyChild</code> to be child of <code class="literal">MyParent</code>. <code class="literal">.Join()</code> has many overloads so be sure to check them out if you
+need to map not one but multiple children.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "mappings": {
+    "doc": {
+      "_routing": {
+        "required": true
+      },
+      "properties": {
+        "parentProperty": {
+          "type": "text"
+        },
+        "childProperty": {
+          "type": "text"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "myJoinField": {
+          "type": "join",
+          "relations": {
+            "parent": "mychild"
+          }
+        }
+      }
     }
-  ]
-}</pre></div><p>Great! This has removed stop words, but we still have <code class="literal">F#</code> tokenized as <code class="literal">"f"</code>
-and no <code class="literal">"great"</code> synonym for <code class="literal">"superior"</code>.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Character and Token filters are <span class="strong strong"><strong>applied in the order</strong></span> in which they are specified.</p></div></div><p>Let’s build a custom analyzer with additional components to solve this.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_testing_a_custom_analyzer_in_an_index"></a>Testing a custom analyzer in an index<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/analysis/testing-analyzers.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A custom analyzer can be created within an index, either when creating the index or by
-updating the settings on an existing index.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>When adding to an existing index, it needs to be closed first.</p></div></div><p>In this example, we’ll add a custom analyzer to an existing index. First,
-we need to close the index</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">client.CloseIndex("analysis-index");</pre></div><p>Now, we can update the settings to add the analyzer</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">client.UpdateIndexSettings("analysis-index", i =&gt; i
-    .IndexSettings(s =&gt; s
-        .Analysis(a =&gt; a
-            .CharFilters(cf =&gt; cf
-                .Mapping("my_char_filter", m =&gt; m
-                    .Mappings("F# =&gt; FSharp")
-                )
-            )
-            .TokenFilters(tf =&gt; tf
-                .Synonym("my_synonym", sf =&gt; sf
-                    .Synonyms("superior, great")
+  }
+}</pre></div><p>Note how <code class="literal">MyParent</code>'s relation name is <code class="literal">parent</code> because of the mapping on connection settings. This also comes in handy
+later when doing strongly typed <code class="literal">has_child</code> and <code class="literal">has_parent</code> queries.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_indexing_parents_or_children"></a>Indexing parents or children<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/mapping/parent-child-relationships.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Now that we have our join field mapping set up on the index, we can proceed to index parent and child documents.</p><p>To mark a document with the relation name of the parent <code class="literal">MyParent</code> all of the following three ways are equivalent.</p><p>In the first we explicitly call <code class="literal">JoinField.Root</code> to mark this document as the root of a parent child relationship namely
+that of <code class="literal">MyParent</code>. In the following examples we rely on implicit conversion from <code class="literal">string</code> and <code class="literal">Type</code> to do the same.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var parentDocument = new MyParent
+{
+    Id = 1,
+    ParentProperty = "a parent prop",
+    MyJoinField = JoinField.Root&lt;MyParent&gt;()
+};
 
-                )
-            )
-            .Analyzers(an =&gt; an
-                .Custom("my_analyzer", ca =&gt; ca
-                    .Tokenizer("standard")
-                    .CharFilters("my_char_filter")
-                    .Filters("lowercase", "stop", "my_synonym")
-                )
-            )
+parentDocument = new MyParent
+{
+    Id = 1,
+    ParentProperty = "a parent prop",
+    MyJoinField = typeof(MyParent) <a id="CO48-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+};
 
-        )
-    )
-);</pre></div><p>And open the index again. Here, we also wait up to five seconds for the
-status of the index to become green</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">client.OpenIndex("analysis-index");
-client.ClusterHealth(h =&gt; h
-    .WaitForStatus(WaitForStatus.Green)
-    .Index("analysis-index")
-    .Timeout(TimeSpan.FromSeconds(5))
-);</pre></div><p>With the index open and ready, let’s test the analyzer</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var analyzeResponse = client.Analyze(a =&gt; a
-    .Index("analysis-index") <a id="CO54-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    .Analyzer("my_analyzer")
-    .Text("F# is THE SUPERIOR language :)")
-);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO54-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Since we added the custom analyzer to the "analysis-index" index, we need to target this index to test it
-</p></td></tr></table></div><p>The output now looks like</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "tokens": [
-    {
-      "token": "fsharp",
-      "start_offset": 0,
-      "end_offset": 2,
-      "type": "&lt;ALPHANUM&gt;",
-      "position": 0
-    },
-    {
-      "token": "superior",
-      "start_offset": 10,
-      "end_offset": 18,
-      "type": "&lt;ALPHANUM&gt;",
-      "position": 3
-    },
-    {
-      "token": "great",
-      "start_offset": 10,
-      "end_offset": 18,
-      "type": "SYNONYM",
-      "position": 3
-    },
-    {
-      "token": "language",
-      "start_offset": 19,
-      "end_offset": 27,
-      "type": "&lt;ALPHANUM&gt;",
-      "position": 4
-    }
-  ]
-}</pre></div><p>Exactly what we were after!</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_testing_an_analyzer_on_a_field"></a>Testing an analyzer on a field<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/analysis/testing-analyzers.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It’s also possible to test the analyzer for a given field type mapping.
-Given an index created with the following settings and mappings</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">client.CreateIndex("project-index", i =&gt; i
-    .Settings(s =&gt; s
-        .Analysis(a =&gt; a
-            .CharFilters(cf =&gt; cf
-                .Mapping("my_char_filter", m =&gt; m
-                    .Mappings("F# =&gt; FSharp")
-                )
-            )
-            .TokenFilters(tf =&gt; tf
-                .Synonym("my_synonym", sf =&gt; sf
-                    .Synonyms("superior, great")
+parentDocument = new MyParent
+{
+    Id = 1,
+    ParentProperty = "a parent prop",
+    MyJoinField = "myparent" <a id="CO48-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+};
+var indexParent = client.IndexDocument&lt;MyDocument&gt;(parentDocument);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO48-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+this lets the join data type know this is a root document of type <code class="literal">myparent</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO48-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+this lets the join data type know this is a root document of type <code class="literal">myparent</code>
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "id": 1,
+  "parentProperty": "a parent prop",
+  "myJoinField": "myparent"
+}</pre></div><p>Linking the child document to its parent follows a similar pattern.
+Here we create a link by inferring the id from our parent instance <code class="literal">parentDocument</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var indexChild = client.IndexDocument&lt;MyDocument&gt;(new MyChild
+{
+    MyJoinField = JoinField.Link&lt;MyChild, MyParent&gt;(parentDocument)
+});</pre></div><p>or here we are simply stating this document is of type <code class="literal">mychild</code> and should be linked
+to parent id 1 from <code class="literal">parentDocument</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">indexChild = client.IndexDocument&lt;MyDocument&gt;(new MyChild
+{
+    Id = 2,
+    MyJoinField = JoinField.Link&lt;MyChild&gt;(1)
+});</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "id": 2,
+  "myJoinField": {
+    "name": "mychild",
+    "parent": "1"
+  }
+}</pre></div><p>The mapping already links <code class="literal">myparent</code> as the parent type so we only need supply the parent id.
+In fact there are many ways to create join field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("myparent").WhenSerializing(JoinField.Root(typeof(MyParent)));
+Expect("myparent").WhenSerializing(JoinField.Root(Relation&lt;MyParent&gt;()));
+Expect("myparent").WhenSerializing(JoinField.Root&lt;MyParent&gt;());
+Expect("myparent").WhenSerializing(JoinField.Root("myparent"));
 
-                )
-            )
-            .Analyzers(an =&gt; an
-                .Custom("my_analyzer", ca =&gt; ca
-                    .Tokenizer("standard")
-                    .CharFilters("my_char_filter")
-                    .Filters("lowercase", "stop", "my_synonym")
-                )
-            )
+var childLink = new { name = "mychild", parent = "1" };
+Expect(childLink).WhenSerializing(JoinField.Link&lt;MyChild&gt;(1));
+Expect(childLink).WhenSerializing(JoinField.Link&lt;MyChild, MyParent&gt;(parentDocument));
+Expect(childLink).WhenSerializing(JoinField.Link("mychild", 1));
+Expect(childLink).WhenSerializing(JoinField.Link(typeof(MyChild), 1));</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_routing_parent_child_documents"></a>Routing parent child documents<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/mapping/parent-child-relationships.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A parent and all of it’s (grand)children still need to live on the same shard so you still need to take care of specifying routing.</p><p>In the past you would have to provide the parent id on the request using <code class="literal">parent=&lt;parentid&gt;</code> this was always an alias for routing
+and thus in Elasticsearch 6.x you need to provide <code class="literal">routing=&lt;parentid&gt;</code> instead.</p><p>NEST has a handy helper to infer the correct routing value given a document that is smart enough to find the join field and infer
+correct parent.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var infer = client.Infer;
+var parent = new MyParent {Id = 1337, MyJoinField = JoinField.Root&lt;MyParent&gt;()};
+infer.Routing(parent).Should().Be("1337");
 
-        )
-    )
-    .Mappings(m =&gt; m
-        .Map&lt;Project&gt;(mm =&gt; mm
-            .Properties(p =&gt; p
-                .Text(t =&gt; t
-                    .Name(n =&gt; n.Name)
-                    .Analyzer("my_analyzer")
-                )
-            )
-        )
-    )
-);</pre></div><p>The analyzer on the <code class="literal">name</code> field can be tested with</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var analyzeResponse = client.Analyze(a =&gt; a
-    .Index("project-index")
-    .Field&lt;Project&gt;(f =&gt; f.Name)
-    .Text("F# is THE SUPERIOR language :)")
-);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="writing-analyzers.html">
+var child = new MyChild {Id = 1338, MyJoinField = JoinField.Link&lt;MyChild&gt;(parentId: "1337")};
+infer.Routing(child).Should().Be("1337");
+
+child = new MyChild {Id = 1339, MyJoinField = JoinField.Link&lt;MyChild, MyParent&gt;(parent)};
+infer.Routing(child).Should().Be("1337");</pre></div><p>here we index <code class="literal">parent</code> and rather than fishing out the parent id by inspecting <code class="literal">parent</code> we just pass the instance
+to <code class="literal">Routing</code> which can infer the correct routing key based on the JoinField property on the instance</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var indexResponse = client.Index(parent, i =&gt; i.Routing(Routing.From(parent)));
+indexResponse.ApiCall.Uri.Query.Should().Contain("routing=1337");</pre></div><p>The same goes for when we index a child, we can pass the instance directly to <code class="literal">Routing</code> and NEST will use the parent id
+already specified on <code class="literal">child</code>. Here we use the static import <code class="literal">using static Nest.Infer</code> and it’s <code class="literal">Route()</code> static method to
+create an instance of <code class="literal">Routing</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">indexResponse = client.Index(child, i =&gt; i.Routing(Route(child)));
+indexResponse.ApiCall.Uri.Query.Should().Contain("routing=1337");</pre></div><p>Wouldn’t be handy if NEST does this automatically? It does!</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">indexResponse = client.IndexDocument(child);
+indexResponse.ApiCall.Uri.Query.Should().Contain("routing=1337");</pre></div><p>You can always override the default inferred routing though</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">indexResponse = client.Index(child, i =&gt; i.Routing("explicit"));
+indexResponse.ApiCall.Uri.Query.Should().Contain("routing=explicit");
+
+indexResponse = client.Index(child, i =&gt; i.Routing(null));
+indexResponse.ApiCall.Uri.Query.Should().NotContain("routing");</pre></div><p>This works for both the fluent and object initializer syntax</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var indexRequest = new IndexRequest&lt;MyChild&gt;(child);
+indexResponse = client.Index(indexRequest);
+indexResponse.ApiCall.Uri.Query.Should().Contain("routing=1337");</pre></div><p>Its important to note that the routing is resolved at request time, not instantation time
+here we update the <code class="literal">child</code>'s <code class="literal">JoinField</code> after already creating the index request for <code class="literal">child</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">child.MyJoinField = JoinField.Link&lt;MyChild&gt;(parentId: "something-else");
+indexResponse = client.Index(indexRequest);
+indexResponse.ApiCall.Uri.Query.Should().Contain("routing=something-else");</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you use multiple levels of parent and child relations e.g <code class="literal">A =&gt; B =&gt; C</code>, when you index <code class="literal">C</code>, you
+need to provide the id of <code class="literal">A</code> as the routing key <span class="strong strong"><strong>but</strong></span> the id of <code class="literal">B</code> to set up the relation on the join field.
+In this case, NEST <code class="literal">JoinRouting</code> helper is unable to resolve to the id of <code class="literal">A</code> and will return the id of <code class="literal">B</code>.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="visitor-pattern-mapping.html">
               « 
-              Writing analyzers</a>
+              Applying conventions through the Visitor pattern</a>
            
         </span><span class="next">
            
-          <a href="search.html">Search
+          <a href="ignoring-properties.html">Ignoring properties
                »
             </a></span></div>
 <!-- end body -->
