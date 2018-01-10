@@ -641,7 +641,17 @@ to use device <code class="literal">4</code>:</p><div class="pre_wrapper"><pre c
 4: \Device\NPF_{77DFFCAF-1335-4B0D-AFD4-5A4685674FAA} (MS NDIS 6.0 LoopBack Driver)</pre></div><h3><a id="packetbeat-missing-transactions"></a>Packetbeat is missing long running transactions?<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/faq.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Packetbeat has an internal timeout that it uses to time out transactions and TCP connections
 when no packets have been seen for a long time.</p><p>To process long running transactions, you can specify a larger value for the <a class="link" href="common-protocol-options.html#transaction-timeout-option" title="transaction_timeoutedit"><code class="literal">transaction_timeout</code></a>
 option. However, keep in mind that very large timeout values can increase memory usage if messages are lost or transaction
-response messages are not sent.</p><h3><a id="bandwidth-throttling"></a>Need to limit bandwidth used by Packetbeat?<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/faq-limit-bandwidth.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you need to limit bandwidth usage, we recommend that you configure the network stack on your OS to perform
+response messages are not sent.</p><h3><a id="mysql-no-data"></a>Packetbeat isn’t capturing MySQL performance data?<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/faq-mysql-ssl.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You may be listening on the wrong interface or trying to capture data sent over
+an encrypted connection. Packetbeat can only monitor MySQL traffic if it is
+unencrypted. To resolve your issue:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+Make sure Packetbeat is configured to listen on the <code class="literal">lo0</code> interface:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">packetbeat.interfaces.device: lo0</pre></div></li><li class="listitem"><p class="simpara">
+Make sure the client programs you are monitoring run <code class="literal">mysql</code> with SSL
+disabled. For example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">mysql --protocol tcp --host=127.0.0.1 --port=3306 --ssl-mode=DISABLED</pre></div></li></ul></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>When SSL is disabled, the connection between the MySQL client and
+server is unencrypted, which means that anyone with access to your network may
+be able to inspect data sent between the client and server. If MySQL is running
+in an untrusted network, it’s not advisable to disable encryption.</p></div></div><h3><a id="bandwidth-throttling"></a>Need to limit bandwidth used by Packetbeat?<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/faq-limit-bandwidth.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you need to limit bandwidth usage, we recommend that you configure the network stack on your OS to perform
 bandwidth throttling.</p><p>For example, the following Linux commands cap the connection between Packetbeat and Logstash by setting a
 limit of 50 kbps on TCP connections over port 5044:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">tc qdisc add dev $DEV root handle 1: htb
 tc class add dev $DEV parent 1:1 classid 1:10 htb rate 50kbps ceil 50kbps
