@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting Up SSL/TLS on a Cluster
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Setting Up TLS on a Cluster
         | X-Pack for the Elastic Stack [master]
       | Elastic
     </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [master]" /><link rel="up" href="encrypting-communications.html" title="Encrypting Communications" /><link rel="prev" href="encrypting-communications.html" title="Encrypting Communications" /><link rel="next" href="ciphers.html" title="Enabling Cipher Suites for Stronger Encryption" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/XPack/Reference/master" />
@@ -618,7 +618,7 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">X-Pack for the Elastic Stack
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-security.html">Securing Elasticsearch and Kibana</a></span> » <span class="breadcrumb-link"><a href="encrypting-communications.html">Encrypting Communications</a></span> » <span class="breadcrumb-node">Setting Up SSL/TLS on a Cluster</span></div><div class="navheader"><span class="prev"><a href="encrypting-communications.html">
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-security.html">Securing Elasticsearch and Kibana</a></span> » <span class="breadcrumb-link"><a href="encrypting-communications.html">Encrypting Communications</a></span> » <span class="breadcrumb-node">Setting Up TLS on a Cluster</span></div><div class="navheader"><span class="prev"><a href="encrypting-communications.html">
               « 
               Encrypting Communications</a>
            
@@ -626,78 +626,37 @@ Not what you want? See the
            
           <a href="ciphers.html">Enabling Cipher Suites for Stronger Encryption
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ssl-tls"></a>Setting Up SSL/TLS on a Cluster</h2></div></div></div><p>X-Pack security enables you to encrypt traffic to, from, and within your Elasticsearch
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ssl-tls"></a>Setting Up TLS on a Cluster</h2></div></div></div><p>X-Pack security enables you to encrypt traffic to, from, and within your Elasticsearch
 cluster. Connections are secured using Transport Layer Security (TLS), which is
 commonly referred to as "SSL".</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Clusters that do not have encryption enabled send all data in plain text
-including passwords and will not be able to install a license that enables X-Pack security.</p></div></div><p>To enable encryption, you need to perform the following steps on each node in
-the cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-<a class="link" href="ssl-tls.html#installing-node-certificates" title="Generating Node Certificates">Generate a private key and X.509 certificate</a>.
-</li><li class="listitem"><p class="simpara">
-<a class="link" href="ssl-tls.html#configure-ssl">Configure the node</a> to:
-</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
-Identify itself using its signed certificate.
+including passwords and will not be able to install a license that enables X-Pack security.</p></div></div><p>The following steps describe how to enable encryption across the various
+components of the Elastic Stack. You must perform each of the steps that are
+applicable to your cluster.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Generate a private key and X.509 certificate for each of your Elasticsearch nodes. See
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/configuring-tls.html#node-certificates" target="_top">Generating Node Certificates</a>.
 </li><li class="listitem">
-Enable SSL on the transport and HTTP layers.
-</li></ol></div></li><li class="listitem">
-Restart Elasticsearch.
-</li></ol></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="installing-node-certificates"></a>Generating Node Certificates</h3></div></div></div><p>TLS requires X.509 certificates to perform encryption and authentication of the application
-that is being communicated with. In order for the communication between nodes to be truly
-secure, the certificates must be validated. The recommended approach for validating
-certificate authenticity in a Elasticsearch cluster is to trust the certificate authority (CA)
-that signed the certificate. By doing this, as nodes are added to your cluster they just need
-to use a certificate signed by the same CA and the node is automatically allowed to join the
-cluster. Additionally, it is recommended that the certificates contain subject alternative
-names (SAN) that correspond to the node’s IP address and DNS name so that hostname verification
-can be performed.</p><p>In order to simplify the process of generating certificates for the Elastic Stack, a command
-line tool, <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/certutil.html" target="_top"><code class="literal">certutil</code></a> has been included with X-Pack. This
-tool takes care of the generating
-a CA and signing certificates with the CA. <code class="literal">certutil</code> can be used interactively or in a silent
-mode through the use of an input file. The <code class="literal">certutil</code> tool also supports generation of certificate
-signing requests (CSR), so that a commercial or organization specific CA can be used to sign
-the certificates. For example:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-Optional: Create a certificate authority by using the <code class="literal">certutil ca</code> command.
-</li><li class="listitem"><p class="simpara">
-Generate a certificate for each node by using the <code class="literal">certutil cert</code> command.
-</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You should secure the output files, since they contain the private keys
-for your instance.</p></div></div></li><li class="listitem">
-Copy the node certificate to the appropriate locations. For each Elastic
-product that you want to configure, copy the certificates to the relevant
-configuration directory. For more information, see
-<a class="link" href="ssl-tls.html#enable-ssl" title="Enabling SSL in the Node Configuration">Configuring security in Elasticsearch</a>,
-<a class="ulink" href="https://www.elastic.co/guide/en/kibana/master/using-kibana-with-security.html" target="_top">Configuring security in Kibana</a>, and
-<a class="ulink" href="http://www.elastic.co/guide/en/logstash/master/ls-security.html" target="_top">Configuring security in Logstash</a>.
-</li></ol></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you choose not to use <code class="literal">certutil</code>, the certificates that you obtain must allow for both
-<code class="literal">clientAuth</code> and <code class="literal">serverAuth</code> if the extended key usage extension is present. The certificates
-need to be in PEM or PKCS#12 format. Although not required, it is highly recommended that the certificate contain
-the DNS names and/or IP addresses of the node so that hostname verification can be used.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="enable-ssl"></a>Enabling SSL in the Node Configuration</h3></div></div></div><p>Once you have the signed certificate, private key, and CA certificate you need to
-modify the node configuration to enable SSL.</p><p><a id="configure-ssl"></a>To enable SSL, make the following changes in <code class="literal">elasticsearch.yml</code>:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Specify the location of the node’s keystore and the password(s) needed to
-access the node’s certificate. For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.ssl.key:                     /home/es/config/x-pack/node01.key <a id="CO17-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-xpack.ssl.certificate:             /home/es/config/x-pack/node01.crt <a id="CO17-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-xpack.ssl.certificate_authorities: [ "/home/es/config/x-pack/ca.crt" ] <a id="CO17-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The full path to the node key file. This must be a location within the
-    Elasticsearch configuration directory.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The full path to the node certificate. This must be a location within the
-    Elasticsearch configuration directory.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-An array of paths to the CA certificates that should be trusted. These paths
-    must be a location within the Elasticsearch configuration directory.
-</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
-Enable SSL on the transport networking layer to ensure that communication
-between nodes is encrypted:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.security.transport.ssl.enabled: true</pre></div></li><li class="listitem"><p class="simpara">
-Enable SSL on the HTTP layer to ensure that communication between HTTP clients
-and the cluster is encrypted:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.security.http.ssl.enabled: true</pre></div></li><li class="listitem"><p class="simpara">
-Restart Elasticsearch.
-</p><p class="simpara">You must perform a full cluster restart. Nodes which are configured to use
-SSL/TLS cannot communicate with nodes that are using unencrypted networking
-(and vice-versa). After enabling SSL/TLS you must restart all nodes in order
-to maintain communication across the cluster.</p></li></ol></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>All SSL related node settings that are considered to be highly sensitive
-      and therefore are not exposed via the
-      <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes info API</a>.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="encrypting-communications.html">
+Configure each node in the cluster to identify itself using its signed
+certificate and enable TLS on the transport layer. You can also optionally
+enable TLS on the HTTP layer. See
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/configuring-tls.html#enable-ssl" target="_top">Enabling TLS on Elasticsearch Nodes</a>.
+</li><li class="listitem">
+Configure X-Pack monitoring to use encrypted connections. See <a class="xref" href="secure-monitoring.html" title="Monitoring and Security">Monitoring and Security</a>.
+</li><li class="listitem">
+Configure Kibana to encrypt communications between the browser and
+the Kibana server and to connect to Elasticsearch via HTTPS. See
+<a class="ulink" href="https://www.elastic.co/guide/en/kibana/master/using-kibana-with-security.html" target="_top">Configuring Security in Kibana</a>.
+</li><li class="listitem">
+Configure Logstash to use TLS encryption. See
+<a class="ulink" href="http://www.elastic.co/guide/en/logstash/master/ls-security.html" target="_top">Configuring Security in Logstash</a>.
+</li><li class="listitem">
+Configure Beats to use encrypted connections. See <a class="xref" href="beats.html" title="Beats and Security">Beats and Security</a>.
+</li><li class="listitem">
+Configure the Java transport client to use encrypted communications.
+See <a class="xref" href="java-clients.html" title="Java Client and Security">Java Client and Security</a>.
+</li><li class="listitem">
+Configure Elasticsearch for Apache Hadoop to use secured transport. See
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/hadoop/master/security.html" target="_top">Elasticsearch for Apache Hadoop Security</a>.
+</li></ol></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="installing-node-certificates"></a>Node Certificates</h3></div></div></div><p>See <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/configuring-tls.html#node-certificates" target="_top">Generating Node Certificates</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="enable-ssl"></a>Enabling TLS in the Node Configuration</h3></div></div></div><p>See <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/configuring-tls.html#enable-ssl" target="_top">Enabling TLS on Elasticsearch Nodes</a>.</p></div></div><div class="navfooter"><span class="prev"><a href="encrypting-communications.html">
               « 
               Encrypting Communications</a>
            
