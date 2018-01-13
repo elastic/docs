@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Visualization Spy
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Querying ElasticSearch
         | Kibana User Guide [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Kibana User Guide [master]" /><link rel="up" href="visualize.html" title="Visualize" /><link rel="prev" href="heatmap-chart.html" title="Heatmap Chart" /><link rel="next" href="vega-graph.html" title="Vega Graphs" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Kibana/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Kibana User Guide [master]" /><link rel="up" href="visualize.html" title="Visualize" /><link rel="prev" href="vega-vs-vegalite.html" title="Vega vs VegaLite" /><link rel="next" href="vega-esmfiles.html" title="Elastic Map Files" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Kibana/Reference/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -618,27 +618,112 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Kibana User Guide
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="visualize.html">Visualize</a></span> » <span class="breadcrumb-node">Visualization Spy</span></div><div class="navheader"><span class="prev"><a href="heatmap-chart.html">
+    </a></span> » <span class="breadcrumb-link"><a href="visualize.html">Visualize</a></span> » <span class="breadcrumb-node">Querying ElasticSearch</span></div><div class="navheader"><span class="prev"><a href="vega-vs-vegalite.html">
               « 
-              Heatmap Chart</a>
+              Vega vs VegaLite</a>
            
         </span><span class="next">
            
-          <a href="vega-graph.html">Vega Graphs
+          <a href="vega-esmfiles.html">Elastic Map Files
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="vis-spy"></a>Visualization Spy<a href="https://github.com/elastic/kibana/edit/master/docs/visualize/visualization-raw-data.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To display the raw data behind the visualization, click the <span class="inlinemediaobject"><img src="images/spy-open-button.png" alt="images/spy-open-button.png" /></span> button in the bottom left corner of the container. The visualization spy panel will open. Use the select input to view detailed information about the raw data.</p><p><span class="inlinemediaobject"><img src="images/spy-panel.png" alt="images/spy-panel.png" /></span></p><p><strong>Table. </strong>A representation of the underlying data, presented as a paginated data grid. You can sort the items
-in the table by clicking on the table headers at the top of each column.</p><p><strong>Request. </strong>The raw request used to query the server, presented in JSON format.</p><p><strong>Response. </strong>The raw response from the server, presented in JSON format.</p><p><strong>Statistics. </strong>A summary of the statistics related to the request and the response, presented as a data grid. The data
-grid includes the query duration, the request duration, the total number of records found on the server, and the
-index pattern used to make the query.</p><p><strong>Debug. </strong>The visualization saved state presented in JSON format.</p><p>To export the raw data behind the visualization as a comma-separated-values (CSV) file, click on either the
-<span class="strong strong"><strong>Raw</strong></span> or <span class="strong strong"><strong>Formatted</strong></span> links at the bottom of any of the detailed information tabs. A raw export contains the data as it
-is stored in Elasticsearch. A formatted export contains the results of any applicable Kibana
-<a class="link" href="managing-fields.html" title="Managing Fields">field formatters</a>.</p></div><div class="navfooter"><span class="prev"><a href="heatmap-chart.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="vega-querying-elasticsearch"></a>Querying ElasticSearch<a href="https://github.com/elastic/kibana/edit/master/docs/visualize/vega.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>By default, Vega’s <a class="ulink" href="https://vega.github.io/vega/docs/data/" target="_top">data</a> element
+can use embedded and external data with a <code class="literal">"url"</code> parameter. Kibana adds support for the direct ElasticSearch queries by overloading
+the <code class="literal">"url"</code> value.</p><p>Here is an example of an ES query that counts the number of documents in all indexes. The query uses <span class="strong strong"><strong>@timestamp</strong></span> field to filter the time range, and break it into histogram buckets.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">// An object instead of a string for the url value
+// is treated as a context-aware Elasticsearch query.
+url: {
+  // Filter the time picker (upper right corner) with this field
+  %timefield%: @timestamp
+  // Apply dashboard context filters when set
+  %context%: true
+
+  // Which indexes to search
+  index: _all
+  // The body element may contain "aggs" and "query" subfields
+  body: {
+    aggs: {
+      time_buckets: {
+        date_histogram: {
+          // Use date histogram aggregation on @timestamp field
+          field: @timestamp
+          // interval value will depend on the daterange picker
+          // Use an integer to set approximate bucket count
+          interval: { %autointerval%: true }
+          // Make sure we get an entire range, even if it has no data
+          extended_bounds: {
+            min: { %timefilter%: "min" }
+            max: { %timefilter%: "max" }
+          }
+          // Use this for linear (e.g. line, area) graphs
+          // Without it, empty buckets will not show up
+          min_doc_count: 0
+        }
+      }
+    }
+    // Speed up the response by only including aggregation results
+    size: 0
+  }
+}</pre></div><p>The full ES result has this kind of structure:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">{
+  "aggregations": {
+    "time_buckets": {
+      "buckets": [{
+          "key_as_string": "2015-11-30T22:00:00.000Z",
+          "key": 1448920800000,
+          "doc_count": 28
+        }, {
+          "key_as_string": "2015-11-30T23:00:00.000Z",
+          "key": 1448924400000,
+          "doc_count": 330
+        }, ...</pre></div><p>Note that <code class="literal">"key"</code> is a unix timestamp, and can be used without conversions by the
+Vega date expressions.</p><p>For most graphs we only need the list of the bucket values, so we use <code class="literal">format: {property: "aggregations.time_buckets.buckets"}</code> expression to focus on just the data we need.</p><p>Query may be specified with individual range and dashboard context as
+well. This query is equivalent to <code class="literal">"%context%": true, "%timefield%": "@timestamp"</code>,
+except that the timerange is shifted back by 10 minutes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">{
+  body: {
+    query: {
+      bool: {
+        must: [
+          // This string will be replaced
+          // with the auto-generated "MUST" clause
+          "%dashboard_context-must_clause%"
+          {
+            range: {
+              // apply timefilter (upper right corner)
+              // to the @timestamp variable
+              @timestamp: {
+                // "%timefilter%" will be replaced with
+                // the current values of the time filter
+                // (from the upper right corner)
+                "%timefilter%": true
+                // Only work with %timefilter%
+                // Shift current timefilter by 10 units back
+                shift: 10
+                // week, day (default), hour, minute, second
+                unit: minute
+              }
+            }
+          }
+        ]
+        must_not: [
+          // This string will be replaced with
+          // the auto-generated "MUST-NOT" clause
+          "%dashboard_context-must_not_clause%"
+        ]
+      }
+    }
+  }
+}</pre></div><p>The <code class="literal">"%timefilter%"</code> can also be used to specify a single min or max
+value. As shown above, the date_histogram’s <code class="literal">extended_bounds</code> can be set
+with two values - min and max. Instead of hardcoding a value, you may
+use <code class="literal">"min": {"%timefilter%": "min"}</code>, which will be replaced with the
+beginning of the current time range. The <code class="literal">shift</code> and <code class="literal">unit</code> values are
+also supported. The <code class="literal">"interval"</code> can also be set dynamically, depending
+on the currently picked range: <code class="literal">"interval": {"%autointerval%": 10}</code> will
+try to get about 10-15 data points (buckets).</p></div><div class="navfooter"><span class="prev"><a href="vega-vs-vegalite.html">
               « 
-              Heatmap Chart</a>
+              Vega vs VegaLite</a>
            
         </span><span class="next">
            
-          <a href="vega-graph.html">Vega Graphs
+          <a href="vega-esmfiles.html">Elastic Map Files
                »
             </a></span></div>
 <!-- end body -->
