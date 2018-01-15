@@ -642,43 +642,63 @@ a <code class="literal">TimeSpan</code>
     .WhenSerializing(unitString)
     .WhenSerializing(unitComposed)
     .WhenSerializing(unitTimeSpan)
-    .WhenSerializing(unitMilliseconds);</pre></div><p>The <code class="literal">Milliseconds</code> property on <code class="literal">Time</code> is calculated even when not using the constructor that takes a double</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">unitMilliseconds.Milliseconds.Should().Be(1000*60*60*24*2);
+    .WhenSerializing(unitMilliseconds);</pre></div><p>The <code class="literal">Milliseconds</code> property on <code class="literal">Time</code> is calculated even when not using the constructor that takes a <code class="literal">double</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">unitMilliseconds.Milliseconds.Should().Be(1000*60*60*24*2);
 unitComposed.Milliseconds.Should().Be(1000*60*60*24*2);
 unitTimeSpan.Milliseconds.Should().Be(1000*60*60*24*2);
-unitString.Milliseconds.Should().Be(1000*60*60*24*2);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_implicit_conversion_6"></a>Implicit conversion<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/time-unit/time-units.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Alternatively to using the constructor, <code class="literal">string</code>, <code class="literal">TimeSpan</code> and <code class="literal">double</code> can be implicitly converted to <code class="literal">Time</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Time oneAndHalfYear = "1.5y";
-Time twoWeeks = TimeSpan.FromDays(14);
+unitString.Milliseconds.Should().Be(1000*60*60*24*2);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_implicit_conversion_6"></a>Implicit conversion<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/time-unit/time-units.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There are implicit conversions from <code class="literal">string</code>, <code class="literal">TimeSpan</code> and <code class="literal">double</code> to an instance of <code class="literal">Time</code>, making them
+easier to work with</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Time oneMinute = "1m";
+Time fourteenDays = TimeSpan.FromDays(14);
 Time twoDays = 1000*60*60*24*2;
 
-Expect("1.5y").WhenSerializing(oneAndHalfYear);
-Expect("2w").WhenSerializing(twoWeeks);
-Expect("2d").WhenSerializing(twoDays);
+Expect("1m").WhenSerializing(oneMinute);
+Expect("14d").WhenSerializing(fourteenDays);
+Expect("2d").WhenSerializing(twoDays);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_equality_and_comparison"></a>Equality and Comparison<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/time-unit/time-units.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Comparisons on the expressions can be performed since Milliseconds are calculated
+even when values are not passed as <code class="literal">double</code> milliseconds</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Time fourteenDays = TimeSpan.FromDays(14);
+fourteenDays.Milliseconds.Should().Be(1209600000);
 
-Time oneAndHalfYear = "1.5y";
-Time twoWeeks = TimeSpan.FromDays(14);
-Time twoDays = 1000*60*60*24*2;</pre></div><p>Milliseconds are calculated even when values are not passed as long…</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">twoWeeks.Milliseconds.Should().BeGreaterThan(1);</pre></div><p>…<span class="strong strong"><strong>except</strong></span> when dealing with years or months, whose millsecond value cannot
-be calculated <span class="strong strong"><strong>accurately</strong></span>, since they are not fixed durations. For instance,
-30 vs 31 vs 28 days in a month, or 366 vs 365 days in a year.
-In this instance, Milliseconds will be -1.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">oneAndHalfYear.Milliseconds.Should().Be(-1);</pre></div><p>This allows you to do comparisons on the expressions</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">oneAndHalfYear.Should().BeGreaterThan(twoWeeks);
-(oneAndHalfYear &gt; twoWeeks).Should().BeTrue();
-(oneAndHalfYear &gt;= twoWeeks).Should().BeTrue();
+Time twoDays = 1000*60*60*24*2;
+
+fourteenDays.Should().BeGreaterThan(twoDays);
+(fourteenDays &gt; twoDays).Should().BeTrue();
 (twoDays != null).Should().BeTrue();
 (twoDays &gt;= new Time("2d")).Should().BeTrue();
 
-twoDays.Should().BeLessThan(twoWeeks);
-(twoDays &lt; twoWeeks).Should().BeTrue();
-(twoDays &lt;= twoWeeks).Should().BeTrue();
-(twoDays &lt;= new Time("2d")).Should().BeTrue();</pre></div><p>Special Time values <code class="literal">0</code> and <code class="literal">-1</code> can be compared against each other
-and other Time values although admittingly this is a tad non-sensical.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Time.MinusOne.Should().BeLessThan(Time.Zero);
-Time.Zero.Should().BeGreaterThan(Time.MinusOne);
-Time.Zero.Should().BeLessThan(twoDays);
-Time.MinusOne.Should().BeLessThan(twoDays);</pre></div><p>And assert equality</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">twoDays.Should().Be(new Time("2d"));
+twoDays.Should().BeLessThan(fourteenDays);
+(twoDays &lt; fourteenDays).Should().BeTrue();
+(twoDays &lt;= fourteenDays).Should().BeTrue();
+(twoDays &lt;= new Time("2d")).Should().BeTrue();</pre></div><p>Equality can also be performed</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">twoDays.Should().Be(new Time("2d"));
 (twoDays == new Time("2d")).Should().BeTrue();
 (twoDays != new Time("2.1d")).Should().BeTrue();
-(new Time("2.1d") == new Time(TimeSpan.FromDays(2.1))).Should().BeTrue();
-//the string "-1" is not the same as double -1 which is milliseconds
-(new Time("-1") == new Time(-1)).Should().BeFalse();
-(new Time("-1") == Time.MinusOne).Should().BeTrue();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_units_of_time"></a>Units of Time<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/time-unit/time-units.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Units of <code class="literal">Time</code> are specified as a union of either a <code class="literal">DateInterval</code> or <code class="literal">Time</code>,
-both of which implicitly convert to the <code class="literal">Union</code> of these two.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("month").WhenSerializing&lt;Union&lt;DateInterval, Time&gt;&gt;(DateInterval.Month);
+(new Time("2.1d") == new Time(TimeSpan.FromDays(2.1))).Should().BeTrue();</pre></div><p>Equality has down to 1/10 nanosecond precision</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Time oneNanosecond = new Time(1, Nest.TimeUnit.Nanoseconds);
+Time onePointNoughtNineNanoseconds = "1.09nanos";
+Time onePointOneNanoseconds = "1.1nanos";
+
+(oneNanosecond == onePointNoughtNineNanoseconds).Should().BeTrue();
+(oneNanosecond == onePointOneNanoseconds).Should().BeFalse();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_special_time_values"></a>Special Time values<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/time-unit/time-units.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Elasticsearch has two special values that can sometimes be passed where a <code class="literal">Time</code> is accepted</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">0</code> represented as <code class="literal">Time.Zero</code>
+</li><li class="listitem">
+<code class="literal">-1</code> represented as <code class="literal">Time.MinusOne</code>
+</li></ul></div><p>The following are all equal to <code class="literal">Time.MinusOne</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Time.MinusOne.Should().Be(Time.MinusOne);
+new Time("-1").Should().Be(Time.MinusOne);
+new Time(-1).Should().Be(Time.MinusOne);
+((Time) (-1)).Should().Be(Time.MinusOne);
+((Time) "-1").Should().Be(Time.MinusOne);
+((Time) (-1)).Should().Be((Time) "-1");</pre></div><p>Similarly, the following are all equal to <code class="literal">Time.Zero</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Time.Zero.Should().Be(Time.Zero);
+new Time("0").Should().Be(Time.Zero);
+new Time(0).Should().Be(Time.Zero);
+((Time) 0).Should().Be(Time.Zero);
+((Time) "0").Should().Be(Time.Zero);
+((Time) 0).Should().Be((Time) "0");</pre></div><p>Special Time values <code class="literal">0</code> and <code class="literal">-1</code> can be compared against other Time values
+although admittedly, this is a tad nonsensical.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var twoDays = new Time(2, Nest.TimeUnit.Day);
+Time.MinusOne.Should().BeLessThan(Time.Zero);
+Time.Zero.Should().BeGreaterThan(Time.MinusOne);
+Time.Zero.Should().BeLessThan(twoDays);
+Time.MinusOne.Should().BeLessThan(twoDays);</pre></div><p>If there is a need to construct a time of -1ms or 0ms, use the constructor
+that accepts a factor and time unit, or specify a string with ms time units</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">(new Time(-1, Nest.TimeUnit.Millisecond) == new Time("-1ms")).Should().BeTrue();
+(new Time(0, Nest.TimeUnit.Millisecond) == new Time("0ms")).Should().BeTrue();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_units_of_time"></a>Units of Time<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/time-unit/time-units.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Where Units of Time can be specified as a union of either a <code class="literal">DateInterval</code> or <code class="literal">Time</code>,
+a <code class="literal">DateInterval</code> or <code class="literal">Time</code> may be passed which will be implicity converted to a
+<code class="literal">Union&lt;DateInterval, Time&gt;</code>, the serialized form of which represents the initial value
+passed</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("month").WhenSerializing&lt;Union&lt;DateInterval, Time&gt;&gt;(DateInterval.Month);
 Expect("day").WhenSerializing&lt;Union&lt;DateInterval, Time&gt;&gt;(DateInterval.Day);
 Expect("hour").WhenSerializing&lt;Union&lt;DateInterval, Time&gt;&gt;(DateInterval.Hour);
 Expect("minute").WhenSerializing&lt;Union&lt;DateInterval, Time&gt;&gt;(DateInterval.Minute);
@@ -688,7 +708,7 @@ Expect("week").WhenSerializing&lt;Union&lt;DateInterval, Time&gt;&gt;(DateInterv
 Expect("year").WhenSerializing&lt;Union&lt;DateInterval, Time&gt;&gt;(DateInterval.Year);
 
 Expect("2d").WhenSerializing&lt;Union&lt;DateInterval, Time&gt;&gt;((Time)"2d");
-Expect("1.16w").WhenSerializing&lt;Union&lt;DateInterval, Time&gt;&gt;((Time)TimeSpan.FromDays(8.1));</pre></div></div></div><div class="navfooter"><span class="prev"><a href="common-types.html">
+Expect("11664m").WhenSerializing&lt;Union&lt;DateInterval, Time&gt;&gt;((Time)TimeSpan.FromDays(8.1));</pre></div></div></div><div class="navfooter"><span class="prev"><a href="common-types.html">
               « 
               Common Types</a>
            

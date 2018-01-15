@@ -628,7 +628,7 @@ Not what you want? See the
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="date-math-expressions"></a>Date math expressions<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The date type supports using date math expression when using it in a query/filter
 Whenever durations need to be specified, eg for a timeout parameter, the duration can be specified</p><p>The expression starts with an "anchor" date, which can be either now or a date string (in the applicable format) ending with <code class="literal">||</code>.
-It can then follow by a math expression, supporting <code class="literal">+</code>, <code class="literal">-</code> and <code class="literal">/</code> (rounding).
+It can be followed by a math expression, supporting <code class="literal">+</code>, <code class="literal">-</code> and <code class="literal">/</code> (rounding).
 The units supported are</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">y</code> (year)
 </li><li class="listitem">
@@ -643,7 +643,7 @@ The units supported are</p><div class="itemizedlist"><ul class="itemizedlist" ty
 <code class="literal">m</code> (minute)
 </li><li class="listitem">
 <code class="literal">s</code> (second)
-</li></ul></div><p>as a whole number representing time in milliseconds, or as a time value like <code class="literal">2d</code> for 2 days.</p><p>Be sure to read the Elasticsearch documentation on <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.1/common-options.html#date-math" target="_top">Date Math</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_simple_expressions"></a>Simple expressions<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can create simple expressions using any of the static methods on <code class="literal">DateMath</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now").WhenSerializing(Nest.DateMath.Now);
+</li></ul></div><p>Be sure to read the Elasticsearch documentation on <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.1/common-options.html#date-math" target="_top">Date Math</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_simple_expressions"></a>Simple expressions<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can create simple expressions using any of the static methods on <code class="literal">DateMath</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now").WhenSerializing(Nest.DateMath.Now);
 Expect("2015-05-05T00:00:00").WhenSerializing(Nest.DateMath.Anchored(new DateTime(2015,05, 05)));</pre></div><p>strings implicitly convert to <code class="literal">DateMath</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now").WhenSerializing&lt;Nest.DateMath&gt;("now");</pre></div><p>but are lenient to bad math expressions</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var nonsense = "now||*asdaqwe";</pre></div><p>the resulting date math will assume the whole string is the anchor</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect(nonsense).WhenSerializing&lt;Nest.DateMath&gt;(nonsense)
     .Result(dateMath =&gt; ((IDateMath)dateMath)
         .Anchor.Match(
@@ -663,25 +663,81 @@ Expect("2015-05-05T00:00:00").WhenSerializing&lt;Nest.DateMath&gt;(date)
     Nest.DateMath.Now.Add("1d").Subtract(TimeSpan.FromMinutes(1)));</pre></div><p>A rounding value can be chained to the end of the expression, after which no more ranges can be appended</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now+1d-1m/d").WhenSerializing(
     Nest.DateMath.Now.Add("1d")
         .Subtract(TimeSpan.FromMinutes(1))
-        .RoundTo(Nest.TimeUnit.Day));</pre></div><p>When anchoring dates, a <code class="literal">||</code> needs to be appended as clear separator between the anchor and ranges.
+        .RoundTo(DateMathTimeUnit.Day));</pre></div><p>When anchoring dates, a <code class="literal">||</code> needs to be appended as clear separator between the anchor and ranges.
 Again, multiple ranges can be chained</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("2015-05-05T00:00:00||+1d-1m").WhenSerializing(
     Nest.DateMath.Anchored(new DateTime(2015,05,05))
         .Add("1d")
-        .Subtract(TimeSpan.FromMinutes(1)));</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fractional_times"></a>Fractional times<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>DateMath expressions do not support fractional numbers so unlike <code class="literal">Time</code> DateMath will
-pick the biggest integer unit it can represent</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now+25h").WhenSerializing(
-    Nest.DateMath.Now.Add(TimeSpan.FromHours(25)));</pre></div><p>where as <code class="literal">Time</code> on its own serializes like this</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("1.04d").WhenSerializing(new Time(TimeSpan.FromHours(25)));
+        .Subtract(TimeSpan.FromMinutes(1)));</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fractional_times"></a>Fractional times<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Date math expressions within Elasticsearch do not support fractional numbers. To make working with Date math
+easier within NEST, conversions from <code class="literal">string</code>, <code class="literal">TimeSpan</code> and <code class="literal">double</code> will convert a fractional value to the
+largest whole number value and unit, rounded to the nearest second.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now+1w").WhenSerializing(Nest.DateMath.Now.Add(TimeSpan.FromDays(7)));
+
+Expect("now+1w").WhenSerializing(Nest.DateMath.Now.Add("1w"));
+
+Expect("now+1w").WhenSerializing(Nest.DateMath.Now.Add(604800000));
+
+Expect("now+7d").WhenSerializing(Nest.DateMath.Now.Add("7d"));
+
+Expect("now+30h").WhenSerializing(Nest.DateMath.Now.Add(TimeSpan.FromHours(30)));
+
+Expect("now+30h").WhenSerializing(Nest.DateMath.Now.Add("1.25d"));
 
 Expect("now+90001s").WhenSerializing(
     Nest.DateMath.Now.Add(TimeSpan.FromHours(25).Add(TimeSpan.FromSeconds(1))));
 
-Expect("now+90000001ms").WhenSerializing(
+Expect("now+90000s").WhenSerializing(
     Nest.DateMath.Now.Add(TimeSpan.FromHours(25).Add(TimeSpan.FromMilliseconds(1))));
 
-Expect("now+1y").WhenSerializing(
-    Nest.DateMath.Now.Add("1y"));
+Expect("now+1y").WhenSerializing(Nest.DateMath.Now.Add("1y"));
 
-Expect("now+52w").WhenSerializing(
-    Nest.DateMath.Now.Add(TimeSpan.FromDays(7 * 52)));</pre></div></div></div><div class="navfooter"><span class="prev"><a href="distance-units.html">
+Expect("now+12M").WhenSerializing(Nest.DateMath.Now.Add("12M"));
+
+Expect("now+18M").WhenSerializing(Nest.DateMath.Now.Add("1.5y"));
+
+Expect("now+52w").WhenSerializing(Nest.DateMath.Now.Add(TimeSpan.FromDays(7 * 52)));</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_rounding"></a>Rounding<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Rounding can be controlled using the constructor, and passing a value for rounding</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">Expect("now+2s").WhenSerializing(
+    Nest.DateMath.Now.Add(new DateMathTime("2.5s", MidpointRounding.ToEven)));
+
+Expect("now+3s").WhenSerializing(
+    Nest.DateMath.Now.Add(new DateMathTime("2.5s", MidpointRounding.AwayFromZero)));
+
+Expect("now+0s").WhenSerializing(
+    Nest.DateMath.Now.Add(new DateMathTime(500, MidpointRounding.ToEven)));
+
+Expect("now+1s").WhenSerializing(
+    Nest.DateMath.Now.Add(new DateMathTime(500, MidpointRounding.AwayFromZero)));</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_equality_and_comparisons"></a>Equality and Comparisons<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/common-options/date-math/date-math-expressions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><code class="literal">DateMathTime</code> supports implements equality and comparison</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">DateMathTime twoSeconds = new DateMathTime(2, DateMathTimeUnit.Second);
+DateMathTime twoSecondsFromString = "2s";
+DateMathTime twoSecondsFromTimeSpan = TimeSpan.FromSeconds(2);
+DateMathTime twoSecondsFromDouble = 2000;
+
+twoSeconds.Should().Be(twoSecondsFromString);
+twoSeconds.Should().Be(twoSecondsFromTimeSpan);
+twoSeconds.Should().Be(twoSecondsFromDouble);
+
+DateMathTime threeSecondsFromString = "3s";
+DateMathTime oneMinuteFromTimeSpan = TimeSpan.FromMinutes(1);
+
+(threeSecondsFromString &gt; twoSecondsFromString).Should().BeTrue();
+(oneMinuteFromTimeSpan &gt; threeSecondsFromString).Should().BeTrue();</pre></div><p>Since years and months do not
+contain exact values</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+A year is approximated to 365 days
+</li><li class="listitem">
+A month is approximated to (365 / 12) days
+</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">DateMathTime oneYear = new DateMathTime(1, DateMathTimeUnit.Year);
+DateMathTime oneYearFromString = "1y";
+DateMathTime twelveMonths = new DateMathTime(12, DateMathTimeUnit.Month);
+DateMathTime twelveMonthsFromString = "12M";
+
+oneYear.Should().Be(oneYearFromString);
+oneYear.Should().Be(twelveMonths);
+twelveMonths.Should().Be(twelveMonthsFromString);
+
+DateMathTime thirteenMonths = new DateMathTime(13, DateMathTimeUnit.Month);
+DateMathTime thirteenMonthsFromString = "13M";
+DateMathTime fiftyTwoWeeks = "52w";
+
+(oneYear &lt; thirteenMonths).Should().BeTrue();
+(oneYear &lt; thirteenMonthsFromString).Should().BeTrue();
+(twelveMonths &gt; fiftyTwoWeeks).Should().BeTrue();
+(oneYear &gt; fiftyTwoWeeks).Should().BeTrue();</pre></div></div></div><div class="navfooter"><span class="prev"><a href="distance-units.html">
               « 
               Distance units</a>
            
