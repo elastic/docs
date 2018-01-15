@@ -675,7 +675,116 @@ we do not want the detailed SQL to be considered in the message categorization.
 This particular categorization filter removes the SQL statement from the categorization
 algorithm.</p><p>If your data is stored in Elasticsearch, you can create an advanced job with these same
 properties:</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-category-advanced.jpg" alt="Advanced job configuration options related to categorization" /></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To add the <code class="literal">categorization_examples_limit</code> property, you must use the
-<span class="strong strong"><strong>Edit JSON</strong></span> tab and copy the <code class="literal">analysis_limits</code> object from the API example.</p></div></div><p>After you open the job and start the datafeed or supply data to the job, you can
+<span class="strong strong"><strong>Edit JSON</strong></span> tab and copy the <code class="literal">analysis_limits</code> object from the API example.</p></div></div><p>It is possible to customize the way the categorization field values are interpreted
+to an even greater extent:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/ml/anomaly_detectors/it_ops_new_logs2
+{
+  "description" : "IT Ops Application Logs",
+  "analysis_config" : {
+    "categorization_field_name": "message",
+    "bucket_span":"30m",
+    "detectors" :[{
+      "function":"count",
+      "by_field_name": "mlcategory",
+      "detector_description": "Unusual message counts"
+    }],
+    "categorization_analyzer":{
+      "char_filter": [
+        { "type": "pattern_replace", "pattern": "\\[statement:.*\\]" } <a id="CO58-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      ],
+      "tokenizer": "ml_classic", <a id="CO58-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+      "filter": [
+        { "type" : "stop", "stopwords": [
+          "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+          "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
+          "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+          "GMT", "UTC"
+        ] } <a id="CO58-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+      ]
+    }
+  },
+  "analysis_limits":{
+    "categorization_examples_limit": 5
+  },
+  "data_description" : {
+    "time_field":"time",
+    "time_format": "epoch_ms"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/ml-configuring-categories/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO58-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-pattern-replace-charfilter.html" target="_top"><code class="literal">pattern_replace</code> character filter</a>
+here achieves exactly the same as the <code class="literal">categorization_filters</code> in the first
+example.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO58-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">ml_classic</code> tokenizer works like the non-customizable tokenization
+that was used for categorization in older versions of machine learning. Use
+it if you want the same categorization behavior as older versions.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO58-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+English day/month words are filtered by default from log messages
+before categorization. If your logs are in a different language and contain
+dates then you may get better results by filtering day/month words in your
+language.
+</p></td></tr></table></div><p>The optional <code class="literal">categorization_analyzer</code> property allows even greater customization
+of how categorization interprets the categorization field value. It can refer to
+a built-in Elasticsearch analyzer, or a combination of zero or more character
+filters, a tokenizer, and zero or more token filters.</p><p>The <code class="literal">ml_classic</code> tokenizer and the day/month stopword filter are more-or-less
+equivalent to the following analyzer defined using only built-in Elasticsearch
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-tokenizers.html" target="_top">tokenizers</a> and
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-tokenfilters.html" target="_top">token filters</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/ml/anomaly_detectors/it_ops_new_logs3
+{
+  "description" : "IT Ops Application Logs",
+  "analysis_config" : {
+    "categorization_field_name": "message",
+    "bucket_span":"30m",
+    "detectors" :[{
+      "function":"count",
+      "by_field_name": "mlcategory",
+      "detector_description": "Unusual message counts"
+    }],
+    "categorization_analyzer":{
+      "tokenizer": {
+        "type" : "simple_pattern_split",
+        "pattern" : "[^-0-9A-Za-z_.]+" <a id="CO59-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      },
+      "filter": [
+        { "type" : "pattern_replace", "pattern": "^[0-9].*" }, <a id="CO59-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        { "type" : "pattern_replace", "pattern": "^[-0-9A-Fa-f.]+$" }, <a id="CO59-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        { "type" : "pattern_replace", "pattern": "^[^0-9A-Za-z]+" }, <a id="CO59-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+        { "type" : "pattern_replace", "pattern": "[^0-9A-Za-z]+$" }, <a id="CO59-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+        { "type" : "stop", "stopwords": [
+          "",
+          "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+          "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
+          "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+          "GMT", "UTC"
+        ] }
+      ]
+    }
+  },
+  "analysis_limits":{
+    "categorization_examples_limit": 5
+  },
+  "data_description" : {
+    "time_field":"time",
+    "time_format": "epoch_ms"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/ml-configuring-categories/3.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO59-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Tokens basically consist of hyphens, digits, letters, underscores and dots.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO59-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+By default categorization ignores tokens that begin with a digit.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO59-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+By default categorization also ignores tokens that are hexadecimal numbers.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO59-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Underscores, hypens and dots are removed from the beginning of tokens.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO59-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Also at the end of tokens.
+</p></td></tr></table></div><p>The key difference between the default <code class="literal">categorization_analyzer</code> and this example
+analyzer is that using the <code class="literal">ml_classic</code> tokenizer is several times faster. (The
+difference in behavior is that this custom analyzer does not include accented
+letters in tokens whereas the <code class="literal">ml_classic</code> tokenizer will, although that could be
+fixed by using more complex regular expressions.)</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>To add the <code class="literal">categorization_analyzer</code> property, you must use the <span class="strong strong"><strong>Edit JSON</strong></span>
+tab and copy the <code class="literal">categorization_analyzer</code> object from one of the API examples above.</p></div></div><p>After you open the job and start the datafeed or supply data to the job, you can
 view the results in Kibana. For example:</p><div class="screenshot informalfigure"><div class="mediaobject"><img src="images/ml-category-anomalies.jpg" alt="Categorization example in the Anomaly Explorer" /></div></div><p>For this type of job, the <span class="strong strong"><strong>Anomaly Explorer</strong></span> contains extra information for
 each anomaly: the name of the category (for example, <code class="literal">mlcategory 11</code>) and
 examples of the messages in that category. In this case, you can use these

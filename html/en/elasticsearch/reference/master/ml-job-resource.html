@@ -743,6 +743,19 @@ so do not set the <code class="literal">background_persist_interval</code> value
   consideration for defining categories. For example, you can exclude SQL
   statements that appear in your log files. For more information, see
   <a class="ulink" href="https://www.elastic.co/guide/en/x-pack/master/ml-configuring-categories.html" target="_top">Categorizing Log Messages</a>.
+  This property cannot be used at the same time as <code class="literal">categorization_analyzer</code>.
+  If you only want to define simple regular expression filters to be applied
+  prior to tokenization then it is easiest to specify them using this property.
+  If you also want to customize the tokenizer or post-tokenization filtering
+  then these filters must be included in the <code class="literal">categorization_analyzer</code> as
+  <code class="literal">pattern_replace</code> `char_filter`s. The effect is exactly the same.
+
+</dd><dt><span class="term">
+<code class="literal">categorization_analyzer</code>
+</span></dt><dd>
+  (object or string) If <code class="literal">categorization_field_name</code> is specified,
+  you can also define the analyzer that will be used to interpret the field
+  to be categorized. See <a class="link" href="ml-job-resource.html#ml-categorizationanalyzer" title="Categorization Analyzer">categorization analyzer</a>.
 
 </dd><dt><span class="term">
 <code class="literal">detectors</code>
@@ -873,7 +886,77 @@ in Elasticsearch. Only the results for anomaly detection are retained.</p><p>A d
 When you use date-time formatting patterns, it is recommended that you provide
 the full date, time and time zone. For example: <code class="literal">yyyy-MM-dd'T'HH:mm:ssX</code>.
 If the pattern that you specify is not sufficient to produce a complete timestamp,
-job creation fails.</p></div></div></dd></dl></div><h4><a id="ml-apilimits"></a>Analysis Limits</h4><p>Limits can be applied for the resources required to hold the mathematical models in memory.
+job creation fails.</p></div></div></dd></dl></div><h4><a id="ml-categorizationanalyzer"></a>Categorization Analyzer</h4><p>The categorization analyzer specifies how the <code class="literal">categorization_field</code> is
+interpreted by the categorization process. The syntax is very similar to that
+used to define the <code class="literal">analyzer</code> in the <a class="link" href="indices-analyze.html" title="Analyze">Analyze endpoint</a>.</p><p>The <code class="literal">categorization_analyzer</code> field can be specified either as a string or as
+an object.</p><p>If it is a string it must refer to a
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-analyzers.html" target="_top">built-in analyzer</a> or one added by
+another plugin.</p><p>If it is an object it has the following properties:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">char_filter</code>
+</span></dt><dd>
+  (array of strings or objects) One or more
+  <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-charfilters.html" target="_top">character filters</a>. In addition
+  to the built-in character filters other plugins may provide more. This property
+  is optional. If not specified then there will be no character filters. If
+  you are customizing some other aspect of the analyzer and need to achieve
+  the equivalent of <code class="literal">categorization_filters</code> (which are not permitted when some
+  other aspect of the analyzer is customized), add them here as
+  <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-pattern-replace-charfilter.html" target="_top">pattern replace character filters</a>.
+</dd><dt><span class="term">
+<code class="literal">tokenizer</code>
+</span></dt><dd>
+  (string or object) The name or definition of the
+  <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-tokenizers.html" target="_top">tokenizer</a> to use after character
+  filters have been applied. This property is compulsory if <code class="literal">categorization_analyzer</code>
+  is specified as an object. Machine learning provides a tokenizer called <code class="literal">ml_classic</code>
+  that tokenizes in the same way as the non-customizable tokenizer in older versions of
+  the product. If you would like to stick with this but change the character or token
+  filters then specify <code class="literal">"tokenizer": "ml_classic"</code> in your <code class="literal">categorization_analyzer</code>.
+</dd><dt><span class="term">
+<code class="literal">filter</code>
+</span></dt><dd>
+  (array of strings or objects) One or more
+  <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-tokenfilters.html" target="_top">token filters</a>. In addition to the built-in token
+  filters other plugins may provide more. This property is optional. If not specified
+  then there will be no token filters.
+</dd></dl></div><p>If you omit <code class="literal">categorization_analyzer</code> entirely then the default that will be used is
+the one from the following job:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _xpack/ml/anomaly_detectors/_validate
+{
+  "analysis_config" : {
+    "categorization_analyzer" : {
+      "tokenizer" : "ml_classic",
+      "filter" : [
+        { "type" : "stop", "stopwords": [
+          "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+          "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
+          "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+          "GMT", "UTC"
+        ] }
+      ]
+    },
+    "categorization_field_name": "message",
+    "detectors" :[{
+      "function":"count",
+      "by_field_name": "mlcategory"
+    }]
+  },
+  "data_description" : {
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/ml-job-resource/1.json"></div><p>However, if you specify any part of <code class="literal">categorization_analyzer</code> then any omitted
+sub-properties are <span class="emphasis"><em>not</em></span> defaulted.</p><p>If you are categorizing non-English messages in a language where words are separated
+by spaces you may get better results if you change the day/month words in the stop
+token filter to those from your language. If you are categorizing messages in a language
+where words are not separated by spaces then you will need to use a different tokenizer
+as well in order to get sensible categorization results.</p><p>It is important to be aware that analyzing for categorization of machine generated
+log messages is a little different to tokenizing for search. Features that work well
+for search, such as stemming, synonym substitution and lowercasing are likely to make
+the results of categorization worse. However, in order for drilldown from machine
+learning results to work correctly, the tokens that the categorization analyzer
+produces need to be sufficiently similar to those produced by the search analyzer
+that if you search for the tokens that the categorization analyzer produces you will
+find the original document that the field to be categorized came from.</p><p>For more information, see <a class="ulink" href="https://www.elastic.co/guide/en/x-pack/master/ml-configuring-categories.html" target="_top">Categorizing Log Messages</a>.
+</p><h4><a id="ml-apilimits"></a>Analysis Limits</h4><p>Limits can be applied for the resources required to hold the mathematical models in memory.
 These limits are approximate and can be set per job. They do not control the
 memory used by other processes, for example the Elasticsearch Java processes.
 If necessary, you can increase the limits after the job is created.</p><p>The <code class="literal">analysis_limits</code> object has the following properties:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
