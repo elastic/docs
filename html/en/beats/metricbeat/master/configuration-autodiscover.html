@@ -673,7 +673,60 @@ For example, with the example event, "<code class="literal">${data.port}</code>"
           config:
             - module: redis
               metricsets: ["info", "keyspace"]
-              hosts: "${data.host}:6379"</pre></div><p>This configuration launches a <code class="literal">redis</code> module for all containers running an image with <code class="literal">redis</code> in the name.</p></div><div class="navfooter"><span class="prev"><a href="using-environ-vars.html">
+              hosts: "${data.host}:6379"</pre></div><p>This configuration launches a <code class="literal">redis</code> module for all containers running an image with <code class="literal">redis</code> in the name.</p><h5><a id="_kubernetes"></a>Kubernetes<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Kubernetes autodiscover provider watches for Kubernetes pods start, update and stop. These are the available fields on every
+event:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+host
+</li><li class="listitem">
+port
+</li><li class="listitem">
+kubernetes.container.id
+</li><li class="listitem">
+kubernetes.container.image
+</li><li class="listitem">
+kubernetes.container.name
+</li><li class="listitem">
+kubernetes.labels
+</li><li class="listitem">
+kubernetes.namespace
+</li><li class="listitem">
+kubernetes.node.name
+</li><li class="listitem">
+kubernetes.pod.name
+</li></ul></div><p>If the <code class="literal">include_annotations</code> config is added to the provider config then the list of annotations present in the config
+are added to the event.</p><p>For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">{
+  "host": "172.17.0.21",
+  "port": 9090,
+  "kubernetes": {
+    "container": {
+      "id": "bb3a50625c01b16a88aa224779c39262a9ad14264c3034669a50cd9a90af1527",
+      "image": "prom/prometheus",
+      "name": "prometheus"
+    },
+    "labels": {
+      "project": "prometheus",
+      ...
+    },
+    "namespace": "default",
+    "node": {
+      "name": "minikube"
+    },
+    "pod": {
+      "name": "prometheus-2657348378-k1pnh"
+    }
+  },
+}</pre></div><p>Configuration of templates and conditions are exactly similar as that of Docker provider. Configuration templates can
+contain variables from the autodiscover event. They can be accessed under data namespace.</p><p>Metricbeat supports templates for modules:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat.autodiscover:
+  providers:
+    - type: kubernetes
+      include_annotations: ["prometheus.io.scrape"]
+      templates:
+        - condition:
+            contains:
+              kubernetes.annotations.prometheus.io.scrape: "true"
+          config:
+            - module: prometheus
+              metricsets: ["collector"]
+              hosts: "${data.host}:{data.port}"</pre></div><p>This configuration launches a <code class="literal">prometheus</code> module for all containers of pods annotated <code class="literal">prometheus.io.scrape=true</code>.</p></div><div class="navfooter"><span class="prev"><a href="using-environ-vars.html">
               « 
               Use environment variables in the configuration</a>
            
