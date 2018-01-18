@@ -627,12 +627,12 @@ Not what you want? See the
           <a href="plugins-inputs-http_poller.html">Http_poller input plugin
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="plugins-inputs-http"></a>Http input plugin<a href="https://github.com/logstash-plugins/logstash-input-http/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Plugin version: v3.0.6
+Plugin version: v3.0.8
 </li><li class="listitem">
-Released on: 2017-08-15
+Released on: 2017-12-09
 </li><li class="listitem">
-<a class="ulink" href="https://github.com/logstash-plugins/logstash-input-http/blob/v3.0.6/CHANGELOG.md" target="_top">Changelog</a>
-</li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_installation_15"></a>Installation<a href="https://github.com/logstash-plugins/logstash-input-http/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For plugins not bundled by default, it is easy to install by running <code class="literal">bin/logstash-plugin install logstash-input-http</code>. See <a class="xref" href="working-with-plugins.html" title="Working with plugins"><em>Working with plugins</em></a> for more details.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_getting_help_16"></a>Getting Help<a href="https://github.com/logstash-plugins/logstash-input-http/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For questions about the plugin, open a topic in the <a class="ulink" href="http://discuss.elastic.co" target="_top">Discuss</a> forums. For bugs or feature requests, open an issue in <a class="ulink" href="https://github.com/logstash-plugins/logstash-input-http" target="_top">Github</a>.
+<a class="ulink" href="https://github.com/logstash-plugins/logstash-input-http/blob/v3.0.8/CHANGELOG.md" target="_top">Changelog</a>
+</li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_getting_help_16"></a>Getting Help<a href="https://github.com/logstash-plugins/logstash-input-http/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For questions about the plugin, open a topic in the <a class="ulink" href="http://discuss.elastic.co" target="_top">Discuss</a> forums. For bugs or feature requests, open an issue in <a class="ulink" href="https://github.com/logstash-plugins/logstash-input-http" target="_top">Github</a>.
 For the list of Elastic supported plugins, please consult the <a class="ulink" href="https://www.elastic.co/support/matrix#show_logstash_plugins" target="_top">Elastic Support Matrix</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_description_16"></a>Description<a href="https://github.com/logstash-plugins/logstash-input-http/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Using this input you can receive single or multiline events over http(s).
 Applications can send an HTTP POST request with a body to the endpoint started by this
 input and Logstash will convert it into an event for subsequent processing. Users
@@ -640,7 +640,12 @@ can pass plain text, JSON, or any formatted data and use a corresponding codec w
 input. For Content-Type <code class="literal">application/json</code> the <code class="literal">json</code> codec is used, but for all other
 data formats, <code class="literal">plain</code> codec is used.</p><p>This input can also be used to receive webhook requests to integrate with other services
 and applications. By taking advantage of the vast plugin ecosystem available in Logstash
-you can trigger actionable events right from your application.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_security"></a>Security<a href="https://github.com/logstash-plugins/logstash-input-http/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This plugin supports standard HTTP basic authentication headers to identify the requester.
+you can trigger actionable events right from your application.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_blocking_behavior"></a>Blocking Behavior<a href="https://github.com/logstash-plugins/logstash-input-http/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The HTTP protocol doesn’t deal well with long running requests. This plugin will either return
+a 429 (busy) error when Logstash is backlogged, or it will time out the request.</p><p>If a 429 error is encountered clients should sleep, backing off exponentially with some random
+jitter, then retry their request.</p><p>This plugin will block if the Logstash queue is blocked and there are available HTTP input threads.
+This will cause most HTTP clients to time out. Sent events will still be processed in this case. This
+behavior is not optimal and will be changed in a future release. In the future, this plugin will always
+return a 429 if the queue is busy, and will not time out in the event of a busy queue.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_security"></a>Security<a href="https://github.com/logstash-plugins/logstash-input-http/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This plugin supports standard HTTP basic authentication headers to identify the requester.
 You can pass in a username, password combination while sending data to this input</p><p>You can also setup SSL and send data securely over https, with an option of validating
 the client’s certificate. Currently, the certificate setup is through
 <a class="ulink" href="https://docs.oracle.com/cd/E19509-01/820-3503/ggfen/index.html" target="_top">Java Keystore
@@ -655,10 +660,7 @@ and no codec for the request’s content-type is found</p></div><div class="sect
 Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
 </li><li class="listitem">
 Default value is <code class="literal">"0.0.0.0"</code>
-</li></ul></div><p>Codec used to decode the incoming data.
-This codec will be used as a fall-back if the content-type
-is not found in the "additional_codecs" hash
-The host or ip to bind</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-http-keystore"></a><code class="literal">keystore</code><a href="https://github.com/logstash-plugins/logstash-input-http/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><p>The host or ip to bind</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-inputs-http-keystore"></a><code class="literal">keystore</code><a href="https://github.com/logstash-plugins/logstash-input-http/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#path" title="Pathedit">path</a>
 </li><li class="listitem">
 There is no default value for this setting.
