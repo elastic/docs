@@ -626,26 +626,31 @@ Not what you want? See the
            
           <a href="index-modules-index-sorting.html">Index Sorting
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-translog"></a>Translog<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Changes to Lucene are only persisted to disk during a Lucene commit,
-which is a relatively heavy operation and so cannot be performed after every
-index or delete operation. Changes that happen after one commit and before another
-will be lost in the event of process exit or HW failure.</p><p>To prevent this data loss, each shard has a <span class="emphasis"><em>transaction log</em></span> or write ahead
-log associated with it. Any index or delete operation is written to the
-translog after being processed by the internal Lucene index.</p><p>In the event of a crash, recent transactions can be replayed from the
-transaction log when the shard recovers.</p><p>An Elasticsearch flush is the process of performing a Lucene commit and
-starting a new translog. It is done automatically in the background in order
-to make sure the transaction log doesn’t grow too large, which would make
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-modules-translog"></a>Translog<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Changes to Lucene are only persisted to disk during a Lucene commit, which is a
+relatively expensive operation and so cannot be performed after every index or
+delete operation. Changes that happen after one commit and before another will
+be removed from the index by Lucene in the event of process exit or hardware
+failure.</p><p>Because Lucene commits are too expensive to perform on every individual change,
+each shard copy also has a <span class="emphasis"><em>transaction log</em></span> known as its <span class="emphasis"><em>translog</em></span> associated
+with it. All index and delete operations are written to the translog after
+being processed by the internal Lucene index but before they are acknowledged.
+In the event of a crash, recent transactions that have been acknowledged but
+not yet included in the last Lucene commit can instead be recovered from the
+translog when the shard recovers.</p><p>An Elasticsearch flush is the process of performing a Lucene commit and
+starting a new translog. Flushes are performed automatically in the background
+in order to make sure the translog doesn’t grow too large, which would make
 replaying its operations take a considerable amount of time during recovery.
-It is also exposed through an API, though its rarely needed to be performed
-manually.</p><h3><a id="_translog_settings"></a>Translog settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The data in the transaction log is only persisted to disk when the translog is
+The ability to perform a flush manually is also exposed through an API,
+although this is rarely needed.</p><h3><a id="_translog_settings"></a>Translog settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The data in the translog is only persisted to disk when the translog is
 <code class="literal">fsync</code>ed and committed.  In the event of hardware failure, any data written
-since the previous translog commit will be lost.</p><p>By default, Elasticsearch <code class="literal">fsync</code>s and commits the translog every 5 seconds if <code class="literal">index.translog.durability</code> is set
-to <code class="literal">async</code> or if set to <code class="literal">request</code> (default) at the end of every <a class="link" href="docs-index_.html" title="Index API">index</a>, <a class="link" href="docs-delete.html" title="Delete API">delete</a>,
-<a class="link" href="docs-update.html" title="Update API">update</a>, or  <a class="link" href="docs-bulk.html" title="Bulk API">bulk</a> request.  In fact, Elasticsearch
-will only report success of an index, delete, update, or bulk request to the
-client after the transaction log has been successfully <code class="literal">fsync</code>ed and committed
-on the primary and on every allocated replica.</p><p>The following <a class="link" href="indices-update-settings.html" title="Update Indices Settings">dynamically updatable</a> per-index settings
-control the behaviour of the transaction log:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+since the previous translog commit will be lost.</p><p>By default, Elasticsearch <code class="literal">fsync</code>s and commits the translog every 5 seconds
+if <code class="literal">index.translog.durability</code> is set to <code class="literal">async</code> or if set to <code class="literal">request</code>
+(default) at the end of every <a class="link" href="docs-index_.html" title="Index API">index</a>, <a class="link" href="docs-delete.html" title="Delete API">delete</a>,
+<a class="link" href="docs-update.html" title="Update API">update</a>, or  <a class="link" href="docs-bulk.html" title="Bulk API">bulk</a> request. More precisely, if set
+to <code class="literal">request</code>, Elasticsearch will only report success of an index, delete,
+update, or bulk request to the client after the translog has been successfully
+<code class="literal">fsync</code>ed and committed on the primary and on every allocated replica.</p><p>The following <a class="link" href="indices-update-settings.html" title="Update Indices Settings">dynamically updatable</a> per-index
+settings control the behaviour of the translog:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">index.translog.sync_interval</code>
 </span></dt><dd>
 How often the translog is <code class="literal">fsync</code>ed to disk and committed, regardless of
@@ -668,25 +673,32 @@ update, or bulk request.  This setting accepts the following parameters:</p><div
 </dd></dl></div></dd><dt><span class="term">
 <code class="literal">index.translog.flush_threshold_size</code>
 </span></dt><dd>
-The translog stores all operations that are not yet safely persisted in Lucene (i.e., are
-not part of a lucene commit point). Although these operations are available for reads, they will
-need to be reindexed if the shard was to shutdown and has to be recovered. This settings controls
-the maximum total size of these operations, to prevent recoveries from taking too long. Once the
-maximum size has been reached a flush will happen, generating a new Lucene commit. Defaults to <code class="literal">512mb</code>.
+The translog stores all operations that are not yet safely persisted in Lucene
+(i.e., are not part of a Lucene commit point). Although these operations are
+available for reads, they will need to be reindexed if the shard was to
+shutdown and has to be recovered. This settings controls the maximum total size
+of these operations, to prevent recoveries from taking too long. Once the
+maximum size has been reached a flush will happen, generating a new Lucene
+commit point. Defaults to <code class="literal">512mb</code>.
 </dd><dt><span class="term">
 <code class="literal">index.translog.retention.size</code>
 </span></dt><dd>
-The total size of translog files to keep. Keeping more translog files increases the chance of performing
-an operation based sync when recovering replicas. If the translog files are not sufficient, replica recovery
-will fall back to a file based sync. Defaults to <code class="literal">512mb</code>
+The total size of translog files to keep. Keeping more translog files increases
+the chance of performing an operation based sync when recovering replicas. If
+the translog files are not sufficient, replica recovery will fall back to a
+file based sync. Defaults to <code class="literal">512mb</code>
 </dd><dt><span class="term">
 <code class="literal">index.translog.retention.age</code>
 </span></dt><dd>
 The maximum duration for which translog files will be kept. Defaults to <code class="literal">12h</code>.
-</dd></dl></div><h3><a id="corrupt-translog-truncation"></a>What to do if the translog becomes corrupted?<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In some cases (a bad drive, user error) the translog can become corrupted. When
-this corruption is detected by Elasticsearch due to mismatching checksums,
-Elasticsearch will fail the shard and refuse to allocate that copy of the data
-to the node, recovering from a replica if available.</p><p>If there is no copy of the data from which Elasticsearch can recover
+</dd></dl></div><h3><a id="corrupt-translog-truncation"></a>What to do if the translog becomes corrupted?<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/translog.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In some cases (a bad drive, user error) the translog on a shard copy can become
+corrupted. When this corruption is detected by Elasticsearch due to mismatching
+checksums, Elasticsearch will fail that shard copy and refuse to use that copy
+of the data.  If there are other copies of the shard available then
+Elasticsearch will automatically recover from one of them using the normal
+shard allocation and recovery mechanism.  In particular, if the corrupt shard
+copy was the primary when the corruption was detected then one of its replicas
+will be promoted in its place.</p><p>If there is no copy of the data from which Elasticsearch can recover
 successfully, a user may want to recover the data that is part of the shard at
 the cost of losing the data that is currently contained in the translog. We
 provide a command-line tool for this, <code class="literal">elasticsearch-translog</code>.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The <code class="literal">elasticsearch-translog</code> tool should <span class="strong strong"><strong>not</strong></span> be run while Elasticsearch is
