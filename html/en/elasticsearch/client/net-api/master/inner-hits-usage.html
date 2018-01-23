@@ -640,6 +640,7 @@ nested hits that caused a search hit to match in a different scope.</p><p>Inner 
     q.HasChild&lt;Prince&gt;(hc =&gt; hc
         .Query(hcq =&gt; hcq.Match(m =&gt; m.Field(p =&gt; p.FullTextField).Query("default")))
         .InnerHits(ih =&gt; ih
+            .DocValueFields(f=&gt;f.Field(p=&gt;p.Name))
             .Name("princes")
             .Highlight(h=&gt;h.Fields(f=&gt;f.Field(p=&gt;p.FullTextField)))
         )
@@ -658,6 +659,7 @@ nested hits that caused a search hit to match in a different scope.</p><p>Inner 
         InnerHits = new InnerHits
         {
             Name = "princes",
+            DocValueFields = Field&lt;Prince&gt;(p=&gt;p.Name),
             Highlight = Highlight.Field(Field&lt;Prince&gt;(p=&gt;p.FullTextField))
         }
     } || new NestedQuery
@@ -683,6 +685,9 @@ nested hits that caused a search hit to match in a different scope.</p><p>Inner 
             },
             "inner_hits": {
               "name": "princes",
+              "docvalue_fields": [
+                "name"
+              ],
               "highlight": {
                 "fields": {
                   "fullTextField": {}
@@ -717,6 +722,11 @@ foreach (var hit in response.Hits)
         var hl = highlights["fullTextField"];
         hl.Highlights.Should().NotBeEmpty("all docs have the same text so should all highlight")
             .And.Contain(s =&gt; s.Contains("&lt;em&gt;default&lt;/em&gt;"), "default to be highlighted as its part of the query");
+
+        princeHit.Fields.Should().NotBeNull("all princes have a keyword name so fields should be returned");
+        var docValueName = princeHit.Fields.ValueOf&lt;Prince, string&gt;(p=&gt;p.Name);
+        docValueName.Should().NotBeNullOrWhiteSpace("value of name on Fields");
+
     }
 
     var foes = hit.InnerHits["foes"].Documents&lt;King&gt;();

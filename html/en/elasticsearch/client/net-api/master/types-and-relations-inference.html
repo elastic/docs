@@ -629,24 +629,24 @@ Not what you want? See the
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="types-and-relations-inference"></a>Types and relations inference<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/inference/types-and-relations-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_typename_default"></a>TypeName default<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/inference/types-and-relations-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Type names are resolved by lowercasing the type name</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var settings = new ConnectionSettings();
 var resolver = new TypeNameResolver(settings);
 var index = resolver.Resolve&lt;Project&gt;();
-index.Should().Be("project");</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="type-name-inferrer"></a>Override tye name inferer<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/inference/types-and-relations-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can provide a delegate to override the default type name inferrer for types</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var settings = new ConnectionSettings()
+index.Should().Be("project");</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="default-type-name"></a>Default Type Name<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/inference/types-and-relations-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>With Elasticsearch 6.x you can only have a single type per index and in the long run types will be phased out.
+The need to tag types is no longer necessary so in many cases it makes sense to use a single fixed type.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var settings = new ConnectionSettings().DefaultTypeName("doc");
+var resolver = new TypeNameResolver(settings);
+var index = resolver.Resolve&lt;Project&gt;();
+index.Should().Be("doc");</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="type-name-inferrer"></a>Override tye name inferer<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/inference/types-and-relations-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can provide a delegate to override the default type name inferrer for types</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var settings = new ConnectionSettings()
     .DefaultTypeNameInferrer(t=&gt;t.Name.ToLower() + "-suffix");
 var resolver = new TypeNameResolver(settings);
 var type = resolver.Resolve&lt;Project&gt;();
-type.Should().Be("project-suffix");</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="pluralize-type-names"></a>Pluralize type names<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/inference/types-and-relations-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The default behaviour in older versions of NEST was to pluralize typenames</p><p>You can still opt in to this old behaviour as followed:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var settings = new ConnectionSettings()
-    .PluralizeTypeNames();
-var resolver = new TypeNameResolver(settings);
-var index = resolver.Resolve&lt;Project&gt;();
-index.Should().Be("projects");</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="relation-names"></a>Relation names<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/inference/types-and-relations-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Prior to Elasticsearch 6.x you could have multiple types per index. They acted as a discrimatory column but were often
+type.Should().Be("project-suffix");</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="relation-names"></a>Relation names<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/inference/types-and-relations-inference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Prior to Elasticsearch 6.x you could have multiple types per index. They acted as a discrimatory column but were often
 confused with tables. The fact that the mapping API’s treated them as seperate entities did not help.</p><p>The general guideline has always been to use a single type per index. Starting from 6.x this is also enforced.
 Some features still need to store multiple types in a single index such as Parent/Child join relations.</p><p>Both <code class="literal">Parent</code> and <code class="literal">Child</code> will need to have resolve to the same typename to be indexed into the same index.</p><p>Therefore in 6.x we need a different type that translates a CLR type to a join relation. This can be configured seperately
 using <code class="literal">.RelationName()</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var settings = new ConnectionSettings()
-    .InferMappingFor&lt;CommitActivity&gt;(m =&gt; m
+    .DefaultMappingFor&lt;CommitActivity&gt;(m =&gt; m
         .IndexName("projects-and-commits")
         .TypeName("doc")
         .RelationName("commits")
     )
-    .InferMappingFor&lt;Project&gt;(m =&gt; m
+    .DefaultMappingFor&lt;Project&gt;(m =&gt; m
         .IndexName("projects-and-commits")
         .TypeName("doc")
         .RelationName("projects")
@@ -660,7 +660,7 @@ relation = resolver.Resolve&lt;CommitActivity&gt;();
 relation.Should().Be("commits");
 
 var settings = new ConnectionSettings()
-    .InferMappingFor&lt;Project&gt;(m =&gt; m
+    .DefaultMappingFor&lt;Project&gt;(m =&gt; m
         .IndexName("projects-and-commits")
         .TypeName("doc")
     );
