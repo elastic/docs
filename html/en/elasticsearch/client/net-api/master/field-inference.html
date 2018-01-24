@@ -763,7 +763,7 @@ Expect("naam").WhenSerializing(Field&lt;BuiltIn&gt;(p =&gt; p.Name));</pre></div
 Here we ask the default <code class="literal">JsonNetSerializer</code> to resolve a property name and it takes
 the <code class="literal">JsonPropertyAttribute</code> into account</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class SerializerSpecific
 {
-    [Rename("nameInJson"), JsonProperty("nameInJson")]
+    [PropertyName("nameInJson"), JsonProperty("nameInJson")]
     public string Name { get; set; }
 }
 
@@ -771,7 +771,7 @@ Expect("nameInJson").WhenSerializing(Field&lt;SerializerSpecific&gt;(p =&gt; p.N
 <span class="strong strong"><strong>NEST attributes take precedence</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class Both
 {
     [Text(Name = "naam")]
-    [Rename("nameInJson"), JsonProperty("nameInJson")]
+    [PropertyName("nameInJson"), JsonProperty("nameInJson")]
     public string Name { get; set; }
 }
 
@@ -822,29 +822,34 @@ Pass the MemberInfo’s Name to the DefaultFieldNameInferrer, which by default c
 </li></ol></div><p>The following example class will demonstrate this precedence</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">class Precedence
 {
     [Text(Name = "renamedIgnoresNest")]
-    [Rename("renamedIgnoresJsonProperty"),JsonProperty("renamedIgnoresJsonProperty")]
+    [PropertyName("renamedIgnoresJsonProperty"),JsonProperty("renamedIgnoresJsonProperty")]
     public string RenamedOnConnectionSettings { get; set; } <a id="CO67-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
     [Text(Name = "nestAtt")]
-    [Rename("jsonProp"),JsonProperty("jsonProp")]
+    [PropertyName("nestProp"),JsonProperty("jsonProp")]
     public string NestAttribute { get; set; } <a id="CO67-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
 
-    [Rename("jsonProp"),JsonProperty("jsonProp")]
-    public string JsonProperty { get; set; } <a id="CO67-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    [PropertyName("nestProp"),JsonProperty("jsonProp")]
+    public string NestProperty { get; set; } <a id="CO67-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
 
-    [Rename("dontaskme"),JsonProperty("dontaskme")]
-    public string AskSerializer { get; set; } <a id="CO67-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    [JsonProperty("jsonProp")]
+    public string JsonProperty { get; set; } <a id="CO67-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
 
-    public string DefaultFieldNameInferrer { get; set; } <a id="CO67-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+    [PropertyName("dontaskme"),JsonProperty("dontaskme")]
+    public string AskSerializer { get; set; } <a id="CO67-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+
+    public string DefaultFieldNameInferrer { get; set; } <a id="CO67-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO67-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Even though this property has a NEST property mapping <span class="emphasis"><em>and</em></span> a <code class="literal">JsonProperty</code> attribute, We are going to provide a hard rename for it on ConnectionSettings later that should win.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO67-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This property has both a NEST attribute and a <code class="literal">JsonProperty</code>, NEST should win.
+This property has both a NEST attribute and property and a <code class="literal">JsonProperty</code>, NEST should win.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO67-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-We should take the json property into account by itself
+This property has both a NEST property and a <code class="literal">JsonProperty</code>, NEST should win.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO67-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This property we are going to special case in our custom serializer to resolve to ask
+We should take the json property into account by itself
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO67-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This property we are going to hard code in our custom serializer to resolve to ask.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO67-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 We are going to register a DefaultFieldNameInferrer on ConnectionSettings that will uppercase all properties.
 </p></td></tr></table></div><p>Here we create a custom serializer that renames any property named <code class="literal">AskSerializer</code> to <code class="literal">ask</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">class CustomPropertyMappingProvider : PropertyMappingProvider
 {
@@ -865,6 +870,7 @@ and all properties that are not mapped verbatim should be uppercased</p><div cla
 
 usingSettings.Expect("renamed").ForField(Field&lt;Precedence&gt;(p =&gt; p.RenamedOnConnectionSettings));
 usingSettings.Expect("nestAtt").ForField(Field&lt;Precedence&gt;(p =&gt; p.NestAttribute));
+usingSettings.Expect("nestProp").ForField(Field&lt;Precedence&gt;(p =&gt; p.NestProperty));
 usingSettings.Expect("jsonProp").ForField(Field&lt;Precedence&gt;(p =&gt; p.JsonProperty));
 usingSettings.Expect("ask").ForField(Field&lt;Precedence&gt;(p =&gt; p.AskSerializer));
 usingSettings.Expect("DEFAULTFIELDNAMEINFERRER").ForField(Field&lt;Precedence&gt;(p =&gt; p.DefaultFieldNameInferrer));</pre></div><p>The same naming rules also apply when indexing a document</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">usingSettings.Expect(new []
@@ -872,12 +878,14 @@ usingSettings.Expect("DEFAULTFIELDNAMEINFERRER").ForField(Field&lt;Precedence&gt
     "ask",
     "DEFAULTFIELDNAMEINFERRER",
     "jsonProp",
+    "nestProp",
     "nestAtt",
     "renamed"
 }).AsPropertiesOf(new Precedence
 {
     RenamedOnConnectionSettings = "renamed on connection settings",
     NestAttribute = "using a nest attribute",
+    NestProperty = "using a nest property",
     JsonProperty = "the default serializer resolves json property attributes",
     AskSerializer = "serializer fiddled with this one",
     DefaultFieldNameInferrer = "shouting much?"

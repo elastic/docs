@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Fluent mapping
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Extending NEST types
         | Elasticsearch.Net and NEST: the .NET clients [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="mapping.html" title="Mapping" /><link rel="prev" href="attribute-mapping.html" title="Attribute mapping" /><link rel="next" href="visitor-pattern-mapping.html" title="Applying conventions through the Visitor pattern" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/.Net/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="custom-serialization.html" title="Custom Serialization" /><link rel="prev" href="custom-serialization.html" title="Custom Serialization" /><link rel="next" href="modifying-default-serializer.html" title="Modifying the default serializer" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/.Net/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -618,387 +618,62 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-node">Fluent mapping</span></div><div class="navheader"><span class="prev"><a href="attribute-mapping.html">
+    </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-link"><a href="custom-serialization.html">Custom Serialization</a></span> » <span class="breadcrumb-node">Extending NEST types</span></div><div class="navheader"><span class="prev"><a href="custom-serialization.html">
               « 
-              Attribute mapping</a>
+              Custom Serialization</a>
            
         </span><span class="next">
            
-          <a href="visitor-pattern-mapping.html">Applying conventions through the Visitor pattern
+          <a href="modifying-default-serializer.html">Modifying the default serializer
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="fluent-mapping"></a>Fluent mapping<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/mapping/fluent-mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Fluent mapping POCO properties to fields within an Elasticsearch type mapping
-offers the most control over the process. With fluent mapping, each property of
-the POCO is explicitly mapped to an Elasticsearch type field mapping.</p><p>To demonstrate, we’ll define two POCOs</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">Company</code>, which has a name and a collection of Employees
-</li><li class="listitem">
-<code class="literal">Employee</code> which has various properties of different types and has itself a collection of <code class="literal">Employee</code> types.
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class Company
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="extending-nest-types"></a>Extending NEST types<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/serialization/extending-nest-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Although of course NEST should always be up to date with a 100% API coverage of the Elasticsearch API, sometimes you might want to work around a bug
+or maybe use types from a third party plugin that NEST does not support.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyPluginProperty : IProperty
 {
-    public string Name { get; set; }
-    public List&lt;Employee&gt; Employees { get; set; }
-}
+    IDictionary&lt;string, object&gt; IProperty.LocalMetadata { get; set; }
+    public string Type { get; set; } = "my_plugin_property";
+    public PropertyName Name { get; set; }
 
-public class Employee
-{
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public int Salary { get; set; }
-    public DateTime Birthday { get; set; }
-    public bool IsManager { get; set; }
-    public List&lt;Employee&gt; Employees { get; set; }
-    public TimeSpan Hours { get; set; }
-}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_manual_mapping"></a>Manual mapping<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/mapping/fluent-mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To create a mapping for our Company type, we can use the fluent API
-and map each property explicitly</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
+    public MyPluginProperty(string name, string language)
+    {
+        this.Name = name;
+        this.Language = language;
+        this.Numeric = true;
+    }
+
+    [PropertyName("language")]
+    public string Language { get; set; }
+
+    [PropertyName("numeric")]
+    public bool Numeric { get; set; }
+}</pre></div><p><code class="literal">PropertyNameAttribute</code> can be used to mark properties that should be serialized. Without this attribute,
+NEST won’t pick up the property for serialization.</p><p>Now that we have our own <code class="literal">IProperty</code> implementation we can add it to our propertes mapping when creating an index</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var createIndexResponse = client.CreateIndex("myindex", c =&gt; c
     .Mappings(ms =&gt; ms
-        .Map&lt;Company&gt;(m =&gt; m
-            .Properties(ps =&gt; ps
-                .Text(s =&gt; s
-                    .Name(c =&gt; c.Name)
-                )
-                .Object&lt;Employee&gt;(o =&gt; o
-                    .Name(c =&gt; c.Employees)
-                    .Properties(eps =&gt; eps
-                        .Text(s =&gt; s
-                            .Name(e =&gt; e.FirstName)
-                        )
-                        .Text(s =&gt; s
-                            .Name(e =&gt; e.LastName)
-                        )
-                        .Number(n =&gt; n
-                            .Name(e =&gt; e.Salary)
-                            .Type(NumberType.Integer)
-                        )
-                    )
-                )
+        .Map&lt;Project&gt;(m =&gt; m
+            .Properties(props =&gt; props
+                .Custom(new MyPluginProperty("fieldName", "dutch"))
             )
         )
-    );</pre></div><p>Here, the Name property of the <code class="literal">Company</code> type has been mapped as a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.1/text.html" target="_top">text datatype</a> and
-the <code class="literal">Employees</code> property mapped as an <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.1/object.html" target="_top">object datatype</a>. Within this object mapping,
-only the <code class="literal">FirstName</code>, <code class="literal">LastName</code> and <code class="literal">Salary</code> properties of the <code class="literal">Employee</code> type have been mapped.</p><p>The json mapping for this example looks like</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+    )
+);</pre></div><p>which will serialize to the following JSON request</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
   "mappings": {
-    "company": {
+    "doc": {
       "properties": {
-        "name": {
-          "type": "text"
-        },
-        "employees": {
-          "type": "object",
-          "properties": {
-            "firstName": {
-              "type": "text"
-            },
-            "lastName": {
-              "type": "text"
-            },
-            "salary": {
-              "type": "integer"
-            }
-          }
+        "fieldName": {
+          "type": "my_plugin_property",
+          "language": "dutch",
+          "numeric": true
         }
       }
     }
   }
-}</pre></div><p>Manual mapping in this way is powerful but can become verbose and unwieldy for
-large POCOs. The majority of the time you simply want to map <span class="strong strong"><strong>all</strong></span> the properties of a POCO in a single go
-without having to specify the mapping for each property,
-particularly when there is <a class="link" href="auto-map.html" title="Auto mapping">inferred mapping</a> from CLR types to Elasticsearch types.</p><p>This is where the fluent mapping in conjunction with auto mapping comes in.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="auto-map-with-overrides"></a>Auto mapping with fluent overrides<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/mapping/fluent-mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In most cases, you’ll want to map more than just the vanilla datatypes and also provide
-various options for your properties, such as the analyzer to use, whether to enable <code class="literal">doc_values</code>, etc.</p><p>In this case, it’s possible to use <code class="literal">.AutoMap()</code> in conjunction with explicitly mapped properties.</p><p>Here we are using <code class="literal">.AutoMap()</code> to automatically infer the mapping of our <code class="literal">Company</code> type from the
-CLR property types, but then we’re overriding the <code class="literal">Employees</code> property to make it a
-<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.1/nested.html" target="_top">nested datatype</a>, since by default <code class="literal">.AutoMap()</code> will infer the
-<code class="literal">List&lt;Employee&gt;</code> property as an <code class="literal">object</code> datatype</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;Company&gt;(m =&gt; m
-            .AutoMap()
-            .Properties(ps =&gt; ps
-                .Nested&lt;Employee&gt;(n =&gt; n
-                    .Name(c =&gt; c.Employees)
-                )
-            )
-        )
-    );</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "mappings": {
-    "company": {
-      "properties": {
-        "name": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          }
-        },
-        "employees": {
-          "type": "nested"
-        }
-      }
-    }
-  }
-}</pre></div><p><code class="literal">.AutoMap()</code> <span class="emphasis"><em>                 </em></span><span class="strong strong"><strong>is idempotent</strong></span>   therefore calling it <span class="emphasis"><em>before</em></span> or <span class="emphasis"><em>after</em></span>
-manually mapped properties will still yield the same result. The next example
-generates the same mapping as the previous</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;Company&gt;(m =&gt; m
-            .Properties(ps =&gt; ps
-                .Nested&lt;Employee&gt;(n =&gt; n
-                    .Name(c =&gt; c.Employees)
-                )
-            )
-            .AutoMap()
-        )
-    );</pre></div><p>Just as we were able to override the inferred properties from auto mapping in the previous example,
-fluent mapping also takes precedence over <a class="link" href="attribute-mapping.html" title="Attribute mapping">Attribute Mapping</a>.
-In this way, fluent, attribute and auto mapping can be combined. We’ll demonstrate with an example.</p><p>Consider the following two POCOS</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">[ElasticsearchType(Name = "company")]
-public class CompanyWithAttributes
-{
-    [Keyword(NullValue = "null", Similarity = "BM25")]
-    public string Name { get; set; }
-
-    [Text(Name = "office_hours")]
-    public TimeSpan? HeadOfficeHours { get; set; }
-
-    [Object(Store = false)]
-    public List&lt;Employee&gt; Employees { get; set; }
-}
-
-[ElasticsearchType(Name = "employee")]
-public class EmployeeWithAttributes
-{
-    [Text(Name = "first_name")]
-    public string FirstName { get; set; }
-
-    [Text(Name = "last_name")]
-    public string LastName { get; set; }
-
-    [Number(DocValues = false, IgnoreMalformed = true, Coerce = true)]
-    public int Salary { get; set; }
-
-    [Date(Format = "MMddyyyy")]
-    public DateTime Birthday { get; set; }
-
-    [Boolean(NullValue = false, Store = true)]
-    public bool IsManager { get; set; }
-
-    [Nested]
-    [PropertyName("empl"), JsonProperty("empl")]
-    public List&lt;Employee&gt; Employees { get; set; }
-}</pre></div><p>Now when mapping, <code class="literal">AutoMap()</code> is called to infer the mapping from the POCO property types and
-attributes, and inferred mappings are overridden with fluent mapping</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(ms =&gt; ms
-        .Map&lt;CompanyWithAttributes&gt;(m =&gt; m
-            .AutoMap() <a id="CO43-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            .Properties(ps =&gt; ps <a id="CO43-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                .Nested&lt;Employee&gt;(n =&gt; n
-                    .Name(c =&gt; c.Employees)
-                )
-            )
-        )
-        .Map&lt;EmployeeWithAttributes&gt;(m =&gt; m
-            .AutoMap() <a id="CO43-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-            .Properties(ps =&gt; ps <a id="CO43-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-                .Text(s =&gt; s
-                    .Name(e =&gt; e.FirstName)
-                    .Fields(fs =&gt; fs
-                        .Keyword(ss =&gt; ss
-                            .Name("firstNameRaw")
-                        )
-                        .TokenCount(t =&gt; t
-                            .Name("length")
-                            .Analyzer("standard")
-                        )
-                    )
-                )
-                .Number(n =&gt; n
-                    .Name(e =&gt; e.Salary)
-                    .Type(NumberType.Double)
-                    .IgnoreMalformed(false)
-                )
-                .Date(d =&gt; d
-                    .Name(e =&gt; e.Birthday)
-                    .Format("MM-dd-yy")
-                )
-            )
-        )
-    );</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Automap company
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Override company inferred mappings
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Auto map employee
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Override employee inferred mappings
-</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "mappings": {
-    "company": {
-      "properties": {
-        "employees": {
-          "type": "nested"
-        },
-        "name": {
-          "null_value": "null",
-          "similarity": "BM25",
-          "type": "keyword"
-        },
-        "office_hours": {
-          "type": "text"
-        }
-      }
-    },
-    "employee": {
-      "properties": {
-        "birthday": {
-          "format": "MM-dd-yy",
-          "type": "date"
-        },
-        "empl": {
-          "properties": {
-            "birthday": {
-              "type": "date"
-            },
-            "employees": {
-              "properties": {},
-              "type": "object"
-            },
-            "firstName": {
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              },
-              "type": "text"
-            },
-            "hours": {
-              "type": "long"
-            },
-            "isManager": {
-              "type": "boolean"
-            },
-            "lastName": {
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              },
-              "type": "text"
-            },
-            "salary": {
-              "type": "integer"
-            }
-          },
-          "type": "nested"
-        },
-        "first_name": {
-          "fields": {
-            "firstNameRaw": {
-              "type": "keyword"
-            },
-            "length": {
-              "analyzer": "standard",
-              "type": "token_count"
-            }
-          },
-          "type": "text"
-        },
-        "isManager": {
-          "null_value": false,
-          "store": true,
-          "type": "boolean"
-        },
-        "last_name": {
-          "type": "text"
-        },
-        "salary": {
-          "ignore_malformed": false,
-          "type": "double"
-        }
-      }
-    }
-  }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_auto_mapping_overrides_down_the_object_graph"></a>Auto mapping overrides down the object graph<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/mapping/fluent-mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You may have noticed in the <a class="link" href="fluent-mapping.html#auto-map-with-overrides" title="Auto mapping with fluent overrides">Automap with fluent overrides example</a>
-that the properties of the <code class="literal">Employees</code> property on <code class="literal">Company</code> were not mapped. This is because the automapping
-was applied only at the root level of the <code class="literal">Company</code> mapping.</p><p>By calling <code class="literal">.AutoMap()</code> inside of the <code class="literal">.Nested&lt;Employee&gt;</code> mapping, it is possible to auto map the
-<code class="literal">Employee</code> nested properties and again, override any inferred mapping from the automapping process,
-through manual mapping</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
-    .Mappings(m =&gt; m
-        .Map&lt;Company&gt;(mm =&gt; mm
-            .AutoMap() <a id="CO44-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            .Properties(p =&gt; p <a id="CO44-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                .Nested&lt;Employee&gt;(n =&gt; n
-                    .Name(c =&gt; c.Employees)
-                    .AutoMap() <a id="CO44-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-                    .Properties(pp =&gt; pp <a id="CO44-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-                        .Text(t =&gt; t
-                            .Name(e =&gt; e.FirstName)
-                        )
-                        .Text(t =&gt; t
-                            .Name(e =&gt; e.LastName)
-                        )
-                        .Nested&lt;Employee&gt;(nn =&gt; nn
-                            .Name(e =&gt; e.Employees)
-                        )
-                    )
-                )
-            )
-        )
-    );</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Automap <code class="literal">Company</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Override specific <code class="literal">Company</code> mappings
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Automap <code class="literal">Employees</code> property
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Override specific <code class="literal">Employee</code> properties
-</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "mappings": {
-    "company": {
-      "properties": {
-        "name": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          }
-        },
-        "employees": {
-          "type": "nested",
-          "properties": {
-            "firstName": {
-              "type": "text"
-            },
-            "lastName": {
-              "type": "text"
-            },
-            "salary": {
-              "type": "integer"
-            },
-            "birthday": {
-              "type": "date"
-            },
-            "isManager": {
-              "type": "boolean"
-            },
-            "employees": {
-              "type": "nested"
-            },
-            "hours": {
-              "type": "long"
-            }
-          }
-        }
-      }
-    }
-  }
-}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="attribute-mapping.html">
+}</pre></div><p>Whilst NEST can serialize our <code class="literal">my_plugin_property</code>, it does not know how to deserialize it;
+We plan to make this more pluggable in the future</p></div><div class="navfooter"><span class="prev"><a href="custom-serialization.html">
               « 
-              Attribute mapping</a>
+              Custom Serialization</a>
            
         </span><span class="next">
            
-          <a href="visitor-pattern-mapping.html">Applying conventions through the Visitor pattern
+          <a href="modifying-default-serializer.html">Modifying the default serializer
                »
             </a></span></div>
 <!-- end body -->
