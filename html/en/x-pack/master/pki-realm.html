@@ -627,17 +627,18 @@ Not what you want? See the
           <a href="file-realm.html">File-based User Authentication
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="pki-realm"></a>PKI User Authentication</h2></div></div></div><p>You can configure X-Pack security to use Public Key Infrastructure (PKI) certificates
-to authenticate users. This requires clients to present X.509 certificates. To
-use PKI, you configure a PKI realm, enable client authentication on the desired
-network layers (transport or http), and map the Distinguished Names (DNs) from
-the user certificates to X-Pack security roles in the <a class="link" href="mapping-roles.html" title="Mapping Users and Groups to Roles">role mapping file</a>.</p><p>You can also use a combination of PKI and username/password authentication. For
+to authenticate users in Elasticsearch. This requires clients to present X.509
+certificates.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You cannot use PKI certificates to authenticate users in Kibana.</p></div></div><p>To use PKI in Elasticsearch, you configure a PKI realm, enable client authentication on
+the desired network layers (transport or http), and map the Distinguished Names
+(DNs) from the user certificates to X-Pack security roles in the
+<a class="link" href="mapping-roles.html" title="Mapping Users and Groups to Roles">role mapping file</a>.</p><p>You can also use a combination of PKI and username/password authentication. For
 example, you can enable SSL/TLS on the transport layer and define a PKI realm to
 require transport clients to authenticate with X.509 certificates, while still
 authenticating HTTP traffic using username and password credentials. You can also set
 <code class="literal">xpack.security.transport.ssl.client_authentication</code> to <code class="literal">optional</code> to allow clients without
 certificates to authenticate with other credentials.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>You must enable SSL/TLS and enabled client authentication to use PKI.
             For more information, see <a class="link" href="ssl-tls.html" title="Setting Up TLS on a Cluster">Setting Up SSL/TLS on a Cluster</a>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_pki_realm_configuration"></a>PKI Realm Configuration</h3></div></div></div><p>Like other realms, you configure options for a <code class="literal">pki</code> realm under the
-<code class="literal">xpack.security.authc.realms</code> namespace in <code class="literal">elasticsearch.yml</code>.</p><p>To configure <code class="literal">pki</code> realm:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+<code class="literal">xpack.security.authc.realms</code> namespace in <code class="literal">elasticsearch.yml</code>.</p><p>To configure a <code class="literal">pki</code> realm:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Add a realm configuration of type <code class="literal">pki</code> to <code class="literal">elasticsearch.yml</code> under the
 <code class="literal">xpack.security.authc.realms</code> namespace. At a minimum, you must set the realm <code class="literal">type</code> to
 <code class="literal">pki</code>. If you are configuring multiple realms, you should also explicitly set
@@ -693,23 +694,10 @@ signed by a different CA than the one that signs your users' certificates.</p><p
           truststore:
             path: "/path/to/pki_truststore.jks"
             password: "x-pack-test-password"</pre></div><p>The <code class="literal">certificate_authorities</code> option may be used as an alternative to the
-<code class="literal">truststore.path</code> setting.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="pki-settings"></a>PKI Realm Settings</h4></div></div></div><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Setting</p></td><td align="center" valign="top"><p>Required</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">type</code></p></td><td align="center" valign="top"><p>yes</p></td><td align="left" valign="top"><p>Indicates the realm type. Must be set to <code class="literal">pki</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">order</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>Indicates the priority of this realm within the realm
-                                          chain. Realms with a lower order are consulted first.
-                                          Although not required, we recommend explicitly
-                                          setting this value when you configure multiple realms.
-                                          Defaults to <code class="literal">Integer.MAX_VALUE</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">enabled</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>Indicates whether this realm is enabled or disabled.
-                                          Enables you to disable a realm without removing its
-                                          configuration. Defaults to <code class="literal">true</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">username_pattern</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the regular expression pattern used to extract
-                                          the username from the certificate DN. The first match
-                                          group is used as the username. Defaults to <code class="literal">CN=(.*?)(?:,|$)</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">certificate_authorities</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>List of paths to the PEM encoded certificate files
-                                          that should be trusted.
-                                          This setting may not be used with <code class="literal">truststore.path</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">truststore.path</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>The path to the truststore. Defaults to the path
-                                          defined by  <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/security-settings.html#ssl-tls-settings" target="_top">SSL/TLS settings</a>.
-                                          This setting may not be used with <code class="literal">certificate_authorities</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">truststore.password</code></p></td><td align="center" valign="top"><p>no/yes</p></td><td align="left" valign="top"><p>Specifies the password for the truststore. Must be
-                                          provided if <code class="literal">truststore.path</code> is set.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">truststore.algorithm</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the algorithm used for the truststore.
-                                          Defaults to <code class="literal">SunX509</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">files.role_mapping</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the <a class="link" href="security-files.html#security-files-location" title="Important">location</a>
-                                          for the <a class="link" href="mapping-roles.html#pki-role-mapping" title="PKI Realms">YAML role mapping configuration file</a>.
-                                          Defaults to <code class="literal">CONFIG_DIR/x-pack/role_mapping.yml</code>.</p></td></tr></tbody></table></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="assigning-roles-pki"></a>Mapping Roles for PKI Users</h3></div></div></div><p>You map roles for PKI users through the
+<code class="literal">truststore.path</code> setting.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="pki-settings"></a>PKI Realm Settings</h4></div></div></div><p>See
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/security-settings.html#_settings_valid_for_all_realms" target="_top">Security Settings for All Realms</a>
+and
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/security-settings.html#ref-pki-settings" target="_top">PKI Realm Settings</a>.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="assigning-roles-pki"></a>Mapping Roles for PKI Users</h3></div></div></div><p>You map roles for PKI users through the
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-role-mapping.html" target="_top">role-mapping API</a>, or by using a file stored on
 each node. When a user authenticates against a PKI realm, the privileges for
 that user are the union of all privileges defined by the roles to which the
