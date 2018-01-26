@@ -32,7 +32,7 @@ HEADER
         new => <<"HEADER"
 你当前正在查看的是未发布版本的预览版文档。如果不是你要找的，请点击查看 <a href="../current/index.html">当前发布版本的文档</a>。
 HEADER
-        },
+    },
     ja => {
         old => <<"HEADER",
 You are looking at documentation for an older release.
@@ -44,7 +44,7 @@ You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
-        },
+    },
     ko => {
         old => <<"HEADER",
 You are looking at documentation for an older release.
@@ -57,7 +57,6 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         }
-
 
 );
 
@@ -127,6 +126,7 @@ sub new {
         current       => $current,
         tags          => $tags,
         private       => $args{private} || '',
+        noindex       => $args{noindex} || '',
         lang          => $lang
     }, $class;
 }
@@ -230,6 +230,7 @@ sub _build_book {
                 edit_url      => $edit_url,
                 root_dir      => $first_path,
                 private       => $self->private,
+                noindex       => $self->noindex,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
@@ -247,6 +248,7 @@ sub _build_book {
                 edit_url      => $edit_url,
                 root_dir      => $first_path,
                 private       => $self->private,
+                noindex       => $self->noindex,
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
@@ -387,6 +389,7 @@ sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
 sub is_multi_version { @{ shift->branches } > 1 }
 sub private          { shift->{private} }
+sub noindex          { shift->{noindex} }
 sub tags             { shift->{tags} }
 sub source           { shift->{source} }
 sub lang             { shift->{lang} }

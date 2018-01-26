@@ -42,6 +42,7 @@ sub build_chunked {
     my $section   = $opts{section_title} || '';
     my $private   = $opts{private}       || '';
     my $resources = $opts{resource}      || [];
+    my $noindex   = $opts{noindex}       || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
     $dest->rmtree;
     $dest->mkpath;
@@ -72,6 +73,7 @@ sub build_chunked {
                 "local.book.multi_version" => $multi,
                 "local.page.header"        => $page_header,
                 "local.book.section.title" => "Learn/Docs/$section",
+                "local.noindex"            => $noindex
             ),
             $index
         );
@@ -106,6 +108,7 @@ sub build_single {
     my $root_dir  = $opts{root_dir}      || '';
     my $section   = $opts{section_title} || '';
     my $private   = $opts{private}       || '';
+    my $noindex   = $opts{noindex}       || '';
     my $resources = $opts{resource}      || [];
     my $page_header = custom_header($index) || $opts{page_header} || '';
 
@@ -134,6 +137,7 @@ sub build_single {
                 "local.book.multi_version" => $multi,
                 "local.page.header"        => $page_header,
                 "local.book.section.title" => "Learn/Docs/$section",
+                "local.noindex"            => $noindex
             ),
             $index
         );

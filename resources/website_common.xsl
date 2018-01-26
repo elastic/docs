@@ -9,6 +9,9 @@
   <xsl:param name="local.page.header"></xsl:param>
   <xsl:param name="local.book.section.title">Learn/Docs/</xsl:param>
 
+  <!-- header -->
+  <xsl:param name="local.noindex" select="''"/>
+
   <!-- css -->
   <xsl:param name="generate.consistent.ids" select="1"/>
   <xsl:param name="css.decoration"          select="0"/>
@@ -41,6 +44,9 @@
         <xsl:value-of select="$local.book.section.title" />
       </xsl:attribute>
     </meta>
+    <xsl:if test="$local.noindex!=''">
+      <meta name="robots" content="noindex,nofollow" />
+    </xsl:if>
   </xsl:template>
 
   <!--  title element -->
