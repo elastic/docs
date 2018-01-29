@@ -628,7 +628,8 @@ Not what you want? See the
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="custom-realms"></a>Integrating with Other Authentication Systems</h2></div></div></div><p>If you are using an authentication system that is not supported out-of-the-box
 by X-Pack security, you can create a custom realm to interact with it to authenticate
-users. You implement a custom realm as an X-Pack extension.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="implementing-custom-realm"></a>Implementing a Custom Realm</h3></div></div></div><p>Sample code that illustrates the structure and implementation of a custom realm
+users. You implement a custom realm as an SPI loaded security extension
+as part of an ordinary elasticsearch plugin.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="implementing-custom-realm"></a>Implementing a Custom Realm</h3></div></div></div><p>Sample code that illustrates the structure and implementation of a custom realm
 is provided in the <a class="ulink" href="https://github.com/elastic/shield-custom-realm-example" target="_top">custom-realm-example</a>
 repository on GitHub. You can use this code as a starting point for creating your
 own realm.</p><p>To create a custom realm, you need to:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
@@ -642,7 +643,7 @@ Extend <code class="literal">org.elasticsearch.xpack.security.authc.DefaultAuthe
   handle authentication failures when using your custom realm.
 </li></ol></div><p>To package your custom realm as a plugin:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Implement an extension class for your realm that extends
-  <code class="literal">org.elasticsearch.xpack.extensions.XPackExtension</code>. There you need to
+  <code class="literal">org.elasticsearch.xpack.core.security.SecurityExtension</code>. There you need to
   override one or more of the following methods:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">@Override
 public Map&lt;String, Factory&gt; getRealms() {
@@ -654,26 +655,22 @@ public AuthenticationFailureHandler getAuthenticationFailureHandler() {
 }</pre></div><p class="simpara">The <code class="literal">getAuthenticationFailureHandler</code> method is used to optionally provide a
 custom <code class="literal">AuthenticationFailureHandler</code>, which will control how X-Pack responds
 in certain authentication failure events.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">@Override
-public Collection&lt;String&gt; getRestHeaders() {
-    ...
-}</pre></div><p class="simpara">The <code class="literal">getRestHeaders</code> method returns a collection of header names that should be
-copied from the request into the <code class="literal">ThreadContext</code> where they can be accessed by
-the realm.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">@Override
 public List&lt;String&gt; getSettingsFilter() {
     ...
-}</pre></div><p class="simpara">The <code class="literal">getSettingsFilter</code> method returns a list of setting names that should be
-filtered from the settings APIs as they may contain sensitive credentials.</p></li><li class="listitem">
+}</pre></div><p class="simpara">The <code class="literal">Plugin#getSettingsFilter</code> method returns a list of setting names that should be
+filtered from the settings APIs as they may contain sensitive credentials. Note this method is not
+part of the <code class="literal">SecurityExtension</code> interface, it’s available as part of the elasticsearch plugin main class.</p></li><li class="listitem">
 Create a build configuration file for the plugin; Gradle is our recommendation.
 </li><li class="listitem">
-Create a <code class="literal">x-pack-extension-descriptor.properties</code> descriptor file for the
-  extension.
+Create a <code class="literal">META-INF/services/org.elasticsearch.xpack.core.security.SecurityExtension</code> descriptor file for the
+  extension that contains the fully qualified class name of your <code class="literal">org.elasticsearch.xpack.core.security.SecurityExtension</code> implementation
 </li><li class="listitem">
 Bundle all in a single zip file.
 </li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="using-custom-realm"></a>Using a Custom Realm to Authenticate Users</h3></div></div></div><p>To use a custom realm:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Install the realm extension on each node in the cluster. You run
-  <code class="literal">bin/x-pack/extension</code> with the <code class="literal">install</code> sub-command and specify the URL
+  <code class="literal">bin/elasticsearch-plugin</code> with the <code class="literal">install</code> sub-command and specify the URL
   pointing to the zip file that contains the extension. For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/x-pack/extension install file:///&lt;path&gt;/my-realm-1.0.zip</pre></div></li><li class="listitem"><p class="simpara">
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch-plugin install file:///&lt;path&gt;/my-realm-1.0.zip</pre></div></li><li class="listitem"><p class="simpara">
 Add a realm configuration of the appropriate realm type to <code class="literal">elasticsearch.yml</code>
 under the <code class="literal">xpack.security.authc.realms</code> namespace. The options you can set depend
 on the settings exposed by the custom realm. At a minimum, you must set the realm
