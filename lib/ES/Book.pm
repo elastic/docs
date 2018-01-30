@@ -1,0 +1,398 @@
+package ES::Book;
+
+use strict;
+use warnings;
+use v5.10;
+use Data::Dumper qw(Dumper);
+use ES::Util
+    qw(run build_chunked build_single proc_man write_html_redirect $Opts);
+use Path::Class();
+use ES::Source();
+use File::Copy::Recursive qw(fcopy rcopy);
+use ES::Toc();
+use utf8;
+
+our %Page_Header = (
+    en => {
+        old => <<"HEADER",
+You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        new => <<"HEADER"
+You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+    },
+    zh_cn => {
+        old => <<"HEADER",
+你当前正在查看的是旧版本的文档。如果不是你要找的，请点击查看 <a href="../current/index.html">当前发布版本的文档</a>。
+HEADER
+        new => <<"HEADER"
+你当前正在查看的是未发布版本的预览版文档。如果不是你要找的，请点击查看 <a href="../current/index.html">当前发布版本的文档</a>。
+HEADER
+    },
+    ja => {
+        old => <<"HEADER",
+You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        new => <<"HEADER"
+You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+    },
+    ko => {
+        old => <<"HEADER",
+You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        new => <<"HEADER"
+You are looking at preliminary documentation for a future release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        }
+
+);
+
+#===================================
+sub new {
+#===================================
+    my ( $class, %args ) = @_;
+
+    my $title = $args{title}
+        or die "No <title> specified: " . Dumper( \%args );
+
+    my $dir = $args{dir}
+        or die "No <dir> specified for book <$title>";
+
+    my $temp_dir = $args{temp_dir}
+        or die "No <temp_dir> specified for book <$title>";
+
+    my $source = ES::Source->new(
+        temp_dir => $temp_dir,
+        sources  => $args{sources}
+    );
+
+    my $prefix = $args{prefix}
+        or die "No <prefix> specified for book <$title>";
+
+    my $index = Path::Class::file( $args{index} || 'index.asciidoc' );
+
+    my $chunk = $args{chunk} || 0;
+    my $toc   = $args{toc}   || 0;
+
+    my $branch_list = $args{branches};
+    my $current     = $args{current};
+
+    die "<branches> must be an array in book <$title>"
+        unless ref $branch_list eq 'ARRAY';
+
+    my ( @branches, %branch_titles );
+    for (@$branch_list) {
+        my ( $branch, $title ) = ref $_ eq 'HASH' ? (%$_) : ( $_, $_ );
+        push @branches, $branch;
+        $branch_titles{$branch} = $title;
+    }
+
+    die "Current branch <$current> is not in <branches> in book <$title>"
+        unless $branch_titles{$current};
+
+    my $template = $args{template}
+        or die "No <template> specified for book <$title>";
+
+    my $tags = $args{tags}
+        or die "No <tags> specified for book <$title>";
+
+    my $lang = $args{lang} || 'en';
+
+    bless {
+        title         => $title,
+        dir           => $dir->subdir($prefix),
+        template      => $template,
+        source        => $source,
+        prefix        => $prefix,
+        chunk         => $chunk,
+        toc           => $toc,
+        single        => $args{single},
+        index         => $index,
+        branches      => \@branches,
+        branch_titles => \%branch_titles,
+        current       => $current,
+        tags          => $tags,
+        private       => $args{private} || '',
+        noindex       => $args{noindex} || '',
+        lang          => $lang
+    }, $class;
+}
+
+#===================================
+sub build {
+#===================================
+    my $self = shift;
+
+    say "Book: " . $self->title;
+
+    my $toc = ES::Toc->new( $self->title );
+    my $dir = $self->dir;
+    $dir->mkpath;
+
+    my $title = $self->title;
+
+    my $pm = proc_man(
+        $Opts->{procs},
+        sub {
+            my ( $pid, $error, $branch ) = @_;
+            $self->source->mark_done( $title, $branch );
+        }
+    );
+
+    for my $branch ( @{ $self->branches } ) {
+        $self->_build_book( $branch, $pm );
+
+        my $branch_title = $self->branch_title($branch);
+        if ( $branch eq $self->current ) {
+            $toc->add_entry(
+                {   title => "$title: $branch_title (current)",
+                    url   => "current/index.html"
+                }
+            );
+
+        }
+        else {
+            $toc->add_entry(
+                {   title => "$title: $branch_title",
+                    url   => "$branch/index.html"
+                }
+            );
+        }
+    }
+    $pm->wait_all_children();
+    $self->_copy_branch_to_current( $self->current );
+    $self->remove_old_branches;
+
+    if ( $self->is_multi_version ) {
+        say "   - Writing versions TOC";
+        $toc->write($dir);
+        return {
+            title => "$title [" . $self->branch_title( $self->current ) . "\\]",
+            url   => $self->prefix . '/current/index.html',
+            versions      => $self->prefix . '/index.html',
+            section_title => $self->section_title()
+        };
+    }
+
+    say "   - Writing redirect to current branch";
+    write_html_redirect( $dir, "current/index.html" );
+
+    return {
+        title => $title,
+        url   => $self->prefix . '/current/index.html'
+    };
+}
+
+#===================================
+sub _build_book {
+#===================================
+    my ( $self, $branch, $pm ) = @_;
+
+    my $branch_dir    = $self->dir->subdir($branch);
+    my $source        = $self->source;
+    my $template      = $self->template;
+    my $index         = $self->index;
+    my $section_title = $self->section_title($branch);
+    my $edit_url      = $self->source->edit_url($branch);
+    my $lang          = $self->lang;
+
+    return
+           if -e $branch_dir
+        && !$template->md5_changed($branch_dir)
+        && !$source->has_changed( $self->title, $branch );
+
+    my ( $checkout, $first_path ) = $source->prepare($branch);
+
+    $pm->start($branch) and return;
+    say " - Branch: $branch - Building...";
+    eval {
+        if ( $self->single ) {
+            $branch_dir->rmtree;
+            $branch_dir->mkpath;
+            build_single(
+                $first_path->file($index),
+                $branch_dir,
+                version       => $branch,
+                lang          => $lang,
+                edit_url      => $edit_url,
+                root_dir      => $first_path,
+                private       => $self->private,
+                noindex       => $self->noindex,
+                multi         => $self->is_multi_version,
+                page_header   => $self->_page_header($branch),
+                section_title => $section_title,
+                toc           => $self->toc,
+                template      => $template,
+                resource      => [$checkout],
+            );
+        }
+        else {
+            build_chunked(
+                $first_path->file($index),
+                $branch_dir,
+                version       => $branch,
+                lang          => $lang,
+                edit_url      => $edit_url,
+                root_dir      => $first_path,
+                private       => $self->private,
+                noindex       => $self->noindex,
+                chunk         => $self->chunk,
+                multi         => $self->is_multi_version,
+                page_header   => $self->_page_header($branch),
+                section_title => $section_title,
+                template      => $template,
+                resource      => [$checkout],
+            );
+            $self->_add_title_to_toc( $branch, $branch_dir );
+        }
+        $checkout->rmtree;
+        say " - Branch: $branch - Finished";
+
+        1;
+    } && $pm->finish;
+
+    my $error = $@;
+    die "\nERROR building "
+        . $self->title
+        . " branch $branch\n\n"
+        . $source->dump_recent_commits( $self->title, $branch )
+        . $error . "\n";
+}
+
+#===================================
+sub _add_title_to_toc {
+#===================================
+    my ( $self, $branch, $dir ) = @_;
+    my $title = $self->title;
+    if ( $self->is_multi_version ) {
+        $title .= ': <select>';
+        for ( @{ $self->branches } ) {
+            my $option = '<option value="' . $_ . '"';
+            $option .= ' selected'  if $branch eq $_;
+            $option .= '>' . $self->branch_title($_);
+            $option .= ' (current)' if $self->current eq $_;
+            $option .= '</option>';
+            $title  .= $option;
+        }
+        $title .= '</select>';
+    }
+    $title = '<li id="book_title"><span>' . $title . '</span></li>';
+    for ( 'toc.html', 'index.html' ) {
+        my $file = $dir->file($_);
+        my $html = $file->slurp( iomode => "<:encoding(UTF-8)" );
+        $html =~ s/<ul class="toc"><li>/<ul class="toc">${title}<li>/;
+        $file->spew( iomode => '>:utf8', $html );
+    }
+}
+
+#===================================
+sub _copy_branch_to_current {
+#===================================
+    my ( $self, $branch ) = @_;
+
+    say "   - Copying $branch to current";
+
+    my $branch_dir  = $self->dir->subdir($branch);
+    my $current_dir = $self->dir->subdir('current');
+
+    $current_dir->rmtree;
+    rcopy( $branch_dir, $current_dir )
+        or die "Couldn't copy <$branch_dir> to <$current_dir>: $!";
+
+    return {
+        title => "Version: $branch (current)",
+        url   => 'current/index.html'
+    };
+}
+
+#===================================
+sub _page_header {
+#===================================
+    my ( $self, $branch ) = @_;
+    return '' unless $self->is_multi_version;
+
+    my $current = $self->current;
+    return '' if $current eq $branch;
+
+    if ( $current !~ /-\w/ ) {
+        $current .= '-zzzzzz';
+    }
+    if ( $branch !~ /-\w/ ) {
+        $branch .= '-zzzzzz';
+    }
+
+    return $self->_page_header_text( $branch lt $current ? 'old' : 'new' );
+}
+
+#===================================
+sub _page_header_text {
+#===================================
+    my ( $self, $phrase ) = @_;
+    $phrase ||= '';
+    return $Page_Header{ $self->lang }{$phrase}
+        || die "No page header available for lang: "
+        . $self->lang
+        . " and phrase: $phrase";
+
+}
+
+#===================================
+sub remove_old_branches {
+#===================================
+    my $self     = shift;
+    my %branches = map { $_ => 1 } ( @{ $self->branches }, 'current' );
+    my $dir      = $self->dir;
+
+    for my $child ( $dir->children ) {
+        next unless $child->is_dir;
+        my $version = $child->basename;
+        next if $branches{$version};
+        say " - Deleting old branch: $version";
+        $child->rmtree;
+    }
+}
+
+#===================================
+sub section_title {
+#===================================
+    my $self   = shift;
+    my $branch = shift || '';
+    my $title  = $self->tags;
+    return $title unless $self->is_multi_version;
+    return $title . "/" . $branch;
+}
+
+#===================================
+sub title            { shift->{title} }
+sub dir              { shift->{dir} }
+sub template         { shift->{template} }
+sub prefix           { shift->{prefix} }
+sub chunk            { shift->{chunk} }
+sub toc              { shift->{toc} }
+sub single           { shift->{single} }
+sub index            { shift->{index} }
+sub branches         { shift->{branches} }
+sub branch_title     { shift->{branch_titles}->{ shift() } }
+sub current          { shift->{current} }
+sub is_multi_version { @{ shift->branches } > 1 }
+sub private          { shift->{private} }
+sub noindex          { shift->{noindex} }
+sub tags             { shift->{tags} }
+sub source           { shift->{source} }
+sub lang             { shift->{lang} }
+#===================================
+
+1;

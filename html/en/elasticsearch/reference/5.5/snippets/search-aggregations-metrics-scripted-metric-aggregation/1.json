@@ -1,0 +1,16 @@
+POST ledger/_search?size=0
+{
+    "query" : {
+        "match_all" : {}
+    },
+    "aggs": {
+        "profit": {
+            "scripted_metric": {
+                "init_script" : "params._agg.transactions = []",
+                "map_script" : "params._agg.transactions.add(doc.type.value == 'sale' ? doc.amount.value : -1 * doc.amount.value)", 
+                "combine_script" : "double profit = 0; for (t in params._agg.transactions) { profit += t } return profit",
+                "reduce_script" : "double profit = 0; for (a in params._aggs) { profit += a } return profit"
+            }
+        }
+    }
+}
