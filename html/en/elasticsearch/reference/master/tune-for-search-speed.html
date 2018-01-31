@@ -641,7 +641,34 @@ ongoing basis when compared to dedicated local storage. If you put an index on
 throttled.</p><p>If your search is CPU-bound, you should investigate buying faster CPUs.</p><h3><a id="_document_modeling"></a>Document modeling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Documents should be modeled so that search-time operations are as cheap as possible.</p><p>In particular, joins should be avoided. <a class="link" href="nested.html" title="Nested datatype"><code class="literal">nested</code></a> can make queries
 several times slower and <a class="link" href="mapping-parent-field.html" title="_parent field">parent-child</a> relations can make
 queries hundreds of times slower. So if the same questions can be answered without
-joins by denormalizing documents, significant speedups can be expected.</p><h3><a id="_pre_index_data"></a>Pre-index data<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You should leverage patterns in your queries to optimize the way data is indexed.
+joins by denormalizing documents, significant speedups can be expected.</p><h3><a id="_search_as_few_fields_as_possible"></a>Search as few fields as possible<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The more fields a <a class="link" href="query-dsl-query-string-query.html" title="Query String Query"><code class="literal">query_string</code></a> or
+<a class="link" href="query-dsl-multi-match-query.html" title="Multi Match Query"><code class="literal">multi_match</code></a> query targets, the slower it is.
+A common technique to improve search speed over multiple fields is to copy
+their values into a single field at index time, and then use this field at
+search time. This can be automated with the <a class="link" href="copy-to.html" title="copy_to"><code class="literal">copy-to</code></a> directive of
+mappings without having to change the source of documents. Here is an example
+of an index containing movies that optimizes queries that search over both the
+name and the plot of the movie by indexing both values into the <code class="literal">name_and_plot</code>
+field.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT movies
+{
+  "mappings": {
+    "_doc": {
+      "properties": {
+        "name_and_plot": {
+          "type": "text"
+        },
+        "name": {
+          "type": "text",
+          "copy_to": "name_and_plot"
+        },
+        "plot": {
+          "type": "text",
+          "copy_to": "name_and_plot"
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/1.json"></div><h3><a id="_pre_index_data"></a>Pre-index data<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You should leverage patterns in your queries to optimize the way data is indexed.
 For instance, if all your documents have a <code class="literal">price</code> field and most queries run
 <a class="link" href="search-aggregations-bucket-range-aggregation.html" title="Range Aggregation"><code class="literal">range</code></a> aggregations on a fixed
 list of ranges, you could make this aggregation faster by pre-indexing the ranges
@@ -650,7 +677,7 @@ aggregations.</p><p>For instance, if documents look like:</p><div class="pre_wra
 {
   "designation": "spoon",
   "price": 13
-}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/1.json"></div><p>and search requests look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET index/_search
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/2.json"></div><p>and search requests look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET index/_search
 {
   "aggs": {
     "price_ranges": {
@@ -664,7 +691,7 @@ aggregations.</p><p>For instance, if documents look like:</p><div class="pre_wra
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/2.json"></div><p>Then documents could be enriched by a <code class="literal">price_range</code> field at index time, which
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/3.json"></div><p>Then documents could be enriched by a <code class="literal">price_range</code> field at index time, which
 should be mapped as a <a class="link" href="keyword.html" title="Keyword datatype"><code class="literal">keyword</code></a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT index
 {
   "mappings": {
@@ -683,7 +710,7 @@ PUT index/_doc/1
   "designation": "spoon",
   "price": 13,
   "price_range": "10-100"
-}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/3.json"></div><p>And then search requests could aggregate this new field rather than running a
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/4.json"></div><p>And then search requests could aggregate this new field rather than running a
 <code class="literal">range</code> aggregation on the <code class="literal">price</code> field.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET index/_search
 {
   "aggs": {
@@ -693,7 +720,7 @@ PUT index/_doc/1
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/4.json"></div><h3><a id="_mappings"></a>Mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The fact that some data is numeric does not mean it should always be mapped as a
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/5.json"></div><h3><a id="_mappings"></a>Mappings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The fact that some data is numeric does not mean it should always be mapped as a
 <a class="link" href="number.html" title="Numeric datatypes">numeric field</a>. Typically, fields storing identifiers such as an <code class="literal">ISBN</code>
 or any number identifying a record from another database, might benefit from
 being mapped as <a class="link" href="keyword.html" title="Keyword datatype"><code class="literal">keyword</code></a> rather than <code class="literal">integer</code> or <code class="literal">long</code>.</p><h3><a id="_avoid_scripts"></a>Avoid scripts<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In general, scripts should be avoided. If they are absolutely needed, you
@@ -719,7 +746,7 @@ GET index/_search
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/5.json"></div><p>could be replaced with the following query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET index/_search
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/6.json"></div><p>could be replaced with the following query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET index/_search
 {
   "query": {
     "constant_score": {
@@ -733,7 +760,7 @@ GET index/_search
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/6.json"></div><p>In that case we rounded to the minute, so if the current time is <code class="literal">16:31:29</code>,
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/7.json"></div><p>In that case we rounded to the minute, so if the current time is <code class="literal">16:31:29</code>,
 the range query will match everything whose value of the <code class="literal">my_date</code> field is
 between <code class="literal">15:31:00</code> and <code class="literal">16:31:59</code>. And if several users run a query that
 contains this range in the same minute, the query cache could help speed things
@@ -777,7 +804,7 @@ as shown below:</p></div></div><div class="pre_wrapper"><pre class="programlisti
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/7.json"></div><p>However such practice might make the query run slower in some cases since the
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/8.json"></div><p>However such practice might make the query run slower in some cases since the
 overhead introduced by the <code class="literal">bool</code> query may defeat the savings from better
 leveraging the query cache.</p><h3><a id="_force_merge_read_only_indices"></a>Force-merge read-only indices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Indices that are read-only would benefit from being
 <a class="link" href="indices-forcemerge.html" title="Force Merge">merged down to a single segment</a>. This is typically the
@@ -800,7 +827,7 @@ eagerly at refresh-time by configuring mappings as described below:</p><div clas
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/8.json"></div><h3><a id="_warm_up_the_filesystem_cache"></a>Warm up the filesystem cache<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the machine running Elasticsearch is restarted, the filesystem cache will be
+}</pre></div><div class="console_widget" data-snippet="snippets/tune-for-search-speed/9.json"></div><h3><a id="_warm_up_the_filesystem_cache"></a>Warm up the filesystem cache<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/how-to/search-speed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If the machine running Elasticsearch is restarted, the filesystem cache will be
 empty, so it will take some time before the operating system loads hot regions
 of the index into memory so that search operations are fast. You can explicitly
 tell the operating system which files should be loaded into memory eagerly
