@@ -18,7 +18,7 @@ alias docbldesx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-extr
 # Kibana
 alias docbldkb='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.asciidoc --chunk 1'
 
-alias docbldkbx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana-extra/x-pack-kibana/docs/en/index.asciidoc --resource=$GIT_HOME/kibana/docs/ --chunk 1'
+alias docbldkbx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
 
 # Logstash
 alias docbldls='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
