@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Integrating with Other Authentication Systems
-        | X-Pack for the Elastic Stack [6.2]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>saml-metadata
+        | Elasticsearch Reference [6.2]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [6.2]" /><link rel="up" href="setting-up-authentication.html" title="Setting Up User Authentication" /><link rel="prev" href="saml-realm.html" title="SAML Authentication" /><link rel="next" href="controlling-user-cache.html" title="Controlling the User Cache" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/XPack/Reference/6.2" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.2]" /><link rel="up" href="xpack-commands.html" title="X-Pack Commands" /><link rel="prev" href="migrate-tool.html" title="migrate" /><link rel="next" href="setup-passwords.html" title="setup-passwords" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.2" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -616,81 +616,114 @@
 <div class="page_header">You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">X-Pack for the Elastic Stack
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [6.2]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-security.html">Securing Elasticsearch and Kibana</a></span> » <span class="breadcrumb-link"><a href="setting-up-authentication.html">Setting Up User Authentication</a></span> » <span class="breadcrumb-node">Integrating with Other Authentication Systems</span></div><div class="navheader"><span class="prev"><a href="saml-realm.html">
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-commands.html">X-Pack Commands</a></span> » <span class="breadcrumb-node">saml-metadata</span></div><div class="navheader"><span class="prev"><a href="migrate-tool.html">
               « 
-              SAML Authentication</a>
+              migrate</a>
            
         </span><span class="next">
            
-          <a href="controlling-user-cache.html">Controlling the User Cache
+          <a href="setup-passwords.html">setup-passwords
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="custom-realms"></a>Integrating with Other Authentication Systems</h2></div></div></div><p>If you are using an authentication system that is not supported out-of-the-box
-by X-Pack security, you can create a custom realm to interact with it to authenticate
-users. You implement a custom realm as an X-Pack extension.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="implementing-custom-realm"></a>Implementing a Custom Realm</h3></div></div></div><p>Sample code that illustrates the structure and implementation of a custom realm
-is provided in the <a class="ulink" href="https://github.com/elastic/shield-custom-realm-example" target="_top">custom-realm-example</a>
-repository on GitHub. You can use this code as a starting point for creating your
-own realm.</p><p>To create a custom realm, you need to:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-Extend <code class="literal">org.elasticsearch.xpack.security.authc.Realm</code> to communicate with your
-  authentication system to authenticate users.
-</li><li class="listitem">
-Implement the <code class="literal">org.elasticsearch.xpack.security.authc.Realm.Factory</code> interface in
-  a class that will be used to create the custom realm.
-</li><li class="listitem">
-Extend <code class="literal">org.elasticsearch.xpack.security.authc.DefaultAuthenticationFailureHandler</code> to
-  handle authentication failures when using your custom realm.
-</li></ol></div><p>To package your custom realm as a plugin:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Implement an extension class for your realm that extends
-  <code class="literal">org.elasticsearch.xpack.extensions.XPackExtension</code>. There you need to
-  override one or more of the following methods:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">@Override
-public Map&lt;String, Factory&gt; getRealms() {
-    ...
-}</pre></div><p class="simpara">The <code class="literal">getRealms</code> method is used to provide a map of type names to the <code class="literal">Factory</code> that
-will be used to create the realm.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">@Override
-public AuthenticationFailureHandler getAuthenticationFailureHandler() {
-    ...
-}</pre></div><p class="simpara">The <code class="literal">getAuthenticationFailureHandler</code> method is used to optionally provide a
-custom <code class="literal">AuthenticationFailureHandler</code>, which will control how X-Pack responds
-in certain authentication failure events.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">@Override
-public Collection&lt;String&gt; getRestHeaders() {
-    ...
-}</pre></div><p class="simpara">The <code class="literal">getRestHeaders</code> method returns a collection of header names that should be
-copied from the request into the <code class="literal">ThreadContext</code> where they can be accessed by
-the realm.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">@Override
-public List&lt;String&gt; getSettingsFilter() {
-    ...
-}</pre></div><p class="simpara">The <code class="literal">getSettingsFilter</code> method returns a list of setting names that should be
-filtered from the settings APIs as they may contain sensitive credentials.</p></li><li class="listitem">
-Create a build configuration file for the plugin; Gradle is our recommendation.
-</li><li class="listitem">
-Create a <code class="literal">x-pack-extension-descriptor.properties</code> descriptor file for the
-  extension.
-</li><li class="listitem">
-Bundle all in a single zip file.
-</li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="using-custom-realm"></a>Using a Custom Realm to Authenticate Users</h3></div></div></div><p>To use a custom realm:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Install the realm extension on each node in the cluster. You run
-  <code class="literal">bin/x-pack/extension</code> with the <code class="literal">install</code> sub-command and specify the URL
-  pointing to the zip file that contains the extension. For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/x-pack/extension install file:///&lt;path&gt;/my-realm-1.0.zip</pre></div></li><li class="listitem"><p class="simpara">
-Add a realm configuration of the appropriate realm type to <code class="literal">elasticsearch.yml</code>
-under the <code class="literal">xpack.security.authc.realms</code> namespace. The options you can set depend
-on the settings exposed by the custom realm. At a minimum, you must set the realm
-<code class="literal">type</code> to the type defined by the extension. If you are configuring multiple
-realms, you should also explicitly set the  <code class="literal">order</code> attribute to control the
-order in which the realms are consulted during authentication.
-</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>When you configure realms in <code class="literal">elasticsearch.yml</code>, only the
-realms you specify are used for authentication. If you also want to use the
-<code class="literal">native</code> or <code class="literal">file</code> realms, you must include them in the realm chain.</p></div></div></li><li class="listitem">
-Restart Elasticsearch.
-</li></ol></div></div></div><div class="navfooter"><span class="prev"><a href="saml-realm.html">
+            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="saml-metadata"></a>saml-metadata</h2></div></div></div><p>The <code class="literal">saml-metadata</code> command can be used to generate a SAML 2.0 Service Provider
+Metadata file.</p><h3><a id="_synopsis_4"></a>Synopsis</h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/x-pack/saml-metadata
+[--realm &lt;name&gt;]
+[--out &lt;file_path&gt;] [--batch]
+[--attribute &lt;name&gt;] [--service-name &lt;name&gt;]
+[--locale &lt;name&gt;] [--contacts]
+([--organisation-name &lt;name&gt;] [--organisation-display-name &lt;name&gt;] [--organisation-url &lt;url&gt;])
+[-E &lt;KeyValuePair&gt;]
+[-h, --help] ([-s, --silent] | [-v, --verbose])</pre></div><h3><a id="_description_45"></a>Description</h3><p>The SAML 2.0 specification provides a mechanism for Service Providers to
+describe their capabilities and configuration using a <span class="emphasis"><em>metadata file</em></span>.</p><p>The <code class="literal">saml-metadata</code> command generates such a file, based on the configuration of
+a SAML realm in Elasticsearch.</p><p>Some SAML Identity Providers will allow you to automatically import a metadata
+file when you configure the Elastic Stack as a Service Provider.</p><h3><a id="_parameters_13"></a>Parameters</h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">--attribute &lt;name&gt;</code>
+</span></dt><dd>
+Specifies a SAML attribute that should be
+included as a <code class="literal">&lt;RequestedAttribute&gt;</code> element in the metadata. Any attribute
+configured in the Elasticsearch realm is automatically included and does not need to be
+specified as a commandline option.
+</dd><dt><span class="term">
+<code class="literal">--batch</code>
+</span></dt><dd>
+Do not prompt for user input.
+</dd><dt><span class="term">
+<code class="literal">--contacts</code>
+</span></dt><dd>
+Specifies that the metadata should include one or more
+<code class="literal">&lt;ContactPerson&gt;</code> elements. The user will be prompted to enter the details for
+each person.
+</dd><dt><span class="term">
+<code class="literal">-E &lt;KeyValuePair&gt;</code>
+</span></dt><dd>
+Configures an Elasticsearch setting.
+</dd><dt><span class="term">
+<code class="literal">-h, --help</code>
+</span></dt><dd>
+Returns all of the command parameters.
+</dd><dt><span class="term">
+<code class="literal">--locale &lt;name&gt;</code>
+</span></dt><dd>
+Specifies the locale to use for metadata elements such as
+<code class="literal">&lt;ServiceName&gt;</code>. Defaults to the JVM’s default system locale.
+</dd><dt><span class="term">
+<code class="literal">--organisation-display-name &lt;name</code>
+</span></dt><dd>
+Specified the value of the
+<code class="literal">&lt;OrganizationDisplayName&gt;</code> element.
+Only valid if <code class="literal">--organisation-name</code> is also specified.
+</dd><dt><span class="term">
+<code class="literal">--organisation-name &lt;name&gt;</code>
+</span></dt><dd>
+Specifies that an <code class="literal">&lt;Organization&gt;</code> element should
+be included in the metadata and provides the value for the <code class="literal">&lt;OrganizationName&gt;</code>.
+If this is specified, then <code class="literal">--organisation-url</code> must also be specified.
+</dd><dt><span class="term">
+<code class="literal">--organisation-url &lt;url&gt;</code>
+</span></dt><dd>
+Specifies the value of the <code class="literal">&lt;OrganizationURL&gt;</code>
+element. This is required if <code class="literal">--organisation-name</code> is specified.
+</dd><dt><span class="term">
+<code class="literal">--out &lt;file_path&gt;</code>
+</span></dt><dd>
+Specifies a path for the output files.
+Defaults to <code class="literal">saml-elasticsearch-metadata.xml</code>
+</dd><dt><span class="term">
+<code class="literal">--service-name &lt;name&gt;</code>
+</span></dt><dd>
+Specifies the value for the <code class="literal">&lt;ServiceName&gt;</code> element in
+the metadata. Defaults to <code class="literal">elasticsearch</code>.
+</dd><dt><span class="term">
+<code class="literal">--realm &lt;name&gt;</code>
+</span></dt><dd>
+Specifies the name of the realm for which the metadata
+should be generated. This parameter is required if there is more than 1 <code class="literal">saml</code>
+realm in your Elasticsearch configuration.
+</dd><dt><span class="term">
+<code class="literal">-s, --silent</code>
+</span></dt><dd>
+Shows minimal output.
+</dd><dt><span class="term">
+<code class="literal">-v, --verbose</code>
+</span></dt><dd>
+Shows verbose output.
+</dd></dl></div><h3><a id="_examples_68"></a>Examples</h3><p>The following command generates a default metadata file for the <code class="literal">saml1</code> realm:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/x-pack/saml-metadata --realm saml1</pre></div><p>The file will be written to <code class="literal">saml-elasticsearch-metadata.xml</code>.
+You may be prompted to provide the "friendlyName" value for any attributes that
+are used by the realm.</p><p>The following command generates a metadata file for the <code class="literal">saml2</code> realm, with a
+<code class="literal">&lt;ServiceName&gt;</code> of <code class="literal">kibana-finance</code>, a locale of <code class="literal">en-GB</code> and includes
+<code class="literal">&lt;ContactPerson&gt;</code> elements and an <code class="literal">&lt;Organization&gt;</code> element:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/x-pack/saml-metadata --realm saml2 \
+    --service-name kibana-finance \
+    --locale en-GB \
+    --contacts \
+    --organisation-name "Mega Corp. Finance Team" \
+    --organisation-url "http://mega.example.com/finance/"</pre></div></div><div class="navfooter"><span class="prev"><a href="migrate-tool.html">
               « 
-              SAML Authentication</a>
+              migrate</a>
            
         </span><span class="next">
            
-          <a href="controlling-user-cache.html">Controlling the User Cache
+          <a href="setup-passwords.html">setup-passwords
                »
             </a></span></div>
 <!-- end body -->
