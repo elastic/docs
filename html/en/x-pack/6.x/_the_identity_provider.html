@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuring Role-based Access Control
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>The Identity Provider
         | X-Pack for the Elastic Stack [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [6.x]" /><link rel="up" href="xpack-security.html" title="Securing Elasticsearch and Kibana" /><link rel="prev" href="saml-kibana.html" title="Configuring Kibana" /><link rel="next" href="built-in-roles.html" title="Built-in Roles" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/XPack/Reference/6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [6.x]" /><link rel="up" href="saml-guide.html" title="Configuring SAML Single-Sign-On on the Elastic Stack" /><link rel="prev" href="saml-guide.html" title="Configuring SAML Single-Sign-On on the Elastic Stack" /><link rel="next" href="_configure_elasticsearch_for_saml_authentication.html" title="Configure Elasticsearch for SAML Authentication" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/XPack/Reference/6.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -618,66 +618,57 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">X-Pack for the Elastic Stack
       [6.x]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-security.html">Securing Elasticsearch and Kibana</a></span> » <span class="breadcrumb-node">Configuring Role-based Access Control</span></div><div class="navheader"><span class="prev"><a href="saml-kibana.html">
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-security.html">Securing Elasticsearch and Kibana</a></span> » <span class="breadcrumb-link"><a href="saml-guide.html">Configuring SAML Single-Sign-On on the Elastic Stack</a></span> » <span class="breadcrumb-node">The Identity Provider</span></div><div class="navheader"><span class="prev"><a href="saml-guide.html">
               « 
-              Configuring Kibana</a>
+              Configuring SAML Single-Sign-On on the Elastic Stack</a>
            
         </span><span class="next">
            
-          <a href="built-in-roles.html">Built-in Roles
+          <a href="_configure_elasticsearch_for_saml_authentication.html">Configure Elasticsearch for SAML Authentication
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="authorization"></a>Configuring Role-based Access Control</h2></div></div></div><p>X-Pack security introduces the concept of <span class="emphasis"><em>authorization</em></span> to Elasticsearch.
-Authorization is the process of determining whether the user behind an incoming
-request is allowed to execute it. This process takes place once a request is
-successfully authenticated and the user behind the request is identified.</p><h3><a id="roles"></a>Roles, Permissions and Privileges</h3><p>The authorization process revolves around the following 5 constructs:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<span class="emphasis"><em>Secured Resource</em></span>
-</span></dt><dd>
-A resource to which access is restricted. Indices/aliases, documents, fields,
-users and the Elasticsearch cluster itself are all examples of secured objects.
-</dd><dt><span class="term">
-<span class="emphasis"><em>Privilege</em></span>
-</span></dt><dd>
-A named group representing one or more actions that a user may execute against a
-secured resource. Each secured resource has its own sets of available privileges.
-For example, <code class="literal">read</code> is an index privilege that represents all actions that enable
-reading the indexed/stored data. For a complete list of available privileges
-see <a class="xref" href="security-privileges.html" title="Security Privileges">Security Privileges</a>.
-</dd><dt><span class="term">
-<span class="emphasis"><em>Permissions</em></span>
-</span></dt><dd><p class="simpara">
-A set of one or more privileges against a secured resource. Permissions can
-easily be described in words, here are few examples:
-</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">read</code> privilege on the <code class="literal">products</code> index
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_the_identity_provider"></a>The Identity Provider</h2></div></div></div><p>The Elastic Stack supports the SAML 2.0 <span class="emphasis"><em>Web Browser SSO</em></span> and the SAML
+2.0 <span class="emphasis"><em>Single Logout</em></span> profiles and can integrate with any Identity Provider (IdP)
+that supports at least the SAML 2.0 <span class="emphasis"><em>Web Browser SSO Profile</em></span>.
+It has been tested with a number of popular IdP implementations.</p><p>This guide assumes that you have an existing IdP and wish to add Kibana as a
+Service Provider.</p><p>The Elastic Stack uses a standard SAML <span class="emphasis"><em>metadata</em></span> document, in XML format that
+defines the capabilities and features of your IdP. You should be able to
+download or generate such a document within your IdP administration interface.</p><p>Download the IdP metadata document and store it within the <code class="literal">config</code> directory on
+each Elasticsearch node. For the purposes of this guide, we will assume that you are
+storing it as <code class="literal">config/saml/idp-metadata.xml</code>.</p><p>The IdP will have been assigned an identifier (<span class="emphasis"><em>EntityID</em></span> in SAML terminology)
+which is most commonly expressed in <span class="emphasis"><em>Uniform Resource Identifier</em></span> (URI) form.
+Your admin interface may tell you what this is, or you might need to
+read the metadata document to find it - look for the <code class="literal">entityID</code> attribute on the
+<code class="literal">EntityDescriptor</code> element.</p><p>Most IdPs will provide an appropriate metadata file with all the features that
+the Elastic Stack requires, and should only require the  configuration steps
+described below. For completeness sake, the minimum requirements that the Elastic
+Stack has for the IdP’s metadata are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+An <code class="literal">&lt;EntityDescriptor&gt;</code> with an <code class="literal">entityID</code> that matches the Elasticsearch
+  <a class="link" href="_configure_elasticsearch_for_saml_authentication.html#saml-create-realm" title="Create a SAML Realm">configuration</a>
 </li><li class="listitem">
-<code class="literal">manage</code> privilege on the cluster
+An <code class="literal">&lt;IDPSSODescriptor&gt;</code> that supports the SAML 2.0 protocol
+  (<code class="literal">urn:oasis:names:tc:SAML:2.0:protocol</code>).
 </li><li class="listitem">
-<code class="literal">run_as</code> privilege on <code class="literal">john</code> user
+At least one <code class="literal">&lt;KeyDescriptor&gt;</code> that is configured for <span class="emphasis"><em>signing</em></span> (that is, it
+  has <code class="literal">use="signing"</code> or leaves the <code class="literal">use</code> unspecified)
 </li><li class="listitem">
-<code class="literal">read</code> privilege on documents that match query X
+A <code class="literal">&lt;SingleSignOnService&gt;</code> with binding of HTTP-Redirect
+  (<code class="literal">urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect</code>)
 </li><li class="listitem">
-<code class="literal">read</code> privilege on <code class="literal">credit_card</code> field
-</li></ul></div></dd><dt><span class="term">
-<span class="emphasis"><em>Role</em></span>
-</span></dt><dd>
-A named sets of permissions
-</dd><dt><span class="term">
-<span class="emphasis"><em>User</em></span>
-</span></dt><dd>
-The authenticated user.
-</dd></dl></div><p>A secure Elasticsearch cluster manages the privileges of users through <span class="emphasis"><em>roles</em></span>.
-A role has a unique name and identifies a set of permissions that translate to
-privileges on resources. A user can be associated with an arbitrary number of
-roles. The total set of permissions that a user has is therefore defined by
-union of the permissions in all its roles.</p><p>As an administrator, you will need to define the roles that you want to use,
-then assign users to the roles. These can be assigned to users in a number of
-ways depending on the realms by which the users are authenticated.</p></div><div class="navfooter"><span class="prev"><a href="saml-kibana.html">
+If you wish to support <a class="link" href="_configure_elasticsearch_for_saml_authentication.html#saml-logout" title="SAML Logout">Single Logout</a>, a <code class="literal">&lt;SingleLogoutService&gt;</code>
+  with binding of HTTP-Redirect
+  (<code class="literal">urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect</code>)
+</li></ul></div><p>The Elastic Stack requires that all messages from the IdP are signed.
+For authentication <code class="literal">&lt;Response&gt;</code> messages, the signature may be applied to either
+the response itself, or to the individual assertions.
+For <code class="literal">&lt;LogoutRequest&gt;</code> messages, the message itself must be signed, and the
+signature should be provided as a URL parameter, as required by the HTTP-Redirect
+binding.</p></div><div class="navfooter"><span class="prev"><a href="saml-guide.html">
               « 
-              Configuring Kibana</a>
+              Configuring SAML Single-Sign-On on the Elastic Stack</a>
            
         </span><span class="next">
            
-          <a href="built-in-roles.html">Built-in Roles
+          <a href="_configure_elasticsearch_for_saml_authentication.html">Configure Elasticsearch for SAML Authentication
                »
             </a></span></div>
 <!-- end body -->
