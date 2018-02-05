@@ -40,6 +40,7 @@ sub build_chunked {
     my $edit_url  = $opts{edit_url}      || '';
     my $root_dir  = $opts{root_dir}      || '';
     my $section   = $opts{section_title} || '';
+    my $subject   = $opts{subject}       || '';
     my $private   = $opts{private}       || '';
     my $resources = $opts{resource}      || [];
     my $noindex   = $opts{noindex}       || '';
@@ -73,6 +74,7 @@ sub build_chunked {
                 "local.book.multi_version" => $multi,
                 "local.page.header"        => $page_header,
                 "local.book.section.title" => "Learn/Docs/$section",
+                "local.book.subject"       => $subject,
                 "local.noindex"            => $noindex
             ),
             $index
@@ -107,6 +109,7 @@ sub build_single {
     my $edit_url  = $opts{edit_url}      || '';
     my $root_dir  = $opts{root_dir}      || '';
     my $section   = $opts{section_title} || '';
+    my $subject   = $opts{subject}       || '';    
     my $private   = $opts{private}       || '';
     my $noindex   = $opts{noindex}       || '';
     my $resources = $opts{resource}      || [];
@@ -137,6 +140,7 @@ sub build_single {
                 "local.book.multi_version" => $multi,
                 "local.page.header"        => $page_header,
                 "local.book.section.title" => "Learn/Docs/$section",
+                "local.book.subject"       => $subject,
                 "local.noindex"            => $noindex
             ),
             $index

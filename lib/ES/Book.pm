@@ -109,6 +109,9 @@ sub new {
     my $tags = $args{tags}
         or die "No <tags> specified for book <$title>";
 
+    my $subject = $args{subject}
+        or die "No <subject> specified for book <$title>";
+
     my $lang = $args{lang} || 'en';
 
     bless {
@@ -125,6 +128,7 @@ sub new {
         branch_titles => \%branch_titles,
         current       => $current,
         tags          => $tags,
+        subject       => $subject,
         private       => $args{private} || '',
         noindex       => $args{noindex} || '',
         lang          => $lang
@@ -391,6 +395,7 @@ sub is_multi_version { @{ shift->branches } > 1 }
 sub private          { shift->{private} }
 sub noindex          { shift->{noindex} }
 sub tags             { shift->{tags} }
+sub subject          { shift->{subject} }
 sub source           { shift->{source} }
 sub lang             { shift->{lang} }
 #===================================
