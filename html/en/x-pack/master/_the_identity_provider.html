@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>X-Pack Commands
-        | Elasticsearch Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>The Identity Provider
+        | X-Pack for the Elastic Stack [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index.html" title="Elasticsearch Reference [master]" /><link rel="prev" href="ml-event-resource.html" title="Scheduled Event Resources" /><link rel="next" href="certgen.html" title="certgen" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="X-Pack for the Elastic Stack [master]" /><link rel="up" href="saml-guide.html" title="Configuring SAML Single-Sign-On on the Elastic Stack" /><link rel="prev" href="saml-guide.html" title="Configuring SAML Single-Sign-On on the Elastic Stack" /><link rel="next" href="_configure_elasticsearch_for_saml_authentication.html" title="Configure Elasticsearch for SAML Authentication" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/XPack/Reference/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -616,37 +616,59 @@
 <div class="page_header">You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">X-Pack for the Elastic Stack
       [master]
-    </a></span> » <span class="breadcrumb-node">X-Pack Commands</span></div><div class="navheader"><span class="prev"><a href="ml-event-resource.html">
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-security.html">Securing Elasticsearch and Kibana</a></span> » <span class="breadcrumb-link"><a href="saml-guide.html">Configuring SAML Single-Sign-On on the Elastic Stack</a></span> » <span class="breadcrumb-node">The Identity Provider</span></div><div class="navheader"><span class="prev"><a href="saml-guide.html">
               « 
-              Scheduled Event Resources</a>
+              Configuring SAML Single-Sign-On on the Elastic Stack</a>
            
         </span><span class="next">
            
-          <a href="certgen.html">certgen
+          <a href="_configure_elasticsearch_for_saml_authentication.html">Configure Elasticsearch for SAML Authentication
                »
-            </a></span></div><div class="xpack part"><div class="titlepage"><div><div><h1 class="title"><a id="xpack-commands"></a>X-Pack Commands</h1></div></div></div><div class="partintro"><div></div><p>X-Pack includes commands that help you configure security:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="xref" href="certgen.html" title="certgen"><em>certgen</em></a>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_the_identity_provider"></a>The Identity Provider</h2></div></div></div><p>The Elastic Stack supports the SAML 2.0 <span class="emphasis"><em>Web Browser SSO</em></span> and the SAML
+2.0 <span class="emphasis"><em>Single Logout</em></span> profiles and can integrate with any Identity Provider (IdP)
+that supports at least the SAML 2.0 <span class="emphasis"><em>Web Browser SSO Profile</em></span>.
+It has been tested with a number of popular IdP implementations.</p><p>This guide assumes that you have an existing IdP and wish to add Kibana as a
+Service Provider.</p><p>The Elastic Stack uses a standard SAML <span class="emphasis"><em>metadata</em></span> document, in XML format that
+defines the capabilities and features of your IdP. You should be able to
+download or generate such a document within your IdP administration interface.</p><p>Download the IdP metadata document and store it within the <code class="literal">config</code> directory on
+each Elasticsearch node. For the purposes of this guide, we will assume that you are
+storing it as <code class="literal">config/saml/idp-metadata.xml</code>.</p><p>The IdP will have been assigned an identifier (<span class="emphasis"><em>EntityID</em></span> in SAML terminology)
+which is most commonly expressed in <span class="emphasis"><em>Uniform Resource Identifier</em></span> (URI) form.
+Your admin interface may tell you what this is, or you might need to
+read the metadata document to find it - look for the <code class="literal">entityID</code> attribute on the
+<code class="literal">EntityDescriptor</code> element.</p><p>Most IdPs will provide an appropriate metadata file with all the features that
+the Elastic Stack requires, and should only require the  configuration steps
+described below. For completeness sake, the minimum requirements that the Elastic
+Stack has for the IdP’s metadata are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+An <code class="literal">&lt;EntityDescriptor&gt;</code> with an <code class="literal">entityID</code> that matches the Elasticsearch
+  <a class="link" href="_configure_elasticsearch_for_saml_authentication.html#saml-create-realm" title="Create a SAML Realm">configuration</a>
 </li><li class="listitem">
-<a class="xref" href="certutil.html" title="certutil"><em>certutil</em></a>
+An <code class="literal">&lt;IDPSSODescriptor&gt;</code> that supports the SAML 2.0 protocol
+  (<code class="literal">urn:oasis:names:tc:SAML:2.0:protocol</code>).
 </li><li class="listitem">
-<a class="xref" href="migrate-tool.html" title="migrate"><em>migrate</em></a>
+At least one <code class="literal">&lt;KeyDescriptor&gt;</code> that is configured for <span class="emphasis"><em>signing</em></span> (that is, it
+  has <code class="literal">use="signing"</code> or leaves the <code class="literal">use</code> unspecified)
 </li><li class="listitem">
-<a class="xref" href="saml-metadata.html" title="saml-metadata"><em>saml-metadata</em></a>
+A <code class="literal">&lt;SingleSignOnService&gt;</code> with binding of HTTP-Redirect
+  (<code class="literal">urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect</code>)
 </li><li class="listitem">
-<a class="xref" href="setup-passwords.html" title="setup-passwords"><em>setup-passwords</em></a>
-</li><li class="listitem">
-<a class="xref" href="syskeygen.html" title="syskeygen"><em>syskeygen</em></a>
-</li><li class="listitem">
-<a class="xref" href="users-command.html" title="Users Command"><em>users</em></a>
-</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="ml-event-resource.html">
+If you wish to support <a class="link" href="_configure_elasticsearch_for_saml_authentication.html#saml-logout" title="SAML Logout">Single Logout</a>, a <code class="literal">&lt;SingleLogoutService&gt;</code>
+  with binding of HTTP-Redirect
+  (<code class="literal">urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect</code>)
+</li></ul></div><p>The Elastic Stack requires that all messages from the IdP are signed.
+For authentication <code class="literal">&lt;Response&gt;</code> messages, the signature may be applied to either
+the response itself, or to the individual assertions.
+For <code class="literal">&lt;LogoutRequest&gt;</code> messages, the message itself must be signed, and the
+signature should be provided as a URL parameter, as required by the HTTP-Redirect
+binding.</p></div><div class="navfooter"><span class="prev"><a href="saml-guide.html">
               « 
-              Scheduled Event Resources</a>
+              Configuring SAML Single-Sign-On on the Elastic Stack</a>
            
         </span><span class="next">
            
-          <a href="certgen.html">certgen
+          <a href="_configure_elasticsearch_for_saml_authentication.html">Configure Elasticsearch for SAML Authentication
                »
             </a></span></div>
 <!-- end body -->
