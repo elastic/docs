@@ -623,7 +623,46 @@
            
           <a href="matrix-aggregations.html">Matrix Aggregations
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="sum-bucket-aggregation-usage"></a>Sum Bucket Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/pipeline/sum-bucket/sum-bucket-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_62"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/pipeline/sum-bucket/sum-bucket-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="sum-bucket-aggregation-usage"></a>Sum Bucket Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/pipeline/sum-bucket/sum-bucket-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+.DateHistogram("projects_started_per_month", dh =&gt; dh
+    .Field(p =&gt; p.StartedOn)
+    .Interval(DateInterval.Month)
+    .Aggregations(aa =&gt; aa
+        .Sum("commits", sm =&gt; sm
+            .Field(p =&gt; p.NumberOfCommits)
+        )
+    )
+)
+.SumBucket("sum_of_commits", aaa =&gt; aaa
+    .BucketsPath("projects_started_per_month&gt;commits")
+)</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new DateHistogramAggregation("projects_started_per_month")
+{
+    Field = "startedOn",
+    Interval = DateInterval.Month,
+    Aggregations = new SumAggregation("commits", "numberOfCommits")
+}
+&amp;&amp; new SumBucketAggregation("sum_of_commits", "projects_started_per_month&gt;commits")</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "projects_started_per_month": {
+    "date_histogram": {
+      "field": "startedOn",
+      "interval": "month"
+    },
+    "aggs": {
+      "commits": {
+        "sum": {
+          "field": "numberOfCommits"
+        }
+      }
+    }
+  },
+  "sum_of_commits": {
+    "sum_bucket": {
+      "buckets_path": "projects_started_per_month&gt;commits"
+    }
+  }
+}</pre></div><p>
+</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_62"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/pipeline/sum-bucket/sum-bucket-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 
 var projectsPerMonth = response.Aggregations.DateHistogram("projects_started_per_month");
 projectsPerMonth.Should().NotBeNull();

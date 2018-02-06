@@ -626,7 +626,65 @@ Not what you want? See the
            
           <a href="sampler-aggregation-usage.html">Sampler Aggregation Usage
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="reverse-nested-aggregation-usage"></a>Reverse Nested Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/reverse-nested/reverse-nested-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_42"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/reverse-nested/reverse-nested-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="reverse-nested-aggregation-usage"></a>Reverse Nested Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/reverse-nested/reverse-nested-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+.Nested("tags", n =&gt; n
+    .Path(p =&gt; p.Tags)
+    .Aggregations(aa =&gt; aa
+        .Terms("tag_names", t =&gt; t
+            .Field(p =&gt; p.Tags.Suffix("name"))
+            .Aggregations(aaa =&gt; aaa
+                .ReverseNested("tags_to_project", r =&gt; r
+                    .Aggregations(aaaa =&gt; aaaa
+                        .Terms("top_projects_per_tag", tt =&gt; tt
+                            .Field(p =&gt; p.Name)
+                        )
+                    )
+                )
+            )
+        )
+    )
+)</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new NestedAggregation("tags")
+{
+    Path = "tags",
+    Aggregations = new TermsAggregation("tag_names")
+    {
+        Field = "tags.name",
+        Aggregations = new ReverseNestedAggregation("tags_to_project")
+        {
+            Aggregations = new TermsAggregation("top_projects_per_tag")
+            {
+                Field = Field&lt;Project&gt;(p =&gt; p.Name)
+            }
+        }
+    }
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "tags": {
+    "nested": {
+      "path": "tags"
+    },
+    "aggs": {
+      "tag_names": {
+        "terms": {
+          "field": "tags.name"
+        },
+        "aggs": {
+          "tags_to_project": {
+            "reverse_nested": {},
+            "aggs": {
+              "top_projects_per_tag": {
+                "terms": {
+                  "field": "name"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}</pre></div><p>
+</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_42"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/reverse-nested/reverse-nested-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 var tags = response.Aggregations.Nested("tags");
 tags.Should().NotBeNull();
 var tagNames = tags.Terms("tag_names");

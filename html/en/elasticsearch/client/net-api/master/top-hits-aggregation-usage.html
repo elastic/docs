@@ -626,7 +626,152 @@ Not what you want? See the
            
           <a href="value-count-aggregation-usage.html">Value Count Aggregation Usage
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="top-hits-aggregation-usage"></a>Top Hits Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_23"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="top-hits-aggregation-usage"></a>Top Hits Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+    .Terms("states", t =&gt; t
+        .Field(p =&gt; p.State)
+        .Aggregations(aa =&gt; aa
+            .TopHits("top_state_hits", th =&gt; th
+                .Sort(srt =&gt; srt
+                    .Field(sf =&gt; sf
+                        .Field(p =&gt; p.StartedOn)
+                    .Order(SortOrder.Descending))
+                    .Script(ss =&gt; ss
+                        .Type("number")
+                        .Script(sss =&gt; sss
+                            .Source("Math.sin(34*(double)doc['numberOfCommits'].value)")
+                            .Lang("painless")
+                        )
+                        .Order(SortOrder.Descending)
+                    )
+                )
+                .Source(src =&gt; src
+                    .Includes(fs =&gt; fs
+                        .Field(p =&gt; p.Name)
+                        .Field(p =&gt; p.LastActivity)
+                        .Field(p =&gt; p.SourceOnly)
+                    )
+                )
+                .Size(1)
+                .Version()
+                .TrackScores()
+                .Explain()
+                .StoredFields(f =&gt; f
+                    .Field(p =&gt; p.StartedOn)
+                )
+                .Highlight(h =&gt; h
+                    .Fields(
+                        hf =&gt; hf.Field(p =&gt; p.Tags),
+                        hf =&gt; hf.Field(p =&gt; p.Description)
+                    )
+                )
+                .ScriptFields(sfs =&gt; sfs
+                    .ScriptField("commit_factor", sf =&gt; sf
+                        .Source("doc['numberOfCommits'].value * 2")
+
+                )
+            )
+        )
+    )
+)</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new TermsAggregation("states")
+{
+
+        Field = Field&lt;Project&gt;(p =&gt; p.State),
+        Aggregations = new TopHitsAggregation("top_state_hits")
+        {
+            Sort = new List&lt;ISort&gt;
+            {
+                new SortField { Field = Field&lt;Project&gt;(p =&gt; p.StartedOn), Order = SortOrder.Descending },
+            new ScriptSort
+                {
+                    Type = "number",
+                    Script = new InlineScript("Math.sin(34*(double)doc['numberOfCommits'].value)") { Lang = "painless" },
+                    Order = SortOrder.Descending
+                },},
+            Source = new SourceFilter
+            {
+                Includes = new [] { "name", "lastActivity", "sourceOnly" }
+            },
+            Size = 1,
+            Version = true,
+            TrackScores = true,
+            Explain = true,
+            StoredFields = new[] { "startedOn" },
+            Highlight = new Highlight
+            {
+                Fields = new Dictionary&lt;Field, IHighlightField&gt;
+                {
+                    { Field&lt;Project&gt;(p =&gt; p.Tags), new HighlightField() },
+                    { Field&lt;Project&gt;(p =&gt; p.Description), new HighlightField() }
+                }
+            },
+            ScriptFields = new ScriptFields{
+            {
+                "commit_factor", new ScriptField
+                {
+                    Script = new InlineScript("doc['numberOfCommits'].value * 2")
+                }
+            }
+        }
+    }
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "states": {
+    "terms": {
+      "field": "state"
+    },
+    "aggs": {
+      "top_state_hits": {
+        "top_hits": {
+          "sort": [
+            {
+              "startedOn": {
+                "order": "desc"
+              }
+            },
+            {
+              "_script": {
+                "type": "number",
+                "script": {
+                  "lang": "painless",
+                  "source": "Math.sin(34*(double)doc['numberOfCommits'].value)"
+                },
+                "order": "desc"
+              }
+            }
+          ],
+          "_source": {
+            "includes": [
+              "name",
+              "lastActivity",
+              "sourceOnly"
+            ]
+          },
+          "size": 1,
+          "version": true,
+          "track_scores": true,
+          "explain": true,
+          "stored_fields": [
+            "startedOn"
+          ],
+          "highlight": {
+            "fields": {
+              "tags": {},
+              "description": {}
+            }
+          },
+          "script_fields": {
+            "commit_factor": {
+              "script": {
+                "source": "doc['numberOfCommits'].value * 2"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}</pre></div><p>
+</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_23"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/metric/top-hits/top-hits-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 var states = response.Aggregations.Terms("states");
 states.Should().NotBeNull();
 states.Buckets.Should().NotBeNullOrEmpty();

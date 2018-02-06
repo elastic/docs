@@ -613,7 +613,10 @@
 				
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
+<div class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [5.x]
     </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-node">Auto mapping</span></div><div class="navheader"><span class="prev"><a href="mapping.html">
               « 
@@ -644,15 +647,16 @@ public class Employee
     public List&lt;Employee&gt; Employees { get; set; }
     public TimeSpan Hours { get; set; }
 }</pre></div><p>Auto mapping can take the pain out of having to define a manual mapping for all properties
-on the POCO</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
+on the POCO</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var createIndexResponse = client.CreateIndex("myindex", c =&gt; c
     .Mappings(ms =&gt; ms
         .Map&lt;Company&gt;(m =&gt; m.AutoMap()) <a id="CO42-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         .Map&lt;Employee&gt;(m =&gt; m.AutoMap()) <a id="CO42-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    );</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO42-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+    )
+);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO42-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Auto map <code class="literal">Company</code>
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO42-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Auto map <code class="literal">Employee</code>
-</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+</p></td></tr></table></div><p>This produces the following JSON request</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
   "mappings": {
     "company": {
       "properties": {
@@ -745,6 +749,42 @@ Auto map <code class="literal">Employee</code>
       }
     }
   }
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var connectionSettings = new ConnectionSettings(new InMemoryConnection()) <a id="CO43-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    .DisableDirectStreaming() <a id="CO43-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    .InferMappingFor&lt;ParentWithStringId&gt;(m =&gt; m
+        .TypeName("parent")
+        .Ignore(p =&gt; p.Description)
+        .Ignore(p =&gt; p.IgnoreMe)
+    );
+
+var client = new ElasticClient(connectionSettings);
+
+var createIndexResponse = client.CreateIndex("myindex", c =&gt; c
+    .Mappings(ms =&gt; ms
+        .Map&lt;ParentWithStringId&gt;(m =&gt; m
+            .AutoMap()
+        )
+    )
+    );</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+we’re using an <span class="emphasis"><em>in memory</em></span> connection for this example. In your production application though, you’ll want to use an <code class="literal">IConnection</code> that actually sends a request.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+we disable direct streaming here to capture the request and response bytes. In your production application however, you’ll likely not want to do this, since it causes the request and response bytes to be buffered in memory.
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "mappings": {
+    "parent": {
+      "properties": {
+        "id": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "ignore_above": 256,
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    }
+  }
 }</pre></div><p>Observe that NEST has inferred the Elasticsearch types based on the CLR type of our POCO properties.
 In this example,</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Birthday is mapped as a <code class="literal">date</code>,
@@ -757,57 +797,199 @@ Salary is mapped as an <code class="literal">integer</code>
 </li><li class="listitem">
 Employees is mapped as an <code class="literal">object</code>
 </li></ul></div><p>and the remaining string properties as multi field <code class="literal">text</code> datatypes, each with a <code class="literal">keyword</code> datatype
-sub field.</p><p>NEST has inferred mapping support for the following .NET types</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">String</code> maps to <code class="literal">"text"</code> with a <code class="literal">"keyword"</code> sub field. See <a class="link" href="multi-fields.html" title="Multi fields">Multi Fields</a>.
-</li><li class="listitem">
-<code class="literal">Int32</code> maps to <code class="literal">"integer"</code>
-</li><li class="listitem">
-<code class="literal">UInt16</code> maps to <code class="literal">"integer"</code>
-</li><li class="listitem">
-<code class="literal">Int16</code> maps to <code class="literal">"short"</code>
-</li><li class="listitem">
-<code class="literal">Byte</code> maps to <code class="literal">"short"</code>
-</li><li class="listitem">
-<code class="literal">Int64</code> maps to <code class="literal">"long"</code>
-</li><li class="listitem">
-<code class="literal">UInt32</code> maps to <code class="literal">"long"</code>
-</li><li class="listitem">
-<code class="literal">TimeSpan</code> maps to <code class="literal">"long"</code>
-</li><li class="listitem">
-<code class="literal">Single</code> maps to <code class="literal">"float"</code>
-</li><li class="listitem">
-<code class="literal">Double</code> maps to <code class="literal">"double"</code>
-</li><li class="listitem">
-<code class="literal">Decimal</code> maps to <code class="literal">"double"</code>
-</li><li class="listitem">
-<code class="literal">UInt64</code> maps to <code class="literal">"double"</code>
-</li><li class="listitem">
-<code class="literal">DateTime</code> maps to <code class="literal">"date"</code>
-</li><li class="listitem">
-<code class="literal">DateTimeOffset</code> maps to <code class="literal">"date"</code>
-</li><li class="listitem">
-<code class="literal">Boolean</code> maps to <code class="literal">"boolean"</code>
-</li><li class="listitem">
-<code class="literal">Char</code> maps to <code class="literal">"keyword"</code>
-</li><li class="listitem">
-<code class="literal">Guid</code> maps to <code class="literal">"keyword"</code>
-</li></ul></div><p>and supports a number of special types defined in NEST</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">Nest.GeoLocation</code> maps to <code class="literal">"geo_point"</code>
-</li><li class="listitem">
-<code class="literal">Nest.CompletionField</code> maps to <code class="literal">"completion"</code>
-</li><li class="listitem">
-<code class="literal">Nest.Attachment</code> maps to <code class="literal">"attachment"</code>
-</li><li class="listitem">
-<code class="literal">Nest.DateRange</code> maps to <code class="literal">"date_range"</code>
-</li><li class="listitem">
-<code class="literal">Nest.DoubleRange</code> maps to <code class="literal">"double_range"</code>
-</li><li class="listitem">
-<code class="literal">Nest.FloatRange</code> maps to <code class="literal">"float_range"</code>
-</li><li class="listitem">
-<code class="literal">Nest.IntegerRange</code> maps to <code class="literal">"integer_range"</code>
-</li><li class="listitem">
-<code class="literal">Nest.LongRange</code> maps to <code class="literal">"long_range"</code>
-</li></ul></div><p>All other types map to <code class="literal">"object"</code> by default.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Some .NET types do not have direct equivalent Elasticsearch types. For example, <code class="literal">System.Decimal</code> is a type
+sub field.</p><p>NEST has inferred mapping support for the following .NET types</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">String</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"text"</code> with a <code class="literal">"keyword"</code> sub field. See <a class="link" href="multi-fields.html" title="Multi fields">Multi Fields</a>.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Int32</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"integer"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">UInt16</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"integer"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Int16</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"short"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Byte</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"short"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Int64</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"long"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">UInt32</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"long"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">TimeSpan</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"long"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Single</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"float"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Double</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"double"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Decimal</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"double"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">UInt64</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"double"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">DateTime</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"date"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">DateTimeOffset</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"date"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Boolean</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"boolean"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Char</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"keyword"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Guid</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"keyword"</code>
+</p>
+</td></tr></tbody></table></div><p>and supports a number of special types defined in NEST</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">Nest.GeoLocation</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"geo_point"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Nest.CompletionField</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"completion"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Nest.DateRange</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"date_range"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Nest.DoubleRange</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"double_range"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Nest.FloatRange</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"float_range"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Nest.IntegerRange</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"integer_range"</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">Nest.LongRange</code>
+</p>
+</td><td valign="top">
+<p>
+maps to <code class="literal">"long_range"</code>
+</p>
+</td></tr></tbody></table></div><p>All other types map to <code class="literal">"object"</code> by default.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Some .NET types do not have direct equivalent Elasticsearch types. For example, <code class="literal">System.Decimal</code> is a type
 commonly used to express currencies and other financial calculations that require large numbers of significant
 integral and fractional digits and no round-off errors. There is no equivalent type in Elasticsearch, and the
 nearest type is <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/5.6/number.html" target="_top">double</a>, a double-precision 64-bit IEEE 754 floating point.</p><p>When a POCO has a <code class="literal">System.Decimal</code> property, it is automapped to the Elasticsearch <code class="literal">double</code> type. With the caveat
@@ -827,10 +1009,11 @@ the need to do this, so you can control the recursion depth of <code class="lite
 Child of type <code class="literal">A</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class A
 {
     public A Child { get; set; }
-}</pre></div><p>By default, <code class="literal">.AutoMap()</code> only goes as far as depth 1</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var descriptor = new CreateIndexDescriptor("myindex")
+}</pre></div><p>By default, <code class="literal">.AutoMap()</code> only goes as far as depth 1</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var createIndexResponse = client.CreateIndex("myindex", c =&gt; c
     .Mappings(ms =&gt; ms
         .Map&lt;A&gt;(m =&gt; m.AutoMap())
-    );</pre></div><p>Thus we do not map properties on the second occurrence of our Child property</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+    )
+);</pre></div><p>Thus we do not map properties on the second occurrence of our Child property</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
   "mappings": {
     "a": {
       "properties": {
@@ -841,10 +1024,11 @@ Child of type <code class="literal">A</code>.</p><div class="pre_wrapper"><pre c
       }
     }
   }
-}</pre></div><p>Now let’s specify a maxRecursion of <code class="literal">3</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var withMaxRecursionDescriptor = new CreateIndexDescriptor("myindex")
+}</pre></div><p>Now let’s specify a maxRecursion of <code class="literal">3</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">createIndexResponse = client.CreateIndex("myindex", c =&gt; c
     .Mappings(ms =&gt; ms
         .Map&lt;A&gt;(m =&gt; m.AutoMap(3))
-    );</pre></div><p><code class="literal">.AutoMap()</code> has now mapped three levels of our Child property</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+    )
+);</pre></div><p><code class="literal">.AutoMap()</code> has now mapped three levels of our Child property</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
   "mappings": {
     "a": {
       "properties": {
