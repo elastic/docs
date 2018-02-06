@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Custom Traces
-        | APM Node.js Agent Reference (Beta) [0.x]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Custom Spans
+        | APM Node.js Agent Reference (Beta) [1.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Node.js Agent Reference (Beta) [0.x]" /><link rel="up" href="index.html" title="APM Node.js Agent Reference (Beta) [0.x]" /><link rel="prev" href="custom-transactions.html" title="Custom Transactions" /><link rel="next" href="source-maps.html" title="Source Map Support" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Node.js Agent/Reference/0.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Node.js Agent Reference (Beta) [1.x]" /><link rel="up" href="index.html" title="APM Node.js Agent Reference (Beta) [1.x]" /><link rel="prev" href="custom-transactions.html" title="Custom Transactions" /><link rel="next" href="source-maps.html" title="Source Map Support" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Node.js Agent/Reference/1.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -615,8 +615,8 @@
             <!-- start body -->
 <div class="page_header">You are looking at the documentation for a beta release.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">APM Node.js Agent Reference (Beta)
-      [0.x]
-    </a></span> » <span class="breadcrumb-node">Custom Traces</span></div><div class="navheader"><span class="prev"><a href="custom-transactions.html">
+      [1.x]
+    </a></span> » <span class="breadcrumb-node">Custom Spans</span></div><div class="navheader"><span class="prev"><a href="custom-transactions.html">
               « 
               Custom Transactions</a>
            
@@ -624,10 +624,10 @@
            
           <a href="source-maps.html">Source Map Support
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="custom-traces"></a>Custom Traces<a href="https://github.com/elastic/apm-agent-nodejs/edit/0.x/docs/custom-traces.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>If you want to track and time a custom event that happens in your application during a transaction,
-you can add a new trace to an existing transaction.</p><p>This is an example of how to use custom traces.
-For general information about the Elastic APM Node.js Trace API,
-see the <a class="link" href="trace-api.html" title="Trace API">Trace API documentation</a>.</p><p>In the example below we create an Express app that times how long it takes to:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="custom-spans"></a>Custom Spans<a href="https://github.com/elastic/apm-agent-nodejs/edit/1.x/docs/custom-spans.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>If you want to track and time a custom event that happens in your application during a transaction,
+you can add a new span to an existing transaction.</p><p>This is an example of how to use custom spans.
+For general information about the Elastic APM Node.js Span API,
+see the <a class="link" href="span-api.html" title="Span API">Span API documentation</a>.</p><p>In the example below we create an Express app that times how long it takes to:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 Receive the body of an HTTP POST or PUT request
 </li><li class="listitem">
 Parse JSON sent by the client
@@ -640,13 +640,13 @@ app.use(function (req, res, next) {
     return next()
   }
 
-  // `buildTrace` will only return a trace if there's an
+  // `buildSpan` will only return a span if there's an
   // active transaction
-  var trace = apm.buildTrace()
+  var span = apm.buildSpan()
 
-  // start the trace to measure the time it takes to receive
+  // start the span to measure the time it takes to receive
   // the body of the HTTP request
-  if (trace) trace.start('receiving body')
+  if (span) span.start('receiving body')
 
   var buffers = []
   req.on('data', function (chunk) {
@@ -655,9 +655,9 @@ app.use(function (req, res, next) {
   req.on('end', function () {
     req.body = Buffer.concat(buffers).toString()
 
-    // end the trace after we're done loading data from the
+    // end the span after we're done loading data from the
     // client
-    if (trace) trace.end()
+    if (span) span.end()
 
     next()
   })
@@ -669,18 +669,18 @@ app.use(function (req, res, next) {
     return next()
   }
 
-  var trace = apm.buildTrace()
+  var span = apm.buildSpan()
 
-  // start the trace to measure the time it takes to parse
+  // start the span to measure the time it takes to parse
   // the JSON
-  if (trace) trace.start('parse json')
+  if (span) span.start('parse json')
 
   try {
     req.json = JSON.parse(req.body)
   } catch (e) {}
 
-  // when we've processed the json, stop the custom trace
-  if (trace) trace.end()
+  // when we've processed the json, stop the custom span
+  if (span) span.end()
 
   next()
 })
