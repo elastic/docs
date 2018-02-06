@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Custom Serialization
         | Elasticsearch.Net and NEST: the .NET clients [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="nest.html" title="NEST - High level client" /><link rel="prev" href="changing-serializers.html" title="Changing serializers" /><link rel="next" href="extending-nest-types.html" title="Extending NEST types" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/.Net/master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="serialization.html" title="Serialization" /><link rel="prev" href="serialization.html" title="Serialization" /><link rel="next" href="extending-nest-types.html" title="Extending NEST types" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/.Net/master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -618,21 +618,30 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-node">Custom Serialization</span></div><div class="navheader"><span class="prev"><a href="changing-serializers.html">
+    </a></span> » <span class="breadcrumb-link"><a href="nest.html">NEST - High level client</a></span> » <span class="breadcrumb-link"><a href="serialization.html">Serialization</a></span> » <span class="breadcrumb-node">Custom Serialization</span></div><div class="navheader"><span class="prev"><a href="serialization.html">
               « 
-              Changing serializers</a>
+              Serialization</a>
            
         </span><span class="next">
            
           <a href="extending-nest-types.html">Extending NEST types
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="custom-serialization"></a>Custom Serialization<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/serialization/custom-serialization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Starting with 6.0 NEST ships with a shaded Json.NET dependency. Meaning we merged it into Nest’s dll
-internalized all Json.NET’s types and changed their namespace from <code class="literal">Newtonsoft.Json</code> to <code class="literal">Nest.Json</code>.</p><p>NEST has always isolated Json.NET as best as it could but this meant that we had to mandate some things.
-For instance NEST heavily relied on the fact that the <code class="literal">ContractConverter</code> was an instance of <code class="literal">ElasticContractConverter</code></p><p>If you wanted to deserialize your <code class="literal">_source</code> or <code class="literal">_fields</code> using your own <code class="literal">ContractConverter</code> you were out of luck.</p><p>So what did we do in 6.x and how does it affect you?</p><p>The <code class="literal">NEST</code> nuget package from 6.0.0 onwards on its own will use the internal Json.NET serializer and will in affect behave the same
-as it did in previous releases.</p><p>If you previously configured a custom Json.NET serializer with custom <code class="literal">JsonSerializerSettings</code>, <code class="literal">ContractConverter</code> things
-will change a bit, but for the better!</p><h3><a id="_injecting_a_new_serializer"></a>Injecting a new serializer<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/serialization/custom-serialization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Starting with NEST 6.x you can inject a serializer that is isolated to only be called
-for the (de)serialization of <code class="literal">_source</code> <code class="literal">_fields</code> and where ever a user provided value is expected
-to be written and returned.</p><p>Internally we call this the <code class="literal">RequestResponseSerializer</code> and the <code class="literal">SourceSerializer</code></p><p>If left unconfigured the internal <code class="literal">RequestResponseSerializer</code> is the <code class="literal">SourceSerializer</code> as well.</p><p>Implementing <code class="literal">IElasticsearchSerializer</code> is technically enough to inject your own <code class="literal">SourceSerialzier</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class VanillaSerializer : IElasticsearchSerializer
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="custom-serialization"></a>Custom Serialization<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/serialization/custom-serialization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>NEST 6.x ships with a <span class="emphasis"><em>shaded</em></span> Json.NET dependency, meaning that all of Json.NET’s types are
+internalized and IL merged into the NEST assembly, and their namespace has been changed
+from <code class="literal">Newtonsoft.Json</code> to <code class="literal">Nest.Json</code>.</p><p>Why would we do this, you may ask? Well, NEST has always isolated its dependency on Json.NET as best as it could,
+but this meant that we had to mandate how certain things were in the client. For instance,
+NEST heavily relied on the fact that the <code class="literal">IContractResolver</code> used by the configured serializer was
+an instance of <code class="literal">ElasticContractResolver</code>, so if you wanted to deserialize your <code class="literal">_source</code> or <code class="literal">_fields</code>
+using your own resolver, you were out of luck. In addition, continued improvements to NEST’s serialization pipeline
+was stymied by this dependency and as client authors, we wanted to unhinder ourselves from this in order to explore the myriad
+of exciting developments happening in the .NET ecosystem around performance with the likes of <code class="literal">Span&lt;T&gt;</code>,
+<code class="literal">ArrayPool&lt;T&gt;</code> and a more compact UTF-8 string representation.</p><p>So what did we do in 6.x and how does it affect you?</p><p>The <code class="literal">NEST</code> nuget package from 6.0.0 onwards will use the internal Json.NET serializer and will in effect, behave the same
+as it did in previous releases. If you previously relied on custom Json.NET serialization and configuration with custom
+<code class="literal">JsonSerializerSettings</code> and <code class="literal">JsonConverter</code> types for example, things have changed a bit. The following section explains
+how to continue working with these with NEST 6.x.</p><h4><a id="_injecting_a_new_serializer"></a>Injecting a new serializer<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/serialization/custom-serialization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Starting with NEST 6.x you can inject a serializer that is isolated to only be called
+for the (de)serialization of <code class="literal">_source</code>, <code class="literal">_fields</code>, or wherever a user provided value is expected
+to be written and returned.</p><p>Within NEST, we refer to this serializer as the <code class="literal">SourceSerializer</code>.</p><p>Another serializer also exists within NEST known as the <code class="literal">RequestResponseSerializer</code>. This serializer is internal
+and is responsible for serializing the request and response types that are part of NEST.</p><p>If <code class="literal">SourceSerializer</code> is left unconfigured, the internal <code class="literal">RequestResponseSerializer</code> is the <code class="literal">SourceSerializer</code> as well.</p><p>Implementing <code class="literal">IElasticsearchSerializer</code> is technically enough to inject your own <code class="literal">SourceSerializer</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class VanillaSerializer : IElasticsearchSerializer
 {
     public T Deserialize&lt;T&gt;(Stream stream) =&gt; throw new NotImplementedException();
 
@@ -650,63 +659,94 @@ to be written and returned.</p><p>Internally we call this the <code class="liter
     public Task SerializeAsync&lt;T&gt;(T data, Stream stream, SerializationFormatting formatting = SerializationFormatting.Indented,
         CancellationToken cancellationToken = default(CancellationToken)) =&gt;
         throw new NotImplementedException();
-}
-
-var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
-var connectionSettings =
-        new ConnectionSettings(pool, sourceSerializer: (settings, builtin) =&gt; new VanillaSerializer()); <a id="CO40-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-var client = new ElasticClient(connectionSettings);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO40-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><p>Hooking up the serializer is performed in the <code class="literal">ConnectionSettings</code> constructor</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+var connectionSettings = new ConnectionSettings(
+    pool,
+    sourceSerializer: (builtin, settings) =&gt; new VanillaSerializer()); <a id="CO39-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+var client = new ElasticClient(connectionSettings);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO39-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 what the Func?
-</p></td></tr></table></div><p>If implementing <code class="literal">IElasticsearchSerializer</code> is enough why do we need to provide its instance wrapped in a factory <code class="literal">Func</code>?</p><p>There are various cases where you need to provide a <code class="literal">_source</code> with <code class="literal">Nest</code> data type as part of that <code class="literal">_source</code>.</p><p>An example if you want to use percolation you need to store queries on your document which means you need to have something like
-this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyPercolationDocument
+</p></td></tr></table></div><p>If implementing <code class="literal">IElasticsearchSerializer</code> is enough, why do we need to provide an instance wrapped in a factory <code class="literal">Func</code>?</p><p>There are various cases where you might have a POCO type that contains a NEST type as one of its properties. For example,
+consider if you want to use percolation; you need to store Elasticsearch queries as part of the <code class="literal">_source</code> of your document,
+which means you need to have a POCO that looks something like this</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyPercolationDocument
 {
     public QueryContainer Query { get; set; }
     public string Category { get; set; }
-}</pre></div><h3><a id="_jsonnetserializer"></a>JsonNetSerializer<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/serialization/custom-serialization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A custom <code class="literal">SourceSerializer</code> would not know how to serialize <code class="literal">QueryContainer</code> or other NEST types that could appear as part of
-the source. Therefor we ship a separate <code class="literal">NEST.JsonNetSerializer</code> package that helps in composing a custom <code class="literal">SourceSerializer</code>
-using <code class="literal">Json.NET</code> that is smart enough to hand back the (de)serialization of known NEST types back to the builtin
+}</pre></div><p>A custom serializer would not know how to serialize <code class="literal">QueryContainer</code> or other NEST types that could appear as part of
+the <code class="literal">_source</code> of a document, therefore a custom serializer needs to have a way to delegate serialization of NEST types
+back to NEST’s built-in serializer.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_jsonnetserializer"></a>JsonNetSerializer<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/serialization/custom-serialization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>We ship a separate <a class="ulink" href="https://www.nuget.org/packages/NEST.JsonNetSerializer" target="_top">NEST.JsonNetSerializer</a> package that helps in composing a custom <code class="literal">SourceSerializer</code>
+using <code class="literal">Json.NET</code>, that is smart enough to delegate the serialization of known NEST types back to the built-in
 <code class="literal">RequestResponseSerializer</code>. This package is also useful if you want to control how your documents and values are stored
-and retreived from elasticsearch using <code class="literal">Json.NET</code> without intervering with the way NEST uses <code class="literal">Json.NET</code> internally.</p><p>The easiest way to hook this custom source serializer is as followed:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+and retreived from Elasticsearch using <code class="literal">Json.NET</code>, without intervering with the way NEST uses <code class="literal">Json.NET</code> internally.</p><p>The easiest way to hook this custom source serializer is as follows</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
 var connectionSettings =
     new ConnectionSettings(pool, sourceSerializer: JsonNetSerializer.Default);
-var client = new ElasticClient(connectionSettings);</pre></div><p><code class="literal">JsonNetSerializer.Default</code> is just syntactic helper which is equivalent to doing:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
-var connectionSettings =
-    new ConnectionSettings(pool, sourceSerializer: (b, s) =&gt; new JsonNetSerializer(b, s));
+var client = new ElasticClient(connectionSettings);</pre></div><p><code class="literal">JsonNetSerializer.Default</code> is just syntactic sugar for passing a delegate like</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+var connectionSettings = new ConnectionSettings(
+    pool,
+    sourceSerializer: (builtin, settings) =&gt; new JsonNetSerializer(builtin, settings));
 var client = new ElasticClient(connectionSettings);</pre></div><p><code class="literal">JsonNetSerializer</code>'s constructor takes several methods that allow you to control the <code class="literal">JsonSerializerSettings</code> and modify
 the contract resolver from <code class="literal">Json.NET</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
 var connectionSettings =
-    new ConnectionSettings(pool, sourceSerializer: (b, s) =&gt; new JsonNetSerializer(
-        b, s,
+    new ConnectionSettings(pool, sourceSerializer: (builtin, settings) =&gt; new JsonNetSerializer(
+        builtin, settings,
         () =&gt; new JsonSerializerSettings { NullValueHandling = NullValueHandling.Include },
-        (resolver) =&gt; resolver.NamingStrategy = new SnakeCaseNamingStrategy()
+        resolver =&gt; resolver.NamingStrategy = new SnakeCaseNamingStrategy()
     ));
-var client = new ElasticClient(connectionSettings);</pre></div><p>You can also subclass <code class="literal">ConnectionAwareSerializerBase</code> for a more explicit implementation.</p><p>Using this <code class="literal">MyCustomJsonNetSerializer</code> we can (de)serialize using a <code class="literal">NamingStrategy</code> that snake cases and <code class="literal">JsonSerializerSettings</code>
-that include null properties, without affecting how NEST’s own types are serialized.</p><p>Furthermore because this serializer is aware of the builtin serializer we can automatically inject a <code class="literal">JsonConverter</code> to handle
-known NEST types that could appear as part of the source such as the afformentioned <code class="literal">QueryContainer</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyCustomJsonNetSerializer : ConnectionSettingsAwareSerializerBase
+var client = new ElasticClient(connectionSettings);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_derived_serializers"></a>Derived serializers<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/high-level/serialization/custom-serialization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you’d like to be more explicit, you can also derive from <code class="literal">ConnectionSettingsAwareSerializerBase</code>
+and override the <code class="literal">CreateJsonSerializerSettings</code> and <code class="literal">ModifyContractResolver</code> methods</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyCustomJsonNetSerializer : ConnectionSettingsAwareSerializerBase
 {
     public MyCustomJsonNetSerializer(IElasticsearchSerializer builtinSerializer, IConnectionSettingsValues connectionSettings)
         : base(builtinSerializer, connectionSettings) { }
 
-    protected override IEnumerable&lt;JsonConverter&gt; CreateJsonConverters() =&gt; Enumerable.Empty&lt;JsonConverter&gt;();
+    protected override IEnumerable&lt;JsonConverter&gt; CreateJsonConverters() =&gt;
+        Enumerable.Empty&lt;JsonConverter&gt;();
 
-    protected override JsonSerializerSettings CreateJsonSerializerSettings() =&gt; new JsonSerializerSettings()
-    {
-        NullValueHandling = NullValueHandling.Include
-    };
+    protected override JsonSerializerSettings CreateJsonSerializerSettings() =&gt;
+        new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Include
+        };
 
-    protected override void ModifyContractResolver(ConnectionSettingsAwareContractResolver resolver)
-    {
+    protected override void ModifyContractResolver(ConnectionSettingsAwareContractResolver resolver) =&gt;
         resolver.NamingStrategy = new SnakeCaseNamingStrategy();
-    }
-}
+}</pre></div><p>Using <code class="literal">MyCustomJsonNetSerializer</code>, we can serialize using</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+a Json.NET <code class="literal">NamingStrategy</code> that snake cases property names
+</li><li class="listitem">
+<code class="literal">JsonSerializerSettings</code> that includes <code class="literal">null</code> properties
+</li></ul></div><p>without affecting how NEST’s own types are serialized. Furthermore, because this serializer is aware of
+the built-in serializer, we can automatically inject a <code class="literal">JsonConverter</code> to handle
+known NEST types that could appear as part of the source, such as the aformentioned <code class="literal">QueryContainer</code>.</p><p>Let’s demonstrate with an example document type</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyDocument
+{
+    public int Id { get; set; }
 
-var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
-var connectionSettings =
-        new ConnectionSettings(pool, sourceSerializer: (builtin, settings) =&gt; new MyCustomJsonNetSerializer(builtin, settings));
-var client = new ElasticClient(connectionSettings);</pre></div><p>Using this <code class="literal">MyCustomJsonNetSerializer</code> we can (de)serialize using a <code class="literal">NamingStrategy</code> that snake cases and <code class="literal">JsonSerializerSettings</code>
-that include null properties, without affecting how NEST’s own types are serialized.</p></div><div class="navfooter"><span class="prev"><a href="changing-serializers.html">
+    public string Name { get; set; }
+
+    public string FilePath { get; set; }
+
+    public int OwnerId { get; set; }
+}</pre></div><p>Hooking up the serializer and using it is as follows</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var pool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
+var connectionSettings = new ConnectionSettings(
+    pool,
+    connection: new InMemoryConnection(), <a id="CO40-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    sourceSerializer: (builtin, settings) =&gt; new MyCustomJsonNetSerializer(builtin, settings))
+    .DefaultIndex("my-index");
+
+var client = new ElasticClient(connectionSettings);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO40-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+an <span class="emphasis"><em>in-memory</em></span> connection is used here for example purposes. In your production application, you would use an <code class="literal">IConnection</code> implementation that actually sends a request.
+</p></td></tr></table></div><p>Now, if we index an instance of our document type</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var document = new MyDocument
+{
+    Id = 1,
+    Name = "My first document",
+    OwnerId = 2
+};
+
+var indexResponse = client.IndexDocument(document);</pre></div><p>it serializes to</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "id": 1,
+  "name": "My first document",
+  "file_path": null,
+  "owner_id": 2
+}</pre></div><p>which adheres to the conventions of our configured <code class="literal">MyCustomJsonNetSerializer</code> serializer.</p></div></div><div class="navfooter"><span class="prev"><a href="serialization.html">
               « 
-              Changing serializers</a>
+              Serialization</a>
            
         </span><span class="next">
            
