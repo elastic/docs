@@ -719,11 +719,10 @@ its URL will be tested against each element in this list.
 If an element in the array is a <code class="literal">String</code>,
 an exact match will be performed.
 If an element in the array is a <code class="literal">RegExp</code> object,
-its test function will be called with the URL being tested.</p><p>Example usage:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">require('elastic-apm-node').start({
+its test function will be called with the URL being tested.</p><p>Note that all errors that are captured during a request to an ignored URL are still sent to the APM Server regardless of this setting.</p><p>Example usage:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">require('elastic-apm-node').start({
   ignoreUrls: [
     '/ping',
-    /^\/admin\//i,
-    new RegExp('^/api/v1')
+    /^\/admin\//i
   ]
 })</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="ignore-user-agents"></a><code class="literal">ignoreUserAgents</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <span class="strong strong"><strong>Type:</strong></span> Array
@@ -735,7 +734,7 @@ the User-Agent from the request headers will be tested against each element in t
 If an element in the array is a <code class="literal">String</code>,
 it’s matched against the beginning of the User-Agent.
 If an element in the array is a <code class="literal">RegExp</code> object,
-its test function will be called with the User-Agent string being tested.</p><p>Example usage:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">require('elastic-apm-node').start({
+its test function will be called with the User-Agent string being tested.</p><p>Note that all errors that are captured during a request by an ignored user agent are still sent to the APM Server regardless of this setting.</p><p>Example usage:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">require('elastic-apm-node').start({
   ignoreUserAgents: [
     'curl/',
     /pingdom/i,
@@ -782,7 +781,21 @@ An error will be generated and sent to the APM Server if this happens.</p></div>
 <span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_HOSTNAME</code>
 </li></ul></div><p>The OS hostname is automatically logged along with all errors and transactions.
 If you want to overwrite this,
-use this option.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="log-level"></a><code class="literal">logLevel</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+use this option.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="framework-name"></a><code class="literal">frameworkName</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_FRAMEWORK_NAME</code>
+</li></ul></div><p>Set the name of the web framework used by the instrumented service / application.
+The name will be available as metadata for all errors and transactions sent to the APM Server.
+This can be useful for debugging and filtering.</p><p>By default,
+the agent will set the value of this config option if the framework can be detected automatically.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="framework-version"></a><code class="literal">frameworkVersion</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Type:</strong></span> String
+</li><li class="listitem">
+<span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_FRAMEWORK_VERSION</code>
+</li></ul></div><p>Set the version of the web framework used by the instrumented service / application.
+The version will be available as metadata for all errors and transactions sent to the APM Server.
+This can be useful for debugging and filtering.</p><p>By default,
+the agent will set the value of this config option if the framework can be detected automatically.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="log-level"></a><code class="literal">logLevel</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <span class="strong strong"><strong>Type:</strong></span> String
 </li><li class="listitem">
 <span class="strong strong"><strong>Default:</strong></span> <code class="literal">'info'</code>
@@ -852,11 +865,10 @@ Library frames are frames belonging to Node core and code inside the application
 In-app frames are everything else.</p><p>Use the following two config options to change how many lines of source code to include for the different types of stack frames:</p><p><a id="source-context-span-app-frames"></a><span class="strong strong"><strong><code class="literal">sourceLinesSpanAppFrames</code></strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <span class="strong strong"><strong>Type:</strong></span> Number
 </li><li class="listitem">
-<span class="strong strong"><strong>Default:</strong></span> <code class="literal">5</code>
+<span class="strong strong"><strong>Default:</strong></span> <code class="literal">0</code>
 </li><li class="listitem">
 <span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_SOURCE_LINES_SPAN_APP_FRAMES</code>
-</li></ul></div><p>The default value <code class="literal">5</code> means that 5 lines of source code will be collected for in-app span frames.
-2 lines above the stack frame line + 2 below + the stack frame line it self.</p><p>Setting this config option to <code class="literal">0</code> means that no source code will be collected for in-app span frames.</p><p><a id="source-context-span-library-frames"></a><span class="strong strong"><strong><code class="literal">sourceLinesSpanLibraryFrames</code></strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><p>The default value <code class="literal">0</code> means that no source code will be collected for in-app span frames.</p><p><a id="source-context-span-library-frames"></a><span class="strong strong"><strong><code class="literal">sourceLinesSpanLibraryFrames</code></strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <span class="strong strong"><strong>Type:</strong></span> Number
 </li><li class="listitem">
 <span class="strong strong"><strong>Default:</strong></span> <code class="literal">0</code>
@@ -904,19 +916,22 @@ in which case only <code class="literal">flushInterval</code> counts.</p></div><
 <span class="strong strong"><strong>Default:</strong></span> <code class="literal">true</code>
 </li><li class="listitem">
 <span class="strong strong"><strong>Env:</strong></span> <code class="literal">ELASTIC_APM_FILTER_HTTP_HEADERS</code>
-</li></ul></div><p>A boolean specifying if the agent should anonymize certain sensitive HTTP headers by default before they are sent to the APM Server.
+</li></ul></div><p>When tracing an incoming HTTP request,
+the agent will add metadata about the requests to the recorded transaction.
+The same applies for errors that occurs and are captured as a result of the request.</p><p>This boolean specifies if the agent should anonymize certain sensitive HTTP headers by default before they are sent to the APM Server.
 When anonymized,
 the header value will be set to <code class="literal">[REDACTED]</code></p><p>Currently the following HTTP headers are anonymized by default:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">Authorization</code> - The full value of this header is redacted
 </li><li class="listitem">
 <code class="literal">Cookie</code> - The cookies inside the <code class="literal">Cookie</code> header are analyzed and their values redacted if they appear sensitive (like a session cookie).
-See the <a class="ulink" href="https://github.com/watson/is-secret" target="_top">is-secret</a> module for details about which patterns are considered sensitive.
-</li></ul></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="apm-add-filter"></a><code class="literal">apm.addFilter()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.addFilter(callback)</pre></div><p>Use <code class="literal">addFilter()</code> to supply a filter function.</p><p>Each filter function will be called just before data is being sent to the APM Server.
+  See the <a class="ulink" href="https://github.com/watson/is-secret" target="_top">is-secret</a> module for details about which patterns are considered sensitive.
+</li></ul></div><p>If you wish to filter or santitize other data,
+use the <a class="link" href="agent-api.html#apm-add-filter" title="apm.addFilter()"><code class="literal">apm.addFilter()</code></a> function.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="apm-add-filter"></a><code class="literal">apm.addFilter()</code><a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/agent-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.addFilter(callback)</pre></div><p>Use <code class="literal">addFilter()</code> to supply a filter function.</p><p>Each filter function will be called just before data is being sent to the APM Server.
 This will allow you to manipulate the data being sent,
 for instance to remove sensitive information like passwords etc.</p><p>Each filter function will be called in the order they were added,
 and will receive a <code class="literal">payload</code> object as the only argument,
 containing the data about to be sent to the APM Server.</p><p>For details on the format of the payload,
-see the <a class="ulink" href="https://github.com/elastic/apm-server/tree/master/docs/spec" target="_top">intake API JSON Schema</a> for the APM Server.</p><p>The filter function is synchronous and should return the manipulated payload object.
+see the <a class="ulink" href="https://www.elastic.co/guide/en/apm/server/6.2/intake-api.html" target="_top">APM Server intake API documentation</a>.</p><p>The filter function is synchronous and should return the manipulated payload object.
 If a filter function doesn’t return any value or returns a falsy value,
 the remaining filter functions will not be called and the payload <span class="strong strong"><strong>will not</strong></span> be sent to the APM Server.</p><p>Example usage:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.addFilter(function (payload) {
   if (payload.context.request &amp;&amp; payload.context.request.headers) {
