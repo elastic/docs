@@ -630,10 +630,103 @@
     public string Reduce { get; set; }
     public string Map { get; set; }
     public string Init { get; set; }
-}</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_20"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/metric/scripted-metric/scripted-metric-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+.ScriptedMetric("sum_the_hard_way", sm =&gt; sm
+    .InitScript(ss =&gt; ss.Source(Script.Init))
+    .MapScript(ss =&gt; ss.Source(Script.Map))
+    .CombineScript(ss =&gt; ss.Source(Script.Combine))
+    .ReduceScript(ss =&gt; ss.Source(Script.Reduce))
+)</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new ScriptedMetricAggregation("sum_the_hard_way")
+{
+    InitScript = new InlineScript(Script.Init),
+    MapScript = new InlineScript(Script.Map),
+    CombineScript = new InlineScript(Script.Combine),
+    ReduceScript = new InlineScript(Script.Reduce)
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "sum_the_hard_way": {
+    "scripted_metric": {
+      "init_script": {
+        "source": "params._agg.commits = []"
+      },
+      "map_script": {
+        "source": "if (doc['state'].value == \"Stable\") { params._agg.commits.add(doc['numberOfCommits'].value) }"
+      },
+      "combine_script": {
+        "source": "def sum = 0.0; for (c in params._agg.commits) { sum += c } return sum"
+      },
+      "reduce_script": {
+        "source": "def sum = 0.0; for (a in params._aggs) { sum += a } return sum"
+      }
+    }
+  }
+}</pre></div><p>
+</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_20"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/metric/scripted-metric/scripted-metric-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 var sumTheHardWay = response.Aggregations.ScriptedMetric("sum_the_hard_way");
 sumTheHardWay.Should().NotBeNull();
-sumTheHardWay.Value&lt;int&gt;().Should().BeGreaterThan(0);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+sumTheHardWay.Value&lt;int&gt;().Should().BeGreaterThan(0);</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+.ScriptedMetric("by_state_total", sm =&gt; sm
+    .InitScript(ss =&gt; ss.Source(First.Init).Lang(First.Language))
+    .MapScript(ss =&gt; ss.Source(First.Map).Lang(First.Language))
+    .ReduceScript(ss =&gt; ss.Source(First.Reduce).Lang(First.Language))
+)
+.ScriptedMetric("total_commits", sm =&gt; sm
+    .InitScript(ss =&gt; ss.Source(Second.Init).Lang(Second.Language))
+    .MapScript(ss =&gt; ss.Source(Second.Map).Lang(Second.Language))
+    .CombineScript(ss =&gt; ss.Source(Second.Combine).Lang(Second.Language))
+    .ReduceScript(ss =&gt; ss.Source(Second.Reduce).Lang(Second.Language))
+)</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new ScriptedMetricAggregation("by_state_total")
+{
+    InitScript = new InlineScript(First.Init) {Lang = First.Language},
+    MapScript = new InlineScript(First.Map) {Lang = First.Language},
+    ReduceScript = new InlineScript(First.Reduce) {Lang = First.Language}
+}
+&amp;&amp; new ScriptedMetricAggregation("total_commits")
+{
+    InitScript = new InlineScript(Second.Init) {Lang = Second.Language},
+    MapScript = new InlineScript(Second.Map) {Lang = Second.Language},
+    CombineScript = new InlineScript(Second.Combine) {Lang = Second.Language},
+    ReduceScript = new InlineScript(Second.Reduce) {Lang = Second.Language}
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "by_state_total": {
+    "scripted_metric": {
+      "init_script": {
+        "source": "params._agg.map = [:]",
+        "lang": "painless"
+      },
+      "map_script": {
+        "source": "if (params._agg.map.containsKey(doc['state'].value)) params._agg.map[doc['state'].value] += 1 else params._agg.map[doc['state'].value] = 1;",
+        "lang": "painless"
+      },
+      "reduce_script": {
+        "source": "def reduce = [:]; for (agg in params._aggs) { for (entry in agg.map.entrySet()) { if (reduce.containsKey(entry.getKey())) reduce[entry.getKey()] += entry.getValue(); else reduce[entry.getKey()] = entry.getValue(); } } return reduce;",
+        "lang": "painless"
+      }
+    }
+  },
+  "total_commits": {
+    "scripted_metric": {
+      "init_script": {
+        "source": "params._agg.commits = []",
+        "lang": "painless"
+      },
+      "map_script": {
+        "source": "if (doc['state'].value == \"Stable\") { params._agg.commits.add(doc['numberOfCommits'].value) }",
+        "lang": "painless"
+      },
+      "combine_script": {
+        "source": "def sum = 0.0; for (c in params._agg.commits) { sum += c } return sum",
+        "lang": "painless"
+      },
+      "reduce_script": {
+        "source": "def sum = 0.0; for (a in params._aggs) { sum += a } return sum",
+        "lang": "painless"
+      }
+    }
+  }
+}</pre></div><p>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 var byStateTotal = response.Aggregations.ScriptedMetric("by_state_total");
 var totalCommits = response.Aggregations.ScriptedMetric("total_commits");
 

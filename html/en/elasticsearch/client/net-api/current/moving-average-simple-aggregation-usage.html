@@ -623,7 +623,61 @@
            
           <a href="percentiles-bucket-aggregation-usage.html">Percentiles Bucket Aggregation Usage
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="moving-average-simple-aggregation-usage"></a>Moving Average Simple Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/pipeline/moving-average/moving-average-simple-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_58"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/pipeline/moving-average/moving-average-simple-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="moving-average-simple-aggregation-usage"></a>Moving Average Simple Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/pipeline/moving-average/moving-average-simple-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+.DateHistogram("projects_started_per_month", dh =&gt; dh
+    .Field(p =&gt; p.StartedOn)
+    .Interval(DateInterval.Month)
+    .Aggregations(aa =&gt; aa
+        .Sum("commits", sm =&gt; sm
+            .Field(p =&gt; p.NumberOfCommits)
+        )
+        .MovingAverage("commits_moving_avg", mv =&gt; mv
+            .BucketsPath("commits")
+            .Window(30)
+            .Predict(10)
+            .Model(m =&gt; m
+                .Simple()
+            )
+        )
+    )
+)</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new DateHistogramAggregation("projects_started_per_month")
+{
+    Field = "startedOn",
+    Interval = DateInterval.Month,
+    Aggregations =
+        new SumAggregation("commits", "numberOfCommits")
+        &amp;&amp; new MovingAverageAggregation("commits_moving_avg", "commits")
+        {
+            Window = 30,
+            Predict = 10,
+            Model = new SimpleModel()
+        }
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "projects_started_per_month": {
+    "date_histogram": {
+      "field": "startedOn",
+      "interval": "month"
+    },
+    "aggs": {
+      "commits": {
+        "sum": {
+          "field": "numberOfCommits"
+        }
+      },
+      "commits_moving_avg": {
+        "moving_avg": {
+          "buckets_path": "commits",
+          "model": "simple",
+          "window": 30,
+          "predict": 10,
+          "settings": {}
+        }
+      }
+    }
+  }
+}</pre></div><p>
+</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_58"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/pipeline/moving-average/moving-average-simple-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 
 var projectsPerMonth = response.Aggregations.DateHistogram("projects_started_per_month");
 projectsPerMonth.Should().NotBeNull();

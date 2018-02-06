@@ -639,7 +639,47 @@ foreach (var item in projectsPerMonth.Buckets.Skip(1))
     var commitsDerivative = item.Derivative("commits_derivative");
     commitsDerivative.Should().NotBeNull();
     commitsDerivative.Value.Should().NotBe(null);
-}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="cumulative-sum-aggregation-usage.html">
+}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+.DateHistogram("projects_started_per_month", dh =&gt; dh
+    .Field(p =&gt; p.StartedOn)
+    .Interval(DateInterval.Month)
+    .Aggregations(aa =&gt; aa
+        .Sum("commits", sm =&gt; sm
+            .Field(p =&gt; p.NumberOfCommits)
+        )
+        .Derivative("commits_derivative", d =&gt; d
+            .BucketsPath("commits")
+        )
+    )
+)</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new DateHistogramAggregation("projects_started_per_month")
+{
+    Field = "startedOn",
+    Interval = DateInterval.Month,
+    Aggregations =
+        new SumAggregation("commits", "numberOfCommits") &amp;&amp;
+        new DerivativeAggregation("commits_derivative", "commits")
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "projects_started_per_month": {
+    "date_histogram": {
+      "field": "startedOn",
+      "interval": "month"
+    },
+    "aggs": {
+      "commits": {
+        "sum": {
+          "field": "numberOfCommits"
+        }
+      },
+      "commits_derivative": {
+        "derivative": {
+          "buckets_path": "commits"
+        }
+      }
+    }
+  }
+}</pre></div><p>
+</p></div></div><div class="navfooter"><span class="prev"><a href="cumulative-sum-aggregation-usage.html">
               « 
               Cumulative Sum Aggregation Usage</a>
            

@@ -626,7 +626,62 @@ Not what you want? See the
            
           <a href="moving-average-holt-linear-aggregation-usage.html">Moving Average Holt Linear Aggregation Usage
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="moving-average-ewma-aggregation-usage"></a>Moving Average Ewma Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/moving-average/moving-average-ewma-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_54"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/moving-average/moving-average-ewma-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="moving-average-ewma-aggregation-usage"></a>Moving Average Ewma Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/moving-average/moving-average-ewma-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+.DateHistogram("projects_started_per_month", dh =&gt; dh
+    .Field(p =&gt; p.StartedOn)
+    .Interval(DateInterval.Month)
+    .Aggregations(aa =&gt; aa
+        .Sum("commits", sm =&gt; sm
+            .Field(p =&gt; p.NumberOfCommits)
+        )
+        .MovingAverage("commits_moving_avg", mv =&gt; mv
+            .BucketsPath("commits")
+            .Model(m =&gt; m
+                .Ewma(e =&gt; e
+                    .Alpha(0.3f)
+                )
+            )
+        )
+    )
+)</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new DateHistogramAggregation("projects_started_per_month")
+{
+    Field = "startedOn",
+    Interval = DateInterval.Month,
+    Aggregations =
+        new SumAggregation("commits", "numberOfCommits")
+        &amp;&amp; new MovingAverageAggregation("commits_moving_avg", "commits")
+        {
+            Model = new EwmaModel
+            {
+                Alpha = 0.3f,
+            }
+        }
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "projects_started_per_month": {
+    "date_histogram": {
+      "field": "startedOn",
+      "interval": "month"
+    },
+    "aggs": {
+      "commits": {
+        "sum": {
+          "field": "numberOfCommits"
+        }
+      },
+      "commits_moving_avg": {
+        "moving_avg": {
+          "buckets_path": "commits",
+          "model": "ewma",
+          "settings": {
+            "alpha": 0.3
+          }
+        }
+      }
+    }
+  }
+}</pre></div><p>
+</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_54"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/moving-average/moving-average-ewma-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 
 var projectsPerMonth = response.Aggregations.DateHistogram("projects_started_per_month");
 projectsPerMonth.Should().NotBeNull();
