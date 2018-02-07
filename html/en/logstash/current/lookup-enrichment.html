@@ -635,7 +635,7 @@ Performs a standard or reverse DNS lookup.
     action =&gt; "replace"
   }
 }</pre></div></dd><dt><span class="term">
-<a class="link" href="plugins-filters-elasticsearch.html" title="Elasticsearch filter plugin">elasticsearch</a>
+<a class="link" href="plugins-filters-elasticsearch.html" title="Elasticsearch filter plugin">elasticsearch filter</a>
 </span></dt><dd><p class="simpara">
 Copies fields from previous log events in Elasticsearch to current events.
 </p><p class="simpara">The following config shows a complete example of how this filter might
@@ -685,7 +685,85 @@ For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint 
              "longitude" =&gt; 37.6156,
            "region_code" =&gt; "MOW"
     }</pre></div></dd><dt><span class="term">
-<a class="link" href="plugins-filters-jdbc_streaming.html" title="Jdbc_streaming filter plugin">jdbc_streaming</a>
+<a class="link" href="plugins-filters-jdbc_static.html" title="Jdbc_static filter plugin">jdbc_static filter</a>
+</span></dt><dd><p class="simpara">
+Enriches events with data pre-loaded from a remote database.
+</p><p class="simpara">The following example fetches data from a remote database, caches it in a local
+database, and uses lookups to enrich events with data cached in the local
+database.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">filter {
+  jdbc_static {
+    loaders =&gt; [ <a id="CO12-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      {
+        id =&gt; "remote-servers"
+        query =&gt; "select ip, descr from ref.local_ips order by ip"
+        local_table =&gt; "servers"
+      },
+      {
+        id =&gt; "remote-users"
+        query =&gt; "select firstname, lastname, userid from ref.local_users order by userid"
+        local_table =&gt; "users"
+      }
+    ]
+    local_db_objects =&gt; [ <a id="CO12-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+      {
+        name =&gt; "servers"
+        index_columns =&gt; ["ip"]
+        columns =&gt; [
+          ["ip", "varchar(15)"],
+          ["descr", "varchar(255)"]
+        ]
+      },
+      {
+        name =&gt; "users"
+        index_columns =&gt; ["userid"]
+        columns =&gt; [
+          ["firstname", "varchar(255)"],
+          ["lastname", "varchar(255)"],
+          ["userid", "int"]
+        ]
+      }
+    ]
+    local_lookups =&gt; [ <a id="CO12-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+      {
+        id =&gt; "local-servers"
+        query =&gt; "select descr as description from servers WHERE ip = :ip"
+        parameters =&gt; {ip =&gt; "[from_ip]"}
+        target =&gt; "server"
+      },
+      {
+        id =&gt; "local-users"
+        query =&gt; "select firstname, lastname from users WHERE userid = :id"
+        parameters =&gt; {id =&gt; "[loggedin_userid]"}
+        target =&gt; "user" <a id="CO12-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+      }
+    ]
+    # using add_field here to add &amp; rename values to the event root
+    add_field =&gt; { server_name =&gt; "%{[server][0][description]}" }
+    add_field =&gt; { user_firstname =&gt; "%{[user][0][firstname]}" } <a id="CO12-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+    add_field =&gt; { user_lastname =&gt; "%{[user][0][lastname]}" } <a id="CO12-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+    remove_field =&gt; ["server", "user"]
+    jdbc_user =&gt; "logstash"
+    jdbc_password =&gt; "example"
+    jdbc_driver_class =&gt; "org.postgresql.Driver"
+    jdbc_driver_library =&gt; "/tmp/logstash/vendor/postgresql-42.1.4.jar"
+    jdbc_connection_string =&gt; "jdbc:postgresql://remotedb:5432/ls_test_2"
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Queries an external database to fetch the dataset that will be cached
+locally.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Defines the columns, types, and indexes used to build the local database
+structure. The column names and types should match the external database.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Performs lookup queries on the local database to enrich the events.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Specifies the event field that will store the looked-up data. If the lookup
+returns multiple columns, the data is stored as a JSON object within the field.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> <a href="#CO12-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Takes data from the JSON object and stores it in top-level event fields for
+easier analysis in Kibana.
+</p></td></tr></table></div></dd><dt><span class="term">
+<a class="link" href="plugins-filters-jdbc_streaming.html" title="Jdbc_streaming filter plugin">jdbc_streaming filter</a>
 </span></dt><dd><p class="simpara">
 Enriches events with database data.
 </p><p class="simpara">The following example executes a SQL query and stores the result set in a field
