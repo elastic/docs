@@ -210,6 +210,7 @@ sub _build_book {
     my $template      = $self->template;
     my $index         = $self->index;
     my $section_title = $self->section_title($branch);
+    my $subject       = $self->subject;
     my $edit_url      = $self->source->edit_url($branch);
     my $lang          = $self->lang;
 
@@ -238,6 +239,7 @@ sub _build_book {
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
+                subject       => $subject,
                 toc           => $self->toc,
                 template      => $template,
                 resource      => [$checkout],
@@ -257,6 +259,7 @@ sub _build_book {
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
+                subject       => $subject,
                 template      => $template,
                 resource      => [$checkout],
             );
