@@ -1,3 +1,4 @@
+
 <xsl:stylesheet version="1.0"
                xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
@@ -8,6 +9,9 @@
   <xsl:param name="local.book.multi_version" select="0"/>
   <xsl:param name="local.page.header"></xsl:param>
   <xsl:param name="local.book.section.title">Learn/Docs/</xsl:param>
+  <xsl:param name="local.book.subject"></xsl:param>
+  <xsl:param name="local.book.version"></xsl:param>
+
 
   <!-- header -->
   <xsl:param name="local.noindex" select="''"/>
@@ -42,6 +46,18 @@
     <meta name="DC.type">
       <xsl:attribute name="content">
         <xsl:value-of select="$local.book.section.title" />
+      </xsl:attribute>
+    </meta>
+    <meta name="description" content="{$meta-description}" />
+    <meta name="DC.subject">
+      <xsl:attribute name="content">
+        <xsl:value-of select="$local.book.subject" />
+      </xsl:attribute>
+    </meta>
+    <meta name="description" content="{$meta-description}" />
+    <meta name="DC.identifier">
+      <xsl:attribute name="content">
+        <xsl:value-of select="$local.book.version" />
       </xsl:attribute>
     </meta>
     <xsl:if test="$local.noindex!=''">

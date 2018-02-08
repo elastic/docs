@@ -109,6 +109,9 @@ sub new {
     my $tags = $args{tags}
         or die "No <tags> specified for book <$title>";
 
+    my $subject = $args{subject}
+        or die "No <subject> specified for book <$title>";
+
     my $lang = $args{lang} || 'en';
 
     bless {
@@ -125,6 +128,7 @@ sub new {
         branch_titles => \%branch_titles,
         current       => $current,
         tags          => $tags,
+        subject       => $subject,
         private       => $args{private} || '',
         noindex       => $args{noindex} || '',
         lang          => $lang
@@ -206,6 +210,7 @@ sub _build_book {
     my $template      = $self->template;
     my $index         = $self->index;
     my $section_title = $self->section_title($branch);
+    my $subject       = $self->subject;
     my $edit_url      = $self->source->edit_url($branch);
     my $lang          = $self->lang;
 
@@ -234,6 +239,7 @@ sub _build_book {
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
+                subject       => $subject,
                 toc           => $self->toc,
                 template      => $template,
                 resource      => [$checkout],
@@ -253,6 +259,7 @@ sub _build_book {
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
+                subject       => $subject,
                 template      => $template,
                 resource      => [$checkout],
             );
@@ -391,6 +398,7 @@ sub is_multi_version { @{ shift->branches } > 1 }
 sub private          { shift->{private} }
 sub noindex          { shift->{noindex} }
 sub tags             { shift->{tags} }
+sub subject          { shift->{subject} }
 sub source           { shift->{source} }
 sub lang             { shift->{lang} }
 #===================================
