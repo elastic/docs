@@ -636,7 +636,7 @@ validation callback and merrily whistle off into the sunset. <span class="strong
 current <code class="literal">AppDomain</code> <span class="strong strong"><strong>without</strong></span> any validation. Here’s a concrete example:</p><p>Imagine you deploy a web application that talks to Elasticsearch over HTTPS through NEST, and also uses some third party SOAP/WSDL endpoint;
 by setting</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">ServicePointManager.ServerCertificateValidationCallback +=
     (sender, cert, chain, errors) =&gt; true;</pre></div><p>validation will not be performed for HTTPS connections to <span class="strong strong"><strong>both</strong></span> Elasticsearch <span class="strong strong"><strong>and</strong></span> that external web service.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_validation_configuration"></a>Validation configuration<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/certificates/working-with-certificates.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It’s possible to also set a callback per service endpoint with .NET, and both Elasticsearch.NET and NEST expose this through
-connection settings <code class="literal">ConnectionConfiguration</code> with Elasticsearch.Net and <code class="literal">ConnectionSettings</code> with NEST). You can do
+connection settings (<code class="literal">ConnectionConfiguration</code> with Elasticsearch.Net and <code class="literal">ConnectionSettings</code> with NEST). You can do
 your own validation in that handler or use one of the baked in handlers that we ship with out of the box, on the static class
 <code class="literal">CertificateValidations</code>.</p><p>The two most basic ones are <code class="literal">AllowAll</code> and <code class="literal">DenyAll</code>, which accept or deny all SSL traffic to our nodes, respectively. Here’s
 a couple of examples.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_denying_all_certificate_validation"></a>Denying all certificate validation<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/certificates/working-with-certificates.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Here we set up <code class="literal">ConnectionSettings</code> with a validation callback that denies all certificate validation</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class DenyAllCertificatesCluster : SslAndKpiXPackCluster
@@ -673,19 +673,12 @@ the certificate the server presented was generated using it</p><div class="pre_w
 in the certificate chain. When using such a certificate, use <code class="literal">CertificateValidations.AuthorityPartOfChain</code> which validates that
 the local CA certificate is part of the chain that was used to generate the servers key.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_client_certificates"></a>Client Certificates<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/certificates/working-with-certificates.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>through client certificates. The <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.1/certutil.html" target="_top"><code class="literal">certutil</code> tool</a> included with X-Pack allows you to
 generate client certificates as well and assign the distinguished name (DN) of the
-certificate to a user with a certain role.</p><p>By default, the <code class="literal">certutil</code> tool only generates a public certificate <code class="literal">.cer</code>) and a private key <code class="literal">.key</code>. To authenticate with client certificates, you need to present both
+certificate to a user with a certain role.</p><p>By default, the <code class="literal">certutil</code> tool only generates a public certificate (<code class="literal">.cer</code>) and a private key <code class="literal">.key</code>. To authenticate with client certificates, you need to present both
 as one certificate. The easiest way to do this is to generate a <code class="literal">pfx</code> or <code class="literal">p12</code> file from the <code class="literal">.cer</code> and <code class="literal">.key</code>
-and attach these to requests using <code class="literal">new X509Certificate(pathToPfx)</code>.</p><p>If you do not have a way to run <code class="literal">openssl</code> or <code class="literal">Pvk2Pfx</code> to do this as part of your deployments the clients ships with a handy helper to generate one
-on the fly by passing the paths to the <code class="literal">.cer</code>  and <code class="literal">.key</code> files that <code class="literal">certutil</code> outputs. Sadly, this functonality is not available on .NET Core because
-the <code class="literal">PublicKey</code> property cannot be set on the crypto service provider that is used to generate the <code class="literal">pfx</code> file at runtime.</p><p>You can set Client Certificates to use on all connections on <code class="literal">ConnectionSettings</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class PkiCluster : CertgenCaCluster
+and attach these to requests using <code class="literal">new X509Certificate(pathToPfx)</code>.</p><p>You can pass a client certificate on <code class="literal">ConnectionSettings</code> for <span class="strong strong"><strong>all</strong></span> requests.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class PkiCluster : CertgenCaCluster
 {
     protected override ConnectionSettings Authenticate(ConnectionSettings s) =&gt; s <a id="CO38-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        .ClientCertificate(
-            ClientCertificate.LoadWithPrivateKey(
-                this.Node.FileSystem.ClientCertificate, <a id="CO38-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                this.Node.FileSystem.ClientPrivateKey, <a id="CO38-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-                "") <a id="CO38-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-        );
+        .ClientCertificate(new X509Certificate2(this.Node.FileSystem.ClientCertificate));
 
     //hide
     protected override string[] AdditionalServerSettings =&gt; base.AdditionalServerSettings.Concat(new[]
@@ -695,13 +688,7 @@ the <code class="literal">PublicKey</code> property cannot be set on the crypto 
     }).ToArray();
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Set the client certificate on <code class="literal">ConnectionSettings</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The path to the <code class="literal">.cer</code> file
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The path to the <code class="literal">.key</code> file
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The password for the private key
-</p></td></tr></table></div><p>Or per request on <code class="literal">RequestConfiguration</code> which will take precedence over the ones defined on <code class="literal">ConnectionConfiguration</code></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/certificates/working-with-certificates.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new RootNodeInfoRequest
+</p></td></tr></table></div><p>Or on a per request basis on <code class="literal">RequestConfiguration</code> which will take precedence over the ones defined on <code class="literal">ConnectionConfiguration</code></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/certificates/working-with-certificates.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new RootNodeInfoRequest
 {
     RequestConfiguration = new RequestConfiguration
     {

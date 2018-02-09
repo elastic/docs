@@ -672,11 +672,7 @@ in the pipeline the exception happened is not lost.</p><p>In this next example, 
 The call then rolls over to retry on 9201, which throws an hard exception from within <code class="literal">IConnection</code>.
 Finally, we assert that we can still see the audit trail for the whole coordinated request.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var audit = new Auditor(() =&gt; Framework.Cluster
     .Nodes(10)
-#if DOTNETCORE
-    .ClientCalls(r =&gt; r.OnPort(9200).FailAlways(new System.Net.Http.HttpRequestException("recover")))
-#else
-    .ClientCalls(r =&gt; r.OnPort(9200).FailAlways(new WebException("recover"))) <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-#endif
+    .ClientCalls(r =&gt; r.OnPort(9200).FailAlways(new System.Net.Http.HttpRequestException("recover"))) <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     .ClientCalls(r =&gt; r.OnPort(9201).FailAlways(new Exception("boom!"))) <a id="CO3-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     .StaticConnectionPool()
     .Settings(s =&gt; s.DisablePing())
@@ -694,7 +690,7 @@ audit = await audit.TraceUnexpectedException(
         e.InnerException.Message.Should().Be("boom!");
     }
 );</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-calls on 9200 set up to throw a <code class="literal">WebException</code>
+calls on 9200 set up to throw a <code class="literal">HttpRequestException</code>
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 calls on 9201 set up to throw an <code class="literal">Exception</code>
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>

@@ -679,39 +679,7 @@ var searchResponse = client.Search&lt;Project&gt;(s =&gt; s.MatchAll());</pre></
 <code class="literal">InMemoryConnection</code> is configured to <span class="strong strong"><strong>always</strong></span> return <code class="literal">responseBytes</code> along with a 200 HTTP status code
 </p></td></tr></table></div><p>We can now assert that the <code class="literal">searchResponse</code> is valid and contains documents deserialized
 from our fixed <code class="literal">InMemoryConnection</code> response</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">searchResponse.ShouldBeValid();
-searchResponse.Documents.Count.Should().Be(25);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_changing_httpconnection"></a>Changing HttpConnection<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/connection/modifying-default-connection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>There may be a need to change how the default <code class="literal">HttpConnection</code> works, for example, to add an X509 certificate
-to the request, change the maximum number of connections allowed to an endpoint, etc.</p><p>By deriving from <code class="literal">HttpConnection</code>, it is possible to change the behaviour of the connection. The following
-provides some examples</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="servicepoint-behaviour"></a>ServicePoint behaviour<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/connection/modifying-default-connection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you are running on the Desktop CLR you can override specific properties for the current <code class="literal">ServicePoint</code> easily
-by overriding <code class="literal">AlterServicePoint</code> on an <code class="literal">IConnection</code> implementation deriving from <code class="literal">HttpConnection</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class MyCustomHttpConnection : HttpConnection
-{
-    protected override void AlterServicePoint(ServicePoint requestServicePoint, RequestData requestData)
-    {
-        base.AlterServicePoint(requestServicePoint, requestData);
-        requestServicePoint.ConnectionLimit = 10000;
-        requestServicePoint.UseNagleAlgorithm = true;
-    }
-}
-
-var connection = new MyCustomHttpConnection();
-var connectionPool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
-var settings = new ConnectionSettings(connectionPool, connection);
-var client = new ElasticClient(settings);</pre></div><p>The Connection limit has been increased from the default 80 to much higher and
- <a class="ulink" href="https://en.wikipedia.org/wiki/Nagle’s_algorithm" target="_top">nagling</a> has been enabled, which is disabled by default in the client.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The client reuses TCP connections through .NET’s internal connection pooling,
-so changing the connection limit to something really high should only be done with careful
-consideration and testing. It’s demonstrated here only as an example.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="x509-certificates"></a>X.509 Certificates<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/client-concepts/connection/modifying-default-connection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>It is possible to add X509 certificates to each request from the client by overriding the <code class="literal">CreateHttpWebRequest</code>
-method in an <code class="literal">IConnection</code> implementation deriving from <code class="literal">HttpConnection</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class X509CertificateHttpConnection : HttpConnection
-{
-    protected override HttpWebRequest CreateHttpWebRequest(RequestData requestData)
-    {
-        var request = base.CreateHttpWebRequest(requestData);
-        request.ClientCertificates.Add(new X509Certificate("file_path_to_cert"));
-        return request;
-    }
-}</pre></div><p>As before, a new instance of the custom connection is passed to <code class="literal">ConnectionSettings</code> in order to
-use</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var connection = new X509CertificateHttpConnection();
-var connectionPool = new SingleNodeConnectionPool(new Uri("http://localhost:9200"));
-var settings = new ConnectionSettings(connectionPool, connection);
-var client = new ElasticClient(settings);</pre></div><p>See <a class="link" href="working-with-certificates.html" title="Working with certificates">Working with certificates</a> for further details.</p></div></div></div><div class="navfooter"><span class="prev"><a href="connection-pooling.html">
+searchResponse.Documents.Count.Should().Be(25);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="connection-pooling.html">
               « 
               Connection pools</a>
            
