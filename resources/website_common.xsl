@@ -327,6 +327,9 @@
         <xsl:when test="contains(text(),'CONSOLE') and not(contains(text(),'NOTCONSOLE'))">
             <div class="console_widget" data-snippet=":CONSOLE:"></div>
         </xsl:when>
+        <xsl:when test="contains(text(),'KIBANA')">
+            <div class="kibana_widget" data-snippet=":KIBANA:"></div>
+        </xsl:when>
         <xsl:when test="contains(text(),'SENSE:')">
             <xsl:variable name="sense_url" select="translate(substring-after(text(),'SENSE:'),' ','')" />
             <div class="sense_widget" data-snippet="snippets/{$sense_url}"></div>
@@ -344,6 +347,9 @@
         </xsl:when>
         <xsl:when test="contains(text(),'CONSOLE') and not(contains(text(),'NOTCONSOLE'))">
             <div class="console_widget" data-snippet=":CONSOLE:"></div>
+        </xsl:when>
+        <xsl:when test="contains(text(),'KIBANA')">
+            <div class="kibana_widget" data-snippet=":KIBANA:"></div>
         </xsl:when>
         <xsl:when test="contains(text(),'SENSE:')">
             <xsl:variable name="sense_url" select="translate(substring-after(text(),'SENSE:'),' ','')" />
