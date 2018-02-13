@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Source Map
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Source Maps
         | APM Frontend JavaScript Agent Reference (Alpha) [master]
       | Elastic
     </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Frontend JavaScript Agent Reference (Alpha) [master]" /><link rel="up" href="index.html" title="APM Frontend JavaScript Agent Reference (Alpha) [master]" /><link rel="prev" href="getting-started.html" title="Getting started" /><link rel="next" href="api.html" title="API Reference" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Frontend JavaScript Agent/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="APM" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
@@ -618,7 +618,7 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">APM Frontend JavaScript Agent Reference (Alpha)
       [master]
-    </a></span> » <span class="breadcrumb-node">Source Map</span></div><div class="navheader"><span class="prev"><a href="getting-started.html">
+    </a></span> » <span class="breadcrumb-node">Source Maps</span></div><div class="navheader"><span class="prev"><a href="getting-started.html">
               « 
               Getting started</a>
            
@@ -626,9 +626,10 @@ Not what you want? See the
            
           <a href="api.html">API Reference
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="sourcemap"></a>Source Map<a href="https://github.com/elastic/apm-agent-js-base/edit/master/docs/sourcemap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>It is a common practice to minify JavaScript bundles,
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="sourcemap"></a>Source Maps<a href="https://github.com/elastic/apm-agent-js-base/edit/master/docs/sourcemap.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>It is a common practice to minify JavaScript bundles,
 However debugging minified files is inherently difficult. To resolve this issue,
-you can generate source maps for your bundles and upload them to the APM server.</p><p>Here is an example to generate source maps with webpack and configure the JavaScript agent accordingly.</p><p>First you need to configure webpack to generate source map and provide the app version to your app:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var webpack = require('webpack')
+you can generate source maps for your bundles and upload them to the APM server.</p><p>Here is an example to generate source maps with webpack and configure the JavaScript agent accordingly.</p><p>First you need to configure webpack to generate source map and provide the service version to your app:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var webpack = require('webpack')
+var serviceVersion = require("./package.json").version
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
 module.exports = {
   entry: 'app.js',
@@ -638,25 +639,42 @@ module.exports = {
   },
   devtool: 'source-map',
   plugins: [
-    new webpack.DefinePlugin({'appVersion': JSON.stringify(require("./package.json").version)}),
+    new webpack.DefinePlugin({'serviceVersion': JSON.stringify(serviceVersion)}),
     new UglifyJSPlugin({
       sourceMap: true
     })
   ]
-}</pre></div><p>Then you can use the provided app version to set the "serviceVersion" configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">import { init as initApm } from 'elastic-apm-js-base'
+}</pre></div><p>Or you can use current git commit hash:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var webpack = require('webpack')
+var git = require('git-rev-sync')
+var serviceVersion = git.short()
+const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
+module.exports = {
+  entry: 'app.js',
+  output: {
+    filename: 'app.min.js',
+    path: './dist'
+  },
+  devtool: 'source-map',
+  plugins: [
+    new webpack.DefinePlugin({'serviceVersion': JSON.stringify(serviceVersion)}),
+    new UglifyJSPlugin({
+      sourceMap: true
+    })
+  ]
+}</pre></div><p>Then you can use the provided service version to set the "serviceVersion" configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">import { init as initApm } from 'elastic-apm-js-base'
 var apm = initApm({
   // Set required service name
   serviceName: 'service-name',
 
   // Set service version (required for source map feature)
-  serviceVersion: appVersion
-})</pre></div><p>Make sure to upload the generated source map file to APM server with the same "serviceVersion"
-and "serviceName".</p><p>Here is a Node.js example of uploading source map file to the APM server:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">console.log('Uploading sourcemaps!')
+  serviceVersion: serviceVersion
+})</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Make sure to upload the generated source map file to APM server with the same "serviceVersion"
+and "serviceName".</p></div></div><p>Here is a Node.js example of uploading source map file to the APM server:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">console.log('Uploading sourcemaps!')
 var request = require('request')
-var filepath = './dist/app.min.js'
+var filepath = './dist/app.min.js.map'
 var formData = {
   sourcemap: fs.createReadStream(filepath),
-  service_version: require("./package.json").version,
+  service_version: require("./package.json").version, // Or use 'git-rev-sync' for git commit hash
   bundle_filepath: 'http://localhost/app.min.js',
   service_name: 'service-name'
 }
@@ -666,7 +684,17 @@ request.post({url: 'http://localhost:8200/v1/client-side/sourcemaps',formData: f
   } else {
     console.log('Sourcemaps uploaded!')
   }
-})</pre></div></div><div class="navfooter"><span class="prev"><a href="getting-started.html">
+})</pre></div><p>You can also use <code class="literal">curl</code> command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">SERVICEVERSION=`node -e "console.log(require('./package.json').version);"` &amp;&amp; \
+curl http://localhost:8200/v1/client-side/sourcemaps -X POST \
+    -F sourcemap=@./dist/app.min.js.map \
+    -F service_version="$SERVICEVERSION" \
+    -F bundle_filepath="http://localhost/app.min.js" \
+    -F service_name="service-name"</pre></div><p>Or use current git commit hash:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">SERVICEVERSION=`git rev-parse --short HEAD` &amp;&amp; \
+curl http://localhost:8200/v1/client-side/sourcemaps -X POST \
+    -F sourcemap=@./dist/app.min.js.map \
+    -F service_version="$SERVICEVERSION" \
+    -F bundle_filepath="http://localhost/app.min.js" \
+    -F service_name="service-name"</pre></div></div><div class="navfooter"><span class="prev"><a href="getting-started.html">
               « 
               Getting started</a>
            
