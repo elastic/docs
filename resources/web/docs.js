@@ -152,11 +152,10 @@
 
 // END jscookie
 
-
 jQuery(function() {
-
   var lang = jQuery('section#guide[lang]').attr('lang') || 'en';
   var Strings;
+
   if (lang === 'en') {
     Strings = {
       "Configure Console URL" : "Configure Console URL",
@@ -165,8 +164,10 @@ jQuery(function() {
       "Couldn't automatically copy!" : "Couldn't automatically copy!",
       "Default Console URL" : "Default Console URL",
       "Default Sense URL" : "Default Sense URL",
-      "Enter the URL of the Console editor:" : "Enter the URL of the Console editor:",
-      "Enter the URL of the Sense editor:" : "Enter the URL of the Sense editor:",
+      "Default Kibana URL" : "Default Kibana URL",
+      "Enter the URL of the Console editor" : "Enter the URL of the Console editor",
+      "Enter the URL of the Sense editor" : "Enter the URL of the Sense editor",
+      "Enter the URL of Kibana": "Enter the URL of Kibana",
       "On this page" : "On this page",
       "Open snippet in Console" : "Open snippet in Console",
       "Open snippet in Sense" : "Open snippet in Sense",
@@ -177,8 +178,7 @@ jQuery(function() {
       "View in Sense" : "View in Sense",
       "View in Console" : "View in Console"
     };
-  }
-  else if (lang === 'zh_cn') {
+  } else if (lang === 'zh_cn') {
     Strings = {
       "Configure Console URL" : "配置 Console URL",
       "Configure Sense URL" : "配置 Sense URL",
@@ -186,8 +186,10 @@ jQuery(function() {
       "Couldn't automatically copy!" : "无法自动拷贝!",
       "Default Console URL" : "默认 Console URL",
       "Default Sense URL" : "默认 Sense URL",
-      "Enter the URL of the Console editor:" : "输入 Console 编辑器的 URL：",
-      "Enter the URL of the Sense editor:" : "输入 Sense 编辑器的 URL：",
+      "Default Kibana URL" : "默认 Kibana URL",
+      "Enter the URL of the Console editor" : "输入 Console 编辑器的 URL",
+      "Enter the URL of the Sense editor" : "输入 Sense 编辑器的 URL",
+      "Enter the URL of Kibana": "输入 Kibana 的 URL",
       "On this page" : "本页导航",
       "Open snippet in Console" : "在 Console 中打开代码片段",
       "Open snippet in Sense" : "在 Sense 中打开代码片段",
@@ -208,14 +210,18 @@ jQuery(function() {
     get_current_page_in_version('current')
   });
 
-  var default_console_url = 'http://localhost:5601/app/kibana#/dev_tools/console';
-  var default_sense_url = 'http://localhost:5601/app/sense/';
+  var default_kibana_url = 'http://localhost:5601';
+  var default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console';
+  var default_sense_url = default_kibana_url + '/app/sense/';
+
+  var kibana_url = Cookies.get('kibana_url') || default_kibana_url;
   var console_url = Cookies.get('console_url') || default_console_url;
   var sense_url = Cookies.get('sense_url') || default_sense_url;
 
   // Enable Sense widget
   init_sense_widgets(sense_url);
   init_console_widgets(console_url);
+  init_kibana_widgets(kibana_url);
 
   function init_sense_widgets(sense_url) {
     var base_url = window.location.href.replace(/\/[^/?]+(?:\?.*)?$/, '/')
@@ -224,7 +230,9 @@ jQuery(function() {
       function() {
         var div = jQuery(this);
         var snippet = div.attr('data-snippet');
-        div.html('<a class="sense_widget copy_as_curl">'
+        div.html('<a class="sense_widget copy_as_curl" data-host="'
+          + sense_url
+          + '">'
           + Strings['Copy as cURL']
           + '</a>'
           + '<a class="sense_widget" target="sense" '
@@ -254,7 +262,9 @@ jQuery(function() {
       function() {
         var div = jQuery(this);
         var snippet = div.attr('data-snippet');
-        div.html('<a class="sense_widget copy_as_curl">'
+        div.html('<a class="sense_widget copy_as_curl" data-host="'
+          + console_url
+          + '">'
           + Strings['Copy as cURL']
           + '</a>'
           + '<a class="console_widget" target="console" '
@@ -289,11 +299,15 @@ jQuery(function() {
         '$comment',
         comment).replace('$nonComment', nonComment), 'g');
     }
+
     jQuery('#guide').on('click', 'a.copy_as_curl', function() {
       var regex = console_regex();
-      var consoleText = jQuery(this).parent().prev().text() + '\n';
+      var div = jQuery(this);
+      var consoleText = div.parent().prev().text() + '\n';
+      var host = div.data('host');
       var curlText = '';
       var match;
+
       while (match = regex.exec(consoleText)) {
         var comment = match[1];
         var method = match[2];
@@ -303,8 +317,14 @@ jQuery(function() {
           curlText += comment + '\n';
         } else {
           path = path.replace(/^\//, '').replace(/\s+$/,'');
-          path += path.includes('?') ? '&pretty' : '?pretty';
-          curlText += 'curl -X' + method + " 'localhost:9200/" + path + "'";
+          curlText += 'curl -X ' + method + ' "' + host + '/' + path + '"';
+
+          if (div.data('kibana')) {
+            curlText += " -H 'kbn-xsrf: true'";
+          } else {
+            path += path.includes('?') ? '&pretty' : '?pretty';
+          }
+
           if (body) {
             body = body.replace(/\'/g, '\\u0027');
             body = body.replace(/\s*$/,"\n");
@@ -326,6 +346,28 @@ jQuery(function() {
     });
   }
 
+  function init_kibana_widgets(kibana_url) {
+    var base_url = window.location.href.replace(/\/[^/?]+(?:\?.*)?$/, '/')
+      .replace(/^http:/, 'https:');
+    jQuery('div.kibana_widget').each(
+      function() {
+        var div = jQuery(this);
+        var snippet = div.attr('data-snippet');
+        div.html('<a class="kibana_widget copy_as_curl" data-host="'
+          + kibana_url
+          + '" data-kibana="true">'
+          + Strings['Copy as cURL']
+          + '</a>'
+          + '<a class="kibana_settings" title="'
+          + Strings['Configure Kibana URL']
+          + '">&nbsp</a>'
+        );
+
+        div.find('a.kibana_settings').click(kibana_settings);
+      });
+  }
+
+
   function sense_settings(e) {
     e.stopPropagation();
     if (jQuery('#sense_settings').length > 0) {
@@ -335,21 +377,22 @@ jQuery(function() {
     var div = jQuery('<div id="sense_settings">'
       + '<form>'
       + '<label for="sense_url">'
-      + Strings['Enter the URL of the Sense editor:']
+      + Strings['Enter the URL of the Sense editor']
       + '</label>'
       + '<input id="sense_url" type="text" value="'
       + sense_url
       + '" />'
-      + '<button id="save_url"    type="button">'
+      + '<button id="save_url" type="button">'
       + Strings['Save']
       + '</button>'
-      + '<button id="reset_url"   type="button">'
+      + '<button id="reset_url" type="button">'
       + Strings['Default Sense URL']
       + '</button>'
       + '<p>'
       + Strings['Or install Sense2']
       + '</p>'
       + '</form></div>');
+
     jQuery('body').prepend(div);
 
     div.find('#save_url').click(function(e) {
@@ -381,7 +424,7 @@ jQuery(function() {
     var div = jQuery('<div id="console_settings">'
       + '<form>'
       + '<label for="console_url">'
-      + Strings['Enter the URL of the Console editor:']
+      + Strings['Enter the URL of the Console editor']
       + '</label>'
       + '<input id="console_url" type="text" value="'
       + console_url
@@ -414,6 +457,51 @@ jQuery(function() {
     });
     div.find('#reset_url').click(function(e) {
       jQuery('#console_url').val(default_console_url);
+      e.stopPropagation();
+    });
+  }
+
+  function kibana_settings(e) {
+    e.stopPropagation();
+    if (jQuery('#kibana_settings').length > 0) {
+      return;
+    }
+
+    var div = jQuery('<div id="kibana_settings"><form><label for="kibana_url">'
+      + Strings['Enter the URL of Kibana']
+      + ':</label>'
+      + '<input id="kibana_url" type="text" value="'
+      + kibana_url
+      + '" />'
+      + '<button id="save_url" type="button">'
+      + Strings['Save']
+      + '</button>'
+      + '<button id="reset_url" type="button">'
+      + Strings['Default Kibana URL']
+      + '</button>'
+      + '<p>'
+      + Strings['Or install Kibana']
+      + '</p></form></div>'
+    );
+
+    jQuery('body').prepend(div);
+
+    div.find('#save_url').click(function(e) {
+      var new_url = jQuery('#kibana_url').val() || default_kibana_url;
+      if (new_url === default_kibana_url) {
+        Cookies.set('kibana_url', '');
+      } else {
+        Cookies.set('kibana_url', new_url, {
+          expires : 365
+        });
+      }
+      kibana_url = new_url;
+      init_kibana_widgets(kibana_url);
+      div.remove();
+      e.stopPropagation();
+    });
+    div.find('#reset_url').click(function(e) {
+      jQuery('#kibana_url').val(default_kibana_url);
       e.stopPropagation();
     });
   }

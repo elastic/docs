@@ -91,9 +91,9 @@ my $Autosense_RE = qr{
          ((?:(?!</pre>).)+?)
          </pre>
          </div>
-         <div \s class="(?:console|sense)_widget" \s data-snippet="
+         <div \s class="(?:console|sense|kibana)_widget" \s data-snippet="
         )
-        :(?:CONSOLE|AUTOSENSE):
+        :(?:CONSOLE|AUTOSENSE|KIBANA):
     }xs;
 
 #===================================
