@@ -5,6 +5,13 @@ date
 
 USAGE="Usage: offline_docs.sh [-d <dir-name>] [-r <dir-name>] [-z] [-o] [-h]."
 
+echo  
+echo "NOTICE:"
+echo "The documents produced by this utility are intended for customer use only." 
+echo "They may be not be published in any other form or hosted on any publicly"
+echo "accessible site other than https://elastic.co. "
+echo 
+
 while getopts "d:r:zoh" opt; do
   case $opt in
     d)
@@ -41,7 +48,9 @@ if [[ $RESOURCE_DIR == "" ]] ; then
   RESOURCE_DIR="resources/offline"
 fi
 
-printf "Warning: This will modify the contents of $HTML_DIR in place. Continue? y/N: "
+echo 
+echo WARNING:
+printf "This will modify the contents of $HTML_DIR in place. Continue? y/N: "
 read CONTINUE
 if [[ $CONTINUE == "y" ]] ; then
   echo "Copying offline resources from $RESOURCE_DIR into $HTML_DIR"
