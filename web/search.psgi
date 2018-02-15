@@ -35,19 +35,17 @@ sub _parse_request {
     my $qs      = $req->query_parameters;
     my $q       = decode_utf8( eval { $qs->get_one('q') } || '' );
     my $section = eval { $qs->get_one('section') } || '';
-    my @tags    = grep {$_} $qs->get_all('tags');
     my $page    = eval { $qs->get_one('page') } || 1;
 
     my @words = split /\s+/, $q;
     $#words = 19 if @words > 20;
     $q = join " ", @words;
 
-    return unless $q || $section || @tags;
+    return unless $q || $section;
 
     my %query = (
         q       => $q,
         section => $section,
-        tags    => \@tags,
         page    => $page,
     );
 
@@ -150,7 +148,6 @@ sub _add_search_query {
     push @filter, (
         _current_filter($q),    #
         _section_filter($q),    #
-        _tags_filter($q),       #
     );
 
     my $text = $q->{q};
@@ -272,7 +269,6 @@ sub _add_suggest_query {
 
     push @filter, (
         _section_filter($q),    #
-        _tags_filter($q),       #
         _current_filter($q)
     );
 
@@ -324,17 +320,6 @@ sub _section_filter {
     my $q = shift;
     my $section = $q->{section} or return;
     return { term => { section => $section } };
-}
-
-#===================================
-sub _tags_filter {
-#===================================
-    my $q = shift;
-    if ( @{ $q->{tags} } ) {
-        my @filters = map { +{ term => { tags => $_ } } } @{ $q->{tags} };
-        return { bool => { filter => \@filters } };
-    }
-    return;
 }
 
 #===================================
