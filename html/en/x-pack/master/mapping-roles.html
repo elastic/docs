@@ -648,113 +648,14 @@ These two sources of role-mapping are combined inside of X-Pack security, so it 
 possible for a single user to have some roles that have been mapped through
 the API, and other roles that are mapped through files.</p><p>When you use role-mappings, you assign existing roles to users.
 The available roles should either be added using the
-<a class="link" href="defining-roles.html#roles-management-api" title="Role Management API">Role Management APIs</a> or defined in the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-roles.html" target="_top">Role Management APIs</a> or defined in the
 <a class="link" href="defining-roles.html#roles-management-file" title="File-based Role Management">roles file</a>. Either role-mapping method can use
 either role management method. For example, when you use the role mapping API,
 you are able to map users to both API-managed roles and file-managed roles
 (and likewise for file-based role-mappings).</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="mapping-roles-api"></a>Using the Role Mapping API</h3></div></div></div><p>You can define role-mappings through the
-<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-role-mapping.html" target="_top">role mapping API</a>.</p><p>Each role-mapping has a distinct name which is used to interact with it via the
-API. The name does not affect the behaviour of the mapping in any way, but it
-is needed so that you can update or delete an existing mapping.</p><p>A mapping has <span class="emphasis"><em>rules</em></span> that determine which users should be matched by this
-mapping, a list of <span class="emphasis"><em>roles</em></span> that will be granted to the users that match.</p><p>The rule is a logical condition that is expressed using a JSON DSL.
-An mapping example with a simple rule is shown below:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "roles": [ "superuser" ],
-  "enabled": true,
-  "rules": {
-    "any": [
-      {
-        "field": {
-          "username": "esadmin"
-        }
-      },
-      {
-        "field": {
-          "groups": "cn=admins,dc=example,dc=com"
-        }
-      }
-    ]
-  }
-}</pre></div><p>This mapping matches any user where either of these conditions are met:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-the username is <code class="literal">esadmin</code>
-</li><li class="listitem">
-the user is in the <code class="literal">cn=admins,dc=example,dc=com</code> group
-</li></ul></div><p>The rules can be more complex and include wildcard matching:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "roles": [ "superuser" ],
-  "enabled": true,
-  "rules": {
-    "all": [
-      {
-        "any": [
-          {
-            "field": {
-              "dn": "*,ou=admin,dc=example,dc=com"
-            }
-          },
-          {
-            "field": {
-              "username": [ "es-admin", "es-system" ]
-            }
-          }
-        ]
-      },
-      {
-        "field": {
-          "groups": "cn=people,dc=example,dc=com"
-        }
-      },
-      {
-        "except": {
-          "field": {
-            "metadata.terminated_date": null
-          }
-        }
-      }
-    ]
-  }
-}</pre></div><p>The mapping above matches any user where <span class="strong strong"><strong>all</strong></span> of these conditions are met:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-the <span class="emphasis"><em>Distinguished Name</em></span> matches the pattern <code class="literal">*,ou=admin,dc=example,dc=com</code>,
-  or the username is <code class="literal">es-admin</code>, or the username is <code class="literal">es-system</code>
-</li><li class="listitem">
-the user in in the <code class="literal">cn=people,dc=example,dc=com</code> group
-</li><li class="listitem">
-the user does not have a <code class="literal">terminated_date</code>
-</li></ul></div><h5><a id="_the_role_mapping_dsl"></a>The Role Mapping DSL</h5><p>The DSL supports the following rule types:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Type</p></td><td align="left" valign="top"><p>Value Type (child)</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">any</code></p></td><td align="left" valign="top"><p>An array of rules</p></td><td align="left" valign="top"><p>Evaluates to <code class="literal">true</code> if <span class="strong strong"><strong>any</strong></span> of its
-                                          children are true</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">all</code></p></td><td align="left" valign="top"><p>An array of rules</p></td><td align="left" valign="top"><p>Evaluates to <code class="literal">true</code> if <span class="strong strong"><strong>all</strong></span> of its
-                                          children are true</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">field</code></p></td><td align="left" valign="top"><p>An object</p></td><td align="left" valign="top"><p><a class="link" href="mapping-roles.html#mapping-roles-rule-field" title="The field Rule">See below</a></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">except</code></p></td><td align="left" valign="top"><p>A single rule as an object</p></td><td align="left" valign="top"><p>Only valid as a child of an <code class="literal">all</code>
-                                          rule, the <code class="literal">except</code> is <code class="literal">true</code> if its
-                                          child is <code class="literal">false</code> (negation).</p></td></tr></tbody></table></div><h5><a id="mapping-roles-rule-field"></a>The <code class="literal">field</code> Rule</h5><p>The <code class="literal">field</code> rule is the primary building block for a role-mapping expression.
-It takes a single object as value, and that object must contains a single
-member with key <span class="emphasis"><em>F</em></span> and value <span class="emphasis"><em>V</em></span>. The field rule looks up the value of <span class="emphasis"><em>F</em></span>
-within the user object and then tests whether the user-value <span class="emphasis"><em>matches</em></span> the
-provided value <span class="emphasis"><em>V</em></span>.</p><p>The value specified in the field rule may be one of the following types:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p>Type</p></td><td align="left" valign="top"><p><code class="literal">Example</code></p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p>Simple String</p></td><td align="left" valign="top"><p><code class="literal">"esadmin"</code></p></td><td align="left" valign="top"><p>Matches exactly the provided value</p></td></tr><tr><td align="left" valign="top"><p>Wildcard String</p></td><td align="left" valign="top"><p><code class="literal">"*,dc=example,dc=com"</code></p></td><td align="left" valign="top"><p>Matches the provided value using a wildcard</p></td></tr><tr><td align="left" valign="top"><p>Regular Expression</p></td><td align="left" valign="top"><p><code class="literal">"/.*-admin[0-9]*/"</code></p></td><td align="left" valign="top"><p>Matches the provided value using a
-                                                     <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-regexp-query.html#regexp-syntax" target="_top">Lucene regexp</a></p></td></tr><tr><td align="left" valign="top"><p>Number</p></td><td align="left" valign="top"><p><code class="literal">7</code></p></td><td align="left" valign="top"><p>Matches an equivalent numerical value</p></td></tr><tr><td align="left" valign="top"><p>Null</p></td><td align="left" valign="top"><p><code class="literal">null</code></p></td><td align="left" valign="top"><p>Matches a null, or missing value</p></td></tr><tr><td align="left" valign="top"><p>Array</p></td><td align="left" valign="top"><p><code class="literal">["admin", "operator"]</code></p></td><td align="left" valign="top"><p>Tests each element in the  array in
-                                                     accordance with the definitions above.
-                                                     The match is successful if <span class="emphasis"><em>any</em></span> of elements match.</p></td></tr></tbody></table></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_available_user_fields"></a>Available User Fields</h4></div></div></div><p>The <span class="emphasis"><em>user object</em></span> against which the rules are evaluated has the following fields:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /></colgroup><tbody><tr><td align="left" valign="top"><p><span class="strong strong"><strong>Name</strong></span></p></td><td align="left" valign="top"><p>Type</p></td><td align="left" valign="top"><p>Description</p></td></tr><tr><td align="left" valign="top"><p><span class="strong strong"><strong>username</strong></span></p></td><td align="left" valign="top"><p>string</p></td><td align="left" valign="top"><p>The username by which X-Pack security knows this user.</p></td></tr><tr><td align="left" valign="top"><p><span class="strong strong"><strong>dn</strong></span></p></td><td align="left" valign="top"><p>string</p></td><td align="left" valign="top"><p>The <span class="emphasis"><em>Distinguished Name</em></span> of the user.</p></td></tr><tr><td align="left" valign="top"><p><span class="strong strong"><strong>groups</strong></span></p></td><td align="left" valign="top"><p>array-of-string</p></td><td align="left" valign="top"><p>The groups to which the user belongs.</p></td></tr><tr><td align="left" valign="top"><p><span class="strong strong"><strong>metadata</strong></span></p></td><td align="left" valign="top"><p>object</p></td><td align="left" valign="top"><p>Additional metadata for the user.</p></td></tr><tr><td align="left" valign="top"><p><span class="strong strong"><strong>realm</strong></span></p></td><td align="left" valign="top"><p>object</p></td><td align="left" valign="top"><p>The realm that authenticated the user.
-                                  The only field in this object is the realm name.</p></td></tr></tbody></table></div><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "username": "jsmith",
-  "dn"      : "cn=jsmith,ou=users,dc=example,dc=com",
-  "groups"  : [ "cn=admin,ou=groups,dc=example,dc=com", "cn=esusers,ou=groups,dc=example,dc=com" ],
-  "metadata": { "cn": "John Smith" },
-  "realm"   : { "name": "ldap1" }
-}</pre></div><p>The <code class="literal">groups</code> field is multi-valued - a user may belong to many groups. When a
-<code class="literal">field</code> rule is applied against a multi-valued field, it is considered to match
-if <span class="emphasis"><em>at least one</em></span> of the member values matches. This means that the rule:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{ "field" : { "groups" : "admin" } }</pre></div><p>will match any user who is a member of the <code class="literal">admin</code> group, regardless of any
-other groups they may belong to.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_role_mapping_examples"></a>Role Mapping Examples</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Match <span class="strong strong"><strong>all users</strong></span>
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{ "field" : { "username" : "*" } }</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Match users who authenticated against a <span class="strong strong"><strong>specific realm</strong></span>:
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{ "field" : { "realm.name" : "ldap1" } }</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Match users within a particular <span class="strong strong"><strong>LDAP sub-tree</strong></span>:
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{ "field" : { "dn" : "*,ou=subtree,dc=example,dc=com" } }</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Match users within a particular <span class="strong strong"><strong>LDAP sub-tree</strong></span> in a <span class="strong strong"><strong>specific realm</strong></span>:
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "all": [
-    { "field" : { "dn" : "*,ou=subtree,dc=example,dc=com" } },
-    { "field" : { "realm.name" : "ldap1" } }
-  ]
-}</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="mapping-roles-file"></a>Using Role Mapping Files</h3></div></div></div><p>To use file based role-mappings, you must configure the mappings in a
-YAML file and copy it to each node in the cluster. Tools like Puppet or Chef can
-help with this.</p><p>By default, role mappings are stored in <code class="literal">ES_PATH_CONF/x-pack/role_mapping.yml</code>,
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-role-mapping.html" target="_top">role mapping API</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="mapping-roles-file"></a>Using Role Mapping Files</h3></div></div></div><p>To use file based role-mappings, you must configure the mappings in a YAML file
+and copy it to each node in the cluster. Tools like Puppet or Chef can help with
+this.</p><p>By default, role mappings are stored in <code class="literal">ES_PATH_CONF/x-pack/role_mapping.yml</code>,
 where <code class="literal">ES_PATH_CONF</code> is <code class="literal">ES_HOME/config</code> (zip/tar installations) or
 <code class="literal">/etc/elasticsearch</code> (package installations). To specify a different location,
 you configure the <code class="literal">files.role_mapping</code> realm settings in <code class="literal">elasticsearch.yml</code>.
@@ -763,9 +664,9 @@ are values. The mappings can have a many-to-many relationship. When you map role
 to groups, the roles of a user in that group are the combination of the roles
 assigned to that group and the roles assigned to that user.</p><p>By default, X-Pack security checks role mapping files for changes every 5 seconds.
 You can change this default behavior by changing the
-<code class="literal">resource.reload.interval.high</code> setting in the <code class="literal">elasticsearch.yml</code> file
-(as this is a common setting in Elasticsearch, changing its value may effect
-other schedules in the system).</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_realm_specific_details"></a>Realm Specific Details</h3></div></div></div><h5><a id="ldap-role-mapping"></a>Active Directory and LDAP Realms</h5><p>To specify users and groups in the role mappings, you use their
+<code class="literal">resource.reload.interval.high</code> setting in the <code class="literal">elasticsearch.yml</code> file. Since
+this is a common setting in Elasticsearch, changing its value might effect other
+schedules in the system.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_realm_specific_details"></a>Realm Specific Details</h3></div></div></div><h5><a id="ldap-role-mapping"></a>Active Directory and LDAP Realms</h5><p>To specify users and groups in the role mappings, you use their
 <span class="emphasis"><em>Distinguished Names</em></span> (DNs). A DN is a string that uniquely identifies the user
 or group, for example <code class="literal">"cn=John Doe,cn=contractors,dc=example,dc=com"</code>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>X-Pack security only supports Active Directory security groups. You cannot map
       distribution groups to roles.</p></div></div><p>For example, the following snippet uses the file-based method to map the
@@ -781,7 +682,7 @@ The name of a X-Pack security role.
 The distinguished name of an LDAP group or an Active Directory security group.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The distinguished name of an LDAP or Active Directory user.
-</p></td></tr></table></div><p>We can use the role-mapping API to define equivalent mappings as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/security/role_mapping/admins
+</p></td></tr></table></div><p>You can use the role-mapping API to define equivalent mappings as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/security/role_mapping/admins
 {
   "roles" : [ "monitoring", "user" ],
   "rules" : { "field" : { "groups" : "cn=admins,dc=example,dc=com" } },
@@ -798,7 +699,7 @@ The distinguished name of an LDAP or Active Directory user.
 the PKI realm has no notion of a group.</p><p>This is an example using a file-based mapping:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">monitoring:
   - "cn=Admin,ou=example,o=com"
 user:
-  - "cn=John Doe,ou=example,o=com"</pre></div><p>And the equivalent mappings using the API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/security/role_mapping/admin_user
+  - "cn=John Doe,ou=example,o=com"</pre></div><p>The following example creates equivalent mappings using the API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/security/role_mapping/admin_user
 {
   "roles" : [ "monitoring" ],
   "rules" : { "field" : { "dn" : "cn=Admin,ou=example,o=com" } },
