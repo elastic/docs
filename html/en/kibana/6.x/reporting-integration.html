@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Rolling upgrades
-        | Elasticsearch Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Reporting Integration
+        | Kibana User Guide [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="setup-upgrade.html" title="Upgrade Elasticsearch" /><link rel="prev" href="setup-upgrade.html" title="Upgrade Elasticsearch" /><link rel="next" href="restart-upgrade.html" title="Full cluster restart upgrade" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Kibana User Guide [6.x]" /><link rel="up" href="xpack-reporting.html" title="Reporting from Kibana" /><link rel="prev" href="reporting-troubleshooting.html" title="Reporting Troubleshooting" /><link rel="next" href="kibana-plugins.html" title="Kibana Plugins" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Kibana/Reference/6.x" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Kibana" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -628,128 +628,94 @@
 <div class="page_header">You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [master]
-    </a></span> » <span class="breadcrumb-link"><a href="setup-upgrade.html">Upgrade Elasticsearch</a></span> » <span class="breadcrumb-node">Rolling upgrades</span></div><div class="navheader"><span class="prev"><a href="setup-upgrade.html">
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Kibana User Guide
+      [6.x]
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-reporting.html">Reporting from Kibana</a></span> » <span class="breadcrumb-node">Reporting Integration</span></div><div class="navheader"><span class="prev"><a href="reporting-troubleshooting.html">
               « 
-              Upgrade Elasticsearch</a>
+              Reporting Troubleshooting</a>
            
         </span><span class="next">
            
-          <a href="restart-upgrade.html">Full cluster restart upgrade
+          <a href="kibana-plugins.html">Kibana Plugins
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="rolling-upgrades"></a>Rolling upgrades<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/upgrade/rolling_upgrade.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A rolling upgrade allows an Elasticsearch cluster to be upgraded one node at
-a time so upgrading does not interrupt service. Running multiple versions of
-Elasticsearch in the same cluster beyond the duration of an upgrade is
-not supported, as shards cannot be replicated from upgraded nodes to nodes
-running the older version.</p><p>Rolling upgrades can be performed between minor versions. Elasticsearch
-6.x supports rolling upgrades from <span class="strong strong"><strong>Elasticsearch 5.6</strong></span>.
-Upgrading from earlier 5.x versions requires a <a class="link" href="restart-upgrade.html" title="Full cluster restart upgrade">full cluster restart</a>. You must <a class="link" href="reindex-upgrade.html" title="Reindex before upgrading">reindex to upgrade</a> from
-versions prior to 5.x.</p><p>To perform a rolling upgrade:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Disable shard allocation</strong></span>.
-</p><p class="simpara">When you shut down a node, the allocation process waits for one minute
-before starting to replicate the shards on that node to other nodes
-in the cluster, causing a lot of wasted I/O. You can avoid racing the clock
-by disabling allocation before shutting down the node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
-{
-  "persistent": {
-    "cluster.routing.allocation.enable": "none"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/1.json"></div></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Stop non-essential indexing and perform a synced flush.</strong></span> (Optional)
-</p><p class="simpara">While you can continue indexing during the upgrade, shard recovery
-is much faster if you temporarily stop non-essential indexing and perform a
-<a class="link" href="indices-synced-flush.html" title="Synced Flush">synced-flush</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST _flush/synced</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/2.json"></div><p class="simpara">When you perform a synced flush, check the response to make sure there are
-no failures. Synced flush operations that fail due to pending indexing
-operations are listed in the response body, although the request itself
-still returns a 200 OK status. If there are failures, reissue the request.</p></li><li class="listitem"><p class="simpara">
-<a id="upgrade-node"></a> <span class="strong strong"><strong>Shut down a single node</strong></span>.
-</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
-If you are running Elasticsearch with <code class="literal">systemd</code>:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo systemctl stop elasticsearch.service</pre></div></li><li class="listitem"><p class="simpara">
-If you are running Elasticsearch with SysV <code class="literal">init</code>:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo -i service elasticsearch stop</pre></div></li><li class="listitem"><p class="simpara">
-If you are running Elasticsearch as a daemon:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">kill $(cat pid)</pre></div></li></ul></div></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Upgrade the node you shut down.</strong></span>
-</p><p class="simpara">To upgrade using a <a class="link" href="deb.html" title="Install Elasticsearch with Debian Package">Debian</a> or <a class="link" href="rpm.html" title="Install Elasticsearch with RPM">RPM</a> package:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Use <code class="literal">rpm</code> or <code class="literal">dpkg</code> to install the new package.  All files are
-    installed in the appropriate location for the operating system
-    and Elasticsearch config files are not overwritten.
-</li></ul></div><p class="simpara">To upgrade using a zip or compressed tarball:</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
-Extract the zip or tarball to a <span class="emphasis"><em>new</em></span> directory. This is critical if you
-   are not using external <code class="literal">config</code> and <code class="literal">data</code> directories.
-</li><li class="listitem">
-Set the <code class="literal">ES_PATH_CONF</code> environment variable to specify the location of
-   your external <code class="literal">config</code> directory and <code class="literal">jvm.options</code> file. If you are not
-   using an external <code class="literal">config</code> directory, copy your old configuration
-   over to the new installation.
-</li><li class="listitem">
-Set <code class="literal">path.data</code> in <code class="literal">config/elasticsearch.yml</code> to point to your external
-   data directory. If you are not using an external <code class="literal">data</code> directory, copy
-   your old data directory over to the new installation.
-</li><li class="listitem">
-Set <code class="literal">path.logs</code> in <code class="literal">config/elasticsearch.yml</code> to point to the location
-   where you want to store your logs. If you do not specify this setting,
-   logs are stored in the directory you extracted the archive to.
-</li></ol></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>When you extract the zip or tarball packages, the <code class="literal">elasticsearch-n.n.n</code>
-directory contains the Elasticsearh <code class="literal">config</code>, <code class="literal">data</code>, <code class="literal">logs</code> and
-<code class="literal">plugins</code> directories.</p><p>We recommend moving these directories out of the Elasticsearch directory
-so that there is no chance of deleting them when you upgrade Elasticsearch.
-To specify the new locations, use the <code class="literal">ES_PATH_CONF</code> environment
-variable and the <code class="literal">path.data</code> and <code class="literal">path.logs</code> settings. For more information,
-see <a class="link" href="important-settings.html" title="Important Elasticsearch configuration">Important Elasticsearch configuration</a>.</p><p>The <a class="link" href="deb.html" title="Install Elasticsearch with Debian Package">Debian</a> and <a class="link" href="rpm.html" title="Install Elasticsearch with RPM">RPM</a> packages place these directories in the
-appropriate place for each operating system. In production, we recommend
-installing using the deb or rpm package.</p></div></div></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Upgrade any plugins.</strong></span>
-</p><p class="simpara">Use the <code class="literal">elasticsearch-plugin</code> script to install the upgraded version of each
-installed Elasticsearch plugin. All plugins must be upgraded when you upgrade
-a node.</p></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Start the upgraded node.</strong></span>
-</p><p class="simpara">Start the newly-upgraded node and confirm that it joins the cluster by checking
-the log file or by submitting a <code class="literal">_cat/nodes</code> request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/nodes</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/3.json"></div></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Reenable shard allocation.</strong></span>
-</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Because <a class="link" href="cluster-update-settings.html#_precedence_of_settings" title="Precedence of settingsedit">transient settings take precedence over persistent settings</a>, this overrides the
-persistent setting used to disable shard allocation in the first step. If you
-don’t explicitly reenable shard allocation after a full cluster restart, the
-persistent setting is used and shard allocation remains disabled.</p></div></div><p class="simpara">Once the node has joined the cluster, reenable shard allocation to start using
-the node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
-{
-  "transient": {
-    "cluster.routing.allocation.enable": "all"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/4.json"></div></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Wait for the node to recover.</strong></span>
-</p><p class="simpara">Before upgrading the next node, wait for the cluster to finish shard allocation.
-You can check progress by submitting a <a class="link" href="cat-health.html" title="cat health"><code class="literal">_cat/health</code></a> request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/health</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/5.json"></div><p class="simpara">Wait for the <code class="literal">status</code> column to switch from <code class="literal">yellow</code> to <code class="literal">green</code>. Once the
-node is <code class="literal">green</code>, all primary and replica shards have been allocated.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>During a rolling upgrade, primary shards assigned to a node running the new
-version cannot have their replicas assigned to a node with the old
-version. The new version might have a different data format that is
-not understood by the old version.</p><p>If it is not possible to assign the replica shards to another node
-(there is only one upgraded node in the cluster), the replica
-shards remain unassigned and status stays <code class="literal">yellow</code>.</p><p>In this case, you can proceed once there are no initializing or relocating shards
-(check the <code class="literal">init</code> and <code class="literal">relo</code> columns).</p><p>As soon as another node is upgraded, the replicas can be assigned and the
-status will change to <code class="literal">green</code>.</p></div></div><p class="simpara">Shards that were not <a class="link" href="indices-synced-flush.html" title="Synced Flush">sync-flushed</a> might take longer to
-recover.  You can monitor the recovery status of individual shards by
-submitting a <a class="link" href="cat-recovery.html" title="cat recovery"><code class="literal">_cat/recovery</code></a> request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/recovery</pre></div><div class="console_widget" data-snippet="snippets/rolling-upgrades/6.json"></div><p class="simpara">If you stopped indexing, it is safe to resume indexing as soon as
-recovery completes.</p></li><li class="listitem"><p class="simpara">
-<span class="strong strong"><strong>Repeat</strong></span>
-</p><p class="simpara">When  the node has recovered and the cluster is stable, repeat these steps
-for each node that needs to be updated.</p></li></ol></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>During a rolling upgrade, the cluster continues to operate normally. However,
-any new functionality is disabled or operates in a backward compatible mode
-until all nodes in the cluster are upgraded. New functionality
-becomes operational once the upgrade is complete and all nodes are running the
-new version. Once that has happened, there’s no way to return to operating
-in a backward compatible mode. Nodes running the previous major version will
-not be allowed to join the fully-updated cluster.</p><p>In the unlikely case of a network malfunction during the upgrade process that
-isolates all remaining old nodes from the cluster, you must take the
-old nodes offline and upgrade them to enable them to join the cluster.</p></div></div></div><div class="navfooter"><span class="prev"><a href="setup-upgrade.html">
+            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="reporting-integration"></a>Reporting Integration</h2></div></div></div><p>Intergrating a Kibana application with X-Pack reporting requires a minimum amount of code, and the goal is to not have to
+modify the Reporting code as we add additional applications. Instead, applications abide by a contract that Reporting
+uses to determine the information that is required to export CSVs and PDFs.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>These pages document internal APIs and are not guaranteed to be supported across future versions of Kibana.
+However, these docs will be kept up-to-date to reflect the current implementation of Reporting integration in Kibana.</p></div></div><h3><a id="reporting-nav-bar-extensions"></a>Nav Bar Extensions</h3><p>X-Pack uses the <code class="literal">NavBarExtensionsRegistryProvider</code> to register a navigation bar item for the
+Dashboard/Discover/Visualize applications. These all use the <code class="literal">export-config</code> AngularJS directive to display the
+Reporting options. Each of the different exportTypes require the AngularJS controller that the contains the
+<code class="literal">export-config</code> directive to implement certain methods/properties that are used when creating the X-Pack reporting job.</p><p>If you wish to add Reporting integration via the navigation bar that emulates the way these options are chosen for
+Dashboards, Visualize and Discover, you can reuse the <code class="literal">export-config</code> directive for the time being. Otherwise, you can
+provide a custom UI that generates the URL that is used to generate the X-Pack reporting job.</p><p>This integration will likely be changing in the near future as we move away from AngularJS towards React.</p><h3><a id="_generate_job_url"></a>Generate Job URL</h3><p>To generate a new X-Pack reporting job, different export types require different <code class="literal">jobParams</code> that are Rison encoded into a URL
+that abide by the following convention: <code class="literal">/api/reporting/generate?jobParams=${rison.encode(jobParams)}</code>. If you use the
+aforementioned <a class="link" href="reporting-integration.html#reporting-nav-bar-extensions" title="Nav Bar Extensions">nav bar extensions</a> then this detail will be abstracted away, but if you
+provide a custom UI for generating the report, you will have to generate the URL and create a POST request to the URL.</p><h3><a id="_csv"></a>CSV</h3><h4><a id="_job_parameters"></a>Job Parameters</h4><p>If integrating with Reporting via a custom UI, the following job parameters must be Rison encoded and posted to
+the aforementioned generate job url:</p><pre class="screen">interface jobParameters {
+  type: string;
+  title: string;
+  searchRequest: {
+    index: string;
+    body: object;
+  };
+  fields: string[];
+  metaFields: string[];
+  conflictedTypesFields: string[];
+  indexPatternId: string;
+}</pre><p>The <code class="literal">searchRequest.body</code> should abide by the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/search-request-body.html" target="_top">Elasticsearch Seach Request Body</a> syntax</p><h4><a id="_literal_export_config_literal_directive"></a><code class="literal">export-config</code> Directive</h4><p>If integrating with Reporting via the <code class="literal">export-config</code> directive, the AngularJS controller that contains the directive should expose
+the following methods and the <code class="literal">export-config</code> directive will POST them to the reporting API:</p><pre class="screen">interface sharingData {
+  searchRequest: {
+    index: string;
+    body: object;
+  };
+  fields: string[];
+  metaFields: string[];
+  conflictedTypesFields: string[];
+  indexPatternId: string;
+}
+
+function getSharingData(): sharingData;
+
+function getSharingType(): string;
+
+function getSharingTitle() string;</pre><p>The <code class="literal">sharingData.searchRequest.body</code> should abide by the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/search-request-body.html" target="_top">Elasticsearch Seach Request Body</a> syntax</p><h3><a id="_pdf"></a>PDF</h3><h4><a id="_job_parameters_2"></a>Job Parameters</h4><p>If integrating with Reporting via a custom UI, the following job parameters must be Rison encoded and posted to
+the aforementioned generate job url:</p><pre class="screen">interface jobParameters {
+  objectType: string;
+  title: string;
+  browserTimezone: string;
+  relativeUrls: string[];
+  layout: {
+    id: string;
+    dimensions: {
+      height: number;
+      width: number;
+    };
+  };
+}</pre><p><code class="literal">jobParameters.browserTimezone</code> is a string that appears in the tz database
+<code class="literal">jobParameters.layout.id</code> presently only accepts "print" and "preserve_layout"
+<code class="literal">jobParameters.layout.dimensions</code> is only currently used by "preserve_layout"</p><h4><a id="_literal_export_config_literal_directive_2"></a><code class="literal">export-config</code> Directive</h4><p>If integrating with Reporting via the <code class="literal">export-config</code> directive, the AngularJS controller that contains
+the directive should expose the following methods and the <code class="literal">export-config</code> directive will POST them to the
+reporting API:</p><pre class="screen">function getSharingType(): string;
+
+function getSharingTitle(): string;</pre><p>The <code class="literal">export-config</code> directive will use the browser’s current URL and timezone when generating the job
+parameters automatically. The <code class="literal">export-config</code> directive will also grab the height/width of the element
+with the <code class="literal">data-shared-items-container</code> attribute and use this as the dimensions.</p><h4><a id="_screenshot_capturing_attributes"></a>Screenshot capturing attributes</h4><p>When generating the PDF, reporting looks for a number of attributes in the DOM to determine which elements
+should have their screenshot taken and when the Visualizations are done rendering.</p><p>The print layout takes a screenshot of every element with the <code class="literal">data-shared-item</code> attribute and includes the
+individual screenshots in the PDF. The print layout also uses the <code class="literal">data-title</code> and <code class="literal">data-description</code>
+attributes on the same HTMLElement as the <code class="literal">data-shared-item</code> to specify the title and description
+that appears right above the individual screenshots.</p><p>The preserve layout takes a screenshot of the element with the <code class="literal">data-shared-items-container</code> attribute. Additionally,
+reporting will resize the element with the <code class="literal">data-shared-items-container</code> to be the size specified in the layout dimensions.
+The preserve layout also uses the <code class="literal">data-title</code> and <code class="literal">data-description</code> attributes on the HTMLElement with the
+<code class="literal">data-shared-items-container</code> attribute to specify the title/description for the entire PDF.</p><p>Reporting needs to determine when all of the visualizations have completed rendering, so that it can begin taking screenshots.
+If there are multiple visualizations, the <code class="literal">data-shared-items-count</code> attribute should be specified to let Reporting know how
+many Visualizations to look for. Reporting will look at every element with the <code class="literal">data-shared-item</code> attribute and use the corresponding
+<code class="literal">data-render-complete</code> attribute and <code class="literal">renderComplete</code> events to listen for rendering to complete. When rendering is complete for a visualization
+the <code class="literal">data-render-complete</code> attribute should be set to "true" and it should dispatch a custom DOM <code class="literal">renderComplete</code> event.</p></div><div class="navfooter"><span class="prev"><a href="reporting-troubleshooting.html">
               « 
-              Upgrade Elasticsearch</a>
+              Reporting Troubleshooting</a>
            
         </span><span class="next">
            
-          <a href="restart-upgrade.html">Full cluster restart upgrade
+          <a href="kibana-plugins.html">Kibana Plugins
                »
             </a></span></div>
 <!-- end body -->
