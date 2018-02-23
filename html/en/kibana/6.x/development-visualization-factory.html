@@ -700,9 +700,33 @@ to the experimental notification in visualize, if your visualization is experime
 </li></ul></div><p>Each of the factories have some of the custom parameters, which will be described below.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="development-base-visualization-type"></a>Base Visualization Type<a href="https://github.com/elastic/kibana/edit/6.x/docs/development/visualize/development-create-visualization.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The base visualization type does not make any assumptions about the rendering technology you are going to use and
 works with pure Javascript. It is the visualization type we recommend to use.</p><p>You need to provide a type with a constructor function, a render method which will be called every time
 options or data change, and a destroy method which will be called to cleanup.</p><p>The render function receives the data object and status object which tells what actually changed.
-Render function needs to return a promise, which should be resolved once the visualization is done rendering.</p><p>Status object has the following properties: <code class="literal">aggs</code>, <code class="literal">data</code>, <code class="literal">params</code>, <code class="literal">resize</code>, <code class="literal">time</code>, <code class="literal">uiState</code>. Each of them is set to true if the matching
-object changed since last call to the render function or set to false otherwise. You can use it to make your
-visualization rendering more efficient.</p><div class="informalfigure"><div class="mediaobject"><img src="images/visualize-flow.png" alt="Main Flow" /></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Render function needs to return a promise, which should be resolved once the visualization is done rendering.</p><p>The status object provides information about changes since the previous render call.
+Due to performance reasons you need to opt-in for each status change, that you want
+to be informed about by Kibana. This is done by using the <code class="literal">requiresUpdateStatus</code> key
+in your visualization registration object. You pass it an array, that contains all
+the status updates you want to receive. By default none of it will be calculated.</p><p>The following snippet shows explain all available status updates. You should only
+activate those changes, that you actually use in your <code class="literal">render</code> method.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">import { Status } from 'ui/vis/update_status';
+
+// ...
+return  VisFactory.createBaseVisualization({
+  // ...
+  requiresUpdateStatus: [
+    // Check for changes in the aggregation configuration for the visualization
+    Status.AGGS,
+    // Check for changes in the actual data returned from Elasticsearch
+    Status.DATA,
+    // Check for changes in the parameters (configuration) for the visualization
+    Status.PARAMS,
+    // Check if the visualization has changes its size
+    Status.RESIZE,
+    // Check if the time range for the visualization has been changed
+    Status.TIME,
+    // Check if the UI state of the visualization has been changed
+    Status.UI_STATE
+  ]
+});</pre></div><p>If you activate any of these status updates, the <code class="literal">status</code> object passed as second
+parameter to the <code class="literal">render</code> method will contain a key for that status (e.g. <code class="literal">status[Status.DATA]</code>),
+that is either <code class="literal">true</code> if a change has been detected or <code class="literal">false</code> otherwise.</p><div class="informalfigure"><div class="mediaobject"><img src="images/visualize-flow.png" alt="Main Flow" /></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Your visualizations constructor will get called with <code class="literal">vis</code> object and the DOM-element to which it should render.
 At this point you should prepare everything for rendering, but not render yet
 </li><li class="listitem">
