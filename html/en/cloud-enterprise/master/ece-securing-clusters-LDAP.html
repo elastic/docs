@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configure the Java Transport Client
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Secure Your Clusters with LDAP
         | Elastic Cloud Enterprise Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Enterprise Reference [master]" /><link rel="up" href="ece-securing-clusters.html" title="Secure Your Clusters" /><link rel="prev" href="users-manage-shield.html" title="Manage Users and Roles in Shield" /><link rel="next" href="ece-securing-clusters-LDAP.html" title="Secure Your Clusters with LDAP" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/CloudEnterprise/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="ECE" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Enterprise Reference [master]" /><link rel="up" href="ece-securing-clusters.html" title="Secure Your Clusters" /><link rel="prev" href="security-transport.html" title="Configure the Java Transport Client" /><link rel="next" href="ece-troubleshooting.html" title="Troubleshooting" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/CloudEnterprise/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="ECE" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -629,43 +629,153 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elastic Cloud Enterprise Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="ece-administering-clusters.html">Administering Clusters</a></span> » <span class="breadcrumb-link"><a href="ece-securing-clusters.html">Secure Your Clusters</a></span> » <span class="breadcrumb-node">Configure the Java Transport Client</span></div><div class="navheader"><span class="prev"><a href="users-manage-shield.html">
+    </a></span> » <span class="breadcrumb-link"><a href="ece-administering-clusters.html">Administering Clusters</a></span> » <span class="breadcrumb-link"><a href="ece-securing-clusters.html">Secure Your Clusters</a></span> » <span class="breadcrumb-node">Secure Your Clusters with LDAP</span></div><div class="navheader"><span class="prev"><a href="security-transport.html">
               « 
-              Manage Users and Roles in Shield</a>
+              Configure the Java Transport Client</a>
            
         </span><span class="next">
            
-          <a href="ece-securing-clusters-LDAP.html">Secure Your Clusters with LDAP
+          <a href="ece-troubleshooting.html">Troubleshooting
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="security-transport"></a>Configure the Java Transport Client</h2></div></div></div><p>You can connect to an X-Pack or Shield protected cluster using the transport client. To learn more, see <a class="ulink" href="https://www.elastic.co/guide/en/x-pack/6.0/java-clients.html" target="_top">Java Client and Security</a> and  <a class="ulink" href="https://www.elastic.co/guide/en/shield/2.4/_using_elasticsearch_java_clients_with_shield.html" target="_top">Using Elasticsearch Java Clients with Shield</a>.</p><p>The only addition you need when using Elastic Cloud Enterprise is to add a header indicating which cluster to route the connections to.</p><p>Here is an example of how to create a transport client to connect to Elastic Cloud Enterprise:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// Build the settings for our client.
-String clusterId = "ac01aa2425e4a5bafdebf5100af3e9b37401055b"; // Your cluster ID here
-String region = "us-east-1"; // Your region here
-boolean enableSsl = true;
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ece-securing-clusters-LDAP"></a>Secure Your Clusters with LDAP</h2></div></div></div><p>These steps show how you can secure your Elasticsearch clusters and Kibana instances with the Lightweight Directory Access Protocol (LDAP). To authenticate users through LDAP, you must first configure an <code class="literal">ldap</code> realm and map LDAP groups to user roles using the X-Pack security features.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_before_you_begin_10"></a>Before You Begin</h3></div></div></div><p>The steps in this section require an understanding of LDAP. To learn more about how securing Elasticsearch clusters with LDAP works, see <a class="ulink" href="https://www.elastic.co/guide/en/x-pack/6.0/ldap-realm.html" target="_top">LDAP User Authentication</a>.</p><h4><a id="ece-securing-clusters-LDAP-5x"></a>Configure LDAP for Certificate-Based Authentication (Version 5.0 and Later)</h4><p><span class="strong strong"><strong>For version 5.0 and later</strong></span>: To configure certificate-based authentication that uses LDAP over SSL:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Create an LDAP realm.
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+Decide which type of verification to perform when connecting to a LDAP server:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+For self-signed certificates: Use <code class="literal">ssl.verification_mode: certificate</code> together with the <code class="literal">ssl.truststore.path</code> and <code class="literal">ssl.truststore.password</code> settings.
+</li><li class="listitem">
+For certificates issued by a trusted source: Use <code class="literal">ssl.verification_mode: full</code> together with the <code class="literal">ssl.truststore.path</code> and <code class="literal">ssl.truststore.password</code> settings.
+</li></ul></div></li><li class="listitem"><p class="simpara">
+Create some LDAP entries. In this example, there is one organizational unit <code class="literal">groups</code> with the <code class="literal">administrators</code> and <code class="literal">readonly</code> groups under it. All of the entries are part of the domain LDAP object <code class="literal">dc=example,dc=com</code>.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">admin:
+  - "cn=administrators,ou=groups,dc=example,dc=com"
+readonly:
+  - "cn=users,ou=groups,dc=example,dc=com"</pre></div></li></ol></div></li><li class="listitem">
+Prepare a custom bundle as a ZIP file that contains your keystore file with the private key and certificate inside of a <code class="literal">truststore</code> folder` <a class="ulink" href="https://www.elastic.co/guide/en/cloud/current/custom-bundles.html" target="_top">in the same way that you would on Elastic Cloud</a>. This bundle allows all Elasticsearch containers to access the same keystore file through your <code class="literal">ssl.truststore</code> settings.
+</li><li class="listitem"><p class="simpara">
+Prepare a custom bundle ZIP file with a <a class="ulink" href="https://www.elastic.co/guide/en/x-pack/5.4/mapping-roles.html" target="_top">role mapping file</a> contained inside a <code class="literal">mappings</code> folder. The contents of the role mapping file in our example are:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">admin:
+  - "cn=administrators,ou=groups,dc=example,dc=com"
+readonly:
+  - "cn=users,ou=groups,dc=example,dc=com"</pre></div></li><li class="listitem">
+<a class="link" href="ece-provisioning.html#ece-create-cluster" title="Create Your First Cluster">Create a cluster</a> in the Cloud UI that you will update for use with LDAP later on. Use Elasticsearch version 5.x or later.
+</li><li class="listitem"><p class="simpara">
+Update your new Elasticsearch cluster in the <a class="link" href="ece-advanced-configuration.html" title="Advanced Cluster Configuration">advanced configuration editor</a> so that it uses the bundles you prepared in a previous step. You need to modify the <code class="literal">user_bundles</code> JSON attribute similar to the following example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">{
+  "cluster_name": "xxxxxxx",
+  "plan": {
 
-Settings settings = Settings.settingsBuilder()
-    .put("transport.ping_schedule", "5s")
-    //.put("transport.sniff", false) // Disabled by default and *must* be disabled.
-    .put("cluster.name", clusterId)
-    .put("action.bulk.compress", false)
-    .put("shield.transport.ssl", enableSsl)
-    .put("request.headers.X-Found-Cluster", clusterId)
-    .put("shield.user", "username:password") // your shield username and password
-    .build();
+    ...
 
-String hostname = clusterId + "." + region + ".aws.found.io";
-// Instantiate a TransportClient and add the cluster to the list of addresses to connect to.
-// Only port 9343 (SSL-encrypted) is currently supported.
-Client client = TransportClient.builder()
-        .addPlugin(ShieldPlugin.class)
-        .settings(settings)
-        .build()
-        .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(hostname), 9343));</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The example is for an ES 2.1 cluster. See GitHub for  <a class="ulink" href="https://github.com/elastic/found-shield-example" target="_top">examples that work with other versions</a>.</p></div></div><p>You need to add the Shield JAR to your classpath. Examples of how to do this with various build systems are available in the <a class="ulink" href="https://www.elastic.co/guide/en/shield/2.4/_using_elasticsearch_java_clients_with_shield.html#transport-client" target="_top">Shield documentation</a>.</p></div><div class="navfooter"><span class="prev"><a href="users-manage-shield.html">
+    "elasticsearch": {
+      "version": "5.5.1",
+      "user_bundles": [
+        {
+          "name": "ldap-cert",
+          "url": "https://www.myurl.com/ldapcert.zip",
+          "elasticsearch_version": "5.5.1"
+        },
+        {
+          "name": "role-mappings",
+          "url": "https://www.myurl.com/role-mappings.zip",
+          "elasticsearch_version": "5.5.1"
+        }
+      ]
+    }
+  }</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The URLs that point to the bundle ZIP files (here <code class="literal">ldapcert.zip</code> and <code class="literal">role-mappings.zip</code>) must be accessible to the cluster.</p></div></div></li><li class="listitem"><p class="simpara">
+Note the file locations where custom bundles get unzipped, you will need them in the next step. Custom bundles get unzipped under the path <code class="literal">/app/config/BUNDLE_DIRECTORY_STRUCTURE</code>, where <code class="literal">BUNDLE_DIRECTORY_STRUCTURE</code> is the directory structure within the bundle ZIP file itself. For example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">$ tree .
+.
+└── truststore
+      └── keystore.ks</pre></div><p class="simpara">In our example, the unzipped keystore file gets placed under <code class="literal">/app/config/truststore/keystore.ks</code> and the unzipped role mappings file under <code class="literal">/app/config/mappings/role-mappings.yml</code>.</p></li><li class="listitem"><p class="simpara">
+<a class="link" href="ece-change-user-settings.html" title="Add User Settings">Add your user settings</a> for the <code class="literal">ldap</code> realm for your users and groups, and specify your keystore and role mapping files from the previous step. For example:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">xpack:
+  security:
+    authc:
+      realms:
+        ldap1:
+          type: ldap
+          order: 0
+          url: "ldaps://COORDINATOR_HOST_IP<a id="CO10-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>:636"
+          user_search:
+            base_dn: "dc=example,dc=com"
+            attribute: cn
+          group_search:
+            base_dn: "ou=groups,dc=example,dc=com"
+          ssl:
+            verification_mode: certificate
+          truststore:
+              path: "/app/config/truststore/keystore.ks"
+              password: "PASSWORD<a id="CO10-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>"
+          files:
+            role_mapping: "/app/config/mappings/role-mappings.yml"
+          unmapped_groups_as_roles: false</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The IP address of a host that holds the coordinator role in your installation.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The password you chose when creating the keystore.
+</p></td></tr></table></div></li><li class="listitem">
+After the cluster configuration is updated, log into Kibana with the different users in your LDAP realm and verify that they can access the product features and data you expect. For example, in this case the <code class="literal">readonly</code> user should be able to read indices based on the roles you granted, but it should not be able to write to indices or manage security features.
+</li></ol></div><h4><a id="ece-securing-clusters-LDAP-5x-role-mapping"></a>Configure LDAP with the Role Mapping API (Version 5.5 and Later)</h4><p><span class="strong strong"><strong>For version 5.5 and later:</strong></span> To configure certificate-based authentication with LDAP using the <a class="ulink" href="https://www.elastic.co/guide/en/x-pack/6.0/mapping-roles.html#mapping-roles-api" target="_top">Role Mapping API</a>:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Follow steps 1 through 5 <a class="link" href="ece-securing-clusters-LDAP.html#ece-securing-clusters-LDAP-5x" title="Configure LDAP for Certificate-Based Authentication (Version 5.0 and Later)">in the previous section</a>, <span class="strong strong"><strong>excluding step 3</strong></span>. These steps walk you through configuring an LDAP realm, creating a custom bundle with your keystore file, creating a cluster, and updating your cluster configuration to use the bundle.
+</li><li class="listitem"><p class="simpara">
+<a class="link" href="ece-change-user-settings.html" title="Add User Settings">Edit the user settings</a> for your cluster to add minimal LDAP settings, replacing <code class="literal">COORDINATOR_HOST_IP</code> with your own information:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">xpack:
+  security:
+    authc:
+      realms:
+        ldap1:
+          type: ldap
+          order: 0
+          url: "ldap://COORDINATOR_HOST_IP:389"
+          user_search:
+            base_dn: "dc=example,dc=com"
+            attribute: cn
+          group_search:
+            base_dn: "ou=groups,dc=example,dc=com"
+          unmapped_groups_as_roles: false</pre></div></li><li class="listitem">
+Map roles to your users with the <a class="ulink" href="https://www.elastic.co/guide/en/x-pack/6.0/mapping-roles.html#mapping-roles-api" target="_top">Role Mapping API</a>. For example, you can create an <code class="literal">admin</code> user with roles that map to the <code class="literal">elastic</code> superuser role and a <code class="literal">readonly</code> user that maps to some read-only roles.
+</li><li class="listitem">
+After the cluster configuration is updated, log into Kibana with the different users in your LDAP realm and verify that they can access the functionality and data you expect. For example, in this case, the <code class="literal">readonly</code> user should be able to read indices based on the roles you granted, but it should not be able to write to indices or manage security features.
+</li></ol></div><h4><a id="ece-securing-clusters-LDAP-2x"></a>Configure LDAP with a Role Mapping File (version 2.x)</h4><p><span class="strong strong"><strong>For version 2.x:</strong></span> To configure configure certificate-based authentication with LDAP using a <a class="ulink" href="https://www.elastic.co/guide/en/shield/2.4//defining-roles.html" target="_top">role mapping file</a>:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Follow steps 1 through 5 <a class="link" href="ece-securing-clusters-LDAP.html#ece-securing-clusters-LDAP-5x" title="Configure LDAP for Certificate-Based Authentication (Version 5.0 and Later)">in the first section</a>, <span class="strong strong"><strong>excluding step 1a</strong></span>. These steps walk you through configuring an LDAP realm, creating a custom bundle with your keystore file, creating a cluster, and updating your cluster configuration to use the bundle. Make sure you use the correct cluster version.
+</li><li class="listitem"><p class="simpara">
+<a class="link" href="ece-change-user-settings.html" title="Add User Settings">Add your user settings</a> for LDAP, replacing <code class="literal">myuser</code> with your own user. The <code class="literal">trustore</code> section must be placed outside the <code class="literal">realms</code> section for these settings to work.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">shield:
+  ssl:
+    truststore:
+      path: "/app/config/trusted/trusted.ks"
+      password: "PASSWORD<a id="CO11-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>"
+  authc:
+    realms:
+      ldap1:
+        type: ldap
+        order: 0
+        url: "ldaps://COORDINATOR_HOST_IP<a id="CO11-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>:636"
+        bind_dn: "uid=myuser,dc=example,dc=com"
+        bind_password: PASSWORD
+        user_search:
+          base_dn: "dc=example,dc=com"
+          attribute: cn
+        group_search:
+          base_dn: "ou=groups,dc=example,dc=com"
+        unmapped_groups_as_roles: false
+        files:
+          role_mapping: "/app/config/mappings/role_mapping.yml"
+        hostname_verification: false<a id="CO11-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO11-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The password you chose when creating the keystore.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO11-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The IP address of a host that holds the coordinator role in your installation.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO11-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+In a production environment with a trusted certificate authority, omit the <code class="literal">hostname_verification: false</code> setting. This setting skips the certificate host name check and is suitable only for testing.
+</p></td></tr></table></div></li><li class="listitem">
+After the cluster configuration is updated, log into Kibana with the different users in your LDAP realm and verify that they can access the functionality and data you expect. For example, the <code class="literal">readonly</code> user should be able to read indices based on the roles you granted, but it should not be able to write to indices or manage security features.
+</li></ol></div></div></div><div class="navfooter"><span class="prev"><a href="security-transport.html">
               « 
-              Manage Users and Roles in Shield</a>
+              Configure the Java Transport Client</a>
            
         </span><span class="next">
            
-          <a href="ece-securing-clusters-LDAP.html">Secure Your Clusters with LDAP
+          <a href="ece-troubleshooting.html">Troubleshooting
                »
             </a></span></div>
 <!-- end body -->
