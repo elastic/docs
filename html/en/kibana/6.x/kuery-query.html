@@ -639,180 +639,24 @@ Not what you want? See the
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="kuery-query"></a>Kuery<a href="https://github.com/elastic/kibana/edit/6.x/docs/discover/kuery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>
 This functionality is experimental and may be changed or removed completely in a future release.
-</p></div></div><p>Kuery is a new query language built specifically for Kibana. It aims to simplify the search experience in Kibana
+</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Breaking changes were made to Kuery’s experimental syntax in 6.3. Read on for details of the new syntax.</p></div></div><p>Kuery is a new query language built specifically for Kibana. It aims to simplify the search experience in Kibana
 and enable the creation of helpful features like auto-complete, seamless migration of saved searches, additional
 query types, and more. Kuery is a basic experience today but we’re hard at work building these additional features on
-top of the foundation Kuery provides.</p><p>Kueries are built with functions. Many functions take a field name as their first argument. Extremely common functions have shorthand notations.</p><p><code class="literal">is("response", 200)</code> will match documents where the response field matches the value 200.
-<code class="literal">response:200</code> does the same thing. <code class="literal">:</code> is an alias for the <code class="literal">is</code> function.</p><p>Multiple search terms are separated by whitespace.</p><p><code class="literal">response:200 extension:php</code> will match documents where response matches 200 and extension matches php.</p><p><span class="strong strong"><strong>All terms must match by default</strong></span>. The language supports boolean logic with and/or operators. The above query is equivalent to <code class="literal">response:200 and extension:php</code>.
-This is a departure from the Lucene query syntax where all terms are optional by default.</p><p>We can make terms optional by using <code class="literal">or</code>.</p><p><code class="literal">response:200 or extension:php</code> will match documents where response matches 200, extension matches php, or both.</p><p>By default, <code class="literal">and</code> has a higher precedence than <code class="literal">or</code>.</p><p><code class="literal">response:200 and extension:php or extension:css</code> will match documents where response is 200 and extension is php OR documents where extension is css and response is anything.</p><p>We can override the default precedence with grouping.</p><p><code class="literal">response:200 and (extension:php or extension:css)</code> will match documents where response is 200 and extension is either php or css.</p><p>Terms can be inverted by prefixing them with <code class="literal">!</code>.</p><p><code class="literal">!response:200</code> will match all documents where response is not 200.</p><p>Entire groups can also be inverted.</p><p><code class="literal">response:200 and !(extension:php or extension:css)</code></p><p>Some query functions have named arguments.</p><p><code class="literal">range("bytes", gt=1000, lt=8000)</code> will match documents where the bytes field is greater than 1000 and less than 8000.</p><p>Quotes are generally optional if your terms don’t have whitespace or special characters. <code class="literal">range(bytes, gt=1000, lt=8000)</code>
-would also be a valid query.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Terms without fields will be matched against all fields. For example, a query for <code class="literal">response:200</code> will search for the value 200
-in the response field, but a query for just <code class="literal">200</code> will search for 200 across all fields in your index.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_function_reference"></a>Function Reference<a href="https://github.com/elastic/kibana/edit/6.x/docs/discover/kuery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-Function Name
-</p>
-</td><td valign="top">
-<p>
-Description
-</p>
-</td></tr><tr><td valign="top">
-<p>
-and
-</p>
-</td><td valign="top">
-<div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Purpose
-</span></dt><dd>
-Match all given sub-queries
-</dd><dt><span class="term">
-Alias
-</span></dt><dd>
-<code class="literal">and</code> as a binary operator
-</dd><dt><span class="term">
-Examples
-</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">and(response:200, extension:php)</code>
-</li><li class="listitem">
-<code class="literal">response:200 and extension:php</code>
-</li></ul></div></dd></dl></div>
-</td></tr><tr><td valign="top">
-<p>
-or
-</p>
-</td><td valign="top">
-<div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Purpose
-</span></dt><dd>
-Match one or more sub-queries
-</dd><dt><span class="term">
-Alias
-</span></dt><dd>
-<code class="literal">or</code> as a binary operator
-</dd><dt><span class="term">
-Examples
-</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">or(extension:css, extension:php)</code>
-</li><li class="listitem">
-<code class="literal">extension:css or extension:php</code>
-</li></ul></div></dd></dl></div>
-</td></tr><tr><td valign="top">
-<p>
-not
-</p>
-</td><td valign="top">
-<div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Purpose
-</span></dt><dd>
-Negates a sub-query
-</dd><dt><span class="term">
-Alias
-</span></dt><dd>
-<code class="literal">!</code> as a prefix operator
-</dd><dt><span class="term">
-Examples
-</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">not(response:200)</code>
-</li><li class="listitem">
-<code class="literal">!response:200</code>
-</li></ul></div></dd></dl></div>
-</td></tr><tr><td valign="top">
-<p>
-is
-</p>
-</td><td valign="top">
-<div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Purpose
-</span></dt><dd>
-Matches a field with a given term
-</dd><dt><span class="term">
-Alias
-</span></dt><dd>
-<code class="literal">:</code>
-</dd><dt><span class="term">
-Examples
-</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">is("response", 200)</code>
-</li><li class="listitem">
-<code class="literal">response:200</code>
-</li></ul></div></dd></dl></div>
-</td></tr><tr><td valign="top">
-<p>
-range
-</p>
-</td><td valign="top">
-<div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Purpose
-</span></dt><dd>
-Match a field against a range of values.
-</dd><dt><span class="term">
-Alias
-</span></dt><dd>
-<code class="literal">:[]</code>
-</dd><dt><span class="term">
-Examples
-</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">range("bytes", gt=1000, lt=8000)</code>
-</li><li class="listitem">
-<code class="literal">bytes:[1000 to 8000]</code>
-</li></ul></div></dd><dt><span class="term">
-Named arguments
-</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">gt</code> - greater than
-</li><li class="listitem">
-<code class="literal">gte</code> - greater than or equal to
-</li><li class="listitem">
-<code class="literal">lt</code> - less than
-</li><li class="listitem">
-<code class="literal">lte</code> - less than or equal to
-</li></ul></div></dd></dl></div>
-</td></tr><tr><td valign="top">
-<p>
-exists
-</p>
-</td><td valign="top">
-<div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Purpose
-</span></dt><dd>
-Match documents where a given field exists
-</dd><dt><span class="term">
-Examples
-</span></dt><dd>
-<code class="literal">exists("response")</code>
-</dd></dl></div>
-</td></tr><tr><td valign="top">
-<p>
-geoBoundingBox
-</p>
-</td><td valign="top">
-<div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Purpose
-</span></dt><dd>
-Creates a geo_bounding_box query
-</dd><dt><span class="term">
-Examples
-</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">geoBoundingBox("coordinates", topLeft="40.73, -74.1", bottomRight="40.01, -71.12")</code> (whitespace between lat and lon is ignored)
-</li></ul></div></dd><dt><span class="term">
-Named arguments
-</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">topLeft</code> - the top left corner of the bounding box as a "lat, lon" string
-</li><li class="listitem">
-<code class="literal">bottomRight</code> - the bottom right corner of the bounding box as a "lat, lon" string
-</li></ul></div></dd></dl></div>
-</td></tr><tr><td valign="top">
-<p>
-geoPolygon
-</p>
-</td><td valign="top">
-<div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Purpose
-</span></dt><dd>
-Creates a geo_polygon query given 3 or more points as "lat, lon"
-</dd><dt><span class="term">
-Examples
-</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">geoPolygon("geo.coordinates", "40.97, -127.26", "24.20, -84.375", "40.44, -66.09")</code>
-</li></ul></div></dd></dl></div>
-</td></tr></tbody></table></div></div></div><div class="navfooter"><span class="prev"><a href="lucene-query.html">
+top of the foundation Kuery provides.</p><p>If you’re familiar with Kibana’s old lucene query syntax, you should feel right at home with Kuery. Both languages
+are very similar, but there are some differences we’ll note along the way.</p><p><code class="literal">response:200</code> will match documents where the response field matches the value 200.</p><p>Quotes around a search term will initiate a phrase search. For example, <code class="literal">message:"Quick brown fox"</code> will search
+for the phrase "quick brown fox" in the message field. Without the quotes, your query will get broken down into tokens via
+the message field’s configured analyzer and will match documents that contain those tokens, regardless of the order in which
+they appear. This means documents with "quick brown fox" will match, but so will "quick fox brown". Remember to use quotes if you want
+to search for a phrase.</p><p>Unlike lucene, Kuery will not split on whitespace. Multiple search terms must be separated by explicit
+boolean operators. Note that boolean operators in Kuery are not case sensitive.</p><p><code class="literal">response:200 extension:php</code> in lucene would become <code class="literal">response:200 and extension:php</code>.
+ This will match documents where response matches 200 and extension matches php.</p><p>We can make terms optional by using <code class="literal">or</code>.</p><p><code class="literal">response:200 or extension:php</code> will match documents where response matches 200, extension matches php, or both.</p><p>By default, <code class="literal">and</code> has a higher precedence than <code class="literal">or</code>.</p><p><code class="literal">response:200 and extension:php or extension:css</code> will match documents where response is 200 and extension is php OR documents where extension is css and response is anything.</p><p>We can override the default precedence with grouping.</p><p><code class="literal">response:200 and (extension:php or extension:css)</code> will match documents where response is 200 and extension is either php or css.</p><p>A shorthand exists that allows us to easily search a single field for multiple values.</p><p><code class="literal">response:(200 or 404)</code> searches for docs where the <code class="literal">response</code> field matches 200 or 404. We can also search for docs
+with multi-value fields that contain a list of terms, for example: <code class="literal">tags:(success and info and security)</code></p><p>Terms can be inverted by prefixing them with <code class="literal">not</code>.</p><p><code class="literal">not response:200</code> will match all documents where response is not 200.</p><p>Entire groups can also be inverted.</p><p><code class="literal">response:200 and not (extension:php or extension:css)</code></p><p>Ranges in Kuery are similar to lucene with a small syntactical difference.</p><p>Instead of <code class="literal">bytes:&gt;1000</code>, Kuery omits the colon: <code class="literal">bytes &gt; 1000</code>.</p><p><code class="literal">&gt;, &gt;=, &lt;, &lt;=</code> are all valid range operators.</p><p>Exist queries are simple and do not require a special operator. <code class="literal">response:*</code> will find all docs where the response
+field exists.</p><p>Wildcard queries are available. <code class="literal">machine.os:win*</code> would match docs where the machine.os field starts with "win", which
+would match values like "windows 7" and "windows 10".</p><p>Wildcards also allow us to search multiple fields at once. This can come in handy when you have both <code class="literal">text</code> and <code class="literal">keyword</code>
+versions of a field. Let’s say we have <code class="literal">machine.os</code> and <code class="literal">machine.os.keyword</code> fields and we want to check both for the term
+"windows 10". We can do it like this: `machine.os*:windows 10".</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Terms without fields will be matched against the default field in your index settings. If a default field is not
+set these terms will be matched against all fields. For example, a query for <code class="literal">response:200</code> will search for the value 200
+in the response field, but a query for just <code class="literal">200</code> will search for 200 across all fields in your index.</p></div></div></div><div class="navfooter"><span class="prev"><a href="lucene-query.html">
               « 
               Lucene Query Syntax</a>
            
