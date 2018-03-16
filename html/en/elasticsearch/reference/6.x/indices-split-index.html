@@ -653,7 +653,7 @@ factor of <code class="literal">2</code> or <code class="literal">3</code>.  In 
 <code class="literal">5</code> → <code class="literal">15</code> → <code class="literal">30</code> (split by 3, then by 2)
 </li><li class="listitem">
 <code class="literal">5</code> → <code class="literal">30</code> (split by 6)
-</li></ul></div><p>Splitting works as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+</li></ul></div><h3><a id="_how_does_splitting_work"></a>How does splitting work?<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/indices/split-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Splitting works as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 First, it creates a new target index with the same definition as the source
   index, but with a larger number of primary shards.
 </li><li class="listitem">
@@ -666,7 +666,28 @@ Once the low level files are created all documents will be <code class="literal"
 </li><li class="listitem">
 Finally, it recovers the target index as though it were a closed index which
   had just been re-opened.
-</li></ul></div><h3><a id="_preparing_an_index_for_splitting"></a>Preparing an index for splitting<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/indices/split-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Create an index with a routing shards factor:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_source_index
+</li></ul></div><h3><a id="_why_doesn_8217_t_elasticsearch_support_incremental_resharding"></a>Why doesn’t Elasticsearch support incremental resharding?<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/indices/split-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Going from <code class="literal">N</code> shards to <code class="literal">N+1</code> shards, aka. incremental resharding, is indeed a
+feature that is supported by many key-value stores. Adding a new shard and
+pushing new data to this new shard only is not an option: this would likely be
+an indexing bottleneck, and figuring out which shard a document belongs to
+given its <code class="literal">_id</code>, which is necessary for get, delete and update requests, would
+become quite complex. This means that we need to rebalance existing data using
+a different hashing scheme.</p><p>The most common way that key-value stores do this efficiently is by using
+consistent hashing. Consistent hashing only requires <code class="literal">1/N</code>-th of the keys to
+be relocated when growing the number of shards from <code class="literal">N</code> to <code class="literal">N+1</code>. However
+Elasticsearch’s unit of storage, shards, are Lucene indices. Because of their
+search-oriented data structure, taking a significant portion of a Lucene index,
+be it only 5% of documents, deleting them and indexing them on another shard
+typically comes with a much higher cost than with a key-value store. This cost
+is kept reasonable when growing the number of shards by a multiplicative factor
+as described in the above section: this allows Elasticsearch to perform the
+split locally, which in-turn allows to perform the split at the index level
+rather than reindexing documents that need to move, as well as using hard links
+for efficient file copying.</p><p>In the case of append-only data, it is possible to get more flexibility by
+creating a new index and pushing new data to it, while adding an alias that
+covers both the old and the new index for read operations. Assuming that the
+old and new indices have respectively <code class="literal">M</code> and <code class="literal">N</code> shards, this has no overhead
+compared to searching an index that would have <code class="literal">M+N</code> shards.</p><h3><a id="_preparing_an_index_for_splitting"></a>Preparing an index for splitting<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/indices/split-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Create an index with a routing shards factor:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_source_index
 {
     "settings": {
         "index.number_of_shards" : 1,
