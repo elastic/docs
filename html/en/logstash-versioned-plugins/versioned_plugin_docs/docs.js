@@ -309,7 +309,29 @@ jQuery(function() {
             body = body.replace(/\'/g, '\\u0027');
             body = body.replace(/\s*$/,"\n");
             curlText += " -H 'Content-Type: application/json'";
-            curlText += " -d'" + body + "'";
+            curlText += " -d'";
+            var start = body.indexOf('"""');
+            if (start < 0) {
+                curlText += body;
+            } else {
+              var startOfNormal = 0;
+              while (start >= 0) {
+                var end = body.indexOf('"""', start + 3);
+                if (end < 0) {
+                    end = body.length();
+                }
+                curlText += body.substring(startOfNormal, start);
+                curlText += '"';
+                curlText += body.substring(start + 3, end)
+                    .replace(/"/g, '\\"')
+                    .replace(/\n/g, "\\n");
+                curlText += '"';
+                startOfNormal = end + 3;
+                start = body.indexOf('"""', startOfNormal);
+              }
+              curlText += body.substring(startOfNormal);
+            }
+            curlText += "'";
           }
           curlText += '\n';
         }
