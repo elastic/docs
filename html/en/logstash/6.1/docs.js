@@ -312,19 +312,36 @@ jQuery(function() {
             curlText += " -d'";
             var start = body.indexOf('"""');
             if (start < 0) {
-                curlText += body;
+              curlText += body;
             } else {
               var startOfNormal = 0;
               while (start >= 0) {
                 var end = body.indexOf('"""', start + 3);
                 if (end < 0) {
-                    end = body.length();
+                  end = body.length();
                 }
                 curlText += body.substring(startOfNormal, start);
                 curlText += '"';
-                curlText += body.substring(start + 3, end)
+                var quoteBody = body.substring(start + 3, end);
+                // Trim leading newline if there is one
+                quoteBody = quoteBody.replace(/^\n+/, '');
+                // Trim leading whitespace off of each line
+                // But not more whitespace than is on the first line
+                var leadingWhitespace = quoteBody.search(/\S/);
+                if (leadingWhitespace > 0) {
+                  var leadingString = '^'
+                  for (var i = 0; i < leadingWhitespace; i++) {
+                    leadingString += ' ';
+                  }
+                  quoteBody = quoteBody.replace(new RegExp(leadingString, 'gm'), '');
+                }
+                // Trim trailing whitespace
+                quoteBody = quoteBody.replace(/\s+$/, '');
+                // Escape for json
+                quoteBody = quoteBody
                     .replace(/"/g, '\\"')
-                    .replace(/\n/g, "\\n");
+                    .replace(/\n/g, '\\n');
+                curlText += quoteBody;
                 curlText += '"';
                 startOfNormal = end + 3;
                 start = body.indexOf('"""', startOfNormal);
