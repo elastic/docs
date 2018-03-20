@@ -657,6 +657,10 @@ The user Kibana uses to connect and communicate with Elasticsearch.
 <code class="literal">logstash_system</code>
 </span></dt><dd>
 The user Logstash uses when storing monitoring information in Elasticsearch.
+</dd><dt><span class="term">
+<code class="literal">beats_system</code>
+</span></dt><dd>
+The user the Beats use when storing monitoring information in Elasticsearch.
 </dd></dl></div><h4><a id="built-in-user-explanation"></a>How the Built-in Users Work</h4><p>These built-in users are stored within a special <code class="literal">.security</code> index managed by
 X-Pack security.
 This means that, if the password is changed, or a user is disabled, then that
@@ -679,7 +683,7 @@ password.</p></div></div><h4><a id="set-built-in-user-passwords"></a>Setting Bui
 passwords for the first time. It uses the <code class="literal">elastic</code> user’s bootstrap password to
 run user management API requests. For example, you can run the command in
 an "interactive" mode, which prompts you to enter new passwords for the
-<code class="literal">elastic</code>, <code class="literal">kibana</code>, and <code class="literal">logstash_system</code> users:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/x-pack/setup-passwords interactive</pre></div><p>For more information about the command options, see
+<code class="literal">elastic</code>, <code class="literal">kibana</code>, <code class="literal">logstash_system</code>, and <code class="literal">beats_system</code> users:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/x-pack/setup-passwords interactive</pre></div><p>For more information about the command options, see
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/setup-passwords.html" target="_top">setup-passwords</a>.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>After you set a password for the <code class="literal">elastic</code> user, the bootstrap
 password is no longer valid; you cannot run the <code class="literal">setup-passwords</code> command a
 second time.</p></div></div><p>Alternatively, you can set the initial passwords for the built-in users by using
@@ -694,14 +698,21 @@ new bootstrap password:</p><div class="pre_wrapper"><pre class="programlisting p
 password to log into Kibana and change the passwords. Alternatively, you can
 submit Change Password API requests for each built-in user. These methods are
 better suited for changing your passwords after the initial setup is complete,
-since at that point the bootstrap password is no longer required.</p><h4><a id="add-built-in-user-passwords"></a>Adding Built-in User Passwords To Kibana and Logstash</h4><p>After the <code class="literal">kibana</code> user password is set, you need to update the Kibana server
+since at that point the bootstrap password is no longer required.</p><h4><a id="add-built-in-user-passwords"></a>Adding Built-in User Passwords To Kibana, Logstash, and Beats</h4><p>After the <code class="literal">kibana</code> user password is set, you need to update the Kibana server
 with the new password by setting <code class="literal">elasticsearch.password</code> in the <code class="literal">kibana.yml</code>
 configuration file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">elasticsearch.password: kibanapassword</pre></div><p>The <code class="literal">logstash_system</code> user is used internally within Logstash when
 monitoring is enabled for Logstash.</p><p>To enable this feature in Logstash, you need to update the Logstash
 configuration with the new password by setting <code class="literal">xpack.monitoring.elasticsearch.password</code> in
 the <code class="literal">logstash.yml</code> configuration file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.password: logstashpassword</pre></div><p>If you have upgraded from an older version of elasticsearch/x-pack,
 the <code class="literal">logstash_system</code> user may have defaulted to <span class="emphasis"><em>disabled</em></span> for security reasons.
-Once the password has been changed, you can enable the user via the following API call:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/security/user/logstash_system/_enable</pre></div><div class="console_widget" data-snippet="snippets/setting-up-authentication/1.json"></div><h4><a id="disabling-default-password"></a>Disabling Default Password Functionality</h4><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>This setting is deprecated. The elastic user no longer has a default password.
+Once the password has been changed, you can enable the user via the following API call:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/security/user/logstash_system/_enable</pre></div><div class="console_widget" data-snippet="snippets/setting-up-authentication/1.json"></div><p>The <code class="literal">beats_system</code> user is used internally within Beats when monitoring is
+enabled for Beats.</p><p>To enable this feature in Beats, you need to update the configuration for each
+of your beats to reference the correct username and password. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.username: beats_system
+xpack.monitoring.elasticsearch.password: beatspassword</pre></div><p>If you have upgraded from an older version of Elasticsearch, then you may not have set a
+password for the <code class="literal">beats_system</code> user. If this is the case, then you should use
+the <span class="strong strong"><strong>Management &gt; Users</strong></span> page in Kibana or the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/security-api-change-password.html" target="_top">Change Password API</a> to set a password
+for this user.</p><h4><a id="disabling-default-password"></a>Disabling Default Password Functionality</h4><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>This setting is deprecated. The elastic user no longer has a default password.
 The password must be set before the user can be used.
 See <a class="xref" href="setting-up-authentication.html#bootstrap-elastic-passwords" title="The Elastic Bootstrap Password">The Elastic Bootstrap Password</a>.</p></div></div><h3><a id="internal-users"></a>Internal Users</h3><p>X-Pack security has three <span class="emphasis"><em>internal</em></span> users (<code class="literal">_system</code>, <code class="literal">_xpack</code>, and <code class="literal">_xpack_security</code>)
 that are responsible for the operations that take place inside an Elasticsearch cluster.</p><p>These users are only used by requests that originate from within the cluster.
