@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Collecting Data from Particular Indices
-        | Elasticsearch Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Monitoring Overview
+        | Elasticsearch Reference [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="es-monitoring.html" title="Monitoring Elasticsearch" /><link rel="prev" href="es-monitoring-collectors.html" title="Collectors" /><link rel="next" href="http-exporter.html" title="HTTP Exporter" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="es-monitoring.html" title="Monitoring Elasticsearch" /><link rel="prev" href="es-monitoring.html" title="Monitoring Elasticsearch" /><link rel="next" href="es-monitoring-collectors.html" title="Collectors" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -628,28 +628,59 @@
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [master]
-    </a></span> » <span class="breadcrumb-link"><a href="es-monitoring.html">Monitoring Elasticsearch</a></span> » <span class="breadcrumb-node">Collecting Data from Particular Indices</span></div><div class="navheader"><span class="prev"><a href="es-monitoring-collectors.html">
+      [6.x]
+    </a></span> » <span class="breadcrumb-link"><a href="es-monitoring.html">Monitoring Elasticsearch</a></span> » <span class="breadcrumb-node">Monitoring Overview</span></div><div class="navheader"><span class="prev"><a href="es-monitoring.html">
               « 
-              Collectors</a>
+              Monitoring Elasticsearch</a>
            
         </span><span class="next">
            
-          <a href="http-exporter.html">HTTP Exporter
+          <a href="es-monitoring-collectors.html">Collectors
                »
-            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="stats-export"></a>Collecting Data from Particular Indices</h2></div></div></div><p>By default, the monitoring agent collects data from all Elasticsearch indices.
-To collect data from particular indices, configure the
-<code class="literal">xpack.monitoring.collection.indices</code> setting in <code class="literal">elasticsearch.yml</code>.
-You can specify multiple indices as a comma-separated list or
-use an index pattern to match multiple indices:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.collection.indices: logstash-*, index1, test2</pre></div><p>You can prepend <code class="literal">+</code> or <code class="literal">-</code> to explicitly include or exclude index
-names or patterns. For example, to include all indices that
-start with <code class="literal">test</code> except <code class="literal">test3</code>, you could specify <code class="literal">+test*,-test3</code>.</p></div><div class="navfooter"><span class="prev"><a href="es-monitoring-collectors.html">
+            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="es-monitoring-overview"></a>Monitoring Overview</h2></div></div></div><p>Elasticsearch is at the core of the X-Pack monitoring. In all cases, X-Pack monitoring documents
+are just ordinary JSON documents built by monitoring each Elastic Stack
+component at some polling interval (<code class="literal">10s</code> by default), then indexing those
+documents into the monitoring cluster. Each component in the stack is
+responsible for monitoring itself and then forwarding those documents to Elasticsearch
+for both routing and indexing (storage).</p><p>For Elasticsearch, this process is handled by what are called <span class="emphasis"><em>collectors</em></span> and
+<span class="emphasis"><em>exporters</em></span>. In the past, collectors and exporters were considered to be part of
+a monitoring "agent", but that term is generally not used anymore.</p><p>Each collector runs once for each collection interval to obtain data from the
+public APIs in Elasticsearch and X-Pack that it chooses to monitor. When the data
+collection is finished, the data is handed in bulk to the exporters to be sent
+to the monitoring clusters.</p><p>X-Pack monitoring in Elasticsearch also receives monitoring data from other parts of the
+Elastic Stack. In this way, it serves as an unscheduled monitoring data
+collector for the stack. Once data is received, it is forwarded to the exporters
+to be routed to the monitoring cluster like all monitoring data.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Because this stack-level "collector" lives outside of the collection
+interval of X-Pack monitoring for Elasticsearch, it is not impacted by the
+<code class="literal">xpack.monitoring.collection.interval</code> setting. Therefore, data is passed to the
+exporters whenever it is received. This behavior can result in indices for Kibana,
+Logstash, or Beats being created somewhat unexpectedly.</p></div></div><p>While the monitoring data is collected and processed, some production cluster
+metadata is added to incoming documents. This metadata enables Kibana to link the
+monitoring data to the appropriate cluster.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If this linkage is unimportant to the infrastructure that you’re
+monitoring, it might be simpler to configure Logstash to report its monitoring
+data directly to the monitoring cluster. This scenario also prevents the
+production cluster from adding extra overhead related to monitoring data, which
+can be very useful when there are a large number of Logstash nodes.</p></div></div><p>Regardless of the number of exporters, each collector only runs once per
+monitoring interval.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>It is possible to configure more than one exporter, but the general and
+default setup is to use a single exporter.</p></div></div><p>There are two types of exporters in Elasticsearch: <code class="literal">local</code> and <code class="literal">http</code>. It is the
+responsibility of the exporters to send documents to the monitoring cluster
+that they communicate with. How that happens depends on the exporter, but the
+end result is the same: documents are indexed in what the exporter deems to be
+the monitoring cluster.</p><p>Before X-Pack monitoring can actually be used, it is necessary for it to set up
+certain Elasticsearch resources. These include templates and ingest pipelines. Exporters
+handle the setup of these resources before ever sending data. If resource setup
+fails (for example, due to security permissions), no data is sent and
+warnings are logged.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>It is critical that all Elasticsearch nodes have their exporters configured in
+the same way. If they do not, some monitoring data might be missing from the
+monitoring cluster.</p></div></div><p>All settings associated with X-Pack monitoring in Elasticsearch must be set in either the
+<code class="literal">elasticsearch.yml</code> file for each node or, where possible, in the dynamic
+cluster settings. For more information, see <a class="xref" href="monitoring-settings.html" title="Monitoring Settings in Elasticsearch">Monitoring Settings</a>.</p></div><div class="navfooter"><span class="prev"><a href="es-monitoring.html">
               « 
-              Collectors</a>
+              Monitoring Elasticsearch</a>
            
         </span><span class="next">
            
-          <a href="http-exporter.html">HTTP Exporter
+          <a href="es-monitoring-collectors.html">Collectors
                »
             </a></span></div>
 <!-- end body -->
