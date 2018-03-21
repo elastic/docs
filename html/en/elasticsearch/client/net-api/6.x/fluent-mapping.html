@@ -757,7 +757,7 @@ generates the same mapping as the previous</p><div class="pre_wrapper"><pre clas
             .AutoMap()
         )
     )
-            );</pre></div><p>Just as we were able to override the inferred properties from auto mapping in the previous example,
+            );</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_auto_mapping_overrides_down_the_object_graph"></a>Auto mapping overrides down the object graph<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/client-concepts/high-level/mapping/fluent-mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Just as we were able to override the inferred properties from auto mapping in the previous example,
 fluent mapping also takes precedence over <a class="link" href="attribute-mapping.html" title="Attribute mapping">Attribute Mapping</a>.
 In this way, fluent, attribute and auto mapping can be combined. We’ll demonstrate with an example.</p><p>Consider the following two POCOS</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">[ElasticsearchType(Name = "company")]
 public class CompanyWithAttributes
@@ -769,7 +769,7 @@ public class CompanyWithAttributes
     public TimeSpan? HeadOfficeHours { get; set; }
 
     [Object(Store = false)]
-    public List&lt;Employee&gt; Employees { get; set; }
+    public List&lt;EmployeeWithAttributes&gt; Employees { get; set; }
 }
 
 [ElasticsearchType(Name = "employee")]
@@ -799,34 +799,32 @@ attributes, and inferred mappings are overridden with fluent mapping</p><div cla
         .Map&lt;CompanyWithAttributes&gt;(m =&gt; m
             .AutoMap() <a id="CO43-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
             .Properties(ps =&gt; ps <a id="CO43-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                .Nested&lt;Employee&gt;(n =&gt; n
+                .Nested&lt;EmployeeWithAttributes&gt;(n =&gt; n
                     .Name(nn =&gt; nn.Employees)
-                )
-            )
-        )
-        .Map&lt;EmployeeWithAttributes&gt;(m =&gt; m
-            .AutoMap() <a id="CO43-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-            .Properties(ps =&gt; ps <a id="CO43-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-                .Text(s =&gt; s
+         .AutoMap() <a id="CO43-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+          .Properties(pps =&gt; pps <a id="CO43-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+               .Text(s =&gt; s
                     .Name(e =&gt; e.FirstName)
                     .Fields(fs =&gt; fs
-                        .Keyword(ss =&gt; ss
-                            .Name("firstNameRaw")
-                        )
-                        .TokenCount(t =&gt; t
-                            .Name("length")
-                            .Analyzer("standard")
-                        )
+                         .Keyword(ss =&gt; ss
+                              .Name("firstNameRaw")
+                         )
+                         .TokenCount(t =&gt; t
+                              .Name("length")
+                              .Analyzer("standard")
+                         )
                     )
-                )
-                .Number(n =&gt; n
+               )
+               .Number(nu =&gt; nu
                     .Name(e =&gt; e.Salary)
                     .Type(NumberType.Double)
                     .IgnoreMalformed(false)
-                )
-                .Date(d =&gt; d
+               )
+               .Date(d =&gt; d
                     .Name(e =&gt; e.Birthday)
                     .Format("MM-dd-yy")
+               )
+          )
                 )
             )
         )
@@ -836,7 +834,7 @@ Automap company
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Override company inferred mappings
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Auto map employee
+Automap nested employee type
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO43-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Override employee inferred mappings
 </p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
@@ -844,7 +842,76 @@ Override employee inferred mappings
     "company": {
       "properties": {
         "employees": {
-          "type": "nested"
+          "type": "nested",
+          "properties": {
+            "birthday": {
+              "format": "MM-dd-yy",
+              "type": "date"
+            },
+            "empl": {
+              "properties": {
+                "birthday": {
+                  "type": "date"
+                },
+                "employees": {
+                  "properties": {},
+                  "type": "object"
+                },
+                "firstName": {
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  },
+                  "type": "text"
+                },
+                "hours": {
+                  "type": "long"
+                },
+                "isManager": {
+                  "type": "boolean"
+                },
+                "lastName": {
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  },
+                  "type": "text"
+                },
+                "salary": {
+                  "type": "integer"
+                }
+              },
+              "type": "nested"
+            },
+            "first_name": {
+              "fields": {
+                "firstNameRaw": {
+                  "type": "keyword"
+                },
+                "length": {
+                  "analyzer": "standard",
+                  "type": "token_count"
+                }
+              },
+              "type": "text"
+            },
+            "isManager": {
+              "null_value": false,
+              "store": true,
+              "type": "boolean"
+            },
+            "last_name": {
+              "type": "text"
+            },
+            "salary": {
+              "ignore_malformed": false,
+              "type": "double"
+            }
+          }
         },
         "name": {
           "null_value": "null",
@@ -855,157 +922,11 @@ Override employee inferred mappings
           "type": "text"
         }
       }
-    },
-    "employee": {
-      "properties": {
-        "birthday": {
-          "format": "MM-dd-yy",
-          "type": "date"
-        },
-        "empl": {
-          "properties": {
-            "birthday": {
-              "type": "date"
-            },
-            "employees": {
-              "properties": {},
-              "type": "object"
-            },
-            "firstName": {
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              },
-              "type": "text"
-            },
-            "hours": {
-              "type": "long"
-            },
-            "isManager": {
-              "type": "boolean"
-            },
-            "lastName": {
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              },
-              "type": "text"
-            },
-            "salary": {
-              "type": "integer"
-            }
-          },
-          "type": "nested"
-        },
-        "first_name": {
-          "fields": {
-            "firstNameRaw": {
-              "type": "keyword"
-            },
-            "length": {
-              "analyzer": "standard",
-              "type": "token_count"
-            }
-          },
-          "type": "text"
-        },
-        "isManager": {
-          "null_value": false,
-          "store": true,
-          "type": "boolean"
-        },
-        "last_name": {
-          "type": "text"
-        },
-        "salary": {
-          "ignore_malformed": false,
-          "type": "double"
-        }
-      }
     }
   }
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_auto_mapping_overrides_down_the_object_graph"></a>Auto mapping overrides down the object graph<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/client-concepts/high-level/mapping/fluent-mapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You may have noticed in the <a class="link" href="fluent-mapping.html#auto-map-with-overrides" title="Auto mapping with fluent overrides">Automap with fluent overrides example</a>
-that the properties of the <code class="literal">Employees</code> property on <code class="literal">Company</code> were not mapped. This is because the automapping
-was applied only at the root level of the <code class="literal">Company</code> mapping.</p><p>By calling <code class="literal">.AutoMap()</code> inside of the <code class="literal">.Nested&lt;Employee&gt;</code> mapping, it is possible to auto map the
+}</pre></div><p>As demonstrated, by calling <code class="literal">.AutoMap()</code> inside of the <code class="literal">.Nested&lt;Employee&gt;</code> mapping, it is possible to auto map the
 <code class="literal">Employee</code> nested properties and again, override any inferred mapping from the automapping process,
-through manual mapping</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var createIndexResponse = client.CreateIndex("myindex", c =&gt; c
-    .Mappings(m =&gt; m
-        .Map&lt;Company&gt;(mm =&gt; mm
-            .AutoMap() <a id="CO44-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            .Properties(p =&gt; p <a id="CO44-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                .Nested&lt;Employee&gt;(n =&gt; n
-                    .Name(nn =&gt; nn.Employees)
-                    .AutoMap() <a id="CO44-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-                    .Properties(pp =&gt; pp <a id="CO44-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-                        .Text(t =&gt; t
-                            .Name(e =&gt; e.FirstName)
-                        )
-                        .Text(t =&gt; t
-                            .Name(e =&gt; e.LastName)
-                        )
-                        .Nested&lt;Employee&gt;(nn =&gt; nn
-                            .Name(e =&gt; e.Employees)
-                        )
-                    )
-                )
-            )
-        )
-    )
-            );</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Automap <code class="literal">Company</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Override specific <code class="literal">Company</code> mappings
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Automap <code class="literal">Employees</code> property
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Override specific <code class="literal">Employee</code> properties
-</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "mappings": {
-    "company": {
-      "properties": {
-        "name": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          }
-        },
-        "employees": {
-          "type": "nested",
-          "properties": {
-            "firstName": {
-              "type": "text"
-            },
-            "lastName": {
-              "type": "text"
-            },
-            "salary": {
-              "type": "integer"
-            },
-            "birthday": {
-              "type": "date"
-            },
-            "isManager": {
-              "type": "boolean"
-            },
-            "employees": {
-              "type": "nested"
-            },
-            "hours": {
-              "type": "long"
-            }
-          }
-        }
-      }
-    }
-  }
-}</pre></div></div></div><div class="navfooter"><span class="prev"><a href="attribute-mapping.html">
+through manual mapping</p></div></div><div class="navfooter"><span class="prev"><a href="attribute-mapping.html">
               « 
               Attribute mapping</a>
            

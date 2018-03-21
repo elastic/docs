@@ -638,23 +638,10 @@
 properties of the POCO, using <code class="literal">.AutoMap()</code>. But what do you do when you want to map differently
 to the inferred mapping? This is where attribute mapping can help.</p><p>It is possible to define your mappings using attributes on your POCO type and properties. With
 attributes on properties and calling <code class="literal">.AutoMap()</code>, NEST will infer the mappings from the POCO property
-types <span class="strong strong"><strong>and</strong></span> take into account the mapping attributes.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>When you use attributes, you <span class="strong strong"><strong>must</strong></span> also call <code class="literal">.AutoMap()</code> for the attributes to be applied.</p></div></div><p>Here we define the same two types as before, but this time using attributes to define the mappings.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">[ElasticsearchType(Name = "company")]
-public class Company
-{
-    [Keyword(NullValue = "null", Similarity = "BM25")]
-    public string Name { get; set; }
-
-    [Text(Name = "office_hours")]
-    public TimeSpan? HeadOfficeHours { get; set; }
-
-    [Object(Store = false)]
-    public List&lt;Employee&gt; Employees { get; set; }
-}
-
-[ElasticsearchType(Name = "employee")]
+types <span class="strong strong"><strong>and</strong></span> take into account the mapping attributes.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>When you use attributes, you <span class="strong strong"><strong>must</strong></span> also call <code class="literal">.AutoMap()</code> for the attributes to be applied.</p></div></div><p>Here we define an <code class="literal">Employee</code> type and use attributes to define the mappings.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">[ElasticsearchType(Name = "employee")]
 public class Employee
 {
-    [Text(Name = "first_name")]
+    [Text(Name = "first_name", Norms = false, Similarity = "LMDirichlet")]
     public string FirstName { get; set; }
 
     [Text(Name = "last_name")]
@@ -672,56 +659,27 @@ public class Employee
     [Nested]
     [PropertyName("empl")]
     public List&lt;Employee&gt; Employees { get; set; }
+
+     [Text(Name = "office_hours")]
+     public TimeSpan? OfficeHours { get; set; }
+
+     [Object]
+     public List&lt;Skill&gt; Skills { get; set; }
+}
+
+public class Skill
+{
+    [Text]
+    public string Name { get; set; }
+
+    [Number(NumberType.Byte, Name = "level")]
+    public int Proficiency { get; set; }
 }</pre></div><p>Then we map the types by calling <code class="literal">.AutoMap()</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">var createIndexResponse = client.CreateIndex("myindex", c =&gt; c
     .Mappings(ms =&gt; ms
-        .Map&lt;Company&gt;(m =&gt; m.AutoMap())
         .Map&lt;Employee&gt;(m =&gt; m.AutoMap())
     )
 );</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
   "mappings": {
-    "company": {
-      "properties": {
-        "employees": {
-          "properties": {
-            "birthday": {
-              "format": "MMddyyyy",
-              "type": "date"
-            },
-            "empl": {
-              "properties": {},
-              "type": "nested"
-            },
-            "first_name": {
-              "type": "text"
-            },
-            "isManager": {
-              "null_value": false,
-              "store": true,
-              "type": "boolean"
-            },
-            "last_name": {
-              "type": "text"
-            },
-            "salary": {
-              "coerce": true,
-              "doc_values": false,
-              "ignore_malformed": true,
-              "type": "float"
-            }
-          },
-          "type": "object",
-          "store": false
-        },
-        "name": {
-          "null_value": "null",
-          "similarity": "BM25",
-          "type": "keyword"
-        },
-        "office_hours": {
-          "type": "text"
-        }
-      }
-    },
     "employee": {
       "properties": {
         "birthday": {
@@ -733,7 +691,9 @@ public class Employee
           "type": "nested"
         },
         "first_name": {
-          "type": "text"
+          "type": "text",
+          "norms": false,
+          "similarity": "LMDirichlet"
         },
         "isManager": {
           "null_value": false,
@@ -743,11 +703,25 @@ public class Employee
         "last_name": {
           "type": "text"
         },
+        "office_hours": {
+          "type": "text"
+        },
         "salary": {
           "coerce": true,
           "doc_values": false,
           "ignore_malformed": true,
           "type": "float"
+        },
+        "skills": {
+          "properties": {
+            "level": {
+              "type": "byte"
+            },
+            "name": {
+              "type": "text"
+            }
+          },
+          "type": "object"
         }
       }
     }
