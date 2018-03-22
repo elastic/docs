@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Changing the application’s code
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Force Merge API
         | Java REST Client [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java REST Client [6.x]" /><link rel="up" href="java-rest-high-level-migration.html" title="Migration Guide" /><link rel="prev" href="_changing_the_client_8217_s_initialization_code.html" title="Changing the client’s initialization code" /><link rel="next" href="_provide_feedback.html" title="Provide feedback" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/JavaREST/6.x" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Clients" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java REST Client [6.x]" /><link rel="up" href="_indices_apis.html" title="Indices APIs" /><link rel="prev" href="java-rest-high-clear-cache.html" title="Clear Cache API" /><link rel="next" href="java-rest-high-rollover-index.html" title="Rollover Index API" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/JavaREST/6.x" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Clients" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -629,236 +629,82 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Java REST Client
       [6.x]
-    </a></span> » <span class="breadcrumb-link"><a href="java-rest-high.html">Java High Level REST Client</a></span> » <span class="breadcrumb-link"><a href="java-rest-high-level-migration.html">Migration Guide</a></span> » <span class="breadcrumb-node">Changing the application’s code</span></div><div class="navheader"><span class="prev"><a href="_changing_the_client_8217_s_initialization_code.html">
+    </a></span> » <span class="breadcrumb-link"><a href="java-rest-high.html">Java High Level REST Client</a></span> » <span class="breadcrumb-link"><a href="_indices_apis.html">Indices APIs</a></span> » <span class="breadcrumb-node">Force Merge API</span></div><div class="navheader"><span class="prev"><a href="java-rest-high-clear-cache.html">
               « 
-              Changing the client’s initialization code</a>
+              Clear Cache API</a>
            
         </span><span class="next">
            
-          <a href="_provide_feedback.html">Provide feedback
+          <a href="java-rest-high-rollover-index.html">Rollover Index API
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_changing_the_application_8217_s_code"></a>Changing the application’s code<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">RestHighLevelClient</code> supports the same request and response objects
-as the <code class="literal">TransportClient</code>, but exposes slightly different methods to
-send the requests.</p><p>More importantly, the high-level client:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-does not support request builders. The legacy methods like
-<code class="literal">client.prepareIndex()</code> must be changed to use
- request constructors like <code class="literal">new IndexRequest()</code> to create requests
- objects. The requests are then executed using synchronous or
- asynchronous dedicated methods like <code class="literal">client.index()</code> or <code class="literal">client.indexAsync()</code>.
-</li><li class="listitem">
-does not provide indices or cluster management APIs. Management
-operations can be executed by external scripts or
-<a class="link" href="_changing_the_application_8217_s_code.html#java-rest-high-level-migration-manage-indices" title="Manage Indices using the Low-Level REST Client">using the low-level client</a>.
-</li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_how_to_migrate_the_way_requests_are_built"></a>How to migrate the way requests are built<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Java API provides two ways to build a request: by using the request’s constructor or by using
-a request builder. Migrating from the <code class="literal">TransportClient</code> to the high-level client can be
-straightforward if application’s code uses the former, while changing usages of the latter can
-require more work.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="java-rest-high-level-migration-request-ctor"></a>With request constructors<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>When request constructors are used, like in the following example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">IndexRequest request = new IndexRequest("index", "doc", "id"); <a id="CO292-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-request.source("{\"field\":\"value\"}", XContentType.JSON);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO292-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Create an <code class="literal">IndexRequest</code> using its constructor
-</p></td></tr></table></div><p>The migration is very simple. The execution using the <code class="literal">TransportClient</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">IndexResponse response = transportClient.index(indexRequest).actionGet();</pre></div><p>Can be easily replaced to use the <code class="literal">RestHighLevelClient</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">IndexResponse response = client.index(request);</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="java-rest-high-level-migration-request-builder"></a>With request builders<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The Java API provides a request builder for every type of request. They are exposed by the
-<code class="literal">TransportClient</code> through the many <code class="literal">prepare()</code> methods. Here are some examples:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">IndexRequestBuilder indexRequestBuilder   = transportClient.prepareIndex();  // <a id="CO293-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-DeleteRequestBuilder deleteRequestBuilder = transportClient.prepareDelete(); // <a id="CO293-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-SearchRequestBuilder searchRequestBuilder = transportClient.prepareSearch(); // <a id="CO293-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO293-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Create a <code class="literal">IndexRequestBuilder</code> using the <code class="literal">prepareIndex()</code> method from the <code class="literal">TransportClient</code>. The
-request builder encapsulates the <code class="literal">IndexRequest</code> to be executed.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO293-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Create a <code class="literal">DeleteRequestBuilder</code> using the <code class="literal">prepareDelete()</code> method from the <code class="literal">TransportClient</code>. The
-request builder encapsulates the <code class="literal">DeleteRequest</code> to be executed.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO293-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Create a <code class="literal">SearchRequestBuilder</code> using the <code class="literal">prepareSearch()</code> method from the <code class="literal">TransportClient</code>. The
-request builder encapsulates the <code class="literal">SearchRequest</code> to be executed.
-</p></td></tr></table></div><p>Since the Java High Level REST Client does not support request builders, applications that use
-them must be changed to use <a class="link" href="_changing_the_application_8217_s_code.html#java-rest-high-level-migration-request-ctor" title="With request constructors">requests constructors</a> instead.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>While you are incrementally migrating your application and you have both the transport client
-and the high level client available you can always get the <code class="literal">Request</code> object from the <code class="literal">Builder</code> object
-by calling <code class="literal">Builder.request()</code>. We do not advise continuing to depend on the builders in the long run
-but it should be possible to use them during the transition from the transport client to the high
-level rest client.</p></div></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_how_to_migrate_the_way_requests_are_executed"></a>How to migrate the way requests are executed<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">TransportClient</code> allows to execute requests in both synchronous and asynchronous ways. This is also
-possible using the high-level client.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_synchronous_execution"></a>Synchronous execution<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The following example shows how a <code class="literal">DeleteRequest</code> can be synchronously executed using the <code class="literal">TransportClient</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">DeleteRequest request = new DeleteRequest("index", "doc", "id"); // <a id="CO294-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-DeleteResponse response = transportClient.delete(request).actionGet(); // <a id="CO294-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO294-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Create the <code class="literal">DeleteRequest</code> using its constructor
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO294-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Execute the <code class="literal">DeleteRequest</code>. The <code class="literal">actionGet()</code> method blocks until a
-response is returned by the cluster.
-</p></td></tr></table></div><p>The same request synchronously executed using the high-level client is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">DeleteRequest request = new DeleteRequest("index", "doc", "id");
-DeleteResponse response = client.delete(request); <a id="CO295-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO295-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Execute the <code class="literal">DeleteRequest</code>. The <code class="literal">delete()</code> method blocks until a
-response is returned by the cluster.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_asynchronous_execution"></a>Asynchronous execution<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The following example shows how a <code class="literal">DeleteRequest</code> can be asynchronously executed using the <code class="literal">TransportClient</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">DeleteRequest request = new DeleteRequest("index", "doc", "id"); // <a id="CO296-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-transportClient.delete(request, new ActionListener&lt;DeleteResponse&gt;() { // <a id="CO296-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="java-rest-high-force-merge"></a>Force Merge API<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/indices/force_merge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-force-merge-request"></a>Force merge Request<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/indices/force_merge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A <code class="literal">ForceMergeRequest</code> can be applied to one or more indices, or even on <code class="literal">_all</code> the indices:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ForceMergeRequest request = new ForceMergeRequest("index1"); <a id="CO238-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+ForceMergeRequest requestMultiple = new ForceMergeRequest("index1", "index2"); <a id="CO238-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+ForceMergeRequest requestAll = new ForceMergeRequest(); <a id="CO238-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO238-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Force merge one index
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO238-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Force merge multiple indices
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO238-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Force merge all the indices
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_optional_arguments_17"></a>Optional arguments<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/indices/force_merge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.indicesOptions(IndicesOptions.lenientExpandOpen()); <a id="CO239-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO239-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Setting <code class="literal">IndicesOptions</code> controls how unavailable indices are resolved and
+how wildcard expressions are expanded
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.maxNumSegments(1); <a id="CO240-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO240-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set <code class="literal">max_num_segments</code> to control the number of segments to merge down to.
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.onlyExpungeDeletes(true); <a id="CO241-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO241-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set the <code class="literal">only_expunge_deletes</code> flag to <code class="literal">true</code>
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.flush(true); <a id="CO242-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO242-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set the <code class="literal">flush</code> flag to <code class="literal">true</code>
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-force-merge-sync"></a>Synchronous Execution<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/indices/force_merge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ForceMergeResponse forceMergeResponse = client.indices().forceMerge(request);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-force-merge-async"></a>Asynchronous Execution<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/indices/force_merge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The asynchronous execution of a force merge request requires both the <code class="literal">ForceMergeRequest</code>
+instance and an <code class="literal">ActionListener</code> instance to be passed to the asynchronous
+method:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">client.indices().forceMergeAsync(request, listener); <a id="CO243-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO243-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">ForceMergeRequest</code> to execute and the <code class="literal">ActionListener</code> to use when
+the execution completes
+</p></td></tr></table></div><p>The asynchronous method does not block and returns immediately. Once it is
+completed the <code class="literal">ActionListener</code> is called back using the <code class="literal">onResponse</code> method
+if the execution successfully completed or using the <code class="literal">onFailure</code> method if
+it failed.</p><p>A typical listener for <code class="literal">ForceMergeResponse</code> looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ActionListener&lt;ForceMergeResponse&gt; listener = new ActionListener&lt;ForceMergeResponse&gt;() {
     @Override
-    public void onResponse(DeleteResponse deleteResponse) {
-        // <a id="CO296-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    public void onResponse(ForceMergeResponse forceMergeResponse) {
+        <a id="CO244-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
 
     @Override
     public void onFailure(Exception e) {
-        // <a id="CO296-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+        <a id="CO244-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     }
-});</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO296-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Create the <code class="literal">DeleteRequest</code> using its constructor
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO296-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Execute the <code class="literal">DeleteRequest</code> by passing the request and a
-<code class="literal">ActionListener</code> that gets called on execution completion or
-failure. This method does not block and returns immediately.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO296-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">onResponse()</code> method is called when the response is
-returned by the cluster.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO296-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">onFailure()</code> method is called when an error occurs
-during the execution of the request.
-</p></td></tr></table></div><p>The same request asynchronously executed using the high-level client is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">DeleteRequest request = new DeleteRequest("index", "doc", "id"); <a id="CO297-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-client.deleteAsync(request, new ActionListener&lt;DeleteResponse&gt;() { <a id="CO297-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    @Override
-    public void onResponse(DeleteResponse deleteResponse) {
-        <a id="CO297-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+};</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO244-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Called when the execution is successfully completed. The response is
+provided as an argument
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO244-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Called in case of failure. The raised exception is provided as an argument
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-force-merge-response"></a>Force Merge Response<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/indices/force_merge.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The returned <code class="literal">ForceMergeResponse</code> allows to retrieve information about the
+executed operation as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">int totalShards = forceMergeResponse.getTotalShards(); <a id="CO245-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+int successfulShards = forceMergeResponse.getSuccessfulShards(); <a id="CO245-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+int failedShards = forceMergeResponse.getFailedShards(); <a id="CO245-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+DefaultShardOperationFailedException[] failures = forceMergeResponse.getShardFailures(); <a id="CO245-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO245-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Total number of shards hit by the force merge request
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO245-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Number of shards where the force merge has succeeded
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO245-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Number of shards where the force merge has failed
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO245-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+A list of failures if the operation failed on one or more shards
+</p></td></tr></table></div><p>By default, if the indices were not found, an <code class="literal">ElasticsearchException</code> will be thrown:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">try {
+    ForceMergeRequest request = new ForceMergeRequest("does_not_exist");
+    client.indices().forceMerge(request);
+} catch (ElasticsearchException exception) {
+    if (exception.status() == RestStatus.NOT_FOUND) {
+        <a id="CO246-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
-
-    @Override
-    public void onFailure(Exception e) {
-        <a id="CO297-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-    }
-});</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO297-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Create the <code class="literal">DeleteRequest</code> using its constructor
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO297-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Execute the <code class="literal">DeleteRequest</code> by passing the request and a
-<code class="literal">ActionListener</code> that gets called on execution completion or
-failure. This method does not block and returns immediately.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO297-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">onResponse()</code> method is called when the response is
-returned by the cluster.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO297-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The <code class="literal">onFailure()</code> method is called when an error occurs
-during the execution of the request.
-</p></td></tr></table></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-level-migration-manage-indices"></a>Manage Indices using the Low-Level REST Client<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The low-level client is able to execute any kind of HTTP requests, and can
-therefore be used to call the APIs that are not yet supported by the high level client.</p><p>For example, creating a new index with the <code class="literal">TransportClient</code> may look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings settings = Settings.builder() // <a id="CO298-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                                .put(SETTING_NUMBER_OF_SHARDS, 1)
-                                .put(SETTING_NUMBER_OF_REPLICAS, 0)
-                                .build();
-
-String mappings = XContentFactory.jsonBuilder()  // <a id="CO298-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                                .startObject()
-                                    .startObject("doc")
-                                        .startObject("properties")
-                                            .startObject("time")
-                                                .field("type", "date")
-                                            .endObject()
-                                        .endObject()
-                                    .endObject()
-                                .endObject()
-                                .string();
-
-CreateIndexResponse response = transportClient.admin().indices()  // <a id="CO298-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-        .prepareCreate("my-index")
-        .setSettings(indexSettings)
-        .addMapping("doc", docMapping, XContentType.JSON)
-        .get();
-
-if (response.isAcknowledged() == false) {
-    // <a id="CO298-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO298-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Define the settings of the index
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO298-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Define the mapping for document of type <code class="literal">doc</code> using a
-<code class="literal">XContentBuilder</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO298-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Create the index with the previous settings and mapping
-using the <code class="literal">prepareCreate()</code> method. The execution is synchronous
-and blocks on the <code class="literal">get()</code> method until the remote cluster returns
-a response.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO298-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Handle the situation where the index has not been created
-</p></td></tr></table></div><p>The same operation executed with the low-level client could be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings indexSettings = Settings.builder() <a id="CO299-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        .put(SETTING_NUMBER_OF_SHARDS, 1)
-        .put(SETTING_NUMBER_OF_REPLICAS, 0)
-        .build();
-
-String payload = Strings.toString(XContentFactory.jsonBuilder() <a id="CO299-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-        .startObject()
-            .startObject("settings") <a id="CO299-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-                .value(indexSettings)
-            .endObject()
-            .startObject("mappings")  <a id="CO299-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-                .startObject("doc")
-                    .startObject("properties")
-                        .startObject("time")
-                            .field("type", "date")
-                        .endObject()
-                    .endObject()
-                .endObject()
-            .endObject()
-        .endObject());
-
-HttpEntity entity = new NStringEntity(payload, ContentType.APPLICATION_JSON); <a id="CO299-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
-
-Response response = client.getLowLevelClient().performRequest("PUT", "my-index", emptyMap(), entity); <a id="CO299-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
-if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-    <a id="CO299-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO299-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Define the settings of the index
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO299-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Define the body of the HTTP request using a <code class="literal">XContentBuilder</code> with JSON format
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO299-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Include the settings in the request body
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO299-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Include the mappings in the request body
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO299-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Convert the request body from <code class="literal">String</code> to a <code class="literal">HttpEntity</code> and
-set its content type (here, JSON)
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO299-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Execute the request using the low-level client. The execution is synchronous
-and blocks on the <code class="literal">performRequest()</code> method until the remote cluster returns
-a response. The low-level client can be retrieved from an existing <code class="literal">RestHighLevelClient</code>
-instance through the <code class="literal">getLowLevelClient</code> getter method.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO299-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Handle the situation where the index has not been created
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-level-migration-cluster-health"></a>Checking Cluster Health using the Low-Level REST Client<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Another common need is to check the cluster’s health using the Cluster API. With
-the <code class="literal">TransportClient</code> it can be done this way:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ClusterHealthResponse response = client.admin().cluster().prepareHealth().get(); // <a id="CO300-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-
-ClusterHealthStatus healthStatus = response.getStatus(); // <a id="CO300-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-if (healthStatus != ClusterHealthStatus.GREEN) {
-    // <a id="CO300-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO300-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Execute a <code class="literal">ClusterHealth</code> with default parameters
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO300-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Retrieve the cluster’s health status from the response
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO300-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Handle the situation where the cluster’s health is not green
-</p></td></tr></table></div><p>With the low-level client, the code can be changed to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map&lt;String, String&gt; parameters = singletonMap("wait_for_status", "green");
-Response response = client.getLowLevelClient().performRequest("GET", "/_cluster/health", parameters); <a id="CO301-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-
-ClusterHealthStatus healthStatus;
-try (InputStream is = response.getEntity().getContent()) { <a id="CO301-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    Map&lt;String, Object&gt; map = XContentHelper.convertToMap(XContentType.JSON.xContent(), is, true); <a id="CO301-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-    healthStatus = ClusterHealthStatus.fromString((String) map.get("status")); <a id="CO301-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-}
-
-if (healthStatus == ClusterHealthStatus.GREEN) {
-    <a id="CO301-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO301-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Call the cluster’s health REST endpoint and wait for the cluster health to become green,
-then get back a <code class="literal">Response</code> object.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO301-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Retrieve an <code class="literal">InputStream</code> object in order to read the response’s content
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO301-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Parse the response’s content using Elasticsearch’s helper class <code class="literal">XContentHelper</code>. This
- helper requires the content type of the response to be passed as an argument and returns
- a <code class="literal">Map</code> of objects. Values in the map can be of any type, including inner <code class="literal">Map</code> that are
- used to represent the JSON object hierarchy.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO301-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Retrieve the value of the <code class="literal">status</code> field in the response map, casts it as a a <code class="literal">String</code>
-object and use the <code class="literal">ClusterHealthStatus.fromString()</code> method to convert it as a <code class="literal">ClusterHealthStatus</code>
-object. This method throws an exception if the value does not corresponds to a valid cluster
-health status.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO301-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Handle the situation where the cluster’s health is not green
-</p></td></tr></table></div><p>Note that for convenience this example uses Elasticsearch’s helpers to parse the JSON response
-body, but any other JSON parser could have been use instead.</p></div></div><div class="navfooter"><span class="prev"><a href="_changing_the_client_8217_s_initialization_code.html">
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO246-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Do something if the indices to be force merged were not found
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="java-rest-high-clear-cache.html">
               « 
-              Changing the client’s initialization code</a>
+              Clear Cache API</a>
            
         </span><span class="next">
            
-          <a href="_provide_feedback.html">Provide feedback
+          <a href="java-rest-high-rollover-index.html">Rollover Index API
                »
             </a></span></div>
 <!-- end body -->
