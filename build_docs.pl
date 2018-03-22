@@ -159,7 +159,7 @@ sub build_local_pdf {
 #===================================
 sub build_all {
 #===================================
-    say "Checking GitHub username and password";
+    say "Checking GitHub username and password (or auth token for multi-factor auth)";
 
     ensure_creds_cache_enabled() || enable_creds_cache() || exit(1);
     check_github_authed();
@@ -493,7 +493,7 @@ sub check_github_authed {
         git_creds( 'approve', $creds );
         restart();
     }
-    die "Username and password for GitHub required to continue\n";
+    die "GitHub username and password (or auth token) required to continue\n";
 }
 
 #===================================
