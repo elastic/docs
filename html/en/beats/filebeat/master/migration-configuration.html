@@ -646,7 +646,7 @@ If you specify additional config files, you need to place them in a directory ot
 where the main Filebeat config file resides. You specify the location of the config files by using the
 <code class="literal">config_dir</code> option to configure the path to the directory. In most cases, you can do a one-to-one
 conversion to create a Filebeat config file for each Logstash Forwarder config file.</p><p>Before migrating your config files, we recommend that you first read the <a class="xref" href="configuring-howto-filebeat.html" title="Configuring Filebeat">Configuring Filebeat</a>
-section to understand the Filebeat options.</p><h3><a id="_migrate_the_files_section"></a>Migrate the "files" section<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To migrate the <code class="literal">files</code> section from the Logstash Forwarder configuration, create a  <code class="literal">prospectors</code> section in the Filebeat config file. For example, assuming that you start
+section to understand the Filebeat options.</p><h3><a id="_migrate_the_files_section"></a>Migrate the "files" section<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To migrate the <code class="literal">files</code> section from the Logstash Forwarder configuration, create an <code class="literal">inputs</code> section in the Filebeat config file. For example, assuming that you start
 with this configuration in Logstash Forwarder:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">  # The list of files configurations
   "files": [
     # An array of hashes. Each hash tells what paths to watch and
@@ -673,7 +673,7 @@ with this configuration in Logstash Forwarder:</p><div class="pre_wrapper"><pre 
       ],
       "fields": { "type": "apache" }
     }
-  ]</pre></div><p>The equivalent <code class="literal">prospectors</code> section would look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.prospectors:
+  ]</pre></div><p>The equivalent <code class="literal">inputs</code> section would look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.inputs:
 - type: log
   paths:
     - /var/log/messages
@@ -682,17 +682,17 @@ with this configuration in Logstash Forwarder:</p><div class="pre_wrapper"><pre 
     service: apache
     zone: us-east-1
   fields_under_root: true
-- type: stdin <a id="CO13-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+- type: stdin <a id="CO15-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 - type: log
   paths:
-    - /var/log/apache2/httpd-*.log</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+    - /var/log/apache2/httpd-*.log</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The explicit <code class="literal">type</code> option was introduced to differentiate between normal files and
     stdin. In the future, additional types might be supported.
 </p></td></tr></table></div><p>As you can see, apart from the new <code class="literal">type</code> options,
 which were before implicitly defined via the <code class="literal">type</code> custom field, the remaining
-options can be migrated mechanically.</p><p>The Filebeat configuration gives you more control over how each prospector behaves
+options can be migrated mechanically.</p><p>The Filebeat configuration gives you more control over how each input behaves
 by allowing you to configure options that were previously global in Logstash Forwarder
-and set them separately for each prospector. See <a class="xref" href="configuring-howto-filebeat.html" title="Configuring Filebeat">Configuring Filebeat</a>.</p><h3><a id="_migrate_the_network_section"></a>Migrate the "network" section<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Like Logstash Forwarder, Filebeat can communicate directly with Logstash.
+and set them separately for each input. See <a class="xref" href="configuring-howto-filebeat.html" title="Configuring Filebeat">Configuring Filebeat</a>.</p><h3><a id="_migrate_the_network_section"></a>Migrate the "network" section<a href="https://github.com/elastic/beats/edit/master/filebeat/docs/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Like Logstash Forwarder, Filebeat can communicate directly with Logstash.
 Filebeat can also insert log entries directly
 into Elasticsearch. This results in an <code class="literal">output</code> section that is a bit more complex, as
 you can see in the following example. You’ll find, however, that you can easily
@@ -720,18 +720,18 @@ configuration.</p><p>The following snippet shows the <code class="literal">netwo
     # will connect to a server chosen at random from the servers list.
     "timeout": 15
   }</pre></div><p>The equivalent in Filebeat would look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.logstash:
-  hosts: <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  hosts: <a id="CO16-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     - localhost:5043
   timeout: 15
-  ssl.certificate_authorities: <a id="CO14-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  ssl.certificate_authorities: <a id="CO16-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
     - ./logstash-forwarder.crt
   ssl.certificate: ./logstash-forwarder.crt
-  ssl.key: ./logstash-forwarder.key</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+  ssl.key: ./logstash-forwarder.key</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 When multiple hosts are defined, the default behavior in Filebeat is to
     pick a random host for new connections, similar to the Logstash Forwarder
     behavior. Filebeat can optionally do load balancing. For more details, see the
     <a class="xref" href="logstash-output.html#loadbalance" title="loadbalance"><code class="literal">loadbalance</code></a> configuration option.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Note that if the <code class="literal">ssl</code> settings are missing, then SSL is disabled. SSL is
     automatically enabled when you add any of the <code class="literal">ssl</code> options. For more information about
     specific configuration options, see <a class="xref" href="configuration-ssl.html" title="Specify SSL settings"><em>Specify SSL settings</em></a>.
@@ -751,7 +751,7 @@ and its equivalent for Filebeat.</p><p>Logstash Forwarder configuration:</p><div
   "network": {
     "servers": [ "localhost:5043" ],
   }
-}</pre></div><p>Filebeat configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.prospectors:
+}</pre></div><p>Filebeat configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.inputs:
 - type: log
   paths:
     - /var/log/*.log
