@@ -717,7 +717,7 @@ count them by settings <code class="literal">"conflicts": "proceed"</code> in th
     "op_type": "create"
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/5.json"></div><p>You can limit the documents by adding a type to the <code class="literal">source</code> or by adding a
-query. This will only copy <code class="literal">tweet</code>'s made by <code class="literal">kimchy</code> into <code class="literal">new_twitter</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
+query. This will only copy tweets made by <code class="literal">kimchy</code> into <code class="literal">new_twitter</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
   "source": {
     "index": "twitter",
@@ -733,11 +733,11 @@ query. This will only copy <code class="literal">tweet</code>'s made by <code cl
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/6.json"></div><p><code class="literal">index</code> and <code class="literal">type</code> in <code class="literal">source</code> can both be lists, allowing you to copy from
 lots of sources in one request. This will copy documents from the <code class="literal">_doc</code> and
-<code class="literal">post</code> types in the <code class="literal">twitter</code> and <code class="literal">blog</code> index. It’d include the <code class="literal">post</code> type in
-the <code class="literal">twitter</code> index and the <code class="literal">_doc</code> type in the <code class="literal">blog</code> index. If you want to be
-more specific you’ll need to use the <code class="literal">query</code>. It also makes no effort to handle
-ID collisions. The target index will remain valid but it’s not easy to predict
-which document will survive because the iteration order isn’t well defined.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
+<code class="literal">post</code> types in the <code class="literal">twitter</code> and <code class="literal">blog</code> index. The copied documents would include the
+<code class="literal">post</code> type in the <code class="literal">twitter</code> index and the <code class="literal">_doc</code> type in the <code class="literal">blog</code> index. For more
+specific parameters, you can use <code class="literal">query</code>.</p><p>The Reindex API makes no effort to handle ID collisions. For such issues, the target index
+will remain valid, but it’s not easy to predict which document will survive because
+the iteration order isn’t well defined.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
   "source": {
     "index": ["twitter", "blog"],
@@ -757,8 +757,8 @@ which document will survive because the iteration order isn’t well defined.</p
   "dest": {
     "index": "new_twitter"
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/8.json"></div><p>If you want a particular set of documents from the twitter index you’ll
-need to sort. Sorting makes the scroll less efficient but in some contexts
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/8.json"></div><p>If you want a particular set of documents from the <code class="literal">twitter</code> index you’ll
+need to use <code class="literal">sort</code>. Sorting makes the scroll less efficient but in some contexts
 it’s worth it. If possible, prefer a more selective query to <code class="literal">size</code> and <code class="literal">sort</code>.
 This will copy 10000 documents from <code class="literal">twitter</code> into <code class="literal">new_twitter</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
@@ -771,8 +771,8 @@ This will copy 10000 documents from <code class="literal">twitter</code> into <c
     "index": "new_twitter"
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/9.json"></div><p>The <code class="literal">source</code> section supports all the elements that are supported in a
-<a class="link" href="search-request-body.html" title="Request Body Search">search request</a>. For instance only a subset of the
-fields from the original documents can be reindexed using source filtering
+<a class="link" href="search-request-body.html" title="Request Body Search">search request</a>. For instance, only a subset of the
+fields from the original documents can be reindexed using <code class="literal">source</code> filtering
 as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
   "source": {
@@ -810,8 +810,8 @@ in the <code class="literal">noop</code> counter in the <a class="link" href="do
 Set <code class="literal">ctx.op = "delete"</code> if your script decides that the document must be
  deleted from the destination index. The deletion will be reported in the
  <code class="literal">deleted</code> counter in the <a class="link" href="docs-reindex.html#docs-reindex-response-body" title="Response bodyedit">response body</a>.
-</dd></dl></div><p>Setting <code class="literal">ctx.op</code> to anything else is an error. Setting any
-other field in <code class="literal">ctx</code> is an error.</p><p>Think of the possibilities! Just be careful! With great power…. You can
+</dd></dl></div><p>Setting <code class="literal">ctx.op</code> to anything else will return an error, as will setting any
+other field in <code class="literal">ctx</code>.</p><p>Think of the possibilities! Just be careful; you are able to
 change:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">_id</code>
 </li><li class="listitem">
@@ -823,7 +823,7 @@ change:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li cl
 </li><li class="listitem">
 <code class="literal">_routing</code>
 </li></ul></div><p>Setting <code class="literal">_version</code> to <code class="literal">null</code> or clearing it from the <code class="literal">ctx</code> map is just like not
-sending the version in an indexing request. It will cause that document to be
+sending the version in an indexing request; it will cause the document to be
 overwritten in the target index regardless of the version on the target or the
 version type you use in the <code class="literal">_reindex</code> request.</p><p>By default if <code class="literal">_reindex</code> sees a document with routing then the routing is
 preserved unless it’s changed by the script. You can set <code class="literal">routing</code> on the
@@ -831,11 +831,11 @@ preserved unless it’s changed by the script. You can set <code class="literal"
 <code class="literal">keep</code>
 </span></dt><dd>
 Sets the routing on the bulk request sent for each match to the routing on
-the match. The default.
+the match. This is the default value.
 </dd><dt><span class="term">
 <code class="literal">discard</code>
 </span></dt><dd>
-Sets the routing on the bulk request sent for each match to null.
+Sets the routing on the bulk request sent for each match to <code class="literal">null</code>.
 </dd><dt><span class="term">
 <code class="literal">=&lt;some text&gt;</code>
 </span></dt><dd>
@@ -898,7 +898,7 @@ batch size with the <code class="literal">size</code> field in the <code class="
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/15.json"></div><p>The <code class="literal">host</code> parameter must contain a scheme, host, and port (e.g.
 <code class="literal">https://otherhost:9200</code>). The <code class="literal">username</code> and <code class="literal">password</code> parameters are
-optional and when they are present reindex will connect to the remote
+optional, and when they are present <code class="literal">_reindex</code> will connect to the remote
 Elasticsearch node using basic auth. Be sure to use <code class="literal">https</code> when using
 basic auth or the password will be sent in plain text.</p><p>Remote hosts have to be explicitly whitelisted in elasticsearch.yaml using the
 <code class="literal">reindex.remote.whitelist</code> property. It can be set to a comma delimited list
@@ -912,7 +912,7 @@ is sent directly to the remote host without validation or modification.</p><div 
 <a class="link" href="docs-reindex.html#docs-reindex-manual-slice" title="Manual slicingedit">manual</a> or
 <a class="link" href="docs-reindex.html#docs-reindex-automatic-slice" title="Automatic slicingedit">automatic slicing</a>.</p></div></div><p>Reindexing from a remote server uses an on-heap buffer that defaults to a
 maximum size of 100mb. If the remote index includes very large documents you’ll
-need to use a smaller batch size. The example below sets the batch size <code class="literal">10</code>
+need to use a smaller batch size. The example below sets the batch size to <code class="literal">10</code>
 which is very, very small.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
   "source": {
@@ -932,8 +932,8 @@ which is very, very small.</p><div class="pre_wrapper"><pre class="programlistin
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/16.json"></div><p>It is also possible to set the socket read timeout on the remote connection
 with the <code class="literal">socket_timeout</code> field and the connection timeout with the
-<code class="literal">connect_timeout</code> field. Both default to thirty seconds. This example
-sets the socket read timeout to one minute and the connection timeout to ten
+<code class="literal">connect_timeout</code> field. Both default to 30 seconds. This example
+sets the socket read timeout to one minute and the connection timeout to 10
 seconds:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
   "source": {
@@ -968,17 +968,17 @@ for details. <code class="literal">timeout</code> controls how long each write r
 shards to become available. Both work exactly how they work in the
 <a class="link" href="docs-bulk.html" title="Bulk API">Bulk API</a>. As <code class="literal">_reindex</code> uses scroll search, you can also specify
 the <code class="literal">scroll</code> parameter to control how long it keeps the "search context" alive,
-eg <code class="literal">?scroll=10m</code>, by default it’s 5 minutes.</p><p><code class="literal">requests_per_second</code> can be set to any positive decimal number (<code class="literal">1.4</code>, <code class="literal">6</code>,
-<code class="literal">1000</code>, etc) and throttles rate at which reindex issues batches of index
+(e.g. <code class="literal">?scroll=10m</code>). The default value is 5 minutes.</p><p><code class="literal">requests_per_second</code> can be set to any positive decimal number (<code class="literal">1.4</code>, <code class="literal">6</code>,
+<code class="literal">1000</code>, etc) and throttles the rate at which <code class="literal">_reindex</code> issues batches of index
 operations by padding each batch with a wait time. The throttling can be
-disabled by setting <code class="literal">requests_per_second</code> to <code class="literal">-1</code>.</p><p>The throttling is done by waiting between batches so that scroll that reindex
+disabled by setting <code class="literal">requests_per_second</code> to <code class="literal">-1</code>.</p><p>The throttling is done by waiting between batches so that the <code class="literal">scroll</code> which <code class="literal">_reindex</code>
 uses internally can be given a timeout that takes into account the padding.
 The padding time is the difference between the batch size divided by the
 <code class="literal">requests_per_second</code> and the time spent writing. By default the batch size is
 <code class="literal">1000</code>, so if the <code class="literal">requests_per_second</code> is set to <code class="literal">500</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">target_time = 1000 / 500 per second = 2 seconds
-wait_time = target_time - write_time = 2 seconds - .5 seconds = 1.5 seconds</pre></div><p>Since the batch is issued as a single <code class="literal">_bulk</code> request large batch sizes will
+wait_time = target_time - write_time = 2 seconds - .5 seconds = 1.5 seconds</pre></div><p>Since the batch is issued as a single <code class="literal">_bulk</code> request, large batch sizes will
 cause Elasticsearch to create many requests and then wait for a while before
-starting the next set. This is "bursty" instead of "smooth". The default is <code class="literal">-1</code>.</p><h3><a id="docs-reindex-response-body"></a>Response body<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The JSON response looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+starting the next set. This is "bursty" instead of "smooth". The default value is <code class="literal">-1</code>.</p><h3><a id="docs-reindex-response-body"></a>Response body<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The JSON response looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "took": 639,
   "timed_out": false,
   "total": 5,
@@ -999,12 +999,12 @@ starting the next set. This is "bursty" instead of "smooth". The default is <cod
 }</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">took</code>
 </span></dt><dd>
-The number of milliseconds from start to end of the whole operation.
+The total milliseconds the entire operation took.
 </dd><dt><span class="term">
 <code class="literal">timed_out</code>
 </span></dt><dd>
 This flag is set to <code class="literal">true</code> if any of the requests executed during the
-reindex has timed out.
+reindex timed out.
 </dd><dt><span class="term">
 <code class="literal">total</code>
 </span></dt><dd>
@@ -1050,7 +1050,7 @@ The number of requests per second effectively executed during the reindex.
 </dd><dt><span class="term">
 <code class="literal">throttled_until_millis</code>
 </span></dt><dd>
-This field should always be equal to zero in a delete by query response. It only
+This field should always be equal to zero in a <code class="literal">_delete_by_query</code> response. It only
 has meaning when using the <a class="link" href="docs-reindex.html#docs-reindex-task-api" title="Works with the Task APIedit">Task API</a>, where it
 indicates the next time (in milliseconds since epoch) a throttled request will be
 executed again in order to conform to <code class="literal">requests_per_second</code>.
@@ -1061,7 +1061,7 @@ Array of all indexing failures. If this is non-empty then the request aborted
 because of those failures. See <code class="literal">conflicts</code> for how to prevent version conflicts
 from aborting the operation.
 </dd></dl></div><h3><a id="docs-reindex-task-api"></a>Works with the Task API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can fetch the status of all running reindex requests with the
-<a class="link" href="tasks.html" title="Task Management API">Task API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks?detailed=true&amp;actions=*reindex</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/18.json"></div><p>The responses looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+<a class="link" href="tasks.html" title="Task Management API">Task API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _tasks?detailed=true&amp;actions=*reindex</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/18.json"></div><p>The response looks like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "nodes" : {
     "r1A2WoRbTwKZ516z6NEs5A" : {
       "name" : "r1A2WoR",
@@ -1098,19 +1098,19 @@ from aborting the operation.
     }
   }
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO21-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-this object contains the actual status. It is just like the response json
-with the important addition of the <code class="literal">total</code> field. <code class="literal">total</code> is the total number
-of operations that the reindex expects to perform. You can estimate the
+this object contains the actual status. It is identical to the response JSON
+except for the important addition of the <code class="literal">total</code> field. <code class="literal">total</code> is the total number
+of operations that the <code class="literal">_reindex</code> expects to perform. You can estimate the
 progress by adding the <code class="literal">updated</code>, <code class="literal">created</code>, and <code class="literal">deleted</code> fields. The request
 will finish when their sum is equal to the <code class="literal">total</code> field.
 </p></td></tr></table></div><p>With the task id you can look up the task directly:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_tasks/taskId:1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/19.json"></div><p>The advantage of this API is that it integrates with <code class="literal">wait_for_completion=false</code>
 to transparently return the status of completed tasks. If the task is completed
-and <code class="literal">wait_for_completion=false</code> was set on it them it’ll come back with a
+and <code class="literal">wait_for_completion=false</code> was set, it will return a
 <code class="literal">results</code> or an <code class="literal">error</code> field. The cost of this feature is the document that
 <code class="literal">wait_for_completion=false</code> creates at <code class="literal">.tasks/task/${taskId}</code>. It is up to
-you to delete that document.</p><h3><a id="docs-reindex-cancel-task-api"></a>Works with the Cancel Task API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Any Reindex can be canceled using the <a class="link" href="tasks.html" title="Task Management API">Task Cancel API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _tasks/task_id:1/_cancel</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/20.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Cancelation should happen quickly but might take a few seconds. The task status
-API above will continue to list the task until it is wakes to cancel itself.</p><h3><a id="docs-reindex-rethrottle"></a>Rethrottling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The value of <code class="literal">requests_per_second</code> can be changed on a running reindex using
-the <code class="literal">_rethrottle</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex/task_id:1/_rethrottle?requests_per_second=-1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/21.json"></div><p>The <code class="literal">task_id</code> can be found using the tasks API above.</p><p>Just like when setting it on the <code class="literal">_reindex</code> API <code class="literal">requests_per_second</code>
+you to delete that document.</p><h3><a id="docs-reindex-cancel-task-api"></a>Works with the Cancel Task API<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Any Reindex can be canceled using the <a class="link" href="tasks.html" title="Task Management API">Task Cancel API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _tasks/task_id:1/_cancel</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/20.json"></div><p>The <code class="literal">task_id</code> can be found using the Tasks API.</p><p>Cancelation should happen quickly but might take a few seconds. The Tasks
+API will continue to list the task until it wakes to cancel itself.</p><h3><a id="docs-reindex-rethrottle"></a>Rethrottling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The value of <code class="literal">requests_per_second</code> can be changed on a running reindex using
+the <code class="literal">_rethrottle</code> API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex/task_id:1/_rethrottle?requests_per_second=-1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/21.json"></div><p>The <code class="literal">task_id</code> can be found using the Tasks API above.</p><p>Just like when setting it on the Reindex API, <code class="literal">requests_per_second</code>
 can be either <code class="literal">-1</code> to disable throttling or any decimal number
 like <code class="literal">1.7</code> or <code class="literal">12</code> to throttle to that level. Rethrottling that speeds up the
 query takes effect immediately but rethrotting that slows down the query will
@@ -1120,7 +1120,7 @@ create an index containing documents that look like this:</p><div class="pre_wra
 {
   "text": "words words",
   "flag": "foo"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/22.json"></div><p>But you don’t like the name <code class="literal">flag</code> and want to replace it with <code class="literal">tag</code>.
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/22.json"></div><p>but you don’t like the name <code class="literal">flag</code> and want to replace it with <code class="literal">tag</code>.
 <code class="literal">_reindex</code> can create the other index for you:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
   "source": {
@@ -1132,7 +1132,7 @@ create an index containing documents that look like this:</p><div class="pre_wra
   "script": {
     "source": "ctx._source.tag = ctx._source.remove(\"flag\")"
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/23.json"></div><p>Now you can get the new document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test2/_doc/1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/24.json"></div><p>and it’ll look like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/23.json"></div><p>Now you can get the new document:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test2/_doc/1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/24.json"></div><p>which will return:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "found": true,
   "_id": "1",
   "_index": "test2",
@@ -1142,7 +1142,7 @@ create an index containing documents that look like this:</p><div class="pre_wra
     "text": "words words",
     "tag": "foo"
   }
-}</pre></div><p>Or you can search by <code class="literal">tag</code> or whatever you want.</p><h3><a id="docs-reindex-slice"></a>Slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Reindex supports <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> to parallelize the reindexing process.
+}</pre></div><h3><a id="docs-reindex-slice"></a>Slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Reindex supports <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> to parallelize the reindexing process.
 This parallelization can improve efficiency and provide a convenient way to
 break the request down into smaller parts.</p><h4><a id="docs-reindex-manual-slice"></a>Manual slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Slice a reindex request manually by providing a slice id and total number of
 slices to each request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
@@ -1170,12 +1170,12 @@ POST _reindex
   "dest": {
     "index": "new_twitter"
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/25.json"></div><p>Which you can verify works with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _refresh
-POST new_twitter/_search?size=0&amp;filter_path=hits.total</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/26.json"></div><p>Which results in a sensible <code class="literal">total</code> like this one:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/25.json"></div><p>You can verify this works by:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _refresh
+POST new_twitter/_search?size=0&amp;filter_path=hits.total</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/26.json"></div><p>which results in a sensible <code class="literal">total</code> like this one:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "hits": {
     "total": 120
   }
-}</pre></div><h4><a id="docs-reindex-automatic-slice"></a>Automatic slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>You can also let reindex automatically parallelize using <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> to
+}</pre></div><h4><a id="docs-reindex-automatic-slice"></a>Automatic slicing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>You can also let <code class="literal">_reindex</code> automatically parallelize using <a class="xref" href="search-request-scroll.html#sliced-scroll" title="Sliced Scroll">Sliced Scroll</a> to
 slice on <code class="literal">_uid</code>. Use <code class="literal">slices</code> to specify the number of slices to use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex?slices=5&amp;refresh
 {
   "source": {
@@ -1184,7 +1184,7 @@ slice on <code class="literal">_uid</code>. Use <code class="literal">slices</co
   "dest": {
     "index": "new_twitter"
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/27.json"></div><p>Which you also can verify works with:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST new_twitter/_search?size=0&amp;filter_path=hits.total</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/28.json"></div><p>Which results in a sensible <code class="literal">total</code> like this one:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/27.json"></div><p>You can also this verify works by:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST new_twitter/_search?size=0&amp;filter_path=hits.total</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/28.json"></div><p>which results in a sensible <code class="literal">total</code> like this one:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "hits": {
     "total": 120
   }
@@ -1199,7 +1199,7 @@ sub-requests are "child" tasks of the task for the request with <code class="lit
 Fetching the status of the task for the request with <code class="literal">slices</code> only contains
 the status of completed slices.
 </li><li class="listitem">
-These sub-requests are individually addressable for things like cancellation
+These sub-requests are individually addressable for things like cancelation
 and rethrottling.
 </li><li class="listitem">
 Rethrottling the request with <code class="literal">slices</code> will rethrottle the unfinished
@@ -1217,24 +1217,24 @@ above about distribution being uneven and you should conclude that the using
 <code class="literal">size</code> with <code class="literal">slices</code> might not result in exactly <code class="literal">size</code> documents being
 `_reindex`ed.
 </li><li class="listitem">
-Each sub-requests gets a slightly different snapshot of the source index
+Each sub-request gets a slightly different snapshot of the source index,
 though these are all taken at approximately the same time.
 </li></ul></div><h5><a id="docs-reindex-picking-slices"></a>Picking the number of slices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>If slicing automatically, setting <code class="literal">slices</code> to <code class="literal">auto</code> will choose a reasonable
-number for most indices. If you’re slicing manually or otherwise tuning
+number for most indices. If slicing manually or otherwise tuning
 automatic slicing, use these guidelines.</p><p>Query performance is most efficient when the number of <code class="literal">slices</code> is equal to the
-number of shards in the index. If that number is large, (for example,
-500) choose a lower number as too many <code class="literal">slices</code> will hurt performance. Setting
+number of shards in the index. If that number is large (e.g. 500),
+choose a lower number as too many <code class="literal">slices</code> will hurt performance. Setting
 <code class="literal">slices</code> higher than the number of shards generally does not improve efficiency
 and adds overhead.</p><p>Indexing performance scales linearly across available resources with the
 number of slices.</p><p>Whether query or indexing performance dominates the runtime depends on the
 documents being reindexed and cluster resources.</p><h3><a id="_reindex_daily_indices"></a>Reindex daily indices<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can use <code class="literal">_reindex</code> in combination with <a class="link" href="modules-scripting-painless.html" title="Painless Scripting Language">Painless</a>
- to reindex daily indices to apply a new template to the existing documents.</p><p>Assuming you have indices consisting of documents as following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT metricbeat-2016.05.30/_doc/1?refresh
+to reindex daily indices to apply a new template to the existing documents.</p><p>Assuming you have indices consisting of documents as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT metricbeat-2016.05.30/_doc/1?refresh
 {"system.cpu.idle.pct": 0.908}
 PUT metricbeat-2016.05.31/_doc/1?refresh
-{"system.cpu.idle.pct": 0.105}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/29.json"></div><p>The new template for the <code class="literal">metricbeat-*</code> indices is already loaded into Elasticsearch
+{"system.cpu.idle.pct": 0.105}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/29.json"></div><p>The new template for the <code class="literal">metricbeat-*</code> indices is already loaded into Elasticsearch,
 but it applies only to the newly created indices. Painless can be used to reindex
 the existing documents and apply the new template.</p><p>The script below extracts the date from the index name and creates a new index
-with <code class="literal">-1</code> appended. All data from <code class="literal">metricbeat-2016.05.31</code> will be reindex
+with <code class="literal">-1</code> appended. All data from <code class="literal">metricbeat-2016.05.31</code> will be reindexed
 into <code class="literal">metricbeat-2016.05.31-1</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
   "source": {
@@ -1247,9 +1247,9 @@ into <code class="literal">metricbeat-2016.05.31-1</code>.</p><div class="pre_wr
     "lang": "painless",
     "source": "ctx._index = 'metricbeat-' + (ctx._index.substring('metricbeat-'.length(), ctx._index.length())) + '-1'"
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/30.json"></div><p>All documents from the previous metricbeat indices now can be found in the <code class="literal">*-1</code> indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET metricbeat-2016.05.30-1/_doc/1
-GET metricbeat-2016.05.31-1/_doc/1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/31.json"></div><p>The previous method can also be used in combination with <a class="link" href="docs-reindex.html#docs-reindex-change-name" title="Reindex to change the name of a fieldedit">change the name of a field</a>
-to only load the existing data into the new index, but also rename fields if needed.</p><h3><a id="_extracting_a_random_subset_of_an_index"></a>Extracting a random subset of an index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Reindex can be used to extract a random subset of an index for testing:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/30.json"></div><p>All documents from the previous metricbeat indices can now be found in the <code class="literal">*-1</code> indices.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET metricbeat-2016.05.30-1/_doc/1
+GET metricbeat-2016.05.31-1/_doc/1</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/31.json"></div><p>The previous method can also be used in conjunction with <a class="link" href="docs-reindex.html#docs-reindex-change-name" title="Reindex to change the name of a fieldedit">change the name of a field</a>
+to load only the existing data into the new index and rename any fields if needed.</p><h3><a id="_extracting_a_random_subset_of_an_index"></a>Extracting a random subset of an index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p><code class="literal">_reindex</code> can be used to extract a random subset of an index for testing:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _reindex
 {
   "size": 10,
   "source": {
@@ -1266,7 +1266,7 @@ to only load the existing data into the new index, but also rename fields if nee
     "index": "random_twitter"
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/32.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO22-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Reindex defaults to sorting by <code class="literal">_doc</code> so <code class="literal">random_score</code> won’t have any
+<code class="literal">_reindex</code> defaults to sorting by <code class="literal">_doc</code> so <code class="literal">random_score</code> will not have any
 effect unless you override the sort to <code class="literal">_score</code>.
 </p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="docs-bulk.html">
               « 
