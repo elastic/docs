@@ -697,7 +697,7 @@ bind request, which is required to authenticate the credentials provided by the 
 used with the Active Directory realm and the ability to maintain a set of pooled
 connections to Active Directory. These pooled connection reduce the number of
 resources that must be created and destroyed with every user authentication.</p><p>The following example shows the configuration of a bind user through the user of the
-<code class="literal">bind_dn</code> and <code class="literal">bind_password</code> settings.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack:
+<code class="literal">bind_dn</code> and <code class="literal">secure_bind_password</code> settings.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack:
   security:
     authc:
       realms:
@@ -706,12 +706,13 @@ resources that must be created and destroyed with every user authentication.</p>
           order: 0
           domain_name: ad.example.com
           url: ldaps://ad.example.com:636
-          bind_dn: es_svc_user@ad.example.com <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-          bind_password: es_svc_user_password</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+          bind_dn: es_svc_user@ad.example.com <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This is the user that all Active Directory search requests are executed as.
     Without a bind user configured, all requests run as the user that is authenticating
     with Elasticsearch.
-</p></td></tr></table></div><p>When a bind user is configured, connection pooling is enabled by default.
+</p></td></tr></table></div><p>The password for the <code class="literal">bind_dn</code> user should be configured by adding the appropriate
+<code class="literal">secure_bind_password</code> setting to the Elasticsearch keystore.
+For example, the following command adds the password for the example realm above:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/elasticsearch-keystore add xpack.security.authc.realms.active_directory.secure_bind_password</pre></div><p>When a bind user is configured, connection pooling is enabled by default.
 Connection pooling can be disabled using the <code class="literal">user_search.pool.enabled</code> setting.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_multiple_domain_support"></a>Multiple Domain Support</h4></div></div></div><p>When authenticating users across multiple domains in a forest, there are a few minor
 differences in the configuration and the way that users will authenticate. The <code class="literal">domain_name</code>
 setting should be set to the forest root domain name. The <code class="literal">url</code> setting also needs to
@@ -784,7 +785,9 @@ operation are supported: failover and load balancing</p><div class="table"><a id
                                           <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes info API</a>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">bind_password</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>The password for the user that is used to bind to
                                           Active Directory. Due to its potential security impact,
                                           <code class="literal">bind_password</code> is not exposed via the
-                                          <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes info API</a>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">load_balance.type</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>The behavior to use when there are multiple LDAP URLs defined.
+                                          <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes info API</a>.
+                                          <span class="strong strong"><strong>Deprecated.</strong></span> Use <code class="literal">secure_bind_password</code> instead.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">secure_bind_password</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>(<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/secure-settings.html" target="_top">Secure</a>)
+                                          The password for the user that is used to bind to Active Directory.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">load_balance.type</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>The behavior to use when there are multiple LDAP URLs defined.
                                           For supported values see <a class="xref" href="active-directory-realm.html#ad-load-balancing" title="Load Balancing and Failover">Load Balancing and Failover</a>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">load_balance.cache_ttl</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>When using <code class="literal">dns_failover</code> or <code class="literal">dns_round_robin</code> as the load
                                           balancing type, this setting controls the amount of time to
                                           cache DNS lookups. Defaults to <code class="literal">1h</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">user_search.base_dn</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>Specifies the context to search for the user. Defaults to the
