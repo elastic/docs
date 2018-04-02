@@ -813,19 +813,20 @@ of a polygon with a hole:</p><div class="pre_wrapper"><pre class="programlisting
 }</pre></div><div class="console_widget" data-snippet="snippets/geo-shape/8.json"></div><p>The following is an example of a Polygon with a hole in WKT:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /example/doc
 {
     "location" : "POLYGON ((100.0 0.0, 101.0 0.0, 101.0 1.0, 100.0 1.0, 100.0 0.0), (100.2 0.2, 100.8 0.2, 100.8 0.8, 100.2 0.8, 100.2 0.2))"
-}</pre></div><div class="console_widget" data-snippet="snippets/geo-shape/9.json"></div><p><span class="strong strong"><strong>IMPORTANT NOTE:</strong></span> GeoJSON and WKT do not enforce a specific order for vertices
-thus ambiguous polygons around the dateline and poles are possible. To alleviate
-ambiguity the Open Geospatial Consortium (OGC)
-<a class="ulink" href="http://www.opengeospatial.org/standards/sfa" target="_top">Simple Feature Access</a> specification
-defines the following vertex ordering:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Outer Ring - Counterclockwise
-</li><li class="listitem">
-Inner Ring(s) / Holes - Clockwise
-</li></ul></div><p>For polygons that do not cross the dateline, vertex order will not matter in
-Elasticsearch. For polygons that do cross the dateline, Elasticsearch requires
-vertex ordering to comply with the OGC specification. Otherwise, an unintended polygon
-may be created and unexpected query/filter results will be returned.</p><p>The following provides an example of an ambiguous polygon.  Elasticsearch will apply
-OGC standards to eliminate ambiguity resulting in a polygon that crosses the dateline.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /example/doc
+}</pre></div><div class="console_widget" data-snippet="snippets/geo-shape/9.json"></div><p><span class="strong strong"><strong>IMPORTANT NOTE:</strong></span> WKT does not enforce a specific order for vertices thus
+ambiguous polygons around the dateline and poles are possible.
+<a class="ulink" href="https://tools.ietf.org/html/rfc7946#section-3.1.6" target="_top">GeoJSON</a> mandates that the
+outer polygon must be counterclockwise and interior shapes must be clockwise,
+which agrees with the Open Geospatial Consortium (OGC)
+<a class="ulink" href="http://www.opengeospatial.org/standards/sfa" target="_top">Simple Feature Access</a>
+specification for vertex ordering.</p><p>Elasticsearch accepts both clockwise and counterclockwise polygons if they
+appear not to cross the dateline (i.e. they cross less than 180° of longitude),
+but for polygons that do cross the dateline (or for other polygons wider than
+180°) Elasticsearch requires the vertex ordering to comply with the OGC and
+GeoJSON specifications. Otherwise, an unintended polygon may be created and
+unexpected query/filter results will be returned.</p><p>The following provides an example of an ambiguous polygon.  Elasticsearch will
+apply the GeoJSON standard to eliminate ambiguity resulting in a polygon that
+crosses the dateline.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /example/doc
 {
     "location" : {
         "type" : "polygon",
