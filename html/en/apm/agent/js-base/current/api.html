@@ -644,7 +644,29 @@
 key - Any string. Must not contain periods (<code class="literal">.</code>) as those have special meaning in Elasticsearch
 </li><li class="listitem">
 value - Any string. If a non-string data type is given, it’s converted to a string before being sent to the APM Server.
-</li></ul></div></li></ul></div></div><div class="navfooter"><span class="prev"><a href="sourcemap.html">
+</li></ul></div></li></ul></div><h3><a id="apm-add-filter"></a><code class="literal">apm.addFilter()</code><a href="https://github.com/elastic/apm-agent-js-base/edit/0.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A filter can be used to modify the APM payload before it is sent to the apm-server.
+This can be useful in for example redacting sensitive information from the payload:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.addFilter(function (payload) {
+  if (payload.errors) {
+    payload.errors.forEach(function (error) {
+      error.exception.message = error.exception.message.replace('secret', '[REDACTED]')
+    })
+  }
+  if (payload.transactions) {
+    payload.transactions.forEach(function (tr) {
+      tr.spans.forEach(function (span) {
+        if (span.context &amp;&amp; span.context.http &amp;&amp; span.context.http.url) {
+          var url = new URL(span.context.http.url.raw)
+          if (url.searchParams.get('token')) {
+            url.searchParams.set('token', 'REDACTED')
+          }
+          span.context.http.url.raw = url.toString()
+        }
+      })
+    })
+  }
+  // Make sure to return the payload
+  return payload
+})</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The payload will be dropped if one of the filters return a falsy value.</p></div></div></div><div class="navfooter"><span class="prev"><a href="sourcemap.html">
               « 
               Source Maps</a>
            
