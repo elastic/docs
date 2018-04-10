@@ -953,10 +953,17 @@ containing the data about to be sent to the APM Server.</p><p>For details on the
 see the <a class="ulink" href="https://www.elastic.co/guide/en/apm/server/6.2/intake-api.html" target="_top">APM Server intake API documentation</a>.</p><p>The filter function is synchronous and should return the manipulated payload object.
 If a filter function doesn’t return any value or returns a falsy value,
 the remaining filter functions will not be called and the payload <span class="strong strong"><strong>will not</strong></span> be sent to the APM Server.</p><p>Example usage:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">apm.addFilter(function (payload) {
-  if (payload.context.request &amp;&amp; payload.context.request.headers) {
-    // redact sensitive data
-    payload.context.request.headers['x-secret'] = '[REDACTED]'
-  }
+  // the payload can either contain an array of transactions or errors
+  var items = payload.transactions || payload.errors || []
+
+  // loop over each item in the array to redact any secrets we don't
+  // want sent to the APM Server
+  items.forEach(function (item) {
+    if (item.context.request &amp;&amp; item.context.request.headers) {
+      // redact sensitive data
+      payload.context.request.headers['x-secret'] = '[REDACTED]'
+    }
+  })
 
   // remember to return the modified payload
   return payload
