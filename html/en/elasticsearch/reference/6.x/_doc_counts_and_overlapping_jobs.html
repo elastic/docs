@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Get Watch API
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Doc counts and overlapping jobs
         | Elasticsearch Reference [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="watcher-api.html" title="Watcher APIs" /><link rel="prev" href="watcher-api-put-watch.html" title="Put Watch API" /><link rel="next" href="watcher-api-delete-watch.html" title="Delete Watch API" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="rollup-understanding-groups.html" title="Understanding Groups" /><link rel="prev" href="_grouping_limitations_with_heterogeneous_indices.html" title="Grouping Limitations with heterogeneous indices" /><link rel="next" href="rollup-search-limitations.html" title="Rollup Search Limitations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.x" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -629,75 +629,112 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [6.x]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-api.html">X-Pack APIs</a></span> » <span class="breadcrumb-link"><a href="watcher-api.html">Watcher APIs</a></span> » <span class="breadcrumb-node">Get Watch API</span></div><div class="navheader"><span class="prev"><a href="watcher-api-put-watch.html">
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-rollup.html">Rolling up historical data</a></span> » <span class="breadcrumb-link"><a href="rollup-understanding-groups.html">Understanding Groups</a></span> » <span class="breadcrumb-node">Doc counts and overlapping jobs</span></div><div class="navheader"><span class="prev"><a href="_grouping_limitations_with_heterogeneous_indices.html">
               « 
-              Put Watch API</a>
+              Grouping Limitations with heterogeneous indices</a>
            
         </span><span class="next">
            
-          <a href="watcher-api-delete-watch.html">Delete Watch API
+          <a href="rollup-search-limitations.html">Rollup Search Limitations
                »
-            </a></span></div><div class="xpack section"><div class="titlepage"><div><div><h2 class="title"><a id="watcher-api-get-watch"></a>Get Watch API</h2></div></div></div><p>This API retrieves a watch by its ID.</p><h4><a id="_request_65"></a>Request</h4><p><code class="literal">GET _xpack/watcher/watch/&lt;watch_id&gt;</code></p><h4><a id="_path_parameters_53"></a>Path Parameters</h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">watch_id</code> (required)
-</span></dt><dd>
-  (string) Identifier for the watch.
-</dd></dl></div><h4><a id="_authorization_56"></a>Authorization</h4><p>You must have <code class="literal">manage_watcher</code> or <code class="literal">monitor_watcher</code> cluster privileges to use
-this API. For more information, see
-<a class="ulink" href="https://www.elastic.co/guide/en/x-pack/6.x/security-privileges.html" target="_top">Security Privileges</a>.</p><h4><a id="_examples_68"></a>Examples</h4><p>The following example gets a watch with <code class="literal">my-watch</code> id:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _xpack/watcher/watch/my_watch</pre></div><div class="console_widget" data-snippet="snippets/watcher-api-get-watch/1.json"></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "found": true,
-  "_id": "my_watch",
-  "_version": 1,
-  "status": { <a id="CO378-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    "version": 1,
-    "state": {
-      "active": true,
-      "timestamp": "2015-05-26T18:21:08.630Z"
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_doc_counts_and_overlapping_jobs"></a>Doc counts and overlapping jobs</h2></div></div></div><p>There is an issue with doc counts, related to the above grouping limitation.  Imagine you have two Rollup jobs saving to the same index, where
+one job is a "subset" of another job.</p><p>For example, you might have jobs with these two groupings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/rollup/job/sensor-all
+{
+    "groups" : {
+      "date_histogram": {
+        "field": "timestamp",
+        "interval": "1h",
+        "delay": "7d"
+      },
+      "terms": {
+        "fields": ["node"]
+      }
     },
-    "actions": {
-      "test_index": {
-        "ack": {
-          "timestamp": "2015-05-26T18:21:08.630Z",
-          "state": "awaits_successful_execution"
+    "metrics": [
+        {
+            "field": "price",
+            "metrics": ["avg"]
         }
+    ]
+    ...
+}</pre></div><p>and</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/rollup/job/sensor-building
+{
+    "groups" : {
+      "date_histogram": {
+        "field": "timestamp",
+        "interval": "1h",
+        "delay": "7d"
+      },
+      "terms": {
+        "fields": ["node", "building"]
       }
     }
-  },
-  "watch": {
-    "input": {
-      "simple": {
-        "payload": {
-          "send": "yes"
-        }
-      }
+    ...
+}</pre></div><p>The first job <code class="literal">sensor-all</code> contains the groupings and metrics that apply to all data in the index.  The second job is rolling up a subset
+of data (in different buildings) which also include a building identifier.  You did this because combining them would run into the limitation
+described in the previous section.</p><p>This <span class="emphasis"><em>mostly</em></span> works, but can sometimes return incorrect <code class="literal">doc_counts</code> when you search.  All metrics will be valid however.</p><p>The issue arises from the composite agg limitation described before, combined with search-time optimization.  Imagine you try to run the
+following aggregation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggs" : {
+  "nodes": {
+    "terms": {
+      "field": "node"
+    }
+  }
+}</pre></div><p>This aggregation could be serviced by either <code class="literal">sensor-all</code> or <code class="literal">sensor-building</code> job, since they both group on the node field.  So the RollupSearch
+API will search both of them and merge results.  This will result in <span class="strong strong"><strong>correct</strong></span> doc_counts and <span class="strong strong"><strong>correct</strong></span> metrics.  No problem here.</p><p>The issue arises from an aggregation that can <span class="emphasis"><em>only</em></span> be serviced by <code class="literal">sensor-building</code>, like this one:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggs" : {
+  "nodes": {
+    "terms": {
+      "field": "node"
     },
-    "condition": {
-      "always": {}
-    },
-    "trigger": {
-      "schedule": {
-        "hourly": {
-          "minute": [0, 5]
-        }
-      }
-    },
-    "actions": {
-      "test_index": {
-        "index": {
-          "index": "test",
-          "doc_type": "test2"
+    "aggs": {
+      "building": {
+        "terms": {
+          "field": "building"
         }
       }
     }
   }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO378-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The current status of the watch
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="watcher-api-put-watch.html">
+}</pre></div><p>Now we run into a problem.  The RollupSearch API will correctly identify that only <code class="literal">sensor-building</code> job has all the required components
+to answer the aggregation, and will search it exclusively.  Unfortunately, due to the composite aggregation limitation, that job only
+rolled up documents that have both a "node" and a "building" field.  Meaning that the doc_counts for the <code class="literal">"nodes"</code> aggregation will not
+include counts for any document that doesn’t have <code class="literal">[node, building]</code> fields.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The <code class="literal">doc_count</code> for <code class="literal">"nodes"</code> aggregation will be incorrect because it only contains counts for <code class="literal">nodes</code> that also have buildings
+</li><li class="listitem">
+The <code class="literal">doc_count</code> for <code class="literal">"buildings"</code> aggregation will be correct
+</li><li class="listitem">
+Any metrics, on any level, will be correct
+</li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_workarounds"></a>Workarounds</h3></div></div></div><p>There are two main workarounds if you find yourself with a schema like the above.</p><p>Easiest and most robust method: use separate indices to store your rollups.  The limitations arise because you have several document
+schemas co-habitating in a single index, which makes it difficult for rollups to correctly summarize.  If you make several rollup
+jobs and store them in separate indices, these sorts of difficulties do not arise.  It does, however, keep you from searching across several
+different rollup indices at the same time.</p><p>The other workaround is to include an "off-target" aggregation in the query, which pulls in the "superset" job and corrects the doc counts.
+The RollupSearch API determines the best job to search for each "leaf node" in the aggregation tree.  So if we include a metric agg on <code class="literal">price</code>,
+which was only defined in the <code class="literal">sensor-all</code> job, that will "pull in" the other job:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggs" : {
+  "nodes": {
+    "terms": {
+      "field": "node"
+    },
+    "aggs": {
+      "building": {
+        "terms": {
+          "field": "building"
+        }
+      },
+      "avg_price": {
+        "avg": { "field": "price" } <a id="CO364-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      }
+    }
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO364-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Adding an avg aggregation here will fix the doc counts
+</p></td></tr></table></div><p>Because only <code class="literal">sensor-all</code> job had an <code class="literal">avg</code> on the price field, the RollupSearch API is forced to pull in that additional job for searching,
+and will merge/correct the doc_counts as appropriate.  This sort of workaround applies to any additional aggregation — metric or bucketing — although it can be tedious to look through the jobs and determine the right one to add.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_status"></a>Status</h3></div></div></div><p>We realize this is an onerous limitation, and somewhat breaks the rollup contract of "pick the fields to rollup, we do the rest".  We are
+actively working to get the limitation to <code class="literal">composite</code> agg fixed, and the related issues in Rollup.  The documentation will be updated when
+the fix is implemented.</p></div></div><div class="navfooter"><span class="prev"><a href="_grouping_limitations_with_heterogeneous_indices.html">
               « 
-              Put Watch API</a>
+              Grouping Limitations with heterogeneous indices</a>
            
         </span><span class="next">
            
-          <a href="watcher-api-delete-watch.html">Delete Watch API
+          <a href="rollup-search-limitations.html">Rollup Search Limitations
                »
             </a></span></div>
 <!-- end body -->
