@@ -647,100 +647,13 @@ monitoring cluster.</p><p>To use X-Pack monitoring with X-Pack security enabled,
 and create at least one user for the Monitoring UI. If you are using an external
 monitoring cluster, you also need to configure a user for the monitoring agent
 and configure the agent to use the appropriate credentials when communicating
-with the monitoring cluster.</p><h4><a id="monitoring-ui-users"></a>Setting Up Monitoring UI Users</h4><p>When X-Pack security is enabled, Kibana users are prompted to log in when they access
-the UI. To use the Monitoring UI, a user must have access to the Kibana indices
-and permission to read from the monitoring indices.</p><p>You set up Monitoring UI users on the cluster where the monitoring data is being
-stored. To grant all of the necessary permissions, assign the user the
-<code class="literal">monitoring_user</code> and <code class="literal">kibana_user</code> roles:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
-If you’re using the <code class="literal">native</code> realm, you can assign roles through Kibana or
-with the <a class="link" href="native-realm.html#managing-native-users" title="Managing Native Users">User Management API</a>. For example, the following
-command creates a user named <code class="literal">jacknich</code> and assigns him the <code class="literal">kibana_user</code> and
-<code class="literal">monitoring_user</code> roles:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_xpack/security/user/jacknich
-{
-  "password" : "t0pS3cr3t",
-  "roles" : [ "kibana_user", "monitoring_user" ]
-}</pre></div></li><li class="listitem"><p class="simpara">
-If you are using an LDAP or Active Directory realm, you can either assign roles
-on a per user basis, or assign roles to groups of users. By default, role mappings
-are configured in <a class="link" href="mapping-roles.html" title="Mapping Users and Groups to Roles"><code class="literal">config/x-pack/role_mapping.yml</code></a>. For example,
-the following snippet assigns the user named Jack Nicholson to the <code class="literal">kibana_user</code>
-and <code class="literal">monitoring_user</code> roles:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">kibana_user:
-  - "cn=Jack Nicholson,dc=example,dc=com"
-monitoring_user:
-  - "cn=Jack Nicholson,dc=example,dc=com"</pre></div></li></ul></div><h4><a id="configuring-monitoring-agent-security"></a>Configuring Monitoring Agent to Communicate with a X-Pack security-Enabled Monitoring Cluster</h4><p>To configure the monitoring agent to communicate with a secured monitoring cluster:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Configure a user on the monitoring cluster who has the <code class="literal">remote_monitoring_agent</code>
-role, which is <a class="link" href="built-in-roles.html#built-in-roles-remote-monitoring-agent">built-in to X-Pack</a>.
-For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_xpack/security/user/agent-user
-{
-  "password" : "t0pS3cr3t",
-  "roles" : [ "remote_monitoring_agent" ]
-}</pre></div></li><li class="listitem"><p class="simpara">
-On each node in the cluster being monitored, configure a Monitoring HTTP exporter
-in <code class="literal">elasticsearch.yml</code> and restart Elasticsearch. In the exporter configuration,
-you need to:
-</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
-Set the <code class="literal">type</code> to <code class="literal">http</code>.
+with the monitoring cluster.</p><p>For more information, see:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/configuring-monitoring.html" target="_top">Configuring monitoring in Elasticsearch</a>
 </li><li class="listitem">
-Specify the location of the monitoring cluster in the <code class="literal">host</code> setting.
+<a class="ulink" href="https://www.elastic.co/guide/en/kibana/6.x/monitoring-xpack-kibana.html" target="_top">Configuring monitoring in Kibana</a>
 </li><li class="listitem">
-Provide the agent user credentials with the <code class="literal">username</code> and <code class="literal">password</code> settings.
-</li></ol></div><p class="simpara">For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
-  id1:
-    type: http
-    host: ["http://es-mon1:9200", "http://es-mon2:9200"]
-    auth:
-      username: agent-user
-      password: password</pre></div><p class="simpara">If SSL/TLS is enabled on the monitoring cluster:</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
-Specify the HTTPS protocol when setting the monitoring server host.
-</li><li class="listitem">
-Include the CA certificate in each node’s trusted certificates in order to verify
-   the identities of the nodes in the monitoring cluster.
-</li></ol></div><p class="simpara">To add a CA certificate to an Elasticsearch node’s trusted certificates, you
-can specify the location of the PEM encoded certificate with the
-<code class="literal">certificate_authorities</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
-  id1:
-    type: http
-    host: ["https://es-mon1:9200", "https://es-mon2:9200"]
-    auth:
-      username: agent-user
-      password: password
-    ssl:
-      certificate_authorities: [ "/path/to/ca.crt" ]
-  id2:
-    type: local</pre></div><p class="simpara">Alternatively, you can configure trusted certificates using a truststore
-(a Java Keystore file that contains the certificates):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
-  id1:
-    type: http
-    host: ["https://es-mon1:9200", "https://es-mon2:9200"]
-    auth:
-      username: agent-user
-      password: password
-    ssl:
-      truststore.path: /path/to/file
-      truststore.password: password
-  id2:
-    type: local</pre></div></li><li class="listitem"><p class="simpara">
-On each Logstash node being monitored, update <code class="literal">logstash.yml</code> to:
-</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
-Specify the location of the monitoring cluster and provide credentials
-for the agent user:
-</li></ol></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.url: ["http://es-mon-1:9200", "http://es-mon2:9200"]
-xpack.monitoring.elasticsearch.username: "remote_monitor"
-xpack.monitoring.elasticsearch.password: "x-pack-test-password"</pre></div><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
-If SSL/TLS is enabled on the monitoring cluster:
-</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Specify the HTTPS protocol when setting the <code class="literal">elasticsearch.url</code>.
-</li><li class="listitem">
-Include the CA certificate in each node’s trusted certificates in order to verify
-   the identities of the nodes in the monitoring cluster.
-</li></ul></div></li></ol></div><p class="simpara">To add a CA certificate to an node’s trusted certificates, you
-can specify the location of the PEM encoded certificate with the
-<code class="literal">xpack.monitoring.elasticsearch.ssl.ca</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.ssl.ca: /path/to/ca.crt</pre></div><p class="simpara">Alternatively, you can configure trusted certificates using a truststore
-(a Java Keystore file that contains the certificates):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.elasticsearch.ssl.truststore.path: /path/to/file
-xpack.monitoring.elasticsearch.ssl.truststore.password: x-pack-test-password</pre></div></li></ol></div></div><div class="navfooter"><span class="prev"><a href="beats.html">
+<a class="ulink" href="http://www.elastic.co/guide/en/logstash/6.x/configuring-logstash.html" target="_top">Configuring monitoring for Logstash nodes</a>
+</li></ul></div></div><div class="navfooter"><span class="prev"><a href="beats.html">
               « 
               Beats and Security</a>
            
