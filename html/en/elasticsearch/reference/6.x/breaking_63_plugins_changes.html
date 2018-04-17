@@ -653,7 +653,18 @@ if standard input was closed or there was no TTY attached (e.g., <code class="li
 additional security permissions has been removed. Now, a user must deliberately
 accept these permissions either by keeping standard input open and attaching a
 TTY (i.e., using interactive mode to accept the permissions), or by passing the
-<code class="literal">--batch</code> flag.</p></div></div><div class="navfooter"><span class="prev"><a href="breaking-changes-6.3.html">
+<code class="literal">--batch</code> flag.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_concurrency_level_of_analyze_requests"></a>Concurrency level of analyze requests<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/migration/migrate_6_3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Previously, analyze requests would run on the same thread pool as indexing
+requests. The <code class="literal">index</code> thread pool has been deprecated as it is no longer needed
+since indexing requests are internally converted to bulk requests and run on the
+<code class="literal">bulk</code> thread pool. This leaves analyze requests without a home so we added a
+small thread pool called the <code class="literal">analyze</code> thread pool. This thread pool defaults to
+having one thread and a queue depth of sixteen requests. This means that
+previously analyze requests had a level of concurrency equal to the size of the
+<code class="literal">index</code> thread pool and now they have a level of concurrency of one. For most
+users we think this is fine as analyze requests are useful for debugging and so
+probably do not see high concurrency. If you are impacted by this you can
+increase the size of the thread pool by using the <code class="literal">thread_pool.analyze.size</code>
+setting.</p></div></div><div class="navfooter"><span class="prev"><a href="breaking-changes-6.3.html">
               « 
               Breaking changes in 6.3</a>
            
