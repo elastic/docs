@@ -230,9 +230,7 @@ jQuery(function() {
       function() {
         var div = jQuery(this);
         var snippet = div.attr('data-snippet');
-        div.html('<a class="sense_widget copy_as_curl" data-host="'
-          + sense_url
-          + '">'
+        div.html('<a class="sense_widget copy_as_curl" data-curl-host="localhost:9200">'
           + Strings['Copy as cURL']
           + '</a>'
           + '<a class="sense_widget" target="sense" '
@@ -262,9 +260,7 @@ jQuery(function() {
       function() {
         var div = jQuery(this);
         var snippet = div.attr('data-snippet');
-        div.html('<a class="sense_widget copy_as_curl" data-host="'
-          + console_url
-          + '">'
+        div.html('<a class="sense_widget copy_as_curl" data-curl-host="localhost:9200">'
           + Strings['Copy as cURL']
           + '</a>'
           + '<a class="console_widget" target="console" '
@@ -304,7 +300,7 @@ jQuery(function() {
       var regex = console_regex();
       var div = jQuery(this);
       var consoleText = div.parent().prev().text() + '\n';
-      var host = div.data('host');
+      var host = div.data('curl-host');
       var curlText = '';
       var match;
 
@@ -392,7 +388,7 @@ jQuery(function() {
       function() {
         var div = jQuery(this);
         var snippet = div.attr('data-snippet');
-        div.html('<a class="kibana_widget copy_as_curl" data-host="'
+        div.html('<a class="kibana_widget copy_as_curl" data-curl-host="'
           + kibana_url
           + '" data-kibana="true">'
           + Strings['Copy as cURL']
