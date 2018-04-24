@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Percentiles Bucket Aggregation Usage
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Handling Responses
         | Elasticsearch.Net and NEST: the .NET clients [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="pipeline-aggregations.html" title="Pipeline Aggregations" /><link rel="prev" href="moving-average-simple-aggregation-usage.html" title="Moving Average Simple Aggregation Usage" /><link rel="next" href="serial-differencing-aggregation-usage.html" title="Serial Differencing Aggregation Usage" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/.Net/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Clients" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch.Net and NEST: the .NET clients [master]" /><link rel="up" href="bucket-aggregations.html" title="Bucket Aggregations" /><link rel="prev" href="filter-aggregation-usage.html" title="Filter Aggregation Usage" /><link rel="next" href="filters-aggregation-usage.html" title="Filters Aggregation Usage" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/.Net/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Clients" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
     <!-- RTP tag -->
     <script type='text/javascript' async>
     (function(c,h,a,f,i,e){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a].a=i;c[a].e=e;var g=h.createElement("script");g.async=true;g.type="text/javascript";g.src=f+'?aid='+i;var b=h.getElementsByTagName("script")[0];b.parentNode.insertBefore(g,b);})(window,document,"rtp","//sjrtp2-cdn.marketo.com/rtp-api/v1/rtp.js","elasticco");
@@ -629,80 +629,76 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch.Net and NEST:  the .NET clients
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="reference-aggregations.html">Aggregations</a></span> » <span class="breadcrumb-link"><a href="pipeline-aggregations.html">Pipeline Aggregations</a></span> » <span class="breadcrumb-node">Percentiles Bucket Aggregation Usage</span></div><div class="navheader"><span class="prev"><a href="moving-average-simple-aggregation-usage.html">
+    </a></span> » <span class="breadcrumb-link"><a href="reference-aggregations.html">Aggregations</a></span> » <span class="breadcrumb-link"><a href="bucket-aggregations.html">Bucket Aggregations</a></span> » <span class="breadcrumb-node">Handling Responses</span></div><div class="navheader"><span class="prev"><a href="filter-aggregation-usage.html">
               « 
-              Moving Average Simple Aggregation Usage</a>
+              Filter Aggregation Usage</a>
            
         </span><span class="next">
            
-          <a href="serial-differencing-aggregation-usage.html">Serial Differencing Aggregation Usage
+          <a href="filters-aggregation-usage.html">Filters Aggregation Usage
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="percentiles-bucket-aggregation-usage"></a>Percentiles Bucket Aggregation Usage<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/percentiles-bucket/percentiles-bucket-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
-.DateHistogram("projects_started_per_month", dh =&gt; dh
-    .Field(p =&gt; p.StartedOn)
-    .Interval(DateInterval.Month)
-    .Aggregations(aa =&gt; aa
-        .Sum("commits", sm =&gt; sm
-            .Field(p =&gt; p.NumberOfCommits)
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_handling_responses_31"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/filter/filter-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">AggregateDictionary found on `.Aggregations</code> on <code class="literal">ISearchResponse&lt;T&gt;</code> has several helper methods
+so we can fetch our aggregation results easily in the correct type.
+<a class="link" href="writing-aggregations.html#handling-aggregate-response" title="Handling responsesedit">Be sure to read more about these helper methods</a></p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_32"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/filter/filter-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+
+var filterAgg = response.Aggregations.Filter("bethels_projects");
+filterAgg.Should().NotBeNull();
+filterAgg.DocCount.Should().BeGreaterThan(0);
+var tags = filterAgg.Terms("project_tags");
+tags.Should().NotBeNull();
+tags.Buckets.Should().NotBeEmpty();</pre></div><h2><a id="_empty_filter"></a>Empty Filter<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/bucket/filter/filter-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>When the collection of filters is empty or all are conditionless, NEST will serialize them
+to an empty object.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+.Filter("empty_filter", date =&gt; date
+    .Filter(f =&gt; f
+        .Bool(b =&gt; b
+            .Filter(new QueryContainer[0])
         )
     )
-)
-.PercentilesBucket("commits_outlier", aaa =&gt; aaa
-    .BucketsPath("projects_started_per_month&gt;commits")
-    .Percents(95, 99, 99.9)
-)</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new DateHistogramAggregation("projects_started_per_month")
+)</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new FilterAggregation("empty_filter")
 {
-    Field = "startedOn",
-    Interval = DateInterval.Month,
-    Aggregations = new SumAggregation("commits", "numberOfCommits")
-}
-&amp;&amp; new PercentilesBucketAggregation("commits_outlier", "projects_started_per_month&gt;commits")
-{
-    Percents = new[] {95, 99, 99.9}
+    Filter = new BoolQuery
+    {
+        Filter = new List&lt;QueryContainer&gt;()
+    }
 }</pre></div><p><strong>Example json output. </strong>
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
-  "projects_started_per_month": {
-    "date_histogram": {
-      "field": "startedOn",
-      "interval": "month"
-    },
-    "aggs": {
-      "commits": {
-        "sum": {
-          "field": "numberOfCommits"
+  "empty_filter": {
+    "filter": {}
+  }
+}</pre></div><p>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldNotBeValid();</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+.Filter(_aggName, date =&gt; date
+    .Filter(f =&gt; f
+        .Script(b =&gt; b
+            .Source(_ctxNumberofCommits)
+        )
+    )
+)</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new FilterAggregation(_aggName)
+{
+    Filter = new ScriptQuery
+    {
+        Source = _ctxNumberofCommits
+    }
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "script_filter": {
+    "filter": {
+      "script": {
+        "script": {
+          "source": "_source.numberOfCommits &gt; 0"
         }
       }
     }
-  },
-  "commits_outlier": {
-    "percentiles_bucket": {
-      "buckets_path": "projects_started_per_month&gt;commits",
-      "percents": [
-        95.0,
-        99.0,
-        99.9
-      ]
-    }
   }
 }</pre></div><p>
-</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_62"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/master/docs/aggregations/pipeline/percentiles-bucket/percentiles-bucket-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
-
-var projectsPerMonth = response.Aggregations.DateHistogram("projects_started_per_month");
-projectsPerMonth.Should().NotBeNull();
-projectsPerMonth.Buckets.Should().NotBeNull();
-projectsPerMonth.Buckets.Count.Should().BeGreaterThan(0);
-
-var commitsOutlier = response.Aggregations.PercentilesBucket("commits_outlier");
-commitsOutlier.Should().NotBeNull();
-commitsOutlier.Items.Should().NotBeNullOrEmpty();
-foreach (var item in commitsOutlier.Items)
-    item.Value.Should().BeGreaterThan(0);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="moving-average-simple-aggregation-usage.html">
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
+response.Aggregations.Filter(_aggName).DocCount.Should().BeGreaterThan(0);</pre></div></div></div><div class="navfooter"><span class="prev"><a href="filter-aggregation-usage.html">
               « 
-              Moving Average Simple Aggregation Usage</a>
+              Filter Aggregation Usage</a>
            
         </span><span class="next">
            
-          <a href="serial-differencing-aggregation-usage.html">Serial Differencing Aggregation Usage
+          <a href="filters-aggregation-usage.html">Filters Aggregation Usage
                »
             </a></span></div>
 <!-- end body -->
