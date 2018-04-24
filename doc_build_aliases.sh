@@ -13,22 +13,24 @@
 # Elasticsearch
 alias docbldes='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --chunk 1'
 
-alias docbldesx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs/ --chunk 1'
+alias docbldesx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch/x-pack/docs/ --chunk 1'
 
 # Kibana
 alias docbldkb='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.asciidoc --chunk 1'
 
-alias docbldkbx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
+alias docbldkbx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana/x-pack/docs/ --chunk 1'
 
 # Logstash
 alias docbldls='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
 
-alias docbldlsx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/logstash/docs/index.x.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --resource=$GIT_HOME/logstash-extra/x-pack-logstash/docs/ --chunk 1'
+alias docbldlsx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/logstash/docs/index.x.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --resource=$GIT_HOME/logstash/x-pack/docs/ --chunk 1'
 
 # Stack
 alias docbldstk='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/index.asciidoc'
 
 alias docbldgls='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc'
+
+alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana/x-pack/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --chunk 1'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
@@ -98,6 +100,6 @@ alias docbldecc='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs
 
 alias docbldesh='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/index.adoc'
 
-# X-Pack Reference 5.4 and later
+# X-Pack Reference 5.4 to 6.2
 
 alias docbldx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs --chunk 1'
