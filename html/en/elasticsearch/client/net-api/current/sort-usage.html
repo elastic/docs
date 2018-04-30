@@ -635,14 +635,15 @@
           <a href="source-filtering-usage.html">Source Filtering Usage
                »
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="sort-usage"></a>Sort Usage<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/search/request/sort-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Allows to add one or more sort on specific fields. Each sort can be reversed as well.
-The sort is defined on a per field level, with special field name for <code class="literal">_score</code> to sort by score.</p><h3><a id="_fluent_dsl_example_17"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/search/request/sort-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
+The sort is defined on a per field level, with special field name for <code class="literal">_score</code> to sort by score.</p><h3><a id="_fluent_dsl_example_18"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/search/request/sort-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
 .Sort(ss =&gt; ss
     .Ascending(p =&gt; p.StartedOn)
     .Descending(p =&gt; p.Name)
     .Descending(SortSpecialField.Score)
     .Ascending(SortSpecialField.DocumentIndexOrder)
+
     .Field(f =&gt; f
-        .Field(p =&gt; p.LastActivity)
+        .Field(p =&gt; p.Tags.First().Added)
         .Order(SortOrder.Descending)
         .MissingLast()
         .UnmappedType(FieldType.Date)
@@ -671,7 +672,7 @@ The sort is defined on a per field level, with special field name for <code clas
             .Params(p =&gt; p.Add("factor", 1.1))
         )
     )
-)</pre></div><h3><a id="_object_initializer_syntax_example_17"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/search/request/sort-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
+)</pre></div><h3><a id="_object_initializer_syntax_example_18"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/search/request/sort-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
 {
     Sort = new List&lt;ISort&gt;
     {
@@ -681,7 +682,7 @@ The sort is defined on a per field level, with special field name for <code clas
         new SortField { Field = "_doc", Order = SortOrder.Ascending },
         new SortField
         {
-            Field = Field&lt;Project&gt;(p=&gt;p.LastActivity),
+            Field = Field&lt;Project&gt;(p=&gt;p.Tags.First().Added),
             Order = SortOrder.Descending,
             Missing = "_last",
             UnmappedType = FieldType.Date,
@@ -691,7 +692,7 @@ The sort is defined on a per field level, with special field name for <code clas
         },
         new SortField
         {
-            Field = Field&lt;Project&gt;(p=&gt;p.NumberOfCommits),
+            Field = Field&lt;Project&gt;(p =&gt; p.NumberOfCommits),
             Order = SortOrder.Descending,
             Missing = -1
         },
@@ -702,17 +703,17 @@ The sort is defined on a per field level, with special field name for <code clas
             DistanceType = GeoDistanceType.Arc,
             GeoUnit = DistanceUnit.Centimeters,
             Mode = SortMode.Min,
-            Points = new [] {new GeoLocation(70, -70), new GeoLocation(-12, 12) }
+            Points = new[] {new GeoLocation(70, -70), new GeoLocation(-12, 12)}
         },
         new ScriptSort
         {
             Type = "number",
             Order = SortOrder.Ascending,
-            Script =  new InlineScript("doc['numberOfCommits'].value * params.factor")
+            Script = new InlineScript("doc['numberOfCommits'].value * params.factor")
             {
                 Params = new Dictionary&lt;string, object&gt;
                 {
-                    { "factor", 1.1 }
+                    {"factor", 1.1}
                 }
             }
         }
@@ -741,14 +742,14 @@ The sort is defined on a per field level, with special field name for <code clas
       }
     },
     {
-      "lastActivity": {
+      "tags.added": {
         "missing": "_last",
         "order": "desc",
         "mode": "avg",
+        "nested_path": "tags",
         "nested_filter": {
           "match_all": {}
         },
-        "nested_path": "tags",
         "unmapped_type": "date"
       }
     },
@@ -786,6 +787,59 @@ The sort is defined on a per field level, with special field name for <code clas
           },
           "source": "doc['numberOfCommits'].value * params.factor"
         }
+      }
+    }
+  ]
+}</pre></div><p>
+</p><h3><a id="_nested_sort_usage"></a>Nested sort usage<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/search/request/sort-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In Elasticsearch 6.1.0+, using <code class="literal">nested_path</code> and <code class="literal">nested_filter</code> for sorting on fields mapped as
+<code class="literal">nested</code> types is deprecated. Instead, you should use the <code class="literal">nested</code> sort instead.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">s =&gt; s
+.Sort(ss =&gt; ss
+    .Field(f =&gt; f
+        .Field(p =&gt; p.Tags.First().Added)
+        .Order(SortOrder.Descending)
+        .MissingLast()
+        .UnmappedType(FieldType.Date)
+        .Mode(SortMode.Average)
+        .Nested(n =&gt; n
+            .Path(p =&gt; p.Tags)
+            .Filter(ff =&gt; ff
+                .MatchAll()
+            )
+        )
+    )
+)</pre></div><h3><a id="_object_initializer_syntax_example_19"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/search/request/sort-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new SearchRequest&lt;Project&gt;
+{
+    Sort = new List&lt;ISort&gt;
+    {
+        new SortField
+        {
+            Field = Field&lt;Project&gt;(p =&gt; p.Tags.First().Added),
+            Order = SortOrder.Descending,
+            Missing = "_last",
+            UnmappedType = FieldType.Date,
+            Mode = SortMode.Average,
+            Nested = new NestedSort
+            {
+                Path = Field&lt;Project&gt;(p =&gt; p.Tags),
+                Filter = new MatchAllQuery()
+            }
+        }
+    }
+}</pre></div><p><strong>Example json output. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">{
+  "sort": [
+    {
+      "tags.added": {
+        "missing": "_last",
+        "order": "desc",
+        "mode": "avg",
+        "nested": {
+          "path": "tags",
+          "filter": {
+            "match_all": {}
+          }
+        },
+        "unmapped_type": "date"
       }
     }
   ]
