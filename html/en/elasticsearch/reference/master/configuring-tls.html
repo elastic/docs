@@ -651,7 +651,10 @@ Configure each node to:
 Required: <a class="link" href="configuring-tls.html#tls-transport" title="Encrypting Communications Between Nodes in a Cluster">Enable TLS on the transport layer</a>.
 </li><li class="listitem">
 Recommended: <a class="link" href="configuring-tls.html#tls-http" title="Encrypting HTTP Client Communications">Enable TLS on the HTTP layer</a>.
-</li></ol></div></li></ol></div><p>For more information about encrypting communications across the Elastic Stack,
+</li></ol></div></li><li class="listitem">
+If you are using Active Directory user authentication,
+<a class="link" href="configuring-tls.html#tls-active-directory" title="Encrypting communications between Elasticsearch and Active Directory">encrypt communications between Elasticsearch and your Active Directory server</a>.
+</li></ol></div><p>For more information about encrypting communications across the Elastic Stack,
 see <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/master/encrypting-communications.html" target="_top">Encrypting Communications</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="node-certificates"></a>Generating Node Certificates</h3></div></div></div><p>TLS requires X.509 certificates to perform encryption and authentication of the
 application that is being communicated with. In order for the communication
 between nodes to be truly secure, the certificates must be validated. The
@@ -814,7 +817,42 @@ Restart Elasticsearch.
 </li></ol></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>All TLS-related node settings are considered to be highly sensitive and
 therefore are not exposed via the
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/cluster-nodes-info.html#cluster-nodes-info" target="_top">nodes info API</a> For more
-information about any of these settings, see <a class="xref" href="security-settings.html" title="Security settings in Elasticsearch">Security settings</a>.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="configuring-security.html">
+information about any of these settings, see <a class="xref" href="security-settings.html" title="Security settings in Elasticsearch">Security settings</a>.</p></div></div></div><div class="xpack section"><div class="titlepage"><div><div><h3 class="title"><a id="tls-active-directory"></a>Encrypting communications between Elasticsearch and Active Directory</h3></div></div></div><p>To protect the user credentials that are sent for authentication, it’s highly
+recommended to encrypt communications between Elasticsearch and your Active Directory
+server. Connecting via SSL/TLS ensures that the identity of the Active Directory
+server is authenticated before X-Pack security transmits the user credentials and the
+usernames and passwords are encrypted in transit.</p><p>Clients and nodes that connect via SSL/TLS to the Active Directory server need
+to have the Active Directory server’s certificate or the server’s root CA
+certificate installed in their keystore or truststore.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Create the realm configuration for the <code class="literal">xpack.security.authc.realms</code> namespace
+in the <code class="literal">elasticsearch.yml</code> file. See <a class="xref" href="configuring-ad-realm.html" title="Configuring an Active Directory realm">Configuring an Active Directory realm</a>.
+</li><li class="listitem">
+Set the <code class="literal">url</code> attribute in the realm configuration to specify the LDAPS protocol
+and the secure port number. For example, <code class="literal">url: ldaps://ad.example.com:636</code>.
+</li><li class="listitem"><p class="simpara">
+Configure each node to trust certificates signed by the certificate authority
+(CA) that signed your Active Directory server certificates.
+</p><p class="simpara">The following example demonstrates how to trust a CA certificate (<code class="literal">cacert.pem</code>),
+which is located within the configuration directory:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">xpack:
+  security:
+    authc:
+      realms:
+        active_directory:
+          type: active_directory
+          order: 0
+          domain_name: ad.example.com
+          url: ldaps://ad.example.com:636
+          ssl:
+            certificate_authorities: [ "CONFIG_DIR/cacert.pem" ]</pre></div><p class="simpara">The CA cert must be a PEM encoded certificate.</p><p class="simpara">For more information about these settings, see <a class="xref" href="security-settings.html#ref-ad-settings" title="Active Directory realm settings">Active Directory realm settings</a>.</p></li><li class="listitem">
+Restart Elasticsearch.
+</li></ol></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>By default, when you configure X-Pack security to connect to Active Directory
+      using SSL/TLS, X-Pack security attempts to verify the hostname or IP address
+      specified with the <code class="literal">url</code> attribute in the realm configuration with the
+      values in the certificate. If the values in the certificate and realm
+      configuration do not match, X-Pack security does not allow a connection to the
+      Active Directory server. This is done to protect against man-in-the-middle
+      attacks. If necessary, you can disable this behavior by setting the
+      <code class="literal">ssl.verification_mode</code> property to <code class="literal">certificate</code>.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="configuring-security.html">
               « 
               Configuring Security in Elasticsearch</a>
            
