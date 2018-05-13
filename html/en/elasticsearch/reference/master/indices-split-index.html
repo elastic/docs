@@ -704,13 +704,13 @@ compared to searching an index that would have <code class="literal">M+N</code> 
 and have <a class="link" href="cluster-health.html" title="Cluster Health">health</a> <code class="literal">green</code>.</p><p>This can be achieved with the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /my_source_index/_settings
 {
   "settings": {
-    "index.blocks.write": true <a id="CO153-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "index.blocks.write": true <a id="CO154-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/indices-split-index/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO153-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/indices-split-index/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO154-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Prevents write operations to this index while still allowing metadata
     changes like deleting the index.
 </p></td></tr></table></div><h3><a id="_splitting_an_index"></a>Splitting an index<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/split-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To split <code class="literal">my_source_index</code> into a new index called <code class="literal">my_target_index</code>, issue
-the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST my_source_index/_split/my_target_index
+the following request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST my_source_index/_split/my_target_index?copy_settings=true
 {
   "settings": {
     "index.number_of_shards": 2
@@ -727,24 +727,27 @@ The number of primary shards in the target index must be a factor of the
 The node handling the split process must have sufficient free disk space to
   accommodate a second copy of the existing index.
 </li></ul></div></div></div><p>The <code class="literal">_split</code> API is similar to the <a class="link" href="indices-create-index.html" title="Create Index"><code class="literal">create index</code> API</a>
-and accepts <code class="literal">settings</code> and <code class="literal">aliases</code> parameters for the target index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST my_source_index/_split/my_target_index
+and accepts <code class="literal">settings</code> and <code class="literal">aliases</code> parameters for the target index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST my_source_index/_split/my_target_index?copy_settings=true
 {
   "settings": {
-    "index.number_of_shards": 5 <a id="CO154-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "index.number_of_shards": 5 <a id="CO155-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
   },
   "aliases": {
     "my_search_indices": {}
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/indices-split-index/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO154-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/indices-split-index/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO155-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The number of shards in the target index. This must be a factor of the
     number of shards in the source index.
 </p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Mappings may not be specified in the <code class="literal">_split</code> request.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>By default, with the exception of <code class="literal">index.analysis</code>, <code class="literal">index.similarity</code>,
 and <code class="literal">index.sort</code> settings, index settings on the source index are not copied
 during a split operation. With the exception of non-copyable settings, settings
 from the source index can be copied to the target index by adding the URL
-parameter <code class="literal">copy_settings=true</code> to the request.</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><h3>Deprecated in 6.4.0. </h3><p>
- <code class="literal">copy_settings</code> will default to <code class="literal">true</code> in 8.x and will be removed in 9.0.0
-</p></div></div><h3><a id="_monitoring_the_split_process"></a>Monitoring the split process<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/split-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The split process can be monitored with the <a class="link" href="cat-recovery.html" title="cat recovery"><code class="literal">_cat recovery</code> API</a>, or the <a class="link" href="cluster-health.html" title="Cluster Health"><code class="literal">cluster health</code> API</a> can be used to wait
+parameter <code class="literal">copy_settings=true</code> to the request. Note that <code class="literal">copy_settings</code> can not
+be set to <code class="literal">false</code>. The parameter <code class="literal">copy_settings</code> will be removed in 9.0.0</p></div></div><p><span class="deprecated">
+      [<span class="version">6.4.0</span>]
+      <span class="detail">Deprecated in 6.4.0. 
+not copying settings is deprecated
+</span></span></p><h3><a id="_monitoring_the_split_process"></a>Monitoring the split process<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/indices/split-index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The split process can be monitored with the <a class="link" href="cat-recovery.html" title="cat recovery"><code class="literal">_cat recovery</code> API</a>, or the <a class="link" href="cluster-health.html" title="Cluster Health"><code class="literal">cluster health</code> API</a> can be used to wait
 until all primary shards have been allocated by setting the  <code class="literal">wait_for_status</code>
 parameter to <code class="literal">yellow</code>.</p><p>The <code class="literal">_split</code> API returns as soon as the target index has been added to the
 cluster state, before any shards have been allocated. At this point, all
