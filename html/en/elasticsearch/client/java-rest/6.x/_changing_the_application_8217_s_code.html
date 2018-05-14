@@ -645,10 +645,6 @@ does not support request builders. The legacy methods like
  request constructors like <code class="literal">new IndexRequest()</code> to create requests
  objects. The requests are then executed using synchronous or
  asynchronous dedicated methods like <code class="literal">client.index()</code> or <code class="literal">client.indexAsync()</code>.
-</li><li class="listitem">
-does not provide indices or cluster management APIs. Management
-operations can be executed by external scripts or
-<a class="link" href="_changing_the_application_8217_s_code.html#java-rest-high-level-migration-manage-indices" title="Manage Indices using the Low-Level REST Client">using the low-level client</a>.
 </li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_how_to_migrate_the_way_requests_are_built"></a>How to migrate the way requests are built<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Java API provides two ways to build a request: by using the request’s constructor or by using
 a request builder. Migrating from the <code class="literal">TransportClient</code> to the high-level client can be
 straightforward if application’s code uses the former, while changing usages of the latter can
@@ -729,127 +725,47 @@ returned by the cluster.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO332-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">onFailure()</code> method is called when an error occurs
 during the execution of the request.
-</p></td></tr></table></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-level-migration-manage-indices"></a>Manage Indices using the Low-Level REST Client<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The low-level client is able to execute any kind of HTTP requests, and can
-therefore be used to call the APIs that are not yet supported by the high level client.</p><p>For example, creating a new index with the <code class="literal">TransportClient</code> may look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings settings = Settings.builder() // <a id="CO333-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                                .put(SETTING_NUMBER_OF_SHARDS, 1)
-                                .put(SETTING_NUMBER_OF_REPLICAS, 0)
-                                .build();
+</p></td></tr></table></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-level-migration-cluster-health"></a>Checking Cluster Health using the Low-Level REST Client<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Another common need is to check the cluster’s health using the Cluster API. With
+the <code class="literal">TransportClient</code> it can be done this way:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ClusterHealthResponse response = client.admin().cluster().prepareHealth().get(); // <a id="CO333-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 
-String mappings = XContentFactory.jsonBuilder()  // <a id="CO333-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                                .startObject()
-                                    .startObject("doc")
-                                        .startObject("properties")
-                                            .startObject("time")
-                                                .field("type", "date")
-                                            .endObject()
-                                        .endObject()
-                                    .endObject()
-                                .endObject()
-                                .string();
-
-CreateIndexResponse response = transportClient.admin().indices()  // <a id="CO333-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-        .prepareCreate("my-index")
-        .setSettings(indexSettings)
-        .addMapping("doc", docMapping, XContentType.JSON)
-        .get();
-
-if (response.isAcknowledged() == false) {
-    // <a id="CO333-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO333-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Define the settings of the index
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO333-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Define the mapping for document of type <code class="literal">doc</code> using a
-<code class="literal">XContentBuilder</code>
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO333-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Create the index with the previous settings and mapping
-using the <code class="literal">prepareCreate()</code> method. The execution is synchronous
-and blocks on the <code class="literal">get()</code> method until the remote cluster returns
-a response.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO333-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Handle the situation where the index has not been created
-</p></td></tr></table></div><p>The same operation executed with the low-level client could be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Settings indexSettings = Settings.builder() <a id="CO334-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        .put(SETTING_NUMBER_OF_SHARDS, 1)
-        .put(SETTING_NUMBER_OF_REPLICAS, 0)
-        .build();
-
-String payload = Strings.toString(XContentFactory.jsonBuilder() <a id="CO334-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-        .startObject()
-            .startObject("settings") <a id="CO334-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-                .value(indexSettings)
-            .endObject()
-            .startObject("mappings")  <a id="CO334-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-                .startObject("doc")
-                    .startObject("properties")
-                        .startObject("time")
-                            .field("type", "date")
-                        .endObject()
-                    .endObject()
-                .endObject()
-            .endObject()
-        .endObject());
-
-HttpEntity entity = new NStringEntity(payload, ContentType.APPLICATION_JSON); <a id="CO334-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
-
-Response response = client.getLowLevelClient().performRequest("PUT", "my-index", emptyMap(), entity); <a id="CO334-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
-if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-    <a id="CO334-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Define the settings of the index
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Define the body of the HTTP request using a <code class="literal">XContentBuilder</code> with JSON format
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Include the settings in the request body
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Include the mappings in the request body
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Convert the request body from <code class="literal">String</code> to a <code class="literal">HttpEntity</code> and
-set its content type (here, JSON)
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Execute the request using the low-level client. The execution is synchronous
-and blocks on the <code class="literal">performRequest()</code> method until the remote cluster returns
-a response. The low-level client can be retrieved from an existing <code class="literal">RestHighLevelClient</code>
-instance through the <code class="literal">getLowLevelClient</code> getter method.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Handle the situation where the index has not been created
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-high-level-migration-cluster-health"></a>Checking Cluster Health using the Low-Level REST Client<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/high-level/migration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Another common need is to check the cluster’s health using the Cluster API. With
-the <code class="literal">TransportClient</code> it can be done this way:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">ClusterHealthResponse response = client.admin().cluster().prepareHealth().get(); // <a id="CO335-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-
-ClusterHealthStatus healthStatus = response.getStatus(); // <a id="CO335-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+ClusterHealthStatus healthStatus = response.getStatus(); // <a id="CO333-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
 if (healthStatus != ClusterHealthStatus.GREEN) {
-    // <a id="CO335-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO335-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+    // <a id="CO333-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO333-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Execute a <code class="literal">ClusterHealth</code> with default parameters
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO335-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO333-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Retrieve the cluster’s health status from the response
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO335-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO333-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Handle the situation where the cluster’s health is not green
-</p></td></tr></table></div><p>With the low-level client, the code can be changed to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Map&lt;String, String&gt; parameters = singletonMap("wait_for_status", "green");
-Response response = client.getLowLevelClient().performRequest("GET", "/_cluster/health", parameters); <a id="CO336-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+</p></td></tr></table></div><p>With the low-level client, the code can be changed to:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Request request = new Request("GET", "/_cluster/health");
+request.addParameter("wait_for_status", "green"); <a id="CO334-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+Response response = client.getLowLevelClient().performRequest(request); <a id="CO334-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
 
 ClusterHealthStatus healthStatus;
-try (InputStream is = response.getEntity().getContent()) { <a id="CO336-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    Map&lt;String, Object&gt; map = XContentHelper.convertToMap(XContentType.JSON.xContent(), is, true); <a id="CO336-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-    healthStatus = ClusterHealthStatus.fromString((String) map.get("status")); <a id="CO336-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+try (InputStream is = response.getEntity().getContent()) { <a id="CO334-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    Map&lt;String, Object&gt; map = XContentHelper.convertToMap(XContentType.JSON.xContent(), is, true); <a id="CO334-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    healthStatus = ClusterHealthStatus.fromString((String) map.get("status")); <a id="CO334-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
 }
 
-if (healthStatus == ClusterHealthStatus.GREEN) {
-    <a id="CO336-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO336-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Call the cluster’s health REST endpoint and wait for the cluster health to become green,
-then get back a <code class="literal">Response</code> object.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO336-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+if (healthStatus != ClusterHealthStatus.GREEN) {
+    <a id="CO334-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set up the request to wait for the cluster’s health to become green if it isn’t already.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Make the request and the get back a <code class="literal">Response</code> object.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Retrieve an <code class="literal">InputStream</code> object in order to read the response’s content
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO336-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Parse the response’s content using Elasticsearch’s helper class <code class="literal">XContentHelper</code>. This
  helper requires the content type of the response to be passed as an argument and returns
  a <code class="literal">Map</code> of objects. Values in the map can be of any type, including inner <code class="literal">Map</code> that are
  used to represent the JSON object hierarchy.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO336-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Retrieve the value of the <code class="literal">status</code> field in the response map, casts it as a a <code class="literal">String</code>
 object and use the <code class="literal">ClusterHealthStatus.fromString()</code> method to convert it as a <code class="literal">ClusterHealthStatus</code>
 object. This method throws an exception if the value does not corresponds to a valid cluster
 health status.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO336-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO334-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Handle the situation where the cluster’s health is not green
 </p></td></tr></table></div><p>Note that for convenience this example uses Elasticsearch’s helpers to parse the JSON response
 body, but any other JSON parser could have been use instead.</p></div></div><div class="navfooter"><span class="prev"><a href="_changing_the_client_8217_s_initialization_code.html">
