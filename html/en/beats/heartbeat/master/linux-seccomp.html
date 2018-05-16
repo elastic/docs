@@ -646,10 +646,13 @@ filter is loaded by the process it cannot be removed.</p><p>The kernel exposes a
 Heartbeat. By installing a seccomp filter, you can limit the total kernel
 surface exposed to Heartbeat (principle of least privilege). This minimizes
 the impact of unknown vulnerabilities that might be found in the process.</p><p>The filter is expressed as a Berkeley Packet Filter (BPF) program. The BPF
-program is generated based on a policy defined in the Heartbeat
-configuration. If you don’t specify a policy, Heartbeat uses a minimal
-default blacklist policy that prohibits <code class="literal">execve</code>, <code class="literal">execveat</code>, <code class="literal">fork</code>, and
-<code class="literal">vfork</code> syscalls. This is the default policy.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">seccomp:
+program is generated based on a policy defined by Heartbeat. The policy
+can be customized through configuration as well.</p><p>A seccomp policy is architecture specific due to the fact that system calls vary
+by architecture. Heartbeat includes a whitelist seccomp policy for the
+amd64 and 386 architectures. You can view those policies
+<a class="ulink" href="https://github.com/elastic/beats/tree/master/libbeat/common/seccomp" target="_top">here</a>.</p><h3><a id="seccomp-policy-config"></a>Seccomp Policy Configuration<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/security/linux-seccomp.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The seccomp policy can be customized through the configuration policy. This is
+an example blacklist policy that prohibits <code class="literal">execve</code>, <code class="literal">execveat</code>, <code class="literal">fork</code>, and
+<code class="literal">vfork</code> syscalls.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">seccomp:
   default_action: allow <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
   syscalls:
   - action: errno <a id="CO14-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
@@ -665,7 +668,7 @@ If the system call being invoked matches one of the names below then an
 error will be returned to caller. This is known as a blacklist policy.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 These are system calls being prohibited.
-</p></td></tr></table></div><h3><a id="seccomp-policy-config"></a>Seccomp Policy Configuration<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/security/linux-seccomp.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>These are the configuration options for a seccomp policy.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+</p></td></tr></table></div><p>These are the configuration options for a seccomp policy.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <span class="strong strong"><strong><code class="literal">enabled</code></strong></span>
 </span></dt><dd>
 On Linux, this option is enabled by default. To disable seccomp
@@ -701,7 +704,7 @@ actions that are available depend on the kernel version.
   then the system call fails with <code class="literal">ENOSYS</code> (function not implemented).
 </li><li class="listitem">
 <code class="literal">trap</code> - The kernel will send a <code class="literal">SIGSYS</code> signal to the calling thread and not
-  execute the system call.
+  execute the system call. The Go runtime will exit.
 </li><li class="listitem">
 <code class="literal">kill_thread</code> - The kernel will immediately terminate the thread. Other
   threads will continue to execute.
