@@ -11,27 +11,27 @@
 
 
 # Elasticsearch
-alias docbldes='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --chunk 1'
-
 alias docbldesx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch/x-pack/docs/ --chunk 1'
+
+alias docbldes=docbldesx
 
 # Elasticsearch 6.2 and earlier
 
 alias docbldesold='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs/ --chunk 1'
 
 # Kibana
-alias docbldkb='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.asciidoc --chunk 1'
-
 alias docbldkbx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana/x-pack/docs/ --chunk 1'
+
+alias docbldkb=docbldkbx
 
 # Kibana 6.2 and earlier
 
 alias docbldkbold='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
 
 # Logstash
-alias docbldls='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
-
 alias docbldlsx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/logstash/docs/index.x.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --resource=$GIT_HOME/logstash/x-pack/docs/ --chunk 1'
+
+alias docbldls=docbldlsx
 
 # Logstash 6.2 and earlier
 
