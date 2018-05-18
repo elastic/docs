@@ -17,7 +17,7 @@ alias docbldes=docbldesx
 
 # Elasticsearch 6.2 and earlier
 
-alias docbldesold='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs/ --chunk 1'
+alias docbldesold='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs/ --chunk 1'
 
 # Kibana
 alias docbldkbx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.asciidoc --resource=$GIT_HOME/kibana/x-pack/docs/ --chunk 1'
