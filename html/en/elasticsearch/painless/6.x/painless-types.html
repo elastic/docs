@@ -652,171 +652,437 @@ Not what you want? See the
            
           <a href="painless-casting.html">Casting
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="painless-types"></a>Types<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Painless supports both dynamic and static types. Static types are split into
-<span class="emphasis"><em>primitive types</em></span> and <span class="emphasis"><em>reference types</em></span>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="dynamic-types"></a>Dynamic Types<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Painless supports one dynamic type: <code class="literal">def</code>.  The <code class="literal">def</code> type can represent any
-primitive or reference type. When you use the <code class="literal">def</code> type, it mimics the exact
-behavior of whatever type it represents at runtime. The default value for the
-def type is <code class="literal">null.</code></p><p>Internally, if the <code class="literal">def</code> type represents a primitive type, it is converted to the
-corresponding reference type. It still behaves like the primitive type, however,
-including within the casting model. The <code class="literal">def</code> type can be assigned to different
-types during the course of script execution.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>Because a <code class="literal">def</code> type variable can be assigned to different types
-during execution, type conversion errors that occur when using the <code class="literal">def</code> type
-happen at runtime.</p></div></div><p>Using the <code class="literal">def</code> type can have a slight impact on performance. If performance is
-critical, it’s better to declare static types.</p><p><span class="strong strong"><strong>Examples:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Java">def x = 1;               // Declare def variable x and set it to the
-                         //   literal int 1
-def l = new ArrayList(); // Declare def variable l and set it a newly
-                         //   allocated ArrayList</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="primitive-types"></a>Primitive Types<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Primitive types are allocated directly onto the stack according to the standard
-Java memory model.</p><p>Primitive types can behave as their corresponding (<a class="link" href="painless-casting.html#boxing-unboxing" title="Boxing and Unboxing">boxed</a>)
-reference type. This means any piece of a reference type can be accessed or
-called through the primitive type. Operations performed in this manner convert
-the primitive type to its corresponding reference type at runtime and perform
-the field access  or method call without needing to perform any other
-operations.</p><p>Painless supports the following primitive types.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-byte
-</span></dt><dd>
-An 8-bit, signed, two’s complement integer.
-Range: [-128, 127].
-Default value: 0.
-Reference type: Byte.
-</dd><dt><span class="term">
-short
-</span></dt><dd>
-A 16-bit, signed, two’s complement integer.
-Range: [-32768, 32767].
-Default value: 0.
-Reference type: Short.
-</dd><dt><span class="term">
-char
-</span></dt><dd>
-A 16-bit Unicode character.
-Range: [0, 65535].
-Default value: 0 or <code class="literal">\u0000</code>.
-Reference type: Character.
-</dd><dt><span class="term">
-int
-</span></dt><dd>
-A 32-bit, signed, two’s complement integer.
-Range: [-2<sup>32, 2</sup>32-1].
-Default value: 0.
-Reference type: Integer.
-</dd><dt><span class="term">
-long
-</span></dt><dd>
-A 64-bit, signed, two’s complement integer.
-Range: [-2<sup>64, 2</sup>64-1].
-Default value: 0.
-Reference type: Long.
-</dd><dt><span class="term">
-float
-</span></dt><dd>
-A 32-bit, single-precision, IEEE 754 floating point number.
-Range:  Depends on multiple factors.
-Default value: 0.0.
-Reference type: Float.
-</dd><dt><span class="term">
-double
-</span></dt><dd>
-A 64-bit, double-precision, IEEE 754 floating point number.
-Range: Depends on multiple factors.
-Default value: 0.0.
-Reference type: Double.
-</dd><dt><span class="term">
-boolean
-</span></dt><dd>
-A logical quanity with two possible values: true and false.
-Range: true/false.
-Default value: false.
-Reference type: Boolean.
-</dd></dl></div><p><span class="strong strong"><strong>Examples:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Java">int i = 1;        // Declare variable i as an int and set it to the
-                  //   literal 1
-double d;         // Declare variable d as a double and set it to the
-                  //   default value of 0.0
-boolean b = true; // Declare variable b as a boolean and set it to true</pre></div><p>Using methods from the corresponding reference type on a primitive type.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Java">int i = 1;    // Declare variable i as an int and set it to the
-              //   literal 1
-i.toString(); // Invokes the Integer method toString on variable i</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="reference-types"></a>Reference Types<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Reference types are similar to Java classes and can contain multiple pieces
-known as <span class="emphasis"><em>members</em></span>. However, reference types do not support access modifiers.
-You allocate reference type instances on the heap using the <code class="literal">new</code> operator.</p><p>Reference types can have both static and non-static members:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Static members are shared by all instances of the same reference type and
-can be accessed without allocating an instance of the reference type. For
-example <code class="literal">Integer.MAX_VALUE</code>.
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="painless-types"></a>Types<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A type is a classification of data used to define the properties of a value.
+These properties specify what data a value represents and the rules for how a
+value is evaluated during an <a class="link" href="painless-operators.html" title="Operators">operation</a>. Each type
+belongs to one of the following categories: <a class="link" href="painless-types.html#primitive-types" title="Primitive Types">primitive</a>,
+<a class="link" href="painless-types.html#reference-types" title="Reference Types">reference</a>, or <a class="link" href="painless-types.html#dynamic-types" title="Dynamic Types">dynamic</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="primitive-types"></a>Primitive Types<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A primitive type represents basic data built natively into the JVM and is
+allocated to non-heap memory. Declare a primitive type
+<a class="link" href="painless-variables.html" title="Variables">variable</a>, and assign it a primitive type value for
+evaluation during later operations. The default value for a newly-declared
+primitive type variable is listed as part of the definitions below. A primitive
+type value is copied during an assignment or as an argument for a
+method/function call.</p><p>A primitive type has a corresponding reference type (also known as a boxed
+type). Use the <a class="link" href="painless-operators.html#field-access" title="Accessing Fields">field access operator</a> or
+<a class="link" href="painless-operators.html#method-access" title="Calling Methods">method call operator</a> on a primitive type value to force
+evaluation as its corresponding reference type value.</p><p>The following primitive types are available:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">byte</code>
+</p>
+</td><td valign="top">
+<p>
+8-bit, signed, two’s complement integer
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+range: [<code class="literal">-128</code>, <code class="literal">127</code>]
 </li><li class="listitem">
-Non-static members are specific to an instance of the reference type
-and can only be accessed through the allocated instance.
-</li></ul></div><p>The default value for a reference type is <code class="literal">null</code>, indicating that no memory has
-been allocated for it. When you assign <code class="literal">null</code> to a reference type, its previous
-value is discarded and garbage collected in accordance with the Java memory
-model as long as there are no other references to that value.</p><p>A reference type can contain:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Zero to many primitive types. Primitive type members can be static or
-non-static and read-only or read-write.
+default value: <code class="literal">0</code>
 </li><li class="listitem">
-Zero to many reference types. Reference type members can be static or
-non-static and read-only or read-write.
+reference type: <code class="literal">Byte</code>
+</li></ul></div>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">short</code>
+</p>
+</td><td valign="top">
+<p>
+16-bit, signed, two’s complement integer
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+range: [<code class="literal">-32768</code>, <code class="literal">32767</code>]
 </li><li class="listitem">
-Methods that call an internal function to return a value and/or manipulate
-the primitive or reference type members. Method members can be static or
-non-static.
+default value: <code class="literal">0</code>
 </li><li class="listitem">
-Constructors that call an internal function to return a newly-allocated
-reference type instance. Constructors are non-static methods that can
-optionally manipulate the primitive and reference type members.
-</li></ul></div><p>Reference types support a Java-style inheritance model. Consider types A and B.
-Type A is considered to be a parent of B, and B a child of A, if B inherits
-(is able to access as its own) all of A’s fields and methods. Type B is
+reference type: <code class="literal">Short</code>
+</li></ul></div>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">char</code>
+</p>
+</td><td valign="top">
+<p>
+16-bit, unsigned, Unicode character
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+range: [<code class="literal">0</code>, <code class="literal">65535</code>]
+</li><li class="listitem">
+default value: <code class="literal">0</code> or <code class="literal">\u0000</code>
+</li><li class="listitem">
+reference type: <code class="literal">Character</code>
+</li></ul></div>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">int</code>
+</p>
+</td><td valign="top">
+<p>
+32-bit, signed, two’s complement integer
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+range: [<code class="literal">-2^32</code>, <code class="literal">2^32-1</code>]
+</li><li class="listitem">
+default value: <code class="literal">0</code>
+</li><li class="listitem">
+reference type: <code class="literal">Integer</code>
+</li></ul></div>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">long</code>
+</p>
+</td><td valign="top">
+<p>
+64-bit, signed, two’s complement integer
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+range: [<code class="literal">-2^64</code>, <code class="literal">2^64-1</code>]
+</li><li class="listitem">
+default value: <code class="literal">0</code>
+</li><li class="listitem">
+reference type: <code class="literal">Long</code>
+</li></ul></div>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">float</code>
+</p>
+</td><td valign="top">
+<p>
+32-bit, signed, single-precision, IEEE 754 floating point number
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+default value: <code class="literal">0.0</code>
+</li><li class="listitem">
+reference type: <code class="literal">Float</code>
+</li></ul></div>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">double</code>
+</p>
+</td><td valign="top">
+<p>
+64-bit, signed, double-precision, IEEE 754 floating point number
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+default value: <code class="literal">0.0</code>
+</li><li class="listitem">
+reference type: <code class="literal">Double</code>
+</li></ul></div>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">boolean</code>
+</p>
+</td><td valign="top">
+<p>
+logical quantity with two possible values of <code class="literal">true</code> and <code class="literal">false</code>
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+default value: <code class="literal">false</code>
+</li><li class="listitem">
+reference type: <code class="literal">Boolean</code>
+</li></ul></div>
+</td></tr></tbody></table></div><p><span class="strong strong"><strong>Examples</strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+Primitive types used in declaration, declaration and assignment.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless"><a id="CO10-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> int i = 1;
+<a id="CO10-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> double d;
+<a id="CO10-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span> boolean b = true;</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">int i</code>;
+    assign <code class="literal">int 1</code> to <code class="literal">i</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">double d</code>;
+    assign default <code class="literal">double 0.0</code> to <code class="literal">d</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">boolean b</code>;
+    assign <code class="literal">boolean true</code> to <code class="literal">b</code>
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+Method call on a primitive type using the corresponding reference type.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless"><a id="CO11-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> int i = 1;
+<a id="CO11-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> i.toString();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO11-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">int i</code>;
+    assign <code class="literal">int 1</code> to <code class="literal">i</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO11-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+access <code class="literal">i</code> → <code class="literal">int 1</code>;
+    box <code class="literal">int 1</code> → <code class="literal">Integer 1 reference</code>;
+    call <code class="literal">toString</code> on <code class="literal">Integer 1 reference</code> → <code class="literal">String '1'</code>
+</p></td></tr></table></div></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="reference-types"></a>Reference Types<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A reference type is a named construct (object), potentially representing
+multiple pieces of data (member fields) and logic to manipulate that data
+(member methods), defined as part of the application programming interface
+(API) for scripts.</p><p>A reference type instance is a single set of data for one reference type
+object allocated to the heap. Use the
+<a class="link" href="painless-operators.html#constructor-call" title="Constructor Call">new instance operator</a> to allocate a reference type
+instance. Use a reference type instance to load from, store to, and manipulate
+complex data.</p><p>A reference type value refers to a reference type instance, and multiple
+reference type values may refer to the same reference type instance. A change to
+a reference type instance will affect all reference type values referring to
+that specific instance.</p><p>Declare a reference type <a class="link" href="painless-variables.html" title="Variables">variable</a>, and assign it a
+reference type value for evaluation during later operations. The default value
+for a newly-declared reference type variable is <code class="literal">null</code>. A reference type value
+is shallow-copied during an assignment or as an argument for a method/function
+call. Assign <code class="literal">null</code> to a reference type variable to indicate the reference type
+value refers to no reference type instance. The JVM will garbage collect a
+reference type instance when it is no longer referred to by any reference type
+values. Pass <code class="literal">null</code> as an argument to a method/function call to indicate the
+argument refers to no reference type instance.</p><p>A reference type object defines zero-to-many of each of the following:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+static member field
+</span></dt><dd>
+A static member field is a named and typed piece of data. Each reference type
+<span class="strong strong"><strong>object</strong></span> contains one set of data representative of its static member fields.
+Use the <a class="link" href="painless-operators.html#field-access" title="Accessing Fields">field access operator</a> in correspondence with the
+reference type object name to access a static member field for loading and
+storing to a specific reference type <span class="strong strong"><strong>object</strong></span>. No reference type instance
+allocation is necessary to use a static member field.
+</dd><dt><span class="term">
+non-static member field
+</span></dt><dd>
+A non-static member field is a named and typed piece of data. Each reference
+type <span class="strong strong"><strong>instance</strong></span> contains one set of data representative of its reference type
+object’s non-static member fields. Use the
+<a class="link" href="painless-operators.html#field-access" title="Accessing Fields">field access operator</a> for loading and storing to a non-static
+member field of a specific reference type <span class="strong strong"><strong>instance</strong></span>. An allocated reference
+type instance is required to use a non-static member field.
+</dd><dt><span class="term">
+static member method
+</span></dt><dd>
+A static member method is a function called on a reference type <span class="strong strong"><strong>object</strong></span>. Use
+the <a class="link" href="painless-operators.html#method-access" title="Calling Methods">method call operator</a> in correspondence with the reference
+type object name to call a static member method. No reference type instance
+allocation is necessary to use a static member method.
+</dd><dt><span class="term">
+non-static member method
+</span></dt><dd>
+A non-static member method is a function called on a reference type <span class="strong strong"><strong>instance</strong></span>.
+A non-static member method called on a reference type instance can load from and
+store to non-static member fields of that specific reference type instance. Use
+the <a class="link" href="painless-operators.html#method-access" title="Calling Methods">method call operator</a> in correspondence with a specific
+reference type instance to call a non-static member method. An allocated
+reference type instance is required to use a non-static member method.
+</dd><dt><span class="term">
+constructor
+</span></dt><dd>
+A constructor is a special type of function used to allocate a reference type
+<span class="strong strong"><strong>instance</strong></span> defined by a specific reference type <span class="strong strong"><strong>object</strong></span>. Use the
+<a class="link" href="painless-operators.html#constructor-call" title="Constructor Call">new instance operator</a> to allocate a reference type
+instance.
+</dd></dl></div><p>A reference type object follows a basic inheritance model. Consider types A and
+B. Type A is considered to be a parent of B, and B a child of A, if B inherits
+(is able to access as its own) all of A’s non-static members. Type B is
 considered a descendant of A if there exists a recursive parent-child
 relationship from B to A with none to many types in between. In this case, B
-inherits all of A’s fields and methods along with all of the fields and
-methods of the types in between. Type B is also considered to be a type A
-in both relationships.</p><p>For the complete list of Painless reference types and their supported methods,
-see the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/painless-api-reference.html" target="_top">Painless API Reference</a>.</p><p>For more information about working with reference types, see
-<a class="link" href="painless-operators.html#field-access" title="Accessing Fields">Accessing Fields</a> and <a class="link" href="painless-operators.html#method-access" title="Calling Methods">Calling Methods</a>.</p><p><span class="strong strong"><strong>Examples:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Java">ArrayList al = new ArrayList();  // Declare variable al as an ArrayList and
-                                 //   set it to a newly allocated ArrayList
-List l = new ArrayList();        // Declare variable l as a List and set
-                                 //   it to a newly allocated ArrayList, which is
-                                 //   allowed because ArrayList inherits from List
-Map m;                           // Declare variable m as a Map and set it
-                                 //   to the default value of null</pre></div><p>Directly accessing static pieces of a reference type.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Java">Integer.MAX_VALUE      // a static field access
-Long.parseLong("123L") // a static function call</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="string-type"></a>String Type<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A <code class="literal">String</code> is a specialized reference type that is immutable and does not have
-to be explicitly allocated. You can directly assign to a <code class="literal">String</code> without first
-allocating it with the <code class="literal">new</code> keyword. (Strings can be allocated with the <code class="literal">new</code>
-keyword, but it’s not required.)</p><p>When assigning a value to a <code class="literal">String</code>, you must enclose the text in single or
-double quotes. Strings are allocated according to the standard Java Memory Model.
-The default value for a <code class="literal">String</code> is <code class="literal">null.</code></p><p><span class="strong strong"><strong>Examples:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Java">String r = "some text";             // Declare String r and set it to the
-                                    //   String "some text"
-String s = 'some text';             // Declare String s and set it to the
-                                    //   String 'some text'
-String t = new String("some text"); // Declare String t and set it to the
-                                    //   String "some text"
-String u;                           // Declare String u and set it to the
-                                    //   default value null</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="void-type"></a>void Type<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">void</code> type represents the concept of no type. In Painless, <code class="literal">void</code> declares
-that a function has no return value.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="array-type"></a>Array Type<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Arrays contain a series of elements of the same type that can be allocated
-simultaneously. Painless supports both single and multi-dimensional arrays for
-all types except void (including <code class="literal">def</code>).</p><p>You declare an array by specifying a type followed by a series of empty brackets,
-where each set of brackets represents a dimension. Declared arrays have a default
-value of <code class="literal">null</code> and are themselves a reference type.</p><p>To allocate an array, you use the <code class="literal">new</code> keyword followed by the type and a
-set of brackets for each dimension. You can explicitly define the size of each dimension by specifying an expression within the brackets, or initialize each
-dimension with the desired number of values. The allocated size of each
-dimension is its permanent size.</p><p>To initialize an array, specify the values you want to initialize
-each dimension with as a comma-separated list of expressions enclosed in braces.
-For example, <code class="literal">new int[] {1, 2, 3}</code> creates a one-dimensional <code class="literal">int</code> array with a
-size of 3 and the values 1, 2, and 3.</p><p>When you initialize an array, the order of the expressions is maintained. Each expression used as part of the initialization is converted to the
-array’s type. An error occurs if the types do not match.</p><p><span class="strong strong"><strong>Grammar:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ANTLR4">declare_array: TYPE ('[' ']')+;
-
-array_initialization: 'new' TYPE '[' ']' '{' expression (',' expression) '}'
-                    | 'new' TYPE '[' ']' '{' '}';</pre></div><p><span class="strong strong"><strong>Examples:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Java">int[] x = new int[5];          // Declare int array x and assign it a newly
-                               //   allocated int array with a size of 5
-def[][] y = new def[5][5];     // Declare the 2-dimensional def array y and
-                               //   assign it a newly allocated 2-dimensional
-                               //   array where both dimensions have a size of 5
-int[] x = new int[] {1, 2, 3}; // Declare int array x and set it to an int
-                               //   array with values 1, 2, 3 and a size of 3
-int i = 1;
-long l = 2L;
-float f = 3.0F;
-double d = 4.0;
-String s = "5";
-def[] da = new def[] {i, l, f*d, s}; // Declare def array da and set it to
-                                     // a def array with a size of 4 and the
-                                     // values i, l, f*d, and s</pre></div></div></div><div class="navfooter"><span class="prev"><a href="painless-variables.html">
+inherits all of A’s non-static members along with all of the non-static members
+of the types in between. Type B is also considered to be a type A in both
+relationships.</p><p><span class="strong strong"><strong>Examples</strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+Reference types evaluated in several different operations.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless"><a id="CO12-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> List l = new ArrayList();
+<a id="CO12-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> l.add(1);
+<a id="CO12-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span> int i = l.get(0) + 2;</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">List l</code>;
+    allocate <code class="literal">ArrayList</code> instance → <code class="literal">ArrayList reference</code>;
+    implicit cast <code class="literal">ArrayList reference</code> to <code class="literal">List reference</code> → <code class="literal">List reference</code>;
+    assign <code class="literal">List reference</code> to <code class="literal">l</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+access <code class="literal">l</code> → <code class="literal">List reference</code>;
+    implicit cast <code class="literal">int 1</code> to <code class="literal">def</code> → <code class="literal">def</code>
+    call <code class="literal">add</code> on <code class="literal">List reference</code> with arguments (<code class="literal">def</code>)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">int i</code>;
+    access <code class="literal">l</code> → <code class="literal">List reference</code>;
+    call <code class="literal">get</code> on <code class="literal">List reference</code> with arguments (<code class="literal">int 0</code>) → <code class="literal">def</code>;
+    implicit cast <code class="literal">def</code> to <code class="literal">int 1</code> → <code class="literal">int 1</code>;
+    add <code class="literal">int 1</code> and <code class="literal">int 2</code> → <code class="literal">int 3</code>;
+    assign <code class="literal">int 3</code> to <code class="literal">i</code>
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+Sharing a reference type instance.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless"><a id="CO13-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> List l0 = new ArrayList();
+<a id="CO13-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> List l1 = l0;
+<a id="CO13-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span> l0.add(1);
+<a id="CO13-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span> l1.add(2);
+<a id="CO13-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span> int i = l1.get(0) + l0.get(1);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">List l0</code>;
+    allocate <code class="literal">ArrayList</code> instance → <code class="literal">ArrayList reference</code>;
+    implicit cast <code class="literal">ArrayList reference</code> to <code class="literal">List reference</code> → <code class="literal">List reference</code>;
+    assign <code class="literal">List reference</code> to <code class="literal">l0</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">List l1</code>;
+    access <code class="literal">l0</code> → <code class="literal">List reference</code>;
+    assign <code class="literal">List reference</code> to <code class="literal">l1</code>
+    (note <code class="literal">l0</code> and <code class="literal">l1</code> refer to the same instance known as a shallow-copy)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+access <code class="literal">l0</code> → <code class="literal">List reference</code>;
+    implicit cast <code class="literal">int 1</code> to <code class="literal">def</code> → <code class="literal">def</code>
+    call <code class="literal">add</code> on <code class="literal">List reference</code> with arguments (<code class="literal">def</code>)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+access <code class="literal">l1</code> → <code class="literal">List reference</code>;
+    implicit cast <code class="literal">int 2</code> to <code class="literal">def</code> → <code class="literal">def</code>
+    call <code class="literal">add</code> on <code class="literal">List reference</code> with arguments (<code class="literal">def</code>)
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO13-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">int i</code>;
+    access <code class="literal">l0</code> → <code class="literal">List reference</code>;
+    call <code class="literal">get</code> on <code class="literal">List reference</code> with arguments (<code class="literal">int 0</code>) → <code class="literal">def @0</code>;
+    implicit cast <code class="literal">def @0</code> to <code class="literal">int 1</code> → <code class="literal">int 1</code>;
+    access <code class="literal">l1</code> → <code class="literal">List reference</code>;
+    call <code class="literal">get</code> on <code class="literal">List reference</code> with arguments (<code class="literal">int 1</code>) → <code class="literal">def @1</code>;
+    implicit cast <code class="literal">def @1</code> to <code class="literal">int 2</code> → <code class="literal">int 2</code>;
+    add <code class="literal">int 1</code> and <code class="literal">int 2</code> → <code class="literal">int 3</code>;
+    assign <code class="literal">int 3</code> to <code class="literal">i</code>;
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+Using the static members of a reference type.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless"><a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> int i = Integer.MAX_VALUE;
+<a id="CO14-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> long l = Long.parseLong("123L");</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">int i</code>;
+    access <code class="literal">MAX_VALUE</code> on <code class="literal">Integer</code> → <code class="literal">int 2147483647</code>;
+    assign <code class="literal">int 2147483647</code> to <code class="literal">i</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">long l</code>;
+    call <code class="literal">parseLong</code> on <code class="literal">Long</code> with arguments (<code class="literal">long 123</code>) → <code class="literal">long 123</code>;
+    assign <code class="literal">long 123</code> to <code class="literal">l</code>
+</p></td></tr></table></div></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="dynamic-types"></a>Dynamic Types<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A dynamic type value can represent the value of any primitive type or
+reference type using a single type name <code class="literal">def</code>. A <code class="literal">def</code> type value mimics
+the behavior of whatever value it represents at run-time and will always
+represent the child-most descendant type value of any type value when evaluated
+during operations.</p><p>Declare a <code class="literal">def</code> type <a class="link" href="painless-variables.html" title="Variables">variable</a>, and assign it
+any type of value for evaluation during later operations. The default value
+for a newly-declared <code class="literal">def</code> type variable is <code class="literal">null</code>.  A <code class="literal">def</code> type variable or
+method/function parameter can change the type it represents during the
+compilation and evaluation of a script.</p><p>Using the <code class="literal">def</code> type can have a slight impact on performance. Use only primitive
+types and reference types directly when performance is critical.</p><p><span class="strong strong"><strong>Errors</strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+If a <code class="literal">def</code> type value represents an inappropriate type for evaluation of an
+  operation at run-time.
+</li></ul></div><p><span class="strong strong"><strong>Examples</strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+General uses of the <code class="literal">def</code> type.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless"><a id="CO15-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> def dp = 1;
+<a id="CO15-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> def dr = new ArrayList();
+<a id="CO15-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span> dr = dp;</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">def dp</code>;
+    implicit cast <code class="literal">int 1</code> to <code class="literal">def</code> → <code class="literal">def</code>;
+    assign <code class="literal">def</code> to <code class="literal">dp</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">def dr</code>;
+    allocate <code class="literal">ArrayList</code> instance → <code class="literal">ArrayList reference</code>;
+    implicit cast <code class="literal">ArrayList reference</code> to <code class="literal">def</code> → <code class="literal">def</code>;
+    assign <code class="literal">def</code> to <code class="literal">dr</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+access <code class="literal">dp</code> → <code class="literal">def</code>;
+    assign <code class="literal">def</code> to <code class="literal">dr</code>;
+    (note the switch in the type <code class="literal">dr</code> represents from <code class="literal">ArrayList</code> to <code class="literal">int</code>)
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+A <code class="literal">def</code> type value representing the child-most descendant of a value.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless"><a id="CO16-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> Object l = new ArrayList();
+<a id="CO16-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> def d = l;
+<a id="CO16-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span> d.ensureCapacity(10);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">Object l</code>;
+    allocate <code class="literal">ArrayList</code> instance → <code class="literal">ArrayList reference</code>;
+    implicit cast <code class="literal">ArrayList reference</code> to <code class="literal">Object reference</code>
+            → <code class="literal">Object reference</code>;
+    assign <code class="literal">Object reference</code> to <code class="literal">l</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">def d</code>;
+    access <code class="literal">l</code> → <code class="literal">Object reference</code>;
+    implicit cast <code class="literal">Object reference</code> to <code class="literal">def</code> → <code class="literal">def</code>;
+    assign <code class="literal">def</code> to <code class="literal">d</code>;
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO16-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+access <code class="literal">d</code> → <code class="literal">def</code>;
+    implicit cast <code class="literal">def</code> to <code class="literal">ArrayList reference</code> → <code class="literal">ArrayList reference</code>;
+    call <code class="literal">ensureCapacity</code> on <code class="literal">ArrayList reference</code> with arguments (<code class="literal">int 10</code>);
+    (note <code class="literal">def</code> was implicit cast to <code class="literal">ArrayList reference</code>
+            since ArrayList` is the child-most descendant type value that the
+            <code class="literal">def</code> type value represents)
+</p></td></tr></table></div></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="string-type"></a>String Type<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">String</code> type is a specialized reference type that does not require
+explicit allocation. Use a <a class="link" href="painless-literals.html#strings" title="Strings">string literal</a> to directly evaluate a
+<code class="literal">String</code> type value. While not required, the
+<a class="link" href="painless-operators.html#constructor-call" title="Constructor Call">new instance operator</a> can allocate <code class="literal">String</code> type
+instances.</p><p><span class="strong strong"><strong>Examples</strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+General use of the <code class="literal">String</code> type.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless"><a id="CO17-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> String r = "some text";
+<a id="CO17-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> String s = 'some text';
+<a id="CO17-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span> String t = new String("some text");
+<a id="CO17-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span> String u;</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">String r</code>;
+    assign <code class="literal">String "some text"</code> to <code class="literal">r</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">String s</code>;
+    assign <code class="literal">String 'some text'</code> to <code class="literal">s</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">String t</code>;
+    allocate <code class="literal">String</code> instance with arguments (<code class="literal">String "some text"</code>)
+            → <code class="literal">String "some text"</code>;
+    assign <code class="literal">String "some text"</code> to <code class="literal">t</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO17-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">String u</code>;
+    assign default <code class="literal">null</code> to <code class="literal">u</code>
+</p></td></tr></table></div></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="void-type"></a>void Type<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">void</code> type represents the concept of a lack of type. Use the <code class="literal">void</code> type to
+indicate a function returns no value.</p><p><span class="strong strong"><strong>Examples</strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+Use of the <code class="literal">void</code> type in a function.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless">void addToList(List l, def d) {
+    l.add(d);
+}</pre></div></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="array-type"></a>Array Type<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>An array type is a specialized reference type where an array type instance
+represents a series of values allocated to the heap.  All values in an array
+type instance are of the same type.  Each value is assigned an index from within
+the range <code class="literal">[0, length)</code> where length is the total number of values allocated for
+the array type instance.</p><p>Use the <a class="link" href="painless-operators.html#new-array" title="New Array">new array operator</a> or the
+<a class="link" href="painless-operators.html#array-initialization" title="Creating and Initializing Arrays">array initialization operator</a> to allocate an array
+type instance. Declare an array type <a class="link" href="painless-variables.html" title="Variables">variable</a>, and
+assign it an array type value for evaluation during later operations. The
+default value for a newly-declared array type variable is <code class="literal">null</code>. An array type
+value is shallow-copied during an assignment or as an argument for a
+method/function call. Assign <code class="literal">null</code> to an array type variable to indicate the
+array type value refers to no array type instance. The JVM will garbage collect
+an array type instance when it is no longer referred to by any array type
+values. Pass <code class="literal">null</code> as an argument to a method/function call to indicate the
+argument refers to no array type instance.</p><p>Use the <a class="link" href="painless-operators.html#array-length" title="Array Length">array length operator</a> to retrieve the length of an
+array type value as an int type value. Use the
+<a class="link" href="painless-operators.html#array-access" title="Accessing Array Elements">array access operator</a> to load from and store to individual
+values within an array type value.</p><p>When an array type instance is allocated with multiple dimensions using the
+range <code class="literal">[2, d]</code> where <code class="literal">d &gt;= 2</code>, each dimension in the range <code class="literal">[1, d-1]</code> is also
+an array type. The array type of each dimension, <code class="literal">n</code>, is an array type with the
+number of dimensions equal to <code class="literal">d-n</code>. For example, consider <code class="literal">int[][][]</code> with 3
+dimensions. The 3rd dimension, <code class="literal">d-3</code>, is the primitive type <code class="literal">int</code>.  The 2nd
+dimension, <code class="literal">d-2</code>, is the array type <code class="literal">int[]</code>. And the 1st dimension, <code class="literal">d-1</code> is
+the array type <code class="literal">int[][]</code>.</p><p><span class="strong strong"><strong>Examples</strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+General use of single-dimensional arrays.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless"><a id="CO18-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> int[] x;
+<a id="CO18-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> float[] y = new float[10];
+<a id="CO18-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span> def z = new float[5];
+<a id="CO18-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span> y[9] = 1.0F;
+<a id="CO18-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span> z[0] = y[9];</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">int[] x</code>;
+    assign default <code class="literal">null</code> to <code class="literal">x</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">float[] y</code>;
+    allocate <code class="literal">1-d float array</code> instance with <code class="literal">length [10]</code>
+            → <code class="literal">1-d float array reference</code>;
+    assign <code class="literal">1-d float array reference</code> to <code class="literal">y</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">def z</code>;
+    allocate <code class="literal">1-d float array</code> instance with <code class="literal">length [5]</code>
+            → <code class="literal">1-d float array reference</code>;
+    implicit cast <code class="literal">1-d float array reference</code> to <code class="literal">def</code> → <code class="literal">def</code>;
+    assign <code class="literal">def</code> to <code class="literal">z</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+access <code class="literal">y</code> → <code class="literal">1-d float array reference</code>;
+    assign <code class="literal">float 1.0</code> to <code class="literal">index [9]</code> of <code class="literal">1-d float array reference</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+access <code class="literal">y</code> → <code class="literal">1-d float array reference @0</code>;
+    access <code class="literal">index [9]</code> of <code class="literal">1-d float array reference @0</code> → <code class="literal">float 1.0</code>;
+    access <code class="literal">z</code> → <code class="literal">def</code>;
+    implicit cast <code class="literal">def</code> to <code class="literal">1-d float array reference @1</code>
+            → <code class="literal">1-d float array reference @1</code>;
+    assign <code class="literal">float 1.0</code> to <code class="literal">index [0]</code> of <code class="literal">1-d float array reference @1</code>
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+Use of a multi-dimensional array.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless"><a id="CO19-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> int[][][] ia3 = new int[2][3][4];
+<a id="CO19-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> ia3[1][2][3] = 99;
+<a id="CO19-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span> int i = ia3[1][2][3];</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">int[][][] ia</code>;
+    allocate <code class="literal">3-d int array</code> instance with length <code class="literal">[2, 3, 4]</code>
+            → <code class="literal">3-d int array reference</code>;
+    assign <code class="literal">3-d int array reference</code> to <code class="literal">ia3</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+access <code class="literal">ia3</code> → <code class="literal">3-d int array reference</code>;
+    assign <code class="literal">int 99</code> to <code class="literal">index [1, 2, 3]</code> of <code class="literal">3-d int array reference</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO19-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+declare <code class="literal">int i</code>;
+    access <code class="literal">ia3</code> → <code class="literal">3-d int array reference</code>;
+    access <code class="literal">index [1, 2, 3]</code> of <code class="literal">3-d int array reference</code> → <code class="literal">int 99</code>;
+    assign <code class="literal">int 99</code> to <code class="literal">i</code>
+</p></td></tr></table></div></li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="painless-variables.html">
               « 
               Variables</a>
            
