@@ -720,7 +720,7 @@ required setting <code class="literal">es.write.rest.error.handler.log.logger.na
 </span></dt><dd>
 The logger level to use when logging the error message. Available options are <code class="literal">FATAL</code>, <code class="literal">ERROR</code>, <code class="literal">WARN</code>, <code class="literal">INFO</code>, <code class="literal">DEBUG</code>, and <code class="literal">TRACE</code>.
 </dd></dl></div><h4><a id="errorhandlers-bulk-fail"></a>Abort on Failure Error Handler<a href="https://github.com/elastic/elasticsearch-hadoop/edit/6.x/docs/src/reference/asciidoc/core/errorhandlers.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Default Handler Name: <code class="literal">fail</code></p><p>When this handler is called it rethrows the error given to it and aborts. This handler is always loaded and automatically
-placed at the end of the list of error handlers.</p><p>There are no configurations for this handler.</p><h4><a id="errorhandlers-bulk-use"></a>Using Bulk Error Handlers<a href="https://github.com/elastic/elasticsearch-hadoop/edit/6.x/docs/src/reference/asciidoc/core/errorhandlers.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To configure bulk error handlers, you must specify the handlers in order with the following properties.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+placed at the end of the list of error handlers.</p><p>There are no configurations for this handler.</p><h3><a id="errorhandlers-bulk-use"></a>Using Bulk Error Handlers<a href="https://github.com/elastic/elasticsearch-hadoop/edit/6.x/docs/src/reference/asciidoc/core/errorhandlers.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To configure bulk error handlers, you must specify the handlers in order with the following properties.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 Setting <code class="literal">es.write.rest.error.handlers</code>
 </span></dt><dd>
 Lists the names of the error handlers to use for bulk write error handling, and the order that they should be called on.
@@ -889,7 +889,209 @@ es.write.rest.error.handler.ignoreConflict = org.myproject.myhandlers.IgnoreConf
 es.write.rest.error.handler.writeFile = org.myproject.myhandlers.OutputToFileHandler
 es.write.rest.error.handler.writeFile.filename = /path/to/some/output/file</pre></div><p>You now have a chain of handlers that retries bulk rejections by default (HTTP Retry built-in handler), then ignores
 any errors that are conflicts (our own ignore conflicts handler), then ignores any other errors by writing them out to
-a file (our own output to file handler).</p></div></div><div class="navfooter"><span class="prev"><a href="mapping.html">
+a file (our own output to file handler).</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="errorhandlers-read-json"></a>Deserialization Error Handlers<a href="https://github.com/elastic/elasticsearch-hadoop/edit/6.x/docs/src/reference/asciidoc/core/errorhandlers.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When reading data, the connector executes scroll requests against the configured indices and reads their contents. For
+each hit in a scroll search result, the connector attempts to deserialize it into an integration specific record type.
+When using MapReduce, this data type is either a MapWritable or Text (for raw JSON data). For an integration like
+Spark SQL which uses data schemas, the resulting data type is a Row object.</p><p>Elasticsearch stores documents in lucene indices. These documents can sometimes have loose definitions, or have
+structures that cannot be parsed into a schema-based data type, for one reason or another. Sometimes a field may be
+in a format that cannot be read correctly.</p><p>Elasticsearch for Apache Hadoop provides an API to handle document level deserialization errors from scroll responses. Error handlers for scroll reads are given:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The raw JSON search result that was tried
+</li><li class="listitem">
+Exception encountered
+</li></ul></div><p>Note: Deserialization Error Handlers only allow handling of errors that occur when parsing documents from scroll
+responses. It may be possible that a search result can be successfully read, but is still malformed, thus causing an
+exception when it is used in a completely different part of the framework. This Error Handler is called from the top of
+the most reasonable place to handle exceptions in the scroll reading process, but this does not encapsulate all logic
+for each integration.</p><h4><a id="errorhandlers-read-json-log"></a>Drop and Log Error Handler<a href="https://github.com/elastic/elasticsearch-hadoop/edit/6.x/docs/src/reference/asciidoc/core/errorhandlers.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Default Handler Name: <code class="literal">log</code></p><p>When this handler is invoked it logs a message containing the JSON search hit that failed, the error message, and any previous
+handler messages. After logging this message, the handler signals that the error has been acknowledged, thus
+consuming/ignoring it.</p><p>Available configurations for this handler:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">es.read.data.error.handler.log.logger.name</code> (required)
+</span></dt><dd>
+The string name to use when creating the logger instance to log the errors. This setting is required if this handler is used.
+</dd><dt><span class="term">
+<code class="literal">es.read.data.error.handler.log.logger.class</code> (alternative to logger.name)
+</span></dt><dd>
+The class name to use when creating the logger instance to log the errors. This setting can be used instead of the
+required setting <code class="literal">es.read.data.error.handler.log.logger.name</code>.
+</dd><dt><span class="term">
+<code class="literal">es.read.data.error.handler.log.logger.level</code> (default: WARN)
+</span></dt><dd>
+The logger level to use when logging the error message. Available options are <code class="literal">FATAL</code>, <code class="literal">ERROR</code>, <code class="literal">WARN</code>, <code class="literal">INFO</code>, <code class="literal">DEBUG</code>, and <code class="literal">TRACE</code>.
+</dd></dl></div><h4><a id="errorhandlers-read-json-fail"></a>Abort on Failure Error Handler<a href="https://github.com/elastic/elasticsearch-hadoop/edit/6.x/docs/src/reference/asciidoc/core/errorhandlers.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Default Handler Name: <code class="literal">fail</code></p><p>When this handler is called it rethrows the error given to it and aborts. This handler is always loaded and automatically
+placed at the end of the list of error handlers.</p><p>There are no configurations for this handler.</p><h3><a id="errorhandlers-read-json-use"></a>Using Deserialization Error Handlers<a href="https://github.com/elastic/elasticsearch-hadoop/edit/6.x/docs/src/reference/asciidoc/core/errorhandlers.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To configure deserialization error handlers, you must specify the handlers in order with the following properties.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Setting <code class="literal">es.read.data.error.handlers</code>
+</span></dt><dd>
+Lists the names of the error handlers to use for deserialization error handling, and the order that they should be called on.
+Each default handler can be referenced by their handler name as the connector knows how to load them. Any handlers
+provided from users or third party code will need to have their handler names defined with the <code class="literal">es.read.data.error.handler.</code>
+prefix.
+</dd></dl></div><p>For deserialization failures, the Abort on Failure built-in handler is always placed as the last error handler to catch
+any unhandled errors. This error handler alone forms the default deserialization error handling behavior for elasticsearch-hadoop, which
+matches the behavior from previous versions.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Any configured user handlers will go here.
+</li><li class="listitem">
+Abort on Failure Built-In Handler: Rethrows the any errors it encounters
+</li></ol></div><p>This behavior is modified by inserting handlers into the chain by using the handlers property. Let’s say that we want
+to log ALL errors and ignore them.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ini">es.read.data.error.handlers = log <a id="CO105-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO105-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Specifying the default Drop and Log handler
+</p></td></tr></table></div><p>With the above configuration, the handler list now looks like the following:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Drop and Log Handler
+</li><li class="listitem">
+Abort on Failure Handler
+</li></ol></div><p>As described above, the built-in <code class="literal">log</code> error handler has a required setting: What to use for the logger name. The logger
+used will respect whatever logging configuration you have in place, and thus needs a name for the logger to use:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ini">es.read.data.error.handlers = log <a id="CO106-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+es.read.data.error.handler.log.logger.name = DeserializationErrors <a id="CO106-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO106-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Specifying the default Drop and Log built-in handler
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO106-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The Drop and Log built-in handler will log all errors to the <code class="literal">DeserializationErrors</code> logger
+</p></td></tr></table></div><p>At this point, the Abort on Failure built-in handler is effectively ignored since the Drop and Log built-in handler will
+always mark an error as consumed. This practice can prove to be hazardous, as potentially important errors may simply be
+ignored. In many cases, it is preferable for users to write their own error handler to handle expected exceptions.</p><h4><a id="errorhandlers-read-json-user-handlers"></a>Writing Your Own Deserialization Error Handlers<a href="https://github.com/elastic/elasticsearch-hadoop/edit/6.x/docs/src/reference/asciidoc/core/errorhandlers.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Let’s say that you are reading a large index of log data from Elasticsearch. In this scenario, your log data is highly
+unstructured, and not all of its contents are critical to your process. Due to the volume of data being read, your job
+takes a long time to complete. In this case, you might want to replace records that cannot be read with a dummy record
+to mark the failure, and not interrupt your processing. The offending data should be logged and dropped.</p><p>Let’s write an error handler for this situation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">package org.myproject.myhandlers;
+
+import org.elasticsearch.hadoop.handler.HandlerResult;
+import org.elasticsearch.hadoop.handler.ErrorCollector;
+import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
+import org.elasticsearch.hadoop.serialization.handler.read.DeserializationFailure;
+
+public class ReturnDummyHandler extends DeserializationErrorHandler { <a id="CO107-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+
+    private static final Logger LOGGER = ...; <a id="CO107-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    private static final String DUMMY_RECORD = "..."; <a id="CO107-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+
+    @Override
+    public HandlerResult onError(DeserializationFailure entry, ErrorCollector&lt;byte[]&gt; collector) <a id="CO107-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+    throws Exception
+    {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(entry.getHitContents()));
+        StringBuilder hitContent = new StringBuilder();
+        for (String line = reader.readLine(); line != null; line = reader.readLine()) {           <a id="CO107-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+            hitContent.append(line);
+        }
+        LOGGER.warn("Encountered malformed record during read. Replacing with dummy record. " +   <a id="CO107-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+                            "Malformed Data: " + hitContent, entry.getException());
+        return collector.retry(DUMMY_RECORD.getBytes());                                         <a id="CO107-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We create a class and extend the DeserializationErrorHandler base class
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Create a logger using preferred logging solution
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We create a String to use for our dummy record that should be deserialized instead
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Override the <code class="literal">onError</code> method which will be invoked with the error details
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We read the contents of the failed search hit as a String
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We log the contents of the failed document, as well as the exception that details the cause of the failure
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO107-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Finally, we return the dummy data contents to be deserialized.
+</p></td></tr></table></div><p>Before we can place this handler in the list of deserialization error handlers, we must register the handler class with a
+name in the settings using <code class="literal">es.read.data.error.handler.[HANDLER-NAME]</code>:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Setting <code class="literal">es.read.data.error.handler.[HANDLER-NAME]</code>
+</span></dt><dd>
+Create a new handler named HANDLER-NAME. The value of this property must be the binary name of the class to
+instantiate for this handler.
+</dd></dl></div><p>In this case, lets register a handler name for our dummy record handler:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ini">es.read.data.error.handler.returnDummy = org.myproject.myhandlers.ReturnDummyHandler</pre></div><p>Now that we have a name for the handler, we can use it in the handler list:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ini">es.read.data.error.handlers = returnDummy
+es.read.data.error.handler.returnDummy = org.myproject.myhandlers.ReturnDummyHandler</pre></div><p>Now, your dummy data error handler will be invoked whenever a deserialization failure occurs, and will instruct the
+connector to use your provided dummy record instead of the malformed data.</p><h4><a id="errorhandlers-read-json-advanced"></a>Advanced Concepts<a href="https://github.com/elastic/elasticsearch-hadoop/edit/6.x/docs/src/reference/asciidoc/core/errorhandlers.adoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>What if instead of logging data and dropping it, what if you wanted to persist it somewhere for safe keeping? What if
+we wanted to pass properties into our handlers to parameterize their behavior? Lets create a handler that stores error
+information in a local file for later analysis.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">package org.myproject.myhandlers;
+
+import ...
+
+import org.elasticsearch.hadoop.handler.HandlerResult;
+import org.elasticsearch.hadoop.handler.ErrorCollector;
+import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
+import org.elasticsearch.hadoop.serialization.handler.read.DeserializationFailure;
+
+public class ReturnDummyAndLogToFileHandler extends DeserializationErrorHandler { <a id="CO108-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+
+    private static final String DUMMY_RECORD = "...";
+
+    private OutputStream outputStream;   <a id="CO108-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    private BufferedWriter writer;
+
+    @Override
+    public void init(Properties properties) {   <a id="CO108-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        try {
+            outputStream = new FileOutputStream(properties.getProperty("filename"));   <a id="CO108-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+            writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Could not open file", e);
+        }
+    }
+
+    @Override
+    public HandlerResult onError(DeserializationFailure entry, ErrorCollector&lt;byte[]&gt; collector)   <a id="CO108-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
+    throws Exception
+    {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(entry.getHitContents()));
+        StringBuilder hitContent = new StringBuilder();
+        for (String line = reader.readLine(); line != null; line = reader.readLine()) {           <a id="CO108-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
+            hitContent.append(line);
+        }
+
+        writer.write("Error: " + entry.getException().getMessage());
+        writer.newLine();
+        for (String message : entry.previousHandlerMessages()) {
+            writer.write("Previous Handler: " + message);           <a id="CO108-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
+            writer.newLine();
+        }
+        writer.write("Entry: ");
+        writer.newLine();
+        writer.write(hitContent.toString());
+        writer.newLine();
+
+        return collector.retry(DUMMY_RECORD.getBytes());            <a id="CO108-8"></a><span><img src="images/icons/callouts/8.png" alt="" /></span>
+    }
+
+    @Override
+    public void close() {   <a id="CO108-9"></a><span><img src="images/icons/callouts/9.png" alt="" /></span>
+        try {
+            writer.close();
+            outputStream.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Closing file failed", e);
+        }
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO108-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Extend the DeserializationErrorHandler base class
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO108-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Some local state for writing data out to a file
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO108-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We override the <code class="literal">init</code> method. Any properties for this handler are passed in here
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO108-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We are extracting the file to write to from the properties. We’ll see how to set this property below
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO108-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Overriding the <code class="literal">onError</code> method to define our behavior
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO108-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Read the contents of the failed search hit
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO108-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Write out the error information. This highlights all the available data provided by the <code class="literal">DeserializationFailure</code> object
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO108-8"><span><img src="images/icons/callouts/8.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Perform a retry operation, using our dummy record
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO108-9"><span><img src="images/icons/callouts/9.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Finally, close out any internally allocated resources
+</p></td></tr></table></div><p>Added to this handler are the <code class="literal">init</code> and <code class="literal">close</code> methods. The <code class="literal">init</code> method is called when the scroll query is first
+created at the start of the task and the <code class="literal">close</code> method is called when the scroll query is closed when the task
+concludes. The <code class="literal">init</code> method accepts a properties parameter, which contains any handler specific properties set by
+using <code class="literal">es.read.data.error.handler.[HANDLER-NAME].[PROPERTY-NAME]</code>.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Setting <code class="literal">es.read.data.error.handler.[HANDLER-NAME].[PROPERTY-NAME]</code>
+</span></dt><dd>
+Used to pass properties into handlers. HANDLER-NAME is the handler to be configured, and PROPERTY-NAME is the property
+to set for the handler.
+</dd></dl></div><p>In our use case, we will configure the our file logging error handler like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ini">es.read.data.error.handler.writeFile = org.myproject.myhandlers.ReturnDummyAndLogToFileHandler   <a id="CO109-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+es.read.data.error.handler.writeFile.filename = /path/to/some/output/file   <a id="CO109-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO109-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+We register our new handler with the name <code class="literal">writeFile</code>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO109-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Now we set a property named <code class="literal">filename</code> for the <code class="literal">writeFile</code> handler. In the <code class="literal">init</code> method of the handler, this can be picked up by using <code class="literal">filename</code> as the property key.
+</p></td></tr></table></div><p>Now to bring it all together with the previous example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ini">es.read.data.error.handlers = writeFile
+es.read.data.error.handler.writeFile = org.myproject.myhandlers.ReturnDummyAndLogToFileHandler
+es.read.data.error.handler.writeFile.filename = /path/to/some/output/file</pre></div><p>You now have a handler that retries replaces malformed data with dummy records, then logs those malformed records along
+with their error information by writing them out to a custom file.</p></div></div><div class="navfooter"><span class="prev"><a href="mapping.html">
               « 
               Mapping and Types</a>
            
