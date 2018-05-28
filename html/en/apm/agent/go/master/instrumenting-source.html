@@ -721,10 +721,10 @@ a request to another service. Errors may refer to Go errors, or panics.</p><p>To
 examples below we will refer to <code class="literal">elasticapm.DefaultTracer</code>. Please refer to the <a class="link" href="api.html" title="API Documentation">API documentation</a>
 for a more thorough description of the types and methods.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_transactions"></a>Transactions<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>To report a transaction, you call <a class="link" href="api.html#tracer-api-start-transaction" title="func (*Tracer) StartTransaction(name, type string) *Transactionedit">elasticapm.DefaultTracer.StartTransaction</a>
 with the transaction name and type. This returns a <code class="literal">Transaction</code> object; the transaction
-can be customized with additional context before you call its <code class="literal">Done</code> method to indicate
-that the transaction has completed. Once the transaction’s <code class="literal">Done</code> method is called, it
+can be customized with additional context before you call its <code class="literal">End</code> method to indicate
+that the transaction has completed. Once the transaction’s <code class="literal">End</code> method is called, it
 will be enqueued for sending to the Elastic APM server, and made available to the APM UI.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">tx := elasticapm.DefaultTracer.StartTransaction("GET /api/v1", "request")
-defer tx.Done(-1)
+defer tx.End()
 ...
 tx.Result = "HTTP 2xx"
 tx.Context.SetTag("region", "us-east-1")</pre></div><p>The agent supports ignoring and sampling transactions; ignored transactions will not be
@@ -738,8 +738,8 @@ or <a class="link" href="api.html#elasticapm-start-span" title="func StartSpan(c
 containing a transaction, respectively. Like a transaction, a span has a name and a type. In addition,
 a span can have a parent span within the same transaction. If the context provided to <code class="literal">elasticapm.StartSpan</code>
 contains a span, then that will be considered the parent.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">span, ctx := elasticapm.StartSpan(ctx, "SELECT FROM foo", "db.mysql.query")
-defer span.Done(-1)</pre></div><p><code class="literal">Transaction.StartSpan</code> and <code class="literal">elasticapm.StartSpan</code> will always return a non-nil <code class="literal">Span</code>, even if the
-transaction is nil. It is always safe to defer a call to the span’s Done method. If setting the span’s
+defer span.End()</pre></div><p><code class="literal">Transaction.StartSpan</code> and <code class="literal">elasticapm.StartSpan</code> will always return a non-nil <code class="literal">Span</code>, even if the
+transaction is nil. It is always safe to defer a call to the span’s End method. If setting the span’s
 context would incur significant overhead, you may want to check if the span is dropped first, by calling
 the <code class="literal">Span.Dropped</code> method.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_panic_recovery_and_errors"></a>Panic recovery and errors<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you want to recover panics, and report them along with your transaction, you can use the
 <a class="link" href="api.html#tracer-recover" title="func (*Tracer) Recover(*Transaction)edit">Tracer.Recover</a> or <a class="link" href="api.html#tracer-recovered" title="func (*Tracer) Recovered(interface{}, *Transaction) *Erroredit">Tracer.Recovered</a> methods. The former should be
