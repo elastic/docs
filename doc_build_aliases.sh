@@ -20,7 +20,7 @@ alias docbldes=docbldesx
 alias docbldesold='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs/ --chunk 1'
 
 # Kibana
-alias docbldkbx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.asciidoc --resource=$GIT_HOME/kibana/x-pack/docs/ --chunk 1'
+alias docbldkbx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.asciidoc --chunk 1'
 
 alias docbldkb=docbldkbx
 
@@ -29,7 +29,7 @@ alias docbldkb=docbldkbx
 alias docbldkbold='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
 
 # Logstash
-alias docbldlsx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --resource=$GIT_HOME/logstash/x-pack/docs/ --chunk 1'
+alias docbldlsx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
 
 alias docbldls=docbldlsx
 
@@ -42,7 +42,7 @@ alias docbldstk='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/in
 
 alias docbldgls='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc'
 
-alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana/x-pack/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --chunk 1'
+alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --chunk 1'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
