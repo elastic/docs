@@ -42,7 +42,7 @@ alias docbldstk='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/in
 
 alias docbldgls='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc'
 
-alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana/x-pack/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --chunk 1'
+alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --chunk 1'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
