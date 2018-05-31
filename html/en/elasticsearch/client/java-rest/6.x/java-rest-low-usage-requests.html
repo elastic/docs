@@ -637,13 +637,17 @@ Handle the failure
         ContentType.APPLICATION_JSON));</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The <code class="literal">ContentType</code> specified for the <code class="literal">HttpEntity</code> is important
 because it will be used to set the <code class="literal">Content-Type</code> header so that Elasticsearch
 can properly parse the content.</p></div></div><p>You can also set it to a <code class="literal">String</code> which will default to
-a <code class="literal">ContentType</code> of <code class="literal">application/json</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.setJsonEntity("{\"json\":\"text\"}");</pre></div><p>And you can add one or more headers to send with the request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.addHeader("Accept", "text/plain");
-request.addHeader("Cache-Control", "no-cache");</pre></div><p>You can also customize the response consumer used to buffer the asynchronous
+a <code class="literal">ContentType</code> of <code class="literal">application/json</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.setJsonEntity("{\"json\":\"text\"}");</pre></div><p>And you can add one or more headers to send with the request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RequestOptions.Builder options = request.getOptions().toBuilder();
+options.addHeader("Accept", "text/plain");
+options.addHeader("Cache-Control", "no-cache");
+request.setOptions(options);</pre></div><p>You can also customize the response consumer used to buffer the asynchronous
 responses. The default consumer will buffer up to 100MB of response on the
 JVM heap. If the response is larger then the request will fail. You could,
 for example, lower the maximum size which might be useful if you are running
-in a heap constrained environment:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.setHttpAsyncResponseConsumerFactory(
-        new HttpAsyncResponseConsumerFactory.HeapBufferedResponseConsumerFactory(30 * 1024 * 1024));</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multiple_parallel_asynchronous_actions"></a>Multiple parallel asynchronous actions<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/low-level/usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The client is quite happy to execute many actions in parallel. The following
+in a heap constrained environment:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RequestOptions.Builder options = request.getOptions().toBuilder();
+options.setHttpAsyncResponseConsumerFactory(
+        new HttpAsyncResponseConsumerFactory.HeapBufferedResponseConsumerFactory(30 * 1024 * 1024));
+request.setOptions(options);</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multiple_parallel_asynchronous_actions"></a>Multiple parallel asynchronous actions<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/low-level/usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The client is quite happy to execute many actions in parallel. The following
 example indexes many documents in parallel. In a real world scenario you’d
 probably want to use the <code class="literal">_bulk</code> API instead, but the example is illustative.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">final CountDownLatch latch = new CountDownLatch(documents.length);
 for (int i = 0; i &lt; documents.length; i++) {
