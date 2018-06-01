@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Elastic APM OpenTracing bridge
         | APM Java Agent Reference (Alpha)
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Java Agent Reference (Alpha)" /><link rel="up" href="index.html" title="APM Java Agent Reference (Alpha)" /><link rel="prev" href="public-api.html" title="Public API" /><link rel="next" href="operation-modes.html" title="Operation Modes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Java Agent/Reference" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="APM" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Java Agent Reference (Alpha)" /><link rel="up" href="index.html" title="APM Java Agent Reference (Alpha)" /><link rel="prev" href="public-api.html" title="Public API" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Java Agent/Reference" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="APM" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
     
 
     
@@ -592,23 +592,75 @@
            
         </span><span class="next">
            
-          <a href="operation-modes.html">Operation Modes
-               »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="opentracing-bridge"></a>Elastic APM OpenTracing bridge<a href="https://github.com/elastic/apm-agent-java/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>The Elastic APM OpenTracing bridge makes allows to create Elastic APM <code class="literal">Transactions</code> and <code class="literal">Spans</code>,
+          </span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="opentracing-bridge"></a>Elastic APM OpenTracing bridge<a href="https://github.com/elastic/apm-agent-java/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>The Elastic APM OpenTracing bridge makes allows to create Elastic APM <code class="literal">Transactions</code> and <code class="literal">Spans</code>,
 using the OpenTracing API.
 In other words,
 it translates the calls to the OpenTracing API to Elastic APM and thus allows for reusing existing instrumentation.</p><p>The first span of a service will be converted to an Elastic APM
 <a class="ulink" href="https://www.elastic.co/guide/en/apm/server/current/transactions.html" target="_top"><code class="literal">Transaction</code></a>,
 subsequent spans are mapped to Elastic APM
-<a class="ulink" href="https://www.elastic.co/guide/en/apm/server/current/spans.html" target="_top"><code class="literal">Span</code></a>s.</p></div><div class="navfooter"><span class="prev"><a href="public-api.html">
+<a class="ulink" href="https://www.elastic.co/guide/en/apm/server/current/spans.html" target="_top"><code class="literal">Span</code></a>s.</p><h3><a id="operation-modes"></a>Operation Modes<a href="https://github.com/elastic/apm-agent-java/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This bridge allows for different operation modes in combination with the Elastic APM <code class="literal">javaagent</code></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Noop
+  If the <code class="literal">javaagent</code> is not specified, the bridge is in noop mode and does not actually record and report spans.
+</li><li class="listitem">
+Mix and Match
+  If you want to leverage the auto instrumentation of Elastic APM,
+  but also want do create custom `Span`s or use the OpenTracing API to add custom tags to the `Span`s created by Elastic APM,
+  you can just do that.
+  The OpenTracing bridge and the standard Elastic APM API interact seamlessly.
+</li><li class="listitem">
+Manual instrumentation
+  If you don’t want Elastic APM to auto-instrument known frameworks,
+  but instead only rely on manual instrumentation,
+  disable the auto instrumentation setting the configuration option <code class="literal">instrument</code> to <code class="literal">false</code>.
+</li></ul></div><h3><a id="getting-started"></a>Getting started<a href="https://github.com/elastic/apm-agent-java/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The first step in getting started with the OpenTracing API bridge ist to declare a dependency to the API:</p><p><strong>pom.xml. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-xml">&lt;dependency&gt;
+    &lt;groupId&gt;co.elastic.apm&lt;/groupId&gt;
+    &lt;artifactId&gt;apm-opentracing&lt;/artifactId&gt;
+    &lt;version&gt;${elastic-apm.version}&lt;/version&gt;
+&lt;/dependency&gt;</pre></div><p>
+</p><p><strong>build.gradle. </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-groovy">compile "co.elastic.apm:apm-opentracing:$elasticApmVersion"</pre></div><p>
+</p><p>Replace the version placeholders with the
+<a class="ulink" href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22co.elastic.apm%22%20AND%20a%3A%22apm-opentracing%22" target="_top">
+latest version from maven central</a>:
+<span class="inlinemediaobject"><img src="https://img.shields.io/maven-central/v/co.elastic.apm/apm-opentracing.svg" alt="Maven Central" /></span></p><h3><a id="init-tracer"></a>Initialize tracer<a href="https://github.com/elastic/apm-agent-java/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">import co.elastic.apm.opentracing.ElasticApmTracer;
+import io.opentracing.Tracer
+
+Tracer tracer = new ElasticApmTracer();</pre></div><h3><a id="elastic-apm-tags"></a>Elastic APM specific tags<a href="https://github.com/elastic/apm-agent-java/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elastic APM defines some tags which are not included in the OpenTracing API but are relevant in the context of Elastic APM.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">type</code> - sets the type of the transaction,
+  for example <code class="literal">request</code>, <code class="literal">ext</code> or <code class="literal">db</code>
+</li><li class="listitem">
+<code class="literal">user.id</code> - sets the user id,
+  appears in the "User" tab in the transaction details in the Elastic APM UI
+</li><li class="listitem">
+<code class="literal">user.email</code> - sets the user email,
+  appears in the "User" tab in the transaction details in the Elastic APM UI
+</li><li class="listitem">
+<code class="literal">user.username</code> - sets the user name,
+  appears in the "User" tab in the transaction details in the Elastic APM UI
+</li><li class="listitem">
+<code class="literal">result</code> - sets the result of the transaction. Overrides the default value of <code class="literal">success</code>.
+  If the <code class="literal">error</code> tag is set to <code class="literal">true</code>, the default value is <code class="literal">error</code>.
+</li></ul></div><h3><a id="unsupported"></a>Caveats<a href="https://github.com/elastic/apm-agent-java/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Not all features of the OpenTracing API are supported.</p><h4><a id="propagation"></a>Context propagation<a href="https://github.com/elastic/apm-agent-java/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>This bridge only supports the formats <code class="literal">Format.Builtin.TEXT_MAP</code> and <code class="literal">Format.Builtin.HTTP_HEADERS</code>.
+<code class="literal">Format.Builtin.BINARY</code> is currently not supported.</p><h4><a id="references"></a>Span References<a href="https://github.com/elastic/apm-agent-java/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Currently, this bridge only supports <code class="literal">child_of</code> references.
+Other references,
+like <code class="literal">follows_from</code> are not supported yet.</p><h4><a id="baggage"></a>Baggage<a href="https://github.com/elastic/apm-agent-java/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">Span.setBaggageItem(String, String)</code> method is not supported.
+Baggage items are silently dropped.</p><h4><a id="logs"></a>Logs<a href="https://github.com/elastic/apm-agent-java/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Only exception logging is supported.
+Logging an Exception on the OpenTracing span will create an Elastic APM
+<a class="ulink" href="https://www.elastic.co/guide/en/apm/server/current/errors.html" target="_top"><code class="literal">Error</code></a>.
+Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">Exception e = ...
+span.log(
+    Map.of(
+        "event", "error",
+        "error.object", e
+    )
+)</pre></div></div><div class="navfooter"><span class="prev"><a href="public-api.html">
               « 
               Public API</a>
            
         </span><span class="next">
            
-          <a href="operation-modes.html">Operation Modes
-               »
-            </a></span></div>
+          </span></div>
 <!-- end body -->
 
             </div>
