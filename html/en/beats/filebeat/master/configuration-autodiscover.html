@@ -726,7 +726,66 @@ contain variables from the autodiscover event. They can be accessed under data n
                 input:
                   type: docker
                   containers.ids:
-                    - "${data.kubernetes.container.id}"</pre></div></div><div class="navfooter"><span class="prev"><a href="using-environ-vars.html">
+                    - "${data.kubernetes.container.id}"</pre></div><h5><a id="_jolokia_experimental"></a>Jolokia (experimental)<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The Jolokia autodiscover provider uses Jolokia Discovery to find agents running
+in your host or your network.</p><p>Jolokia Discovery mechanism is supported by any Jolokia agent since version
+1.2.0, it is enabled by default when Jolokia is included in the application as
+a JVM agent, but disabled in other cases as the OSGI or WAR (Java EE) agents.
+In any case, this feature is controlled with two properties:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">discoveryEnabled</code>, to enable the feature
+</li><li class="listitem">
+<code class="literal">discoveryAgentUrl</code>, if set, this is the URL announced by the agent when
+    being discovered, setting this parameter implicitely enables the feature
+</li></ul></div><p>There are multiple ways of setting these properties, and they can vary from
+application to application, please refer to the documentation of your
+application to find the more suitable way to set them in your case.</p><p>Jolokia Discovery is based on UDP multicast requests. Agents join the multicast
+group 239.192.48.84, port 24884, and discovery is done by sending queries to
+this group. You have to take into account that UDP traffic between Metricbeat
+and the Jolokia agents has to be allowed. Also notice that this multicast
+address is in the 239.0.0.0/8 range, that is reserved for private use within an
+organization, so it can only be used in private networks.</p><p>These are the available fields on every event:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+jolokia.agent.id
+</li><li class="listitem">
+jolokia.agent.version
+</li><li class="listitem">
+jolokia.secured
+</li><li class="listitem">
+jolokia.server.product
+</li><li class="listitem">
+jolokia.server.vendor
+</li><li class="listitem">
+jolokia.server.version
+</li><li class="listitem">
+jolokia.url
+</li></ul></div><p>The configuration of this provider consists in a set of network interfaces, as
+well as a set of templates as in other providers. The network interfaces will be
+the ones used for discovery probes, they have these settings:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">name</code>: the name of the interface (e.g. <code class="literal">br0</code>), it can contain a wildcard
+    at as suffix to apply the same settings to multiple network interfaces of
+    the same type (e.g. <code class="literal">br*</code>).
+</li><li class="listitem">
+<code class="literal">interval</code>: time between probes (defaults to 10s)
+</li><li class="listitem">
+<code class="literal">grace_period</code>: time since the last reply to consider a instance stopped
+    (defaults to 30s)
+</li><li class="listitem">
+<code class="literal">probe_timeout</code>: max time to wait for responses since a probe is sent
+    (defaults to 1s)
+</li></ul></div><p>Filebeat supports templates for inputs and modules:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.autodiscover:
+  providers:
+    - type: jolokia
+      interfaces:
+      - name: lo
+      templates:
+      - condition:
+          contains:
+            jolokia.server.product: "kafka"
+        config:
+        - module: kafka
+          log:
+            enabled: true
+            var.paths:
+            - /var/log/kafka/*.log</pre></div><p>This configuration starts a jolokia module that collects logs of kafka if it is
+running. Discovery probes are sent using the local interface.</p></div><div class="navfooter"><span class="prev"><a href="using-environ-vars.html">
               « 
               Use environment variables in the configuration</a>
            

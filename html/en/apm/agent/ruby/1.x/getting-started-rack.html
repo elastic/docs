@@ -599,7 +599,24 @@ Not what you want? See the
            
           <a href="configuration.html">Configuration
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="getting-started-rack"></a>Getting started with Rack<a href="https://github.com/elastic/apm-agent-ruby/edit/1.x/docs/getting-started-rack.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># config.ru
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="getting-started-rack"></a>Getting started with Rack<a href="https://github.com/elastic/apm-agent-ruby/edit/1.x/docs/getting-started-rack.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Add the gem to your <code class="literal">Gemfile</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">gem 'elastic-apm'</pre></div><p>Create a file <code class="literal">config/elastic_apm.yml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">server_url: http://localhost:8100
+secret_token: ''</pre></div><p>Include the middleware, start (and stop) Elastic APM when booting your app:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># config.ru
+
+app = lambda do |env|
+  [200, {'Content-Type' =&gt; 'text/plain'}, ['ok']]
+end
+
+# Wraps all requests in transactions and reports exceptions
+use ElasticAPM::Middleware
+
+# Start an instance of the Agent
+ElasticAPM.start(service_name: 'NothingButRack')
+
+run app
+
+# Gracefully stop the agent when process exits.
+# Makes sure any pending transactions are sent.
+at_exit { ElasticAPM.stop }</pre></div><h4><a id="getting-started-sinatra"></a>Sinatra example<a href="https://github.com/elastic/apm-agent-ruby/edit/1.x/docs/getting-started-rack.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby"># Example config.ru
 
 require 'sinatra/base'
 
@@ -610,10 +627,7 @@ class MySinatraApp &lt; Sinatra::Base
 end
 
 # Takes optional ElasticAPM::Config values
-ElasticAPM.start(
-  app: MySinatraApp, # required
-  server_url: 'http://localhost:8200'
-)
+ElasticAPM.start(app: MySinatraApp, ...)
 
 run MySinatraApp
 
