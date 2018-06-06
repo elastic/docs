@@ -48,9 +48,9 @@ alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/
 alias docbldcr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
 
 # Cloud
-alias docbldec='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --chunk 1'
+alias docbldec='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
 
-alias docbldece='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/cloud/docs/cloud-enterprise/index.asciidoc --chunk 1'
+alias docbldece='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/cloud/docs/cloud-enterprise/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
 
 # Beats
 alias docbldbpr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/beats/libbeat/docs/index.asciidoc --chunk 1'
