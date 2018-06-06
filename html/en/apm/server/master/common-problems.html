@@ -641,6 +641,8 @@ you have a few options:</p><div class="itemizedlist"><ul class="itemizedlist" ty
 <a class="link" href="common-problems.html#increase-cluster-ingest" title="Tune Elasticsearch for higher ingestionedit">Tune Elasticsearch for higher ingestion</a>
 </li><li class="listitem">
 <a class="link" href="common-problems.html#increase-queue-size" title="Increase internal queue sizeedit">Increase the size of the APM Server queue</a>
+</li><li class="listitem">
+<a class="link" href="common-problems.html#delete-old-data" title="Delete old dataedit">Delete old data</a>
 </li></ul></div><h3><a id="request-timed-out"></a>503: Request timed out waiting to be processed<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>There is a limit to the number of requests that the APM Server can process concurrently.
 The APM Server returns an HTTP 503 status with the message "Request timed out waiting to be processed" when the limit is reached and the request from an agent is blocked.
 This limit is determined by the <code class="literal">apm-server.concurrent_requests</code> configuration parameter.</p><p>To alleviate this problem,
@@ -667,7 +669,27 @@ is to reduce the <span class="emphasis"><em>transaction sample rate</em></span>.
 The transaction sample rate is controlled in the configuration of agents (for example for <a class="ulink" href="https://www.elastic.co/guide/en/apm/agent/python/current/configuration.html#config-transaction-sample-rate" target="_top">Python</a> and <a class="ulink" href="https://www.elastic.co/guide/en/apm/agent/nodejs/current/agent-api.html#transaction-sample-rate" target="_top">Node.js</a>).</p><p>Reducing the transaction sample rate does not affect the collection of metrics such as Requests Per Second.</p><h4><a id="increase-queue-size"></a>Increase internal queue size<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A larger internal queue allows Elasticsearch to be unavailable for longer periods,
 and it alleviates problems that might result from sudden spikes of data.
 You can increase the queue size by overriding <code class="literal">queue.mem.events</code>.
-Be aware that increasing <code class="literal">queue.mem.events</code> can significantly affect APM Server memory usage.</p><h4><a id="reduce-payload-size"></a>Reduce the payload size<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Large payloads coming from agents may result in "503: Request timed out waiting to be processed" messages.
+Be aware that increasing <code class="literal">queue.mem.events</code> can significantly affect APM Server memory usage.</p><h4><a id="delete-old-data"></a>Delete old data<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The internal queue might be full because Elasticsearch ran out of disk space and started rejecting insertions.
+If this happens,
+you will need to remove old indices to make room for new data.
+To do this you can use a tool like Curator and set up a cron job to run it periodically.</p><p>By default APM indices have the pattern <code class="literal">apm-%{[beat.version]}-{type}-%{+yyyy.MM.dd}</code>.
+With the curator command line interface you can, for instance, see all your existing indices:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curator_cli --host localhost show_indices --filter_list '[{"filtertype":"pattern","kind":"prefix","value":"apm-"}]'
+
+apm-7.0.0-alpha1-error-2018.05.10
+apm-7.0.0-alpha1-error-2018.05.11
+apm-7.0.0-alpha1-error-2018.05.12
+apm-7.0.0-alpha1-sourcemap
+apm-7.0.0-alpha1-span-2018.05.10
+apm-7.0.0-alpha1-span-2018.05.11
+apm-7.0.0-alpha1-span-2018.05.12
+apm-7.0.0-alpha1-transaction-2018.05.10
+apm-7.0.0-alpha1-transaction-2018.05.11
+apm-7.0.0-alpha1-transaction-2018.05.12</pre></div><p>And then delete any span indices older than 1 day:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curator_cli --host localhost delete_indices --filter_list '[{"filtertype":"pattern","kind":"prefix","value":"apm-7.0.0-alpha1-span-"}, {"filtertype":"age","source":"name","timestring":"%Y.%m.%d","unit":"days","unit_count":1,"direction":"older"}]'
+
+INFO      Deleting selected indices: [apm-7.0.0-alpha1-span-2018.05.10, apm-7.0.0-alpha1-span-2018.05.11]
+INFO      ---deleting index apm-7.0.0-alpha1-span-2018.05.10
+INFO      ---deleting index apm-7.0.0-alpha1-span-2018.05.11
+INFO      "delete_indices" action completed.</pre></div><p>You can read more on Curator here: <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/client/curator/current/index.html" target="_top">https://www.elastic.co/guide/en/elasticsearch/client/curator/current/index.html</a></p><h4><a id="reduce-payload-size"></a>Reduce the payload size<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Large payloads coming from agents may result in "503: Request timed out waiting to be processed" messages.
 You can reduce the payload size by decreasing the <code class="literal">max_queue_size</code> in the agents.
 This will result in agents sending smaller payloads to the APM Server,
 but the requests will be more frequent.
