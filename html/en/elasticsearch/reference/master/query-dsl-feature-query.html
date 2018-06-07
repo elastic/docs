@@ -622,14 +622,22 @@ Not what you want? See the
           <a href="query-dsl-wrapper-query.html">Wrapper Query
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-feature-query"></a>Feature Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/feature-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">feature</code> query is a specialized query that only works on
-<a class="link" href="feature.html" title="Feature datatype"><code class="literal">feature</code></a> fields. Its goal is to boost the score of documents based
-on the values of numeric features. It is typically put in a <code class="literal">should</code> clause of
-a <a class="link" href="query-dsl-bool-query.html" title="Bool Query"><code class="literal">bool</code></a> query so that its score is added to the score
+<a class="link" href="feature.html" title="Feature datatype"><code class="literal">feature</code></a> fields and <a class="link" href="feature-vector.html" title="Feature vector datatype"><code class="literal">feature_vector</code></a> fields.
+Its goal is to boost the score of documents based on the values of numeric
+features. It is typically put in a <code class="literal">should</code> clause of a
+<a class="link" href="query-dsl-bool-query.html" title="Bool Query"><code class="literal">bool</code></a> query so that its score is added to the score
 of the query.</p><p>Compared to using <a class="link" href="query-dsl-function-score-query.html" title="Function Score Query"><code class="literal">function_score</code></a> or other
 ways to modify the score, this query has the benefit of being able to
 efficiently skip non-competitive hits when
 <a class="link" href="search-uri-request.html" title="URI Search"><code class="literal">track_total_hits</code></a> is set to <code class="literal">false</code>. Speedups may be
-spectacular.</p><p>Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test
+spectacular.</p><p>Here is an example that indexes various features:
+ - <a class="ulink" href="https://en.wikipedia.org/wiki/PageRank" target="_top"><code class="literal">pagerank</code></a>, a measure of the
+   importance of a website,
+ - <code class="literal">url_length</code>, the length of the url, which typically correlates negatively
+   with relevance,
+ - <code class="literal">topics</code>, which associates a list of topics with every document alongside a
+   measure of how well the document is connected to this topic.</p><p>Then the example includes an example query that searches for <code class="literal">"2016"</code> and boosts
+based or <code class="literal">pagerank</code>, <code class="literal">url_length</code> and the <code class="literal">sports</code> topic.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test
 {
   "mappings": {
     "_doc": {
@@ -640,6 +648,9 @@ spectacular.</p><p>Here is an example:</p><div class="pre_wrapper"><pre class="p
         "url_length": {
           "type": "feature",
           "positive_score_impact": false
+        },
+        "topics": {
+          "type": "feature_vector"
         }
       }
     }
@@ -648,14 +659,39 @@ spectacular.</p><p>Here is an example:</p><div class="pre_wrapper"><pre class="p
 
 PUT test/_doc/1
 {
-  "pagerank": 10,
-  "url_length": 50
+  "url": "http://en.wikipedia.org/wiki/2016_Summer_Olympics",
+  "content": "Rio 2016",
+  "pagerank": 50.3,
+  "url_length": 42,
+  "topics": {
+    "sports": 50,
+    "brazil": 30
+  }
 }
 
 PUT test/_doc/2
 {
-  "pagerank": 100,
-  "url_length": 20
+  "url": "http://en.wikipedia.org/wiki/2016_Brazilian_Grand_Prix",
+  "content": "Formula One motor race held on 13 November 2016 at the Autódromo José Carlos Pace in São Paulo, Brazil",
+  "pagerank": 50.3,
+  "url_length": 47,
+  "topics": {
+    "sports": 35,
+    "formula one": 65,
+    "brazil": 20
+  }
+}
+
+PUT test/_doc/3
+{
+  "url": "http://en.wikipedia.org/wiki/Deadpool_(film)",
+  "content": "Deadpool is a 2016 American superhero film",
+  "pagerank": 50.3,
+  "url_length": 37,
+  "topics": {
+    "movies": 60,
+    "super hero": 65
+  }
 }
 
 POST test/_refresh
@@ -663,17 +699,33 @@ POST test/_refresh
 GET test/_search
 {
   "query": {
-    "feature": {
-      "field": "pagerank"
-    }
-  }
-}
-
-GET test/_search
-{
-  "query": {
-    "feature": {
-      "field": "url_length"
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "content": "2016"
+          }
+        }
+      ],
+      "should": [
+        {
+          "feature": {
+            "field": "pagerank"
+          }
+        },
+        {
+          "feature": {
+            "field": "url_length",
+            "boost": 0.1
+          }
+        },
+        {
+          "feature": {
+            "field": "topics.sports",
+            "boost": 0.4
+          }
+        }
+      ]
     }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-feature-query/1.json"></div><h3><a id="_supported_functions"></a>Supported functions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/feature-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">feature</code> query supports 3 functions in order to boost scores using the
