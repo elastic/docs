@@ -624,26 +624,27 @@ and to configure your jobs to analyze aggregated data.</p><p>One of the benefits
 distributes these calculations across your cluster. You can then feed this
 aggregated data into X-Pack machine learning instead of raw results, which
 reduces the volume of data that must be considered while detecting anomalies.</p><p>There are some limitations to using aggregations in datafeeds, however.
-Your aggregation must include a buckets aggregation, which in turn must contain
-a date histogram aggregation. This requirement ensures that the aggregated
-data is a time series. If you use a terms aggregation and the cardinality of a
-term is high, then the aggregation might not be effective and you might want
-to just use the default search and scroll behavior.</p><p>When you create or update a job, you can include the names of aggregations, for
+Your aggregation must include a <code class="literal">date_histogram</code> aggregation, which in turn must
+contain a <code class="literal">max</code> aggregation on the time field. This requirement ensures that the
+aggregated data is a time series and the timestamp of each bucket is the time
+of the last record in the bucket. If you use a terms aggregation and the
+cardinality of a term is high, then the aggregation might not be effective and
+you might want to just use the default search and scroll behavior.</p><p>When you create or update a job, you can include the names of aggregations, for
 example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/ml/anomaly_detectors/farequote
 {
   "analysis_config": {
     "bucket_span": "60m",
     "detectors": [{
-      "function":"mean",
-      "field_name":"responsetime",
-      "by_field_name":"airline"
+      "function": "mean",
+      "field_name": "responsetime",
+      "by_field_name": "airline"
     }],
     "summary_count_field_name": "doc_count"
   },
   "data_description": {
     "time_field":"time"
   }
-}</pre></div><p>In this example, the <code class="literal">airline</code>, <code class="literal">responsetime</code>, and <code class="literal">time</code> fields are
+}</pre></div><div class="console_widget" data-snippet="snippets/ml-configuring-aggregation/1.json"></div><p>In this example, the <code class="literal">airline</code>, <code class="literal">responsetime</code>, and <code class="literal">time</code> fields are
 aggregations.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When the <code class="literal">summary_count_field_name</code> property is set to a non-null value,
 the job expects to receive aggregated input. The property must be set to the
 name of the field that contains the count of raw data points that have been
@@ -679,7 +680,7 @@ aggregated. It applies to all detectors in the job.</p></div></div><p>The aggreg
       }
     }
   }
-}</pre></div><p>In this example, the aggregations have names that match the fields that they
+}</pre></div><div class="console_widget" data-snippet="snippets/ml-configuring-aggregation/2.json"></div><p>In this example, the aggregations have names that match the fields that they
 operate on. That is to say, the <code class="literal">max</code> aggregation is named <code class="literal">time</code> and its
 field is also <code class="literal">time</code>. The same is true for the aggregations with the names
 <code class="literal">airline</code> and <code class="literal">responsetime</code>. Since you must create the job before you can
@@ -688,28 +689,70 @@ these configuration steps.</p><div class="important admon"><div class="icon"><im
 in the datafeed must match the name of the time field, as in the previous example.
 For all other aggregations, if the aggregation name doesn’t match the field name,
 there are limitations in the drill-down functionality within the machine learning page in
-Kibana.</p></div></div><p>When you define an aggregation in a datafeed, it must have the following form:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggregations" : {
-  "buckets" : {
-    "date_histogram" : {
-      "time_zone": "UTC", ...
+Kibana.</p></div></div><p>datafeeds support complex nested aggregations, this example uses the <code class="literal">derivative</code>
+pipeline aggregation to find the 1st order derivative of the counter
+<code class="literal">system.network.out.bytes</code> for each value of the field <code class="literal">beat.name</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggregations": {
+  "beat.name": {
+    "terms": {
+      "field": "beat.name"
     },
     "aggregations": {
-      "&lt;time_field&gt;": {
-        "max": {
-          "field":"&lt;time_field&gt;"
+      "buckets": {
+        "date_histogram": {
+          "field": "@timestamp",
+          "interval": "5m"
+        },
+        "aggregations": {
+          "@timestamp": {
+            "max": {
+              "field": "@timestamp"
+            }
+          },
+          "bytes_out_average": {
+            "avg": {
+              "field": "system.network.out.bytes"
+            }
+          },
+          "bytes_out_derivative": {
+            "derivative": {
+              "buckets_path": "bytes_out_average"
+            }
+          }
         }
       }
-      [,"&lt;first_term&gt;": {
-        "terms":{...
+    }
+  }
+}</pre></div><p>When you define an aggregation in a datafeed, it must have the following form:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggregations": {
+  ["bucketing_aggregation": {
+    "bucket_agg": {
+      ...
+    },
+    "aggregations": {]
+      "data_histogram_aggregation": {
+        "date_histogram": {
+          "field": "time",
+        },
+        "aggregations": {
+          "timestamp": {
+            "max": {
+              "field": "time"
+            }
+          },
+          [,"&lt;first_term&gt;": {
+            "terms":{...
+            }
+            [,"aggregations" : {
+              [&lt;sub_aggregation&gt;]+
+            } ]
+          }]
         }
-        [,"aggregations" : {
-          [&lt;sub_aggregation&gt;]+
-        } ]
-      }]
-   }
- }
-}</pre></div><p>You must specify <code class="literal">buckets</code> as the aggregation name and <code class="literal">date_histogram</code> as the
-aggregation type. For more information, see
+      }
+    }
+  }
+}</pre></div><p>The top level aggregation must be either a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.2/search-aggregations-bucket.html" target="_top">Bucket Aggregation</a>
+containing as single sub-aggregation that is a <code class="literal">date_histogram</code> or the top level aggregation
+is the required <code class="literal">date_histogram</code>. There must be exactly 1 <code class="literal">date_histogram</code> aggregation.
+For more information, see
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.2/search-aggregations-bucket-datehistogram-aggregation.html" target="_top">Date Histogram Aggregation</a>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">time_zone</code> parameter in the date histogram aggregation must be set to <code class="literal">UTC</code>,
 which is the default value.</p></div></div><p>Each histogram bucket has a key, which is the bucket start time. This key cannot
 be used for aggregations in datafeeds, however, because they need to know the

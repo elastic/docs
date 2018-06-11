@@ -651,15 +651,17 @@ does not include the CA in the certificate chain, in order to cut down on SSL ha
 <code class="literal">CertificateValidations.AuthorityIsRoot</code> and pass it your local copy of the CA public key to assert that
 the certificate the server presented was generated using it</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class CertgenCaCluster : SslAndKpiXPackCluster
 {
+    public CertgenCaCluster() : this(new SslAndKpiClusterConfiguration()) { }
+    public CertgenCaCluster(SslAndKpiClusterConfiguration configuration) : base(configuration) { }
     protected override ConnectionSettings ConnectionSettings(ConnectionSettings s) =&gt; s
         .ServerCertificateValidationCallback(
-            CertificateValidations.AuthorityIsRoot(new X509Certificate(this.Node.FileSystem.CaCertificate))
+            CertificateValidations.AuthorityIsRoot(new X509Certificate(this.ClusterConfiguration.FileSystem.CaCertificate))
         );
 }</pre></div><p>If your local copy does not match the server’s CA, the client will fail to connect</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class BadCertgenCaCluster : SslAndKpiXPackCluster
 {
     protected override ConnectionSettings ConnectionSettings(ConnectionSettings s) =&gt; s
         .ServerCertificateValidationCallback(
-            CertificateValidations.AuthorityPartOfChain(new X509Certificate(this.Node.FileSystem.UnusedCaCertificate))
+            CertificateValidations.AuthorityPartOfChain(new X509Certificate(this.ClusterConfiguration.FileSystem.UnusedCaCertificate))
         );
 }</pre></div><p>If you go for a vendor generated SSL certificate, it’s common practice for the certificate to include the CA <span class="emphasis"><em>and</em></span> any intermediary CAs
 in the certificate chain. When using such a certificate, use <code class="literal">CertificateValidations.AuthorityPartOfChain</code> which validates that
@@ -671,20 +673,23 @@ and attach these to requests using <code class="literal">new X509Certificate(pat
 on the fly by passing the paths to the <code class="literal">.cer</code>  and <code class="literal">.key</code> files that <code class="literal">certutil</code> outputs. Sadly, this functonality is not available on .NET Core because
 the <code class="literal">PublicKey</code> property cannot be set on the crypto service provider that is used to generate the <code class="literal">pfx</code> file at runtime.</p><p>You can set Client Certificates to use on all connections on <code class="literal">ConnectionSettings</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">public class PkiCluster : CertgenCaCluster
 {
+    public PkiCluster() : base(new SslAndKpiClusterConfiguration
+    {
+        DefaultNodeSettings =
+        {
+            {"xpack.security.authc.realms.file1.enabled", "false"},
+            {"xpack.security.http.ssl.client_authentication", "required"}
+        }
+    }) { }
+
     protected override ConnectionSettings Authenticate(ConnectionSettings s) =&gt; s <a id="CO38-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         .ClientCertificate(
             ClientCertificate.LoadWithPrivateKey(
-                this.Node.FileSystem.ClientCertificate, <a id="CO38-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-                this.Node.FileSystem.ClientPrivateKey, <a id="CO38-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+                this.ClusterConfiguration.FileSystem.ClientCertificate, <a id="CO38-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                this.ClusterConfiguration.FileSystem.ClientPrivateKey, <a id="CO38-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
                 "") <a id="CO38-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
         );
 
-    //hide
-    protected override string[] AdditionalServerSettings =&gt; base.AdditionalServerSettings.Concat(new[]
-    {
-        "xpack.security.authc.realms.file1.enabled=false",
-        "xpack.security.http.ssl.client_authentication=required"
-    }).ToArray();
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Set the client certificate on <code class="literal">ConnectionSettings</code>
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO38-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
