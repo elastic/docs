@@ -659,17 +659,34 @@ Handle the failure
         ContentType.APPLICATION_JSON));</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The <code class="literal">ContentType</code> specified for the <code class="literal">HttpEntity</code> is important
 because it will be used to set the <code class="literal">Content-Type</code> header so that Elasticsearch
 can properly parse the content.</p></div></div><p>You can also set it to a <code class="literal">String</code> which will default to
-a <code class="literal">ContentType</code> of <code class="literal">application/json</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.setJsonEntity("{\"json\":\"text\"}");</pre></div><p>And you can add one or more headers to send with the request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RequestOptions.Builder options = request.getOptions().toBuilder();
-options.addHeader("Accept", "text/plain");
-options.addHeader("Cache-Control", "no-cache");
-request.setOptions(options);</pre></div><p>You can also customize the response consumer used to buffer the asynchronous
+a <code class="literal">ContentType</code> of <code class="literal">application/json</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.setJsonEntity("{\"json\":\"text\"}");</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-rest-low-usage-request-options"></a>RequestOptions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/low-level/usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">RequestOptions</code> class holds parts of the request that should be shared
+between many requests in the same application. You can make a singleton
+instance and share it between all requests:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">private static final RequestOptions COMMON_OPTIONS;
+static {
+    RequestOptions.Builder builder = RequestOptions.DEFAULT.toBuilder();
+    builder.addHeader("Authorization", "Bearer " + TOKEN); <a id="CO8-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    builder.setNodeSelector(NodeSelector.NOT_MASTER_ONLY); <a id="CO8-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    builder.setHttpAsyncResponseConsumerFactory(           <a id="CO8-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+        new HeapBufferedResponseConsumerFactory(30 * 1024 * 1024 * 1024));
+    COMMON_OPTIONS = builder.build();
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Add any headers needed by all requests.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Set a <code class="literal">NodeSelector</code>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Customize the response consumer.
+</p></td></tr></table></div><p><code class="literal">addHeader</code> is for headers that are required for authorization or to work with
+a proxy in front of Elasticsearch. There is no need to set the <code class="literal">Content-Type</code>
+header because the client will automatically set that from the <code class="literal">HttpEntity</code>
+attached to the request.</p><p>You can set the <code class="literal">NodeSelector</code> which controls which nodes will receive
+requests. <code class="literal">NodeSelector.NOT_MASTER_ONLY</code> is a good choice.</p><p>You can also customize the response consumer used to buffer the asynchronous
 responses. The default consumer will buffer up to 100MB of response on the
 JVM heap. If the response is larger then the request will fail. You could,
 for example, lower the maximum size which might be useful if you are running
-in a heap constrained environment:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RequestOptions.Builder options = request.getOptions().toBuilder();
-options.setHttpAsyncResponseConsumerFactory(
-        new HttpAsyncResponseConsumerFactory.HeapBufferedResponseConsumerFactory(30 * 1024 * 1024));
-request.setOptions(options);</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multiple_parallel_asynchronous_actions"></a>Multiple parallel asynchronous actions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/low-level/usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The client is quite happy to execute many actions in parallel. The following
+in a heap constrained environment like the exmaple above.</p><p>Once you’ve created the singleton you can use it when making requests:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.setOptions(COMMON_OPTIONS);</pre></div><p>You can also customize these options on a per request basis. For example, this
+adds an extra header:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RequestOptions.Builder options = COMMON_OPTIONS.toBuilder();
+options.addHeader("cats", "knock things off of other things");
+request.setOptions(options);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multiple_parallel_asynchronous_actions"></a>Multiple parallel asynchronous actions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/low-level/usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The client is quite happy to execute many actions in parallel. The following
 example indexes many documents in parallel. In a real world scenario you’d
 probably want to use the <code class="literal">_bulk</code> API instead, but the example is illustative.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">final CountDownLatch latch = new CountDownLatch(documents.length);
 for (int i = 0; i &lt; documents.length; i++) {
@@ -681,21 +698,21 @@ for (int i = 0; i &lt; documents.length; i++) {
             new ResponseListener() {
                 @Override
                 public void onSuccess(Response response) {
-                    <a id="CO8-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    <a id="CO9-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
                     latch.countDown();
                 }
 
                 @Override
                 public void onFailure(Exception exception) {
-                    <a id="CO8-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                    <a id="CO9-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
                     latch.countDown();
                 }
             }
     );
 }
-latch.await();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+latch.await();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Process the returned response
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Handle the returned exception, due to communication error or a response
 with status code that indicates an error
 </p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="java-rest-low-usage-initialization.html">
