@@ -686,7 +686,11 @@ for example, lower the maximum size which might be useful if you are running
 in a heap constrained environment like the exmaple above.</p><p>Once you’ve created the singleton you can use it when making requests:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">request.setOptions(COMMON_OPTIONS);</pre></div><p>You can also customize these options on a per request basis. For example, this
 adds an extra header:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RequestOptions.Builder options = COMMON_OPTIONS.toBuilder();
 options.addHeader("cats", "knock things off of other things");
-request.setOptions(options);</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multiple_parallel_asynchronous_actions"></a>Multiple parallel asynchronous actions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/low-level/usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The client is quite happy to execute many actions in parallel. The following
+request.setOptions(options);</pre></div><p>Or you can send requests to nodes with a particular attribute:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RequestOptions.Builder options = COMMON_OPTIONS.toBuilder();
+options.setNodeSelector(new HasAttributeNodeSelector("rack", "c12")); <a id="CO9-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+request.setOptions(options);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Replace the node selector with one that selects nodes on a particular rack.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_multiple_parallel_asynchronous_actions"></a>Multiple parallel asynchronous actions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/java-rest/low-level/usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The client is quite happy to execute many actions in parallel. The following
 example indexes many documents in parallel. In a real world scenario you’d
 probably want to use the <code class="literal">_bulk</code> API instead, but the example is illustative.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">final CountDownLatch latch = new CountDownLatch(documents.length);
 for (int i = 0; i &lt; documents.length; i++) {
@@ -698,21 +702,21 @@ for (int i = 0; i &lt; documents.length; i++) {
             new ResponseListener() {
                 @Override
                 public void onSuccess(Response response) {
-                    <a id="CO9-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    <a id="CO10-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
                     latch.countDown();
                 }
 
                 @Override
                 public void onFailure(Exception exception) {
-                    <a id="CO9-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+                    <a id="CO10-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
                     latch.countDown();
                 }
             }
     );
 }
-latch.await();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+latch.await();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Process the returned response
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO10-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Handle the returned exception, due to communication error or a response
 with status code that indicates an error
 </p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="java-rest-low-usage-initialization.html">
