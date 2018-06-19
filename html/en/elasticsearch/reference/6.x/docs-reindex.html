@@ -1237,8 +1237,23 @@ choose a lower number as too many <code class="literal">slices</code> will hurt 
 <code class="literal">slices</code> higher than the number of shards generally does not improve efficiency
 and adds overhead.</p><p>Indexing performance scales linearly across available resources with the
 number of slices.</p><p>Whether query or indexing performance dominates the runtime depends on the
-documents being reindexed and cluster resources.</p><h3><a id="_reindex_daily_indices"></a>Reindex daily indices<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can use <code class="literal">_reindex</code> in combination with <a class="link" href="modules-scripting-painless.html" title="Painless Scripting Language">Painless</a>
-to reindex daily indices to apply a new template to the existing documents.</p><p>Assuming you have indices consisting of documents as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT metricbeat-2016.05.30/_doc/1?refresh
+documents being reindexed and cluster resources.</p><h3><a id="_reindexing_many_indices"></a>Reindexing many indices<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If you have many indices to reindex it is generally better to reindex them
+one at a time rather than using a glob pattern to pick up many indices. That
+way you can resume the process if there are any errors by removing the
+partially completed index and starting over at that index. It also makes
+parallelizing the process fairly simple: split the list of indices to reindex
+and run each list in parallel.</p><p>One off bash scripts seem to work nicely for this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">for index in i1 i2 i3 i4 i5; do
+  curl -HContent-Type:application/json -XPOST localhost:9200/_reindex?pretty -d'{
+    "source": {
+      "index": "'$index'"
+    },
+    "dest": {
+      "index": "'$index'-reindexed"
+    }
+  }'
+done</pre></div><h3><a id="_reindex_daily_indices"></a>Reindex daily indices<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/docs/reindex.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Notwithstanding the above advice, you can use <code class="literal">_reindex</code> in combination with
+<a class="link" href="modules-scripting-painless.html" title="Painless Scripting Language">Painless</a> to reindex daily indices to apply
+a new template to the existing documents.</p><p>Assuming you have indices consisting of documents as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT metricbeat-2016.05.30/_doc/1?refresh
 {"system.cpu.idle.pct": 0.908}
 PUT metricbeat-2016.05.31/_doc/1?refresh
 {"system.cpu.idle.pct": 0.105}</pre></div><div class="console_widget" data-snippet="snippets/docs-reindex/29.json"></div><p>The new template for the <code class="literal">metricbeat-*</code> indices is already loaded into Elasticsearch,
