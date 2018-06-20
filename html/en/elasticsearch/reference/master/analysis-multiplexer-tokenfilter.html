@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Delaying allocation when a node leaves
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Multiplexer Token Filter
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-modules-allocation.html" title="Index Shard Allocation" /><link rel="prev" href="shard-allocation-filtering.html" title="Shard Allocation Filtering" /><link rel="next" href="recovery-prioritization.html" title="Index recovery prioritization" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="analysis-tokenfilters.html" title="Token Filters" /><link rel="prev" href="analysis-word-delimiter-graph-tokenfilter.html" title="Word Delimiter Graph Token Filter" /><link rel="next" href="analysis-stemmer-tokenfilter.html" title="Stemmer Token Filter" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
     
 
     
@@ -637,87 +637,105 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index Modules</a></span> » <span class="breadcrumb-link"><a href="index-modules-allocation.html">Index Shard Allocation</a></span> » <span class="breadcrumb-node">Delaying allocation when a node leaves</span></div><div class="navheader"><span class="prev"><a href="shard-allocation-filtering.html">
+    </a></span> » <span class="breadcrumb-link"><a href="analysis.html">Analysis</a></span> » <span class="breadcrumb-link"><a href="analysis-tokenfilters.html">Token Filters</a></span> » <span class="breadcrumb-node">Multiplexer Token Filter</span></div><div class="navheader"><span class="prev"><a href="analysis-word-delimiter-graph-tokenfilter.html">
               « 
-              Shard Allocation Filtering</a>
+              Word Delimiter Graph Token Filter</a>
            
         </span><span class="next">
            
-          <a href="recovery-prioritization.html">Index recovery prioritization
+          <a href="analysis-stemmer-tokenfilter.html">Stemmer Token Filter
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="delayed-allocation"></a>Delaying allocation when a node leaves<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When a node leaves the cluster for whatever reason, intentional or otherwise,
-the master reacts by:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Promoting a replica shard to primary to replace any primaries that were on the node.
-</li><li class="listitem">
-Allocating replica shards to replace the missing replicas (assuming there are enough nodes).
-</li><li class="listitem">
-Rebalancing shards evenly across the remaining nodes.
-</li></ul></div><p>These actions are intended to protect the cluster against data loss by
-ensuring that every shard is fully replicated as soon as possible.</p><p>Even though we throttle concurrent recoveries both at the
-<a class="link" href="recovery.html" title="Indices Recovery">node level</a> and at the <a class="link" href="shards-allocation.html" title="Cluster Level Shard Allocation">cluster level</a>, this
-“shard-shuffle” can still put a lot of extra load on the cluster which
-may not be necessary if the missing node is likely to return soon. Imagine
-this scenario:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Node 5 loses network connectivity.
-</li><li class="listitem">
-The master promotes a replica shard to primary for each primary that was on Node 5.
-</li><li class="listitem">
-The master allocates new replicas to other nodes in the cluster.
-</li><li class="listitem">
-Each new replica makes an entire copy of the primary shard across the network.
-</li><li class="listitem">
-More shards are moved to different nodes to rebalance the cluster.
-</li><li class="listitem">
-Node 5 returns after a few minutes.
-</li><li class="listitem">
-The master rebalances the cluster by allocating shards to Node 5.
-</li></ul></div><p>If the master had just waited for a few minutes, then the missing shards could
-have been re-allocated to Node 5 with the minimum of network traffic.  This
-process would be even quicker for idle shards (shards not receiving indexing
-requests) which have been automatically <a class="link" href="indices-synced-flush.html" title="Synced Flush">sync-flushed</a>.</p><p>The allocation of replica shards which become unassigned because a node has
-left can be delayed with the <code class="literal">index.unassigned.node_left.delayed_timeout</code>
-dynamic setting, which defaults to <code class="literal">1m</code>.</p><p>This setting can be updated on a live index (or on all indices):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _all/_settings
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="analysis-multiplexer-tokenfilter"></a>Multiplexer Token Filter<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/tokenfilters/multiplexer-tokenfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A token filter of type <code class="literal">multiplexer</code> will emit multiple tokens at the same position,
+each version of the token having been run through a different filter.  Identical
+output tokens at the same position will be removed.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>If the incoming token stream has duplicate tokens, then these will also be
+removed by the multiplexer</p></div></div><h3><a id="_options_5"></a>Options<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/tokenfilters/multiplexer-tokenfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+filters
+</p>
+</td><td valign="top">
+<p>
+a list of token filters to apply to incoming tokens.  These can be any
+  token filters defined elsewhere in the index mappings.  Filters can be chained
+  using a comma-delimited string, so for example <code class="literal">"lowercase, porter_stem"</code> would
+  apply the <code class="literal">lowercase</code> filter and then the <code class="literal">porter_stem</code> filter to a single token.
+</p>
+</td></tr></tbody></table></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>Shingle or multi-word synonym token filters will not function normally
+  when they are declared in the filters array because they read ahead internally
+  which is unsupported by the multiplexer</p></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+preserve_original
+</span></dt><dd>
+if <code class="literal">true</code> (the default) then emit the original token in
+  addition to the filtered tokens
+</dd></dl></div><h3><a id="_settings_example"></a>Settings example<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/tokenfilters/multiplexer-tokenfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can set it up like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /multiplexer_example
 {
-  "settings": {
-    "index.unassigned.node_left.delayed_timeout": "5m"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/delayed-allocation/1.json"></div><p>With delayed allocation enabled, the above scenario changes to look like this:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Node 5 loses network connectivity.
-</li><li class="listitem">
-The master promotes a replica shard to primary for each primary that was on Node 5.
-</li><li class="listitem">
-The master logs a message that allocation of unassigned shards has been delayed, and for how long.
-</li><li class="listitem">
-The cluster remains yellow because there are unassigned replica shards.
-</li><li class="listitem">
-Node 5 returns after a few minutes, before the <code class="literal">timeout</code> expires.
-</li><li class="listitem">
-The missing replicas are re-allocated to Node 5 (and sync-flushed shards recover almost immediately).
-</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This setting will not affect the promotion of replicas to primaries, nor
-will it affect the assignment of replicas that have not been assigned
-previously. In particular, delayed allocation does not come into effect after a full cluster restart.
-Also, in case of a master failover situation, elapsed delay time is forgotten
-(i.e. reset to the full initial delay).</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_cancellation_of_shard_relocation"></a>Cancellation of shard relocation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If delayed allocation times out, the master assigns the missing shards to
-another node which will start recovery.  If the missing node rejoins the
-cluster, and its shards still have the same sync-id as the primary, shard
-relocation will be cancelled and the synced shard will be used for recovery
-instead.</p><p>For this reason, the default <code class="literal">timeout</code> is set to just one minute: even if shard
-relocation begins, cancelling recovery in favour of the synced shard is cheap.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_monitoring_delayed_unassigned_shards"></a>Monitoring delayed unassigned shards<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The number of shards whose allocation has been delayed by this timeout setting
-can be viewed with the <a class="link" href="cluster-health.html" title="Cluster Health">cluster health API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/health <a id="CO365-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="console_widget" data-snippet="snippets/delayed-allocation/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO365-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This request will return a <code class="literal">delayed_unassigned_shards</code> value.
-</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_removing_a_node_permanently"></a>Removing a node permanently<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/delayed.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If a node is not going to return and you would like Elasticsearch to allocate
-the missing shards immediately, just update the timeout to zero:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _all/_settings
+    "settings" : {
+        "analysis" : {
+            "analyzer" : {
+                "my_analyzer" : {
+                    "tokenizer" : "standard",
+                    "filter" : [ "my_multiplexer" ]
+                }
+            },
+            "filter" : {
+                "my_multiplexer" : {
+                    "type" : "multiplexer",
+                    "filters" : [ "lowercase", "lowercase, porter_stem" ]
+                }
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-multiplexer-tokenfilter/1.json"></div><p>And test it like:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /multiplexer_example/_analyze
 {
-  "settings": {
-    "index.unassigned.node_left.delayed_timeout": "0"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/delayed-allocation/3.json"></div><p>You can reset the timeout as soon as the missing shards have started to recover.</p></div></div><div class="navfooter"><span class="prev"><a href="shard-allocation-filtering.html">
+  "analyzer" : "my_analyzer",
+  "text" : "Going HOME"
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-multiplexer-tokenfilter/2.json"></div><p>And it’d respond:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "tokens": [
+    {
+      "token": "Going",
+      "start_offset": 0,
+      "end_offset": 5,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 0
+    },
+    {
+      "token": "going",
+      "start_offset": 0,
+      "end_offset": 5,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 0
+    },
+    {
+      "token": "go",
+      "start_offset": 0,
+      "end_offset": 5,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 0
+    },
+    {
+      "token": "HOME",
+      "start_offset": 6,
+      "end_offset": 10,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 1
+    },
+    {
+      "token": "home",          <a id="CO340-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "start_offset": 6,
+      "end_offset": 10,
+      "type": "&lt;ALPHANUM&gt;",
+      "position": 1
+    }
+  ]
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO340-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The stemmer has also emitted a token <code class="literal">home</code> at position 1, but because it is a
+duplicate of this token it has been removed from the token stream
+</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="analysis-word-delimiter-graph-tokenfilter.html">
               « 
-              Shard Allocation Filtering</a>
+              Word Delimiter Graph Token Filter</a>
            
         </span><span class="next">
            
-          <a href="recovery-prioritization.html">Index recovery prioritization
+          <a href="analysis-stemmer-tokenfilter.html">Stemmer Token Filter
                »
             </a></span></div>
 <!-- end body -->
