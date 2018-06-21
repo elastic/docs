@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Upgrading with Persistent Queues Enabled
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Upgrading Persistent Queues Enabled
         | Logstash Reference [5.5]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [5.5]" /><link rel="up" href="upgrading-logstash.html" title="Upgrading Logstash" /><link rel="prev" href="upgrading-using-direct-download.html" title="Upgrading Using a Direct Download" /><link rel="next" href="upgrading-logstash-5.0.html" title="Upgrading Logstash to 5.0" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Logstash/Reference/5.5" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Logstash" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="5.5" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Logstash Reference [5.5]" /><link rel="up" href="upgrading-logstash.html" title="Upgrading Logstash" /><link rel="prev" href="upgrading-logstash-5.0.html" title="Upgrading Logstash to 5.0" /><link rel="next" href="configuration.html" title="Configuring Logstash" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Logstash/Reference/5.5" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Logstash" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="5.5" />
     
 
     
@@ -637,28 +637,41 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Logstash Reference
       [5.5]
-    </a></span> » <span class="breadcrumb-link"><a href="upgrading-logstash.html">Upgrading Logstash</a></span> » <span class="breadcrumb-node">Upgrading with Persistent Queues Enabled</span></div><div class="navheader"><span class="prev"><a href="upgrading-using-direct-download.html">
+    </a></span> » <span class="breadcrumb-link"><a href="upgrading-logstash.html">Upgrading Logstash</a></span> » <span class="breadcrumb-node">Upgrading Persistent Queues Enabled</span></div><div class="navheader"><span class="prev"><a href="upgrading-logstash-5.0.html">
               « 
-              Upgrading Using a Direct Download</a>
+              Upgrading Logstash to 5.0</a>
            
         </span><span class="next">
            
-          <a href="upgrading-logstash-5.0.html">Upgrading Logstash to 5.0
+          <a href="configuration.html">Configuring Logstash
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="upgrading-logstash-pqs"></a>Upgrading with Persistent Queues Enabled<a href="https://github.com/elastic/logstash/edit/5.5/docs/static/upgrading.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Upgrading Logstash with persistent queues enabled is supported. The persistent
-queue directory is self-contained and can be read by a new Logstash instance
-running the same pipeline. You can safely shut down the original Logstash
-instance, spin up a new instance, and set <code class="literal">path.queue</code> in the <code class="literal">logstash.yml</code>
-<a class="link" href="logstash-settings-file.html" title="Settings File">settings file</a> to point to the original queue directory.
-You can also use a mounted drive to make this workflow easier.</p><p>Keep in mind that only one Logstash instance can write to <code class="literal">path.queue</code>. You
-cannot have the original instance and the new instance writing to the queue at
-the same time.</p></div><div class="navfooter"><span class="prev"><a href="upgrading-using-direct-download.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="upgrading-logstash-pqs"></a>Upgrading Persistent Queues Enabled<a href="https://github.com/elastic/logstash/edit/5.5/docs/static/upgrading.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The following applies only if you are upgrading from Logstash installations prior
+to 6.3.0 with the persistent queue enabled.</p><p>We regret to say that due to several serialization issues prior to Logstash
+6.3.0, users will have to take some extra steps when upgrading Logstash
+instances with the persistent queue enabled. While we strive to maintain
+backward compatibility within a given major release, these bugs forced us to
+break that compatibility in version 6.3.0 to ensure correctness of operation.
+For more technical details on this issue, please check our tracking github issue
+for this matter, <a class="ulink" href="https://github.com/elastic/logstash/issues/9494" target="_top">#9494</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_drain_the_persistent_queue"></a>Drain the Persistent Queue<a href="https://github.com/elastic/logstash/edit/5.5/docs/static/upgrading.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If you are upgrading from Logstash 6.2.x or an earlier version and use the persistent
+queue, we strongly recommend that you drain or delete the persistent queue
+before you upgrade.</p><p>To drain the queue:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+In the logstash.yml file, set <code class="literal">queue.drain:true</code>.
+</li><li class="listitem">
+Restart Logstash for this setting to take effect.
+</li><li class="listitem">
+Shutdown Logstash (using CTRL+C or SIGTERM), and wait for the queue to empty.
+</li></ol></div><p>When the queue is empty:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+Complete the upgrade.
+</li><li class="listitem">
+Restart Logstash.
+</li></ol></div><p>We are working to resolve issues with data incompatibilities so that these steps
+won’t be required for future upgrades.</p></div></div><div class="navfooter"><span class="prev"><a href="upgrading-logstash-5.0.html">
               « 
-              Upgrading Using a Direct Download</a>
+              Upgrading Logstash to 5.0</a>
            
         </span><span class="next">
            
-          <a href="upgrading-logstash-5.0.html">Upgrading Logstash to 5.0
+          <a href="configuration.html">Configuring Logstash
                »
             </a></span></div>
 <!-- end body -->
