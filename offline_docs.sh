@@ -2,32 +2,31 @@
 # Modify generated docs in a particular directory to work offline.
 
 date
+DOCS_DIR=$(pwd)
+HTML_DIR=$DOCS_DIR/html
+MANIFEST_DIR="$DOCS_DIR/resources/offline/manifest"
 
-USAGE="Usage: offline_docs.sh [-d <dir-name>] [-r <dir-name>] [-z] [-o] [-h]."
+USAGE="Usage: offline_docs.sh [-z <zip-file>] [-o] [-h]."
 
-echo  
-echo "NOTICE:"
-echo "The documents produced by this utility are intended for customer use only." 
-echo "They may be not be published in any other form or hosted on any publicly"
-echo "accessible site other than https://elastic.co. "
-echo 
+HELP="Processes the contents of docs/html to enable the Elastic docs to be
+hosted and viewed without access to elastic.co. Use the -z option
+to generate a zip archive of the processed files. Files are archived to elastic_docs_bundle.zip. Use the -o option to open
+the modified docs in SimpleHTTPServer."
 
-while getopts "d:r:zoh" opt; do
+EXAMPLE="./offline_docs.sh  -z -o"
+
+while getopts "zoh" opt; do
   case $opt in
-    d)
-      HTML_DIR="$OPTARG"
-      ;;
-    r)
-      RESOURCE_DIR="$OPTARG"
-      ;;
     z)
-      CREATE_ZIP="y"
+      ZIP="y"
       ;;
     o)
       START_SERVER="y"
       ;;
     h)
       echo "$USAGE"
+      echo "$HELP"
+      echo "$EXAMPLE"
       exit 0
       ;;
     \?)
@@ -38,39 +37,76 @@ while getopts "d:r:zoh" opt; do
   esac
 done
 
-if [[ $HTML_DIR == "" ]] ; then
-  echo "No HTML directory specified. Defaulting to 'html'."
-  HTML_DIR="html"
+if [[ $ZIP == "" ]] ; then
+  echo "Skipping zip file generation."
+else
+  ZIP_FILE="elastic_docs_bundle.zip"
 fi
 
-if [[ $RESOURCE_DIR == "" ]] ; then
-  echo "No resource directory specified. Defaulting to 'resources/offline'."
-  RESOURCE_DIR="resources/offline"
-fi
-
-echo 
+echo
 echo WARNING:
 printf "This will modify the contents of $HTML_DIR in place. Continue? y/N: "
 read CONTINUE
 if [[ $CONTINUE == "y" ]] ; then
-  echo "Copying offline resources from $RESOURCE_DIR into $HTML_DIR"
-  cp -r $RESOURCE_DIR/. $HTML_DIR
+  echo "Downloading resources."
+  echo "Reading resource manifest from $MANIFEST_DIR."
 
-  cd $HTML_DIR
+  echo "Fetching assets"
+  mkdir -p $HTML_DIR/assets
+  cd $HTML_DIR/assets
+  rm *.svg
+  xargs -n 1 curl -O < $MANIFEST_DIR/assets.txt
+
+  echo "Fetching legal"
+  mkdir -p $HTML_DIR/legal
+  cd $HTML_DIR/legal
+  rm *.html
+  xargs -n 1 curl -O < $MANIFEST_DIR/legal.txt
+  for f in *; do mv $f `basename $f `.html; done;
+  mv brand.html ../.
+
+  echo "Fetching css"
+  mkdir -p $HTML_DIR/static/css
+  cd $HTML_DIR/static/css
+  rm *.css
+  xargs -n 1 curl -O < $MANIFEST_DIR/css.txt
+
+  echo "Fetching images"
+  mkdir -p $HTML_DIR/static/images
+  cd $HTML_DIR/static/images
+  rm *.png *.svg
+  xargs -n 1 curl -O < $MANIFEST_DIR/images.txt
+  mkdir -p $HTML_DIR/static/images/svg
+  cd $HTML_DIR/static/images/svg
+  rm *.svg
+  xargs -n 1 curl -O < $MANIFEST_DIR/images-svg.txt
+
+  echo "Fetching js"
+  mkdir -p $HTML_DIR/static/js
+  cd $HTML_DIR/static/js
+  rm *.js
+  xargs -n 1 curl -O < $MANIFEST_DIR/js.txt
+
+  echo "Copying doc bundle readme to $HTML_DIR"
+  cp $DOCS_DIR/resources/offline/README.txt $HTML_DIR/.
 
   echo "Processing files."
   echo "A LOT of files."
   echo "This is going to take ten minutes or so."
 
-  find . -name '*.html' -exec sed -i '' -e 's/href="https:\/\/www\.elastic\.co\/guide/href="/g' -e  's/privacy-and-cookie-policy"/privacy-and-cookie-policy\.html"/g' -e 's/terms-of-use"/terms-of-use\.html"/g' -e 's/trademarks"/trademarks\.html"/g' -e 's/privacy-policy"/privacy-policy\.html"/g' -e 's/url="\/guide"/url="\/index.html"/g' -e 's/href="\/guide"/href="\/index.html"/g'  {} \;
+  cd $HTML_DIR
 
-  find . -name '*.js' -exec sed -i '' -e 's/href="https:\/\/www\.elastic\.co\/guide/href="/g' {} \;
+  find . -name '*.html' -exec sed -i '' -e 's/href="https:\/\/www\.elastic\.co\/guide/href="/g' -e  's/privacy-statement"/privacy-statement\.html"/g' -e 's/\/terms-of-use"/\/terms-of-use\.html"/g' -e 's/\/trademarks"/\/trademarks\.html"/g' -e 's/url="\/guide"/url="\/index.html"/g' -e 's/href="\/guide"/href="\/index.html"/g' -e 's/assets\/blt.*\//assets\//g' -e 's/\/brand"/\/brand\.html"/g' {} \+
 
-  find . -name '*.css' -exec sed -i '' -e 's/href="https:\/\/www\.elastic\.co\/guide/href="/g' {} \;
+  find . -name 'brand.html' -exec sed -i '' -e  's/<div id="footer-subscribe"/<!--<div id="footer-subscribe"/g' -e  's/<!--subscribe newsletter end-->/--> <!--subscribe newsletter end-->/g' {} \+
 
-  if [[ $CREATE_ZIP == "y" ]] ; then
-      echo "Creating zip file elastic-docs.zip"
-      zip -r elastic-docs.zip .
+  find . -name '*.js' -exec sed -i '' -e 's/href="https:\/\/www\.elastic\.co\/guide/href="/g' {} \+
+
+  find . -name '*.css' -exec sed -i '' -e 's/href="https:\/\/www\.elastic\.co\/guide/href="/g' {} \+
+
+  if [[ $ZIP == "y" ]] ; then
+    echo "Archiving processed files to $DOCS_DIR/$ZIP_FILE."
+    zip -r $DOCS_DIR/$ZIP_FILE html
   fi
 
   if [[ $START_SERVER == "y" ]] ; then
