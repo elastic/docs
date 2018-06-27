@@ -702,7 +702,25 @@ For example, with the example event, "<code class="literal">${data.port}</code>"
                 input:
                   type: docker
                   containers.ids:
-                    - "${data.docker.container.id}"</pre></div><h5><a id="_kubernetes"></a>Kubernetes<a href="https://github.com/elastic/beats/edit/6.3/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The Kubernetes autodiscover provider watches for Kubernetes pods to start, update, and stop. These are the available fields on every
+                    - "${data.docker.container.id}"</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>When using autodiscover, you have to be careful when defining config templates, especially if they are
+reading from places holding information for several containers. For instance, under this file structure:</p><p><code class="literal">/mnt/logs/&lt;container_id&gt;/*.log</code></p><p>You can define a config template like this:</p><p><span class="strong strong"><strong>Wrong settings</strong></span>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">autodiscover.providers:
+  - type: docker
+    templates:
+      - condition.contains:
+          docker.container.image: nginx
+        config:
+          - type: log
+            paths:
+              - "/mnt/logs/*/*.log"</pre></div><p>That would read all the files under the given path several times (one per nginx container). What you really
+want is to scope your template to the container that matched the autodiscover condition. Good settings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">autodiscover.providers:
+  - type: docker
+    templates:
+      - condition.contains:
+          docker.container.image: nginx
+        config:
+          - type: log
+            paths:
+              - "/mnt/logs/${data.docker.container.id}/*.log"</pre></div></div></div><h5><a id="_kubernetes"></a>Kubernetes<a href="https://github.com/elastic/beats/edit/6.3/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The Kubernetes autodiscover provider watches for Kubernetes pods to start, update, and stop. These are the available fields on every
 event:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 host
 </li><li class="listitem">
