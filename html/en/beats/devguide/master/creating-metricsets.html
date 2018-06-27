@@ -744,21 +744,20 @@ configuration entries, if needed.</p><div class="pre_wrapper"><pre class="progra
 }</pre></div><h5><a id="_fetching"></a>Fetching<a href="https://github.com/elastic/beats/edit/master/docs/devguide/create-metricset.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">Fetch</code> method is the central part of the metricset. <code class="literal">Fetch</code> is called every
 time new data is retrieved. If more than one host is defined, <code class="literal">Fetch</code> is
 called once for each host. The frequency of calling <code class="literal">Fetch</code> is based on the <code class="literal">period</code>
-defined in the configuration file.</p><p><code class="literal">Fetch</code> must return a <code class="literal">common.MapStr</code> object, which is then sent to Elasticsearch.
-If an error happens, the error must be returned and then is sent instead
-to Elasticsearch. This means that Metricbeat always sends an event, even on failure.
-You must make sure that the error message helps to identify the actual error.</p><p>The following example shows a metricset <code class="literal">Fetch</code> method with a counter that is
-incremented for each <code class="literal">Fetch</code> call:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (m *MetricSet) Fetch() (common.MapStr, error) {
+defined in the configuration file.</p><p><code class="literal">Fetch</code> must publish the event using the <code class="literal">mb.ReporterV2.Event</code> method. If an error
+happens, the error must be published using the <code class="literal">mb.ReporterV2.Error</code> method. This means
+that Metricbeat always sends an event, even on failure. You must make sure that the
+error message helps to identify the actual error.</p><p>The following example shows a metricset <code class="literal">Fetch</code> method with a counter that is
+incremented for each <code class="literal">Fetch</code> call:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">func (m *MetricSet) Fetch(report mb.ReporterV2) {
 
-        event := common.MapStr{
-                "counter": m.counter,
-        }
+        report.Event(mb.Event{
+                MetricSetFields: common.MapStr{
+                        "counter": m.counter,
+                }
+        })
         m.counter++
-
-        return event, nil
-}</pre></div><p><code class="literal">Fetch</code> must return a <code class="literal">common.MapStr</code>, which will be translated to the JSON content.
-The JSON output will be identical to the naming and structure you use in
-<code class="literal">common.MapStr</code>. For more details about <code class="literal">MapStr</code> and its functions, see the
+}</pre></div><p>The JSON output derived from the reported event will be identical to the naming and
+structure you use in <code class="literal">common.MapStr</code>. For more details about <code class="literal">MapStr</code> and its functions, see the
 <a class="ulink" href="https://godoc.org/github.com/elastic/beats/libbeat/common#MapStr" target="_top">MapStr API docs</a>.</p><h5><a id="_multi_fetching"></a>Multi Fetching<a href="https://github.com/elastic/beats/edit/master/docs/devguide/create-metricset.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Metricbeat has two different <code class="literal">Fetch</code> interfaces. One of the interfaces, which you saw in the
 previous example, fetches a single event. In some cases, every fetch returns a list of events.
 Instead of using an array inside a JSON document, we recommend that you create a list of events.</p><p>For this kind of data, you can use the following <code class="literal">Fetch</code> interface:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">(m *MetricSet) Fetch() ([]common.MapStr, error)</pre></div><p>The only difference between this and the previous example is that the second example returns <code class="literal">[]common.MapStr</code>.
