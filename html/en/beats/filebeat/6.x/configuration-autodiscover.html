@@ -686,7 +686,7 @@ For example, with the example event, "<code class="literal">${data.port}</code>"
     - type: docker
       templates:
         - condition:
-            equals:
+            contains:
               docker.container.image: redis
           config:
             - type: docker
@@ -697,15 +697,33 @@ For example, with the example event, "<code class="literal">${data.port}</code>"
     - type: docker
       templates:
         - condition:
-            equals:
-              docker.container.image: "redis"
+            contains:
+              docker.container.image: redis
           config:
             - module: redis
               log:
                 input:
                   type: docker
                   containers.ids:
-                    - "${data.docker.container.id}"</pre></div><h5><a id="_kubernetes"></a>Kubernetes<a href="https://github.com/elastic/beats/edit/6.x/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The Kubernetes autodiscover provider watches for Kubernetes pods to start, update, and stop. These are the available fields on every
+                    - "${data.docker.container.id}"</pre></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>When using autodiscover, you have to be careful when defining config templates, especially if they are
+reading from places holding information for several containers. For instance, under this file structure:</p><p><code class="literal">/mnt/logs/&lt;container_id&gt;/*.log</code></p><p>You can define a config template like this:</p><p><span class="strong strong"><strong>Wrong settings</strong></span>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">autodiscover.providers:
+  - type: docker
+    templates:
+      - condition.contains:
+          docker.container.image: nginx
+        config:
+          - type: log
+            paths:
+              - "/mnt/logs/*/*.log"</pre></div><p>That would read all the files under the given path several times (one per nginx container). What you really
+want is to scope your template to the container that matched the autodiscover condition. Good settings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">autodiscover.providers:
+  - type: docker
+    templates:
+      - condition.contains:
+          docker.container.image: nginx
+        config:
+          - type: log
+            paths:
+              - "/mnt/logs/${data.docker.container.id}/*.log"</pre></div></div></div><h5><a id="_kubernetes"></a>Kubernetes<a href="https://github.com/elastic/beats/edit/6.x/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The Kubernetes autodiscover provider watches for Kubernetes pods to start, update, and stop. These are the available fields on every
 event:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 host
 </li><li class="listitem">
@@ -747,7 +765,22 @@ are added to the event.</p><p>For example:</p><div class="pre_wrapper"><pre clas
     }
   },
 }</pre></div><p>The configuration of templates and conditions is similar to that of the Docker provider. Configuration templates can
-contain variables from the autodiscover event. They can be accessed under data namespace.</p><p>Filebeat supports templates for inputs and modules.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.autodiscover:
+contain variables from the autodiscover event. They can be accessed under data namespace.</p><p>The <code class="literal">kubernetes</code> autodiscover provider has the following configuration settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">in_cluster</code>
+</span></dt><dd>
+(Optional) Use in cluster settings for Kubernetes client, <code class="literal">true</code>
+  by default.
+</dd><dt><span class="term">
+<code class="literal">host</code>
+</span></dt><dd>
+(Optional) In case <code class="literal">in_cluster</code> is false, use this host to connect to
+  Kubernetes API.
+</dd><dt><span class="term">
+<code class="literal">kube_config</code>
+</span></dt><dd>
+(Optional) Use given config file as configuration for Kubernetes
+  client.
+</dd></dl></div><p>Filebeat supports templates for inputs and modules.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.autodiscover:
   providers:
     - type: kubernetes
       templates:
@@ -772,7 +805,74 @@ contain variables from the autodiscover event. They can be accessed under data n
                 input:
                   type: docker
                   containers.ids:
-                    - "${data.kubernetes.container.id}"</pre></div></div><div class="navfooter"><span class="prev"><a href="using-environ-vars.html">
+                    - "${data.kubernetes.container.id}"</pre></div><h5><a id="_jolokia_experimental"></a>Jolokia (experimental)<a href="https://github.com/elastic/beats/edit/6.x/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The Jolokia autodiscover provider uses Jolokia Discovery to find agents running
+in your host or your network.</p><p>Jolokia Discovery mechanism is supported by any Jolokia agent since version
+1.2.0, it is enabled by default when Jolokia is included in the application as
+a JVM agent, but disabled in other cases as the OSGI or WAR (Java EE) agents.
+In any case, this feature is controlled with two properties:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">discoveryEnabled</code>, to enable the feature
+</li><li class="listitem">
+<code class="literal">discoveryAgentUrl</code>, if set, this is the URL announced by the agent when
+    being discovered, setting this parameter implicitely enables the feature
+</li></ul></div><p>There are multiple ways of setting these properties, and they can vary from
+application to application, please refer to the documentation of your
+application to find the more suitable way to set them in your case.</p><p>Jolokia Discovery is based on UDP multicast requests. Agents join the multicast
+group 239.192.48.84, port 24884, and discovery is done by sending queries to
+this group. You have to take into account that UDP traffic between Metricbeat
+and the Jolokia agents has to be allowed. Also notice that this multicast
+address is in the 239.0.0.0/8 range, that is reserved for private use within an
+organization, so it can only be used in private networks.</p><p>These are the available fields on every event:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+jolokia.agent.id
+</li><li class="listitem">
+jolokia.agent.version
+</li><li class="listitem">
+jolokia.secured
+</li><li class="listitem">
+jolokia.server.product
+</li><li class="listitem">
+jolokia.server.vendor
+</li><li class="listitem">
+jolokia.server.version
+</li><li class="listitem">
+jolokia.url
+</li></ul></div><p>The configuration of this provider consists in a set of network interfaces, as
+well as a set of templates as in other providers. The network interfaces will be
+the ones used for discovery probes, they have these settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">name</code>
+</span></dt><dd>
+the name of the interface (e.g. <code class="literal">br0</code>), it can contain a wildcard
+  as suffix to apply the same settings to multiple network interfaces of
+  the same type (e.g. <code class="literal">br*</code>).
+</dd><dt><span class="term">
+<code class="literal">interval</code>
+</span></dt><dd>
+time between probes (defaults to 10s)
+</dd><dt><span class="term">
+<code class="literal">grace_period</code>
+</span></dt><dd>
+time since the last reply to consider an instance stopped
+  (defaults to 30s)
+</dd><dt><span class="term">
+<code class="literal">probe_timeout</code>
+</span></dt><dd>
+max time to wait for responses since a probe is sent
+  (defaults to 1s)
+</dd></dl></div><p>Filebeat supports templates for inputs and modules:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">filebeat.autodiscover:
+  providers:
+    - type: jolokia
+      interfaces:
+      - name: lo
+      templates:
+      - condition:
+          contains:
+            jolokia.server.product: "kafka"
+        config:
+        - module: kafka
+          log:
+            enabled: true
+            var.paths:
+            - /var/log/kafka/*.log</pre></div><p>This configuration starts a jolokia module that collects logs of kafka if it is
+running. Discovery probes are sent using the local interface.</p></div><div class="navfooter"><span class="prev"><a href="using-environ-vars.html">
               « 
               Use environment variables in the configuration</a>
            

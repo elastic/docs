@@ -648,50 +648,29 @@ Not what you want? See the
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="metricbeat-configuration"></a>Step 2: Configure Metricbeat<a href="https://github.com/elastic/beats/edit/6.x/metricbeat/docs/gettingstarted.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>To configure Metricbeat, you edit the configuration file. For rpm and deb,
 you’ll find the configuration file at <code class="literal">/etc/metricbeat/metricbeat.yml</code>. Under
 Docker, it’s located at <code class="literal">/usr/share/metricbeat/metricbeat.yml</code>. For mac and win,
-look in the archive that you just extracted. There’s also a full example
-configuration file called <code class="literal">metricbeat.reference.yml</code> that shows all non-deprecated
-options.</p><p>See the
+look in the archive that you just extracted.
+There’s also a full example configuration file called <code class="literal">metricbeat.reference.yml</code>
+that shows all non-deprecated options.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>See the
 <a class="ulink" href="http://www.elastic.co/guide/en/beats/libbeat/6.x/config-file-format.html" target="_top">Config File Format</a> section of the
-<span class="emphasis"><em>Beats Platform Reference</em></span> for more about the structure of the config file.</p><p>Metricbeat uses <a class="link" href="metricbeat-modules.html" title="Modules">modules</a> to collect metrics. You configure
-each module individually. The following example shows the default configuration
-in the <code class="literal">metricbeat.yml</code> file. The system status module is enabled by default to
-collect metrics about your server, such as CPU usage, memory usage, network IO
-metrics, and process statistics:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">metricbeat.modules:
-- module: system
-  metricsets:
-    - cpu
-    - filesystem
-    - memory
-    - network
-    - process
-  enabled: true
-  period: 10s
-  processes: ['.*']
-  cpu_ticks: false</pre></div><p>The following example shows how to configure two modules: the system module
-and the Apache HTTPD module:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">metricbeat.modules:
-- module: system
-  metricsets:
-    - cpu
-    - filesystem
-    - memory
-    - network
-    - process
-  enabled: true
-  period: 10s
-  processes: ['.*']
-  cpu_ticks: false
-- module: apache
-  metricsets: ["status"]
-  enabled: true
-  period: 1s
-  hosts: ["http://127.0.0.1"]</pre></div><p>To configure Metricbeat:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Define the Metricbeat modules that you want to enable. For each module, specify
-the metricsets that you want to collect. See <a class="xref" href="configuring-howto-metricbeat.html" title="Configuring Metricbeat">Configuring Metricbeat</a> for
-more details about configuring modules.
-</p><p class="simpara">If you accept the default configuration without specifying additional modules,
-Metricbeat will collect system metrics only.</p></li><li class="listitem"><p class="simpara">
+<span class="emphasis"><em>Beats Platform Reference</em></span> for more about the structure of the config file.</p></div></div><p>When you configure Metricbeat, you need to specify which
+<a class="link" href="metricbeat-modules.html" title="Modules">modules</a> to run. Metricbeat uses modules to collect
+metrics. Each module defines the basic logic for collecting data from a specific
+service, such as Redis or MySQL. A module consists of metricsets that fetch and
+structure the data. Read <a class="xref" href="how-metricbeat-works.html" title="How Metricbeat works"><em>How Metricbeat works</em></a> to learn more.</p><p>To configure Metricbeat:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Enable the modules that you want to run. If you accept the default
+configuration without enabling additional modules, Metricbeat collects system
+metrics only.
+</p><p class="simpara">You can either enable the default module configurations defined in the
+<code class="literal">modules.d</code> directory (recommended), or add the module configs to the
+<code class="literal">metricbeat.yml</code> file. The <code class="literal">modules.d</code> directory contains default
+configurations for all available Metricbeat modules.</p><p class="simpara">If you are using a Docker image, see <a class="xref" href="running-on-docker.html" title="Running Metricbeat on Docker">Running Metricbeat on Docker</a>.</p><p class="simpara">The following examples enable the <code class="literal">apache</code> and <code class="literal">mysql</code> configs in the
+<code class="literal">modules.d</code> directory :</p><p class="simpara"><span class="strong strong"><strong>deb and rpm:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">metricbeat modules enable apache mysql</pre></div><p class="simpara"><span class="strong strong"><strong>mac:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">./metricbeat modules enable apache mysql</pre></div><p class="simpara"><span class="strong strong"><strong>win:</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">PS &gt; .\metricbeat.exe modules enable apache mysql</pre></div><p class="simpara">See the <a class="xref" href="command-line-options.html#modules-command" title="modules command"><code class="literal">modules</code> command</a> to learn more about this command.</p><p class="simpara">To change the default module configurations, modify the <code class="literal">.yml</code> files in the
+<code class="literal">modules.d</code> directory. See <a class="xref" href="configuration-metricbeat.html#module-config-options" title="Standard config optionsedit">Standard config options<a href="https://github.com/elastic/beats/edit/6.x/metricbeat/docs/metricbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a> for more about available
+settings.</p><p class="simpara">See <a class="xref" href="configuration-metricbeat.html" title="Specify which modules to run"><em>Specify which modules to run</em></a> if you want to add the module configs to the
+<code class="literal">metricbeat.yml</code> file rather than using the <code class="literal">modules.d</code> directory.</p></li><li class="listitem"><p class="simpara">
 If you are sending output directly to Elasticsearch (and not using Logstash),
-set the IP address and port where Metricbeat can find the Elasticsearch installation:
+set the IP address and port where Metricbeat can find the Elasticsearch
+installation. For example:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.elasticsearch:
   hosts: ["192.168.1.42:9200"]</pre></div><p class="simpara">If you are sending output to Logstash, make sure you
 <a class="link" href="logstash-output.html" title="Configure the Logstash output">Configure the Logstash output</a> instead.</p></li><li class="listitem"><p class="simpara">
@@ -706,20 +685,22 @@ in the config file before you run the commands that set up and start
 Metricbeat. For example:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.elasticsearch:
   hosts: ["myEShost:9200"]
-  username: "elastic"
-  password: "elastic"
+  username: "filebeat_internal"
+  password: "{pwd}" <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
 setup.kibana:
   host: "mykibanahost:5601"
-  username: "elastic" <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> <a id="CO1-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-  password: "elastic"</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+  username: "my_kibana_user" <a id="CO1-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> <a id="CO1-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+  password: "{pwd}"</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This examples shows a hard-coded password, but you should store sensitive
+values in the <a class="link" href="keystore.html" title="Secrets keystore for secure settings">secrets keystore</a>.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">username</code> and <code class="literal">password</code> settings for Kibana are optional. If you don’t
 specify credentials for Kibana, Metricbeat uses the <code class="literal">username</code> and <code class="literal">password</code>
 specified for the Elasticsearch output.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 If you are planning to <a class="link" href="load-kibana-dashboards.html" title="Step 4: Set up the Kibana dashboards">set up the Kibana dashboards</a>, the user must have the <code class="literal">kibana_user</code>
 <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/built-in-roles.html" target="_top">built-in role</a> or equivalent privileges.
-</p></td></tr></table></div><p class="simpara">Also see the security-related options described in <a class="xref" href="setup-kibana-endpoint.html" title="Set up the Kibana endpoint"><em>Set up the Kibana endpoint</em></a> and
-<a class="link" href="elasticsearch-output.html" title="Configure the Elasticsearch output">Configure the Elasticsearch output</a>.</p></li></ol></div><p>Before starting metricbeat, you should look at the configuration options in the
+</p></td></tr></table></div><p class="simpara">For more information, see <a class="xref" href="securing-metricbeat.html" title="Securing Metricbeat">Securing Metricbeat</a>.</p></li></ol></div><p>Before starting metricbeat, you should look at the configuration options in the
 configuration file. For more information about these options, see <a class="xref" href="configuring-howto-metricbeat.html" title="Configuring Metricbeat">Configuring Metricbeat</a>.</p></div><div class="navfooter"><span class="prev"><a href="metricbeat-installation.html">
               « 
               Step 1: Install Metricbeat</a>
