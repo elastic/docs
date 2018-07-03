@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuring an API Key
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Example Configuration
         | Elastic Cloud Documentation [saas-release-v2]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Documentation [saas-release-v2]" /><link rel="up" href="ec-java-transport.html" title="Elasticsearch Transport Module (Deprecated)" /><link rel="prev" href="ec-installing.html" title="Installing" /><link rel="next" href="ec-new_elasticsearch_settings.html" title="New Elasticsearch Settings" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Cloud/Reference/saas-release-v2" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elastic Cloud" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="saas-release-v2" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Documentation [saas-release-v2]" /><link rel="up" href="ec-java-transport.html" title="Elasticsearch Transport Module (Deprecated)" /><link rel="prev" href="ec-configure-api-module.html" title="Configuring an API Key" /><link rel="next" href="ec-security.html" title="Securing your Deployment" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Cloud/Reference/saas-release-v2" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elastic Cloud" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="saas-release-v2" />
     
 
     
@@ -634,34 +634,52 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elastic Cloud Documentation
       [saas-release-v2]
-    </a></span> » <span class="breadcrumb-link"><a href="ec-deployment-config.html">Configuring Elastic Cloud</a></span> » <span class="breadcrumb-link"><a href="ec-java-transport.html">Elasticsearch Transport Module (Deprecated)</a></span> » <span class="breadcrumb-node">Configuring an API Key</span></div><div class="navheader"><span class="prev"><a href="ec-installing.html">
+    </a></span> » <span class="breadcrumb-link"><a href="ec-deployment-config.html">Configuring Elastic Cloud</a></span> » <span class="breadcrumb-link"><a href="ec-java-transport.html">Elasticsearch Transport Module (Deprecated)</a></span> » <span class="breadcrumb-node">Example Configuration</span></div><div class="navheader"><span class="prev"><a href="ec-configure-api-module.html">
               « 
-              Installing</a>
+              Configuring an API Key</a>
            
         </span><span class="next">
            
-          <a href="ec-new_elasticsearch_settings.html">New Elasticsearch Settings
+          <a href="ec-security.html">Securing your Deployment
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ec-configuring_an_api_key"></a>Configuring an API Key</h2></div></div></div><p>In order to use this module, you must configure one or more API-keys. API-keys
-are stored as a list of acceptable keys under <code class="literal">api_keys</code> at the root level of the ACL. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">default: deny
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ec-transport-example-config"></a>Example Configuration</h2></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">// Build the settings for our transport client.
+Settings settings = ImmutableSettings.settingsBuilder()
+    // Setting "transport.type" enables this module:
+    .put("transport.type", "no.found.elasticsearch.transport.netty.FoundNettyTransportModule")
+    // Create an api key via the console and add it here:
+    .put("transport.found.api-key", "YOUR_API_KEY")
 
-api_keys:
-    - s6aW9aAMZjDMbuhj
-    - 6hKZsTqBru9KnVaW
+    .put("cluster.name", "YOUR_CLUSTER_ID")
 
-auth:
-  users:
-    ...
+    .put("client.transport.ignore_cluster_name", false)
+    .put("client.transport.nodes_sampler_interval", "30s")
+    .put("client.transport.ping_timeout", "30s")
 
-rules:
-  - ...</pre></div><p>In the above example, both <code class="literal">s6aW9aAMZjDMbuhj</code> and <code class="literal">6hKZsTqBru9KnVaW</code> would be
-valid API-keys.</p></div><div class="navfooter"><span class="prev"><a href="ec-installing.html">
+    .build();
+
+// Instantiate a TransportClient and add Elastic Cloud to the list of addresses to connect to.
+// Only port 9343 (SSL-encrypted) is currently supported.
+Client client = new TransportClient(settings)
+    .addTransportAddress(new InetSocketTransportAddress("YOUR_CLUSTER_ID-REGION.foundcluster.com", 9343));</pre></div><h3><a id="ec-transport-example"></a>Example Usage</h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">while(true) {
+    try {
+        System.out.print("Getting cluster health... "); System.out.flush();
+        ActionFuture&lt;ClusterHealthResponse&gt; healthFuture = client.admin().cluster().health(Requests.clusterHealthRequest());
+        ClusterHealthResponse healthResponse = healthFuture.get(5, TimeUnit.SECONDS);
+        System.out.println("Got response: " + healthResponse.getStatus());
+    } catch(Throwable t) {
+        System.out.println("Error: " + t);
+    }
+    try {
+        Thread.sleep(3000);
+    } catch (InterruptedException ie) { ie.printStackTrace(); }
+}</pre></div><h3><a id="ec-transport-dns-cache"></a>DNS-caching</h3><p>Note that the JVM will cache DNS lookups infinitely, by default. Since this client is connecting to a load balancer which can change IPs, it’s important to disable this functionality.</p><p>This can be done by setting the security property <code class="literal">networkaddress.cache.ttl</code> in <code class="literal">$JAVA_HOME/lib/security/java.security</code>. You can also do it programmatically, e.g. <code class="literal">java.security.Security.setProperty("networkaddress.cache.ttl" , "60")</code>.</p><p>Note that you can <span class="strong strong"><strong>not</strong></span> configure it as a JVM-property with, for example, <code class="literal">-Dnetworkaddress.cache.ttl=60</code>.</p><h3><a id="ec-transport-complete-example"></a>Complete Example</h3><p>A complete, runnable example can be found at
+<a class="ulink" href="https://github.com/foundit/elasticsearch-transport-module-example" target="_top">https://github.com/foundit/elasticsearch-transport-module-example</a></p><h3><a id="ec-report-transport-issues"></a>Contributing</h3><p>Report issues in the <a class="ulink" href="https://github.com/foundit/elasticsearch-transport-module/issues" target="_top">issue tracker</a>.</p></div><div class="navfooter"><span class="prev"><a href="ec-configure-api-module.html">
               « 
-              Installing</a>
+              Configuring an API Key</a>
            
         </span><span class="next">
            
-          <a href="ec-new_elasticsearch_settings.html">New Elasticsearch Settings
+          <a href="ec-security.html">Securing your Deployment
                »
             </a></span></div>
 <!-- end body -->
