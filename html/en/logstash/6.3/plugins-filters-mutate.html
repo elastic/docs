@@ -643,11 +643,11 @@
           <a href="plugins-filters-prune.html">Prune filter plugin
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="plugins-filters-mutate"></a>Mutate filter plugin<a href="https://github.com/logstash-plugins/logstash-filter-mutate/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Plugin version: v3.3.1
+Plugin version: v3.3.2
 </li><li class="listitem">
-Released on: 2018-02-02
+Released on: 2018-05-01
 </li><li class="listitem">
-<a class="ulink" href="https://github.com/logstash-plugins/logstash-filter-mutate/blob/v3.3.1/CHANGELOG.md" target="_top">Changelog</a>
+<a class="ulink" href="https://github.com/logstash-plugins/logstash-filter-mutate/blob/v3.3.2/CHANGELOG.md" target="_top">Changelog</a>
 </li></ul></div><p>For other versions, see the
 <a class="ulink" href="https://www.elastic.co/guide/en/logstash-versioned-plugins/current/filter-mutate-index.html" target="_top">Versioned plugin docs</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_getting_help_125"></a>Getting Help<a href="https://github.com/logstash-plugins/logstash-filter-mutate/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For questions about the plugin, open a topic in the <a class="ulink" href="http://discuss.elastic.co" target="_top">Discuss</a> forums. For bugs or feature requests, open an issue in <a class="ulink" href="https://github.com/logstash-plugins/logstash-filter-mutate" target="_top">Github</a>.
 For the list of Elastic supported plugins, please consult the <a class="ulink" href="https://www.elastic.co/support/matrix#matrix_logstash_plugins" target="_top">Elastic Support Matrix</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_description_124"></a>Description<a href="https://github.com/logstash-plugins/logstash-filter-mutate/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The mutate filter allows you to perform general mutations on fields. You
@@ -658,18 +658,50 @@ Value type is <a class="link" href="configuration-file-structure.html#hash" titl
 There is no default value for this setting.
 </li></ul></div><p>Convert a field’s value to a different type, like turning a string to an
 integer. If the field value is an array, all members will be converted.
-If the field is a hash no action will be taken.</p><p>If the conversion type is <code class="literal">boolean</code>, the acceptable values are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<span class="strong strong"><strong>True:</strong></span> <code class="literal">true</code>, <code class="literal">t</code>, <code class="literal">yes</code>, <code class="literal">y</code>, and <code class="literal">1</code>
+If the field is a hash no action will be taken.</p><p>Valid conversion targets, and their expected behaviour with different inputs are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+<code class="literal">integer</code>:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+strings are parsed; comma-separators are supported (e.g., the string <code class="literal">"1,000"</code> produces an integer with value of one thousand); when strings have decimal parts, they are <span class="emphasis"><em>truncated</em></span>.
 </li><li class="listitem">
-<span class="strong strong"><strong>False:</strong></span> <code class="literal">false</code>, <code class="literal">f</code>, <code class="literal">no</code>, <code class="literal">n</code>, and <code class="literal">0</code>
-</li></ul></div><p>If a value other than these is provided, it will pass straight through
-and log a warning message.</p><p>If the conversion type is <code class="literal">integer</code> and the value is a boolean, it will be converted as:
-* <span class="strong strong"><strong>True:</strong></span>  <code class="literal">1</code>
-* <span class="strong strong"><strong>False:</strong></span> <code class="literal">0</code></p><p>If you have numeric strings that have decimal commas (Europe and ex-colonies)
-e.g. "1.234,56" or "2.340", by using conversion targets of integer_eu or float_eu
-the convert function will treat "." as a group separator and "," as a decimal separator.</p><p>Conversion targets of integer or float will now correctly handle "," as a group separator.</p><p>Valid conversion targets are: integer, float, integer_eu, float_eu, string, and boolean.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">filter {
+floats and decimals are <span class="emphasis"><em>truncated</em></span> (e.g., <code class="literal">3.99</code> becomes <code class="literal">3</code>, <code class="literal">-2.7</code> becomes <code class="literal">-2</code>)
+</li><li class="listitem">
+boolean true and boolean false are converted to <code class="literal">1</code> and <code class="literal">0</code> respectively
+</li></ul></div></li><li class="listitem"><p class="simpara">
+<code class="literal">integer_eu</code>:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+same as <code class="literal">integer</code>, except string values support dot-separators and comma-decimals (e.g., <code class="literal">"1.000"</code> produces an integer with value of one thousand)
+</li></ul></div></li><li class="listitem"><p class="simpara">
+<code class="literal">float</code>:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+integers are converted to floats
+</li><li class="listitem">
+strings are parsed; comma-separators and dot-decimals are supported (e.g., <code class="literal">"1,000.5"</code> produces an integer with value of one thousand and one half)
+</li><li class="listitem">
+boolean true and boolean false are converted to <code class="literal">1.0</code> and <code class="literal">0.0</code> respectively
+</li></ul></div></li><li class="listitem"><p class="simpara">
+<code class="literal">float_eu</code>:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+same as <code class="literal">float</code>, except string values support dot-separators and comma-decimals (e.g., <code class="literal">"1.000,5"</code> produces an integer with value of one thousand and one half)
+</li></ul></div></li><li class="listitem"><p class="simpara">
+<code class="literal">string</code>:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+all values are stringified and encoded with UTF-8
+</li></ul></div></li><li class="listitem"><p class="simpara">
+<code class="literal">boolean</code>:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+strings <code class="literal">"true"</code>, <code class="literal">"t"</code>, <code class="literal">"yes"</code>, <code class="literal">"y"</code>, and <code class="literal">"1"</code> are converted to boolean <code class="literal">true</code>
+</li><li class="listitem">
+strings <code class="literal">"false"</code>, <code class="literal">"f"</code>, <code class="literal">"no"</code>, <code class="literal">"n"</code>, and <code class="literal">"0"</code> are converted to boolean <code class="literal">false</code>
+</li><li class="listitem">
+empty strings are converted to boolean <code class="literal">false</code>
+</li><li class="listitem">
+all other values pass straight through without conversion and log a warning message
+</li></ul></div></li></ul></div><p>This plugin can convert multiple fields in the same document, see the example below.</p><p>Example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">filter {
   mutate {
-    convert =&gt; { "fieldname" =&gt; "integer" }
+    convert =&gt; {
+      "fieldname" =&gt; "integer"
+      "booleanfield" =&gt; "boolean"
+    }
   }
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="plugins-filters-mutate-copy"></a><code class="literal">copy</code><a href="https://github.com/logstash-plugins/logstash-filter-mutate/edit/master/docs/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#hash" title="Hashedit">hash</a>
