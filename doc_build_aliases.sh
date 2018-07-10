@@ -1,10 +1,10 @@
 # Aliases for building the docs.
 
-# Edit your .bash_profile. Copy the following two lines to the end of the file
+# Edit your .bash_profile. Copy the following two lines into the file
 # to set the $GIT_HOME variable to the directory that
 # contains your local copies of the elastic repos and include this file.
 #
-#    export GIT_HOME="/Users/<yourUserName>/Documents/<yourRepos>"
+#    export GIT_HOME="/<fullPathTYourRepos>"
 #    source $GIT_HOME/docs/doc_build_aliases.sh
 #
 # These aliases assume that you have cloned the elastic repos according to
