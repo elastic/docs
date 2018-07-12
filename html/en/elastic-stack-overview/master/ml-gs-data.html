@@ -670,8 +670,8 @@ requests across all of the infrastructure. If the number of requests increases
 or decreases unexpectedly, for example, this might be an indication that there
 is a problem or that resources need to be redistributed. By using the X-Pack
 machine learning features to model the behavior of this data, it is easier to identify
-anomalies and take appropriate action.</p><p>Download this sample data by clicking here:
-<a class="ulink" href="https://download.elastic.co/demos/machine_learning/gettingstarted/server_metrics.tar.gz" target="_top">server_metrics.tar.gz</a></p><p>Use the following commands to extract the files:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">tar -zxvf server_metrics.tar.gz</pre></div><p>Each document in the server-metrics data set has the following schema:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+anomalies and take appropriate action.</p><p>Download the sample data and scripts by clicking here:
+<a class="ulink" href="https://download.elastic.co/demos/machine_learning/gettingstarted/server_metrics.tar.gz" target="_top">server_metrics.tar.gz</a></p><p>Use the following command to extract the files:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">tar -zxvf server_metrics.tar.gz</pre></div><p>Each document in the server-metrics data set has the following schema:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "index":
   {
     "_index":"server-metrics",
@@ -699,11 +699,11 @@ this tutorial, however, these summary values are stored in Elasticsearch. For mo
 information, see <a class="xref" href="ml-configuring-aggregation.html" title="Aggregating data for faster performance">Aggregating data for faster performance</a>.</p></div></div><p>Before you load the data set, you need to set up <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/mapping.html" target="_top"><span class="emphasis"><em>mappings</em></span></a>
 for the fields. Mappings divide the documents in the index into logical groups
 and specify a field’s characteristics, such as the field’s searchability or
-whether or not it’s <span class="emphasis"><em>tokenized</em></span>, or broken up into separate words.</p><p>You can use scripts to create the mappings and load the data set. Download  <a class="ulink" href="https://download.elastic.co/demos/machine_learning/gettingstarted/upload_server_metrics.sh" target="_top">upload_server_metrics.sh</a> to the directory where you extracted the sample data.
-Before you run it, however, you must edit the USERNAME and PASSWORD variables
-with your actual user ID and password. If X-Pack security is not enabled, use the
-<a class="ulink" href="https://download.elastic.co/demos/machine_learning/gettingstarted/upload_server_metrics_noauth.sh" target="_top">upload_server_metrics_noauth.sh</a>
-script instead.</p><p>The script runs a <code class="literal">curl</code> command that makes the following create index API
+whether or not it’s <span class="emphasis"><em>tokenized</em></span>, or broken up into separate words.</p><p>You can use scripts to create the mappings and load the data set. If X-Pack security
+is enabled, use the <code class="literal">upload_server_metrics.sh</code> script. Before you run it,
+however, you must edit the USERNAME and PASSWORD variables with your actual user
+ID and password. If X-Pack security is not enabled, use the
+<code class="literal">upload_server_metrics_noauth.sh</code> script instead.</p><p>The scripts run a <code class="literal">curl</code> command that makes the following create index API
 request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">PUT server-metrics
 {
   "settings": {
@@ -737,21 +737,9 @@ request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/ml-gs-data/1.json"></div><p>To learn more about mappings and data types, see <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/mapping.html" target="_top">Mapping</a>.</p><p>You can then use the bulk API to load the sample data set. The
-<code class="literal">upload_server_metrics.sh</code> script runs commands similar to the following example,
-which loads the four JSON files:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -u elastic:x-pack-test-password -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_1.json"
-
-curl -u elastic:x-pack-test-password -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_2.json"
-
-curl -u elastic:x-pack-test-password -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_3.json"
-
-curl -u elastic:x-pack-test-password -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_4.json"</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you want to try running these commands, you must specify a valid user
-ID and password in the <code class="literal">-u</code> parameter. If X-Pack security is not enabled, you can
-omit the <code class="literal">-u</code> parameter.</p></div></div><p>These commands upload 200MB of data and might take some time to run, depending
+}</pre></div><div class="console_widget" data-snippet="snippets/ml-gs-data/1.json"></div><p>To learn more about mappings and data types, see <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/mapping.html" target="_top">Mapping</a>.</p><p>You can then use the bulk API to load the sample data set. The scripts run
+commands similar to the following example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -X POST -H "Content-Type: application/json"
+http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_1.json"</pre></div><p>There are twenty data files. The commands might take some time to run, depending
 on the computing resources available.</p><p>You can verify that the data was loaded successfully by running the cat indices
 API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/indices?v</pre></div><div class="console_widget" data-snippet="snippets/ml-gs-data/2.json"></div><p>You should see output similar to the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">health status index ... pri rep docs.count  ...
 green  open   server-metrics ... 1 0 905940  ...</pre></div><p>Next, you must define an index pattern for this data set:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
