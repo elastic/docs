@@ -728,7 +728,89 @@ return the three most recent tweets for the user
 if you have too many groups and/or <code class="literal">inner_hit</code> requests.</p><p>The <code class="literal">max_concurrent_group_searches</code> request parameter can be used to control
 the maximum number of concurrent searches allowed in this phase.
 The default is based on the number of data nodes and the default search thread pool size.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p><code class="literal">collapse</code> cannot be used in conjunction with <a class="link" href="search-request-scroll.html" title="Scroll">scroll</a>,
-<a class="link" href="search-request-rescore.html" title="Rescoring">rescore</a> or <a class="link" href="search-request-search-after.html" title="Search After">search after</a>.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="search-request-inner-hits.html">
+<a class="link" href="search-request-rescore.html" title="Rescoring">rescore</a> or <a class="link" href="search-request-search-after.html" title="Search After">search after</a>.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_second_level_of_collapsing"></a>Second level of collapsing<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/collapse.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Second level of collapsing is also supported and is applied to <code class="literal">inner_hits</code>.
+For example, the following request finds the top scored tweets for
+each country, and within each country finds the top scored tweets
+for each user.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /twitter/_search
+{
+    "query": {
+        "match": {
+            "message": "elasticsearch"
+        }
+    },
+    "collapse" : {
+        "field" : "country",
+        "inner_hits" : {
+            "name": "by_location",
+            "collapse" : {"field" : "user"},
+            "size": 3
+        }
+    }
+}</pre></div><p>Response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    ...
+    "hits": [
+        {
+            "_index": "twitter",
+            "_type": "_doc",
+            "_id": "9",
+            "_score": ...,
+            "_source": {...},
+            "fields": {"country": ["UK"]},
+            "inner_hits":{
+                "by_location": {
+                    "hits": {
+                       ...,
+                       "hits": [
+                          {
+                            ...
+                            "fields": {"user" : ["user124"]}
+                          },
+                          {
+                            ...
+                            "fields": {"user" : ["user589"]}
+                          },
+                          {
+                            ...
+                             "fields": {"user" : ["user001"]}
+                          }
+                       ]
+                    }
+                 }
+            }
+        },
+        {
+            "_index": "twitter",
+            "_type": "_doc",
+            "_id": "1",
+            "_score": ..,
+            "_source": {...},
+            "fields": {"country": ["Canada"]},
+            "inner_hits":{
+                "by_location": {
+                    "hits": {
+                       ...,
+                       "hits": [
+                          {
+                            ...
+                            "fields": {"user" : ["user444"]}
+                          },
+                          {
+                            ...
+                            "fields": {"user" : ["user1111"]}
+                          },
+                          {
+                            ...
+                             "fields": {"user" : ["user999"]}
+                          }
+                       ]
+                    }
+                 }
+            }
+
+        },
+        ....
+    ]
+}</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Second level of of collapsing doesn’t allow <code class="literal">inner_hits</code>.</p></div></div></div></div><div class="navfooter"><span class="prev"><a href="search-request-inner-hits.html">
               « 
               Inner hits</a>
            
