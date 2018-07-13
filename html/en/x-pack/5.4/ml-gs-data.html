@@ -668,7 +668,7 @@ requests across all of the infrastructure. If the number of requests increases
 or decreases unexpectedly, for example, this might be an indication that there
 is a problem or that resources need to be redistributed. By using the X-Pack
 machine learning features to model the behavior of this data, it is easier to identify
-anomalies and take appropriate action.</p><p>Download this sample data by clicking here:
+anomalies and take appropriate action.</p><p>Download this sample data and scripts by clicking here:
 <a class="ulink" href="https://download.elastic.co/demos/machine_learning/gettingstarted/server_metrics.tar.gz" target="_top">server_metrics.tar.gz</a></p><p>Use the following commands to extract the files:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">tar -zxvf server_metrics.tar.gz</pre></div><p>Each document in the server-metrics data set has the following schema:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "index":
   {
@@ -697,13 +697,13 @@ this tutorial, however, these summary values are stored in Elasticsearch. For mo
 information, see <a class="xref" href="ml-configuring-aggregation.html" title="Aggregating Data For Faster Performance">Aggregating Data For Faster Performance</a>.</p></div></div><p>Before you load the data set, you need to set up <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.4/mapping.html" target="_top"><span class="emphasis"><em>mappings</em></span></a>
 for the fields. Mappings divide the documents in the index into logical groups
 and specify a field’s characteristics, such as the field’s searchability or
-whether or not it’s <span class="emphasis"><em>tokenized</em></span>, or broken up into separate words.</p><p>The sample data includes an <code class="literal">upload_server-metrics.sh</code> script, which you can use
-to create the mappings and load the data set. You can download it by clicking
-here: <a class="ulink" href="https://download.elastic.co/demos/machine_learning/gettingstarted/upload_server-metrics.sh" target="_top">upload_server-metrics.sh</a>
-Before you run it, however, you must edit the USERNAME and PASSWORD variables
-with your actual user ID and password.</p><p>The script runs a command similar to the following example, which sets up a
-mapping for the data set:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -u elastic:changeme -X PUT -H 'Content-Type: application/json'
-http://localhost:9200/server-metrics -d '{
+whether or not it’s <span class="emphasis"><em>tokenized</em></span>, or broken up into separate words.</p><p>You can use scripts to create the mappings and load the data set. If X-Pack security
+is enabled, use the <code class="literal">upload_server_metrics.sh</code> script. Before you run it,
+however, you must edit the USERNAME and PASSWORD variables with your actual user
+ID and password. If X-Pack security is not enabled, use the
+<code class="literal">upload_server_metrics_noauth.sh</code> script.</p><p>The scripts run a <code class="literal">curl</code> command that makes the following create index API
+request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">PUT server-metrics
+{
    "settings":{
       "number_of_shards":1,
       "number_of_replicas":0
@@ -735,24 +735,12 @@ http://localhost:9200/server-metrics -d '{
          }
       }
    }
-}'</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you run this command, you must replace <code class="literal">changeme</code> with your
-actual password.</p></div></div><p>You can then use the Elasticsearch <code class="literal">bulk</code> API to load the data set. The
-<code class="literal">upload_server-metrics.sh</code> script runs commands similar to the following
-example, which loads the four JSON files:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -u elastic:changeme -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_1.json"
-
-curl -u elastic:changeme -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_2.json"
-
-curl -u elastic:changeme -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_3.json"
-
-curl -u elastic:changeme -X POST -H "Content-Type: application/json"
-http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_4.json"</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>This will upload 200MB of data. This is split into 4 files as there is a
-maximum 100MB limit when using the <code class="literal">_bulk</code> API.</p></div></div><p>These commands might take some time to run, depending on the computing resources
-available.</p><p>You can verify that the data was loaded successfully with the following command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl 'http://localhost:9200/_cat/indices?v' -u elastic:changeme</pre></div><p>You should see output similar to the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">health status index ... pri rep docs.count  docs.deleted  store.size ...
+}</pre></div><div class="console_widget" data-snippet="snippets/ml-gs-data/1.json"></div><p>To learn more about mappings and data types, see <a class="ulink" href="http://www.elastic.co/guide/en/elasticsearch/reference/5.4/mapping.html" target="_top">Mapping</a>.</p><p>You can then use the <code class="literal">bulk</code> API to load the sample data set. The scripts run commands similar to the following example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">curl -X POST -H "Content-Type: application/json"
+http://localhost:9200/server-metrics/_bulk --data-binary "@server-metrics_1.json"</pre></div><p>There are twenty data files. These commands might take some time to run,
+depending on the computing resources available.</p><p>You can verify that the data was loaded successfully by running the cat indices
+API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">GET _cat/indices?v</pre></div><div class="console_widget" data-snippet="snippets/ml-gs-data/2.json"></div><p>You should see output similar to the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">health status index ... pri rep docs.count  docs.deleted  store.size ...
 green  open   server-metrics ... 1 0 905940  0  120.5mb  ...</pre></div><p>Next, you must define an index pattern for this data set:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-Open Kibana in your web browser and log in. If you are running Kibana
+Open Kibana in your web browser. If you are running Kibana
 locally, go to <code class="literal">http://localhost:5601/</code>.
 </li><li class="listitem">
 Click the <span class="strong strong"><strong>Management</strong></span> tab, then <span class="strong strong"><strong>Index Patterns</strong></span>.
