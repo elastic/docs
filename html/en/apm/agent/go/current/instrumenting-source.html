@@ -727,7 +727,21 @@ func main() {
         const route = "/my/route"
         router.GET(route, apmhttprouter.Wrap(h, route))
         ...
-}</pre></div><p><a class="ulink" href="https://github.com/julienschmidt/httprouter/pull/139" target="_top">httprouter does not provide a means of obtaining the matched route</a>, hence the route must be passed into the wrapper.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_module_apmlambda"></a>module/apmlambda<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmlambda intercepts requests to your AWS Lambda function invocations.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.</p></div></div><p>Importing the package is enough to report the function invocations.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+}</pre></div><p><a class="ulink" href="https://github.com/julienschmidt/httprouter/pull/139" target="_top">httprouter does not provide a means of obtaining the matched route</a>, hence the route must be passed into the wrapper.</p><p>Alternatively you can use the apmhttprouter.Router type, which wraps httprouter.Router,
+providing the same API and instrumenting added routes. To use this wrapper type, you
+should rewrite your use of <code class="literal">httprouter.New</code> to <code class="literal">apmhttprouter.New</code>; the returned type
+is <code class="literal">*apmhttprouter.Router</code>, and not <code class="literal">*httprouter.Router</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+        "github.com/julienschmidt/httprouter"
+
+        "github.com/elastic/apm-agent-go/module/apmhttprouter"
+)
+
+func main() {
+        router := apmhttprouter.New()
+
+        router.GET(route, h)
+        ...
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_module_apmlambda"></a>module/apmlambda<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmlambda intercepts requests to your AWS Lambda function invocations.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.</p></div></div><p>Importing the package is enough to report the function invocations.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
         _ "github.com/elastic/apm-agent-go/module/apmlambda"
 )</pre></div><p>We currently do not expose the transactions via context; when we do, it will be
 necessary to make a small change to your code to call apmlambda.Start instead of
