@@ -642,7 +642,32 @@
            
           <a href="release-notes-6.3.0.html">Elasticsearch version 6.3.0
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="release-notes-6.3.1"></a>Elasticsearch version 6.3.1<a href="https://github.com/elastic/elasticsearch/edit/6.3/docs/reference/release-notes/6.3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Also see <a class="xref" href="breaking-changes-6.3.html" title="Breaking changes in 6.3"><em>Breaking changes in 6.3</em></a>.</p><h3><a id="bug-6.3.1"></a>Bug fixes<a href="https://github.com/elastic/elasticsearch/edit/6.3/docs/reference/release-notes/6.3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="release-notes-6.3.1"></a>Elasticsearch version 6.3.1<a href="https://github.com/elastic/elasticsearch/edit/6.3/docs/reference/release-notes/6.3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><h3>Known issue with Elasticsearch 6.3.x on JDK 10</h3><p>There appears to be a bug in JDK 10 impacting Elasticsearch 6.3.x (note that the
+official Docker images are based on JDK 10). The issue appears to impact the C2
+compiler on hardware that supports
+<a class="ulink" href="https://en.wikipedia.org/wiki/AVX-512" target="_top">AVX-512 instructions</a> (e.g., Skylake-X
+CPUs). The issue manifests as a segmentation fault in Java code executing
+<code class="literal">org.apache.lucene.util.MergedIterator#pullTop</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007fc7ebc050eb, pid=1, tid=151
+#
+# JRE version: OpenJDK Runtime Environment (10.0.1+10) (build 10.0.1+10)
+# Java VM: OpenJDK 64-Bit Server VM (10.0.1+10, mixed mode, tiered, compressed oops, concurrent mark sweep gc, linux-amd64)
+# Problematic frame:
+# J 14088 c2 org.apache.lucene.util.MergedIterator.pullTop()V (135 bytes) @ 0x00007fc7ebc050eb [0x00007fc7ebc041e0+0x0000000000000f0b]</pre></div><p>or executing <code class="literal">org.apache.lucene.util.MergedIterator#pushTop</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007f8c43de5371, pid=1, tid=140
+#
+# JRE version: OpenJDK Runtime Environment (10.0.1+10) (build 10.0.1+10)
+# Java VM: OpenJDK 64-Bit Server VM (10.0.1+10, mixed mode, tiered, compressed oops, concurrent mark sweep gc, linux-amd64)
+# Problematic frame:
+# J 13039 c2 org.apache.lucene.util.MergedIterator.pushTop()V (92 bytes) @ 0x00007f8c43de5371 [0x00007f8c43de4c40+0x0000000000000731]</pre></div><p>A workaround is to disable the C2 compiler from using AVX-512 instructions via
+the <a class="link" href="jvm-options.html" title="Setting JVM options">JVM option</a> <code class="literal">-XX:UseAVX=2</code>. This issue has been taken
+upstream to the JDK maintainers and the workaround will be necessary until a
+version of the JDK that is not prone to this issue is released. For additional
+background, see <a class="ulink" href="https://github.com/elastic/elasticsearch/issues/31425" target="_top">#31425</a>.</p></div></div><p>Also see <a class="xref" href="breaking-changes-6.3.html" title="Breaking changes in 6.3"><em>Breaking changes in 6.3</em></a>.</p><h3><a id="bug-6.3.1"></a>Bug fixes<a href="https://github.com/elastic/elasticsearch/edit/6.3/docs/reference/release-notes/6.3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 Authentication
 </span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Security: fix joining cluster with production license <a class="ulink" href="https://github.com/elastic/elasticsearch/pull/31341" target="_top">#31341</a> (issue: <a class="ulink" href="https://github.com/elastic/elasticsearch/issues/31332" target="_top">#31332</a>)
