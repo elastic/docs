@@ -642,18 +642,22 @@
            
           <a href="search-request-explain.html">Explain
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-preference"></a>Preference<a href="https://github.com/elastic/elasticsearch/edit/6.3/docs/reference/search/request/preference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Controls a <code class="literal">preference</code> of which shard copies on which to execute the
-search. By default, the operation is randomized among the available shard copies.</p><p>The <code class="literal">preference</code> is a query string parameter which can be set to:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-preference"></a>Preference<a href="https://github.com/elastic/elasticsearch/edit/6.3/docs/reference/search/request/preference.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Controls a <code class="literal">preference</code> of which shard copies on which to execute the search.
+By default, Elasticsearch selects from the available shard copies in an
+unspecified order, taking the <a class="link" href="allocation-awareness.html" title="Shard Allocation Awareness">allocation awareness</a> and
+<a class="link" href="search.html#search-adaptive-replica" title="Adaptive Replica Selectionedit">adaptive replica selection</a> configuration into
+account. However, it may sometimes be desirable to try and route certain
+searches to certain sets of shard copies, for instance to make better use of
+per-copy caches.</p><p>The <code class="literal">preference</code> is a query string parameter which can be set to:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">_primary</code>
 </p>
 </td><td valign="top">
 <p>
-        The operation will go and be executed only on the primary
-        shards. <span class="deprecated">
+        The operation will be executed only on primary shards.  <span class="deprecated">
       [<span class="version">6.1.0</span>]
       <span class="detail">Deprecated in 6.1.0. 
-will be removed in 7.0
+will be removed in 7.0. See the warning below for more information.
 </span></span>
 </p>
 </td></tr><tr><td valign="top">
@@ -662,12 +666,11 @@ will be removed in 7.0
 </p>
 </td><td valign="top">
 <p>
-        The operation will go and be executed on the primary
-        shard, and if not available (failover), will execute on other shards.
-        <span class="deprecated">
+        The operation will be executed on primary shards if possible, but will fall
+        back to other shards if not. <span class="deprecated">
       [<span class="version">6.1.0</span>]
       <span class="detail">Deprecated in 6.1.0. 
-will be removed in 7.0
+will be removed in 7.0. See         the warning below for more information.
 </span></span>
 </p>
 </td></tr><tr><td valign="top">
@@ -676,11 +679,12 @@ will be removed in 7.0
 </p>
 </td><td valign="top">
 <p>
-  The operation will go and be executed only on a replica shard.
-  <span class="deprecated">
+        The operation will be executed only on replica shards. If there are multiple
+        replicas then the order of preference between them is unspecified.
+        <span class="deprecated">
       [<span class="version">6.1.0</span>]
       <span class="detail">Deprecated in 6.1.0. 
-will be removed in 7.0
+will be removed in 7.0. See the warning below for more         information.
 </span></span>
 </p>
 </td></tr><tr><td valign="top">
@@ -689,13 +693,22 @@ will be removed in 7.0
 </p>
 </td><td valign="top">
 <p>
-  The operation will go and be executed only on a replica shard, and if
-  not available (failover), will execute on other shards.
-  <span class="deprecated">
+        The operation will be executed on replica shards if possible, but will fall
+        back to other shards if not. If there are multiple replicas then the order of
+        preference between them is unspecified.  <span class="deprecated">
       [<span class="version">6.1.0</span>]
       <span class="detail">Deprecated in 6.1.0. 
-will be removed in 7.0
+will be removed in         7.0. See the warning below for more information.
 </span></span>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">_only_local</code>
+</p>
+</td><td valign="top">
+<p>
+        The operation will be executed only on shards allocated to the local
+        node.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -703,8 +716,8 @@ will be removed in 7.0
 </p>
 </td><td valign="top">
 <p>
-        The operation will prefer to be executed on a local
-        allocated shard if possible.
+        The operation will be executed on shards allocated to the local node if
+        possible, and will fall back to other shards if not.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -712,8 +725,10 @@ will be removed in 7.0
 </p>
 </td><td valign="top">
 <p>
-        Prefers execution on the nodes with the provided
-        node ids (<code class="literal">abc</code> or <code class="literal">xyz</code> in this case) if applicable.
+        The operation will be executed on nodes with one of the provided node
+        ids (<code class="literal">abc</code> or <code class="literal">xyz</code> in this case) if possible. If suitable shard copies
+        exist on more than one of the selected nodes then the order of
+        preference between these copies is unspecified.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -721,17 +736,20 @@ will be removed in 7.0
 </p>
 </td><td valign="top">
 <p>
-        Restricts the operation to the specified shards. (<code class="literal">2</code>
-        and <code class="literal">3</code> in this case). This preference can be combined with other
-        preferences but it has to appear first: <code class="literal">_shards:2,3|_local</code>
+        Restricts the operation to the specified shards. (<code class="literal">2</code> and <code class="literal">3</code> in this
+        case).  This preference can be combined with other preferences but it
+        has to appear first: <code class="literal">_shards:2,3|_local</code>
 </p>
 </td></tr><tr><td valign="top">
 <p>
-<code class="literal">_only_nodes</code>
+<code class="literal">_only_nodes:abc*,x*yz,...</code>
 </p>
 </td><td valign="top">
 <p>
-    Restricts the operation to nodes specified in <a class="link" href="cluster.html" title="Cluster APIs">node specification</a>
+        Restricts the operation to nodes specified according to the
+        <a class="link" href="cluster.html" title="Cluster APIs">node specification</a>. If suitable shard copies exist on more
+        than one of the selected nodes then the order of preference between
+        these copies is unspecified.
 </p>
 </td></tr><tr><td valign="top">
 <p>
@@ -739,21 +757,41 @@ Custom (string) value
 </p>
 </td><td valign="top">
 <p>
-        A custom value will be used to guarantee that
-        the same shards will be used for the same custom value. This can help
-        with "jumping values" when hitting different shards in different refresh
-        states. A sample value can be something like the web session id, or the
-        user name.
+        Any value that does not start with <code class="literal">_</code>. If two searches both give the same
+        custom string value for their preference and the underlying cluster state
+        does not change then the same ordering of shards will be used for the
+        searches. This does not guarantee that the exact same shards will be used
+        each time: the cluster state, and therefore the selected shards, may change
+        for a number of reasons including shard relocations and shard failures, and
+        nodes may sometimes reject searches causing fallbacks to alternative nodes.
+        However, in practice the ordering of shards tends to remain stable for long
+        periods of time. A good candidate for a custom preference value is something
+        like the web session id or the user name.
 </p>
-</td></tr></tbody></table></div><p>For instance, use the user’s session ID to ensure consistent ordering of results
-for the user:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search?preference=xyzabc123
+</td></tr></tbody></table></div><p>For instance, use the user’s session ID <code class="literal">xyzabc123</code> as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search?preference=xyzabc123
 {
     "query": {
         "match": {
             "title": "elasticsearch"
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-preference/1.json"></div></div><div class="navfooter"><span class="prev"><a href="search-request-scroll.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-preference/1.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The <code class="literal">_only_local</code> preference guarantees only to use shard copies on the
+local node, which is sometimes useful for troubleshooting. All other options do
+not <span class="emphasis"><em>fully</em></span> guarantee that any particular shard copies are used in a search,
+and on a changing index this may mean that repeated searches may yield
+different results if they are executed on different shard copies which are in
+different refresh states.</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The <code class="literal">_primary</code>, <code class="literal">_primary_first</code>, <code class="literal">_replica</code> and <code class="literal">_replica_first</code> are
+deprecated as their use is not recommended. They do not help to avoid
+inconsistent results that arise from the use of shards that have different
+refresh states, and Elasticsearch uses synchronous replication so the primary
+does not in general hold fresher data than its replicas. The <code class="literal">_primary_first</code>
+and <code class="literal">_replica_first</code> preferences silently fall back to non-preferred copies if
+it is not possible to search the preferred copies. The <code class="literal">_primary</code> and
+<code class="literal">_replica</code> preferences will silently change their preferred shards if a replica
+is promoted to primary, which can happen at any time. The <code class="literal">_primary</code> preference
+can also put undesirable extra load on the primary shards. The cache-related
+benefits of these options can also be obtained using <code class="literal">_only_nodes</code>,
+<code class="literal">_prefer_nodes</code>, or a custom string value instead.</p></div></div></div><div class="navfooter"><span class="prev"><a href="search-request-scroll.html">
               « 
               Scroll</a>
            
