@@ -794,7 +794,32 @@ in the query. Defaults to 10.</p></td></tr><tr><td align="left" valign="top"><p>
        }
     }
 }</pre></div><div class="console_widget" data-snippet="snippets/search-rank-eval/3.json"></div><p>The <code class="literal">dcg</code> metric takes the following optional parameters:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Parameter </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">k</code></p></td><td align="left" valign="top"><p>sets the maximum number of documents retrieved per query. This value will act in place of the usual <code class="literal">size</code> parameter
-in the query. Defaults to 10.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">normalize</code></p></td><td align="left" valign="top"><p>If set to <code class="literal">true</code>, this metric will calculate the <a class="ulink" href="https://en.wikipedia.org/wiki/Discounted_cumulative_gain#Normalized_DCG" target="_top">Normalized DCG</a>.</p></td></tr></tbody></table></div><h3><a id="_response_format_2"></a>Response format<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The response of the <code class="literal">_rank_eval</code> endpoint contains the overall calculated result for the defined quality metric,
+in the query. Defaults to 10.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">normalize</code></p></td><td align="left" valign="top"><p>If set to <code class="literal">true</code>, this metric will calculate the <a class="ulink" href="https://en.wikipedia.org/wiki/Discounted_cumulative_gain#Normalized_DCG" target="_top">Normalized DCG</a>.</p></td></tr></tbody></table></div><h4><a id="_expected_reciprocal_rank_err"></a>Expected Reciprocal Rank (ERR)<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Expected Reciprocal Rank (ERR) is an extension of the classical reciprocal rank for the graded relevance case
+(Olivier Chapelle, Donald Metzler, Ya Zhang, and Pierre Grinspan. 2009. <a class="ulink" href="http://olivier.chapelle.cc/pub/err.pdf" target="_top">Expected reciprocal rank for graded relevance</a>.)</p><p>It is based on the assumption of a cascade model of search, in which a user scans through ranked search
+results in order and stops at the first document that satisfies the information need. For this reason, it
+is a good metric for question answering and navigation queries, but less so for survey oriented information
+needs where the user is interested in finding many relevant documents in the top k results.</p><p>The metric models the expectation of the reciprocal of the position at which a user stops reading through
+the result list. This means that relevant document in top ranking positions will contribute much to the
+overall score. However, the same document will contribute much less to the score if it appears in a lower rank,
+even more so if there are some relevant (but maybe less relevant) documents preceding it.
+In this way, the ERR metric discounts documents which are shown after very relevant documents. This introduces
+a notion of dependency in the ordering of relevant documents that e.g. Precision or DCG don’t account for.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /twitter/_rank_eval
+{
+    "requests": [
+    {
+        "id": "JFK query",
+        "request": { "query": { "match_all": {}}},
+        "ratings": []
+    }],
+    "metric": {
+       "expected_reciprocal_rank": {
+            "maximum_relevance" : 3,
+            "k" : 20
+       }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-rank-eval/4.json"></div><p>The <code class="literal">expected_reciprocal_rank</code> metric takes the following parameters:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Parameter </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">maximum_relevance</code></p></td><td align="left" valign="top"><p>Mandatory parameter. The highest relevance grade used in the user supplied
+relevance judgments.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">k</code></p></td><td align="left" valign="top"><p>sets the maximum number of documents retrieved per query. This value will act in place of the usual <code class="literal">size</code> parameter
+in the query. Defaults to 10.</p></td></tr></tbody></table></div><h3><a id="_response_format_2"></a>Response format<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/rank-eval.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The response of the <code class="literal">_rank_eval</code> endpoint contains the overall calculated result for the defined quality metric,
 a <code class="literal">details</code> section with a breakdown of results for each query in the test suite and an optional <code class="literal">failures</code> section
 that shows potential errors of individual queries. The response has the following format:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "rank_eval": {
