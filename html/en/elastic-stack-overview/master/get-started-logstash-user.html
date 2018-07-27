@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configure authentication
-        | Elastic Stack Overview [6.x]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Add user information in Logstash
+        | Elastic Stack Overview [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Stack Overview [6.x]" /><link rel="up" href="security-getting-started.html" title="Getting started with security" /><link rel="prev" href="gs-kibana-security.html" title="Add the built-in user to Kibana" /><link rel="next" href="gs-users.html" title="Create users" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elastic Stack/Overview/6.x" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elastic Stack" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Stack Overview [master]" /><link rel="up" href="security-getting-started.html" title="Getting started with security" /><link rel="prev" href="get-started-roles.html" title="Assign roles" /><link rel="next" href="get-started-verify-users.html" title="View system metrics in Kibana" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elastic Stack/Overview/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elastic Stack" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
     
 
     
@@ -636,32 +636,88 @@
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elastic Stack Overview
-      [6.x]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-security.html">Securing the Elastic Stack</a></span> » <span class="breadcrumb-link"><a href="security-getting-started.html">Getting started with security</a></span> » <span class="breadcrumb-node">Configure authentication</span></div><div class="navheader"><span class="prev"><a href="gs-kibana-security.html">
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-security.html">Securing the Elastic Stack</a></span> » <span class="breadcrumb-link"><a href="security-getting-started.html">Getting started with security</a></span> » <span class="breadcrumb-node">Add user information in Logstash</span></div><div class="navheader"><span class="prev"><a href="get-started-roles.html">
               « 
-              Add the built-in user to Kibana</a>
+              Assign roles</a>
            
         </span><span class="next">
            
-          <a href="gs-users.html">Create users
+          <a href="get-started-verify-users.html">View system metrics in Kibana
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="gs-realms"></a>Configure authentication<a href="https://github.com/elastic/stack-docs/edit/6.x/docs/en/stack/security/get-started-security.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Now that you’ve set up the built-in users, you need to decide how you want to
-manage all the other users.</p><p>The Elastic Stack <span class="emphasis"><em>authenticates</em></span> users to ensure that they are valid. The
-authentication process is handled by <span class="emphasis"><em>realms</em></span>. You can use one or more built-in
-realms, such as the native, file, LDAP, PKI, Active Directory, or SAML realms.
-Alternatively, you can create your own custom realms. In this tutorial, we’ll
-use a native realm.</p><p>In general, you configure realms by adding <code class="literal">xpack.security.authc.realms</code>
-settings in the <code class="literal">elasticsearch.yml</code> file. However, the native realm is available
-by default when no other realms are configured. Therefore, you don’t need to do
-any extra configuration steps in this tutorial. You can jump straight to
-creating users!</p><p>If you want to learn more about authentication and realms, see
-<a class="xref" href="setting-up-authentication.html" title="User authentication"><em>User authentication</em></a>.</p></div><div class="navfooter"><span class="prev"><a href="gs-kibana-security.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="get-started-logstash-user"></a>Add user information in Logstash<a href="https://github.com/elastic/stack-docs/edit/master/docs/en/stack/security/get-started-security.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>In order for Logstash to send data successfully to Elasticsearch, you must configure its
+authentication credentials in the Logstash configuration file.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Configure Logstash to use the <code class="literal">logstash_internal</code> user and the password that you
+created:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+If you don’t mind having passwords visible in your configuration file, add
+the following <code class="literal">user</code> and <code class="literal">password</code> settings in the <code class="literal">demo-metrics-pipeline.conf</code>
+file in your Logstash directory:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">...
+
+output {
+  elasticsearch {
+    hosts =&gt; "localhost:9200"
+    manage_template =&gt; false
+    index =&gt; "%{[@metadata][beat]}-%{[@metadata][version]}-%{+YYYY.MM.dd}"
+    user =&gt; "logstash_internal" <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    password =&gt; "your_password" <a id="CO2-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Specify the <code class="literal">logstash_internal</code> user that you created earlier in this tutorial.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Specify the password that you chose for this user ID.
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+If you prefer not to put your user ID and password in the configuration file,
+store them in a keystore instead.
+</p><p class="simpara">Run the following commands to create the Logstash
+keystore and add the secure settings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">set +o history
+export LOGSTASH_KEYSTORE_PASS=mypassword <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+set -o history
+./bin/logstash-keystore create
+./bin/logstash-keystore add ES_USER
+./bin/logstash-keystore add ES_PWD</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+You can optionally protect access to the Logstash keystore by storing a password
+in an environment variable called <code class="literal">LOGSTASH_KEYSTORE_PASS</code>. For more information,
+see <a class="ulink" href="http://www.elastic.co/guide/en/logstash/master/keystore.html#keystore-password" target="_top">Keystore password</a>.
+</p></td></tr></table></div><p class="simpara">When prompted, specify the <code class="literal">logstash_internal</code> user and its password for the
+<code class="literal">ES_USER</code> and <code class="literal">ES_PWD</code> values.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The Logstash keystore differs from the Kibana keystore. Whereas the Kibana
+keystore enables you to store <code class="literal">kibana.yml</code> settings by name, the Logstash keystore
+enables you to create arbitrary names that you can reference in the Logstash
+configuration. To learn more, see
+<a class="ulink" href="http://www.elastic.co/guide/en/logstash/master/keystore.html" target="_top">Secrets keystore for secure settings</a>.</p></div></div><p class="simpara">You can now use these <code class="literal">ES_USER</code> and <code class="literal">ES_PWD</code> keys in your configuration
+file.  For example, add the <code class="literal">user</code> and <code class="literal">password</code> settings in the
+<code class="literal">demo-metrics-pipeline.conf</code> file as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">...
+
+output {
+  elasticsearch {
+    hosts =&gt; "localhost:9200"
+    manage_template =&gt; false
+    index =&gt; "%{[@metadata][beat]}-%{[@metadata][version]}-%{+YYYY.MM.dd}"
+    user =&gt; "${ES_USER}"
+    password =&gt; "${ES_PWD}"
+  }
+}</pre></div></li></ul></div></li><li class="listitem"><p class="simpara">
+Start Logstash by using the appropriate method for your environment.
+</p><p class="simpara">For example, to
+run Logstash from a command line, go to the Logstash directory and enter the following
+command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">./bin/logstash -f demo-metrics-pipeline.conf</pre></div><p class="simpara">To start Logstash as a service, see
+<a class="ulink" href="http://www.elastic.co/guide/en/logstash/master/running-logstash.html" target="_top">Running Logstash as a service on Debian or RPM</a>.</p></li><li class="listitem">
+If you were connecting directly from Metricbeat to Elasticsearch, you would need
+to configure authentication credentials for the Elasticsearch output in the Metricbeat
+configuration file. In <a class="xref" href="get-started-elastic-stack.html" title="Getting started with the Elastic Stack"><em>Getting started with the Elastic Stack</em></a>, however, you configured
+Metricbeat to send the data to Logstash for additional parsing, so no extra
+settings are required in Metricbeat. For more information, see
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/metricbeat/master/securing-metricbeat.html" target="_top">Securing Metricbeat</a>.
+</li><li class="listitem"><p class="simpara">
+Start Metricbeat by using the appropriate method for your environment.
+</p><p class="simpara">For example, on macOS, run the following command from the Metricbeat directory:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">./metricbeat -e</pre></div><p class="simpara">For more methods, see <a class="ulink" href="https://www.elastic.co/guide/en/beats/metricbeat/master/metricbeat-starting.html" target="_top">Starting Metricbeat</a>.</p></li></ol></div><p>Wait a few minutes for new data to be sent from Metricbeat to Logstash and Elasticsearch.</p></div><div class="navfooter"><span class="prev"><a href="get-started-roles.html">
               « 
-              Add the built-in user to Kibana</a>
+              Assign roles</a>
            
         </span><span class="next">
            
-          <a href="gs-users.html">Create users
+          <a href="get-started-verify-users.html">View system metrics in Kibana
                »
             </a></span></div>
 <!-- end body -->
