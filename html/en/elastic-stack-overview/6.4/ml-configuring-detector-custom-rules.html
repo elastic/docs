@@ -651,20 +651,20 @@ of following its default behavior. To specify the <span class="emphasis"><em>whe
 a <code class="literal">scope</code> and <code class="literal">conditions</code>. You can think of <code class="literal">scope</code> as the categorical
 specification of a rule, while <code class="literal">conditions</code> are the numerical part.
 A rule can have a scope, one or more conditions, or a combination of
-scope and conditions.</p><p>Let us see how those can be configured by examples.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_specifying_rule_scope"></a>Specifying rule scope<a href="https://github.com/elastic/elasticsearch/edit/6.4/x-pack/docs/en/ml/detector-custom-rules.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Let us assume we are configuring a job in order to DNS data exfiltration.
+scope and conditions.</p><p>Let us see how those can be configured by examples.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_specifying_rule_scope"></a>Specifying rule scope<a href="https://github.com/elastic/elasticsearch/edit/6.4/x-pack/docs/en/ml/detector-custom-rules.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Let us assume we are configuring a job in order to detect DNS data exfiltration.
 Our data contain fields "subdomain" and "highest_registered_domain".
 We can use a detector that looks like <code class="literal">high_info_content(subdomain) over highest_registered_domain</code>.
 If we run such a job it is possible that we discover a lot of anomalies on
 frequently used domains that we have reasons to trust. As security analysts, we
 are not interested in such anomalies. Ideally, we could instruct the detector to
 skip results for domains that we consider safe. Using a rule with a scope allows
-us to achieve this.</p><p>First, we need to create a list with our safe domains. Those lists are called
-<code class="literal">filters</code> in machine learning. Filters can be shared across jobs.</p><p>We create our filter using the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.4/ml-put-filter.html" target="_top">put filter API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/ml/filters/safe_domains
+us to achieve this.</p><p>First, we need to create a list of our safe domains. Those lists are called
+<span class="emphasis"><em>filters</em></span> in machine learning. Filters can be shared across jobs.</p><p>We create our filter using the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.4/ml-put-filter.html" target="_top">put filter API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/ml/filters/safe_domains
 {
   "description": "Our list of safe domains",
   "items": ["safe.com", "trusted.com"]
-}</pre></div><div class="console_widget" data-snippet="snippets/ml-configuring-detector-custom-rules/1.json"></div><p>Now, we can create our job specifying a scope that uses the filter for the
-<code class="literal">highest_registered_domain</code> field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/ml/anomaly_detectors/dns_exfiltration_with_rule
+}</pre></div><div class="console_widget" data-snippet="snippets/ml-configuring-detector-custom-rules/1.json"></div><p>Now, we can create our job specifying a scope that uses the <code class="literal">safe_domains</code>
+filter for the <code class="literal">highest_registered_domain</code> field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/ml/anomaly_detectors/dns_exfiltration_with_rule
 {
   "analysis_config" : {
     "bucket_span":"5m",
@@ -691,8 +691,8 @@ domains that we want to add in the filter. We can do that by using the
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.4/ml-update-filter.html" target="_top">update filter API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _xpack/ml/filters/safe_domains/_update
 {
   "add_items": ["another-safe.com"]
-}</pre></div><div class="console_widget" data-snippet="snippets/ml-configuring-detector-custom-rules/3.json"></div><p>Note that we can provide scope for any of the partition/over/by fields.
-In the following example we scope multiple fields:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/ml/anomaly_detectors/scoping_multiple_fields
+}</pre></div><div class="console_widget" data-snippet="snippets/ml-configuring-detector-custom-rules/3.json"></div><p>Note that we can use any of the <code class="literal">partition_field_name</code>, <code class="literal">over_field_name</code>, or
+<code class="literal">by_field_name</code> fields in the <code class="literal">scope</code>.</p><p>In the following example we scope multiple fields:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/ml/anomaly_detectors/scoping_multiple_fields
 {
   "analysis_config" : {
     "bucket_span":"5m",
@@ -782,9 +782,9 @@ is greater than 30 and less than 50:</p><div class="pre_wrapper"><pre class="pro
 Let us imagine that we have configured a job and it has been running
 for some time. After observing its results we decide that we can employ
 rules in order to get rid of some uninteresting results. We can use
-the update-job API to do so. However, the rule we added will only be in effect
-for any results created from the moment we added the rule onwards. Past results
-will remain unaffected.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_rules_vs_filtering_data"></a>Using rules VS filtering data<a href="https://github.com/elastic/elasticsearch/edit/6.4/x-pack/docs/en/ml/detector-custom-rules.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It might appear like using rules is just another way of filtering the data
+the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.4/ml-update-job.html" target="_top">update job API</a> to do so. However, the rule we
+added will only be in effect for any results created from the moment we added
+the rule onwards. Past results will remain unaffected.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_rules_vs_filtering_data"></a>Using rules VS filtering data<a href="https://github.com/elastic/elasticsearch/edit/6.4/x-pack/docs/en/ml/detector-custom-rules.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>It might appear like using rules is just another way of filtering the data
 that feeds into a job. For example, a rule that skips results when the
 partition field value is in a filter sounds equivalent to having a query
 that filters out such documents. But it is not. There is a fundamental
