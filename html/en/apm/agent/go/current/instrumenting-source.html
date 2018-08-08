@@ -765,7 +765,20 @@ func main() {
         db, err := apmsql.Open("pq", "postgres://...")
         db, err := apmsql.Open("sqlite3", ":memory:")
 }</pre></div><p>Spans will be created for queries and other statement executions if the context methods are
-used, and the context includes a transaction.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_module_apmgocql"></a>module/apmgocql<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgocql provides a means of instrumenting <a class="ulink" href="https://github.com/gocql/gocql" target="_top">gocql</a> so
+used, and the context includes a transaction.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_module_apmgorm"></a>module/apmgorm<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgorm provides a means of instrumenting [gorm](<a class="ulink" href="http://gorm.io" target="_top">http://gorm.io</a>) database operations.</p><p>To trace GORM operations, import the appropriate <code class="literal">apmgorm/dialects</code> package (instead of the
+<code class="literal">gorm/dialects</code> package), and use <code class="literal">apmgorm.Open</code> (instead of <code class="literal">gorm.Open</code>). The parameters are
+exactly the same.</p><p>Once you have a <code class="literal">*gorm.DB</code> from <code class="literal">apmgorm.Open</code>, you can call <code class="literal">apmgorm.WithContext</code> to
+propagate a context containing a transaction to the operations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+        "github.com/elastic/apm-agent-go/module/apmgorm"
+        _ "github.com/elastic/apm-agent-go/module/apmgorm/dialects/postgres"
+)
+
+func main() {
+        db, err := apmgorm.Open("postgres", "")
+        ...
+        db = apmgorm.WithContext(ctx, db)
+        db.Find(...) // creates a "SELECT FROM &lt;foo&gt;" span
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_module_apmgocql"></a>module/apmgocql<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgocql provides a means of instrumenting <a class="ulink" href="https://github.com/gocql/gocql" target="_top">gocql</a> so
 that queries are reported as spans within the current transaction.</p><p>To report <code class="literal">gocql</code> queries, you can construct an <code class="literal">apmgocql.Observer</code> and assign it to
 the <code class="literal">QueryObserver</code> and <code class="literal">BatchObserver</code> fields of <code class="literal">gocql.ClusterConfig</code>, or install it
 into a specific <code class="literal">gocql.Query</code> or <code class="literal">gocql.Batch</code> via their <code class="literal">Observer</code> methods.</p><p>Spans will be created for queries as long as they have context associated, and the
