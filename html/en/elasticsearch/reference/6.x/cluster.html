@@ -634,19 +634,66 @@ Not what you want? See the
            
           <a href="cluster-health.html">Cluster Health
                »
-            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="cluster"></a>Cluster APIs<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/cluster.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><h2><a id="cluster-nodes"></a>Node specification<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/cluster.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Most cluster level APIs allow to specify which nodes to execute on (for
-example, getting the node stats for a node). Nodes can be identified in
-the APIs either using their internal node id, the node name, address,
-custom attributes, or just the <code class="literal">_local</code> node receiving the request. For
-example, here are some sample executions of nodes info:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"># Local
+            </a></span></div><div class="part"><div class="titlepage"><div><div><h1 class="title"><a id="cluster"></a>Cluster APIs<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/cluster.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><div class="partintro"><div></div><h2><a id="cluster-nodes"></a>Node specification<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/cluster.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2><p>Some cluster-level APIs may operate on a subset of the nodes which can be
+specified with <span class="emphasis"><em>node filters</em></span>. For example, the <a class="link" href="tasks.html" title="Task Management API">Task Management</a>,
+<a class="link" href="cluster-nodes-stats.html" title="Nodes Stats">Nodes Stats</a>, and <a class="link" href="cluster-nodes-info.html" title="Nodes Info">Nodes Info</a> APIs
+can all report results from a filtered set of nodes rather than from all nodes.</p><p><span class="emphasis"><em>Node filters</em></span> are written as a comma-separated list of individual filters,
+each of which adds or removes nodes from the chosen subset. Each filter can be
+one of the following:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">_all</code>, to add all nodes to the subset.
+</li><li class="listitem">
+<code class="literal">_local</code>, to add the local node to the subset.
+</li><li class="listitem">
+<code class="literal">_master</code>, to add the currently-elected master node to the subset.
+</li><li class="listitem">
+a node id or name, to add this node to the subset.
+</li><li class="listitem">
+an IP address or hostname, to add all matching nodes to the subset.
+</li><li class="listitem">
+a pattern, using <code class="literal">*</code> wildcards, which adds all nodes to the subset
+  whose name, address or hostname matches the pattern.
+</li><li class="listitem">
+<code class="literal">master:true</code>, <code class="literal">data:true</code>, <code class="literal">ingest:true</code> or <code class="literal">coordinating_only:true</code>, which
+  respectively add to the subset all master-eligible nodes, all data nodes,
+  all ingest nodes, and all coordinating-only nodes.
+</li><li class="listitem">
+<code class="literal">master:false</code>, <code class="literal">data:false</code>, <code class="literal">ingest:false</code> or <code class="literal">coordinating_only:false</code>,
+  which respectively remove from the subset all master-eligible nodes, all data
+  nodes, all ingest nodes, and all coordinating-only nodes.
+</li><li class="listitem">
+a pair of patterns, using <code class="literal">*</code> wildcards, of the form <code class="literal">attrname:attrvalue</code>,
+  which adds to the subset all nodes with a custom node attribute whose name
+  and value match the respective patterns. Custom node attributes are
+  configured by setting properties in the configuration file of the form
+  <code class="literal">node.attr.attrname: attrvalue</code>.
+</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>node filters run in the order in which they are given, which is important
+if using filters that remove nodes from the set. For example
+<code class="literal">_all,master:false</code> means all the nodes except the master-eligible ones, but
+<code class="literal">master:false,_all</code> means the same as <code class="literal">_all</code> because the <code class="literal">_all</code> filter runs
+after the <code class="literal">master:false</code> filter.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>if no filters are given, the default is to select all nodes. However, if
+any filters are given then they run starting with an empty chosen subset. This
+means that filters such as <code class="literal">master:false</code> which remove nodes from the chosen
+subset are only useful if they come after some other filters. When used on its
+own, <code class="literal">master:false</code> selects no nodes.</p></div></div><p>Here are some examples of the use of node filters with the
+<a class="link" href="cluster-nodes-info.html" title="Nodes Info">Nodes Info</a> APIs.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"># If no filters are given, the default is to select all nodes
+GET /_nodes
+# Explicitly select all nodes
+GET /_nodes/_all
+# Select just the local node
 GET /_nodes/_local
-# Address
-GET /_nodes/10.0.0.3,10.0.0.4
-GET /_nodes/10.0.0.*
-# Names
+# Select the elected master node
+GET /_nodes/_master
+# Select nodes by name, which can include wildcards
 GET /_nodes/node_name_goes_here
 GET /_nodes/node_name_goes_*
-# Attributes (set something like node.attr.rack: 2 in the config)
+# Select nodes by address, which can include wildcards
+GET /_nodes/10.0.0.3,10.0.0.4
+GET /_nodes/10.0.0.*
+# Select nodes by role
+GET /_nodes/_all,master:false
+GET /_nodes/data:true,ingest:true
+GET /_nodes/coordinating_only:true
+# Select nodes by custom attribute (e.g. with something like `node.attr.rack: 2` in the configuration file)
 GET /_nodes/rack:2
 GET /_nodes/ra*:2
 GET /_nodes/ra*:2*</pre></div><div class="console_widget" data-snippet="snippets/cluster/1.json"></div></div></div><div class="navfooter"><span class="prev"><a href="cat-templates.html">
