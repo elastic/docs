@@ -650,6 +650,8 @@ Not what you want? See the
 <a class="xref" href="common-problems.html#request-timed-out" title="HTTP 503: Request timed out waiting to be processededit">HTTP 503: Request timed out waiting to be processed<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
 </li><li class="listitem">
 <a class="xref" href="common-problems.html#ssl-client-fails" title="SSL client fails to connectedit">SSL client fails to connect<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
+</li><li class="listitem">
+<a class="xref" href="common-problems.html#field-limit-exceeded" title="Field limit exceedededit">Field limit exceeded<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
 </li></ul></div><h3><a id="no-data-indexed"></a>No data is indexed<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If no data shows up in Elasticsearch, first check that the APM components are properly connected.</p><p>To ensure that APM Server configuration is valid and it can connect to the configured output, Elasticsearch by default,
 run the following commands:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">apm-server test config
 apm-server test output</pre></div><p>To see if the agent can connect to the APM Server, send requests to the instrumented service and look for lines
@@ -717,7 +719,24 @@ Create an entry in <code class="literal">/etc/hosts</code> for the hostname. Or 
 Re-create the server certificate and add a SubjectAltName (SAN) for the IP address of the server. This make the
 server’s certificate valid for both the hostname and the IP address.
 </li></ul></div><h5><a id="getsockopt-no-route-to-host"></a>getsockopt: no route to host<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>This is not a SSL problem. It’s a networking problem. Make sure the two hosts can communicate.</p><h5><a id="getsockopt-connection-refused"></a>getsockopt: connection refused<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>This is not a SSL problem. Make sure that Logstash is running and that there is no firewall blocking the traffic.</p><h5><a id="target-machine-refused-connection"></a>No connection could be made because the target machine actively refused it<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>A firewall is refusing the connection. Check if a firewall is blocking the traffic on the client, the network, or the
-destination host.</p></div><div class="navfooter"><span class="prev"><a href="troubleshooting.html">
+destination host.</p><h3><a id="field-limit-exceeded"></a>Field limit exceeded<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When adding too many distinct tag keys on a transaction or span,
+you risk creating a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/mapping.html#mapping-limit-settings" target="_top">mapping explosion</a>.</p><p>For example,
+you should avoid that user-specified data,
+like URL parameters,
+is used as a tag key.
+Likewise,
+using the current timestamp or a user ID as a tag key is not a good idea.
+However,
+tag <span class="strong strong"><strong>values</strong></span> with a high cardinality are not a problem.
+Just try to keep the number of distinct tag keys at a minimum.</p><p>The symptom of a mapping explosion is that transactions and spans are not indexed anymore after a certain time.
+Usually,
+on the next day,
+the spans and transactions will be indexed again because a new index is created each day.
+But as soon as the field limit is reached,
+indexing stops again.</p><p>In the agent logs,
+you won’t see a sign of failures as the APM server asynchronously sends the data it received from the agents to Elasticsearch.
+However,
+the APM server and Elasticsearch log a warning like this:</p><pre class="screen">{\"type\":\"illegal_argument_exception\",\"reason\":\"Limit of total fields [1000] in index [apm-7.0.0-transaction-2017.05.30] has been exceeded\"}</pre></div><div class="navfooter"><span class="prev"><a href="troubleshooting.html">
               « 
               Troubleshooting</a>
            
