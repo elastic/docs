@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Dissect strings
-        | Winlogbeat Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>DNS Reverse Lookup
+        | Heartbeat Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Winlogbeat Reference [master]" /><link rel="up" href="filtering-and-enhancing-data.html" title="Filter and Enhance the exported data" /><link rel="prev" href="add-host-metadata.html" title="Add Host metadata" /><link rel="next" href="processor-dns.html" title="DNS Reverse Lookup" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Winlogbeat/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Winlogbeat" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Heartbeat Reference [master]" /><link rel="up" href="filtering-and-enhancing-data.html" title="Filter and Enhance the exported data" /><link rel="prev" href="dissect.html" title="Dissect strings" /><link rel="next" href="configuring-ingest-node.html" title="Parse data by using ingest node" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Heartbeat/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Heartbeat" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
     
 
     
@@ -621,43 +621,125 @@
 				
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
-<div class="page_header">You are looking at preliminary documentation for a future release.
-Not what you want? See the
-<a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Winlogbeat Reference
+<div class="page_header">This functionality is in beta and is subject to change. The design and
+code is considered to be less mature than official GA features. Elastic will
+take a best effort approach to fix any issues, but beta features are not
+subject to the support SLA of official GA features.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Heartbeat Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="configuring-howto-winlogbeat.html">Configuring Winlogbeat</a></span> » <span class="breadcrumb-link"><a href="filtering-and-enhancing-data.html">Filter and Enhance the exported data</a></span> » <span class="breadcrumb-node">Dissect strings</span></div><div class="navheader"><span class="prev"><a href="add-host-metadata.html">
+    </a></span> » <span class="breadcrumb-link"><a href="configuring-howto-heartbeat.html">Configuring Heartbeat</a></span> » <span class="breadcrumb-link"><a href="filtering-and-enhancing-data.html">Filter and Enhance the exported data</a></span> » <span class="breadcrumb-node">DNS Reverse Lookup</span></div><div class="navheader"><span class="prev"><a href="dissect.html">
               « 
-              Add Host metadata</a>
+              Dissect strings</a>
            
         </span><span class="next">
            
-          <a href="processor-dns.html">DNS Reverse Lookup
+          <a href="configuring-ingest-node.html">Parse data by using ingest node
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="dissect"></a>Dissect strings<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The dissect processor tokenizes incoming strings using defined patterns.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">processors:
-- dissect:
-    tokenizer: "%{key1} %{key2}"
-    field: "message"
-    target_prefix: "dissect"</pre></div><p>The <code class="literal">dissect</code> processor has the following configuration settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">field</code>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="processor-dns"></a>DNS Reverse Lookup<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/processors-using.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The DNS processor performs reverse DNS lookups of IP addresses. It caches the
+responses that it receives in accordance to the time-to-live (TTL) value
+contained in the response. It also caches failures that occur during lookups.
+Each instance of this processor maintains its own independent cache.</p><p>The processor uses its own DNS resolver to send requests to nameservers and does
+not use the operating system’s resolver. It does not read any values contained
+in <code class="literal">/etc/hosts</code>.</p><p>This processor can significantly slow down your pipeline’s throughput if you
+have a high latency network or slow upstream nameserver. The cache will help
+with performance, but if the addresses being resolved have a high cardinality
+then the cache benefits will be diminished due to the high miss ratio.</p><p>By way of example, if each DNS lookup takes 2 milliseconds, the maximum
+throughput you can achieve is 500 events per second (1000 milliseconds / 2
+milliseconds). If you have a high cache hit ratio then your throughput can be
+higher.</p><p>This is a minimal configuration example that resolves the IP addresses contained
+in two fields.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">processors:
+- dns:
+    type: reverse
+    fields:
+      source.ip: source.hostname
+      destination.ip: destination.hostname</pre></div><p>Next is a configuration example showing all options.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">processors:
+- dns:
+    type: reverse
+    action: append
+    fields:
+      server.ip: server.hostname
+      client.ip: client.hostname
+    success_cache:
+      capacity.initial: 1000
+      capacity.max: 10000
+    failure_cache:
+      capacity.initial: 1000
+      capacity.max: 10000
+      ttl: 1m
+    nameservers: ['192.0.2.1', '203.0.113.1']
+    timeout: 500ms
+    tag_on_failure: [_dns_reverse_lookup_failed]</pre></div><p>The <code class="literal">dns</code> processor has the following configuration settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">type</code>
 </span></dt><dd>
-(Optional) The event field to tokenize. Default is <code class="literal">message</code>.
+The type of DNS lookup to perform. The only supported type is
+<code class="literal">reverse</code> which queries for a PTR record.
 </dd><dt><span class="term">
-<code class="literal">target_prefix</code>
+<code class="literal">action</code>
 </span></dt><dd>
-(Optional) The name of the field where the values will be extracted. When an empty
-string is defined, the processor will create the keys at the root of the event. Default is
-<code class="literal">dissect</code>. When the target key already exists in the event, the processor won’t replace it and log
-an error; you need to either drop or rename the key before using dissect.
-</dd></dl></div><p>For tokenization to be successful, all keys must be found and extracted, if one of them cannot be
-found an error will be logged and no modification is done on the original event.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>A key can contain any characters except reserved suffix or prefix modifiers:  <code class="literal">/</code>,<code class="literal">&amp;</code>, <code class="literal">+</code>
-and <code class="literal">?</code>.</p></div></div><p>See <a class="xref" href="defining-processors.html#conditions" title="Conditions">Conditions</a> for a list of supported conditions.</p></div><div class="navfooter"><span class="prev"><a href="add-host-metadata.html">
+This defines the behavior of the processor when the target field
+already exists in the event. The options are <code class="literal">append</code> (default) and <code class="literal">replace</code>.
+</dd><dt><span class="term">
+<code class="literal">fields</code>
+</span></dt><dd>
+This is a mapping of source field names to target field names. The
+value of the source field will be used in the DNS query and result will be
+written to the target field.
+</dd><dt><span class="term">
+<code class="literal">success_cache.capacity.initial</code>
+</span></dt><dd>
+The initial number of items that the success
+cache will be allocated to hold. When initialized the processor will allocate
+the memory for this number of items. Default value is <code class="literal">1000</code>.
+</dd><dt><span class="term">
+<code class="literal">success_cache.capacity.max</code>
+</span></dt><dd>
+The maximum number of items that the success
+cache can hold. When the maximum capacity is reached a random item is evicted.
+Default value is <code class="literal">10000</code>.
+</dd><dt><span class="term">
+<code class="literal">failure_cache.capacity.initial</code>
+</span></dt><dd>
+The initial number of items that the failure
+cache will be allocated to hold. When initialized the processor will allocate
+the memory for this number of items. Default value is <code class="literal">1000</code>.
+</dd><dt><span class="term">
+<code class="literal">failure_cache.capacity.max</code>
+</span></dt><dd>
+The maximum number of items that the failure
+cache can hold. When the maximum capacity is reached a random item is evicted.
+Default value is <code class="literal">10000</code>.
+</dd><dt><span class="term">
+<code class="literal">failure_cache.ttl</code>
+</span></dt><dd>
+The duration for which failures are cached. Valid time
+units are "ns", "us" (or "µs"), "ms", "s", "m", "h". Default value is <code class="literal">1m</code>.
+</dd><dt><span class="term">
+<code class="literal">nameservers</code>
+</span></dt><dd>
+A list of nameservers to query. If there are multiple servers,
+the resolver queries them in the order listed. If none are specified then it
+will read the nameservers listed in <code class="literal">/etc/resolv.conf</code> once at initialization.
+On Windows you must always supply at least one nameserver.
+</dd><dt><span class="term">
+<code class="literal">timeout</code>
+</span></dt><dd>
+The duration after which a DNS query will timeout. This is timeout
+for each DNS request so if you have 2 nameservers then the total timeout will be
+2 times this value. Valid time units are "ns", "us" (or "µs"), "ms", "s", "m",
+"h". Default value is <code class="literal">500ms</code>.
+</dd><dt><span class="term">
+<code class="literal">tag_on_failure</code>
+</span></dt><dd>
+A list of tags to add to the event when any lookup fails. The
+tags are only added once even if multiple lookups fail. By default no tags are
+added upon failure.
+</dd></dl></div></div><div class="navfooter"><span class="prev"><a href="dissect.html">
               « 
-              Add Host metadata</a>
+              Dissect strings</a>
            
         </span><span class="next">
            
-          <a href="processor-dns.html">DNS Reverse Lookup
+          <a href="configuring-ingest-node.html">Parse data by using ingest node
                »
             </a></span></div>
 <!-- end body -->
