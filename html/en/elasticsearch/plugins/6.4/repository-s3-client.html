@@ -632,19 +632,27 @@
           <a href="repository-s3-repository.html">Repository Settings
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="repository-s3-client"></a>Client Settings<a href="https://github.com/elastic/elasticsearch/edit/6.4/docs/plugins/repository-s3.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The client used to connect to S3 has a number of settings available. Client setting names are of
-the form <code class="literal">s3.client.CLIENT_NAME.SETTING_NAME</code> and specified inside <code class="literal">elasticsearch.yml</code>.  The
-default client name looked up by a <code class="literal">s3</code> repository is called <code class="literal">default</code>, but can be customized
-with the repository setting <code class="literal">client</code>. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_s3_repository
+the form <code class="literal">s3.client.CLIENT_NAME.SETTING_NAME</code>. The default client name, which is looked up by
+an <code class="literal">s3</code> repository, is called <code class="literal">default</code>. It can be modified using the
+<a class="link" href="repository-s3-repository.html" title="Repository Settings">repository setting</a> <code class="literal">client</code>. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _snapshot/my_s3_repository
 {
   "type": "s3",
   "settings": {
     "bucket": "my_bucket",
     "client": "my_alternate_client"
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/repository-s3-client/1.json"></div><p>Some settings are sensitive and must be stored in the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/secure-settings.html" target="_top">elasticsearch keystore</a>.
-For example, to use explicit AWS access keys:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/elasticsearch-keystore add s3.client.default.access_key
-bin/elasticsearch-keystore add s3.client.default.secret_key</pre></div><p>The following are the available client settings. Those that must be stored in the keystore
-are marked as <code class="literal">Secure</code>.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+}</pre></div><div class="console_widget" data-snippet="snippets/repository-s3-client/1.json"></div><p>Most client settings are specified inside <code class="literal">elasticsearch.yml</code>, but some are
+sensitive and must be stored in the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/secure-settings.html" target="_top">elasticsearch keystore</a>.</p><p>For example, before you start the node, run these commands to add AWS access
+key settings to the keystore:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/elasticsearch-keystore add s3.client.default.access_key
+bin/elasticsearch-keystore add s3.client.default.secret_key</pre></div><p><span class="strong strong"><strong>All</strong></span> client secure settings of this plugin are
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/secure-settings.html#reloadable-secure-settings" target="_top">reloadable</a>. After you
+reload the settings, the internal <code class="literal">s3</code> clients, used to transfer the snapshot
+contents, will utilize the latest settings from the keystore. Any existing <code class="literal">s3</code>
+repositories, as well as any newly created ones, will pick up the new values
+stored in the keystore.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>In progress snapshot/restore tasks will not be preempted by a <span class="strong strong"><strong>reload</strong></span>
+of the client’s secure settings. The task will complete using the client as it
+was built when the operation started.</p></div></div><p>The following is the list of all the available client settings.
+Those that must be stored in the keystore are marked as <code class="literal">Secure</code> and are <span class="strong strong"><strong>reloadable</strong></span>.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">access_key</code>
 </span></dt><dd>
     An s3 access key. The <code class="literal">secret_key</code> setting must also be specified. (Secure)
