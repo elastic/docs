@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Grouping Limitations with heterogeneous indices
-        | Elasticsearch Reference [6.3]
+        | Elasticsearch Reference [6.4]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.3]" /><link rel="up" href="rollup-understanding-groups.html" title="Understanding Groups" /><link rel="prev" href="rollup-understanding-groups.html" title="Understanding Groups" /><link rel="next" href="_doc_counts_and_overlapping_jobs.html" title="Doc counts and overlapping jobs" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.3" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.3" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.4]" /><link rel="up" href="rollup-understanding-groups.html" title="Understanding Groups" /><link rel="prev" href="rollup-understanding-groups.html" title="Understanding Groups" /><link rel="next" href="_doc_counts_and_overlapping_jobs.html" title="Doc counts and overlapping jobs" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.4" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.4" />
     
 
     
@@ -622,7 +622,7 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [6.3]
+      [6.4]
     </a></span> » <span class="breadcrumb-link"><a href="xpack-rollup.html">Rolling up historical data</a></span> » <span class="breadcrumb-link"><a href="rollup-understanding-groups.html">Understanding Groups</a></span> » <span class="breadcrumb-node">Grouping Limitations with heterogeneous indices</span></div><div class="navheader"><span class="prev"><a href="rollup-understanding-groups.html">
               « 
               Understanding Groups</a>
@@ -631,12 +631,11 @@
            
           <a href="_doc_counts_and_overlapping_jobs.html">Doc counts and overlapping jobs
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_grouping_limitations_with_heterogeneous_indices"></a>Grouping Limitations with heterogeneous indices<a href="https://github.com/elastic/elasticsearch/edit/6.3/x-pack/docs/en/rollup/understanding-groups.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>There is a known limitation to Rollup groups, due to some internal implementation details at this time.  The Rollup feature leverages
-the <code class="literal">composite</code> aggregation from Elasticsearch.  At the moment, the composite agg only returns buckets when all keys in the tuple are non-null.
-Put another way, if the you request keys <code class="literal">[A,B,C]</code> in the composite aggregation, the only documents that are aggregated are those that have
-<span class="emphasis"><em>all</em></span> of the keys <code class="literal">A, B</code> and <code class="literal">C</code>.</p><p>Because Rollup uses the composite agg during the indexing process, it inherits this behavior.  Practically speaking, if all of the documents
-in your index are homogeneous (they have the same mapping), you can ignore this limitation and stop reading now.</p><p>However, if you have a heterogeneous collection of documents that you wish to roll up, you may need to configure two or more jobs to
-accurately cover the original data.</p><p>As an example, if your index has two types of documents:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_grouping_limitations_with_heterogeneous_indices"></a>Grouping Limitations with heterogeneous indices<a href="https://github.com/elastic/elasticsearch/edit/6.4/x-pack/docs/en/rollup/understanding-groups.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>There was previously a limitation in how Rollup could handle indices that had heterogeneous mappings (multiple, unrelated/non-overlapping
+mappings).  The recommendation at the time was to configure a separate job per data "type".  For example, you might configure a separate
+job for each Beats module that you had enabled (one for <code class="literal">process</code>, another for <code class="literal">filesystem</code>, etc).</p><p>This recommendation was driven by internal implementation details that caused document counts to be potentially incorrect if a single "merged"
+job was used.</p><p>This limitation has since been alleviated.  As of 6.4.0, it is now considered best practice to combine all rollup configurations
+into a single job.</p><p>As an example, if your index has two types of documents:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "timestamp": 1516729294000,
   "temperature": 200,
   "voltage": 5.2,
@@ -645,7 +644,7 @@ accurately cover the original data.</p><p>As an example, if your index has two t
   "timestamp": 1516729294000,
   "price": 123,
   "title": "Foo"
-}</pre></div><p>it may be tempting to create a single, combined rollup job which covers both of these document types, something like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/rollup/job/combined
+}</pre></div><p>the best practice is to combine them into a single rollup job which covers both of these document types, like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/rollup/job/combined
 {
     "index_pattern": "data-*",
     "rollup_index": "data_rollup",
@@ -671,55 +670,7 @@ accurately cover the original data.</p><p>As an example, if your index has two t
             "metrics": ["avg"]
         }
     ]
-}</pre></div><p>You can see that it includes a <code class="literal">terms</code> grouping on both "node" and "title", fields that are mutually exclusive in the document types.
-<span class="strong strong"><strong>This will not work.</strong></span>  Because the <code class="literal">composite</code> aggregation (and by extension, Rollup) only returns buckets when all keys are non-null,
-and there are no documents that have both a "node" field and a "title" field, this rollup job will not produce any rollups.</p><p>Instead, you should configure two independent jobs (sharing the same index, or going to separate indices):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/rollup/job/sensor
-{
-    "index_pattern": "data-*",
-    "rollup_index": "data_rollup",
-    "cron": "*/30 * * * * ?",
-    "page_size" :1000,
-    "groups" : {
-      "date_histogram": {
-        "field": "timestamp",
-        "interval": "1h",
-        "delay": "7d"
-      },
-      "terms": {
-        "fields": ["node"]
-      }
-    },
-    "metrics": [
-        {
-            "field": "temperature",
-            "metrics": ["min", "max", "sum"]
-        }
-    ]
-}</pre></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _xpack/rollup/job/purchases
-{
-    "index_pattern": "data-*",
-    "rollup_index": "data_rollup",
-    "cron": "*/30 * * * * ?",
-    "page_size" :1000,
-    "groups" : {
-      "date_histogram": {
-        "field": "timestamp",
-        "interval": "1h",
-        "delay": "7d"
-      },
-      "terms": {
-        "fields": ["title"]
-      }
-    },
-    "metrics": [
-        {
-            "field": "price",
-            "metrics": ["avg"]
-        }
-    ]
-}</pre></div><p>Notice that each job now deals with a single "document type", and will not run into the limitations described above.  We are working on changes
-in core Elasticsearch to remove this limitation from the <code class="literal">composite</code> aggregation, and the documentation will be updated accordingly
-when this particular scenario is fixed.</p></div><div class="navfooter"><span class="prev"><a href="rollup-understanding-groups.html">
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="rollup-understanding-groups.html">
               « 
               Understanding Groups</a>
            
