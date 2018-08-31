@@ -636,9 +636,10 @@ Not what you want? See the
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="saml-role-mapping"></a>Configuring role mappings<a href="https://github.com/elastic/elasticsearch/edit/master/x-pack/docs/en/security/authentication/saml-guide.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When a user authenticates using SAML, they are identified to the Elastic Stack,
 but this does not automatically grant them access to perform any actions or
-access any data.</p><p>Your SAML users cannot do anything until they are mapped to X-Pack security
-roles. This mapping is performed through the
-<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-put-role-mapping.html" target="_top">add role mapping API</a>.</p><p>This is an example of a simple role mapping that grants the <code class="literal">kibana_user</code> role
+access any data.</p><p>Your SAML users cannot do anything until they are assigned X-Pack security
+roles. This is done through either the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-put-role-mapping.html" target="_top">add role mapping API</a>, or with
+<a class="link" href="realm-chains.html#authorization_realms" title="Delegating authorization to another realm">authorization realms</a>.</p><p>This is an example of a simple role mapping that grants the <code class="literal">kibana_user</code> role
 to any user who authenticates against the <code class="literal">saml1</code> realm:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_xpack/security/role_mapping/saml-kibana
 {
   "roles": [ "kibana_user" ],
@@ -669,7 +670,15 @@ via the <code class="literal">saml1</code> realm with the <code class="literal">
         { "field": { "realm.name": "saml1" } },
         { "field": { "groups": "finance-team" } }
   ] }
-}</pre></div><div class="console_widget" data-snippet="snippets/saml-role-mapping/2.json"></div></div><div class="navfooter"><span class="prev"><a href="saml-sp-metadata.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/saml-role-mapping/2.json"></div><p>If your users also exist in a repository that can be directly accessed by X-Pack security
+(such as an LDAP directory) then you can use
+<a class="link" href="realm-chains.html#authorization_realms" title="Delegating authorization to another realm">authorization realms</a> instead of role mappings.</p><p>In this case, you perform the following steps:
+1. In your SAML realm, assigned a SAML attribute to act as the lookup userid,
+   by configuring the <code class="literal">attributes.principal</code> setting.
+2. Create a new realm that can lookup users from your local repository (e.g. an
+   <code class="literal">ldap</code> realm)
+3. In your SAML realm, set <code class="literal">authorization_realms</code> to the name of the realm you
+   created in step 2.</p></div><div class="navfooter"><span class="prev"><a href="saml-sp-metadata.html">
               « 
               Generating SP metadata</a>
            
