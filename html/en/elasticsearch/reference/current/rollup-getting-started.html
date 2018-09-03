@@ -648,8 +648,7 @@ one hour or greater.  A rollup job might look like this:</p><div class="pre_wrap
     "groups" : {
       "date_histogram": {
         "field": "timestamp",
-        "interval": "1h",
-        "delay": "7d"
+        "interval": "60m"
       },
       "terms": {
         "fields": ["node"]
@@ -668,12 +667,12 @@ one hour or greater.  A rollup job might look like this:</p><div class="pre_wrap
 }</pre></div><div class="console_widget" data-snippet="snippets/rollup-getting-started/1.json"></div><p>We give the job the ID of "sensor" (in the url: <code class="literal">PUT _xpack/rollup/job/sensor</code>), and tell it to rollup the index pattern <code class="literal">"sensor-*"</code>.
 This job will find and rollup any index that matches that pattern. Rollup summaries are then stored in the <code class="literal">"sensor_rollup"</code> index.</p><p>The <code class="literal">cron</code> parameter controls when and how often the job activates.  When a rollup job’s cron schedule triggers, it will begin rolling up
 from where it left off after the last activation.  So if you configure the cron to run every 30 seconds, the job will process the last 30
-seconds worth of data that was indexed into the <code class="literal">sensor-*</code> indices.</p><p>If instead the cron was configured to run once a day at midnight, the job would process the last 24hours worth of data.  The choice is largely
+seconds worth of data that was indexed into the <code class="literal">sensor-*</code> indices.</p><p>If instead the cron was configured to run once a day at midnight, the job would process the last 24 hours worth of data.  The choice is largely
 preference, based on how "realtime" you want the rollups, and if you wish to process continuously or move it to off-peak hours.</p><p>Next, we define a set of <code class="literal">groups</code> and <code class="literal">metrics</code>.  The metrics are fairly straightforward: we want to save the min/max/sum of the <code class="literal">temperature</code>
 field, and the average of the <code class="literal">voltage</code> field.</p><p>The groups are a little more interesting.  Essentially, we are defining the dimensions that we wish to pivot on at a later date when
 querying the data.  The grouping in this job allows us to use date_histograms aggregations on the <code class="literal">timestamp</code> field, rolled up at hourly intervals.
 It also allows us to run terms aggregations on the <code class="literal">node</code> field.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Date histogram interval vs cron schedule</strong></p></div></div></div><p>You’ll note that the job’s cron is configured to run every 30 seconds, but the date_histogram is configured to
-rollup at hourly intervals.  How do these relate?</p><p>The date_histogram controls the granularity of the saved data.  Data will be rolled up into hourly intervals, and you will be unable
+rollup at 60 minute intervals.  How do these relate?</p><p>The date_histogram controls the granularity of the saved data.  Data will be rolled up into hourly intervals, and you will be unable
 to query with finer granularity.  The cron simply controls when the process looks for new data to rollup.  Every 30 seconds it will see
 if there is a new hour’s worth of data and roll it up.  If not, the job goes back to sleep.</p><p>Often, it doesn’t make sense to define such a small cron (30s) on a large interval (1h), because the majority of the activations will
 simply go back to sleep.  But there’s nothing wrong with it either, the job will do the right thing.</p></div><p>For more details about the job syntax, see <a class="xref" href="rollup-job-config.html" title="Rollup Job Configuration">Rollup Job Configuration</a>.</p><p>After you execute the above command and create the job, you’ll receive the following response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
@@ -742,65 +741,65 @@ is nearly identical to normal DSL, making it easy to integrate into dashboards a
         }
     }
 }</pre></div><div class="console_widget" data-snippet="snippets/rollup-getting-started/4.json"></div><p>Which returns a corresponding response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "took" : 93,
-  "timed_out" : false,
-  "terminated_early" : false,
-  "_shards" : ... ,
-  "hits" : {
-    "total" : 0,
-    "max_score" : 0.0,
-    "hits" : [ ]
-  },
-  "aggregations" : {
-    "timeline" : {
-      "meta" : { },
-      "buckets" : [
-        {
-          "key_as_string" : "2018-01-18T00:00:00.000Z",
-          "key" : 1516233600000,
-          "doc_count" : 6,
-          "nodes" : {
-            "doc_count_error_upper_bound" : 0,
-            "sum_other_doc_count" : 0,
-            "buckets" : [
-              {
-                "key" : "a",
-                "doc_count" : 2,
-                "max_temperature" : {
-                  "value" : 202.0
-                },
-                "avg_voltage" : {
-                  "value" : 5.1499998569488525
-                }
-              },
-              {
-                "key" : "b",
-                "doc_count" : 2,
-                "max_temperature" : {
-                  "value" : 201.0
-                },
-                "avg_voltage" : {
-                  "value" : 5.700000047683716
-                }
-              },
-              {
-                "key" : "c",
-                "doc_count" : 2,
-                "max_temperature" : {
-                  "value" : 202.0
-                },
-                "avg_voltage" : {
-                  "value" : 4.099999904632568
-                }
-              }
-            ]
-          }
-        }
-      ]
-    }
-  }
+   "took" : 93,
+   "timed_out" : false,
+   "terminated_early" : false,
+   "_shards" : ... ,
+   "hits" : {
+     "total" : 0,
+     "max_score" : 0.0,
+     "hits" : [ ]
+   },
+   "aggregations" : {
+     "timeline" : {
+       "meta" : { },
+       "buckets" : [
+         {
+           "key_as_string" : "2018-01-18T00:00:00.000Z",
+           "key" : 1516233600000,
+           "doc_count" : 6,
+           "nodes" : {
+             "doc_count_error_upper_bound" : 0,
+             "sum_other_doc_count" : 0,
+             "buckets" : [
+               {
+                 "key" : "a",
+                 "doc_count" : 2,
+                 "max_temperature" : {
+                   "value" : 202.0
+                 },
+                 "avg_voltage" : {
+                   "value" : 5.1499998569488525
+                 }
+               },
+               {
+                 "key" : "b",
+                 "doc_count" : 2,
+                 "max_temperature" : {
+                   "value" : 201.0
+                 },
+                 "avg_voltage" : {
+                   "value" : 5.700000047683716
+                 }
+               },
+               {
+                 "key" : "c",
+                 "doc_count" : 2,
+                 "max_temperature" : {
+                   "value" : 202.0
+                 },
+                 "avg_voltage" : {
+                   "value" : 4.099999904632568
+                 }
+               }
+             ]
+           }
+         }
+       ]
+     }
+   }
 }</pre></div><p>In addition to being more complicated (date histogram and a terms aggregation, plus an additional average metric), you’ll notice
-the date_histogram uses a <code class="literal">7d</code> interval instead of <code class="literal">1h</code>.</p><h3><a id="_conclusion_2"></a>Conclusion<a href="https://github.com/elastic/elasticsearch/edit/6.4/docs/reference/rollup/rollup-getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This quickstart should have provided a concise overview of the core functionality that Rollup exposes.  There are more tips and things
+the date_histogram uses a <code class="literal">7d</code> interval instead of <code class="literal">60m</code>.</p><h3><a id="_conclusion_2"></a>Conclusion<a href="https://github.com/elastic/elasticsearch/edit/6.4/docs/reference/rollup/rollup-getting-started.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This quickstart should have provided a concise overview of the core functionality that Rollup exposes.  There are more tips and things
 to consider when setting up Rollups, which you can find throughout the rest of this section.  You may also explore the <a class="link" href="rollup-api-quickref.html" title="API Quick Reference">REST API</a>
 for an overview of what is available.</p></div><div class="navfooter"><span class="prev"><a href="rollup-api-quickref.html">
               « 
