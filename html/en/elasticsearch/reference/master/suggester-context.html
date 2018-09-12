@@ -643,7 +643,8 @@ configuring a completion field. You can define multiple context mappings for a
 completion field.
 Every context mapping has a unique name and a type. There are two types: <code class="literal">category</code>
 and <code class="literal">geo</code>. Context mappings are configured under the <code class="literal">contexts</code> parameter in
-the field mapping.</p><p>The following defines types, each with two context mappings for a completion
+the field mapping.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>It is mandatory to provide a context when indexing and querying
+      a context enabled completion field.</p></div></div><p>The following defines types, each with two context mappings for a completion
 field:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT place
 {
     "mappings": {
@@ -707,11 +708,7 @@ Defines a <code class="literal">category</code> context named <span class="empha
 Defines a <code class="literal">geo</code> context named <span class="emphasis"><em>location</em></span> where the categories are read from
     the <code class="literal">loc</code> field.
 </p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Adding context mappings increases the index size for completion field. The completion index
-is entirely heap resident, you can monitor the completion field index size using <a class="xref" href="indices-stats.html" title="Indices Stats"><em>Indices Stats</em></a>.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p><span class="deprecated">
-      [<span class="version">7.0.0</span>]
-      <span class="detail">Deprecated in 7.0.0. 
-Indexing a suggestion without context on a context enabled completion field is deprecated and will be removed in the next major release. If you want to index a suggestion that matches all contexts you should add a special context for it.
-</span></span></p></div></div><h4><a id="suggester-context-category"></a>Category Context<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">category</code> context allows you to associate one or more categories with suggestions at index
+is entirely heap resident, you can monitor the completion field index size using <a class="xref" href="indices-stats.html" title="Indices Stats"><em>Indices Stats</em></a>.</p></div></div><h4><a id="suggester-context-category"></a>Category Context<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">category</code> context allows you to associate one or more categories with suggestions at index
 time. At query time, suggestions can be filtered and boosted by their associated categories.</p><p>The mappings are set up like the <code class="literal">place_type</code> fields above. If <code class="literal">path</code> is defined
 then the categories are read from that path in the document, otherwise they must
 be sent in the suggest field like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT place/_doc/1
@@ -748,11 +745,9 @@ filters suggestions by multiple categories:</p><div class="pre_wrapper"><pre cla
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/suggester-context/4.json"></div><p>Note: <span class="deprecated">
-      [<span class="version">7.0.0</span>]
-      <span class="detail">Deprecated in 7.0.0. 
-When no categories are provided at query-time
-</span></span></p><p>Suggestions with certain categories can be boosted higher than others.
+}</pre></div><div class="console_widget" data-snippet="snippets/suggester-context/4.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If multiple categories or category contexts are set on the query
+they are merged as a disjunction. This means that suggestions match
+if they contain at least one of the provided context values.</p></div></div><p>Suggestions with certain categories can be boosted higher than others.
 The following filters suggestions by categories and additionally boosts
 suggestions associated with some categories:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST place/_search?pretty
 {
@@ -810,7 +805,8 @@ multiple category context clauses. The following parameters are supported for a
     so on, by specifying a category prefix of <span class="emphasis"><em>type</em></span>.
     Defaults to <code class="literal">false</code>
 </p>
-</td></tr></tbody></table></div><h4><a id="suggester-context-geo"></a>Geo location Context<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A <code class="literal">geo</code> context allows you to associate one or more geo points or geohashes with suggestions
+</td></tr></tbody></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If a suggestion entry matches multiple contexts the final score is computed as the
+maximum score produced by any matching contexts.</p></div></div><h4><a id="suggester-context-geo"></a>Geo location Context<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>A <code class="literal">geo</code> context allows you to associate one or more geo points or geohashes with suggestions
 at index time. At query time, suggestions can be filtered and boosted if they are within
 a certain distance of a specified geo location.</p><p>Internally, geo points are encoded as geohashes with the specified precision.</p><h5><a id="_geo_mapping"></a>Geo Mapping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/suggesters/context-suggest.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>In addition to the <code class="literal">path</code> setting, <code class="literal">geo</code> context mapping accepts the following settings:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
@@ -863,7 +859,9 @@ the encoded geohash of a geo point:</p><div class="pre_wrapper"><pre class="prog
         }
     }
 }</pre></div><div class="console_widget" data-snippet="snippets/suggester-context/7.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When a location with a lower precision at query time is specified, all suggestions
-that fall within the area will be considered.</p></div></div><p>Suggestions that are within an area represented by a geohash can also be boosted higher
+that fall within the area will be considered.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If multiple categories or category contexts are set on the query
+they are merged as a disjunction. This means that suggestions match
+if they contain at least one of the provided context values.</p></div></div><p>Suggestions that are within an area represented by a geohash can also be boosted higher
 than others, as shown by the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST place/_search?pretty
 {
     "suggest": {
@@ -897,7 +895,8 @@ The context query filters for suggestions that fall under
     with a precision of <span class="emphasis"><em>2</em></span> and boosts suggestions
     that fall under the geohash representation of <span class="emphasis"><em>(43.6624803, -79.3863353)</em></span>
     with a default precision of <span class="emphasis"><em>6</em></span> by a factor of <code class="literal">2</code>
-</p></td></tr></table></div><p>In addition to accepting context values, a context query can be composed of
+</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If a suggestion entry matches multiple contexts the final score is computed as the
+maximum score produced by any matching contexts.</p></div></div><p>In addition to accepting context values, a context query can be composed of
 multiple context clauses. The following parameters are supported for a
 <code class="literal">category</code> context clause:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
