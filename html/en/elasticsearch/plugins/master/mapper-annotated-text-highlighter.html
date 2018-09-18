@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Mapper Plugins
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Using the annotated highlighter
         | Elasticsearch Plugins and Integrations [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="prev" href="management.html" title="Management Plugins" /><link rel="next" href="mapper-size.html" title="Mapper Size Plugin" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Plugins/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Plugins and Integrations [master]" /><link rel="up" href="mapper-annotated-text.html" title="Mapper Annotated Text Plugin" /><link rel="prev" href="mapper-annotated-text-tips.html" title="Data modelling tips" /><link rel="next" href="mapper-annotated-text-limitations.html" title="Limitations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Plugins/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
     
 
     
@@ -627,39 +627,61 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Plugins and Integrations
       [master]
-    </a></span> » <span class="breadcrumb-node">Mapper Plugins</span></div><div class="navheader"><span class="prev"><a href="management.html">
+    </a></span> » <span class="breadcrumb-link"><a href="mapper.html">Mapper Plugins</a></span> » <span class="breadcrumb-link"><a href="mapper-annotated-text.html">Mapper Annotated Text Plugin</a></span> » <span class="breadcrumb-node">Using the <code class="literal">annotated</code> highlighter</span></div><div class="navheader"><span class="prev"><a href="mapper-annotated-text-tips.html">
               « 
-              Management Plugins</a>
+              Data modelling tips</a>
            
         </span><span class="next">
            
-          <a href="mapper-size.html">Mapper Size Plugin
+          <a href="mapper-annotated-text-limitations.html">Limitations
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="mapper"></a>Mapper Plugins<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/mapper.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Mapper plugins allow new field datatypes to be added to Elasticsearch.</p><h3><a id="_core_mapper_plugins"></a>Core mapper plugins<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/mapper.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The core mapper plugins are:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<a class="xref" href="mapper-size.html" title="Mapper Size Plugin">Mapper Size Plugin</a>
-</span></dt><dd>
-The mapper-size plugin provides the <code class="literal">_size</code> meta field which, when enabled,
-indexes the size in bytes of the original
-<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/mapping-source-field.html" target="_top"><code class="literal">_source</code></a> field.
-</dd><dt><span class="term">
-<a class="xref" href="mapper-murmur3.html" title="Mapper Murmur3 Plugin">Mapper Murmur3 Plugin</a>
-</span></dt><dd>
-The mapper-murmur3 plugin allows hashes to be computed at index-time and stored
-in the index for later use with the <code class="literal">cardinality</code> aggregation.
-</dd><dt><span class="term">
-<a class="xref" href="mapper-annotated-text.html" title="Mapper Annotated Text Plugin">Mapper Annotated Text Plugin</a>
-</span></dt><dd>
-The annotated text plugin provides the ability to index text that is a
-combination of free-text and special markup that is typically used to identify
-items of interest such as people or organisations (see NER or Named Entity Recognition
-tools).
-</dd></dl></div></div><div class="navfooter"><span class="prev"><a href="management.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="mapper-annotated-text-highlighter"></a>Using the <code class="literal">annotated</code> highlighter<a href="https://github.com/elastic/elasticsearch/edit/master/docs/plugins/mapper-annotated-text.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">annotated-text</code> plugin includes a custom highlighter designed to mark up search hits
+in a way which is respectful of the original markup:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js"># Example documents
+PUT my_index/_doc/1
+{
+  "my_field": "The cat sat on the [mat](sku3578)"
+}
+
+GET my_index/_search
+{
+  "query": {
+    "query_string": {
+        "query": "cats"
+    }
+  },
+  "highlight": {
+    "fields": {
+      "my_field": {
+        "type": "annotated", <a id="CO21-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "require_field_match": false
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/mapper-annotated-text-highlighter/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO21-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The <code class="literal">annotated</code> highlighter type is designed for use with annotated_text fields
+</p></td></tr></table></div><p>The annotated highlighter is based on the <code class="literal">unified</code> highlighter and supports the same
+settings but does not use the <code class="literal">pre_tags</code> or <code class="literal">post_tags</code> parameters. Rather than using
+html-like markup such as <code class="literal">&lt;em&gt;cat&lt;/em&gt;</code> the annotated highlighter uses the same
+markdown-like syntax used for annotations and injects a key=value annotation where <code class="literal">_hit_term</code>
+is the  key and the matched search term is the value e.g.</p><pre class="literallayout">The [cat](_hit_term=cat) sat on the [mat](sku3578)</pre><p>The annotated highlighter tries to be respectful of any existing markup in the original
+text:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+If the search term matches exactly the location of an existing annotation then the
+<code class="literal">_hit_term</code> key is merged into the url-like syntax used in the <code class="literal">(...)</code> part of the
+existing annotation.
+</li><li class="listitem">
+However, if the search term overlaps the span of an existing annotation it would break
+the markup formatting so the original annotation is removed in favour of a new annotation
+with just the search hit information in the results.
+</li><li class="listitem">
+Any non-overlapping annotations in the original text are preserved in highlighter
+selections
+</li></ul></div></div><div class="navfooter"><span class="prev"><a href="mapper-annotated-text-tips.html">
               « 
-              Management Plugins</a>
+              Data modelling tips</a>
            
         </span><span class="next">
            
-          <a href="mapper-size.html">Mapper Size Plugin
+          <a href="mapper-annotated-text-limitations.html">Limitations
                »
             </a></span></div>
 <!-- end body -->
