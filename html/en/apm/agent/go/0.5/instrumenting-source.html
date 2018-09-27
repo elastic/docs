@@ -635,7 +635,10 @@
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="instrumenting-source"></a>Instrumenting Go Source Code<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>At present, Go applications must be instrumented manually at the source code level.
 Where possible, you should use the <a class="link" href="instrumenting-source.html#builtin-modules" title="Built-in Modules">built-in instrumentation modules</a>
 to report transactions served by web and RPC frameworks in your application. If the
-built-in modules are not suitable, please refer to <a class="link" href="instrumenting-source.html#custom-instrumentation" title="Custom instrumentation">Custom Instrumentation</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="builtin-modules"></a>Built-in Modules<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmecho"></a>module/apmecho<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmecho provides middleware for the <a class="ulink" href="https://github.com/labstack/echo" target="_top">Echo</a> web framework.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+built-in modules are not suitable, please refer to <a class="link" href="instrumenting-source.html#custom-instrumentation" title="Custom instrumentation">Custom Instrumentation</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="builtin-modules"></a>Built-in Modules<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Below we describe the built-in instrumentation modules.</p><p>For each of the server instrumentation modules, a transaction is reported for each handled
+request. The transaction will be stored in the request context, which can be obtained through
+that framework’s API. The request context can be used for reporting <a class="link" href="instrumenting-source.html#custom-instrumentation-spans" title="Spans">custom spans</a>.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmecho"></a>module/apmecho<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmecho provides middleware for the <a class="ulink" href="https://github.com/labstack/echo" target="_top">Echo</a> web framework.</p><p>For each request, a transaction is stored in the request context, which can be obtained via
+<a class="ulink" href="https://godoc.org/github.com/labstack/echo#Context" target="_top">echo.Context</a><code class="literal">.Request().Context()</code> in your handler.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
         "github.com/labstack/echo"
         "github.com/elastic/apm-agent-go/module/apmecho"
 )
@@ -645,7 +648,8 @@ func main() {
         e.Use(apmecho.Middleware())
         ...
 }</pre></div><p>The apmecho middleware will recover panics and send them to Elastic APM,
-so you do not need to install the echo/middleware.Recover middleware.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmgin"></a>module/apmgin<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgin provides middleware for the <a class="ulink" href="https://gin-gonic.github.io/gin/" target="_top">Gin</a> web framework.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+so you do not need to install the echo/middleware.Recover middleware.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmgin"></a>module/apmgin<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgin provides middleware for the <a class="ulink" href="https://gin-gonic.github.io/gin/" target="_top">Gin</a> web framework.</p><p>For each request, a transaction is stored in the request context, which can be obtained via
+<a class="ulink" href="https://godoc.org/github.com/gin-gonic/gin#Context" target="_top">gin.Context</a><code class="literal">.Request.Context()</code> in your handler.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
         "github.com/elastic/apm-agent-go/module/apmgin"
 )
 
@@ -653,7 +657,8 @@ func main() {
         engine := gin.New()
         engine.Use(apmgin.Middleware(engine))
         ...
-}</pre></div><p>The apmgin middleware will recover panics and send them to Elastic APM, so you do not need to install the gin.Recovery middleware.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmgorilla"></a>module/apmgorilla<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgorilla provides middleware for the <a class="ulink" href="http://www.gorillatoolkit.org/pkg/mux" target="_top">Gorilla Mux</a> router.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+}</pre></div><p>The apmgin middleware will recover panics and send them to Elastic APM, so you do not need to install the gin.Recovery middleware.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmgorilla"></a>module/apmgorilla<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgorilla provides middleware for the <a class="ulink" href="http://www.gorillatoolkit.org/pkg/mux" target="_top">Gorilla Mux</a> router.</p><p>For each request, a transaction is stored in the request context, which can be obtained via
+<a class="ulink" href="https://golang.org/pkg/net/http/#Request" target="_top">http.Request</a><code class="literal">.Context()</code> in your handler.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
         "github.com/gorilla/mux"
 
         "github.com/elastic/apm-agent-go/module/apmgorilla"
@@ -665,7 +670,8 @@ func main() {
         ...
 }</pre></div><p>The apmgorilla middleware will recover panics and send them to Elastic APM, so you do not need to install any other recovery middleware.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmgrpc"></a>module/apmgrpc<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgrpc provides server and client interceptors for <a class="ulink" href="https://github.com/grpc/grpc-go" target="_top">gRPC-Go</a>.
 Server interceptors report transactions for each incoming request, while client interceptors
-report spans for each outgoing request.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+report spans for each outgoing request. For each RPC served, a transaction is stored in the
+context passed into the method.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
         "github.com/elastic/apm-agent-go/module/apmgrpc"
 )
 
@@ -684,7 +690,8 @@ by apmgrpc.</p><div class="pre_wrapper"><pre class="programlisting prettyprint l
 ))
 ...</pre></div><p>There is currently no support for intercepting at the stream level. Please file an issue and/or
 send a pull request if this is something you need.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmhttp"></a>module/apmhttp<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmhttp provides a low-level <code class="literal">net/http</code> middleware handler. Other web middleware should
-typically be based off this.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+typically be based off this.</p><p>For each request, a transaction is stored in the request context, which can be obtained via
+<a class="ulink" href="https://golang.org/pkg/net/http/#Request" target="_top">http.Request</a><code class="literal">.Context()</code> in your handler.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
         "github.com/elastic/apm-agent-go/module/apmhttp"
 )
 
@@ -707,7 +714,8 @@ func serverHandler(w http.ResponseWriter, req *http.Request) {
 
 func main() {
         http.ListenAndServe(":8080", apmhttp.Wrap(serverHandler))
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmhttprouter"></a>module/apmhttprouter<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmhttprouter provides a low-level middleware handler for <a class="ulink" href="https://github.com/julienschmidt/httprouter" target="_top">httprouter</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmhttprouter"></a>module/apmhttprouter<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmhttprouter provides a low-level middleware handler for <a class="ulink" href="https://github.com/julienschmidt/httprouter" target="_top">httprouter</a>.</p><p>For each request, a transaction is stored in the request context, which can be obtained via
+<a class="ulink" href="https://golang.org/pkg/net/http/#Request" target="_top">http.Request</a><code class="literal">.Context()</code> in your handler.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
         "github.com/julienschmidt/httprouter"
 
         "github.com/elastic/apm-agent-go/module/apmhttprouter"
@@ -815,15 +823,86 @@ reported, but with limited context and without any spans. To determine whether a
 transaction is sampled, use the <code class="literal">Transaction.Sampled</code> method; if it returns false,
 you should avoid unnecessary storage or processing required for setting transaction
 context.</p><p>Once you have started a transaction, you can include it in a <code class="literal">context</code> object for
-propagating throughout the application.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">ctx = elasticapm.ContextWithTransaction(ctx, tx)</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_spans"></a>Spans<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>To report an operation within a transaction, you should use <a class="link" href="api.html#transaction-start-span" title="func (*Transaction) StartSpan(name, spanType string, parent *Span) *Spanedit">Transaction.StartSpan</a>
+propagating throughout the application. See <a class="link" href="instrumenting-source.html#custom-instrumentation-propagation" title="Context propagation">context propagation</a>
+for more details.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">ctx = elasticapm.ContextWithTransaction(ctx, tx)</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="custom-instrumentation-spans"></a>Spans<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>To report an operation within a transaction, you should use <a class="link" href="api.html#transaction-start-span" title="func (*Transaction) StartSpan(name, spanType string, parent *Span) *Spanedit">Transaction.StartSpan</a>
 or <a class="link" href="api.html#elasticapm-start-span" title="func StartSpan(ctx context.Context, name, spanType string) (*Span, context.Context)edit">elasticapm.StartSpan</a> to start a span given a transaction or a <code class="literal">context</code>
 containing a transaction, respectively. Like a transaction, a span has a name and a type. In addition,
 a span can have a parent span within the same transaction. If the context provided to <code class="literal">elasticapm.StartSpan</code>
-contains a span, then that will be considered the parent.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">span, ctx := elasticapm.StartSpan(ctx, "SELECT FROM foo", "db.mysql.query")
+contains a span, then that will be considered the parent. See <a class="link" href="instrumenting-source.html#custom-instrumentation-propagation" title="Context propagation">context propagation</a>
+for more details.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">span, ctx := elasticapm.StartSpan(ctx, "SELECT FROM foo", "db.mysql.query")
 defer span.End()</pre></div><p><code class="literal">Transaction.StartSpan</code> and <code class="literal">elasticapm.StartSpan</code> will always return a non-nil <code class="literal">Span</code>, even if the
 transaction is nil. It is always safe to defer a call to the span’s End method. If setting the span’s
 context would incur significant overhead, you may want to check if the span is dropped first, by calling
-the <code class="literal">Span.Dropped</code> method.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_panic_recovery_and_errors"></a>Panic recovery and errors<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you want to recover panics, and report them along with your transaction, you can use the
+the <code class="literal">Span.Dropped</code> method.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="custom-instrumentation-propagation"></a>Context propagation<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>In Go, <a class="ulink" href="https://golang.org/pkg/context/" target="_top">context</a> is used to propagate request-scoped values along a call
+chain, potentially crossing between goroutines and between processes. For servers based on <code class="literal">net/http</code>,
+each request contains an independent context object, which allows adding values specific to that particular
+request.</p><p>When you start a transaction, you can add it to a context object using
+<a class="link" href="api.html#elasticapm-context-with-transaction" title="func ContextWithTransaction(context.Context, *Transaction) context.Contextedit">elasticapm.ContextWithTransaction</a>. This context object can be
+later passed to <a class="link" href="api.html#elasticapm-transaction-from-context" title="func TransactionFromContext(context.Context) *Transactionedit">elasticapm.TransactionFromContext</a> to obtain
+the transaction, or into <a class="link" href="api.html#elasticapm-start-span" title="func StartSpan(ctx context.Context, name, spanType string) (*Span, context.Context)edit">elasticapm.StartSpan</a> to start a span.</p><p>The simplest way to create and propagate a span is by using <a class="link" href="api.html#elasticapm-start-span" title="func StartSpan(ctx context.Context, name, spanType string) (*Span, context.Context)edit">elasticapm.StartSpan</a>,
+which takes a context and returns a span. The span will be created as a child of the span most recently
+added to this context, or a transaction added to the context as described above. If the context contains
+neither a transaction nor a span, then the span will be dropped (i.e. will not be reported to the APM Server.)</p><p>For example, take a simple CRUD-type web service, which accepts requests over HTTP and then makes
+corresponding database queries. For each incoming request, a transaction will be started and added to the
+request context automatically. This context needs to be passed into method calls within the handler manually
+in order to create spans within that transaction, e.g. to measure the duration of SQL queries.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+        "net/http"
+
+        "github.com/elastic/apm-agent-go"
+        "github.com/elastic/apm-agent-go/module/apmhttp"
+        "github.com/elastic/apm-agent-go/module/apmsql"
+        _ "github.com/elastic/apm-agent-go/module/apmsql/pq"
+)
+
+var db *sql.DB
+
+func init() {
+        // apmsql.Open wraps sql.Open, in order
+        // to add tracing to database operations.
+        db, _ = apmsql.Open("postgres", "")
+}
+
+func main() {
+        mux := http.NewServeMux()
+        mux.HandleFunc("/", handleList)
+
+        // apmhttp.Wrap instruments an http.Handler, in order
+        // to report any request to this handler as a transaction,
+        // and to store the transaction in the request's context.
+        handler := apmhttp.Wrap(mux)
+        http.ListenAndServe(":8080", handler)
+}
+
+func handleList(w http.ResponseWriter, req *http.Request) {
+        // By passing the request context down to getList, getList can add spans to it.
+        ctx := req.Context()
+        getList(ctx)
+        ...
+}
+
+func getList(ctx context.Context) (
+        // When getList is called with a context containing a transaction or span,
+        // StartSpan creates a child span. In this example, getList is always called
+        // with a context containing a transaction for the handler, so we should
+        // expect to see something like:
+        //
+        //     Transaction: handleList
+        //         Span: getList
+        //             Span: SELECT FROM items
+        //
+        span, ctx := elasticapm.StartSpan(ctx, "getList", "custom")
+        defer span.End()
+
+        // NOTE: The context object ctx returned by StartSpan above contains
+        // the current span now, so subsequent calls to StartSpan create new
+        // child spans.
+
+        // db was opened with apmsql, so queries will be reported as
+        // spans when using the context methods.
+        rows, err := db.QueryContext(ctx, "SELECT * FROM items")
+        ...
+        rows.Close()
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_panic_recovery_and_errors"></a>Panic recovery and errors<a href="https://github.com/elastic/apm-agent-go/edit/0.5/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>If you want to recover panics, and report them along with your transaction, you can use the
 <a class="link" href="api.html#tracer-recover" title="func (*Tracer) Recover(*Transaction)edit">Tracer.Recover</a> or <a class="link" href="api.html#tracer-recovered" title="func (*Tracer) Recovered(interface{}, *Transaction) *Erroredit">Tracer.Recovered</a> methods. The former should be
 used as a deferred call, while the latter can be used if you have your own recovery logic. There are also
 methods for reporting non-panic errors: <a class="link" href="api.html#tracer-new-error" title="func (*Tracer) NewError(error) *Erroredit">Tracer.NewError</a>,
