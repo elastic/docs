@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Usage
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Common configuration
         | Java REST Client [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java REST Client [6.x]" /><link rel="up" href="sniffer.html" title="Sniffer" /><link rel="prev" href="_maven_repository.html" title="Maven Repository" /><link rel="next" href="_license.html" title="License" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/JavaREST/6.x" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Clients" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java REST Client [6.x]" /><link rel="up" href="java-rest-low.html" title="Java Low Level REST Client" /><link rel="prev" href="java-rest-low-usage-logging.html" title="Logging" /><link rel="next" href="_timeouts.html" title="Timeouts" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/JavaREST/6.x" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Clients" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.x" />
     
 
     
@@ -627,102 +627,27 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Java REST Client
       [6.x]
-    </a></span> » <span class="breadcrumb-link"><a href="java-rest-low.html">Java Low Level REST Client</a></span> » <span class="breadcrumb-link"><a href="sniffer.html">Sniffer</a></span> » <span class="breadcrumb-node">Usage</span></div><div class="navheader"><span class="prev"><a href="_maven_repository.html">
+    </a></span> » <span class="breadcrumb-link"><a href="java-rest-low.html">Java Low Level REST Client</a></span> » <span class="breadcrumb-node">Common configuration</span></div><div class="navheader"><span class="prev"><a href="java-rest-low-usage-logging.html">
               « 
-              Maven Repository</a>
+              Logging</a>
            
         </span><span class="next">
            
-          <a href="_license.html">License
+          <a href="_timeouts.html">Timeouts
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_usage"></a>Usage<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/low-level/sniffer.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Once a <code class="literal">RestClient</code> instance has been created as shown in <a class="xref" href="java-rest-low-usage-initialization.html" title="Initialization">Initialization</a>,
-a <code class="literal">Sniffer</code> can be associated to it. The <code class="literal">Sniffer</code> will make use of the provided <code class="literal">RestClient</code>
-to periodically (every 5 minutes by default) fetch the list of current nodes from the cluster
-and update them by calling <code class="literal">RestClient#setNodes</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestClient restClient = RestClient.builder(
-    new HttpHost("localhost", 9200, "http"))
-    .build();
-Sniffer sniffer = Sniffer.builder(restClient).build();</pre></div><p>It is important to close the <code class="literal">Sniffer</code> so that its background thread gets
-properly shutdown and all of its resources are released. The <code class="literal">Sniffer</code>
-object should have the same lifecycle as the <code class="literal">RestClient</code> and get closed
-right before the client:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">sniffer.close();
-restClient.close();</pre></div><p>The <code class="literal">Sniffer</code> updates the nodes by default every 5 minutes. This interval can
-be customized by providing it (in milliseconds) as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestClient restClient = RestClient.builder(
-    new HttpHost("localhost", 9200, "http"))
-    .build();
-Sniffer sniffer = Sniffer.builder(restClient)
-    .setSniffIntervalMillis(60000).build();</pre></div><p>It is also possible to enable sniffing on failure, meaning that after each
-failure the nodes list gets updated straightaway rather than at the following
-ordinary sniffing round. In this case a <code class="literal">SniffOnFailureListener</code> needs to
-be created at first and provided at <code class="literal">RestClient</code> creation. Also once the
-<code class="literal">Sniffer</code> is later created, it needs to be associated with that same
-<code class="literal">SniffOnFailureListener</code> instance, which will be notified at each failure
-and use the <code class="literal">Sniffer</code> to perform the additional sniffing round as described.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">SniffOnFailureListener sniffOnFailureListener =
-    new SniffOnFailureListener();
-RestClient restClient = RestClient.builder(
-    new HttpHost("localhost", 9200))
-    .setFailureListener(sniffOnFailureListener) <a id="CO14-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-    .build();
-Sniffer sniffer = Sniffer.builder(restClient)
-    .setSniffAfterFailureDelayMillis(30000) <a id="CO14-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-    .build();
-sniffOnFailureListener.setSniffer(sniffer); <a id="CO14-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Set the failure listener to the <code class="literal">RestClient</code> instance
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-When sniffing on failure, not only do the nodes get updated after each
-failure, but an additional sniffing round is also scheduled sooner than usual,
-by default one minute after the failure, assuming that things will go back to
-normal and we want to detect that as soon as possible. Said interval can be
-customized  at <code class="literal">Sniffer</code> creation time through the <code class="literal">setSniffAfterFailureDelayMillis</code>
-method. Note that this last configuration parameter has no effect in case sniffing
-on failure is not enabled like explained above.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO14-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Set the <code class="literal">Sniffer</code> instance to the failure listener
-</p></td></tr></table></div><p>The Elasticsearch Nodes Info api doesn’t return the protocol to use when
-connecting to the nodes but only their <code class="literal">host:port</code> key-pair, hence <code class="literal">http</code>
-is used by default. In case <code class="literal">https</code> should be used instead, the
-<code class="literal">ElasticsearchNodesSniffer</code> instance has to be manually created and provided
-as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestClient restClient = RestClient.builder(
-        new HttpHost("localhost", 9200, "http"))
-        .build();
-NodesSniffer nodesSniffer = new ElasticsearchNodesSniffer(
-        restClient,
-        ElasticsearchNodesSniffer.DEFAULT_SNIFF_REQUEST_TIMEOUT,
-        ElasticsearchNodesSniffer.Scheme.HTTPS);
-Sniffer sniffer = Sniffer.builder(restClient)
-        .setNodesSniffer(nodesSniffer).build();</pre></div><p>In the same way it is also possible to customize the <code class="literal">sniffRequestTimeout</code>,
-which defaults to one second. That is the <code class="literal">timeout</code> parameter provided as a
-querystring parameter when calling the Nodes Info api, so that when the
-timeout expires on the server side, a valid response is still returned
-although it may contain only a subset of the nodes that are part of the
-cluster, the ones that have responded until then.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestClient restClient = RestClient.builder(
-    new HttpHost("localhost", 9200, "http"))
-    .build();
-NodesSniffer nodesSniffer = new ElasticsearchNodesSniffer(
-    restClient,
-    TimeUnit.SECONDS.toMillis(5),
-    ElasticsearchNodesSniffer.Scheme.HTTP);
-Sniffer sniffer = Sniffer.builder(restClient)
-    .setNodesSniffer(nodesSniffer).build();</pre></div><p>Also, a custom <code class="literal">NodesSniffer</code> implementation can be provided for advanced
-use-cases that may require fetching the `Node`s from external sources rather
-than from Elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">RestClient restClient = RestClient.builder(
-    new HttpHost("localhost", 9200, "http"))
-    .build();
-NodesSniffer nodesSniffer = new NodesSniffer() {
-        @Override
-        public List&lt;Node&gt; sniff() throws IOException {
-            return null; <a id="CO15-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        }
-    };
-Sniffer sniffer = Sniffer.builder(restClient)
-    .setNodesSniffer(nodesSniffer).build();</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO15-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Fetch the hosts from the external source
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="_maven_repository.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="java-rest-low-config"></a>Common configuration<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-rest/low-level/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>As explained in <a class="xref" href="java-rest-low-usage-initialization.html" title="Initialization">Initialization</a>, the <code class="literal">RestClientBuilder</code>
+supports providing both a <code class="literal">RequestConfigCallback</code> and an <code class="literal">HttpClientConfigCallback</code>
+which allow for any customization that the Apache Async Http Client exposes.
+Those callbacks make it possible to modify some specific behaviour of the client
+without overriding every other default configuration that the <code class="literal">RestClient</code>
+is initialized with. This section describes some common scenarios that require
+additional configuration for the low-level Java REST Client.</p></div><div class="navfooter"><span class="prev"><a href="java-rest-low-usage-logging.html">
               « 
-              Maven Repository</a>
+              Logging</a>
            
         </span><span class="next">
            
-          <a href="_license.html">License
+          <a href="_timeouts.html">Timeouts
                »
             </a></span></div>
 <!-- end body -->
