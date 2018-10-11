@@ -636,7 +636,7 @@ Not what you want? See the
           <a href="azure-marketplace-accessing-resources.html">Accessing resources
                »
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="azure-marketplace-getting-started"></a>Getting started<a href="https://github.com/elastic/azure-marketplace/edit/master/docs/azure-marketplace.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Navigate to the <a class="ulink" href="https://azuremarketplace.microsoft.com/en-au/marketplace/apps/elastic.elasticsearch" target="_top">Azure Marketplace</a> offering, and click the "Get it Now"
-button:</p><p><span class="inlinemediaobject"><img src="images/marketplace.jpg" alt="images/marketplace.jpg" /></span></p><p>This will take you straight to the solution from the Marketplace, within the
+button:</p><p><span class="inlinemediaobject"><img src="images/marketplace.png" alt="images/marketplace.png" /></span></p><p>This will take you straight to the solution from the Marketplace, within the
 <a class="ulink" href="https://portal.azure.com" target="_top">Azure portal</a>. If you’re not already logged into the portal, you’ll be
 prompted to do so first.</p><p>Once you’re ready to proceed, click the Create button to walk through the steps.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="marketplace-steps"></a>Marketplace steps<a href="https://github.com/elastic/azure-marketplace/edit/master/docs/azure-marketplace.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Each step of the process is presented in its own blade within the portal, which
 we’ll walk through.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="basics-step"></a>Basics<a href="https://github.com/elastic/azure-marketplace/edit/master/docs/azure-marketplace.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The first step involves setting up the details for the username and authentication
@@ -683,7 +683,32 @@ the new host using the OS disk from the storage account, and <span class="emphas
 will be created on the new host</em></span>.</p><p>Using temp storage <span class="emphasis"><em>can</em></span> be a cost effective way of running an
 Elasticsearch cluster on Azure with decent performance, <span class="emphasis"><em>so long</em></span> as you understand
 the tradeoffs in doing so, by snapshotting frequently and ensuring adequate data
-redundancy through sufficient replica shards.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="user-configuration-step"></a>User configuration<a href="https://github.com/elastic/azure-marketplace/edit/master/docs/azure-marketplace.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>An Elasticsearch cluster deployed through the Azure Marketplace is always deployed
+redundancy through sufficient replica shards.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="external-access-step"></a>Kibana, Logstash and External Access<a href="https://github.com/elastic/azure-marketplace/edit/master/docs/azure-marketplace.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Kibana &amp; Logstash blade determines whether to deploy Kibana and/or Logstash
+in addition to Elasticsearch, as well as how the cluster can be accessed from outside
+of the virtual network:</p><p><span class="inlinemediaobject"><img src="images/marketplace_step4.png" alt="images/marketplace_step4.png" /></span></p><p>When installing Kibana, a separate VM will be provisioned onto which Kibana will
+be deployed and a public IP address will be attached
+to the Kibana VM along with a Network Security group, allowing TCP access over ports
+5601 and 22. The former is used to connect to Kibana through the browser, whilst
+the latter is used to connect to the Kibana VM via SSH.</p><p><span class="inlinemediaobject"><img src="images/marketplace_step4_2.png" alt="images/marketplace_step4_2.png" /></span></p><p>When installing Logstash, a separate VM will be provisioned onto which Logstash
+will be deployed. A Logstash configuration file can be specified, as well as additional
+Logstash plugins to install.</p><p>A jumpbox VM can optionally be deployed, which can be connected to via SSH in order
+to gain access to the Elasticsearch VMs.</p><p>Either an internal or external load balancer can be deployed from the Marketplace;
+When choosing external load balancer, both an internal and external load balancer will
+be deployed. Kibana will use the internal load balancer to communicate with Elasticsearch,
+and the external load balancer is configured with a public IP address , allowing access
+to Elasticsearch from outside of Azure over port 9200.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The Marketplace solution does not configure SSL/TLS for communication for any of</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Communication from the browser to Kibana
+</li><li class="listitem">
+Communication from Kibana to Elasticsearch through internal load balancer
+</li><li class="listitem">
+Communication from Logstash to Elasticsearch through internal load balancer
+</li><li class="listitem">
+Communication to Elasticsearch through external load balancer over the HTTP layer
+</li><li class="listitem">
+Communication between Elasticsearch nodes in the cluster over the Transport layer
+</li></ul></div><p>This is to keep the getting started experience simple through the Marketplace. If you
+need to configure SSL/TLS, it is <span class="strong strong"><strong>recommended that you use <a class="ulink" href="https://github.com/elastic/azure-marketplace" target="_top">the Azure Resource Manager
+template on GitHub directly</a>.</strong></span> Consult the <a class="link" href="azure-arm-template-security.html" title="Security">Security</a> section for more details.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="user-configuration-step"></a>User configuration<a href="https://github.com/elastic/azure-marketplace/edit/master/docs/azure-marketplace.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>An Elasticsearch cluster deployed through the Azure Marketplace is always deployed
 with a 30 day trial license that enables all of <a class="ulink" href="https://www.elastic.co/subscriptions" target="_top">the Platinum features of the Elastic Stack</a>,
 including <a class="ulink" href="https://www.elastic.co/products/stack/security" target="_top">Security</a>. Security features allow Basic Authentication configuration
 for the cluster, setting up three
@@ -695,28 +720,11 @@ communicate with Elasticsearch
 </li><li class="listitem">
 The <code class="literal">logstash_system</code> user, a built-in account that can be used by Logstash
 when storing monitoring information in Elasticsearch.
+</li><li class="listitem">
+The <code class="literal">beats_system</code> user, a built-in account that can be used by Beats
+when storing monitoring information in Elasticsearch.
 </li></ol></div><p>Additionally, a read-only user account, <code class="literal">es_read</code>, is created that has read only
-access to indices:</p><p><span class="inlinemediaobject"><img src="images/marketplace_step4.png" alt="images/marketplace_step4.png" /></span></p><p>Passwords must be specified for all of these accounts.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="external-access-step"></a>External access<a href="https://github.com/elastic/azure-marketplace/edit/master/docs/azure-marketplace.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The external access blade determines how the cluster can be accessed from outside
-of the virtual network:</p><p><span class="inlinemediaobject"><img src="images/marketplace_step5.png" alt="images/marketplace_step5.png" /></span></p><p>When installing Kibana, a separate VM will be provisioned onto which Kibana will
-be deployed and a public IP address will be attached
-to the Kibana VM along with a Network Security group, allowing TCP access over ports
-5601 and 22. The former is used to connect to Kibana through the browser, whilst
-the latter is used to connect to the Kibana VM via SSH.</p><p>A jumpbox VM can optionally be deployed, which can be connected to via SSH in order
-to gain access to the Elasticsearch VMs.</p><p>Either an internal or external load balancer can be deployed from the Marketplace;
-When choosing external load balancer, both an internal and external load balancer will
-be deployed. Kibana will use the internal load balancer to communicate with Elasticsearch,
-and the external load balancer is configured with a public IP address , allowing access
-to Elasticsearch from outside of Azure over port 9200.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The Marketplace solution does not configure SSL/TLS for communication for any of</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Communication from the browser to Kibana
-</li><li class="listitem">
-Communication from Kibana to Elasticsearch through internal load balancer
-</li><li class="listitem">
-Communication to Elasticsearch through external load balancer over the HTTP layer
-</li><li class="listitem">
-Communication between Elasticsearch nodes in the cluster over the Transport layer
-</li></ul></div><p>This is to keep the getting started experience simple through the Marketplace. If you
-need to configure SSL/TLS, it is <span class="strong strong"><strong>recommended that you use <a class="ulink" href="https://github.com/elastic/azure-marketplace" target="_top">the Azure Resource Manager
-template on GitHub directly</a>.</strong></span> Consult the <a class="link" href="azure-arm-template-security.html" title="Security">Security</a> section for more details.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="azure-marketplace-summary"></a>Summary<a href="https://github.com/elastic/azure-marketplace/edit/master/docs/azure-marketplace.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The last steps of configuring a deployment allow you to confirm the values provided
+access to indices:</p><p><span class="inlinemediaobject"><img src="images/marketplace_step5.png" alt="images/marketplace_step5.png" /></span></p><p>Passwords must be specified for all of these accounts.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="azure-marketplace-summary"></a>Summary<a href="https://github.com/elastic/azure-marketplace/edit/master/docs/azure-marketplace.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The last steps of configuring a deployment allow you to confirm the values provided
 for all inputs in the previous steps, and to read the terms and conditions before
 deployment:</p><p><span class="inlinemediaobject"><img src="images/marketplace_step6.png" alt="images/marketplace_step6.png" /></span></p><p>The Azure infrastructure also performs some final validation steps. Once you’re
 happy to proceed and the OK button is clicked, a new deployment will be started
