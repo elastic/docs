@@ -644,8 +644,6 @@ Not what you want? See the
 </li></ul></div><h3><a id="transaction-endpoint"></a>Endpoint<a href="https://github.com/elastic/apm-server/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Send a <code class="literal">HTTP POST</code> request to the APM Server <code class="literal">transactions</code> endpoint:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">http(s)://{hostname}:{port}/v1/transactions</pre></div><p>For <a class="link" href="rum.html" title="Real User Monitoring (RUM)">RUM</a> send a <code class="literal">HTTP POST</code> request to the APM Server <code class="literal">rum transactions</code> endpoint instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">http(s)://{hostname}:{port}/v1/rum/transactions</pre></div><h3><a id="transaction-schema-definition"></a>Schema Definition<a href="https://github.com/elastic/apm-server/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The APM Server uses JSON Schema for validating requests. The specification for transactions is defined bellow:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <a class="xref" href="transaction-api.html#transaction-payload-schema" title="Payloadedit">Payload<a href="https://github.com/elastic/apm-server/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
 </li><li class="listitem">
-<a class="xref" href="transaction-api.html#transaction-transaction-schema" title="Transactionedit">Transaction<a href="https://github.com/elastic/apm-server/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
-</li><li class="listitem">
 <a class="xref" href="transaction-api.html#transaction-span-schema" title="Spanedit">Span<a href="https://github.com/elastic/apm-server/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
 </li><li class="listitem">
 <a class="xref" href="transaction-api.html#transaction-service-schema" title="Serviceedit">Service<a href="https://github.com/elastic/apm-server/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
@@ -660,7 +658,7 @@ Not what you want? See the
 </li><li class="listitem">
 <a class="xref" href="transaction-api.html#transaction-user-schema" title="Useredit">User<a href="https://github.com/elastic/apm-server/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
 </li></ul></div><h4><a id="transaction-payload-schema"></a>Payload<a href="https://github.com/elastic/apm-server/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-    "$id": "docs/spec/transactions/payload.json",
+    "$id": "docs/spec/transactions/v1_transaction.json",
     "title": "Transactions payload",
     "description": "List of transactions wrapped in an object containing some other attributes normalized away from the transactions themselves",
     "type": "object",
@@ -677,173 +675,82 @@ Not what you want? See the
         "transactions": {
             "type": "array",
             "items": {
-                "$ref": "transaction.json"
+                "type": "object",
+                "description": "Data captured by an agent representing an event occurring in a monitored service",
+                "allOf": [
+                    { "$ref": "common_transaction.json"  },
+                    { "$ref": "../timestamp_rfc3339.json" },
+                    {
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "description": "UUID for the transaction, referred by its spans",
+                                "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+                            },
+                            "spans": {
+                                "type": ["array", "null"],
+                                "items": {
+                                    "$ref": "./../spans/v1_span.json"
+                                },
+                                "minItems": 0
+                            },
+                            "span_count": {
+                                "type": ["object", "null"],
+                                "properties": {
+                                    "dropped": {
+                                        "type": ["object", "null"],
+                                        "properties": {
+                                            "total": {
+                                                "type": ["integer","null"],
+                                                "description": "number of spans that have been dropped by the agent recording the transaction."
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "required": ["id"]
+                    }
+                ]
             },
             "minItems": 1
         }
     },
     "required": ["service", "transactions"]
-}</pre></div><h4><a id="transaction-transaction-schema"></a>Transaction<a href="https://github.com/elastic/apm-server/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-    "$id": "docs/spec/transactions/transaction.json",
-    "type": "object",
-    "description": "Data captured by an agent representing an event occurring in a monitored service",
-    "properties": {
-        "context": {
-            "$ref": "../context.json"
-        },
-        "duration": {
-            "type": "number",
-            "description": "How long the transaction took to complete, in ms with 3 decimal points"
-        },
-        "id": {
-            "type": "string",
-            "description": "UUID for the transaction, referred by its spans",
-            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
-        },
-        "name": {
-            "type": ["string","null"],
-            "description": "Generic designation of a transaction in the scope of a single service (eg: 'GET /users/:id')",
-            "maxLength": 1024
-        },
-        "result": {
-            "type": ["string", "null"],
-            "description": "The result of the transaction. For HTTP-related transactions, this should be the status code formatted like 'HTTP 2xx'.",
-            "maxLength": 1024
-        },
-        "timestamp": {
-            "type": ["string", "null"],
-            "pattern": "Z$",
-            "format": "date-time",
-            "description": "Recorded time of the transaction, UTC based and formatted as YYYY-MM-DDTHH:mm:ss.sssZ"
-        },
-        "spans": {
-            "type": ["array", "null"],
-            "items": {
-                "$ref": "span.json"
-            },
-            "minItems": 0
-        },
-        "type": {
-            "type": "string",
-            "description": "Keyword of specific relevance in the service's domain (eg: 'request', 'backgroundjob', etc)",
-            "maxLength": 1024
-        },
-        "marks": {
-            "type": ["object", "null"],
-            "description": "A mark captures the timing of a significant event during the lifetime of a transaction. Marks are organized into groups and can be set by the user or the agent.",
-            "patternProperties": {
-                "^[^.*\"]*$": {
-                    "$ref": "mark.json"
-                }
-            },
-            "additionalProperties": false
-        },
-        "sampled": {
-            "type": ["boolean", "null"],
-            "description": "Transactions that are 'sampled' will include all available information. Transactions that are not sampled will not have 'spans' or 'context'. Defaults to true."
-        },
-        "span_count": {
-            "type": ["object", "null"],
-            "properties": {
-                "dropped": {
-                    "type": ["object", "null"],
-                    "properties": {
-                        "total": {
-                            "type": ["integer","null"],
-                            "description": "Number of spans that have been dropped by the agent recording the transaction."
-                        }
-                    }
-                }
-            }
-        }
-    },
-    "required": ["id", "duration", "type"]
 }</pre></div><h4><a id="transaction-span-schema"></a>Span<a href="https://github.com/elastic/apm-server/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-    "$id": "docs/spec/transactions/span.json",
+    "$id": "docs/spec/spans/v1_span.json",
     "type": "object",
-    "properties": {
-        "id": {
-            "type": ["integer", "null"],
-            "description": "The locally unique ID of the span."
-        },
-        "context": {
-            "type": ["object", "null"],
-            "description": "Any other arbitrary data captured by the agent, optionally provided by the user",
+    "allOf": [
+
+        { "$ref": "common_span.json"  },
+        {
             "properties": {
-                "db": {
-                    "type": ["object", "null"],
-                    "description": "An object containing contextual data for database spans",
-                    "properties": {
-                        "instance": {
-                           "type": ["string", "null"],
-                           "description": "Database instance name"
-                        },
-                        "statement": {
-                           "type": ["string", "null"],
-                           "description": "A database statement (e.g. query) for the given database type"
-                        },
-                        "type": {
-                           "type": ["string", "null"],
-                           "description": "Database type. For any SQL database, \"sql\". For others, the lower-case database category, e.g. \"cassandra\", \"hbase\", or \"redis\""
-                        },
-                        "user": {
-                           "type": ["string", "null"],
-                           "description": "Username for accessing database"
-                        }
-                    }
+                "id": {
+                    "description": "ID od the span.",
+                    "type": ["integer", "null"]
                 },
-                "http": {
-                    "type": ["object", "null"],
-                    "description": "An object containing contextual data of the related http request.",
-                    "properties": {
-                        "url": {
-                            "type": ["string", "null"],
-                            "description": "The raw url of the correlating http request."
-                        }
-                    }
+                "transaction_id": {
+                    "type": "string",
+                    "description": "UUID for the parent transaction",
+                    "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
                 },
-                "tags": {
-                    "$ref": "../tags.json"
+                "parent": {
+                    "type": ["integer", "null"],
+                    "description": "The ID of the parent of the span."
+                },
+                "start": {
+                    "type": "number",
+                    "description": "Offset relative to the transaction's timestamp identifying the start of the span, in milliseconds"
+                }
+            },
+            "required": ["start"],
+            "dependencies": {
+                "parent": {
+                    "required": ["id"]
                 }
             }
-        },
-        "duration": {
-            "type": "number",
-            "description": "Duration of the span in milliseconds"
-        },
-        "name": {
-            "type": "string",
-            "description": "Generic designation of a span in the scope of a transaction",
-            "maxLength": 1024
-        },
-        "parent": {
-            "type": ["integer", "null"],
-            "description": "The locally unique ID of the parent of the span."
-        },
-        "stacktrace": {
-            "type": ["array", "null"],
-            "description": "List of stack frames with variable attributes (eg: lineno, filename, etc)",
-            "items": {
-                "$ref": "../stacktrace_frame.json"
-            },
-            "minItems": 0
-        },
-        "start": {
-            "type": "number",
-            "description": "Offset relative to the transaction's timestamp identifying the start of the span, in milliseconds"
-        },
-        "type": {
-            "type": "string",
-            "description": "Keyword of specific relevance in the service's domain (eg: 'db.postgresql.query', 'template.erb', etc)",
-            "maxLength": 1024
         }
-    },
-    "dependencies": {
-        "parent": {
-            "required": ["id"]
-        }
-    },
-    "required": ["duration", "name", "start", "type"]
+    ]
 }</pre></div><h4><a id="transaction-service-schema"></a>Service<a href="https://github.com/elastic/apm-server/edit/master/docs/transaction-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
     "$id": "doc/spec/service.json",
     "title": "Service",
