@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>APM Go Agent Reference (Beta) [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>OpenTracing API
+        | APM Go Agent Reference (Beta) [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Go Agent Reference (Beta) [master]" /><link rel="next" href="introduction.html" title="Introduction" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Go Agent/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="APM" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Go Agent Reference (Beta) [master]" /><link rel="up" href="index.html" title="APM Go Agent Reference (Beta) [master]" /><link rel="prev" href="api.html" title="API Documentation" /><link rel="next" href="contributing.html" title="Contributing" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Go Agent/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="APM" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
     
 
     
@@ -624,17 +625,82 @@
 <div class="page_header">You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
-</div><div class="navheader"><span class="prev">
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">APM Go Agent Reference (Beta)
+      [master]
+    </a></span> » <span class="breadcrumb-node">OpenTracing API</span></div><div class="navheader"><span class="prev"><a href="api.html">
+              « 
+              API Documentation</a>
            
         </span><span class="next">
            
-          <a href="introduction.html">Introduction
+          <a href="contributing.html">Contributing
                »
-            </a></span></div><div class="book" lang="en"><div class="titlepage"><div><div><h1 class="title"><a id="id-1"></a>APM Go Agent Reference (Beta)</h1></div></div><hr /></div><!--START_TOC--><div class="toc"><ul class="toc"><li id="book_title"><span>APM Go Agent: <select><option value="master" selected>master</option><option value="0.5">0.5 (current)</option></select></span></li><li><span class="chapter"><a href="introduction.html">Introduction</a></span></li><li><span class="chapter"><a href="supported-tech.html">Supported Technologies</a></span></li><li><span class="chapter"><a href="getting-started.html">Getting started</a></span><ul><li><span class="section"><a href="installation.html">Installation</a></span></li><li><span class="section"><a href="instrumenting-source.html">Instrumenting Go Source Code</a></span></li></ul></li><li><span class="chapter"><a href="configuration.html">Configuration</a></span></li><li><span class="chapter"><a href="api.html">API Documentation</a></span></li><li><span class="chapter"><a href="opentracing.html">OpenTracing API</a></span></li><li><span class="chapter"><a href="contributing.html">Contributing</a></span></li></ul></div><!--END_TOC--></div><div class="navfooter"><span class="prev">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="opentracing"></a>OpenTracing API<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>The Elastic APM Go agent provides an implementation of the <a class="ulink" href="https://opentracing.io" target="_top">OpenTracing API</a>,
+building on top of the core Elastic APM API.</p><p>Spans created through the OpenTracing API will be translated to Elastic APM transactions or spans.
+Root spans, and spans created with a remote span context, will be translated to Elastic APM
+transactions; all others will be created as Elastic APM spans.</p><h3><a id="opentracing-init"></a>Initializing the tracer<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The OpenTracing API implementation is implemented as a bridge on top of the core Elastic APM API.
+To initialize the OpenTracing tracer implementation, you must first import the <code class="literal">apmot</code> package:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+        "go.elastic.co/apm/module/apmot"
+)</pre></div><p>The apmot package exports a function, "New", which returns an implementation of the
+<code class="literal">opentracing.Tracer</code> interface. If you simply call <code class="literal">apmot.New()</code> without any arguments,
+the returned tracer will wrap <code class="literal">apm.DefaultTracer</code>. If you wish to use a different
+<code class="literal">apm.Tracer</code>, then you can pass it with <code class="literal">apmot.New(apmot.WithTracer(t))</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">otTracer := apmot.New()</pre></div><p>Once you have obtained an <code class="literal">opentracing.Tracer</code>, you can use the standard OpenTracing API
+to report spans to Elastic APM. Please refer to <a class="ulink" href="https://github.com/opentracing/opentracing-go" target="_top">opentracing-go</a>
+for documentation on the OpenTracing Go API.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+        "context"
+
+        "go.elastic.co/apm/module/apmot"
+
+        "github.com/opentracing/opentracing-go"
+)
+
+func main() {
+        opentracing.SetGlobalTracer(apmot.New())
+
+        parent, ctx := opentracing.StartSpanFromContext(context.Background(), "parent")
+        child, _ := opentracing.StartSpanFromContext(ctx, "child")
+        child.Finish()
+        parent.Finish()
+}</pre></div><h3><a id="opentracing-mixed"></a>Mixing Native and OpenTracing APIs<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When you import <code class="literal">apmot</code>, transactions and spans created with the <a class="link" href="api.html" title="API Documentation">native API</a>
+will be made available as OpenTracing spans, enabling you to mix the use of the
+native and OpenTracing APIs. e.g.:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">// Transaction created through native API.
+transaction := apm.DefaultTracer.StartTransaction("GET /", "request")
+ctx := apm.ContextWithTransaction(context.Background(), transaction)
+
+// Span created through OpenTracing API will be a child of the transaction.
+otSpan, ctx := opentracing.StartSpanFromContext(ctx, "ot-span")
+
+// Span created through the native API will be a child of the span created
+// above via the OpenTracing API.
+apmSpan, ctx := apm.StartSpan(ctx, "apm-span", "apm-span")</pre></div><p>The <code class="literal">opentracing.SpanFromContext</code> function will return an <code class="literal">opentracing.Span</code>
+that wraps either an <code class="literal">apm.Span</code> or <code class="literal">apm.Transaction</code>. These span objects are
+intended only for passing in context when creating a new span through the
+OpenTracing API, and are not fully functional spans. In particular, the <code class="literal">Finish</code>
+method is a no-op, and the <code class="literal">Tracer</code> method returns a no-op tracer.</p><h3><a id="opentracing-apm-tags"></a>Elastic APM specific tags<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elastic APM defines some tags which are not included in the OpenTracing API,
+but are relevant in the context of Elastic APM. Some tags are relevant only
+to Elastic APM transactions.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">type</code> - sets the type of the transaction or span, e.g. "request", or "ext.http".
+           If <code class="literal">type</code> is not specified, then the type may be inferred from other
+           tags. e.g. if "http.url" is specified, then the type will be "request"
+           for transactions, and "ext.http" for spans. If no type can be inferred,
+           it is set to "unknown".
+</li></ul></div><p>The following tags are relevant only to root or service-entry spans, which are
+translated to Elastic APM transactions:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">user.id</code> - sets the user ID, which appears in the "User" tab in the transaction details in the Elastic APM UI
+</li><li class="listitem">
+<code class="literal">user.email</code> - sets the user email, appears in the "User" tab in the transaction details in the Elastic APM UI
+</li><li class="listitem">
+<code class="literal">user.username</code> - sets the user name, appears in the "User" tab in the transaction details in the Elastic APM UI
+</li><li class="listitem">
+<code class="literal">result</code> - sets the result of the transaction. If <code class="literal">result</code> is <span class="emphasis"><em>not</em></span> specified, but <code class="literal">error</code> tag is set to <code class="literal">true</code>,
+             then the transaction result will be set to "error"
+</li></ul></div><h3><a id="opentracing-caveats"></a>Caveats<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><h4><a id="opentracing-caveats-propagation"></a>Context Propagation<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>We support the <code class="literal">TextMap</code> and <code class="literal">HTTPHeaders</code> propagation formats; <code class="literal">Binary</code> is not currently supported.</p><h4><a id="opentracing-caveats-spanrefs"></a>Span References<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>We support only <code class="literal">ChildOf</code> references. Other references, e.g. <code class="literal">FollowsFrom</code>, are not currently supported.</p><h4><a id="opentracing-caveats-baggage"></a>Baggage<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p><code class="literal">Span.SetBaggageItem</code> is a no-op; baggage items are silently dropped.</p><h4><a id="opentracing-caveats-logs"></a>Logs<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p><code class="literal">Span.Log*</code> methods are no-ops; logs will be silently dropped.</p></div><div class="navfooter"><span class="prev"><a href="api.html">
+              « 
+              API Documentation</a>
            
         </span><span class="next">
            
-          <a href="introduction.html">Introduction
+          <a href="contributing.html">Contributing
                »
             </a></span></div>
 <!-- end body -->
