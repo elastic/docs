@@ -708,21 +708,25 @@ Represents an expression on which rows are being grouped <span class="emphasis">
 
        g
 ---------------
+null
 F
 M</pre></div><p>Grouping by output ordinal:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender FROM emp GROUP BY 1;
 
     gender
 ---------------
+null
 F
 M</pre></div><p>Grouping by alias:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender AS g FROM emp GROUP BY g;
 
        g
 ---------------
+null
 F
 M</pre></div><p>And grouping by column expression (typically used along-side an alias):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT languages + 1 AS l FROM emp GROUP BY l;
 
        l
 ---------------
+null
 2
 3
 4
@@ -731,31 +735,41 @@ M</pre></div><p>And grouping by column expression (typically used along-side an 
 
        g       |       l       |       c
 ---------------+---------------+---------------
-M              |1              |12
+M              |null           |7
+F              |null           |3
+M              |1              |9
 F              |1              |4
-M              |2              |12
-F              |2              |8
-M              |3              |15
-F              |3              |7
+null           |1              |2
+M              |2              |11
+F              |2              |5
+null           |2              |3
+M              |3              |11
+F              |3              |6
 M              |4              |11
-F              |4              |7
-M              |5              |13
-F              |5              |11</pre></div><p>When a <code class="literal">GROUP BY</code> clause is used in a <code class="literal">SELECT</code>, <span class="emphasis"><em>all</em></span> output expressions must be either aggregate functions or expressions used for grouping or derivatives of (otherwise there would be more than one possible value to return for each ungrouped column).</p><p>To wit:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender AS g, COUNT(*) AS c FROM emp GROUP BY gender;
+F              |4              |6
+null           |4              |1
+M              |5              |8
+F              |5              |9
+null           |5              |4</pre></div><p>When a <code class="literal">GROUP BY</code> clause is used in a <code class="literal">SELECT</code>, <span class="emphasis"><em>all</em></span> output expressions must be either aggregate functions or expressions used for grouping or derivatives of (otherwise there would be more than one possible value to return for each ungrouped column).</p><p>To wit:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender AS g, COUNT(*) AS c FROM emp GROUP BY gender;
 
        g       |       c
 ---------------+---------------
-F              |37
-M              |63</pre></div><p>Expressions over aggregates used in output:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender AS g, ROUND((MIN(salary) / 100)) AS salary FROM emp GROUP BY gender;
+null           |10
+F              |33
+M              |57</pre></div><p>Expressions over aggregates used in output:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">schema::g:s|salary:i
+SELECT gender AS g, ROUND((MIN(salary) / 100)) AS salary FROM emp GROUP BY gender;
 
        g       |    salary
 ---------------+---------------
+null           |253
 F              |260
-M              |253</pre></div><p>Multiple aggregates used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender AS g, KURTOSIS(salary) AS k, SKEWNESS(salary) AS s FROM emp GROUP BY gender;
+M              |259</pre></div><p>Multiple aggregates used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender AS g, KURTOSIS(salary) AS k, SKEWNESS(salary) AS s FROM emp GROUP BY gender;
 
        g       |        k         |         s
 ---------------+------------------+-------------------
-F              |1.8427808415250482|0.04517149340491813
-M              |2.259327644285826 |0.40268950715550333</pre></div><h5><a id="sql-syntax-group-by-implicit"></a>Implicit Grouping<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>When an aggregation is used without an associated <code class="literal">GROUP BY</code>, an <span class="emphasis"><em>implicit grouping</em></span> is applied, meaning all selected rows are considered to form a single default, or implicit group.
+null           |2.2215791166941923|-0.03373126000214023
+F              |1.7873117044424276|0.05504995122217512
+M              |2.280646181070106 |0.44302407229580243</pre></div><h5><a id="sql-syntax-group-by-implicit"></a>Implicit Grouping<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>When an aggregation is used without an associated <code class="literal">GROUP BY</code>, an <span class="emphasis"><em>implicit grouping</em></span> is applied, meaning all selected rows are considered to form a single default, or implicit group.
 As such, the query emits only a single row (as there is only a single group).</p><p>A common example is counting the number of records:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT COUNT(*) AS count FROM emp;
 
      count
@@ -776,17 +790,19 @@ Represents an expression that evaluates to a <code class="literal">boolean</code
 
        l       |       c
 ---------------+---------------
-1              |16
-2              |20
+1              |15
+2              |19
+3              |17
 4              |18</pre></div><p>Further more, one can use multiple aggregate expressions inside <code class="literal">HAVING</code> even ones that are not used in the output (<code class="literal">SELECT</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MIN(salary) AS min, MAX(salary) AS max, MAX(salary) - MIN(salary) AS diff FROM emp GROUP BY languages HAVING diff - max % min &gt; 0 AND AVG(salary) &gt; 30000;
 
       min      |      max      |     diff
 ---------------+---------------+---------------
+28336          |74999          |46663
 25976          |73717          |47741
 29175          |73578          |44403
-26436          |74999          |48563
+26436          |74970          |48534
 27215          |74572          |47357
-25324          |73851          |48527</pre></div><h5><a id="sql-syntax-having-group-by-implicit"></a>Implicit Grouping<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>As indicated above, it is possible to have a <code class="literal">HAVING</code> clause without a ``GROUP BY``. In this case, the so-called <a class="link" href="sql-syntax-select.html#sql-syntax-group-by-implicit" title="Implicit Groupingedit"><span class="emphasis"><em>implicit grouping</em></span></a> is applied, meaning all selected rows are considered to form a single group and <code class="literal">HAVING</code> can be applied on any of the aggregate functions specified on this group. `
+25324          |66817          |41493</pre></div><h5><a id="sql-syntax-having-group-by-implicit"></a>Implicit Grouping<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>As indicated above, it is possible to have a <code class="literal">HAVING</code> clause without a ``GROUP BY``. In this case, the so-called <a class="link" href="sql-syntax-select.html#sql-syntax-group-by-implicit" title="Implicit Groupingedit"><span class="emphasis"><em>implicit grouping</em></span></a> is applied, meaning all selected rows are considered to form a single group and <code class="literal">HAVING</code> can be applied on any of the aggregate functions specified on this group. `
 As such, the query emits only a single row (as there is only a single group) and <code class="literal">HAVING</code> condition returns either one row (the group) or zero if the condition fails.</p><p>In this example, <code class="literal">HAVING</code> matches:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MIN(salary) AS min, MAX(salary) AS max FROM emp HAVING min &gt; 25000;
 
       min      |      max
