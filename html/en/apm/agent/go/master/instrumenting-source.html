@@ -768,7 +768,7 @@ func main() {
         db, err := apmsql.Open("pq", "postgres://...")
         db, err := apmsql.Open("sqlite3", ":memory:")
 }</pre></div><p>Spans will be created for queries and other statement executions if the context methods are
-used, and the context includes a transaction.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmgorm"></a>module/apmgorm<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgorm provides a means of instrumenting [gorm](<a class="ulink" href="http://gorm.io" target="_top">http://gorm.io</a>) database operations.</p><p>To trace GORM operations, import the appropriate <code class="literal">apmgorm/dialects</code> package (instead of the
+used, and the context includes a transaction.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmgorm"></a>module/apmgorm<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgorm provides a means of instrumenting <a class="ulink" href="http://gorm.io" target="_top">GORM</a> database operations.</p><p>To trace <code class="literal">GORM</code> operations, import the appropriate <code class="literal">apmgorm/dialects</code> package (instead of the
 <code class="literal">gorm/dialects</code> package), and use <code class="literal">apmgorm.Open</code> (instead of <code class="literal">gorm.Open</code>). The parameters are
 exactly the same.</p><p>Once you have a <code class="literal">*gorm.DB</code> from <code class="literal">apmgorm.Open</code>, you can call <code class="literal">apmgorm.WithContext</code> to
 propagate a context containing a transaction to the operations:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
@@ -827,6 +827,26 @@ func handleRequest(w http.ResponseWriter, req *http.Request) {
         // transaction.
         conn := apmredigo.Wrap(redisPool.Get()).WithContext(req.Context())
         defer conn.Close()
+        ...
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmrestful"></a>module/apmrestful<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmrestful provides a <a class="ulink" href="https://github.com/emicklei/go-restful" target="_top">go-restful</a> filter
+for tracing requests, and capturing panics.</p><p>For each request, a transaction is stored in the request context, which can be obtained via
+<a class="ulink" href="https://golang.org/pkg/net/http/#Request" target="_top">http.Request</a><code class="literal">.Context()</code> in your handler.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+        "github.com/emicklei/go-restful"
+
+        "go.elastic.co/apm/module/apmrestful"
+)
+
+func init() {
+        // Trace all requests to web services registered with the default container.
+        restful.Filter(apmrestful.Filter())
+}
+
+func main() {
+        var ws restful.WebService
+        ws.Path("/things").Consumes(restful.MIME_JSON, restful.MIME_XML).Produces(restful.MIME_JSON, restful.MIME_XML)
+        ws.Route(ws.GET("/{id:[0-1]+}").To(func(req *restful.Request, resp *restful.Response) {
+                // req.Request.Context() should be propagated to downstream operations such as database queries.
+        }))
         ...
 }</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="custom-instrumentation"></a>Custom instrumentation<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To report on the performance of transactions served by your application, you can use the Go
 agent’s <a class="link" href="api.html" title="API Documentation">API</a>. Instrumentation refers to modifying your application code to report:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
