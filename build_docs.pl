@@ -235,20 +235,27 @@ sub check_kibana_links {
 
     say "Checking Kibana links";
 
-    my $re = qr|`\$\{baseUrl\}guide/(.+)\$\{urlVersion\}([^#`]+)(?:#([^`*]))?`|;
+# ${baseUrl}guide/en/elasticsearch/reference/${urlVersion}/modules-scripting-expression.html
+# ${ELASTIC_WEBSITE_URL}guide/en/beats/filebeat/${DOC_LINK_VERSION}
+# ${ELASTIC_DOCS}search-aggregations-bucket-datehistogram-aggregation.html
 
     my $extractor = sub {
         my $contents = shift;
         return sub {
-            while ( $contents =~ m{$re}g ) {
-                return ( $1 . $branch . $2, $3 );
+            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC_.+)\}[^`]+)`!g ) {
+                my $path = $1;
+                $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$branch/;
+                $path
+                    =~ s!\$\{ELASTIC_DOCS\}!en/elasticsearch/reference/$branch/!
+                    || $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
+                return ( split /#/, $path );
             }
             return;
         };
 
     };
 
-    my $src_path = 'src/ui/public/documentation_links/documentation_links.js';
+    my $src_path = 'src/ui/public/documentation_links/documentation_links';
     my $repo     = ES::Repo->get_repo('kibana');
 
     my @branches = sort map { $_->basename }
@@ -258,7 +265,10 @@ sub check_kibana_links {
         $branch = $_;
         next if $branch eq 'current' || $branch =~ /^\d/ && $branch lt 5;
         say "  Branch $branch";
-        my $source = $repo->show_file( $branch, $src_path );
+        my $source = eval {
+            $repo->show_file( $branch, $src_path . ".js" )    # javascript
+        } || $repo->show_file( $branch, $src_path . ".ts" );    # or typescript
+
         $link_checker->check_source( $source, $extractor,
             "Kibana [$branch]: $src_path" );
     }
