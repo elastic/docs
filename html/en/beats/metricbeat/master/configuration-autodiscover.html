@@ -686,7 +686,7 @@ For example, with the example event, "<code class="literal">${data.port}</code>"
 event:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 host
 </li><li class="listitem">
-port
+port (if exposed)
 </li><li class="listitem">
 kubernetes.container.id
 </li><li class="listitem">
@@ -751,10 +751,13 @@ contain variables from the autodiscover event. They can be accessed under data n
           config:
             - module: prometheus
               metricsets: ["collector"]
-              hosts: "${data.host}:{data.port}"</pre></div><p>This configuration launches a <code class="literal">prometheus</code> module for all containers of pods annotated <code class="literal">prometheus.io.scrape=true</code>.
-There are cases where the PodSpec does not expose a port. In such cases the host can be provided as <code class="literal">${data.host}:9090</code>
-directly. However, the metadata which is used to enrich the metric would not have information regarding the container since
-the discovery mechanism would not have information on which container the port maps to.</p><h5><a id="_jolokia_experimental"></a>Jolokia (experimental)<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The Jolokia autodiscover provider uses Jolokia Discovery to find agents running
+              hosts: "${data.host}:{data.port}"</pre></div><p>This configuration launches a <code class="literal">prometheus</code> module for all containers of pods annotated <code class="literal">prometheus.io.scrape=true</code>.</p><h5><a id="_manually_defining_ports_with_kubernetes"></a>Manually Defining Ports with Kubernetes<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>Declare exposed ports in your pod spec if possible. Otherwise, you will need to use
+present, and you will need to hardcode ports. Example: <code class="literal">{data.host}:1234</code></p><p>When ports are not declared, Autodiscover generates a config using your provided
+template once per pod, and once per container. These generated configs are
+de-duplicated after they are generated. If the generated configs for multiple
+containers are identical, they will be merged into one config.</p><p>Pods share an identical host. If only the <code class="literal">{data.host}</code> variable is interpolated,
+then one config will be generated per host. The configs will be identical.
+After they are de-duplicated, only one will be used.</p><h5><a id="_jolokia_experimental"></a>Jolokia (experimental)<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-autodiscover.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The Jolokia autodiscover provider uses Jolokia Discovery to find agents running
 in your host or your network.</p><p>Jolokia Discovery mechanism is supported by any Jolokia agent since version
 1.2.0, it is enabled by default when Jolokia is included in the application as
 a JVM agent, but disabled in other cases as the OSGI or WAR (Java EE) agents.
