@@ -640,9 +640,19 @@ Not what you want? See the
     ... processor configuration options ...
   }
 }</pre></div><p>Each processor defines its own configuration parameters, but all processors have
-the ability to declare <code class="literal">tag</code> and <code class="literal">on_failure</code> fields. These fields are optional.</p><p>A <code class="literal">tag</code> is simply a string identifier of the specific instantiation of a certain
+the ability to declare <code class="literal">tag</code>, <code class="literal">on_failure</code> and <code class="literal">if</code> fields. These fields are optional.</p><p>A <code class="literal">tag</code> is simply a string identifier of the specific instantiation of a certain
 processor in a pipeline. The <code class="literal">tag</code> field does not affect the processor’s behavior,
-but is very useful for bookkeeping and tracing errors to specific processors.</p><p>See <a class="xref" href="handling-failure-in-pipelines.html" title="Handling Failures in Pipelines"><em>Handling Failures in Pipelines</em></a> to learn more about the <code class="literal">on_failure</code> field and error handling in pipelines.</p><p>The <a class="link" href="cluster-nodes-info.html#ingest-info" title="Ingest informationedit">node info API</a> can be used to figure out what processors are available in a cluster.
+but is very useful for bookkeeping and tracing errors to specific processors.</p><p>The <code class="literal">if</code> field must contain a script that returns a boolean value. If the script evaluates to <code class="literal">true</code>
+then the processor will be executed for the given document otherwise it will be skipped.
+The <code class="literal">if</code> field takes an object with the script fields defined in <a class="link" href="script-processor.html" title="Script Processor">script-options</a>
+and accesses a read only version of the document via the same <code class="literal">ctx</code> variable used by scripts in the
+<a class="xref" href="script-processor.html" title="Script Processor">Script Processor</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "set": {
+    "if": "ctx.bar == 'expectedValue'",
+    "field": "foo",
+    "value": "bar"
+  }
+}</pre></div><p>See <a class="xref" href="handling-failure-in-pipelines.html" title="Handling Failures in Pipelines"><em>Handling Failures in Pipelines</em></a> to learn more about the <code class="literal">on_failure</code> field and error handling in pipelines.</p><p>The <a class="link" href="cluster-nodes-info.html#ingest-info" title="Ingest informationedit">node info API</a> can be used to figure out what processors are available in a cluster.
 The <a class="link" href="cluster-nodes-info.html#ingest-info" title="Ingest informationedit">node info API</a> will provide a per node list of what processors are available.</p><p>Custom processors must be installed on all nodes. The put pipeline API will fail if a processor specified in a pipeline
 doesn’t exist on all nodes. If you rely on custom processor plugins make sure to mark these plugins as mandatory by adding
 <code class="literal">plugin.mandatory</code> setting to the <code class="literal">config/elasticsearch.yml</code> file, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">plugin.mandatory: ingest-attachment,ingest-geoip</pre></div><p>A node will not start if either of these plugins are not available.</p><p>The <a class="link" href="cluster-nodes-stats.html#ingest-stats" title="Ingest statisticsedit">node stats API</a> can be used to fetch ingest usage statistics, globally and on a per
