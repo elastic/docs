@@ -671,8 +671,25 @@ Configure the Kibana module in Metricbeat.
   hosts: ["http://localhost:5601"] <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
   xpack.enabled: true</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This setting identifies the host and port number that are used to access Kibana.
-</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you configured Kibana to use <a class="link" href="configuring-tls.html" title="Encrypting communications in Kibana">encrypted communications</a>,
-you must access it via HTTPS. For example, <code class="literal">https://localhost:5601</code>.</p></div></div></li><li class="listitem"><p class="simpara">
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+If X-Pack security is enabled, you must also provide a user ID and password so that
+Metricbeat can collect metrics successfully.
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+Create or identify a user that you want to use to collect the metrics.
+</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>There is a <code class="literal">remote_monitoring_user</code> built-in user that grants the privileges
+necessary for Metricbeat to monitor Elastic Stack products. See
+<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/built-in-users.html" target="_top">Built-in users</a>.</p></div></div><p class="simpara">Alternatively, you can choose a different user and give them the
+<code class="literal">remote_monitoring_collector</code> <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/built-in-roles.html" target="_top">built-in role</a>.</p></li><li class="listitem"><p class="simpara">
+Add the <code class="literal">username</code> and <code class="literal">password</code> settings to the Kibana module configuration
+file.
+</p><p class="simpara">For example, add the following settings in the <code class="literal">modules.d/kibana.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: kibana
+  ...
+  username: remote_monitoring_user
+  password: YOUR_PASSWORD</pre></div></li></ol></div></li><li class="listitem">
+If you configured Kibana to use <a class="link" href="configuring-tls.html" title="Encrypting communications in Kibana">encrypted communications</a>,
+you must access it via HTTPS. For example, use a <code class="literal">hosts</code> setting like
+<code class="literal">https://localhost:5601</code> in the <code class="literal">modules.d/kibana.yml</code> file.
+</li><li class="listitem"><p class="simpara">
 Identify where to send the monitoring data.
 </p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>In production environments, we strongly recommend using a separate cluster
 (referred to as the <span class="emphasis"><em>monitoring cluster</em></span>) to store the data. Using a separate
@@ -683,10 +700,27 @@ configuration file (<code class="literal">metricbeat.yml</code>):</p><div class=
   hosts: ["http://es-mon-1:9200", "http://es-mon2:9200"] <a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 In this example, the data is stored on a monitoring cluster with nodes
 <code class="literal">es-mon-1</code> and <code class="literal">es-mon-2</code>.
-</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you configured the monitoring cluster to use
+</p></td></tr></table></div><p class="simpara">For more information about these configuration options, see
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/metricbeat/6.x/elasticsearch-output.html" target="_top">Configure the Elasticsearch output</a>.</p></li><li class="listitem"><p class="simpara">
+If X-Pack security is enabled on the monitoring cluster, you must provide a valid
+user ID and password so that Metricbeat can send metrics successfully.
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+Create or identify a user that you want to use to send the metrics.
+</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>There is a <code class="literal">remote_monitoring_user</code> built-in user that grants the privileges
+necessary for Metricbeat to monitor Elastic Stack products. See
+<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/built-in-users.html" target="_top">Built-in users</a>.</p></div></div><p class="simpara">Alternatively, you can choose a different user and give them the
+<code class="literal">remote_monitoring_agent</code> <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/built-in-roles.html" target="_top">built-in role</a>.</p></li><li class="listitem"><p class="simpara">
+Add the <code class="literal">username</code> and <code class="literal">password</code> settings to the Elasticsearch output information in
+the Metricbeat configuration file (<code class="literal">metricbeat.yml</code>):
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.elasticsearch:
+  ...
+  username: remote_monitoring_user
+  password: YOUR_PASSWORD</pre></div></li></ol></div></li><li class="listitem">
+If you configured the monitoring cluster to use
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/configuring-tls.html" target="_top">encrypted communications</a>, you must access it via
-HTTPS. For example, <code class="literal">https://es-mon-1:9200</code>.</p></div></div><p class="simpara">For more information about these configuration options, see
-<a class="ulink" href="https://www.elastic.co/guide/en/beats/metricbeat/6.x/elasticsearch-output.html" target="_top">Configure the Elasticsearch output</a>.</p></li><li class="listitem">
+HTTPS. For example, use a <code class="literal">hosts</code> setting like <code class="literal">https://es-mon-1:9200</code> in the
+<code class="literal">metricbeat.yml</code> file.
+</li><li class="listitem">
 <a class="link" href="start-stop.html" title="Starting and stopping Kibana">Start Kibana</a>.
 </li><li class="listitem">
 <a class="ulink" href="https://www.elastic.co/guide/en/beats/metricbeat/6.x/metricbeat-starting.html" target="_top">Start Metricbeat</a>.
