@@ -643,15 +643,15 @@ Not what you want? See the
     "aggs": {
         "profit": {
             "scripted_metric": {
-                "init_script" : "state.transactions = []",
-                "map_script" : "state.transactions.add(doc.type.value == 'sale' ? doc.amount.value : -1 * doc.amount.value)", <a id="CO93-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                "init_script" : "state.transactions = []", <a id="CO93-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                "map_script" : "state.transactions.add(doc.type.value == 'sale' ? doc.amount.value : -1 * doc.amount.value)",
                 "combine_script" : "double profit = 0; for (t in state.transactions) { profit += t } return profit",
                 "reduce_script" : "double profit = 0; for (a in states) { profit += a } return profit"
             }
         }
     }
 }</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-metrics-scripted-metric-aggregation/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO93-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-<code class="literal">map_script</code> is the only required  parameter
+<code class="literal">init_script</code> is an optional parameter, all other scripts are required.
 </p></td></tr></table></div><p>The above aggregation demonstrates how one would use the script aggregation compute the total profit from sale and cost transactions.</p><p>The response for the above aggregation:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "took": 218,
     ...
@@ -701,22 +701,22 @@ Executed prior to any collection of documents. Allows the aggregation to set up 
 </p><p class="simpara">In the above example, the <code class="literal">init_script</code> creates an array <code class="literal">transactions</code> in the <code class="literal">state</code> object.</p></dd><dt><span class="term">
 map_script
 </span></dt><dd><p class="simpara">
-Executed once per document collected. This is the only required script. If no combine_script is specified, the resulting state
+Executed once per document collected. This is a required script. If no combine_script is specified, the resulting state
                     needs to be stored in the <code class="literal">state</code> object.
 </p><p class="simpara">In the above example, the <code class="literal">map_script</code> checks the value of the type field. If the value is <span class="emphasis"><em>sale</em></span> the value of the amount field
 is added to the transactions array. If the value of the type field is not <span class="emphasis"><em>sale</em></span> the negated value of the amount field is added
 to transactions.</p></dd><dt><span class="term">
 combine_script
 </span></dt><dd><p class="simpara">
-Executed once on each shard after document collection is complete. Allows the aggregation to consolidate the state returned from
-                    each shard. If a combine_script is not provided the combine phase will return the aggregation variable.
+Executed once on each shard after document collection is complete. This is a required script. Allows the aggregation to
+                    consolidate the state returned from each shard.
 </p><p class="simpara">In the above example, the <code class="literal">combine_script</code> iterates through all the stored transactions, summing the values in the <code class="literal">profit</code> variable
 and finally returns <code class="literal">profit</code>.</p></dd><dt><span class="term">
 reduce_script
 </span></dt><dd><p class="simpara">
-Executed once on the coordinating node after all shards have returned their results. The script is provided with access to a
-                    variable <code class="literal">states</code> which is an array of the result of the combine_script on each shard. If a reduce_script is not provided
-                    the reduce phase will return the <code class="literal">states</code> variable.
+Executed once on the coordinating node after all shards have returned their results. This is a required script. The
+                    script is provided with access to a variable <code class="literal">states</code> which is an array of the result of the combine_script on each
+                    shard.
 </p><p class="simpara">In the above example, the <code class="literal">reduce_script</code> iterates through the <code class="literal">profit</code> returned by each shard summing the values before returning the
 final combined profit which will be returned in the response of the aggregation.</p></dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_worked_example"></a>Worked Example<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/metrics/scripted-metric-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Imagine a situation where you index the following documents into an index with 2 shards:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /transactions/_doc/_bulk?refresh
 {"index":{"_id":1}}
