@@ -710,7 +710,9 @@ The query with id <code class="literal">1</code> matches our document.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO212-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">_percolator_document_slot</code> field indicates which document has matched with this query.
     Useful when percolating multiple document simultaneously.
-</p></td></tr></table></div><h4><a id="_parameters_10"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/6.5/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The following parameters are required when percolating a document:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+</p></td></tr></table></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>To provide a simple example, this documentation uses one index <code class="literal">my-index</code> for both the percolate queries and documents.
+This set-up can work well when there are just a few percolate queries registered. However, with heavier usage it is recommended
+to store queries and documents in separate indices. Please see <a class="link" href="query-dsl-percolate-query.html#how-it-works" title="How it Works Under the Hoodedit">How it Works Under the Hood</a> for more details.</p></div></div><h4><a id="_parameters_10"></a>Parameters<a href="https://github.com/elastic/elasticsearch/edit/6.5/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The following parameters are required when percolating a document:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">field</code>
 </p>
@@ -1139,7 +1141,7 @@ If that isn’t specified then the <code class="literal">field</code> parameter 
 }</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO219-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">_percolator_document_slot_query1</code> percolator slot field indicates that these matched slots are from the <code class="literal">percolate</code>
     query with <code class="literal">_name</code> parameter set to <code class="literal">query1</code>.
-</p></td></tr></table></div><h4><a id="_how_it_works_under_the_hood"></a>How it Works Under the Hood<a href="https://github.com/elastic/elasticsearch/edit/6.5/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When indexing a document into an index that has the <a class="link" href="percolator.html" title="Percolator type">percolator field type</a> mapping configured, the query
+</p></td></tr></table></div><h4><a id="how-it-works"></a>How it Works Under the Hood<a href="https://github.com/elastic/elasticsearch/edit/6.5/docs/reference/query-dsl/percolate-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When indexing a document into an index that has the <a class="link" href="percolator.html" title="Percolator type">percolator field type</a> mapping configured, the query
 part of the document gets parsed into a Lucene query and is stored into the Lucene index. A binary representation
 of the query gets stored, but also the query’s terms are analyzed and stored into an indexed field.</p><p>At search time, the document specified in the request gets parsed into a Lucene document and is stored in a in-memory
 temporary Lucene index. This in-memory index can just hold this one document and it is optimized for that. After this
@@ -1159,7 +1161,14 @@ can be found by running the following search:</p><div class="pre_wrapper"><pre c
     }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-percolate-query/13.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The above example assumes that there is a <code class="literal">query</code> field of type
-<code class="literal">percolator</code> in the mappings.</p></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-script-query.html">
+<code class="literal">percolator</code> in the mappings.</p></div></div><p>Given the design of percolation, it often makes sense to use separate indices for the percolate queries and documents
+being percolated, as opposed to a single index as we do in examples. There are a few benefits to this approach:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Because percolate queries contain a different set of fields from the percolated documents, using two separate indices
+allows for fields to be stored in a denser, more efficient way.
+</li><li class="listitem">
+Percolate queries do not scale in the same way as other queries, so percolation performance may benefit from using
+a different index configuration, like the number of primary shards.
+</li></ul></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-script-query.html">
               « 
               Script Query</a>
            
