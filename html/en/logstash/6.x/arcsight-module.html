@@ -663,7 +663,7 @@ Elasticsearch, Kibana and Logstash on separate hosts to consume data from ArcSig
 Start the Logstash ArcSight module by running the following command in the
 Logstash install directory with your respective Smart Connector host and port:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">bin/logstash --modules arcsight --setup \
-  -M "arcsight.var.input.smartconnector.bootstrap_servers=smart_connect_host:smart_connect_port"  \
+  -M "arcsight.var.input.smartconnector.port=smart_connect_port"  \
   -M "arcsight.var.elasticsearch.hosts=localhost:9200"  \
   -M "arcsight.var.kibana.host=localhost:5601"</pre></div><p class="simpara">The <code class="literal">--modules arcsight</code> option spins up an ArcSight CEF-aware Logstash
 pipeline for ingestion. The <code class="literal">--setup</code> option creates an <code class="literal">arcsight-*</code> index
@@ -683,7 +683,7 @@ See <a class="xref" href="arcsight-module.html#exploring-data-arcsight" title="E
 control the behavior of the ArcSight module.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="arcsight-getting-started-eventbroker"></a>Getting Started with the Event Broker<a href="https://github.com/elastic/logstash/edit/6.x/docs/static/arcsight-module.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To get started, you can use a basic Elastic Stack setup that reads events from
 the Event Broker event stream.</p><div class="informalfigure"><div class="mediaobject"><img src="static/images/arcsight-diagram-adp.svg" alt="ArcSight Event Broker architecture" /></div></div><p>By default, the Logstash ArcSight module consumes from the Event Broker "eb-cef" topic.
 For additional settings, see <a class="xref" href="arcsight-module.html#arcsight-module-config" title="Logstash ArcSight Module Configuration Options">Logstash ArcSight Module Configuration Options</a>. Consuming from a
-secured Event Broker port is not currently available.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Logstash, Elasticsearch, and Kibana must run locally. Note that you can also run
+secured Event Broker port is possible, see <a class="xref" href="arcsight-module.html#arcsight-module-config" title="Logstash ArcSight Module Configuration Options">Logstash ArcSight Module Configuration Options</a>.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Logstash, Elasticsearch, and Kibana must run locally. Note that you can also run
 Elasticsearch, Kibana and Logstash on separate hosts to consume data from ArcSight.</p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="arcsight-instructions-eventbroker"></a>Instructions for Event Broker<a href="https://github.com/elastic/logstash/edit/6.x/docs/static/arcsight-module.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Start the Logstash ArcSight module by running the following command in the
 Logstash install directory with your respective Event Broker host and port:
@@ -770,7 +770,7 @@ Value type is <a class="link" href="configuration-file-structure.html#string" ti
 Default value is "eventbroker"
 </li></ul></div><p class="simpara">Set the input(s) to expose for the Logstash ArcSight module. Valid settings are
 "eventbroker", "smartconnector", or "eventbroker,smartconnector" (exposes both
-inputs concurrently).</p></dd><dt><span class="term">
+inputs concurrently).</p></dd></dl></div><p><span class="strong strong"><strong>ArcSight Module Event Broker specific Options</strong></span></p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <span class="strong strong"><strong><code class="literal">var.input.eventbroker.bootstrap_servers</code></strong></span>
 </span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
@@ -787,12 +787,135 @@ Value type is <a class="link" href="configuration-file-structure.html#array" tit
 </li><li class="listitem">
 Default value is ["eb-cef"]
 </li></ul></div><p class="simpara">A list of Event Broker topics to subscribe to.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.security_protocol</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value can be any of: <code class="literal">PLAINTEXT</code>, <code class="literal">SSL</code>, <code class="literal">SASL_PLAINTEXT</code>, <code class="literal">SASL_SSL</code>
+</li><li class="listitem">
+Default value is <code class="literal">"PLAINTEXT"</code>
+</li></ul></div><p class="simpara">Security protocol to use, which can be either of PLAINTEXT, SSL, SASL_PLAINTEXT, SASL_SSL. If you specify anything other than PLAINTEXT then you need to also specify some of the options listed below. When specifying <code class="literal">SSL</code> or <code class="literal">SASL_SSL</code> you should supply values for the options prefixed with <code class="literal">ssl_</code>, when specifying <code class="literal">SASL_PLAINTEXT</code> or <code class="literal">SASL_SSL</code> you should supply values for <code class="literal">jaas_path</code>, <code class="literal">kerberos_config</code>, <code class="literal">sasl_mechanism</code> and <code class="literal">sasl_kerberos_service_name</code>.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.ssl_key_password</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#password" title="Passwordedit">password</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">The password of the private key in the key store file.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.ssl_keystore_location</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#path" title="Pathedit">path</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">If client authentication is required, this setting stores the keystore path.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.ssl_keystore_password</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#password" title="Passwordedit">password</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">If client authentication is required, this setting stores the keystore password.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.ssl_keystore_type</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">The keystore type.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.ssl_truststore_location</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#path" title="Pathedit">path</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">The JKS truststore path to validate the Kafka broker’s certificate.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.ssl_truststore_password</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#password" title="Passwordedit">password</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">The truststore password.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.ssl_truststore_type</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">The truststore type.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.sasl_kerberos_service_name</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">The Kerberos principal name that Kafka broker runs as.
+This can be defined either in Kafka’s JAAS config or in Kafka’s config.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.sasl_mechanism</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#string" title="Stringedit">string</a>
+</li><li class="listitem">
+Default value is <code class="literal">"GSSAPI"</code>
+</li></ul></div><p class="simpara"><a class="ulink" href="http://kafka.apache.org/documentation.html#security_sasl" target="_top">SASL mechanism</a> used for client connections.
+This may be any mechanism for which a security provider is available.
+GSSAPI is the default mechanism.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.jaas_path</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#path" title="Pathedit">path</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">The Java Authentication and Authorization Service (JAAS) API supplies user authentication and authorization
+services for Kafka. This setting provides the path to the JAAS file. Sample JAAS file for Kafka client:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">KafkaClient {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useTicketCache=true
+  renewTicket=true
+  serviceName="kafka";
+  };</pre></div><p class="simpara">Please note that specifying <code class="literal">jaas_path</code> and <code class="literal">kerberos_config</code> here will add these
+to the global JVM system properties. This means if you have multiple Kafka inputs,
+all of them would be sharing the same <code class="literal">jaas_path</code> and <code class="literal">kerberos_config</code>.
+If this is not desirable, you would have to run separate instances of Logstash on
+different JVM instances.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.eventbroker.kerberos_config</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#path" title="Pathedit">path</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">Optional path to kerberos config file. This is krb5.conf style as detailed in <a class="ulink" href="https://web.mit.edu/kerberos/krb5-1.12/doc/admin/conf_files/krb5_conf.html" target="_top">https://web.mit.edu/kerberos/krb5-1.12/doc/admin/conf_files/krb5_conf.html</a></p></dd></dl></div><p><span class="strong strong"><strong>ArcSight Module Smart Connector specific Options</strong></span></p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <span class="strong strong"><strong><code class="literal">var.input.smartconnector.port</code></strong></span>
 </span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#number" title="Numberedit">number</a>
 </li><li class="listitem">
 Default value is 5000
-</li></ul></div><p class="simpara">The TCP port to listen on when receiving data from SCs.</p></dd></dl></div><p><span class="strong strong"><strong>Common options</strong></span></p><p>The following configuration options are supported by all modules:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+</li></ul></div><p class="simpara">The TCP port to listen on when receiving data from SCs.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.smartconnector.ssl_enable</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a>
+</li><li class="listitem">
+Default value is <code class="literal">false</code>
+</li></ul></div><p class="simpara">Enable SSL (must be set for other <code class="literal">ssl_</code> options to take effect).</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.smartconnector.ssl_cert</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#path" title="Pathedit">path</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">SSL certificate path.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.smartconnector.ssl_extra_chain_certs</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#array" title="Array">array</a>
+</li><li class="listitem">
+Default value is <code class="literal">[]</code>
+</li></ul></div><p class="simpara">An Array of paths to extra X509 certificates to be added to the certificate chain.
+Useful when the CA chain is not necessary in the system store.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.smartconnector.ssl_key</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#path" title="Pathedit">path</a>
+</li><li class="listitem">
+There is no default value for this setting.
+</li></ul></div><p class="simpara">SSL key path</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.smartconnector.ssl_key_passphrase</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#password" title="Passwordedit">password</a>
+</li><li class="listitem">
+Default value is <code class="literal">nil</code>
+</li></ul></div><p class="simpara">SSL key passphrase</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">var.input.smartconnector.ssl_verify</code></strong></span>
+</span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Value type is <a class="link" href="configuration-file-structure.html#boolean" title="Booleanedit">boolean</a>
+</li><li class="listitem">
+Default value is <code class="literal">true</code>
+</li></ul></div><p class="simpara">Verify the identity of the other end of the SSL connection against the CA.
+For input, sets the field <code class="literal">sslsubject</code> to that of the client certificate.</p></dd></dl></div><p><span class="strong strong"><strong>Common options</strong></span></p><p>The following configuration options are supported by all modules:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <span class="strong strong"><strong><code class="literal">var.elasticsearch.hosts</code></strong></span>
 </span></dt><dd><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Value type is <a class="link" href="configuration-file-structure.html#uri" title="URIedit">uri</a>
