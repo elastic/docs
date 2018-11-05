@@ -892,8 +892,8 @@ Update the <code class="literal">/etc/default/grub</code> file with the required
 Enable the <code class="literal">overlay</code> kernel module:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">echo "overlay" | sudo tee -a /etc/modules-load.d/overlay.conf</pre></div></li><li class="listitem"><p class="simpara">
 Refresh the dynamically generated grub2 configuration and configure grub to boot the newly installed kernel 3.10 or higher:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo grub2-mkconfig -o /etc/grub2.cfg
-sudo grub2-set-default 0</pre></div></li></ol></div><h4><a id="ece-install-docker-rhel-centos"></a>Install Docker Version 1.11</h4><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If you are using RHEL 7.5 or later, use the provided Docker version, <span class="strong strong"><strong><span class="emphasis"><em>skip</em></span></strong></span> the package installation instructions, then <span class="strong strong"><strong><span class="emphasis"><em>follow</em></span></strong></span> <a class="link" href="ece-configure-hosts.html#ece-update-configuration-settings-rhel" title="Update the Configurations Settings">docker configuration steps</a>.</p></div></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo grub2-set-default 0
+sudo grub2-mkconfig -o /etc/grub2.cfg</pre></div></li></ol></div><h4><a id="ece-install-docker-rhel-centos"></a>Install Docker Version 1.11</h4><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If you are using RHEL 7.5 or later, use the provided Docker version, skip the package installation instructions, and then follow the <a class="link" href="ece-configure-hosts.html#ece-update-configuration-settings-rhel" title="Update the Configurations Settings">Docker configuration steps</a>.</p></div></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Recommended: Add the Docker repository to make installing the correct version of Docker easier:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo tee /etc/yum.repos.d/docker.repo &lt;&lt;-'EOF'
 [dockerrepo]
@@ -906,12 +906,25 @@ EOF
 
 sudo yum makecache fast</pre></div></li><li class="listitem"><p class="simpara">
 Install the correct version of the <code class="literal">docker-engine</code> package:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo yum install docker-engine-1.11*</pre></div></li></ol></div><h4><a id="ece-update-configuration-settings-rhel"></a>Update the Configurations Settings</h4><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo yum install docker-engine-1.11*</pre></div></li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ece-install_docker_version_18_03"></a>Install Docker Version 18.03</h3></div></div></div><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Add the Docker repository:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo tee /etc/yum.repos.d/docker.repo &lt;&lt;-'EOF'
+[dockerrepo]
+name=Docker Repository
+baseurl=https://download.docker.com/linux/centos/7/x86_64/stable
+enabled=1
+gpgcheck=1
+gpgkey=https://download.docker.com/linux/centos/gpg
+EOF
+
+sudo yum makecache fast</pre></div></li><li class="listitem"><p class="simpara">
+Install the latest version of docker-ce:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo yum install docker-ce-18.03.0.ce</pre></div></li></ol></div><h4><a id="ece-update-configuration-settings-rhel"></a>Update the Configurations Settings</h4><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Stop the Docker service:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo systemctl stop docker</pre></div></li><li class="listitem"><p class="simpara">
 If you plan to run Elasticsearch 5.0 and later: Update the <code class="literal">/etc/sysctl.conf</code> file to set the maximum number of mapped memory areas a process can have:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf</pre></div></li><li class="listitem"><p class="simpara">
-Verify that <code class="literal">fs.may_detach_mounts</code> is enabled:
+For RHEL only: Verify that <code class="literal">fs.may_detach_mounts</code> is enabled:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">cat /proc/sys/fs/may_detach_mounts</pre></div><p class="simpara">If the output of this command is not <code class="literal">1</code>, you must enable the setting in order for Docker to cleanly remove containers:</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
 Update the <code class="literal">/etc/sysctl.conf</code> file to include this line:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">fs.may_detach_mounts = 1</pre></div></li></ol></div></li><li class="listitem"><p class="simpara">
@@ -942,13 +955,23 @@ Create the <code class="literal">/mnt/data/docker</code> directory for the Docke
 Disable the firewalld service. The service is not compatible with Docker and interferes with the installation of ECE. You must disable firewalld before installing or reinstalling ECE.
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo systemctl disable firewalld</pre></div></li><li class="listitem"><p class="simpara">
 Configure the Docker daemon options.
-</p><p class="simpara">Update the <code class="literal">/etc/systemd/system/docker.service.d/docker.conf</code> file. If the file path and file do not exist, create them first.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">[Unit]
+</p><p class="simpara">Depending on the installed Docker version, you need to perform a slightly different system configuration.</p><p class="simpara">Update the <code class="literal">/etc/systemd/system/docker.service.d/docker.conf</code> file. If the file path and file do not exist, create them first.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+Docker version 1.11
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">[Unit]
 Description=Docker Service
 After=multi-user.target
 
 [Service]
 ExecStart=
 ExecStart=/usr/bin/docker daemon -g /mnt/data/docker --storage-driver=overlay --bip=172.17.42.1/16</pre></div></li><li class="listitem"><p class="simpara">
+Docker version 18.03
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">[Unit]
+Description=Docker Service
+After=multi-user.target
+
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd --data-root /mnt/data/docker --storage-driver=overlay --bip=172.17.42.1/16</pre></div></li></ul></div></li><li class="listitem"><p class="simpara">
 Apply the updated Docker daemon configuration:
 </p><p class="simpara">Reload the Docker daemon configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo systemctl daemon-reload</pre></div><p class="simpara">Restart the Docker service:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo systemctl restart docker</pre></div><p class="simpara">Enable Docker to start on boot:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo systemctl enable docker</pre></div></li><li class="listitem"><p class="simpara">
 Enable your user to communicate with the Docker subsystem by adding it to the <code class="literal">docker</code> group:
