@@ -668,7 +668,35 @@ transaction := apm.DefaultTracer.StartTransactionOptions("GET /", "request", opt
 The Transaction must not be used after this.</p><p>The transaction’s duration will be calculated as the amount of time
 elapsed since the transaction was started until this call. To override
 this behaviour, the transaction’s <code class="literal">Duration</code> field may be set before
-calling End.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">transaction.End()</pre></div><h4><a id="transaction-tracecontext"></a><code class="literal">func (*Transaction) TraceContext() TraceContext</code><a href="https://github.com/elastic/apm-agent-go/edit/master/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>TraceContext returns the transaction’s <a class="link" href="api.html#trace-context" title="Trace Contextedit">trace context</a>.</p><h4><a id="apm-context-with-transaction"></a><code class="literal">func ContextWithTransaction(context.Context, *Transaction) context.Context</code><a href="https://github.com/elastic/apm-agent-go/edit/master/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>ContextWithTransaction adds the transaction to the context, and returns the resulting context.</p><p>The transaction can be retrieved using <a class="link" href="api.html#apm-transaction-from-context" title="func TransactionFromContext(context.Context) *Transactionedit">apm.TransactionFromContext</a>.
+calling End.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">transaction.End()</pre></div><h4><a id="transaction-tracecontext"></a><code class="literal">func (*Transaction) TraceContext() TraceContext</code><a href="https://github.com/elastic/apm-agent-go/edit/master/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>TraceContext returns the transaction’s <a class="link" href="api.html#trace-context" title="Trace Contextedit">trace context</a>.</p><h4><a id="transaction-ensureparent"></a><code class="literal">func (*Transaction) EnsureParent() SpanID</code><a href="https://github.com/elastic/apm-agent-go/edit/master/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>EnsureParent returns the transaction’s parent span ID, generating and recording one if
+it did not previously have one.</p><p>EnsureParent enables correlation with spans created by the JavaScript Real User Monitoring
+(RUM) agent for the initial page load. If your backend service generates the HTML page
+dynamically, you can inject the trace and parent span ID into the page in order to initialize
+the JavaScript RUM agent, such that the web browser’s page load appears as the root of the
+trace.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">var initialPageTemplate = template.Must(template.New("").Parse(`
+&lt;html&gt;
+&lt;head&gt;
+&lt;script src="elastic-apm-js-base/dist/bundles/elastic-apm-js-base.umd.min.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  elasticApm.init({
+    serviceName: '',
+    serverUrl: 'http://localhost:8200',
+    pageLoadTraceId: {{.TraceContext.Trace}},
+    pageLoadSpanId: {{.EnsureParent}},
+    pageLoadSampled: {{.Sampled}},
+  })
+&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;...&lt;/body&gt;
+&lt;/html&gt;
+`))
+
+func initialPageHandler(w http.ResponseWriter, req *http.Request) {
+        err := initialPageTemplate.Execute(w, apm.TransactionFromContext(req.Context()))
+        if err != nil {
+                ...
+        }
+}</pre></div><p>See the <a class="ulink" href="https://www.elastic.co/guide/en/apm/agent/js-base/current/index.html" target="_top">JavaScript RUM agent documentation</a> for more information.</p><h4><a id="apm-context-with-transaction"></a><code class="literal">func ContextWithTransaction(context.Context, *Transaction) context.Context</code><a href="https://github.com/elastic/apm-agent-go/edit/master/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>ContextWithTransaction adds the transaction to the context, and returns the resulting context.</p><p>The transaction can be retrieved using <a class="link" href="api.html#apm-transaction-from-context" title="func TransactionFromContext(context.Context) *Transactionedit">apm.TransactionFromContext</a>.
 The context may also be passed into <a class="link" href="api.html#apm-start-span" title="func StartSpan(ctx context.Context, name, spanType string) (*Span, context.Context)edit">apm.StartSpan</a>, which uses
 TransactionFromContext under the covers to create a span as a child of the transaction.</p><h4><a id="apm-transaction-from-context"></a><code class="literal">func TransactionFromContext(context.Context) *Transaction</code><a href="https://github.com/elastic/apm-agent-go/edit/master/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>TransactionFromContext returns a transaction previously stored in the context using
 <a class="link" href="api.html#apm-context-with-transaction" title="func ContextWithTransaction(context.Context, *Transaction) context.Contextedit">apm.ContextWithTransaction</a>, or nil if the context
