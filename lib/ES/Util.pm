@@ -33,7 +33,7 @@ sub build_chunked {
     my ( $index, $dest, %opts ) = @_;
 
     my $chunk     = $opts{chunk}         || 0;
-    my $version   = $opts{version}       || 'test build';
+    my $version   = $opts{version}       || '';
     my $multi     = $opts{multi}         || 0;
     my $lenient   = $opts{lenient}       || '';
     my $lang      = $opts{lang}          || 'en';
@@ -103,13 +103,13 @@ sub build_single {
     my $type = $opts{type} || 'book';
     my $toc = $opts{toc} ? "$type toc" : '';
     my $lenient   = $opts{lenient}       || '';
-    my $version   = $opts{version}       || 'test build';
+    my $version   = $opts{version}       || '';
     my $multi     = $opts{multi}         || 0;
     my $lang      = $opts{lang}          || 'en';
     my $edit_url  = $opts{edit_url}      || '';
     my $root_dir  = $opts{root_dir}      || '';
     my $section   = $opts{section_title} || '';
-    my $subject   = $opts{subject}       || '';    
+    my $subject   = $opts{subject}       || '';
     my $private   = $opts{private}       || '';
     my $noindex   = $opts{noindex}       || '';
     my $resources = $opts{resource}      || [];
@@ -185,7 +185,7 @@ sub build_pdf {
 #===================================
     my ( $index, $dest, %opts ) = @_;
 
-    my $version   = $opts{version}   || 'test build';
+    my $version   = $opts{version}   || '';
     my $lenient   = $opts{lenient}   || '';
     my $toc_level = $opts{toc_level} || 7;
     my $lang      = $opts{lang}      || 'en';
