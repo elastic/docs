@@ -643,8 +643,12 @@ and ship it to the monitoring cluster, rather than routing it through exporters
 as described in <a class="xref" href="configuring-monitoring.html" title="Configuring monitoring in Elasticsearch"><em>Configuring monitoring</em></a>.</p><div class="informalfigure"><div class="mediaobject"><img src="monitoring/images/metricbeat.png" alt="Example monitoring architecture" /></div></div><p>To learn about monitoring in general, see
 <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.5/xpack-monitoring.html" target="_top">Monitoring the Elastic Stack</a>.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Enable the collection of monitoring data. Set
-<code class="literal">xpack.monitoring.collection.enabled</code> to <code class="literal">true</code> on the production cluster.
-</p><p class="simpara">For example, you can use the following APIs to review and change this setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/settings
+<code class="literal">xpack.monitoring.collection.enabled</code> to <code class="literal">true</code> on each node in the production
+cluster. By default, it is is disabled (<code class="literal">false</code>).
+</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You can specify this setting in either the <code class="literal">elasticsearch.yml</code> on each
+node or across the cluster as a dynamic cluster setting. If Elasticsearch
+security features are enabled, you must have <code class="literal">monitor</code> cluster privileges to
+view the cluster settings and <code class="literal">manage</code> cluster privileges to change them.</p></div></div><p class="simpara">For example, you can use the following APIs to review and change this setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/settings
 
 PUT _cluster/settings
 {
@@ -653,9 +657,12 @@ PUT _cluster/settings
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/configuring-metricbeat/1.json"></div><p class="simpara">For more information, see <a class="xref" href="monitoring-settings.html" title="Monitoring settings in Elasticsearch">Monitoring settings</a> and <a class="xref" href="cluster-update-settings.html" title="Cluster Update Settings"><em>Cluster Update Settings</em></a>.</p></li><li class="listitem"><p class="simpara">
 Disable the default collection of Elasticsearch monitoring metrics. Set
-<code class="literal">xpack.monitoring.elasticsearch.collection.enabled</code> to <code class="literal">false</code> on the production
-cluster.
-</p><p class="simpara">For example, you can use the following API to change this setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
+<code class="literal">xpack.monitoring.elasticsearch.collection.enabled</code> to <code class="literal">false</code> on each node in
+the production cluster.
+</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You can specify this setting in either the <code class="literal">elasticsearch.yml</code> on each
+node or across the cluster as a dynamic cluster setting. If Elasticsearch
+security features are enabled, you must have <code class="literal">monitor</code> cluster privileges to
+view the cluster settings and <code class="literal">manage</code> cluster privileges to change them.</p></div></div><p class="simpara">For example, you can use the following API to change this setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
 {
   "persistent": {
     "xpack.monitoring.elasticsearch.collection.enabled": false
@@ -682,21 +689,24 @@ Configure the Elasticsearch module in Metricbeat.
     - node_stats
     - shard
   period: 10s
-  hosts: ["http://localhost:9200"] <a id="CO8-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-  xpack.enabled: true</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+  hosts: ["http://localhost:9200"] <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  xpack.enabled: true <a id="CO7-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 This setting identifies the host and port number that are used to access Elasticsearch.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This setting ensures that Kibana can read this monitoring data successfully.
+That is to say, it’s stored in the same location and format as monitoring data
+that is sent by <a class="link" href="es-monitoring-exporters.html" title="Exporters">exporters</a>.
 </p></td></tr></table></div></li><li class="listitem"><p class="simpara">
-If X-Pack security is enabled, you must also provide a user ID and password so that
-Metricbeat can collect metrics successfully.
-</p><div class="orderedlist"><ol class="orderedlist" type="i"><li class="listitem"><p class="simpara">
-Create or identify a user that you want to use to collect the metrics.
-</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>There is a <code class="literal">remote_monitoring_user</code> built-in user that grants the privileges
-necessary for Metricbeat to monitor Elastic Stack products. See
-<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.5/built-in-users.html" target="_top">Built-in users</a>.</p></div></div><p class="simpara">Alternatively, you can choose a different user and give them the
-<code class="literal">remote_monitoring_collector</code> <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.5/built-in-roles.html" target="_top">built-in role</a>.</p></li><li class="listitem"><p class="simpara">
+If Elastic security features are enabled, you must also provide a user ID
+and password so that Metricbeat can collect metrics successfully.
+</p><div class="orderedlist"><ol class="orderedlist" type="i"><li class="listitem">
+Create a user on the production cluster that has the
+<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.5/built-in-roles.html" target="_top"><code class="literal">remote_monitoring_collector</code> built-in role</a>.
+Alternatively, use the <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.5/built-in-users.html" target="_top"><code class="literal">remote_monitoring_user</code> built-in user</a>.
+</li><li class="listitem"><p class="simpara">
 Add the <code class="literal">username</code> and <code class="literal">password</code> settings to the Elasticsearch module configuration
 file.
-</p><p class="simpara">For example, add the following settings in the <code class="literal">modules.d/kibana.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: elasticsearch
+</p><p class="simpara">For example, add the following settings in the <code class="literal">modules.d/elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: elasticsearch
   ...
   username: remote_monitoring_user
   password: YOUR_PASSWORD</pre></div></li></ol></div></li><li class="listitem">
@@ -711,19 +721,20 @@ monitoring cluster prevents production cluster outages from impacting your
 ability to access your monitoring data. It also prevents monitoring activities
 from impacting the performance of your production cluster.</p></div></div><p class="simpara">For example, specify the Elasticsearch output information in the Metricbeat
 configuration file (<code class="literal">metricbeat.yml</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.elasticsearch:
-  hosts: ["http://es-mon-1:9200", "http://es-mon2:9200"] <a id="CO9-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+  hosts: ["http://es-mon-1:9200", "http://es-mon2:9200"] <a id="CO8-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 In this example, the data is stored on a monitoring cluster with nodes
 <code class="literal">es-mon-1</code> and <code class="literal">es-mon-2</code>.
 </p></td></tr></table></div><p class="simpara">For more information about these configuration options, see
 <a class="ulink" href="https://www.elastic.co/guide/en/beats/metricbeat/6.5/elasticsearch-output.html" target="_top">Configure the Elasticsearch output</a>.</p></li><li class="listitem"><p class="simpara">
-If X-Pack security is enabled on the monitoring cluster, you must provide a valid
-user ID and password so that Metricbeat can send metrics successfully.
-</p><div class="orderedlist"><ol class="orderedlist" type="i"><li class="listitem"><p class="simpara">
-Create or identify a user that you want to use to send the metrics.
-</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>There is a <code class="literal">remote_monitoring_user</code> built-in user that grants the privileges
-necessary for Metricbeat to monitor Elastic Stack products. See
-<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.5/built-in-users.html" target="_top">Built-in users</a>.</p></div></div><p class="simpara">Alternatively, you can choose a different user and give them the
-<code class="literal">remote_monitoring_agent</code> <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.5/built-in-roles.html" target="_top">built-in role</a>.</p></li><li class="listitem"><p class="simpara">
+If Elasticsearch security features are enabled on the monitoring cluster, you
+must provide a valid user ID and password so that Metricbeat can send metrics
+successfully.
+</p><div class="orderedlist"><ol class="orderedlist" type="i"><li class="listitem">
+Create a user on the monitoring cluster that has the
+<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.5/built-in-roles.html" target="_top"><code class="literal">remote_monitoring_agent</code> built-in role</a>.
+Alternatively, use the
+<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.5/built-in-users.html" target="_top"><code class="literal">remote_monitoring_user</code> built-in user</a>.
+</li><li class="listitem"><p class="simpara">
 Add the <code class="literal">username</code> and <code class="literal">password</code> settings to the Elasticsearch output information in
 the Metricbeat configuration file (<code class="literal">metricbeat.yml</code>):
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">output.elasticsearch:
