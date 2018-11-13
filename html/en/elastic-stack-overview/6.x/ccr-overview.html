@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Overview
         | Elastic Stack Overview [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Stack Overview [6.x]" /><link rel="up" href="xpack-ccr.html" title="Cross-cluster replication" /><link rel="prev" href="xpack-ccr.html" title="Cross-cluster replication" /><link rel="next" href="ccr-getting-started.html" title="Getting Started with cross-cluster replication" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elastic Stack/Overview/6.x" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elastic Stack" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Stack Overview [6.x]" /><link rel="up" href="xpack-ccr.html" title="Cross-cluster replication" /><link rel="prev" href="xpack-ccr.html" title="Cross-cluster replication" /><link rel="next" href="ccr-requirements.html" title="Requirements for leader indices" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elastic Stack/Overview/6.x" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elastic Stack" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.x" />
     
 
     
@@ -636,15 +636,76 @@ Not what you want? See the
            
         </span><span class="next">
            
-          <a href="ccr-getting-started.html">Getting Started with cross-cluster replication
+          <a href="ccr-requirements.html">Requirements for leader indices
                »
-            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="ccr-overview"></a>Overview<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ccr/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.</p></div></div><p>This is the overview section of the cross-cluster replication docs.</p></div><div class="navfooter"><span class="prev"><a href="xpack-ccr.html">
+            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="ccr-overview"></a>Overview<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ccr/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.</p></div></div><p>Cross-cluster replication is done on an index-by-index basis. Replication is
+configured at the index level. For each configured replication there is a
+replication source index called the <span class="emphasis"><em>leader index</em></span> and a replication target
+index called the <span class="emphasis"><em>follower index</em></span>.</p><p>Replication is active-passive. This means that while the leader index
+can directly be written into, the follower index can not directly receive
+writes.</p><p>Replication is pull-based. This means that replication is driven by the
+follower index. This simplifies state management on the leader index and means
+that cross-cluster replication does not interfere with indexing on the leader index.</p><h3><a id="_configuring_replication"></a>Configuring replication<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ccr/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Replication can be configured in two ways:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Manually using the
+  <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/ccr-put-follow.html" target="_top">create follower API</a>
+</li><li class="listitem">
+Automatically using
+  <a class="link" href="ccr-overview-auto-follow.html" title="Automatically following indices">auto-follow patterns</a>
+</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You must also <a class="link" href="ccr-requirements.html" title="Requirements for leader indices">configure the leader index</a>.</p></div></div><h3><a id="_the_mechanics_of_replication"></a>The mechanics of replication<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ccr/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>While replication is managed at the index level, replication is performed at the
+shard level. When a follower index is created, it is automatically
+configured to have an identical number of shards as the leader index. A follower
+shard task in the follower index pulls from the corresponding leader shard in
+the leader index by sending read requests for new operations. These read
+requests can be served from any copy of the leader shard (primary or replicas).</p><p>For each read request sent by the follower shard task, if there are new
+operations available on the leader shard, the leader shard responds with
+operations limited by the read parameters that you established when you
+configured the follower index. If there are no new operations available on the
+leader shard, the leader shard waits up to a configured timeout for new
+operations. If new operations occur within that timeout, the leader shard
+immediately responds with those new operations. Otherwise, if the timeout
+elapses, the follower shard replies that there are no new operations. The
+follower shard task updates some statistics and immediately sends another read
+request to the leader shard. This ensures that the network connections between
+the remote cluster and the local cluster are continually being used so as to
+avoid forceful termination by an external source (such as a firewall).</p><p>If a read request fails, the cause of the failure is inspected. If the
+cause of the failure is deemed to be a failure that can be recovered from (for
+example, a network failure), the follower shard task enters into a retry
+loop. Otherwise, the follower shard task is paused and requires user
+intervention before the it can be resumed with the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/ccr-post-resume-follow.html" target="_top">resume follower API</a>.</p><p>When operations are received by the follower shard task, they are placed in a
+write buffer. The follower shard task manages this write buffer and submits
+bulk write requests from this write buffer to the follower shard.  The write
+buffer and these write requests are managed by the write parameters that you
+established when you configured the follower index.  The write buffer serves as
+back-pressure against read requests. If the write buffer exceeds its configured
+limits, no additional read requests are sent by the follower shard task. The
+follower shard task resumes sending read requests when the write buffer no
+longer exceeds its configured limits.</p><p>Mapping updates applied to the leader index are automatically retrieved
+as-needed by the follower index.</p><p>Settings updates applied to the leader index that are needed by the follower
+index are automatically retried as-needed by the follower index. Not all
+settings updates are needed by the follower index. For example, changing the
+number of replicas on the leader index is not replicated by the follower index.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If you apply a non-dynamic settings change to the leader index that is
+needed by the follower index, the follower index will go through a cycle of
+closing itself, applying the settings update, and then re-opening itself. The
+follower index will be unavailable for reads and not replicating writes
+during this cycle.</p></div></div><h3><a id="_inspecting_the_progress_of_replication"></a>Inspecting the progress of replication<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ccr/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can inspect the progress of replication at the shard level with the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/ccr-get-follow-stats.html" target="_top">get follower stats API</a>. This API gives you
+insight into the read and writes managed by the follower shard task. It also
+reports read exceptions that can be retried and fatal exceptions that require
+user intervention.</p><h3><a id="_pausing_and_resuming_replication"></a>Pausing and resuming replication<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ccr/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can pause replication with the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/ccr-post-pause-follow.html" target="_top">pause follower API</a> and then later resume
+replication with the <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/ccr-post-resume-follow.html" target="_top">resume follower API</a>.
+Using these APIs in tandem enables you to adjust the read and write parameters
+on the follower shard task if your initial configuration is not suitable for
+your use case.</p><h3><a id="_terminating_replication"></a>Terminating replication<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ccr/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can terminate replication with the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/ccr-post-unfollow.html" target="_top">unfollow API</a>. This API converts a follower index
+to a regular (non-follower) index.</p></div><div class="navfooter"><span class="prev"><a href="xpack-ccr.html">
               « 
               Cross-cluster replication</a>
            
         </span><span class="next">
            
-          <a href="ccr-getting-started.html">Getting Started with cross-cluster replication
+          <a href="ccr-requirements.html">Requirements for leader indices
                »
             </a></span></div>
 <!-- end body -->
