@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Cluster Update Settings
-        | Elasticsearch Reference [6.4]
+        | Elasticsearch Reference [6.5]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.4]" /><link rel="up" href="cluster.html" title="Cluster APIs" /><link rel="prev" href="cluster-reroute.html" title="Cluster Reroute" /><link rel="next" href="cluster-get-settings.html" title="Cluster Get Settings" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.4" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.4" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.5]" /><link rel="up" href="cluster.html" title="Cluster APIs" /><link rel="prev" href="cluster-reroute.html" title="Cluster Reroute" /><link rel="next" href="cluster-get-settings.html" title="Cluster Get Settings" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.5" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.5" />
     
 
     
@@ -626,7 +626,7 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [6.4]
+      [6.5]
     </a></span> » <span class="breadcrumb-link"><a href="cluster.html">Cluster APIs</a></span> » <span class="breadcrumb-node">Cluster Update Settings</span></div><div class="navheader"><span class="prev"><a href="cluster-reroute.html">
               « 
               Cluster Reroute</a>
@@ -635,53 +635,56 @@
            
           <a href="cluster-get-settings.html">Cluster Get Settings
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="cluster-update-settings"></a>Cluster Update Settings<a href="https://github.com/elastic/elasticsearch/edit/6.4/docs/reference/cluster/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Allows to update cluster wide specific settings. Settings updated can
-either be persistent (applied across restarts) or transient (will not
-survive a full cluster restart). Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="cluster-update-settings"></a>Cluster Update Settings<a href="https://github.com/elastic/elasticsearch/edit/6.5/docs/reference/cluster/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Use this API to review and change cluster-wide settings.</p><p>To review cluster settings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_cluster/settings</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/1.json"></div><p>Updates to settings can be persistent, meaning they apply across restarts, or transient, where they don’t
+survive a full cluster restart. Here is an example of a persistent update:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
 {
     "persistent" : {
         "indices.recovery.max_bytes_per_sec" : "50mb"
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/1.json"></div><p>Or:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings?flat_settings=true
+}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/2.json"></div><p>This update is transient:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings?flat_settings=true
 {
     "transient" : {
         "indices.recovery.max_bytes_per_sec" : "20mb"
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/2.json"></div><p>The cluster responds with the settings updated. So the response for the
-last example will be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/3.json"></div><p>The response to an update returns the changed setting, as in this response to the transient example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     ...
     "persistent" : { },
     "transient" : {
         "indices.recovery.max_bytes_per_sec" : "20mb"
     }
-}</pre></div><p>Resetting persistent or transient settings can be done by assigning a
-<code class="literal">null</code> value. If a transient setting is reset, the persistent setting
-is applied if available. Otherwise Elasticsearch will fallback to the setting
-defined at the configuration file or, if not existent, to the default
-value. Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
+}</pre></div><p>You can reset persistent or transient settings by assigning a
+<code class="literal">null</code> value. If a transient setting is reset, the first one of these values that is defined is applied:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+the persistent setting
+</li><li class="listitem">
+the setting in the configuration file
+</li><li class="listitem">
+the default value.
+</li></ul></div><p>This example resets a setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
 {
     "transient" : {
         "indices.recovery.max_bytes_per_sec" : null
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/3.json"></div><p>Reset settings will not be included in the cluster response. So
-the response for the last example will be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/4.json"></div><p>The response does not include settings that have been reset:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     ...
     "persistent" : {},
     "transient" : {}
-}</pre></div><p>Settings can also be reset using simple wildcards. For instance to reset
-all dynamic <code class="literal">indices.recovery</code> setting a prefix can be used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
+}</pre></div><p>You can also reset settings using wildcards. For example, to reset
+all dynamic <code class="literal">indices.recovery</code> settings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /_cluster/settings
 {
     "transient" : {
         "indices.recovery.*" : null
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/4.json"></div><p>Cluster wide settings can be returned using:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_cluster/settings</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/5.json"></div><h3><a id="_precedence_of_settings"></a>Precedence of settings<a href="https://github.com/elastic/elasticsearch/edit/6.4/docs/reference/cluster/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Transient cluster settings take precedence over persistent cluster settings,
-which take precedence over settings configured in the <code class="literal">elasticsearch.yml</code>
-config file.</p><p>It’s best to set all cluster-wide settings with the <code class="literal">settings</code> API and use the
+}</pre></div><div class="console_widget" data-snippet="snippets/cluster-update-settings/5.json"></div><h3><a id="_order_of_precedence"></a>Order of Precedence<a href="https://github.com/elastic/elasticsearch/edit/6.5/docs/reference/cluster/update-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The order of precedence for cluster settings is:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+transient cluster settings
+</li><li class="listitem">
+persistent cluster settings
+</li><li class="listitem">
+settings in the <code class="literal">elasticsearch.yml</code> configuration file.
+</li></ol></div><p>It’s best to set all cluster-wide settings with the <code class="literal">settings</code> API and use the
 <code class="literal">elasticsearch.yml</code> file only for local configurations. This way you can be sure that
 the setting is the same on all nodes. If, on the other hand, you define different
 settings on different nodes by accident using the configuration file, it is very
-difficult to notice these discrepancies.</p><p>A list of dynamically updatable settings can be found in the
-<a class="link" href="modules.html" title="Modules">Modules</a> documentation.</p></div><div class="navfooter"><span class="prev"><a href="cluster-reroute.html">
+difficult to notice these discrepancies.</p><p>You can find the list of settings that you can dynamically update in <a class="link" href="modules.html" title="Modules">Modules</a>.</p></div><div class="navfooter"><span class="prev"><a href="cluster-reroute.html">
               « 
               Cluster Reroute</a>
            

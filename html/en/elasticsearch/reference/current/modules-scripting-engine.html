@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Advanced scripts using script engines
-        | Elasticsearch Reference [6.4]
+        | Elasticsearch Reference [6.5]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.4]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-scripting-expression.html" title="Lucene Expressions Language" /><link rel="next" href="modules-snapshots.html" title="Snapshot And Restore" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.4" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.4" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.5]" /><link rel="up" href="modules-scripting.html" title="Scripting" /><link rel="prev" href="modules-scripting-expression.html" title="Lucene Expressions Language" /><link rel="next" href="modules-snapshots.html" title="Snapshot And Restore" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.5" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.5" />
     
 
     
@@ -626,7 +626,7 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [6.4]
+      [6.5]
     </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-scripting.html">Scripting</a></span> » <span class="breadcrumb-node">Advanced scripts using script engines</span></div><div class="navheader"><span class="prev"><a href="modules-scripting-expression.html">
               « 
               Lucene Expressions Language</a>
@@ -635,9 +635,9 @@
            
           <a href="modules-snapshots.html">Snapshot And Restore
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-engine"></a>Advanced scripts using script engines<a href="https://github.com/elastic/elasticsearch/edit/6.4/docs/reference/modules/scripting/engine.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A <code class="literal">ScriptEngine</code> is a backend for implementing a scripting language. It may also
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-scripting-engine"></a>Advanced scripts using script engines<a href="https://github.com/elastic/elasticsearch/edit/6.5/docs/reference/modules/scripting/engine.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A <code class="literal">ScriptEngine</code> is a backend for implementing a scripting language. It may also
 be used to write scripts that need to use advanced internals of scripting. For example,
-a script that wants to use term frequencies while scoring.</p><p>The plugin <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/6.4/plugin-authors.html" target="_top">documentation</a> has more information on
+a script that wants to use term frequencies while scoring.</p><p>The plugin <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/6.5/plugin-authors.html" target="_top">documentation</a> has more information on
 how to write a plugin so that Elasticsearch will properly load it. To register
 the <code class="literal">ScriptEngine</code>, your plugin should implement the <code class="literal">ScriptPlugin</code> interface
 and override the <code class="literal">getScriptEngine(Settings settings)</code> method.</p><p>The following is an example of a custom <code class="literal">ScriptEngine</code> which uses the language
@@ -650,80 +650,105 @@ the document frequency of a provided term.</p><div class="pre_wrapper"><pre clas
     }
 
     @Override
-    public &lt;T&gt; T compile(String scriptName, String scriptSource, ScriptContext&lt;T&gt; context, Map&lt;String, String&gt; params) {
+    public &lt;T&gt; T compile(String scriptName, String scriptSource,
+            ScriptContext&lt;T&gt; context, Map&lt;String, String&gt; params) {
         if (context.equals(ScoreScript.CONTEXT) == false) {
-            throw new IllegalArgumentException(getType() + " scripts cannot be used for context [" + context.name + "]");
+            throw new IllegalArgumentException(getType()
+                    + " scripts cannot be used for context ["
+                    + context.name + "]");
         }
         // we use the script "source" as the script identifier
         if ("pure_df".equals(scriptSource)) {
-            ScoreScript.Factory factory = (p, lookup) -&gt; new ScoreScript.LeafFactory() {
-                final String field;
-                final String term;
-                {
-                    if (p.containsKey("field") == false) {
-                        throw new IllegalArgumentException("Missing parameter [field]");
-                    }
-                    if (p.containsKey("term") == false) {
-                        throw new IllegalArgumentException("Missing parameter [term]");
-                    }
-                    field = p.get("field").toString();
-                    term = p.get("term").toString();
-                }
-
-                @Override
-                public ScoreScript newInstance(LeafReaderContext context) throws IOException {
-                    PostingsEnum postings = context.reader().postings(new Term(field, term));
-                    if (postings == null) {
-                        // the field and/or term don't exist in this segment, so always return 0
-                        return new ScoreScript(p, lookup, context) {
-                            @Override
-                            public double execute() {
-                                return 0.0d;
-                            }
-                        };
-                    }
-                    return new ScoreScript(p, lookup, context) {
-                        int currentDocid = -1;
-                        @Override
-                        public void setDocument(int docid) {
-                            // advance has undefined behavior calling with a docid &lt;= its current docid
-                            if (postings.docID() &lt; docid) {
-                                try {
-                                    postings.advance(docid);
-                                } catch (IOException e) {
-                                    throw new UncheckedIOException(e);
-                                }
-                            }
-                            currentDocid = docid;
-                        }
-                        @Override
-                        public double execute() {
-                            if (postings.docID() != currentDocid) {
-                                // advance moved past the current doc, so this doc has no occurrences of the term
-                                return 0.0d;
-                            }
-                            try {
-                                return postings.freq();
-                            } catch (IOException e) {
-                                throw new UncheckedIOException(e);
-                            }
-                        }
-                    };
-                }
-
-                @Override
-                public boolean needs_score() {
-                    return false;
-                }
-            };
+            ScoreScript.Factory factory = PureDfLeafFactory::new;
             return context.factoryClazz.cast(factory);
         }
-        throw new IllegalArgumentException("Unknown script name " + scriptSource);
+        throw new IllegalArgumentException("Unknown script name "
+                + scriptSource);
     }
 
     @Override
     public void close() {
         // optionally close resources
+    }
+
+    private static class PureDfLeafFactory implements LeafFactory {
+        private final Map&lt;String, Object&gt; params;
+        private final SearchLookup lookup;
+        private final String field;
+        private final String term;
+
+        private PureDfLeafFactory(
+                    Map&lt;String, Object&gt; params, SearchLookup lookup) {
+            if (params.containsKey("field") == false) {
+                throw new IllegalArgumentException(
+                        "Missing parameter [field]");
+            }
+            if (params.containsKey("term") == false) {
+                throw new IllegalArgumentException(
+                        "Missing parameter [term]");
+            }
+            this.params = params;
+            this.lookup = lookup;
+            field = params.get("field").toString();
+            term = params.get("term").toString();
+        }
+
+        @Override
+        public boolean needs_score() {
+            return false;  // Return true if the script needs the score
+        }
+
+        @Override
+        public ScoreScript newInstance(LeafReaderContext context)
+                throws IOException {
+            PostingsEnum postings = context.reader().postings(
+                    new Term(field, term));
+            if (postings == null) {
+                /*
+                 * the field and/or term don't exist in this segment,
+                 * so always return 0
+                 */
+                return new ScoreScript(params, lookup, context) {
+                    @Override
+                    public double execute() {
+                        return 0.0d;
+                    }
+                };
+            }
+            return new ScoreScript(params, lookup, context) {
+                int currentDocid = -1;
+                @Override
+                public void setDocument(int docid) {
+                    /*
+                     * advance has undefined behavior calling with
+                     * a docid &lt;= its current docid
+                     */
+                    if (postings.docID() &lt; docid) {
+                        try {
+                            postings.advance(docid);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    }
+                    currentDocid = docid;
+                }
+                @Override
+                public double execute() {
+                    if (postings.docID() != currentDocid) {
+                        /*
+                         * advance moved past the current doc, so this doc
+                         * has no occurrences of the term
+                         */
+                        return 0.0d;
+                    }
+                    try {
+                        return postings.freq();
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            };
+        }
     }
 }</pre></div><p>You can execute the script by specifying its <code class="literal">lang</code> as <code class="literal">expert_scripts</code>, and the name
 of the script as the script source:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /_search
