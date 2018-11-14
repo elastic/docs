@@ -83,6 +83,14 @@ alias docbldamn='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-nodejs/d
 
 alias docbldamp='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-python/docs/index.asciidoc --chunk 1'
 
+alias docbldamry='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-ruby/docs/index.asciidoc --chunk 1'
+
+alias docbldamj='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-java/docs/index.asciidoc --chunk 1'
+
+alias docbldamjs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-js-base/docs/index.asciidoc --chunk 1'
+
+alias docbldamgo='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-go/docs/index.asciidoc --chunk 1'
+
 
 # Definitive Guide
 alias docblddg='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-definitive-guide/book.asciidoc --chunk 1'
