@@ -660,7 +660,25 @@ To force the agent to capture data in Django debug mode, set the <a class="link"
     # ...
 )</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>For Django 1.8, you can add the same middleware to <code class="literal">MIDDLEWARE_CLASSES</code>.</p></div></div><p>Make sure that it is the first middleware in the list.</p><h4><a id="django-instrumenting-custom-python-code"></a>Instrumenting custom Python code<a href="https://github.com/elastic/apm-agent-python/edit/master/docs/django.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To gain further insights into the performance of your code, please see
 <a class="link" href="instrumenting-custom-code.html" title="Instrumenting custom code">instrumenting custom code</a>.</p><h4><a id="django-ignoring-specific-views"></a>Ignoring specific views<a href="https://github.com/elastic/apm-agent-python/edit/master/docs/django.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>You can use the <code class="literal">TRANSACTIONS_IGNORE_PATTERNS</code> configuration option to ignore specific views.
-The list given should be a list of regular expressions which are matched against the transaction name as seen in the Elastic APM user interface:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-python">ELASTIC_APM['TRANSACTIONS_IGNORE_PATTERNS'] = ['^OPTIONS ', 'views.api.v2']</pre></div><p>This example ignores any requests using the <code class="literal">OPTIONS</code> method and any requests containing <code class="literal">views.api.v2</code>.</p><h3><a id="django-enabling-and-disabling-the-agent"></a>Enabling and disabling the agent<a href="https://github.com/elastic/apm-agent-python/edit/master/docs/django.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The easiest way to disable the agent is to set Django’s <code class="literal">DEBUG</code> option to <code class="literal">True</code> in your development configuration.
+The list given should be a list of regular expressions which are matched against the transaction name as seen in the Elastic APM user interface:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-python">ELASTIC_APM['TRANSACTIONS_IGNORE_PATTERNS'] = ['^OPTIONS ', 'views.api.v2']</pre></div><p>This example ignores any requests using the <code class="literal">OPTIONS</code> method and any requests containing <code class="literal">views.api.v2</code>.</p><h4><a id="django-integrating-with-the-rum-agent"></a>Integrating with the RUM agent<a href="https://github.com/elastic/apm-agent-python/edit/master/docs/django.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To correlate performance measurement in the browser with measurements in your Django app,
+you can help the RUM (Real User Monitoring) agent by configuring it with the Trace ID and Span ID of the backend request.
+We provide a handy template context processor which adds all the necessary bits into the context of your templates.</p><p>To enable this feature, first add the <code class="literal">rum_tracing</code> context processor to your <code class="literal">TEMPLATES</code> setting.
+You most likely already have a list of <code class="literal">context_processors</code>, in which case you can simply append ours to the list.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-python">TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'OPTIONS': {
+            'context_processors': [
+                # ...
+                'elasticapm.contrib.django.context_processors.rum_tracing',
+            ],
+        },
+    },
+]</pre></div><p>Then, update the call to initialize the RUM agent (which probably happens in your base template) like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-javascript">elasticApm.init({
+    serviceName: "my-frontend-service",
+    pageLoadTraceId: "{{ apm.trace_id }}",
+    pageLoadSpanId: "{{ apm.span_id }}",
+    pageLoadSampled: {{ apm.is_sampled_js }}
+})</pre></div><p>See the <a class="ulink" href="https://www.elastic.co/guide/en/apm/agent/js-base/current" target="_top">JavaScript RUM agent documentation</a> for more information.</p><h3><a id="django-enabling-and-disabling-the-agent"></a>Enabling and disabling the agent<a href="https://github.com/elastic/apm-agent-python/edit/master/docs/django.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The easiest way to disable the agent is to set Django’s <code class="literal">DEBUG</code> option to <code class="literal">True</code> in your development configuration.
 No errors or metrics will be logged to Elastic APM.</p><p>However, if during debugging you would like to force logging of errors to Elastic APM, then you can set <code class="literal">DEBUG</code> to <code class="literal">True</code> inside of the Elastic APM
 configuration dictionary, like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-python">ELASTIC_APM = {
    # ...
@@ -869,6 +887,12 @@ Success! We tracked the error successfully! You should be able to see it in a fe
                 
                   
                     <li><a href="/products/stack/alerting">Alerting</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/products/stack/canvas">Canvas</a></li>
                   
                 
               
@@ -1218,14 +1242,13 @@ Success! We tracked the error successfully! You should be able to see it in a fe
 				<li><a href="/legal/trademarks">Trademarks</a></li>
 				<li><a href="/legal/terms-of-use">Terms of Use</a></li>
 				<li><a href="/legal/privacy-statement">Privacy</a></li>
-				
 				<li><a href="/brand">Brand</a></li>
 			</ul>
 			<div class="copyright-content">
 				<div class="footer-text">
-					<p>© 2018. All Rights Reserved - Elasticsearch
+					<p>© 2018. Elasticsearch B.V. All Rights Reserved
 					</p>
-					<p>Elasticsearch is a trademark of Elasticsearch BV, registered in the U.S. and in other countries.
+					<p>Elasticsearch is a trademark of Elasticsearch B.V., registered in the U.S. and in other countries.
 					</p>
 					<p>Apache, Apache Lucene, Apache Hadoop, Hadoop, HDFS and the yellow elephant logo are trademarks of the <a href="http://www.apache.org/">Apache Software Foundation</a> in the United States and/or other countries.
 					</p>

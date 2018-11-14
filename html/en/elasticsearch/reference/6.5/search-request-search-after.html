@@ -650,11 +650,21 @@ The idea is to use the results from the previous page to help the retrieval of t
     },
     "sort": [
         {"date": "asc"},
-        {"_id": "desc"}
+        {"tie_breaker_id": "asc"}      <a id="CO57-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     ]
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-search-after/1.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>A field with one unique value per document should be used as the tiebreaker of the sort specification.
-Otherwise the sort order for documents that have the same sort values would be undefined. The recommended way is to use
-the field <code class="literal">_id</code> which is certain to contain one unique value for each document.</p></div></div><p>The result from the above request includes an array of <code class="literal">sort values</code> for each document.
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-search-after/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO57-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+A copy of the <code class="literal">_id</code> field with <code class="literal">doc_values</code> enabled
+</p></td></tr></table></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>A field with one unique value per document should be used as the tiebreaker
+of the sort specification. Otherwise the sort order for documents that have
+the same sort values would be undefined and could lead to missing or duplicate
+results. The <a class="link" href="mapping-id-field.html" title="_id field"><code class="literal">_id</code> field</a> has a unique value per document
+but it is not recommended to use it as a tiebreaker directly.
+<a class="link" href="doc-values.html" title="doc_values">doc value</a> are disabled on this field so sorting on it requires
+to load a lot of data in memory. Instead it is advised to duplicate (client side
+ or with a <a class="link" href="ingest-processors.html" title="Processors">set ingest processor</a>) the content
+of the <a class="link" href="mapping-id-field.html" title="_id field"><code class="literal">_id</code> field</a> in another field that has
+<a class="link" href="doc-values.html" title="doc_values">doc value</a> enabled and to use this new field as the tiebreaker
+for the sort.</p></div></div><p>The result from the above request includes an array of <code class="literal">sort values</code> for each document.
 These <code class="literal">sort values</code> can be used in conjunction with the <code class="literal">search_after</code> parameter to start returning results "after" any
 document in the result list.
 For instance we can use the <code class="literal">sort values</code> of the last document and pass it to <code class="literal">search_after</code> to retrieve the next page of results:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/_search
@@ -668,7 +678,7 @@ For instance we can use the <code class="literal">sort values</code> of the last
     "search_after": [1463538857, "654323"],
     "sort": [
         {"date": "asc"},
-        {"_id": "desc"}
+        {"tie_breaker_id": "asc"}
     ]
 }</pre></div><div class="console_widget" data-snippet="snippets/search-request-search-after/2.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The parameter <code class="literal">from</code> must be set to 0 (or -1) when <code class="literal">search_after</code> is used.</p></div></div><p><code class="literal">search_after</code> is not a solution to jump freely to a random page but rather to scroll many queries in parallel.
 It is very similar to the <code class="literal">scroll</code> API but unlike it, the <code class="literal">search_after</code> parameter is stateless, it is always resolved against the latest
@@ -778,6 +788,12 @@ It is very similar to the <code class="literal">scroll</code> API but unlike it,
                 
                   
                     <li><a href="/products/stack/alerting">Alerting</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/products/stack/canvas">Canvas</a></li>
                   
                 
               
@@ -1127,14 +1143,13 @@ It is very similar to the <code class="literal">scroll</code> API but unlike it,
 				<li><a href="/legal/trademarks">Trademarks</a></li>
 				<li><a href="/legal/terms-of-use">Terms of Use</a></li>
 				<li><a href="/legal/privacy-statement">Privacy</a></li>
-				
 				<li><a href="/brand">Brand</a></li>
 			</ul>
 			<div class="copyright-content">
 				<div class="footer-text">
-					<p>© 2018. All Rights Reserved - Elasticsearch
+					<p>© 2018. Elasticsearch B.V. All Rights Reserved
 					</p>
-					<p>Elasticsearch is a trademark of Elasticsearch BV, registered in the U.S. and in other countries.
+					<p>Elasticsearch is a trademark of Elasticsearch B.V., registered in the U.S. and in other countries.
 					</p>
 					<p>Apache, Apache Lucene, Apache Hadoop, Hadoop, HDFS and the yellow elephant logo are trademarks of the <a href="http://www.apache.org/">Apache Software Foundation</a> in the United States and/or other countries.
 					</p>

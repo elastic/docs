@@ -642,41 +642,51 @@ Not what you want? See the
 Which option to adjust depends on whether you are optimizing for speed,
 memory usage,
 bandwidth,
-or storage.</p><h3><a id="performance-sampling"></a>Sampling<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The first knob to reach for when tuning the performance of the agent is <a class="link" href="agent-api.html#transaction-sample-rate" title="transactionSampleRate"><code class="literal">transactionSampleRate</code></a>.
+or storage.</p><h3><a id="performance-sampling"></a>Sampling<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The first knob to reach for when tuning the performance of the agent is <a class="link" href="configuration.html#transaction-sample-rate" title="transactionSampleRate"><code class="literal">transactionSampleRate</code></a>.
 Adjusting the sampling rate controls what percent of requests are traced.
 By default,
 the sample rate is set at <code class="literal">1.0</code>,
 meaning <span class="emphasis"><em>all</em></span> requests are traced.</p><p>The sample rate will impact all four performance categories,
 so simply turning down the sample rate is an easy way to improve performance.</p><p>Here’s an example of setting the sample rate to 20%:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">require('elastic-apm-node').start({
   transactionSampleRate: 0.2
-})</pre></div><h3><a id="performance-transaction-queue"></a>Transaction Queue<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The agent buffers the collected data using an in-memory queue before sending it to the APM Server.
-The queue is flushed either after a specific <a class="link" href="performance-tuning.html#performance-flush-interval" title="Flush Intervaledit">amount of time</a> or when it reaches <a class="link" href="performance-tuning.html#performance-max-queue-size" title="Max Queue Sizeedit">a certain size</a> -
-whichever comes first.
-Lowering these defaults can reduce memory usage,
-but will increase the number of requests to the APM Server.</p><h4><a id="performance-flush-interval"></a>Flush Interval<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To prevent items from staying in the queue for a long time during low activity,
-the <a class="link" href="agent-api.html#flush-interval" title="flushInterval"><code class="literal">flushInterval</code></a> setting is used to ensure the queue empties if anything in it is too old.</p><p>Lowering the flush interval will ensure transactions are sent to the APM Server faster,
-but may also result in increased HTTP traffic and CPU usage.</p><h4><a id="performance-max-queue-size"></a>Max Queue Size<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <a class="link" href="agent-api.html#max-queue-size" title="maxQueueSize"><code class="literal">maxQueueSize</code></a> controls the maximum number of transactions that may remain in the queue before they must be sent.</p><p>Lowering this will reduce memory consumption,
-however it will increase the number of requests made to the APM Server.</p><h3><a id="performance-server-timeout"></a>APM Server Timeout<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>In the event that the connection to the APM Server is slow or unstable,
-the <a class="link" href="agent-api.html#server-timeout" title="serverTimeout"><code class="literal">serverTimeout</code></a> setting can be set to ensure connections don’t stay open too long.
-If the server timeout is too high,
-it may result in too many socket descriptors being held open.</p><h3><a id="performance-stack-traces"></a>Stack Traces<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Stack traces can be a significant contributor to memory usage.
+})</pre></div><h3><a id="performance-apm-server-communication"></a>APM Server communication<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The agent uses a persistent outgoing HTTP request to stream data to the APM Server.
+To avoid issues with intermittent proxies and load balancers,
+the HTTP request is ended and a new one created at regular intervals or when the size of the request becomes too big.</p><p>There’s an overhead involved in each HTTP request:
+Besides sending new HTTP headers,
+the agent needs to re-send certain metadata to the APM Server each time a new HTTP request is made.
+However,
+if allowed by the network,
+the TCP socket is reused between each HTTP request.</p><h4><a id="performance-api-request-time"></a>Max HTTP request duration<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default, an HTTP request to the APM Server is ended after a maximum of 10 seconds.
+Using the <a class="link" href="configuration.html#api-request-time" title="apiRequestTime"><code class="literal">apiRequestTime</code></a> config option,
+this time limit can be modified.</p><p>Lowering the time limit might be necessary if dealing with very aggressive proxies,
+but increasing the time limit means that the combined overhead of these HTTP requests is reduced,
+as headers and metadata don’t need to be re-sent that often.</p><h4><a id="performance-api-request-size"></a>Max HTTP request size<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default, an HTTP request to the APM Server is ended after approximately 1 MiB of gzip compressed data have been written to the body.
+Using the <a class="link" href="configuration.html#api-request-size" title="apiRequestSize"><code class="literal">apiRequestSize</code></a> config option,
+this time limit can be modified.</p><p>Lowering the size limit might be necessary if dealing with very aggressive proxies,
+but increasing the size limit means that the combined overhead of these HTTP requests is reduced,
+as headers and metadata don’t need to be re-sent that often.</p><h4><a id="performance-server-timeout"></a>APM Server Timeout<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In the event that the APM Server or the connection to the APM Server is slow or unstable,
+the <a class="link" href="configuration.html#server-timeout" title="serverTimeout"><code class="literal">serverTimeout</code></a> setting can be set to ensure the agent doesn’t wait too long for a response.</p><p>The agent only allows for a single TCP socket to be opened to the APM Server at any given time.
+This is to avoid the overhead of opening too many sockets.
+If the agent is stuck waiting for a response from the previous HTTP request,
+it might start dropping new data in order to keep its memory footprint low.</p><p>Keeping this timeout low,
+helps alleviate that problem.</p><h3><a id="performance-stack-traces"></a>Stack Traces<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Stack traces can be a significant contributor to memory usage.
 There are several settings to adjust how they are used.</p><h4><a id="performance-span-stack-traces"></a>Span Stack Traces<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>In a complex application,
 a request may produce many spans.
 Capturing a stack trace for every span can result in significant memory usage.
 To disable capturing stack traces for spans,
-set <a class="link" href="agent-api.html#capture-span-stack-traces" title="captureSpanStackTraces"><code class="literal">captureSpanStackTraces</code></a> to <code class="literal">false</code>.</p><p>This will mainly impact memory usage,
+set <a class="link" href="configuration.html#capture-span-stack-traces" title="captureSpanStackTraces"><code class="literal">captureSpanStackTraces</code></a> to <code class="literal">false</code>.</p><p>This will mainly impact memory usage,
 but may also have a noticeable impact on speed too.
 The CPU time required to capture and convert a stack frame to something JavaScript can understand is not insignificant.</p><h5><a id="performance-source-lines"></a>Source Lines<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>If you want to keep span stack traces enabled for context,
 the next thing to try is adjusting how many source lines are reported for each stack trace.
 When a stack trace is captured,
 the agent will also capture several lines of source code around each stack frame location in the stack trace.</p><p>The are four different settings to control this behaviour:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<a class="link" href="agent-api.html#source-context-error-app-frames"><code class="literal">sourceLinesErrorAppFrames</code></a>
+<a class="link" href="configuration.html#source-context-error-app-frames"><code class="literal">sourceLinesErrorAppFrames</code></a>
 </li><li class="listitem">
-<a class="link" href="agent-api.html#source-context-error-library-frames"><code class="literal">sourceLinesErrorLibraryFrames</code></a>
+<a class="link" href="configuration.html#source-context-error-library-frames"><code class="literal">sourceLinesErrorLibraryFrames</code></a>
 </li><li class="listitem">
-<a class="link" href="agent-api.html#source-context-span-app-frames"><code class="literal">sourceLinesSpanAppFrames</code></a>
+<a class="link" href="configuration.html#source-context-span-app-frames"><code class="literal">sourceLinesSpanAppFrames</code></a>
 </li><li class="listitem">
-<a class="link" href="agent-api.html#source-context-span-library-frames"><code class="literal">sourceLinesSpanLibraryFrames</code></a>
+<a class="link" href="configuration.html#source-context-span-library-frames"><code class="literal">sourceLinesSpanLibraryFrames</code></a>
 </li></ul></div><p>Source line settings are divided into app frames representing your app code and library frames representing the code of your dependencies.
 App and library categories are both split into error and span groups.
 Spans,
@@ -687,15 +697,15 @@ by default,
 will capture five lines of code around each stack frame.</p><p>Source lines are cached in-process.
 In memory-constrained environments,
 the source line cache may use more memory than desired.
-Turning the limits down will help prevent excessive memory use.</p><h4><a id="performance-stack-frame-limit"></a>Stack Frame Limit<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <a class="link" href="agent-api.html#stack-trace-limit" title="stackTraceLimit"><code class="literal">stackTraceLimit</code></a> controls how many stack frames should be captured when producing an <code class="literal">Error</code> instance of any kind.</p><p>This will mainly impact memory usage,
+Turning the limits down will help prevent excessive memory use.</p><h4><a id="performance-stack-frame-limit"></a>Stack Frame Limit<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <a class="link" href="configuration.html#stack-trace-limit" title="stackTraceLimit"><code class="literal">stackTraceLimit</code></a> controls how many stack frames should be captured when producing an <code class="literal">Error</code> instance of any kind.</p><p>This will mainly impact memory usage,
 but may also have a noticeable impact on speed too.
 The CPU time required to capture and convert a stack frame to something JavaScript can understand is not insignificant.</p><h4><a id="performance-error-log-stack-traces"></a>Error Log Stack Traces<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Most stack traces recorded by the agent will point to where the error was instantiated,
 not where it was identified and reported to the agent with <a class="link" href="agent-api.html#apm-capture-error" title="apm.captureError()"><code class="literal">captureError</code></a>.
 For this reason,
-the agent also has the <a class="link" href="agent-api.html#capture-error-log-stack-traces" title="captureErrorLogStackTraces"><code class="literal">captureErrorLogStackTraces</code></a> setting to enable capturing an additional stack trace pointing to the place an error was reported to the agent.
+the agent also has the <a class="link" href="configuration.html#capture-error-log-stack-traces" title="captureErrorLogStackTraces"><code class="literal">captureErrorLogStackTraces</code></a> setting to enable capturing an additional stack trace pointing to the place an error was reported to the agent.
 By default,
 it will only capture the stack trace to the reporting point when <a class="link" href="agent-api.html#apm-capture-error" title="apm.captureError()"><code class="literal">captureError</code></a> is called with a string message.</p><p>Setting this to <code class="literal">always</code> will increase memory and bandwidth usage,
-so it helps to consider how frequently the app may capture errors.</p><h3><a id="performance-transaction-max-spans"></a>Spans<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <a class="link" href="agent-api.html#transaction-max-spans" title="transactionMaxSpans"><code class="literal">transactionMaxSpans</code></a> setting limits the number of spans which may be recorded within a single transaction before remaining spans are dropped.</p><p>Spans may include many things such as a stack trace and context data.
+so it helps to consider how frequently the app may capture errors.</p><h3><a id="performance-transaction-max-spans"></a>Spans<a href="https://github.com/elastic/apm-agent-nodejs/edit/master/docs/performance-tuning.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <a class="link" href="configuration.html#transaction-max-spans" title="transactionMaxSpans"><code class="literal">transactionMaxSpans</code></a> setting limits the number of spans which may be recorded within a single transaction before remaining spans are dropped.</p><p>Spans may include many things such as a stack trace and context data.
 Limiting the number of spans that may be recorded will reduce memory usage.</p><p>Reducing max spans could result in loss of useful data about what occurred within a request,
 if it is set too low.</p></div><div class="navfooter"><span class="prev"><a href="custom-spans.html">
               « 
@@ -803,6 +813,12 @@ if it is set too low.</p></div><div class="navfooter"><span class="prev"><a href
                 
                   
                     <li><a href="/products/stack/alerting">Alerting</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/products/stack/canvas">Canvas</a></li>
                   
                 
               
@@ -1152,14 +1168,13 @@ if it is set too low.</p></div><div class="navfooter"><span class="prev"><a href
 				<li><a href="/legal/trademarks">Trademarks</a></li>
 				<li><a href="/legal/terms-of-use">Terms of Use</a></li>
 				<li><a href="/legal/privacy-statement">Privacy</a></li>
-				
 				<li><a href="/brand">Brand</a></li>
 			</ul>
 			<div class="copyright-content">
 				<div class="footer-text">
-					<p>© 2018. All Rights Reserved - Elasticsearch
+					<p>© 2018. Elasticsearch B.V. All Rights Reserved
 					</p>
-					<p>Elasticsearch is a trademark of Elasticsearch BV, registered in the U.S. and in other countries.
+					<p>Elasticsearch is a trademark of Elasticsearch B.V., registered in the U.S. and in other countries.
 					</p>
 					<p>Apache, Apache Lucene, Apache Hadoop, Hadoop, HDFS and the yellow elephant logo are trademarks of the <a href="http://www.apache.org/">Apache Software Foundation</a> in the United States and/or other countries.
 					</p>

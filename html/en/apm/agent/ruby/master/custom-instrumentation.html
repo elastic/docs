@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Custom instrumentation
         | APM Ruby Agent Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Ruby Agent Reference [master]" /><link rel="up" href="advanced.html" title="Advanced Topics" /><link rel="prev" href="advanced.html" title="Advanced Topics" /><link rel="next" href="spies.html" title="Spies" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Ruby Agent/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="APM" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Ruby Agent Reference [master]" /><link rel="up" href="advanced.html" title="Advanced Topics" /><link rel="prev" href="advanced.html" title="Advanced Topics" /><link rel="next" href="supported-technologies.html" title="Supported technologies" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Ruby Agent/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="APM" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
     
 
     
@@ -636,12 +636,15 @@ Not what you want? See the
            
         </span><span class="next">
            
-          <a href="spies.html">Spies
+          <a href="supported-technologies.html">Supported technologies
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="custom-instrumentation"></a>Custom instrumentation<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/custom-instrumentation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When <a class="link" href="introduction.html" title="Introduction">installed</a> and <a class="link" href="configuration.html" title="Configuration">properly configured</a> ElasticAPM will automatically wrap your app’s request/responses in
-transactions and report its errors.
-It also wraps each background job if you use Sidekiq or DelayedJob.</p><p>But it is possible to create your own transactions as well as provide spans for any
-automatic or custom transaction.</p><p>See <a class="link" href="api.html#api-transaction" title="Transactionedit"><code class="literal">ElasticAPM.transaction</code></a> and <a class="link" href="api.html#api-agent-span" title="ElasticAPM.spanedit"><code class="literal">ElasticAPM.span</code></a>.</p><h4><a id="_helpers"></a>Helpers<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/custom-instrumentation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>ElasticAPM includes some nifty helpers if you just want to instrument a regular method.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">class Thing
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="custom-instrumentation"></a>Custom instrumentation<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/custom-instrumentation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When <a class="link" href="introduction.html" title="Introduction">installed</a> and <a class="link" href="configuration.html" title="Configuration">properly configured</a>
+ElasticAPM will automatically wrap your app’s request/responses in transactions
+and report its errors.
+It also wraps each background job if you use Sidekiq or DelayedJob.</p><p>But it is possible to create your own transactions as well as provide spans for
+any automatic or custom transaction.</p><p>See <a class="link" href="api.html#api-agent-start_transaction" title="ElasticAPM.start_transactionedit"><code class="literal">ElasticAPM.start_transaction</code></a> and
+<a class="link" href="api.html#api-agent-start_span" title="ElasticAPM.start_spanedit"><code class="literal">ElasticAPM.start_span</code></a>.</p><h4><a id="_helpers"></a>Helpers<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/custom-instrumentation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>ElasticAPM includes some nifty helpers if you just want to instrument a regular
+method.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">class Thing
   include SpanHelpers
 
   def do_the_work
@@ -656,33 +659,32 @@ automatic or custom transaction.</p><p>See <a class="link" href="api.html#api-tr
 end</pre></div><h4><a id="_custom_span_example"></a>Custom span example<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/custom-instrumentation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If you are already inside a Transaction (most likely) and you want to instrument
 some work inside it, add a custom span:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">class ThingsController &lt; ApplicationController
   def index
-    @result_of_work = ElasticAPM.span "Heavy work" do
+    @result_of_work = ElasticAPM.with_span "Heavy work" do
       do_the_heavy_work
     end
   end
-end</pre></div><h4><a id="_custom_transaction_example"></a>Custom transaction example<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/custom-instrumentation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If you are <span class="strong strong"><strong>not</strong></span> inside a Transaction already (eg. outside of your common web application)
-start and manage your own transactions like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">class Something
+end</pre></div><h4><a id="_custom_transaction_example"></a>Custom transaction example<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/custom-instrumentation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If you are <span class="strong strong"><strong>not</strong></span> inside a Transaction already (eg. outside of your common web
+application) start and manage your own transactions like so:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">class Something
   def do_work
-    transaction = ElasticAPM.transaction 'Something#do_work'
+    transaction = ElasticAPM.start_transaction 'Something#do_work'
 
     begin
       Sequel[:users] # many third party libs will be automatically instrumented
-      transaction.submit('success') if transaction
     rescue Exception =&gt; e
       ElasticAPM.report(e)
-      transaction.submit('error') if transaction
       raise
     ensure
-      transaction.release
+      ElasticAPM.end_transaction('result')
     end
   end
-end</pre></div><p><span class="strong strong"><strong>Note:</strong></span> If the agent isn’t started beforehand this will do nothing. See <a class="link" href="api.html#api-agent-start" title="ElasticAPM.startedit">ElasticAPM.start</a>.</p></div><div class="navfooter"><span class="prev"><a href="advanced.html">
+end</pre></div><p><span class="strong strong"><strong>Note:</strong></span> If the agent isn’t started beforehand this will do nothing.
+See <a class="link" href="api.html#api-agent-start" title="ElasticAPM.startedit">ElasticAPM.start</a>.</p></div><div class="navfooter"><span class="prev"><a href="advanced.html">
               « 
               Advanced Topics</a>
            
         </span><span class="next">
            
-          <a href="spies.html">Spies
+          <a href="supported-technologies.html">Supported technologies
                »
             </a></span></div>
 <!-- end body -->
@@ -782,6 +784,12 @@ end</pre></div><p><span class="strong strong"><strong>Note:</strong></span> If t
                 
                   
                     <li><a href="/products/stack/alerting">Alerting</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/products/stack/canvas">Canvas</a></li>
                   
                 
               
@@ -1131,14 +1139,13 @@ end</pre></div><p><span class="strong strong"><strong>Note:</strong></span> If t
 				<li><a href="/legal/trademarks">Trademarks</a></li>
 				<li><a href="/legal/terms-of-use">Terms of Use</a></li>
 				<li><a href="/legal/privacy-statement">Privacy</a></li>
-				
 				<li><a href="/brand">Brand</a></li>
 			</ul>
 			<div class="copyright-content">
 				<div class="footer-text">
-					<p>© 2018. All Rights Reserved - Elasticsearch
+					<p>© 2018. Elasticsearch B.V. All Rights Reserved
 					</p>
-					<p>Elasticsearch is a trademark of Elasticsearch BV, registered in the U.S. and in other countries.
+					<p>Elasticsearch is a trademark of Elasticsearch B.V., registered in the U.S. and in other countries.
 					</p>
 					<p>Apache, Apache Lucene, Apache Hadoop, Hadoop, HDFS and the yellow elephant logo are trademarks of the <a href="http://www.apache.org/">Apache Software Foundation</a> in the United States and/or other countries.
 					</p>
