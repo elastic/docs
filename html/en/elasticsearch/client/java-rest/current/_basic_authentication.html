@@ -2,9 +2,9 @@
 <html lang="en-us">
   <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Basic authentication
-        | Java REST Client [6.4]
+        | Java REST Client [6.5]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java REST Client [6.4]" /><link rel="up" href="java-rest-low-usage.html" title="Getting started" /><link rel="prev" href="_number_of_threads.html" title="Number of threads" /><link rel="next" href="_encrypted_communication.html" title="Encrypted communication" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/JavaREST/6.4" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Clients" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.4" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Java REST Client [6.5]" /><link rel="up" href="java-rest-low-config.html" title="Common configuration" /><link rel="prev" href="_number_of_threads.html" title="Number of threads" /><link rel="next" href="_encrypted_communication.html" title="Encrypted communication" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Clients/JavaREST/6.5" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Clients" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.5" />
     
 
     
@@ -626,8 +626,8 @@
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Java REST Client
-      [6.4]
-    </a></span> » <span class="breadcrumb-link"><a href="java-rest-low.html">Java Low Level REST Client</a></span> » <span class="breadcrumb-link"><a href="java-rest-low-usage.html">Getting started</a></span> » <span class="breadcrumb-node">Basic authentication</span></div><div class="navheader"><span class="prev"><a href="_number_of_threads.html">
+      [6.5]
+    </a></span> » <span class="breadcrumb-link"><a href="java-rest-low.html">Java Low Level REST Client</a></span> » <span class="breadcrumb-link"><a href="java-rest-low-config.html">Common configuration</a></span> » <span class="breadcrumb-node">Basic authentication</span></div><div class="navheader"><span class="prev"><a href="_number_of_threads.html">
               « 
               Number of threads</a>
            
@@ -635,37 +635,45 @@
            
           <a href="_encrypted_communication.html">Encrypted communication
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_basic_authentication"></a>Basic authentication<a href="https://github.com/elastic/elasticsearch/edit/6.4/docs/java-rest/low-level/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Configuring basic authentication can be done by providing an
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_basic_authentication"></a>Basic authentication<a href="https://github.com/elastic/elasticsearch/edit/6.5/docs/java-rest/low-level/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Configuring basic authentication can be done by providing an
 <code class="literal">HttpClientConfigCallback</code> while building the <code class="literal">RestClient</code> through its builder.
 The interface has one method that receives an instance of
 <a class="ulink" href="https://hc.apache.org/httpcomponents-asyncclient-dev/httpasyncclient/apidocs/org/apache/http/impl/nio/client/HttpAsyncClientBuilder.html" target="_top"><code class="literal">org.apache.http.impl.nio.client.HttpAsyncClientBuilder</code></a>
  as an argument and has the same return type. The http client builder can be
 modified and then returned. In the following example we set a default
-credentials provider that requires basic authentication.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+credentials provider that requires basic authentication.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">final CredentialsProvider credentialsProvider =
+    new BasicCredentialsProvider();
 credentialsProvider.setCredentials(AuthScope.ANY,
-        new UsernamePasswordCredentials("user", "password"));
+    new UsernamePasswordCredentials("user", "password"));
 
-RestClientBuilder builder = RestClient.builder(new HttpHost("localhost", 9200))
-        .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-            @Override
-            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-            }
-        });</pre></div><p>Preemptive Authentication can be disabled, which means that every request will be sent without
+RestClientBuilder builder = RestClient.builder(
+    new HttpHost("localhost", 9200))
+    .setHttpClientConfigCallback(new HttpClientConfigCallback() {
+        @Override
+        public HttpAsyncClientBuilder customizeHttpClient(
+                HttpAsyncClientBuilder httpClientBuilder) {
+            return httpClientBuilder
+                .setDefaultCredentialsProvider(credentialsProvider);
+        }
+    });</pre></div><p>Preemptive Authentication can be disabled, which means that every request will be sent without
 authorization headers to see if it is accepted and, upon receiving an HTTP 401 response, it will
 resend the exact same request with the basic authentication header. If you wish to do this, then
-you can do so by disabling it via the <code class="literal">HttpAsyncClientBuilder</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+you can do so by disabling it via the <code class="literal">HttpAsyncClientBuilder</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">final CredentialsProvider credentialsProvider =
+    new BasicCredentialsProvider();
 credentialsProvider.setCredentials(AuthScope.ANY,
-        new UsernamePasswordCredentials("user", "password"));
+    new UsernamePasswordCredentials("user", "password"));
 
-RestClientBuilder builder = RestClient.builder(new HttpHost("localhost", 9200))
-        .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-            @Override
-            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                httpClientBuilder.disableAuthCaching(); <a id="CO12-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-                return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-            }
-        });</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+RestClientBuilder builder = RestClient.builder(
+    new HttpHost("localhost", 9200))
+    .setHttpClientConfigCallback(new HttpClientConfigCallback() {
+        @Override
+        public HttpAsyncClientBuilder customizeHttpClient(
+                HttpAsyncClientBuilder httpClientBuilder) {
+            httpClientBuilder.disableAuthCaching(); <a id="CO12-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            return httpClientBuilder
+                .setDefaultCredentialsProvider(credentialsProvider);
+        }
+    });</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO12-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Disable preemptive authentication
 </p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="_number_of_threads.html">
               « 
