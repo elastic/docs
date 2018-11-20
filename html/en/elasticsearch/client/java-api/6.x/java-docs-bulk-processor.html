@@ -744,7 +744,38 @@ bulkProcessor.close();
 client.admin().indices().prepareRefresh().get();
 
 // Now you can start searching!
-client.prepareSearch().get();</pre></div></div></div><div class="navfooter"><span class="prev"><a href="java-docs-bulk.html">
+client.prepareSearch().get();</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="java-docs-bulk-global-parameters"></a>Global Parameters<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/java-api/docs/bulk.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Global parameters can be specified on the BulkRequest as well as BulkProcessor, similar to the REST API. These global
+ parameters serve as defaults and can be overridden by local parameters specified on each sub request. Some parameters
+ have to be set before any sub request is added - index, type - and you have to specify them during  BulkRequest or
+ BulkProcessor creation. Some are optional - pipeline, routing - and can be specified at any point before the bulk is sent.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">try (BulkProcessor processor = initBulkProcessorBuilder(listener)
+        .setGlobalIndex("tweets")
+        .setGlobalType("_doc")
+        .setGlobalRouting("routing")
+        .setGlobalPipeline("pipeline_id")
+        .build()) {
+
+
+    processor.add(new IndexRequest() <a id="CO8-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        .source(XContentType.JSON, "user", "some user"));
+    processor.add(new IndexRequest("blogs", "post_type", "1") <a id="CO8-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+        .source(XContentType.JSON, "title", "some title"));
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+global parameters from the BulkRequest will be applied on a sub request
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+local pipeline parameter on a sub request will override global parameters from BulkRequest
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-java">BulkRequest request = new BulkRequest();
+request.pipeline("globalId");
+
+request.add(new IndexRequest("test", "doc", "1")
+    .source(XContentType.JSON, "field", "bulk1")
+    .setPipeline("perIndexId")); <a id="CO9-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+
+request.add(new IndexRequest("test", "doc", "2")
+    .source(XContentType.JSON, "field", "bulk2")); <a id="CO9-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+local pipeline parameter on a sub request will override global pipeline from the BulkRequest
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+global parameter from the BulkRequest will be applied on a sub request
+</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="java-docs-bulk.html">
               « 
               Bulk API</a>
            
