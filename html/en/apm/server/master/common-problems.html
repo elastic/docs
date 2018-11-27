@@ -674,6 +674,8 @@ Not what you want? See the
 <a class="xref" href="common-problems.html#ssl-client-fails" title="SSL client fails to connectedit">SSL client fails to connect<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
 </li><li class="listitem">
 <a class="xref" href="common-problems.html#field-limit-exceeded" title="Field limit exceedededit">Field limit exceeded<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
+</li><li class="listitem">
+<a class="xref" href="common-problems.html#io-timeout" title="I/O Timeoutedit">I/O Timeout<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
 </li></ul></div><h3><a id="no-data-indexed"></a>No data is indexed<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If no data shows up in Elasticsearch, first check that the APM components are properly connected.</p><p>To ensure that APM Server configuration is valid and it can connect to the configured output, Elasticsearch by default,
 run the following commands:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">apm-server test config
 apm-server test output</pre></div><p>To see if the agent can connect to the APM Server, send requests to the instrumented service and look for lines
@@ -764,7 +766,12 @@ But as soon as the field limit is reached,
 indexing stops again.</p><p>In the agent logs,
 you won’t see a sign of failures as the APM server asynchronously sends the data it received from the agents to Elasticsearch.
 However,
-the APM server and Elasticsearch log a warning like this:</p><pre class="screen">{\"type\":\"illegal_argument_exception\",\"reason\":\"Limit of total fields [1000] in index [apm-7.0.0-transaction-2017.05.30] has been exceeded\"}</pre></div><div class="navfooter"><span class="prev"><a href="troubleshooting.html">
+the APM server and Elasticsearch log a warning like this:</p><pre class="screen">{\"type\":\"illegal_argument_exception\",\"reason\":\"Limit of total fields [1000] in index [apm-7.0.0-transaction-2017.05.30] has been exceeded\"}</pre><h3><a id="io-timeout"></a>I/O Timeout<a href="https://github.com/elastic/apm-server/edit/master/docs/common-problems.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>I/O Timeouts can occur when your timeout settings across the stack are not configured correctly,
+especially when using a load balancer.</p><p>You may see an error like the one below in the agent logs, and/or a similar error on the APM Server side:</p><pre class="screen">[ElasticAPM] APM Server responded with an error:
+"read tcp 123.34.22.313:8200-&gt;123.34.22.40:41602: i/o timeout"</pre><p>To fix this, ensure timeouts are incrementing from the <a class="ulink" href="https://www.elastic.co/guide/en/apm/agent" target="_top">APM Agent</a>,
+through your load balancer, to the <a class="link" href="configuration-process.html#read_timeout" title="read_timeoutedit">APM Server</a>.</p><p>By default, the agent timeouts are set at 10 seconds, and the server timeout is set at 30 seconds.
+Your load balancer should be set somewhere between these numbers.</p><p>For example:</p><pre class="screen">APM Agent --&gt; Load Balancer  --&gt; APM Server
+   10s            15s               30s</pre></div><div class="navfooter"><span class="prev"><a href="troubleshooting.html">
               « 
               Troubleshooting</a>
            
