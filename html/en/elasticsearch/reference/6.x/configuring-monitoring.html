@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuring monitoring in Elasticsearch
         | Elasticsearch Reference [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="setup.html" title="Set up Elasticsearch" /><link rel="prev" href="setup-xpack.html" title="Set up X-Pack" /><link rel="next" href="configuring-metricbeat.html" title="Monitoring Elasticsearch with Metricbeat" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="setup.html" title="Set up Elasticsearch" /><link rel="prev" href="setup-xpack.html" title="Set up X-Pack" /><link rel="next" href="collecting-monitoring-data.html" title="Collecting monitoring data" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="6.x" />
     
 
     
@@ -654,135 +654,21 @@ Not what you want? See the
            
         </span><span class="next">
            
-          <a href="configuring-metricbeat.html">Monitoring Elasticsearch with Metricbeat
+          <a href="collecting-monitoring-data.html">Collecting monitoring data
                »
-            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-monitoring"></a>Configuring monitoring in Elasticsearch<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/monitoring/configuring-monitoring.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you enable the Elastic monitoring features in your cluster, you can
-optionally collect metrics about Elasticsearch. By default, monitoring is enabled but
-data collection is disabled.</p><p>The following method involves sending the metrics to the monitoring cluster by
-using exporters. For an alternative method, see <a class="xref" href="configuring-metricbeat.html" title="Monitoring Elasticsearch with Metricbeat">Monitoring Elasticsearch with Metricbeat</a>.</p><p>Advanced monitoring settings enable you to control how frequently data is
-collected, configure timeouts, and set the retention period for locally-stored
-monitoring indices. You can also adjust how monitoring data is displayed.</p><p>To learn about monitoring in general, see
-<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/xpack-monitoring.html" target="_top">Monitoring the Elastic Stack</a>.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Configure your cluster to collect monitoring data:
-</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
-Verify that the <code class="literal">xpack.monitoring.enabled</code> setting is <code class="literal">true</code>, which is its
-default value, on each node in the cluster. For more information, see
-<a class="xref" href="monitoring-settings.html" title="Monitoring settings in Elasticsearch">Monitoring settings</a>.
-</li><li class="listitem"><p class="simpara">
-Verify that the <code class="literal">xpack.monitoring.elasticsearch.collection.enabled</code> setting
-is <code class="literal">true</code>, which is its default value, on each node in the cluster.
-</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You can specify this setting in either the <code class="literal">elasticsearch.yml</code> on each
-node or across the cluster as a dynamic cluster setting. If Elasticsearch
-security features are enabled, you must have <code class="literal">monitor</code> cluster privileges to
-view the cluster settings and <code class="literal">manage</code> cluster privileges to change them.</p></div></div><p class="simpara">For more information, see <a class="xref" href="monitoring-settings.html" title="Monitoring settings in Elasticsearch">Monitoring settings</a> and <a class="xref" href="cluster-update-settings.html" title="Cluster Update Settings"><em>Cluster Update Settings</em></a>.</p></li><li class="listitem"><p class="simpara">
-Set the <code class="literal">xpack.monitoring.collection.enabled</code> setting to <code class="literal">true</code> on each
-node in the cluster. By default, it is is disabled (<code class="literal">false</code>).
-</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You can specify this setting in either the <code class="literal">elasticsearch.yml</code> on each
-node or across the cluster as a dynamic cluster setting. If Elasticsearch
-security features are enabled, you must have <code class="literal">monitor</code> cluster privileges to
-view the cluster settings and <code class="literal">manage</code> cluster privileges to change them.</p></div></div><p class="simpara">For example, use the following APIs to review and change this setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET _cluster/settings
-
-PUT _cluster/settings
-{
-  "persistent": {
-    "xpack.monitoring.collection.enabled": true
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/configuring-monitoring/1.json"></div><p class="simpara">For more
-information, see <a class="xref" href="monitoring-settings.html" title="Monitoring settings in Elasticsearch">Monitoring settings</a> and <a class="xref" href="cluster-update-settings.html" title="Cluster Update Settings"><em>Cluster Update Settings</em></a>.</p></li><li class="listitem"><p class="simpara">
-Optional: Specify which indices you want to monitor.
-</p><p class="simpara">By default, the monitoring agent collects data from all Elasticsearch indices.
-To collect data from particular indices, configure the
-<code class="literal">xpack.monitoring.collection.indices</code> setting. You can specify multiple indices
-as a comma-separated list or use an index pattern to match multiple indices. For
-example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.collection.indices: logstash-*, index1, test2</pre></div><p class="simpara">You can prepend <code class="literal">+</code> or <code class="literal">-</code> to explicitly include or exclude index names or
-patterns. For example, to include all indices that start with <code class="literal">test</code> except
-<code class="literal">test3</code>, you could specify <code class="literal">+test*,-test3</code>.</p></li><li class="listitem">
-Optional: Specify how often to collect monitoring data. The default value for
-the <code class="literal">xpack.monitoring.collection.interval</code> setting 10 seconds. See
-<a class="xref" href="monitoring-settings.html" title="Monitoring settings in Elasticsearch">Monitoring settings</a>.
-</li></ol></div></li><li class="listitem"><p class="simpara">
-Identify where to store monitoring data.
-</p><p class="simpara">By default, the data is stored on the same cluster by using a
-<a class="link" href="local-exporter.html" title="Local Exporters"><code class="literal">local</code> exporter</a>.</p><p class="simpara">Alternatively, you can use an <a class="link" href="http-exporter.html" title="HTTP Exporters"><code class="literal">http</code> exporter</a> to send data to
-a separate <span class="emphasis"><em>monitoring cluster</em></span>.</p><p class="simpara">For more information about typical monitoring architectures,
-see <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/how-monitoring-works.html" target="_top">How Monitoring Works</a>.</p></li><li class="listitem"><p class="simpara">
-If you choose to use an <code class="literal">http</code> exporter:
-</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
-On the cluster that you want to monitor (often called the <span class="emphasis"><em>production cluster</em></span>),
-configure each node to send metrics to your monitoring cluster. Configure an
-HTTP exporter in the <code class="literal">xpack.monitoring.exporters</code> settings in the
-<code class="literal">elasticsearch.yml</code> file. For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
-  id1:
-    type: http
-    host: ["http://es-mon-1:9200", "http://es-mon2:9200"]</pre></div></li><li class="listitem"><p class="simpara">
-If the Elastic security features are enabled on the monitoring cluster, you
-must provide appropriate credentials when data is shipped to the monitoring cluster:
-</p><div class="orderedlist"><ol class="orderedlist" type="i"><li class="listitem">
-Create a user on the monitoring cluster that has the
-<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/built-in-roles.html" target="_top"><code class="literal">remote_monitoring_agent</code> built-in role</a>.
-Alternatively, use the
-<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/built-in-users.html" target="_top"><code class="literal">remote_monitoring_user</code> built-in user</a>.
-</li><li class="listitem"><p class="simpara">
-Add the user ID and password settings to the HTTP exporter settings in the
-<code class="literal">elasticsearch.yml</code> file on each node.
-</p><p class="simpara">For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
-  id1:
-    type: http
-    host: ["http://es-mon-1:9200", "http://es-mon2:9200"]
-    auth.username: remote_monitoring_user
-    auth.password: YOUR_PASSWORD</pre></div></li></ol></div></li><li class="listitem"><p class="simpara">
-If you configured the monitoring cluster to use
-<a class="link" href="configuring-tls.html" title="Encrypting communications in Elasticsearch">encrypted communications</a>, you must use the HTTPS protocol in
-the <code class="literal">host</code> setting. You must also specify the trusted CA certificates that will
-be used to verify the identity of the nodes in the monitoring cluster.
-</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
-To add a CA certificate to an Elasticsearch node’s trusted certificates, you can
-specify the location of the PEM encoded certificate with the
-<code class="literal">certificate_authorities</code> setting. For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
-  id1:
-    type: http
-    host: ["https://es-mon1:9200", "https://es-mon2:9200"]
-    auth:
-      username: remote_monitoring_user
-      password: YOUR_PASSWORD
-    ssl:
-      certificate_authorities: [ "/path/to/ca.crt" ]</pre></div></li><li class="listitem"><p class="simpara">
-Alternatively, you can configure trusted certificates using a truststore
-(a Java Keystore file that contains the certificates). For example:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
-  id1:
-    type: http
-    host: ["https://es-mon1:9200", "https://es-mon2:9200"]
-    auth:
-      username: remote_monitoring_user
-      password: YOUR_PASSWORD
-    ssl:
-      truststore.path: /path/to/file
-      truststore.password: password</pre></div></li></ul></div></li></ol></div></li><li class="listitem">
-Configure your cluster to route monitoring data from sources such as Kibana,
-Beats, and Logstash to the monitoring cluster. The
-<code class="literal">xpack.monitoring.collection.enabled</code> setting must be <code class="literal">true</code> on each node in the
-cluster. For information about configuring each product to collect and send
-monitoring data, see <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/xpack-monitoring.html" target="_top">Monitoring the Elastic Stack</a>.
-</li><li class="listitem"><p class="simpara">
-If you updated settings in the <code class="literal">elasticsearch.yml</code> files on your production
-cluster, restart Elasticsearch. See <a class="xref" href="stopping-elasticsearch.html" title="Stopping Elasticsearch"><em>Stopping Elasticsearch</em></a> and <a class="xref" href="starting-elasticsearch.html" title="Starting Elasticsearch"><em>Starting Elasticsearch</em></a>.
-</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>You may want to temporarily <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/modules-cluster.html" target="_top">disable shard
-allocation</a> before you restart your nodes to avoid unnecessary shard
-reallocation during the install process.</p></div></div></li><li class="listitem">
-Optional:
-<a class="link" href="config-monitoring-indices.html" title="Configuring indices for monitoring">Configure the indices that store the monitoring data</a>.
+            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-monitoring"></a>Configuring monitoring in Elasticsearch<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/monitoring/configuring-monitoring.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you enable the Elastic monitoring features in your cluster, there are two
+methods to collect metrics about Elasticsearch:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="xref" href="collecting-monitoring-data.html" title="Collecting monitoring data">Collecting monitoring data</a>
 </li><li class="listitem">
-<a class="ulink" href="https://www.elastic.co/guide/en/kibana/6.x/monitoring-data.html" target="_top">View the monitoring data in Kibana</a>.
-</li></ol></div></div><div class="navfooter"><span class="prev"><a href="setup-xpack.html">
+<a class="xref" href="configuring-metricbeat.html" title="Collecting Elasticsearch monitoring data with Metricbeat">Collecting monitoring data with Metricbeat</a>
+</li></ul></div><p>To learn about monitoring in general, see
+<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/xpack-monitoring.html" target="_top">Monitoring the Elastic Stack</a>.</p></div><div class="navfooter"><span class="prev"><a href="setup-xpack.html">
               « 
               Set up X-Pack</a>
            
         </span><span class="next">
            
-          <a href="configuring-metricbeat.html">Monitoring Elasticsearch with Metricbeat
+          <a href="collecting-monitoring-data.html">Collecting monitoring data
                »
             </a></span></div>
 <!-- end body -->
