@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Synonym Token Filter
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Parsing synonym files
         | Elasticsearch Reference [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="analysis-tokenfilters.html" title="Token Filters" /><link rel="prev" href="analysis-phonetic-tokenfilter.html" title="Phonetic Token Filter" /><link rel="next" href="_parsing_synonym_files.html" title="Parsing synonym files" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="analysis-tokenfilters.html" title="Token Filters" /><link rel="prev" href="analysis-synonym-graph-tokenfilter.html" title="Synonym Graph Token Filter" /><link rel="next" href="analysis-compound-word-tokenfilter.html" title="Compound Word Token Filters" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="6.x" />
     
 
     
@@ -683,153 +683,29 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [6.x]
-    </a></span> » <span class="breadcrumb-link"><a href="analysis.html">Analysis</a></span> » <span class="breadcrumb-link"><a href="analysis-tokenfilters.html">Token Filters</a></span> » <span class="breadcrumb-node">Synonym Token Filter</span></div><div class="navheader"><span class="prev"><a href="analysis-phonetic-tokenfilter.html">
+    </a></span> » <span class="breadcrumb-link"><a href="analysis.html">Analysis</a></span> » <span class="breadcrumb-link"><a href="analysis-tokenfilters.html">Token Filters</a></span> » <span class="breadcrumb-node">Parsing synonym files</span></div><div class="navheader"><span class="prev"><a href="analysis-synonym-graph-tokenfilter.html">
               « 
-              Phonetic Token Filter</a>
+              Synonym Graph Token Filter</a>
            
         </span><span class="next">
            
-          <a href="_parsing_synonym_files.html">Parsing synonym files
+          <a href="analysis-compound-word-tokenfilter.html">Compound Word Token Filters
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="analysis-synonym-tokenfilter"></a>Synonym Token Filter<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/analysis/tokenfilters/synonym-tokenfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">synonym</code> token filter allows to easily handle synonyms during the
-analysis process. Synonyms are configured using a configuration file.
-Here is an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test_index
-{
-    "settings": {
-        "index" : {
-            "analysis" : {
-                "analyzer" : {
-                    "synonym" : {
-                        "tokenizer" : "whitespace",
-                        "filter" : ["synonym"]
-                    }
-                },
-                "filter" : {
-                    "synonym" : {
-                        "type" : "synonym",
-                        "synonyms_path" : "analysis/synonym.txt"
-                    }
-                }
-            }
-        }
-    }
-}</pre></div><div class="console_widget" data-snippet="snippets/analysis-synonym-tokenfilter/1.json"></div><p>The above configures a <code class="literal">synonym</code> filter, with a path of
-<code class="literal">analysis/synonym.txt</code> (relative to the <code class="literal">config</code> location). The
-<code class="literal">synonym</code> analyzer is then configured with the filter.</p><p>This filter tokenize synonyms with whatever tokenizer and token filters
-appear before it in the chain.</p><p>Additional settings are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">expand</code> (defaults to <code class="literal">true</code>).
-</li><li class="listitem">
-<code class="literal">lenient</code> (defaults to <code class="literal">false</code>). If <code class="literal">true</code> ignores exceptions while parsing the synonym configuration. It is important
-to note that only those synonym rules which cannot get parsed are ignored. For instance consider the following request:
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test_index
-{
-    "settings": {
-        "index" : {
-            "analysis" : {
-                "analyzer" : {
-                    "synonym" : {
-                        "tokenizer" : "standard",
-                        "filter" : ["my_stop", "synonym"]
-                    }
-                },
-                "filter" : {
-                        "my_stop": {
-                                "type" : "stop",
-                                "stopwords": ["bar"]
-                        },
-                    "synonym" : {
-                        "type" : "synonym",
-                        "lenient": true,
-                        "synonyms" : ["foo, bar =&gt; baz"]
-                    }
-                }
-            }
-        }
-    }
-}</pre></div><div class="console_widget" data-snippet="snippets/analysis-synonym-tokenfilter/2.json"></div><p>With the above request the word <code class="literal">bar</code> gets skipped but a mapping <code class="literal">foo =&gt; baz</code> is still added. However, if the mapping
-being added was "foo, baz ⇒ bar" nothing would get added to the synonym list. This is because the target word for the
-mapping is itself eliminated because it was a stop word. Similarly, if the mapping was "bar, foo, baz" and <code class="literal">expand</code> was
-set to <code class="literal">false</code> no mapping would get added as when <code class="literal">expand=false</code> the target mapping is the first word. However, if
-<code class="literal">expand=true</code> then the mappings added would be equivalent to <code class="literal">foo, baz =&gt; foo, baz</code> i.e, all mappings other than the
-stop word.</p><h4><a id="_literal_tokenizer_literal_and_literal_ignore_case_literal_are_deprecated"></a><code class="literal">tokenizer</code> and <code class="literal">ignore_case</code> are deprecated<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/analysis/tokenfilters/synonym-tokenfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">tokenizer</code> parameter controls the tokenizers that will be used to
-tokenize the synonym, this parameter is for backwards compatibility for indices that created before 6.0.
-The <code class="literal">ignore_case</code> parameter works with <code class="literal">tokenizer</code> parameter only.</p><p>Two synonym formats are supported: Solr, WordNet.</p><h4><a id="_solr_synonyms"></a>Solr synonyms<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/analysis/tokenfilters/synonym-tokenfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The following is a sample format of the file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-synonyms"># Blank lines and lines starting with pound are comments.
-
-# Explicit mappings match any token sequence on the LHS of "=&gt;"
-# and replace with all alternatives on the RHS.  These types of mappings
-# ignore the expand parameter in the schema.
-# Examples:
-i-pod, i pod =&gt; ipod,
-sea biscuit, sea biscit =&gt; seabiscuit
-
-# Equivalent synonyms may be separated with commas and give
-# no explicit mapping.  In this case the mapping behavior will
-# be taken from the expand parameter in the schema.  This allows
-# the same synonym file to be used in different synonym handling strategies.
-# Examples:
-ipod, i-pod, i pod
-foozball , foosball
-universe , cosmos
-lol, laughing out loud
-
-# If expand==true, "ipod, i-pod, i pod" is equivalent
-# to the explicit mapping:
-ipod, i-pod, i pod =&gt; ipod, i-pod, i pod
-# If expand==false, "ipod, i-pod, i pod" is equivalent
-# to the explicit mapping:
-ipod, i-pod, i pod =&gt; ipod
-
-# Multiple synonym mapping entries are merged.
-foo =&gt; foo bar
-foo =&gt; baz
-# is equivalent to
-foo =&gt; foo bar, baz</pre></div><p>You can also define synonyms for the filter directly in the
-configuration file (note use of <code class="literal">synonyms</code> instead of <code class="literal">synonyms_path</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test_index
-{
-    "settings": {
-        "index" : {
-            "analysis" : {
-                "filter" : {
-                    "synonym" : {
-                        "type" : "synonym",
-                        "synonyms" : [
-                            "i-pod, i pod =&gt; ipod",
-                            "universe, cosmos"
-                        ]
-                    }
-                }
-            }
-        }
-    }
-}</pre></div><div class="console_widget" data-snippet="snippets/analysis-synonym-tokenfilter/3.json"></div><p>However, it is recommended to define large synonyms set in a file using
-<code class="literal">synonyms_path</code>, because specifying them inline increases cluster size unnecessarily.</p><h4><a id="_wordnet_synonyms"></a>WordNet synonyms<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/analysis/tokenfilters/synonym-tokenfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Synonyms based on <a class="ulink" href="http://wordnet.princeton.edu/" target="_top">WordNet</a> format can be
-declared using <code class="literal">format</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test_index
-{
-    "settings": {
-        "index" : {
-            "analysis" : {
-                "filter" : {
-                    "synonym" : {
-                        "type" : "synonym",
-                        "format" : "wordnet",
-                        "synonyms" : [
-                            "s(100000001,1,'abstain',v,1,0).",
-                            "s(100000001,2,'refrain',v,1,0).",
-                            "s(100000001,3,'desist',v,1,0)."
-                        ]
-                    }
-                }
-            }
-        }
-    }
-}</pre></div><div class="console_widget" data-snippet="snippets/analysis-synonym-tokenfilter/4.json"></div><p>Using <code class="literal">synonyms_path</code> to define WordNet synonyms in a file is supported
-as well.</p></div><div class="navfooter"><span class="prev"><a href="analysis-phonetic-tokenfilter.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_parsing_synonym_files_2"></a>Parsing synonym files<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/analysis/tokenfilters/synonym-graph-tokenfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch will use the token filters preceding the synonym filter
+in a tokenizer chain to parse the entries in a synonym file.  So, for example, if a
+synonym filter is placed after a stemmer, then the stemmer will also be applied
+to the synonym entries.  Because entries in the synonym map cannot have stacked
+positions, some token filters may cause issues here.  Token filters that produce
+multiple versions of a token may choose which version of the token to emit when
+parsing synonyms, e.g. <code class="literal">asciifolding</code> will only produce the folded version of the
+token.  Others, e.g. <code class="literal">multiplexer</code>, <code class="literal">word_delimiter_graph</code> or <code class="literal">ngram</code> will throw an
+error.</p></div><div class="navfooter"><span class="prev"><a href="analysis-synonym-graph-tokenfilter.html">
               « 
-              Phonetic Token Filter</a>
+              Synonym Graph Token Filter</a>
            
         </span><span class="next">
            
-          <a href="_parsing_synonym_files.html">Parsing synonym files
+          <a href="analysis-compound-word-tokenfilter.html">Compound Word Token Filters
                »
             </a></span></div>
 <!-- end body -->
