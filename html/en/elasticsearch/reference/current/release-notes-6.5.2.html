@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Index Lifecycle Error Handling
-        | Elasticsearch Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Elasticsearch version 6.5.2
+        | Elasticsearch Reference [6.5]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-lifecycle-management.html" title="Managing the index lifecycle" /><link rel="prev" href="_switching_policies_for_an_index.html" title="Switching policies for an index" /><link rel="next" href="index-lifecycle-and-snapshots.html" title="Restoring Snapshots of Managed Indices" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.5]" /><link rel="up" href="es-release-notes.html" title="Release Notes" /><link rel="prev" href="es-release-notes.html" title="Release Notes" /><link rel="next" href="release-notes-6.5.1.html" title="Elasticsearch version 6.5.1" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.5" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="6.5" />
     
 
     
@@ -691,130 +691,23 @@
 				
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
-<div class="page_header">You are looking at preliminary documentation for a future release.
-Not what you want? See the
-<a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [master]
-    </a></span> » <span class="breadcrumb-link"><a href="index-lifecycle-management.html">Managing the index lifecycle</a></span> » <span class="breadcrumb-node">Index Lifecycle Error Handling</span></div><div class="navheader"><span class="prev"><a href="_switching_policies_for_an_index.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+      [6.5]
+    </a></span> » <span class="breadcrumb-link"><a href="es-release-notes.html">Release Notes</a></span> » <span class="breadcrumb-node">Elasticsearch version 6.5.2</span></div><div class="navheader"><span class="prev"><a href="es-release-notes.html">
               « 
-              Switching policies for an index</a>
+              Release Notes</a>
            
         </span><span class="next">
            
-          <a href="index-lifecycle-and-snapshots.html">Restoring Snapshots of Managed Indices
+          <a href="release-notes-6.5.1.html">Elasticsearch version 6.5.1
                »
-            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-lifecycle-error-handling"></a>Index Lifecycle Error Handling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ilm/error-handling.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.</p></div></div><p>During Index Lifecycle Management’s execution of the policy for an index, it’s
-possible for a step to encounter an error during its execution. When this
-happens, ILM will move the management state into an "error" step. This halts
-further execution of the policy and gives an administrator the chance to address
-any issues with the policy, index, or cluster.</p><p>An example will be helpful in illustrating this, imagine the following policy
-has been created by a user:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _ilm/policy/shrink-the-index
-{
-  "policy": {
-    "phases": {
-      "warm": {
-        "min_age": "5d",
-        "actions": {
-          "shrink": {
-            "number_of_shards": 4
-          }
-        }
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/1.json"></div><p>This policy waits until the index is at least 5 days old, and then shrinks
-the index to 4 shards.</p><p>Now imagine that a user creates a new index "myindex" with two primary shards,
-telling it to use the policy they have created:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /myindex
-{
-  "settings": {
-    "index.number_of_shards": 2,
-    "index.lifecycle.name": "shrink-the-index"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/2.json"></div><p>After five days have passed, ILM will attempt to shrink this index from 2
-shards to 4, which is invalid since the shrink action cannot increase the
-number of shards. When this occurs, ILM will move this
-index to the "error" step. Once an index is in this step, information about the
-reason for the error can be retrieved from the <a class="link" href="ilm-explain-lifecycle.html" title="Explain Lifecycle API">ILM Explain API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /myindex/_ilm/explain</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/3.json"></div><p>Which returns the following information:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "indices" : {
-    "myindex" : {
-      "index" : "myindex",
-      "managed" : true,                         <a id="CO407-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-      "policy" : "shrink-the-index",            <a id="CO407-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-      "lifecycle_date_millis" : 1541717265865,
-      "phase" : "warm",                         <a id="CO407-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-      "phase_time_millis" : 1541717272601,
-      "action" : "shrink",                      <a id="CO407-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-      "action_time_millis" : 1541717272601,
-      "step" : "ERROR",                         <a id="CO407-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
-      "step_time_millis" : 1541717272688,
-      "failed_step" : "shrink",                 <a id="CO407-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
-      "step_info" : {
-        "type" : "illegal_argument_exception",   <a id="CO407-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
-        "reason" : "the number of target shards [4] must be less that the number of source shards [2]" <a id="CO407-8"></a><span><img src="images/icons/callouts/8.png" alt="" /></span>
-      },
-      "phase_execution" : {
-        "policy" : "shrink-the-index",
-        "phase_definition" : {                   <a id="CO407-9"></a><span><img src="images/icons/callouts/9.png" alt="" /></span>
-          "min_age" : "5d",
-          "actions" : {
-            "shrink" : {
-              "number_of_shards" : 4
-            }
-          }
-        },
-        "version" : 1,
-        "modified_date_in_millis" : 1541717264230
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-this index is managed by ILM
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the policy in question, in this case, "shrink-the-index"
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-what phase the index is currently in
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-what action the index is currently on
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-what step the index is currently on, in this case, because there is an error, the index is in the "ERROR" step
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the name of the step that failed to execute, in this case "shrink"
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the error class that occurred during this step
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-8"><span><img src="images/icons/callouts/8.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the error message that occurred during the execution failure
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-9"><span><img src="images/icons/callouts/9.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the definition of the phase (in this case, the "warm" phase) that the index is currently on
-</p></td></tr></table></div><p>The index here has been moved to the error step because the shrink definition in
-the policy is using an incorrect number of shards. So rectifing that in the
-policy entails updating the existing policy to use one instead of four for
-the targeted number of shards.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _ilm/policy/shrink-the-index
-{
-  "policy": {
-    "phases": {
-      "warm": {
-        "min_age": "5d",
-        "actions": {
-          "shrink": {
-            "number_of_shards": 1
-          }
-        }
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/5.json"></div><h3><a id="_retrying_failed_index_lifecycle_management_steps"></a>Retrying failed index lifecycle management steps<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ilm/error-handling.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Once the underlying issue that caused an index to move to the error step has
-been corrected, index lifecycle management must be told to retry the step to see
-if it can progress further. This is accomplished by invoking the retry API</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /myindex/_ilm/retry</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/6.json"></div><p>Once this has been issue, index lifecycle management will asynchronously pick up
-on the step that is in a failed state, attempting to re-run it. The
-<a class="link" href="ilm-explain-lifecycle.html" title="Explain Lifecycle API">ILM Explain API</a> can again be used to monitor the status of
-re-running the step.</p></div><div class="navfooter"><span class="prev"><a href="_switching_policies_for_an_index.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="release-notes-6.5.2"></a>Elasticsearch version 6.5.2<a href="https://github.com/elastic/elasticsearch/edit/6.5/docs/reference/release-notes/6.5.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Coming in 6.5.2. </p></div></div><p>Also see <a class="link" href="breaking-changes-6.5.html" title="Breaking changes in 6.5">Breaking changes in 6.5</a>.</p></div><div class="navfooter"><span class="prev"><a href="es-release-notes.html">
               « 
-              Switching policies for an index</a>
+              Release Notes</a>
            
         </span><span class="next">
            
-          <a href="index-lifecycle-and-snapshots.html">Restoring Snapshots of Managed Indices
+          <a href="release-notes-6.5.1.html">Elasticsearch version 6.5.1
                »
             </a></span></div>
 <!-- end body -->

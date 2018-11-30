@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Index Lifecycle Error Handling
-        | Elasticsearch Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Managing Beats
+        | Kibana User Guide [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-lifecycle-management.html" title="Managing the index lifecycle" /><link rel="prev" href="_switching_policies_for_an_index.html" title="Switching policies for an index" /><link rel="next" href="index-lifecycle-and-snapshots.html" title="Restoring Snapshots of Managed Indices" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Kibana User Guide [master]" /><link rel="up" href="management.html" title="Management" /><link rel="prev" href="managing-saved-objects.html" title="Managing Saved Objects" /><link rel="next" href="xpack-spaces.html" title="Spaces" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Kibana/Reference/master" /><meta name="DC.subject" content="Kibana" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -694,127 +694,57 @@
 <div class="page_header">You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Kibana User Guide
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="index-lifecycle-management.html">Managing the index lifecycle</a></span> » <span class="breadcrumb-node">Index Lifecycle Error Handling</span></div><div class="navheader"><span class="prev"><a href="_switching_policies_for_an_index.html">
+    </a></span> » <span class="breadcrumb-link"><a href="management.html">Management</a></span> » <span class="breadcrumb-node">Managing Beats</span></div><div class="navheader"><span class="prev"><a href="managing-saved-objects.html">
               « 
-              Switching policies for an index</a>
+              Managing Saved Objects</a>
            
         </span><span class="next">
            
-          <a href="index-lifecycle-and-snapshots.html">Restoring Snapshots of Managed Indices
+          <a href="xpack-spaces.html">Spaces
                »
-            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="index-lifecycle-error-handling"></a>Index Lifecycle Error Handling<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ilm/error-handling.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.</p></div></div><p>During Index Lifecycle Management’s execution of the policy for an index, it’s
-possible for a step to encounter an error during its execution. When this
-happens, ILM will move the management state into an "error" step. This halts
-further execution of the policy and gives an administrator the chance to address
-any issues with the policy, index, or cluster.</p><p>An example will be helpful in illustrating this, imagine the following policy
-has been created by a user:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _ilm/policy/shrink-the-index
-{
-  "policy": {
-    "phases": {
-      "warm": {
-        "min_age": "5d",
-        "actions": {
-          "shrink": {
-            "number_of_shards": 4
-          }
-        }
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/1.json"></div><p>This policy waits until the index is at least 5 days old, and then shrinks
-the index to 4 shards.</p><p>Now imagine that a user creates a new index "myindex" with two primary shards,
-telling it to use the policy they have created:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /myindex
-{
-  "settings": {
-    "index.number_of_shards": 2,
-    "index.lifecycle.name": "shrink-the-index"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/2.json"></div><p>After five days have passed, ILM will attempt to shrink this index from 2
-shards to 4, which is invalid since the shrink action cannot increase the
-number of shards. When this occurs, ILM will move this
-index to the "error" step. Once an index is in this step, information about the
-reason for the error can be retrieved from the <a class="link" href="ilm-explain-lifecycle.html" title="Explain Lifecycle API">ILM Explain API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /myindex/_ilm/explain</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/3.json"></div><p>Which returns the following information:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "indices" : {
-    "myindex" : {
-      "index" : "myindex",
-      "managed" : true,                         <a id="CO407-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-      "policy" : "shrink-the-index",            <a id="CO407-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-      "lifecycle_date_millis" : 1541717265865,
-      "phase" : "warm",                         <a id="CO407-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-      "phase_time_millis" : 1541717272601,
-      "action" : "shrink",                      <a id="CO407-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-      "action_time_millis" : 1541717272601,
-      "step" : "ERROR",                         <a id="CO407-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>
-      "step_time_millis" : 1541717272688,
-      "failed_step" : "shrink",                 <a id="CO407-6"></a><span><img src="images/icons/callouts/6.png" alt="" /></span>
-      "step_info" : {
-        "type" : "illegal_argument_exception",   <a id="CO407-7"></a><span><img src="images/icons/callouts/7.png" alt="" /></span>
-        "reason" : "the number of target shards [4] must be less that the number of source shards [2]" <a id="CO407-8"></a><span><img src="images/icons/callouts/8.png" alt="" /></span>
-      },
-      "phase_execution" : {
-        "policy" : "shrink-the-index",
-        "phase_definition" : {                   <a id="CO407-9"></a><span><img src="images/icons/callouts/9.png" alt="" /></span>
-          "min_age" : "5d",
-          "actions" : {
-            "shrink" : {
-              "number_of_shards" : 4
-            }
-          }
-        },
-        "version" : 1,
-        "modified_date_in_millis" : 1541717264230
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-this index is managed by ILM
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the policy in question, in this case, "shrink-the-index"
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-what phase the index is currently in
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-what action the index is currently on
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-what step the index is currently on, in this case, because there is an error, the index is in the "ERROR" step
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-6"><span><img src="images/icons/callouts/6.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the name of the step that failed to execute, in this case "shrink"
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-7"><span><img src="images/icons/callouts/7.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the error class that occurred during this step
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-8"><span><img src="images/icons/callouts/8.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the error message that occurred during the execution failure
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-9"><span><img src="images/icons/callouts/9.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-the definition of the phase (in this case, the "warm" phase) that the index is currently on
-</p></td></tr></table></div><p>The index here has been moved to the error step because the shrink definition in
-the policy is using an incorrect number of shards. So rectifing that in the
-policy entails updating the existing policy to use one instead of four for
-the targeted number of shards.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _ilm/policy/shrink-the-index
-{
-  "policy": {
-    "phases": {
-      "warm": {
-        "min_age": "5d",
-        "actions": {
-          "shrink": {
-            "number_of_shards": 1
-          }
-        }
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/5.json"></div><h3><a id="_retrying_failed_index_lifecycle_management_steps"></a>Retrying failed index lifecycle management steps<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ilm/error-handling.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Once the underlying issue that caused an index to move to the error step has
-been corrected, index lifecycle management must be told to retry the step to see
-if it can progress further. This is accomplished by invoking the retry API</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /myindex/_ilm/retry</pre></div><div class="console_widget" data-snippet="snippets/index-lifecycle-error-handling/6.json"></div><p>Once this has been issue, index lifecycle management will asynchronously pick up
-on the step that is in a failed state, attempting to re-run it. The
-<a class="link" href="ilm-explain-lifecycle.html" title="Explain Lifecycle API">ILM Explain API</a> can again be used to monitor the status of
-re-running the step.</p></div><div class="navfooter"><span class="prev"><a href="_switching_policies_for_an_index.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="managing-beats"></a>Managing Beats<a href="https://github.com/elastic/kibana/edit/master/docs/management/managing-beats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Use the Central Management UI under <span class="strong strong"><strong>Management &gt; Beats</strong></span> to define and
+manage configurations in a central location in Kibana and quickly deploy
+configuration changes to all Beats running across your enterprise. For more
+about central management, see the related Beats documentation:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/filebeat/master/configuration-central-management.html" target="_top">Filebeat documentation</a>
+</li><li class="listitem">
+<a class="ulink" href="https://www.elastic.co/guide/en/beats/metricbeat/master/configuration-central-management.html" target="_top">Metricbeat documentation</a>
+</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>This feature requires an Elastic license that includes Beats central
+management.</p><p>Don’t have a license? You can start a 30-day trial. In Kibana, go to
+<span class="strong strong"><strong>Management &gt; License Management</strong></span>. At the end of the trial
+period, you can purchase a subscription to keep using central management. For
+more information, see <a class="ulink" href="https://www.elastic.co/subscriptions" target="_top">https://www.elastic.co/subscriptions</a> and
+<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/master/license-management.html" target="_top">License Management</a>.</p></div></div><p>Kibana makes it easy for you to use central management by walking you through the
+enrollment and configuration process step by step the first time you use the
+Central Management UI.</p><h3><a id="_enroll_beats"></a>Enroll Beats<a href="https://github.com/elastic/kibana/edit/master/docs/management/managing-beats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You need to enroll Beats to register them in central management and establish
+trust. Enrolled Beats will have the credentials needed to retrieve
+configurations from Kibana.</p><h3><a id="_create_configuration_tags"></a>Create configuration tags<a href="https://github.com/elastic/kibana/edit/master/docs/management/managing-beats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>A <span class="emphasis"><em>configuration tag</em></span> is a group of configuration blocks that you can apply to
+one or more Beats. For example, you can create a tag called <code class="literal">development</code> to
+group configurations for Beats running in your development environment.</p><p>The first time you walk through the enrollment process, you’ll create a
+configuration tag that’s applied to the Beats instance you’re enrolling.</p><p>After that, under <span class="strong strong"><strong>Configuration tags</strong></span>, you can create additional tags and
+apply them to any enrolled Beats, and the Beats will use the configurations
+defined in the tag.</p><h3><a id="_add_configuration_blocks"></a>Add configuration blocks<a href="https://github.com/elastic/kibana/edit/master/docs/management/managing-beats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Add one or more configuration blocks to the tag. A tag can have configuration
+blocks for different types of Beats. When the enrolled Beats run, they will
+use the configuration blocks that are valid for their type.</p><h3><a id="_manage_enrolled_beats"></a>Manage enrolled Beats<a href="https://github.com/elastic/kibana/edit/master/docs/management/managing-beats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Under <span class="strong strong"><strong>Enrolled Beats</strong></span>, you can view the list of enrolled Beats to see
+details, including the type, applied tags, configuration status, and the last
+configuration update. Click the <span class="strong strong"><strong>Beat name</strong></span> or <span class="strong strong"><strong>Type</strong></span> column heading to sort the
+list. To filter the list, enter a search string. If there are errors in a
+configuration, you’ll see an Error status in the Central Management UI and need
+to look at Beats logs to troubleshoot the problem.</p><p>You can add or remove tags, and the configuration changes are automatically
+deployed to all Beats that have the tag. Avoid applying tags with conflicting
+configurations. Because the configurations for all assigned tags are merged,
+conflicting configurations result in errors.</p><p>You can unenroll Beats to remove them from central management.</p><h3><a id="_manage_tags"></a>Manage tags<a href="https://github.com/elastic/kibana/edit/master/docs/management/managing-beats.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Under <span class="strong strong"><strong>Configuration tags</strong></span>, you can select tags and delete them, or you can
+drill down into a tag to add, modify, or remove configuration blocks from the
+tag. When you change the configuration blocks or remove tags, the configuration
+changes are automatically deployed to all Beats that have the tag.</p></div><div class="navfooter"><span class="prev"><a href="managing-saved-objects.html">
               « 
-              Switching policies for an index</a>
+              Managing Saved Objects</a>
            
         </span><span class="next">
            
-          <a href="index-lifecycle-and-snapshots.html">Restoring Snapshots of Managed Indices
+          <a href="xpack-spaces.html">Spaces
                »
             </a></span></div>
 <!-- end body -->
