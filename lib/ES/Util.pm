@@ -317,6 +317,7 @@ sub run (@) {
     my @args = @_;
     my ( $out, $err, $ok );
 
+    print "Run PATH=$ENV{PATH}\n";
     if ( $Opts->{verbose} ) {
         say "Running: @args";
         ( $out, $err, $ok ) = tee { system(@args) == 0 };
