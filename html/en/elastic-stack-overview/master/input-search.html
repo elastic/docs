@@ -751,7 +751,7 @@ watch payload:</p><div class="pre_wrapper"><pre class="programlisting prettyprin
       "request": {
         "indices": [ ".watcher-history*" ]
       },
-      "extract": [ "hits.total" ]
+      "extract": [ "hits.total.value" ]
     }
   },</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_using_templates"></a>Using Templates<a href="https://github.com/elastic/elasticsearch/edit/master/x-pack/docs/en/watcher/input/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">search</code> input supports <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/search-template.html" target="_top">search templates</a>. For
 example, the following snippet references the indexed template called
@@ -784,14 +784,14 @@ check if the search returned more than five hits:</p><div class="pre_wrapper"><p
     }
   },
   "condition" : {
-    "compare" : { "ctx.payload.hits.total" : { "gt" : 5 }}
+    "compare" : { "ctx.payload.hits.total.value" : { "gt" : 5 }}
   }
   ...
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_accessing_the_search_results"></a>Accessing the Search Results<a href="https://github.com/elastic/elasticsearch/edit/master/x-pack/docs/en/watcher/input/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Conditions, transforms, and actions can access the search results through the
 watch execution context. For example:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 To load all of the search hits into an email body, use <code class="literal">ctx.payload.hits</code>.
 </li><li class="listitem">
-To reference the total number of hits, use <code class="literal">ctx.payload.hits.total</code>.
+To reference the total number of hits, use <code class="literal">ctx.payload.hits.total.value</code>.
 </li><li class="listitem">
 To access a particular hit, use its zero-based array index. For example, to
   get the third hit, use <code class="literal">ctx.payload.hits.hits.2</code>.
@@ -799,7 +799,12 @@ To access a particular hit, use its zero-based array index. For example, to
 To get a field value from a particular hit, use
   <code class="literal">ctx.payload.hits.hits.&lt;index&gt;.fields.&lt;fieldname&gt;</code>. For example, to get the
   message field from the first hit, use <code class="literal">ctx.payload.hits.hits.0.fields.message</code>.
-</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="search-input-attributes"></a>Search Input Attributes<a href="https://github.com/elastic/elasticsearch/edit/master/x-pack/docs/en/watcher/input/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top"> Name                                          </th><th align="center" valign="top">Required   </th><th align="left" valign="top"> Default             </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">request.search_type</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p><code class="literal">query_then_fetch</code></p></td><td align="left" valign="top"><p>The <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/search-request-search-type.html#search-request-search-type" target="_top">type</a>
+</li></ul></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The total number of hits in the search response is returned as an object
+in the response. It contains a <code class="literal">value</code>, the number of hits, and a <code class="literal">relation</code> that
+indicates if the value is accurate (<code class="literal">"eq"</code>) or a lower bound of the total hits
+that match the query (<code class="literal">"gte"</code>). You can set <code class="literal">track_total_hits</code> to true in
+the search request to tell Elasticsearch to always track the number of hits
+accurately.</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="search-input-attributes"></a>Search Input Attributes<a href="https://github.com/elastic/elasticsearch/edit/master/x-pack/docs/en/watcher/input/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top"> Name                                          </th><th align="center" valign="top">Required   </th><th align="left" valign="top"> Default             </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">request.search_type</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p><code class="literal">query_then_fetch</code></p></td><td align="left" valign="top"><p>The <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/search-request-search-type.html#search-request-search-type" target="_top">type</a>
                                                                                     of search request to perform. Valid values are: <code class="literal">dfs_query_and_fetch</code>,
                                                                                     <code class="literal">dfs_query_then_fetch</code>, <code class="literal">query_and_fetch</code>, and <code class="literal">query_then_fetch</code>. The
                                                                                     Elasticsearch default is <code class="literal">query_then_fetch</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">request.indices</code></p></td><td align="center" valign="top"><p>no</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The indices to search. If omitted, all indices are searched, which is the

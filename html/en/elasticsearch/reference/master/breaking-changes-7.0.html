@@ -894,7 +894,30 @@ the distinction between queries and filters is now decided in Lucene depending
 on whether queries need to access score or not. As a result <code class="literal">bool</code> queries with
 <code class="literal">should</code> clauses that don’t need to access the score will no longer set their
 <code class="literal">minimum_should_match</code> to 1. This behavior has been deprecated in the previous
-major version.</p><h3><a id="breaking_70_packaging_changes"></a>Packaging changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_7_0/packaging.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><h4><a id="systemd-service-file-config"></a>systemd service file is no longer configuration<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_7_0/packaging.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The systemd service file <code class="literal">/usr/lib/systemd/system/elasticsearch.service</code>
+major version.</p><h4><a id="_literal_hits_total_literal_is_now_an_object_in_the_search_response"></a><code class="literal">hits.total</code> is now an object in the search response<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_7_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The total hits that match the search request is now returned as an object
+with a <code class="literal">value</code> and a <code class="literal">relation</code>. <code class="literal">value indicates the number of hits that
+match and `relation indicates whether the value is accurate (`eq</code>) or a lower bound
+(<code class="literal">gte</code>):
+```
+{
+    "hits": {
+        "total": {   &lt;1&gt;
+            "value": 1000,
+            "relation": "eq"
+        },
+        …
+    }
+}
+```</p><p>The "total" object in the response indicates that the query matches exactly 1000
+documents ("eq"). The <code class="literal">value</code> is always accurate (<code class="literal">"relation": "eq"</code>) when
+<code class="literal">track_total_hits</code> is set to true in the request.
+You can also retrieve <code class="literal">hits.total</code> as a number in the rest response by adding
+<code class="literal">rest_total_hits_as_int=true</code> in the request parameter of the search request.
+This parameter has been added to ease the transition to the new format and
+will be removed in the next major version (8.0).</p><h4><a id="_literal_hits_total_literal_is_omitted_in_the_response_if_literal_track_total_hits_literal_is_disabled_false"></a><code class="literal">hits.total</code> is omitted in the response if <code class="literal">track_total_hits</code> is disabled (false)<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_7_0/search.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If <code class="literal">track_total_hits</code> is set to <code class="literal">false in the search request the search response
+will set `hits.total</code> to null and the object will not be displayed in the rest
+layer. You can add <code class="literal">rest_total_hits_as_int=true</code> in the search request parameters
+to get the old format back (<code class="literal">"total": -1</code>).</p><h3><a id="breaking_70_packaging_changes"></a>Packaging changes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_7_0/packaging.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><h4><a id="systemd-service-file-config"></a>systemd service file is no longer configuration<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_7_0/packaging.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The systemd service file <code class="literal">/usr/lib/systemd/system/elasticsearch.service</code>
 was previously marked as a configuration file in rpm and deb packages.
 Overrides to the systemd elasticsearch service should be made
 in <code class="literal">/etc/systemd/system/elasticsearch.service.d/override.conf</code>.</p><h4><a id="_tar_package_no_longer_includes_windows_specific_files"></a>tar package no longer includes windows specific files<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/migration/migrate_7_0/packaging.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The tar package previously included files in the <code class="literal">bin</code> directory meant only
