@@ -715,13 +715,47 @@ paid commercial features. See the
 Elastic license levels.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_pulling_the_image"></a>Pulling the image<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-docker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Obtaining Beats for Docker is as simple as issuing a <code class="literal">docker pull</code> command
 against the Elastic Docker registry.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">docker pull docker.elastic.co/beats/metricbeat:7.0.0-alpha1</pre></div><p>Alternatively, you can download other Docker images that contain only features
 available under the Apache 2.0 license. To download the images, go to
-<a class="ulink" href="https://www.docker.elastic.co" target="_top">www.docker.elastic.co</a>.</p><h4><a id="_configure_metricbeat_on_docker"></a>Configure Metricbeat on Docker<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-docker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The Docker image provides several methods for configuring Metricbeat. The
-conventional approach is to provide a configuration file via a bind mount, but
+<a class="ulink" href="https://www.docker.elastic.co" target="_top">www.docker.elastic.co</a>.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_run_the_metricbeat_setup"></a>Run the Metricbeat setup<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-docker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Running Metricbeat with the setup command will create the index pattern and
+load visualizations, dashboards, and machine learning jobs.  Run this command:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">docker run \
+docker.elastic.co/beats/metricbeat:7.0.0-alpha1 \
+setup -E setup.kibana.host=kibana:5601 \
+-E output.elasticsearch.hosts=["elasticsearch:9200"] <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> <a id="CO4-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Substitute your Kibana and Elasticsearch hosts and ports.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+If you are using the hosted Elasticsearch Service in Elastic Cloud, replace
+the <code class="literal">-E output.elasticsearch.hosts</code> line with the Cloud ID and elastic password
+using this syntax:
+</p></td></tr></table></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-shell">-E cloud.id=&lt;Cloud ID from Elasticsearch Service&gt; \
+-E cloud.auth=elastic:&lt;elastic password&gt;</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_configure_metricbeat_on_docker"></a>Configure Metricbeat on Docker<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-docker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Docker image provides several methods for configuring Metricbeat. The
+conventional approach is to provide a configuration file via a volume mount, but
 it’s also possible to create a custom image with your
-configuration included.</p><h5><a id="_bind_mounted_configuration"></a>Bind-mounted configuration<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-docker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>One way to configure Metricbeat on Docker is to provide <code class="literal">metricbeat.yml</code> via a bind mount.
-With <code class="literal">docker run</code>, the bind mount can be specified like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">docker run \
-  --mount type=bind,source="$(pwd)"/metricbeat.yml,target=/usr/share/metricbeat/metricbeat.yml \
-  docker.elastic.co/beats/metricbeat:7.0.0-alpha1</pre></div><h5><a id="_custom_image_configuration"></a>Custom image configuration<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-docker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>It’s possible to embed your Metricbeat configuration in a custom image.
+configuration included.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_example_configuration_file"></a>Example configuration file<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-docker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Download this example configuration file as a starting point:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -L -O https://raw.githubusercontent.com/elastic/beats/deploy/docker/metricbeat.docker.yml</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_volume_mounted_configuration"></a>Volume-mounted configuration<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-docker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>One way to configure Metricbeat on Docker is to provide <code class="literal">metricbeat.docker.yml</code> via a volume mount.
+With <code class="literal">docker run</code>, the volume mount can be specified like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">docker run -d \
+  --name=metricbeat \
+  --user=root \
+  --volume="$(pwd)/metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro" \
+  --volume="/var/run/docker.sock:/var/run/docker.sock:ro" \
+  --volume="/sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro" \
+  --volume="/proc:/hostfs/proc:ro" \
+  --volume="/:/hostfs:ro" \
+  docker.elastic.co/beats/metricbeat:7.0.0-alpha1 metricbeat -e \
+  -E output.elasticsearch.hosts=["elasticsearch:9200"] <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> <a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Substitute your Elasticsearch hosts and ports.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+If you are using the hosted Elasticsearch Service in Elastic Cloud, replace
+the <code class="literal">-E output.elasticsearch.hosts</code> line with the Cloud ID and elastic password
+using the syntax shown earlier.
+</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_customize_your_configuration"></a>Customize your configuration<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-docker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">metricbeat.docker.yml</code> file you downloaded earlier is configured to deploy Beats modules based on the Docker labels applied to your containers.  See <a class="xref" href="configuration-autodiscover-hints.html" title="Hints based autodiscover">Hints based autodiscover</a> for more details. Add labels to your application Docker containers, and they will be picked up by the Beats autodiscover feature when they are deployed.  Here is an example command for an Apache HTTP Server container with labels to configure the Filebeat and Metricbeat modules for the Apache HTTP Server:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">docker run \
+  --label co.elastic.logs/module=apache2 \
+  --label co.elastic.logs/fileset.stdout=access \
+  --label co.elastic.logs/fileset.stderr=error \
+  --label co.elastic.metrics/module=apache \
+  --label co.elastic.metrics/metricsets=status \
+  --label co.elastic.metrics/hosts='${data.host}:${data.port}' \
+  --detach=true \
+  --name my-apache-app \
+  -p 8080:80 \
+  httpd:2.4</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_custom_image_configuration"></a>Custom image configuration<a href="https://github.com/elastic/beats/edit/master/libbeat/docs/shared-docker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>It’s possible to embed your Metricbeat configuration in a custom image.
 Here is an example Dockerfile to achieve this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-dockerfile">FROM docker.elastic.co/beats/metricbeat:7.0.0-alpha1
 COPY metricbeat.yml /usr/share/metricbeat/metricbeat.yml
 USER root
@@ -732,11 +766,11 @@ containers. Let’s walk-through some examples using Docker as our container
 orchestration tool.</p><p>This example highlights the changes required to make the system module
 work properly inside of a container. This enables Metricbeat to monitor the
 host machine from within the container.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">docker run \
-  --mount type=bind,source=/proc,target=/hostfs/proc,readonly \ <a id="CO4-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-  --mount type=bind,source=/sys/fs/cgroup,target=/hostfs/sys/fs/cgroup,readonly \ <a id="CO4-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-  --mount type=bind,source=/,target=/hostfs,readonly \ <a id="CO4-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
-  --net=host <a id="CO4-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
-  docker.elastic.co/beats/metricbeat:7.0.0-alpha1 -system.hostfs=/hostfs</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+  --mount type=bind,source=/proc,target=/hostfs/proc,readonly \ <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  --mount type=bind,source=/sys/fs/cgroup,target=/hostfs/sys/fs/cgroup,readonly \ <a id="CO6-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  --mount type=bind,source=/,target=/hostfs,readonly \ <a id="CO6-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+  --net=host <a id="CO6-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>
+  docker.elastic.co/beats/metricbeat:7.0.0-alpha1 -system.hostfs=/hostfs</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Metricbeat’s <a class="link" href="metricbeat-module-system.html" title="System module">system module</a> collects much of its data through the Linux proc
 filesystem, which is normally located at <code class="literal">/proc</code>. Because containers
 are isolated as much as possible from the host, the data inside of the
@@ -744,16 +778,16 @@ container’s <code class="literal">/proc</code> is different than the host’s 
 can mount the host’s <code class="literal">/proc</code> filesystem inside of the container and tell
 Metricbeat to look inside the <code class="literal">/hostfs</code> directory when looking for <code class="literal">/proc</code> by
 using the <code class="literal">-system.hostfs=/hostfs</code> CLI flag.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 By default, cgroup reporting is enabled for the
 <a class="link" href="metricbeat-metricset-system-process.html" title="System process metricset">system process metricset</a>, so you need
 to mount the host’s cgroup mountpoints within the container. They need to be
 mounted inside the directory specified by the <code class="literal">-system.hostfs</code> CLI flag.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 If you want to be able to monitor filesystems from the host by using the
 <a class="link" href="metricbeat-metricset-system-filesystem.html" title="System filesystem metricset">system filesystem metricset</a>, then those filesystems need to be mounted inside
 of the container. They can be mounted at any location.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO4-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <a class="link" href="metricbeat-metricset-system-network.html" title="System network metricset">system network metricset</a> uses data from <code class="literal">/proc/net/dev</code>, or
 <code class="literal">/hostfs/proc/net/dev</code> when using <code class="literal">-system.hostfs=/hostfs</code>. The only way
 to make this file contain the host’s network devices is to use the <code class="literal">--net=host</code>
@@ -763,28 +797,28 @@ to <code class="literal">/hostfs/proc</code> is not sufficient.
 host system is running Linux. Attempts to bind-mount these filesystems will
 fail on Windows and MacOS.</p></div></div><h4><a id="monitoring-service"></a>Monitor a service in another container<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/running-on-docker.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Next, let’s look at an example of monitoring a containerized service from a
 Metricbeat container.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">docker run \
-  --network=mysqlnet \ <a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-  -e MYSQL_PASSWORD=secret \ <a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
-  docker.elastic.co/beats/metricbeat:7.0.0-alpha1</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+  --network=mysqlnet \ <a id="CO7-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  -e MYSQL_PASSWORD=secret \ <a id="CO7-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+  docker.elastic.co/beats/metricbeat:7.0.0-alpha1</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Placing the Metricbeat and MySQL containers on the same Docker network
 allows Metricbeat access to the exposed ports of the MySQL container, and
 makes the hostname <code class="literal">mysql</code> resolvable to Metricbeat.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO7-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 If you do not want to hardcode certain values into your Metricbeat
 configuration, then you can pass them into the container either as environment
 variables or as command line flags to Metricbeat (see the <code class="literal">-E</code> CLI flag in <a class="xref" href="command-line-options.html" title="Metricbeat command reference">Command reference</a>).
 </p></td></tr></table></div><p>The mysql module configuration would look like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat.modules:
 - module: mysql
   metricsets: ["status"]
-  hosts: ["tcp(mysql:3306)/"] <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+  hosts: ["tcp(mysql:3306)/"] <a id="CO8-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
   username: root
-  password: ${MYSQL_PASSWORD} <a id="CO6-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+  password: ${MYSQL_PASSWORD} <a id="CO8-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">mysql</code> hostname will resolve to the address of a container
 named <code class="literal">mysql</code> on the <code class="literal">mysqlnet</code> Docker network.
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO6-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO8-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">MYSQL_PASSWORD</code> variable will be evaluated at startup. If the variable
 is not set, this will lead to an error at startup.
-</p></td></tr></table></div></div></div><div class="navfooter"><span class="prev"><a href="command-line-options.html">
+</p></td></tr></table></div></div></div></div><div class="navfooter"><span class="prev"><a href="command-line-options.html">
               « 
               Metricbeat command reference</a>
            
