@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shard Allocation Filtering
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Index-level shard allocation filtering
         | Elasticsearch Reference [master]
       | Elastic
     </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="index-modules-allocation.html" title="Index Shard Allocation" /><link rel="prev" href="index-modules-allocation.html" title="Index Shard Allocation" /><link rel="next" href="delayed-allocation.html" title="Delaying allocation when a node leaves" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
@@ -696,7 +696,7 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index modules</a></span> » <span class="breadcrumb-link"><a href="index-modules-allocation.html">Index Shard Allocation</a></span> » <span class="breadcrumb-node">Shard Allocation Filtering</span></div><div class="navheader"><span class="prev"><a href="index-modules-allocation.html">
+    </a></span> » <span class="breadcrumb-link"><a href="index-modules.html">Index modules</a></span> » <span class="breadcrumb-link"><a href="index-modules-allocation.html">Index Shard Allocation</a></span> » <span class="breadcrumb-node">Index-level shard allocation filtering</span></div><div class="navheader"><span class="prev"><a href="index-modules-allocation.html">
               « 
               Index Shard Allocation</a>
            
@@ -704,31 +704,39 @@ Not what you want? See the
            
           <a href="delayed-allocation.html">Delaying allocation when a node leaves
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="shard-allocation-filtering"></a>Shard Allocation Filtering<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Shard allocation filtering allows you to specify which nodes are allowed
-to host the shards of a particular index.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The per-index shard allocation filters explained below work in
-conjunction with the cluster-wide allocation filters explained in
-<a class="xref" href="shards-allocation.html" title="Cluster Level Shard Allocation">Cluster Level Shard Allocation</a>.</p></div></div><p>It is possible to assign arbitrary metadata attributes to each node at
-startup.  For instance, nodes could be assigned a <code class="literal">rack</code> and a <code class="literal">size</code>
-attribute as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">bin/elasticsearch -Enode.attr.rack=rack1 -Enode.attr.size=big  <a id="CO388-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO388-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-These attribute settings can also be specified in the <code class="literal">elasticsearch.yml</code> config file.
-</p></td></tr></table></div><p>These metadata attributes can be used with the
-<code class="literal">index.routing.allocation.*</code> settings to allocate an index to a particular
-group of nodes.  For instance, we can move the index <code class="literal">test</code> to either <code class="literal">big</code> or
-<code class="literal">medium</code> nodes as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test/_settings
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="shard-allocation-filtering"></a>Index-level shard allocation filtering<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You can use shard allocation filters to control where Elasticsearch allocates shards of
+a particular index. These per-index filters are applied in conjunction with
+<a class="link" href="allocation-filtering.html" title="Cluster-level shard allocation filtering">cluster-wide allocation filtering</a> and
+<a class="link" href="allocation-awareness.html" title="Shard allocation awareness">allocation awareness</a>.</p><p>Shard allocation filters can be based on custom node attributes or the built-in
+<code class="literal">_name</code>, <code class="literal">host_ip</code>, <code class="literal">publish_ip</code>, <code class="literal">_ip</code>, and <code class="literal">_host</code> attributes.
+<a class="link" href="index-lifecycle-management.html" title="Managing the index lifecycle">Index lifecycle management</a> uses filters based
+on custom node attributes to determine how to reallocate shards when moving
+between phases.</p><p>The <code class="literal">cluster.routing.allocation</code> settings are dynamic, enabling live indices to
+be moved from one set of nodes to another. Shards are only relocated if it is
+possible to do so without breaking another routing constraint, such as never
+allocating a primary and replica shard on the same node.</p><p>For example, you could use a custom node attribute to indicate a node’s
+performance characteristics and use shard allocation filtering to route shards
+for a particular index to the most appropriate class of hardware.</p><h4><a id="index-allocation-filters"></a>Enabling index-level shard allocation filtering<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To filter based on a custom node attribute:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Specify the filter characteristics with a custom node attribute in each
+node’s <code class="literal">elasticsearch.yml</code> configuration file. For example, if you have <code class="literal">small</code>,
+<code class="literal">medium</code>, and <code class="literal">big</code> nodes, you could add a <code class="literal">size</code> attribute to filter based
+on node size.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.attr.size: medium</pre></div><p class="simpara">You can also set custom attributes when you start a node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">`./bin/elasticsearch -Enode.attr.size=medium</pre></div></li><li class="listitem"><p class="simpara">
+Add a routing allocation filter to the index. The <code class="literal">index.routing.allocation</code>
+settings support three types of filters: <code class="literal">include</code>, <code class="literal">exclude</code>, and <code class="literal">require</code>.
+For example, to tell Elasticsearch to allocate shards from the <code class="literal">test</code> index to either
+<code class="literal">big</code> or <code class="literal">medium</code> nodes, use <code class="literal">index.routing.allocation.include</code>:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test/_settings
 {
   "index.routing.allocation.include.size": "big,medium"
-}</pre></div><div class="console_widget" data-snippet="snippets/shard-allocation-filtering/1.json"></div><p>Alternatively, we can move the index <code class="literal">test</code> away from the <code class="literal">small</code> nodes with
-an <code class="literal">exclude</code> rule:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test/_settings
-{
-  "index.routing.allocation.exclude.size": "small"
-}</pre></div><div class="console_widget" data-snippet="snippets/shard-allocation-filtering/2.json"></div><p>Multiple rules can be specified, in which case all conditions must be
-satisfied.  For instance, we could move the index <code class="literal">test</code> to <code class="literal">big</code> nodes in
-<code class="literal">rack1</code> with the following:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test/_settings
+}</pre></div></li></ol></div><div class="console_widget" data-snippet=":CONSOLE:"></div><p>+
+If you specify multiple filters, all conditions must be satisfied for shards to
+be relocated. For example, to move the <code class="literal">test</code> index to <code class="literal">big</code> nodes in <code class="literal">rack1</code>,
+you could specify:</p><p>+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test/_settings
 {
   "index.routing.allocation.include.size": "big",
   "index.routing.allocation.include.rack": "rack1"
-}</pre></div><div class="console_widget" data-snippet="snippets/shard-allocation-filtering/3.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>If some conditions cannot be satisfied then shards will not be moved.</p></div></div><p>The following settings are <span class="emphasis"><em>dynamic</em></span>, allowing live indices to be moved from
-one set of nodes to another:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+}</pre></div><div class="console_widget" data-snippet="snippets/shard-allocation-filtering/1.json"></div><h4><a id="index-allocation-settings"></a>Index allocation filter settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/index-modules/allocation/filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">index.routing.allocation.include.{attribute}</code>
 </span></dt><dd>
     Assign the index to a node whose <code class="literal">{attribute}</code> has at least one of the
@@ -743,7 +751,7 @@ one set of nodes to another:</p><div class="variablelist"><dl class="variablelis
 </span></dt><dd>
     Assign the index to a node whose <code class="literal">{attribute}</code> has <span class="emphasis"><em>none</em></span> of the
     comma-separated values.
-</dd></dl></div><p>These special attributes are also supported:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+</dd></dl></div><p>The index allocation settings support the following built-in attributes:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">_name</code>
 </p>
@@ -783,10 +791,10 @@ Match either <code class="literal">_host_ip</code> or <code class="literal">_pub
 <p>
 Match nodes by hostname
 </p>
-</td></tr></tbody></table></div><p>All attribute values can be specified with wildcards, eg:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test/_settings
+</td></tr></tbody></table></div><p>You can use wildcards when specifying attribute values, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test/_settings
 {
   "index.routing.allocation.include._ip": "192.168.2.*"
-}</pre></div><div class="console_widget" data-snippet="snippets/shard-allocation-filtering/4.json"></div></div><div class="navfooter"><span class="prev"><a href="index-modules-allocation.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/shard-allocation-filtering/2.json"></div></div><div class="navfooter"><span class="prev"><a href="index-modules-allocation.html">
               « 
               Index Shard Allocation</a>
            

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shard Allocation Awareness
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shard allocation awareness
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-cluster.html" title="Cluster" /><link rel="prev" href="disk-allocator.html" title="Disk-based Shard Allocation" /><link rel="next" href="allocation-filtering.html" title="Shard Allocation Filtering" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-cluster.html" title="Cluster" /><link rel="prev" href="disk-allocator.html" title="Disk-based shard allocation" /><link rel="next" href="allocation-filtering.html" title="Cluster-level shard allocation filtering" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -696,68 +696,71 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-cluster.html">Cluster</a></span> » <span class="breadcrumb-node">Shard Allocation Awareness</span></div><div class="navheader"><span class="prev"><a href="disk-allocator.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-cluster.html">Cluster</a></span> » <span class="breadcrumb-node">Shard allocation awareness</span></div><div class="navheader"><span class="prev"><a href="disk-allocator.html">
               « 
-              Disk-based Shard Allocation</a>
+              Disk-based shard allocation</a>
            
         </span><span class="next">
            
-          <a href="allocation-filtering.html">Shard Allocation Filtering
+          <a href="allocation-filtering.html">Cluster-level shard allocation filtering
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="allocation-awareness"></a>Shard Allocation Awareness<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/allocation_awareness.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>When running nodes on multiple VMs on the same physical server, on multiple
-racks, or across multiple zones or domains, it is more likely that two nodes on
-the same physical server, in the same rack, or in the same zone or domain will
-crash at the same time, rather than two unrelated nodes crashing
-simultaneously.</p><p>If Elasticsearch is <span class="emphasis"><em>aware</em></span> of the physical configuration of your hardware, it
-can ensure that the primary shard and its replica shards are spread across
-different physical servers, racks, or zones, to minimise the risk of losing
-all shard copies at the same time.</p><p>The shard allocation awareness settings allow you to tell Elasticsearch about
-your hardware configuration.</p><p>As an example, let’s assume we have several racks.  When we start a node, we
-can tell it which rack it is in by assigning it an arbitrary metadata
-attribute called <code class="literal">rack_id</code> — we could use any attribute name.  For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">./bin/elasticsearch -Enode.attr.rack_id=rack_one <a id="CO367-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO367-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This setting could also be specified in the <code class="literal">elasticsearch.yml</code> config file.
-</p></td></tr></table></div><p>Now, we need to set up <span class="emphasis"><em>shard allocation awareness</em></span>  by telling Elasticsearch
-which attributes to use.  This can be configured in the <code class="literal">elasticsearch.yml</code>
-file on <span class="strong strong"><strong>all</strong></span> master-eligible nodes, or it can be set (and changed) with the
-<a class="link" href="cluster-update-settings.html" title="Cluster Update Settings">cluster-update-settings</a> API.</p><p>For our example, we’ll set the value in the config file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cluster.routing.allocation.awareness.attributes: rack_id</pre></div><p>With this config in place, let’s say we start two nodes with
-<code class="literal">node.attr.rack_id</code> set to <code class="literal">rack_one</code>, and we create an index with 5 primary
-shards and 1 replica of each primary.  All primaries and replicas are
-allocated across the two nodes.</p><p>Now, if we start two more nodes with <code class="literal">node.attr.rack_id</code> set to <code class="literal">rack_two</code>,
-Elasticsearch will move shards across to the new nodes, ensuring (if possible)
-that no two copies of the same shard will be in the same rack. However if
-<code class="literal">rack_two</code> were to fail, taking down both of its nodes, Elasticsearch will
-still allocate the lost shard copies to nodes in <code class="literal">rack_one</code>.</p><div class="sidebar"><div class="titlepage"><div><div><p class="title"><strong>Prefer local shards</strong></p></div></div></div><p>When executing search or GET requests, with shard awareness enabled,
-Elasticsearch will prefer using local shards — shards in the same awareness
-group — to execute the request. This is usually faster than crossing between
-racks or across zone boundaries.</p></div><p>Multiple awareness attributes can be specified, in which case each attribute
-is considered separately when deciding where to allocate the shards.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cluster.routing.allocation.awareness.attributes: rack_id,zone</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When using awareness attributes, shards will not be allocated to nodes
-that don’t have values set for those attributes.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Number of primary/replica of a shard allocated on a specific group of
-nodes with the same awareness attribute value is determined by the number of
-attribute values. When the number of nodes in groups is unbalanced and there
-are many replicas, replica shards may be left unassigned.</p></div></div><h3><a id="forced-awareness"></a>Forced Awareness<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/allocation_awareness.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Imagine that you have two zones and enough hardware across the two zones to
-host all of your primary and replica shards.  But perhaps the hardware in a
-single zone, while sufficient to host half the shards, would be unable to host
-<span class="strong strong"><strong>ALL</strong></span> the shards.</p><p>With ordinary awareness, if one zone lost contact with the other zone,
-Elasticsearch would assign all of the missing replica shards to a single zone.
-But in this example, this sudden extra load would cause the hardware in the
-remaining zone to be overloaded.</p><p>Forced awareness solves this problem by <span class="strong strong"><strong>NEVER</strong></span> allowing copies of the same
-shard to be allocated to the same zone.</p><p>For example, lets say we have an awareness attribute called <code class="literal">zone</code>, and we
-know we are going to have two zones, <code class="literal">zone1</code> and <code class="literal">zone2</code>. Here is how we can
-force awareness on a node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cluster.routing.allocation.awareness.force.zone.values: zone1,zone2 <a id="CO368-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-cluster.routing.allocation.awareness.attributes: zone</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO368-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-We must list all possible values that the <code class="literal">zone</code> attribute can have.
-</p></td></tr></table></div><p>Now, if we start 2 nodes with <code class="literal">node.attr.zone</code> set to <code class="literal">zone1</code> and create an
-index with 5 shards and 1 replica. The index will be created, but only the 5
-primary shards will be allocated (with no replicas). Only when we start more
-nodes with <code class="literal">node.attr.zone</code> set to <code class="literal">zone2</code> will the replicas be allocated.</p><p>The <code class="literal">cluster.routing.allocation.awareness.*</code> settings can all be updated
-dynamically on a live cluster with the
-<a class="link" href="cluster-update-settings.html" title="Cluster Update Settings">cluster-update-settings</a> API.</p></div><div class="navfooter"><span class="prev"><a href="disk-allocator.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="allocation-awareness"></a>Shard allocation awareness<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/allocation_awareness.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You can use custom node attributes as <span class="emphasis"><em>awareness attributes</em></span> to enable Elasticsearch
+to take your physical hardware configuration into account when allocating shards.
+If Elasticsearch knows which nodes are on the same physical server, in the same rack, or
+in the same zone, it can distribute the primary shard and its replica shards to
+minimise the risk of losing all shard copies in the event of a failure.</p><p>When shard allocation awareness is enabled with the
+<code class="literal">cluster.routing.allocation.awareness.attributes</code> setting, shards are only
+allocated to nodes that have values set for the specified awareness
+attributes. If you use multiple awareness attributes, Elasticsearch considers
+each attribute separately when allocating shards.</p><p>The allocation awareness settings can be configured in
+<code class="literal">elasticsearch.yml</code> and updated dynamically with the
+<a class="link" href="cluster-update-settings.html" title="Cluster Update Settings">cluster-update-settings</a> API.</p><p>Elasticsearch prefers using shards in the same location (with the same
+awareness attribute values) to process search or GET requests. Using local
+shards is usually faster than crossing rack or zone boundaries.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The number of attribute values determines how many shard copies are
+allocated in each location. If the number of nodes in each location is
+unbalanced and there are a lot of replicas, replica shards might be left
+unassigned.</p></div></div><h4><a id="enabling-awareness"></a>Enabling shard allocation awareness<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/allocation_awareness.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>To enable shard allocation awareness:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Specify the location of each node with a custom node attribute. For example,
+if you want Elasticsearch to distribute shards across different racks, you might
+set an awareness attribute called <code class="literal">rack_id</code> in each node’s <code class="literal">elasticsearch.yml</code>
+config file.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">node.attr.rack_id: rack_one</pre></div><p class="simpara">You can also set custom attributes when you start a node:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">`./bin/elasticsearch -Enode.attr.rack_id=rack_one`</pre></div></li><li class="listitem"><p class="simpara">
+Tell Elasticsearch to take one or more awareness attributes into account when
+allocating shards by setting
+<code class="literal">cluster.routing.allocation.awareness.attributes</code> in <span class="strong strong"><strong>every</strong></span> master-eligible
+node’s <code class="literal">elasticsearch.yml</code> config file.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cluster.routing.allocation.awareness.attributes: rack_id <a id="CO367-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO367-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Specify multiple attributes as a comma-separated list.
+</p></td></tr></table></div><p class="simpara">You can also use the
+<a class="link" href="cluster-update-settings.html" title="Cluster Update Settings">cluster-update-settings</a> API to set or update
+a cluster’s awareness attributes.</p></li></ol></div><p>With this example configuration, if you start two nodes with
+<code class="literal">node.attr.rack_id</code> set to <code class="literal">rack_one</code> and create an index with 5 primary
+shards and 1 replica of each primary, all primaries and replicas are
+allocated across the two nodes.</p><p>If you add two nodes with <code class="literal">node.attr.rack_id</code> set to <code class="literal">rack_two</code>,
+Elasticsearch moves shards to the new nodes, ensuring (if possible)
+that no two copies of the same shard are in the same rack.</p><p>If <code class="literal">rack_two</code> fails and takes down both its nodes, by default Elasticsearch
+allocates the lost shard copies to nodes in <code class="literal">rack_one</code>. To prevent multiple
+copies of a particular shard from being allocated in the same location, you can
+enable forced awareness.</p><h4><a id="forced-awareness"></a>Forced awareness<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/allocation_awareness.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>By default, if one location fails, Elasticsearch assigns all of the missing
+replica shards to the remaining locations. While you might have sufficient
+resources across all locations to host your primary and replica shards, a single
+location might be unable to host <span class="strong strong"><strong>ALL</strong></span> of the shards.</p><p>To prevent a single location from being overloaded in the event of a failure,
+you can set <code class="literal">cluster.routing.allocation.awareness.force</code> so no replicas are
+allocated until nodes are available in another location.</p><p>For example, if you have an awareness attribute called <code class="literal">zone</code> and configure nodes
+in <code class="literal">zone1</code> and <code class="literal">zone2</code>, you can use forced awareness to prevent Elasticsearch
+from allocating replicas if only one zone is available:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cluster.routing.allocation.awareness.attributes: zone
+cluster.routing.allocation.awareness.force.zone.values: zone1,zone2 <a id="CO368-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO368-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Specify all possible values for the awareness attribute.
+</p></td></tr></table></div><p>With this example configuration, if you start two nodes with <code class="literal">node.attr.zone</code> set
+to <code class="literal">zone1</code> and create an index with 5 shards and 1 replica, Elasticsearch creates
+the index and allocates the 5 primary shards but no replicas. Replicas are
+only allocated once nodes with <code class="literal">node.attr.zone</code> set to <code class="literal">zone2</code> are available.</p></div><div class="navfooter"><span class="prev"><a href="disk-allocator.html">
               « 
-              Disk-based Shard Allocation</a>
+              Disk-based shard allocation</a>
            
         </span><span class="next">
            
-          <a href="allocation-filtering.html">Shard Allocation Filtering
+          <a href="allocation-filtering.html">Cluster-level shard allocation filtering
                »
             </a></span></div>
 <!-- end body -->

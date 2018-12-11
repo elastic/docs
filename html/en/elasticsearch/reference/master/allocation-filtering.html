@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Shard Allocation Filtering
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Cluster-level shard allocation filtering
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-cluster.html" title="Cluster" /><link rel="prev" href="allocation-awareness.html" title="Shard Allocation Awareness" /><link rel="next" href="misc-cluster.html" title="Miscellaneous cluster settings" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-cluster.html" title="Cluster" /><link rel="prev" href="allocation-awareness.html" title="Shard allocation awareness" /><link rel="next" href="misc-cluster.html" title="Miscellaneous cluster settings" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -696,19 +696,29 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-cluster.html">Cluster</a></span> » <span class="breadcrumb-node">Shard Allocation Filtering</span></div><div class="navheader"><span class="prev"><a href="allocation-awareness.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-cluster.html">Cluster</a></span> » <span class="breadcrumb-node">Cluster-level shard allocation filtering</span></div><div class="navheader"><span class="prev"><a href="allocation-awareness.html">
               « 
-              Shard Allocation Awareness</a>
+              Shard allocation awareness</a>
            
         </span><span class="next">
            
           <a href="misc-cluster.html">Miscellaneous cluster settings
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="allocation-filtering"></a>Shard Allocation Filtering<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/allocation_filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>While <a class="xref" href="index-modules-allocation.html" title="Index Shard Allocation"><em>Index Shard Allocation</em></a> provides <span class="strong strong"><strong>per-index</strong></span> settings to control the
-allocation of shards to nodes, cluster-level shard allocation filtering allows
-you to allow or disallow the allocation of shards from <span class="strong strong"><strong>any</strong></span> index to
-particular nodes.</p><p>The available <span class="emphasis"><em>dynamic</em></span> cluster settings are as follows, where <code class="literal">{attribute}</code>
-refers to an arbitrary node attribute.:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="allocation-filtering"></a>Cluster-level shard allocation filtering<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/allocation_filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>You can use cluster-level shard allocation filters to control where Elasticsearch
+allocates shards from any index. These cluster wide filters are applied in
+conjunction with <a class="link" href="shard-allocation-filtering.html" title="Index-level shard allocation filtering">per-index allocation filtering</a>
+and <a class="link" href="allocation-awareness.html" title="Shard allocation awareness">allocation awareness</a>.</p><p>Shard allocation filters can be based on custom node attributes or the built-in
+<code class="literal">_name</code>, <code class="literal">_ip</code>, and <code class="literal">_host</code> attributes.</p><p>The <code class="literal">cluster.routing.allocation</code> settings are dynamic, enabling live indices to
+be moved from one set of nodes to another. Shards are only relocated if it is
+possible to do so without breaking another routing constraint, such as never
+allocating a primary and replica shard on the same node.</p><p>The most common use case for cluster-level shard allocation filtering is when
+you want to decommission a node. To move shards off of a node prior to shutting
+it down, you could create a filter that excludes the node by its IP address:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
+{
+  "transient" : {
+    "cluster.routing.allocation.exclude._ip" : "10.0.0.1"
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/allocation-filtering/1.json"></div><h4><a id="cluster-routing-settings"></a>Cluster routing settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/cluster/allocation_filtering.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">cluster.routing.allocation.include.{attribute}</code>
 </span></dt><dd>
     Allocate shards to a node whose <code class="literal">{attribute}</code> has at least one of the
@@ -723,7 +733,7 @@ refers to an arbitrary node attribute.:</p><div class="variablelist"><dl class="
 </span></dt><dd>
     Do not allocate shards to a node whose <code class="literal">{attribute}</code> has <span class="emphasis"><em>any</em></span> of the
     comma-separated values.
-</dd></dl></div><p>These special attributes are also supported:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+</dd></dl></div><p>The cluster allocation settings support the following built-in attributes:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <code class="literal">_name</code>
 </p>
@@ -747,24 +757,14 @@ Match nodes by IP addresses (the IP address associated with the hostname)
 <p>
 Match nodes by hostnames
 </p>
-</td></tr></tbody></table></div><p>The typical use case for cluster-wide shard allocation filtering is when you
-want to decommission a node, and you would like to move the shards from that
-node to other nodes in the cluster before shutting it down.</p><p>For instance, we could decommission a node using its IP address as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
-{
-  "transient" : {
-    "cluster.routing.allocation.exclude._ip" : "10.0.0.1"
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/allocation-filtering/1.json"></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Shards will only be relocated if it is possible to do so without
-breaking another routing constraint, such as never allocating a primary and
-replica shard to the same node.</p></div></div><p>In addition to listing multiple values as a comma-separated list, all
-attribute values can be specified with wildcards, eg:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
+</td></tr></tbody></table></div><p>You can use wildcards when specifying attribute values, for example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
 {
   "transient": {
     "cluster.routing.allocation.exclude._ip": "192.168.2.*"
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/allocation-filtering/2.json"></div></div><div class="navfooter"><span class="prev"><a href="allocation-awareness.html">
               « 
-              Shard Allocation Awareness</a>
+              Shard allocation awareness</a>
            
         </span><span class="next">
            
