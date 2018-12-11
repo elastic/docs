@@ -729,7 +729,27 @@ func main() {
         engine := gin.New()
         engine.Use(apmgin.Middleware(engine))
         ...
-}</pre></div><p>The apmgin middleware will recover panics and send them to Elastic APM, so you do not need to install the gin.Recovery middleware.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmgorilla"></a>module/apmgorilla<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgorilla provides middleware for the <a class="ulink" href="http://www.gorillatoolkit.org/pkg/mux" target="_top">Gorilla Mux</a> router.</p><p>For each request, a transaction is stored in the request context, which can be obtained via
+}</pre></div><p>The apmgin middleware will recover panics and send them to Elastic APM, so you do not need to install the gin.Recovery middleware.</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmbeego"></a>module/apmbeego<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmbeego provides middleware for the <a class="ulink" href="https://beego.me/" target="_top">Beego</a> web framework.</p><p>For each request, a transaction is stored in the request context, which can be obtained via
+<a class="ulink" href="https://godoc.org/github.com/astaxie/beego/context#Context" target="_top">beego/context.Context</a><code class="literal">.Request.Context()</code>
+in your controller.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+        "github.com/astaxie/beego"
+
+        "go.elastic.co/apm/module/apmbeego"
+)
+
+type thingController struct{beego.Controller}
+
+func (c *thingController) Get() {
+        span, _ := apm.StartSpan(c.Ctx.Request.Context(), "thingController.Get", "controller")
+        span.End()
+        ...
+}
+
+func main() {
+        beego.Router("/", &amp;testController{})
+        beego.Router("/thing/:id:int", &amp;testController{}, "get:Get")
+        beego.RunWithMiddleWares("localhost:8080", apmbeego.Middleware())
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmgorilla"></a>module/apmgorilla<a href="https://github.com/elastic/apm-agent-go/edit/master/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmgorilla provides middleware for the <a class="ulink" href="http://www.gorillatoolkit.org/pkg/mux" target="_top">Gorilla Mux</a> router.</p><p>For each request, a transaction is stored in the request context, which can be obtained via
 <a class="ulink" href="https://golang.org/pkg/net/http/#Request" target="_top">http.Request</a><code class="literal">.Context()</code> in your handler.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
         "github.com/gorilla/mux"
 
