@@ -283,6 +283,8 @@ sub _check_build_error {
 }
 
 #===================================
+# Forks xmllint externally and may call `die`. Call inside of an `eval` block
+# to be safe and handle errors.
 sub _xml_lint {
 #===================================
     my ( $dest ) = @_;
