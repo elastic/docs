@@ -77,7 +77,8 @@ sub build_chunked {
         my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
         eval {
             $output = run(
-                'asciidoctor', '-v',
+                'asciidoctor', '-v', '--trace',
+                '-r' => dir('resources/asciidoctor/lib/extensions.rb')->absolute,
                 # TODO figure out resource
                 # ( map { ( '--resource' => $_ ) } @$resources ),
                 '-b' => 'docbook45',
@@ -197,7 +198,8 @@ sub build_single {
 
         eval {
             $output = run(
-                'asciidoctor', '-v',
+                'asciidoctor', '-v', '--trace',
+                '-r' => dir('resources/asciidoctor/lib/extensions.rb')->absolute,
                 # TODO figure out resource
                 # ( map { ( '--resource' => $_ ) } @$resources ),
                 '-b' => 'docbook45',
