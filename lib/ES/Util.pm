@@ -64,7 +64,12 @@ sub build_chunked {
 
     my ( $output, $died );
     if ( $asciidoctor ) {
-        # TODO icons
+        %xsltopts = (%xsltopts,
+                'callout.graphics' => 1,
+                'navig.graphics'   => 1,
+                'admon.textlabel'  => 0,
+                'admon.graphics'   => 1,
+        );
         my $chunks_path = dir("$dest/.chunked");
         $chunks_path->mkpath;
         # Emulate asciidoc_dir because we use it to find shared asciidoc files
@@ -175,10 +180,19 @@ sub build_single {
 
     my ( $output, $died );
     if ( $asciidoctor ) {
-        # TODO icons
+        %xsltopts = (%xsltopts,
+                'callout.graphics' => 1,
+                'navig.graphics'   => 1,
+                'admon.textlabel'  => 0,
+                'admon.graphics'   => 1,
+        );
         if ( $type eq 'book' ) {
             $xsltopts{'chunk.section.depth'} = 0;
         }
+        # Emulate asciidoc_dir because we use it to find shared asciidoc files
+        # but asciidoctor doesn't support it.
+        my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
+
         eval {
             $output = run(
                 'asciidoctor', '-v',
@@ -190,6 +204,7 @@ sub build_single {
                 '-a' => "lang=$lang",
                 '-a' => 'base_edit_url=' . $edit_url,
                 '-a' => 'root_dir=' . $root_dir,
+                '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 $private ? ( '-a' => 'edit_url!' ) : (),
                 '-a' => 'attribute-missing=warn',
                 '--destination-dir=' . $dest,
