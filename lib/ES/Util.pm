@@ -87,7 +87,9 @@ sub build_chunked {
                 '-a' => 'base_edit_url=' . $edit_url,
                 '-a' => 'root_dir=' . $root_dir,
                 $private ? ( '-a' => 'edit_url!' ) : (),
-                '-a' => 'attribute-missing=warn',
+                # Disable warning on missing attributes because we have
+                # missing attributes!
+                # '-a' => 'attribute-missing=warn',
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '--destination-dir=' . $dest,
                 docinfo($index),
@@ -206,7 +208,9 @@ sub build_single {
                 '-a' => 'root_dir=' . $root_dir,
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 $private ? ( '-a' => 'edit_url!' ) : (),
-                '-a' => 'attribute-missing=warn',
+                # Disable warning on missing attributes because we have
+                # missing attributes!
+                # '-a' => 'attribute-missing=warn',
                 '--destination-dir=' . $dest,
                 docinfo($index),
                 $index
