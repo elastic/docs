@@ -459,13 +459,15 @@ sub run (@) {
         ( $out, $err, $ok ) = capture { system(@args) == 0 };
     }
 
-    return "$out\n$err" if $ok;
+    my $combined = "$out\n$err";
+    $combined =~ s/^\s+|\s+$//g;
+    return $combined if $ok;
 
     my $git_dir = $ENV{GIT_DIR} ? "in GIT_DIR $ENV{GIT_DIR}" : "";
     die "Error executing: @args $git_dir\n$out\n---\n$err"
         unless $ok;
 
-    return "$out\n$err";
+    return $combined;
 }
 
 #===================================
