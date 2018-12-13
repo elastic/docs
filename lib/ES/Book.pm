@@ -131,7 +131,8 @@ sub new {
         subject       => $subject,
         private       => $args{private} || '',
         noindex       => $args{noindex} || '',
-        lang          => $lang
+        lang          => $lang,
+        asciidoctor   => $args{asciidoctor} || 0,
     }, $class;
 }
 
@@ -243,6 +244,7 @@ sub _build_book {
                 toc           => $self->toc,
                 template      => $template,
                 resource      => [$checkout],
+                asciidoctor   => $self->asciidoctor,
             );
         }
         else {
@@ -262,6 +264,7 @@ sub _build_book {
                 subject       => $subject,
                 template      => $template,
                 resource      => [$checkout],
+                asciidoctor   => $self->asciidoctor,
             );
             $self->_add_title_to_toc( $branch, $branch_dir );
         }
@@ -401,6 +404,7 @@ sub tags             { shift->{tags} }
 sub subject          { shift->{subject} }
 sub source           { shift->{source} }
 sub lang             { shift->{lang} }
+sub asciidoctor      { shift->{asciidoctor} }
 #===================================
 
 1;

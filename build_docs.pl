@@ -52,7 +52,7 @@ GetOptions(
     'all', 'push', 'update!',    #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
-    'lenient', 'verbose', 'reload_template', 'resource=s@'
+    'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor'
 ) || exit usage();
 
 our $Conf = LoadFile('conf.yaml');
@@ -478,6 +478,7 @@ sub init_env {
     print "Old PATH=$ENV{PATH}\n";
     $ENV{PATH}
         = dir('resources/asciidoc-8.6.8/')->absolute
+        . ':' . dir('resources/asciidoctor/bin')->absolute
         . ":$FindBin::RealBin:"
         . $ENV{PATH};
     print "New PATH=$ENV{PATH}\n";
@@ -651,8 +652,9 @@ sub usage {
           --lenient         Ignore linking errors
           --lang            Defaults to 'en'
           --resource        Path to image dir - may be repeated
-          --skiplinkcheck     Omit the step that checks for broken links
+          --skiplinkcheck   Omit the step that checks for broken links
           --linkcheckonly   Skips the documentation builds. Checks links only.
+          --asciidoctor     Use asciidoctor instead of asciidoc.
 
         WARNING: Anything in the `out` dir will be deleted!
 
