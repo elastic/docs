@@ -7,7 +7,7 @@ use v5.10;
 use File::Copy::Recursive qw(fcopy rcopy);
 use Capture::Tiny qw(capture tee);
 use Encode qw(decode_utf8);
-use Path::Class qw(dir);
+use Path::Class qw(dir file);
 use Parallel::ForkManager();
 
 binmode( STDOUT, ':encoding(utf8)' );
@@ -33,7 +33,7 @@ sub build_chunked {
     my ( $index, $dest, %opts ) = @_;
 
     my $chunk     = $opts{chunk}         || 0;
-    my $version   = $opts{version}       || 'test build';
+    my $version   = $opts{version}       || '';
     my $multi     = $opts{multi}         || 0;
     my $lenient   = $opts{lenient}       || '';
     my $lang      = $opts{lang}          || 'en';
@@ -45,42 +45,95 @@ sub build_chunked {
     my $resources = $opts{resource}      || [];
     my $noindex   = $opts{noindex}       || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
+    my $asciidoctor = $opts{asciidoctor} || 0;
+
     $dest->rmtree;
     $dest->mkpath;
 
+    my %xsltopts = (
+            "toc.max.depth"            => 5,
+            "toc.section.depth"        => $chunk,
+            "chunk.section.depth"      => $chunk,
+            "local.book.version"       => $version,
+            "local.book.multi_version" => $multi,
+            "local.page.header"        => $page_header,
+            "local.book.section.title" => "Learn/Docs/$section",
+            "local.book.subject"       => $subject,
+            "local.noindex"            => $noindex,
+    );
+
     my ( $output, $died );
-    eval {
-        $output = run(
-            'a2x', '-v',    #'--keep',
-            '--icons',
-            ( map { ( '--resource' => $_ ) } @$resources ),
-            '-d' => 'book',
-            '-f' => 'chunked',
-            '-a' => 'showcomments=1',
-            '-a' => "lang=$lang",
-            '-a' => 'base_edit_url=' . $edit_url,
-            '-a' => 'root_dir=' . $root_dir,
-            $private ? ( '-a' => 'edit_url!' ) : (),
-            '--xsl-file'      => 'resources/website_chunked.xsl',
-            '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
-            '--destination-dir=' . $dest,
-            ( $lenient ? '-L' : () ),
-            docinfo($index),
-            xsltopts(
-                "toc.max.depth"            => 5,
-                "toc.section.depth"        => $chunk,
-                "chunk.section.depth"      => $chunk,
-                "local.book.version"       => $version,
-                "local.book.multi_version" => $multi,
-                "local.page.header"        => $page_header,
-                "local.book.section.title" => "Learn/Docs/$section",
-                "local.book.subject"       => $subject,
-                "local.noindex"            => $noindex
-            ),
-            $index
+    if ( $asciidoctor ) {
+        %xsltopts = (%xsltopts,
+                'callout.graphics' => 1,
+                'navig.graphics'   => 1,
+                'admon.textlabel'  => 0,
+                'admon.graphics'   => 1,
         );
-        1;
-    } or do { $output = $@; $died = 1; };
+        my $chunks_path = dir("$dest/.chunked");
+        $chunks_path->mkpath;
+        # Emulate asciidoc_dir because we use it to find shared asciidoc files
+        # but asciidoctor doesn't support it.
+        my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
+        eval {
+            $output = run(
+                'asciidoctor', '-v',
+                # TODO figure out resource
+                # ( map { ( '--resource' => $_ ) } @$resources ),
+                '-b' => 'docbook45',
+                '-d' => 'book',
+                '-a' => 'showcomments=1',
+                '-a' => "lang=$lang",
+                '-a' => 'base_edit_url=' . $edit_url,
+                '-a' => 'root_dir=' . $root_dir,
+                $private ? ( '-a' => 'edit_url!' ) : (),
+                # Disable warning on missing attributes because we have
+                # missing attributes!
+                # '-a' => 'attribute-missing=warn',
+                '-a' => 'asciidoc-dir=' . $asciidoc_dir,
+                '--destination-dir=' . $dest,
+                docinfo($index),
+                $index
+            );
+            if ( !$lenient ) {
+                $output .= _xml_lint($dest);
+            }
+            $output .= run(
+                'xsltproc',
+                rawxsltopts(%xsltopts),
+                '--stringparam', 'base.dir', $chunks_path->absolute . '/',
+                file('resources/website_chunked.xsl')->absolute,
+                "$dest/index.xml"
+            );
+            # TODO copy_resources?
+            # TODO clean the xml files
+            1;
+        } or do { $output = $@; $died = 1; };
+    }
+    else {
+        eval {
+            $output = run(
+                'a2x', '-v',    #'--keep',
+                '--icons',
+                ( map { ( '--resource' => $_ ) } @$resources ),
+                '-d' => 'book',
+                '-f' => 'chunked',
+                '-a' => 'showcomments=1',
+                '-a' => "lang=$lang",
+                '-a' => 'base_edit_url=' . $edit_url,
+                '-a' => 'root_dir=' . $root_dir,
+                $private ? ( '-a' => 'edit_url!' ) : (),
+                '--xsl-file'      => 'resources/website_chunked.xsl',
+                '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
+                '--destination-dir=' . $dest,
+                ( $lenient ? '-L' : () ),
+                docinfo($index),
+                xsltopts(%xsltopts),
+                $index
+            );
+            1;
+        } or do { $output = $@; $died = 1; };
+    }
 
     _check_build_error( $output, $died, $lenient );
 
@@ -103,50 +156,104 @@ sub build_single {
     my $type = $opts{type} || 'book';
     my $toc = $opts{toc} ? "$type toc" : '';
     my $lenient   = $opts{lenient}       || '';
-    my $version   = $opts{version}       || 'test build';
+    my $version   = $opts{version}       || '';
     my $multi     = $opts{multi}         || 0;
     my $lang      = $opts{lang}          || 'en';
     my $edit_url  = $opts{edit_url}      || '';
     my $root_dir  = $opts{root_dir}      || '';
     my $section   = $opts{section_title} || '';
-    my $subject   = $opts{subject}       || '';    
+    my $subject   = $opts{subject}       || '';
     my $private   = $opts{private}       || '';
     my $noindex   = $opts{noindex}       || '';
     my $resources = $opts{resource}      || [];
     my $page_header = custom_header($index) || $opts{page_header} || '';
+    my $asciidoctor = $opts{asciidoctor} || 0;
+
+    my %xsltopts = (
+            "generate.toc"             => $toc,
+            "toc.section.depth"        => 0,
+            "local.book.version"       => $version,
+            "local.book.multi_version" => $multi,
+            "local.page.header"        => $page_header,
+            "local.book.section.title" => "Learn/Docs/$section",
+            "local.book.subject"       => $subject,
+            "local.noindex"            => $noindex,
+    );
 
     my ( $output, $died );
-    eval {
-        $output = run(
-            'a2x', '-v',
-            '--icons',
-            ( map { ( '--resource' => $_ ) } @$resources ),
-            '-f' => 'xhtml',
-            '-d' => $type,
-            '-a' => 'showcomments=1',
-            '-a' => "lang=$lang",
-            '-a' => 'base_edit_url=' . $edit_url,
-            '-a' => 'root_dir=' . $root_dir,
-            $private ? ( '-a' => 'edit_url!' ) : (),
-            '--xsl-file'      => 'resources/website.xsl',
-            '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
-            '--destination-dir=' . $dest,
-            ( $lenient ? '-L' : () ),
-            docinfo($index),
-            xsltopts(
-                "generate.toc"             => $toc,
-                "toc.section.depth"        => 0,
-                "local.book.version"       => $version,
-                "local.book.multi_version" => $multi,
-                "local.page.header"        => $page_header,
-                "local.book.section.title" => "Learn/Docs/$section",
-                "local.book.subject"       => $subject,
-                "local.noindex"            => $noindex
-            ),
-            $index
+    if ( $asciidoctor ) {
+        %xsltopts = (%xsltopts,
+                'callout.graphics' => 1,
+                'navig.graphics'   => 1,
+                'admon.textlabel'  => 0,
+                'admon.graphics'   => 1,
         );
-        1;
-    } or do { $output = $@; $died = 1; };
+        if ( $type eq 'book' ) {
+            $xsltopts{'chunk.section.depth'} = 0;
+        }
+        # Emulate asciidoc_dir because we use it to find shared asciidoc files
+        # but asciidoctor doesn't support it.
+        my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
+
+        eval {
+            $output = run(
+                'asciidoctor', '-v',
+                # TODO figure out resource
+                # ( map { ( '--resource' => $_ ) } @$resources ),
+                '-b' => 'docbook45',
+                '-d' => $type,
+                '-a' => 'showcomments=1',
+                '-a' => "lang=$lang",
+                '-a' => 'base_edit_url=' . $edit_url,
+                '-a' => 'root_dir=' . $root_dir,
+                '-a' => 'asciidoc-dir=' . $asciidoc_dir,
+                $private ? ( '-a' => 'edit_url!' ) : (),
+                # Disable warning on missing attributes because we have
+                # missing attributes!
+                # '-a' => 'attribute-missing=warn',
+                '--destination-dir=' . $dest,
+                docinfo($index),
+                $index
+            );
+            if ( !$lenient ) {
+                $output .= _xml_lint($dest);
+            }
+            $output .= run(
+                'xsltproc',
+                rawxsltopts(%xsltopts),
+                '--output' => "$dest/index.html",
+                file('resources/website.xsl')->absolute,
+                "$dest/index.xml"
+            );
+            # TODO copy_resources?
+            # TODO clean the xml file
+            1;
+        } or do { $output = $@; $died = 1; };
+    }
+    else {
+        eval {
+            $output = run(
+                'a2x', '-v',
+                '--icons',
+                ( map { ( '--resource' => $_ ) } @$resources ),
+                '-f' => 'xhtml',
+                '-d' => $type,
+                '-a' => 'showcomments=1',
+                '-a' => "lang=$lang",
+                '-a' => 'base_edit_url=' . $edit_url,
+                '-a' => 'root_dir=' . $root_dir,
+                $private ? ( '-a' => 'edit_url!' ) : (),
+                '--xsl-file'      => 'resources/website.xsl',
+                '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
+                '--destination-dir=' . $dest,
+                ( $lenient ? '-L' : () ),
+                docinfo($index),
+                xsltopts(%xsltopts),
+                $index
+            );
+            1;
+        } or do { $output = $@; $died = 1; };
+    }
 
     _check_build_error( $output, $died, $lenient );
 
@@ -160,18 +267,17 @@ sub build_single {
     }
 
     finish_build( $index->parent, $dest, $lang );
-
 }
 
 #===================================
 sub _check_build_error {
 #===================================
     my ( $output, $died, $lenient ) = @_;
-    my $warned = grep {/^(a2x|asciidoc): (WARNING):/} split "\n", $output;
+    my $warned = grep {/^(a2x|asciidoc(tor)?): (WARNING):/} split "\n", $output;
 
     return unless $died || $warned;
 
-    my @warn = grep { /(WARNING|ERROR):/ || !/^(a2x|asciidoc): / } split "\n",
+    my @warn = grep { /(WARNING|ERROR):/ || !/^(a2x|asciidoc(tor)?): / } split "\n",
         $output;
 
     if ( $died || $warned && !$lenient ) {
@@ -181,11 +287,26 @@ sub _check_build_error {
 }
 
 #===================================
+# Forks xmllint externally and may call `die`. Call inside of an `eval` block
+# to be safe and handle errors.
+sub _xml_lint {
+#===================================
+    my ( $dest ) = @_;
+    return run(
+            'xmllint',
+            '--nonet',
+            '--noout',
+            '--valid',
+            "$dest/index.xml"
+    );
+}
+
+#===================================
 sub build_pdf {
 #===================================
     my ( $index, $dest, %opts ) = @_;
 
-    my $version   = $opts{version}   || 'test build';
+    my $version   = $opts{version}   || '';
     my $lenient   = $opts{lenient}   || '';
     my $toc_level = $opts{toc_level} || 7;
     my $lang      = $opts{lang}      || 'en';
@@ -293,6 +414,18 @@ sub xsltopts {
 }
 
 #===================================
+sub rawxsltopts {
+#===================================
+    my @opts;
+    while (@_) {
+        my $key = shift;
+        my $val = shift;
+        push @opts, '--stringparam', $key, "'$val'";
+    }
+    return @opts;
+}
+
+#===================================
 sub write_html_redirect {
 #===================================
     my ( $dir, $url ) = @_;
@@ -317,6 +450,7 @@ sub run (@) {
     my @args = @_;
     my ( $out, $err, $ok );
 
+    print "Run PATH=$ENV{PATH}\n";
     if ( $Opts->{verbose} ) {
         say "Running: @args";
         ( $out, $err, $ok ) = tee { system(@args) == 0 };
@@ -325,13 +459,15 @@ sub run (@) {
         ( $out, $err, $ok ) = capture { system(@args) == 0 };
     }
 
-    return $out if $ok;
+    my $combined = "$out\n$err";
+    $combined =~ s/^\s+|\s+$//g;
+    return $combined if $ok;
 
     my $git_dir = $ENV{GIT_DIR} ? "in GIT_DIR $ENV{GIT_DIR}" : "";
     die "Error executing: @args $git_dir\n$out\n---\n$err"
         unless $ok;
 
-    return $out;
+    return $combined;
 }
 
 #===================================

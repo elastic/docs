@@ -1,9 +1,10 @@
 # Aliases for building the docs.
 
-# In your .bash_profile, set the $GIT_HOME variable to the directory that
+# Edit your .bash_profile. Copy the following two lines into the file
+# to set the $GIT_HOME variable to the directory that
 # contains your local copies of the elastic repos and include this file.
 #
-#    GIT_HOME='"~/GitRepo"
+#    export GIT_HOME="/<fullPathTYourRepos>"
 #    source $GIT_HOME/docs/doc_build_aliases.sh
 #
 # These aliases assume that you have cloned the elastic repos according to
@@ -42,7 +43,11 @@ alias docbldstk='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/in
 
 alias docbldgls='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc'
 
-alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --chunk 1'
+alias docbldgs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
+
+alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
+
+alias docbldaz='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
@@ -77,6 +82,14 @@ alias docbldamr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-server/docs/in
 alias docbldamn='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-nodejs/docs/index.asciidoc --chunk 1'
 
 alias docbldamp='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-python/docs/index.asciidoc --chunk 1'
+
+alias docbldamry='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-ruby/docs/index.asciidoc --chunk 1'
+
+alias docbldamj='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-java/docs/index.asciidoc --chunk 1'
+
+alias docbldamjs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-js-base/docs/index.asciidoc --chunk 1'
+
+alias docbldamgo='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-go/docs/index.asciidoc --chunk 1'
 
 
 # Definitive Guide

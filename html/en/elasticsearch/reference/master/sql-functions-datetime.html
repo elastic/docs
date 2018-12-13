@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Date and Time Functions
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="sql-functions.html" title="Functions and Operators" /><link rel="prev" href="_math_functions.html" title="Math Functions" /><link rel="next" href="sql-functions-aggregate.html" title="Aggregate Functions" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="sql-functions.html" title="Functions and Operators" /><link rel="prev" href="sql-functions-aggs.html" title="Aggregate Functions" /><link rel="next" href="sql-functions-search.html" title="Full-Text Search Functions" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -84,7 +84,7 @@
     <!-- For first- and second-generation iPad: -->
     <link rel="apple-touch-icon-precomposed" sizes="16x16" href="/favicon_16x16.png">
 
-	   
+	 
 
     <!-- css -->
     <link href="/static/css/main.css" rel="stylesheet">
@@ -100,41 +100,32 @@
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-    <script type="text/javascript">
-      // ---------------------------- set language based on browser language --------------------
-      var lang = '/'+(navigator.language || navigator.userLanguage).slice(0,2)+'/',
-        locales = {
-            '/en/': '/',
-            '/de/': '/de/',
-            '/fr/': '/fr/',
-            '/ja/':'/jp/',
-            '/ko/':'/kr/',
-            '/zh/':'/cn/'
-        }
-        localepages = ['/','/de/','/fr/','/jp/','/kr/','/cn/','/products','/de/products','/fr/products','/jp/products','/kr/products','/cn/products'],
-        locationpath = window.location.pathname,
-        localeUrl = '{"relative_url_prefix":"/","code":"en-us","display_code":"en-us","url":"/guide_template"}',
-        currentlocale = JSON.parse(localeUrl);
-    
-      if(localepages.indexOf(locationpath) != -1){
-        if($.cookie("c_lang")){
-          if($.cookie("c_lang") != currentlocale.relative_url_prefix){
-            var cookieurl = $.cookie("c_lang") + currentlocale.url.slice(1,currentlocale.url.length);
-            window.location = cookieurl;
-          }
-        }
-        else{
-          var locale_lang = "/";
-          if(locales[lang] != undefined){
-            locale_lang = locales[lang];
-          }
-          $.cookie("c_lang",locale_lang ,{ expires: 365, path: '/'}); 
-          window.location = localepages[localepages.indexOf(locationpath)];
-        }
-      }
-      
-      // --------------------- end of set language based on browser language -----------------
-      </script>
+
+  <script type="text/javascript">
+  // -------------------- set language based on browser language --------------------
+  var lang = '/'+(navigator.language || navigator.userLanguage).slice(0,2)+'/',
+      locales = {
+        '/en':'/',
+        '/de/': '/de/',
+        '/fr/': '/fr/',
+        '/ja/':'/jp/',
+        '/ko/':'/kr/',
+        '/zh/':'/cn/',
+        '/es/': '/es/'
+      },
+      localeUrl = '{"relative_url_prefix":"/","code":"en-us","display_code":"en-us","url":"/guide_template"}',
+      currentlocale = JSON.parse(localeUrl).relative_url_prefix;
+
+  if($.cookie("is_lang_detected") == undefined){
+    if(locales[lang] != undefined && locales[lang] != currentlocale){
+      locale_lang_url = locales[lang] + window.location.pathname.slice(1,window.location.pathname.length);
+      $.cookie("is_lang_detected",true ,{ path: '/'}); 
+      window.location = locale_lang_url;
+    } 
+  }
+        
+  // --------------------- end of set language based on browser language -----------------
+  </script>
 
 
 	
@@ -168,28 +159,78 @@
     <!-- new ga for staging server -->
 
     <!-- Elastic APM -->
-    
-    <script src="/static/js/elastic-apm-js-base.umd.min.js"></script>
-    <script type="text/javascript">
-      var active;
-      
-      active = Math.random() < 1
-      
-      elasticApm.init({
-      active: active,
-      serviceName: "elastic-co-frontend",
-      serverUrl: "https://elastic-co-apm-server.app.elstc.co"
-      })
-      elasticApm.setTags({env:"production"});
-      elasticApm.setInitialPageLoadName(window.location.href);
-    </script>
-    
-    <!-- Elastic APM -->
+<script src="/static/js/elastic-apm-js-base.umd.min.2.2.0.js"></script>
+
+
+<script type="text/javascript">
+  var active;
+  
+  active = Math.random() < 1 //0.9 
+  
+  elasticApm.init({
+    active: active,
+    serviceName: "elastic-co-frontend",
+    serverUrl: "https://elastic-co-apm-server.app.elstc.co"
+  })
+
+  var pageLoadName
+  var pathname = window.location.pathname.replace(/\/es|\/pt|\/jp|\/pt|\/fr|\/kr|\/cn|\/de/g, '')
+  var parts = pathname.split('/');
+
+  if (parts.length && parts[1] === 'blog') {
+    if (parts.length === 2) {
+      pageLoadName =  '/blog';
+    }
+    else if (parts[2] === 'category') {
+      pageLoadName =  '/blog/category';
+    }
+    else if (parts[2] === 'archive') {
+      pageLoadName =  '/blog/archive';
+    }
+    else {
+      pageLoadName =  '/blog/detail';
+    }
+  }
+  else if (parts.length && parts[1] === 'elasticon') {
+    if (parts.length === 2) {
+      pageLoadName =  '/elasticon';
+    }
+    else if (parts.length === 5 && (parts[2] === 'conf' || parts[2] === 'tour')) {
+      pageLoadName =  '/elasticon/overview';
+    }
+    else if (parts.length > 5 && (parts[2] === 'conf' || parts[2] === 'tour')) {
+      pageLoadName =  '/elasticon/video';
+    }
+  }
+  else if (parts.length && parts[1] === 'guide') {
+    pageLoadName =  '/guide';
+  }
+  else if (parts.length === 2 && parts[1] === 'videos') {
+    pageLoadName =  '/videos';
+  }
+  else if (parts.length > 2 && parts[1] === 'videos') {
+    pageLoadName =  '/videos/detail';
+  }
+  else if (parts.length > 2 && parts[1] === 'webinars') {
+    pageLoadName =  '/webinars/detail';
+  }
+  else {
+    pageLoadName =  window.location.pathname;
+  }
+
+  console.log('apm pageLoadName:', pageLoadName, parts)
+  elasticApm.setTags({env:"production"});
+  elasticApm.setInitialPageLoadName(pageLoadName);
+</script>
+
+<!-- Elastic APM -->
+
 
     <!-- Header Section -->
     
 <header class="header-wrapper">
   
+
 
 
   
@@ -229,6 +270,8 @@
             <li class="lang global-language">
                 
                   
+                
+                  
                     <a href="#">EN</a>
                   
                 
@@ -248,6 +291,13 @@
                     
                   
                   
+                  <li><a href="/de/" data-value="/de/" id="locale-select">Deutsch</a></li>
+                  
+                
+                  
+                    
+                  
+                  
                   <li><a href="#" data-value="/" id="locale-select">English</a></li>
                   
                 
@@ -255,14 +305,14 @@
                     
                   
                   
-                  <li><a href="/fr/" data-value="/fr/" id="locale-select">Français</a></li>
+                  <li><a href="/es/" data-value="/es/" id="locale-select">Español</a></li>
                   
                 
                   
                     
                   
                   
-                  <li><a href="/de/" data-value="/de/" id="locale-select">Deutsch</a></li>
+                  <li><a href="/fr/" data-value="/fr/" id="locale-select">Français</a></li>
                   
                 
                   
@@ -377,6 +427,8 @@
           <li class="hidden-xs lang global-language">
                 
                   
+                
+                  
                     <a href="#">EN</a>
                   
                 
@@ -396,6 +448,13 @@
                   
                 
               
+              <li><a class="" href="/de/" data-value="/de/">Deutsch</a></li>
+              
+              
+                
+                  
+                
+              
               <li><a class="" href="#" data-value="/">English</a></li>
               
               
@@ -403,14 +462,14 @@
                   
                 
               
-              <li><a class="" href="/fr/" data-value="/fr/">Français</a></li>
+              <li><a class="" href="/es/" data-value="/es/">Español</a></li>
               
               
                 
                   
                 
               
-              <li><a class="" href="/de/" data-value="/de/">Deutsch</a></li>
+              <li><a class="" href="/fr/" data-value="/fr/">Français</a></li>
               
               
                 
@@ -637,81 +696,144 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-sql.html">SQL Access</a></span> » <span class="breadcrumb-link"><a href="sql-functions.html">Functions and Operators</a></span> » <span class="breadcrumb-node">Date and Time Functions</span></div><div class="navheader"><span class="prev"><a href="_math_functions.html">
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-sql.html">SQL access</a></span> » <span class="breadcrumb-link"><a href="sql-functions.html">Functions and Operators</a></span> » <span class="breadcrumb-node">Date and Time Functions</span></div><div class="navheader"><span class="prev"><a href="sql-functions-aggs.html">
               « 
-              Math Functions</a>
+              Aggregate Functions</a>
            
         </span><span class="next">
            
-          <a href="sql-functions-aggregate.html">Aggregate Functions
+          <a href="sql-functions-search.html">Full-Text Search Functions
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="sql-functions-datetime"></a>Date and Time Functions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract the year from a date (<code class="literal">YEAR</code>)
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT YEAR(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS year;
-
-     year
----------------
-2018</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract the month of the year from a date (<code class="literal">MONTH_OF_YEAR</code> or <code class="literal">MONTH</code>)
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MONTH_OF_YEAR(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS month;
-
-     month
----------------
-2</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract the week of the year from a date (<code class="literal">WEEK_OF_YEAR</code> or <code class="literal">WEEK</code>)
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT WEEK_OF_YEAR(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS week;
-
-     week
----------------
-8</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract the day of the year from a date (<code class="literal">DAY_OF_YEAR</code> or <code class="literal">DOY</code>)
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT DAY_OF_YEAR(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS day;
+            </a></span></div><div class="xpack section"><div class="titlepage"><div><div><h2 class="title"><a id="sql-functions-datetime"></a>Date and Time Functions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-day"></a><code class="literal">DAY_OF_MONTH</code>/<code class="literal">DOM</code>/<code class="literal">DAY</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">DAY_OF_MONTH(date_exp<a id="CO415-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO415-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the day of the month from a date.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT DAY_OF_MONTH(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS day;
 
       day
 ---------------
-50</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract the day of the month from a date (<code class="literal">DAY_OF_MONTH</code>, <code class="literal">DOM</code>, or <code class="literal">DAY</code>)
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT DAY_OF_MONTH(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS day;
+19</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-dow"></a><code class="literal">DAY_OF_WEEK</code>/<code class="literal">DAYOFWEEK</code>/<code class="literal">DOW</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">DAY_OF_WEEK(date_exp<a id="CO416-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO416-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the day of the week from a date. Sunday is <code class="literal">1</code>, Monday is <code class="literal">2</code>, etc.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT DAY_OF_WEEK(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS day;
 
       day
 ---------------
-19</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract the day of the week from a date (<code class="literal">DAY_OF_WEEK</code> or <code class="literal">DOW</code>).
-Monday is <code class="literal">1</code>, Tuesday is <code class="literal">2</code>, etc.
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT DAY_OF_WEEK(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS day;
+2</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-doy"></a><code class="literal">DAY_OF_YEAR</code>/<code class="literal">DOY</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">DAY_OF_YEAR(date_exp<a id="CO417-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO417-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the day of the year from a date.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT DAY_OF_YEAR(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS day;
 
       day
 ---------------
-1</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract the hour of the day from a date (<code class="literal">HOUR_OF_DAY</code> or <code class="literal">HOUR</code>).
-Monday is <code class="literal">1</code>, Tuesday is <code class="literal">2</code>, etc.
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT HOUR_OF_DAY(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS hour;
+50</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-dayname"></a><code class="literal">DAY_NAME</code>/<code class="literal">DAYNAME</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">DAY_NAME(date_exp<a id="CO418-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO418-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: string</p><p><strong>Description: </strong>Extract the day of the week from a datetime in text format (<code class="literal">Monday</code>, <code class="literal">Tuesday</code>…).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT DAY_NAME(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS day;
+
+      day
+---------------
+Monday</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-hour"></a><code class="literal">HOUR_OF_DAY</code>/<code class="literal">HOUR</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">HOUR_OF_DAY(date_exp<a id="CO419-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO419-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the hour of the day from a date.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT HOUR_OF_DAY(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS hour;
 
      hour
 ---------------
-10</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract the minute of the day from a date (<code class="literal">MINUTE_OF_DAY</code>).
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MINUTE_OF_DAY(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS minute;
+10</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-isodow"></a><code class="literal">ISO_DAY_OF_WEEK</code>/<code class="literal">ISODAYOFWEEK</code>/<code class="literal">ISODOW</code>/<code class="literal">IDOW</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">ISO_DAY_OF_WEEK(date_exp<a id="CO420-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO420-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the day of the week from a date, following the <a class="ulink" href="https://en.wikipedia.org/wiki/ISO_week_date" target="_top">ISO 8601 standard</a>.
+Monday is <code class="literal">1</code>, Tuesday is <code class="literal">2</code>, etc.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT ISO_DAY_OF_WEEK(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS day;
+
+      day
+---------------
+1</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-isoweek"></a><code class="literal">ISO_WEEK_OF_YEAR</code>/<code class="literal">ISOWEEKOFYEAR</code>/<code class="literal">ISOWEEK</code>/<code class="literal">IWOY</code>/<code class="literal">IW</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">ISO_WEEK_OF_YEAR(date_exp<a id="CO421-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO421-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the week of the year from a date, following <a class="ulink" href="https://en.wikipedia.org/wiki/ISO_week_date" target="_top">ISO 8601 standard</a>. The first week
+of a year is the first week with a majority (4 or more) of its days in January.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT ISO_WEEK_OF_YEAR(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS week;
+
+     week
+---------------
+8</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-minuteofday"></a><code class="literal">MINUTE_OF_DAY</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">MINUTE_OF_DAY(date_exp<a id="CO422-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO422-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the minute of the day from a date.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MINUTE_OF_DAY(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS minute;
 
     minute
 ---------------
-623</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract the minute of the hour from a date (<code class="literal">MINUTE_OF_HOUR</code>, <code class="literal">MINUTE</code>).
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MINUTE_OF_HOUR(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS minute;
+623</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-minute"></a><code class="literal">MINUTE_OF_HOUR</code>/<code class="literal">MINUTE</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">MINUTE_OF_HOUR(date_exp<a id="CO423-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO423-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the minute of the hour from a date.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MINUTE_OF_HOUR(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS minute;
 
     minute
 ---------------
-23</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract the second of the minute from a date (<code class="literal">SECOND_OF_MINUTE</code>, <code class="literal">SECOND</code>).
-</li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT SECOND_OF_MINUTE(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS second;
+23</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-month"></a><code class="literal">MONTH_OF_YEAR</code>/<code class="literal">MONTH</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">MONTH(date_exp<a id="CO424-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO424-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the month of the year from a date.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MONTH_OF_YEAR(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS month;
+
+     month
+---------------
+2</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-monthname"></a><code class="literal">MONTH_NAME</code>/<code class="literal">MONTHNAME</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">MONTH_NAME(date_exp<a id="CO425-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO425-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: string</p><p><strong>Description: </strong>Extract the month from a datetime in text format (<code class="literal">January</code>, <code class="literal">February</code>…).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MONTH_NAME(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS month;
+
+     month
+---------------
+February</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-second"></a><code class="literal">SECOND_OF_MINUTE</code>/<code class="literal">SECOND</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SECOND_OF_MINUTE(date_exp<a id="CO426-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO426-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the second of the minute from a date.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT SECOND_OF_MINUTE(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS second;
 
     second
 ---------------
-27</pre></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-Extract
-</li></ul></div><p>As an alternative, one can support <code class="literal">EXTRACT</code> to extract fields from datetimes.
-You can run any <a class="link" href="sql-functions-datetime.html" title="Date and Time Functions">datetime function</a>
-with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression&gt;)</code>. So</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT EXTRACT(DAY_OF_YEAR FROM CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS day;
+27</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-quarter"></a><code class="literal">QUARTER</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">QUARTER(date_exp<a id="CO427-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO427-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the year quarter the date falls in.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT QUARTER(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS quarter;
+
+    quarter
+---------------
+1</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-week"></a><code class="literal">WEEK_OF_YEAR</code>/<code class="literal">WEEK</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">WEEK_OF_YEAR(date_exp<a id="CO428-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO428-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the week of the year from a date.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT WEEK(CAST('1988-01-05T09:22:10Z' AS TIMESTAMP)) AS week, ISOWEEK(CAST('1988-01-05T09:22:10Z' AS TIMESTAMP)) AS isoweek;
+
+      week     |   isoweek
+---------------+---------------
+2              |1</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-year"></a><code class="literal">YEAR</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">YEAR(date_exp<a id="CO429-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO429-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract the year from a date.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT YEAR(CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS year;
+
+     year
+---------------
+2018</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-functions-datetime-extract"></a><code class="literal">EXTRACT</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/functions/date-time.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><strong>Synopsis: </strong>
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">EXTRACT(datetime_function<a id="CO430-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> FROM date_exp<a id="CO430-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>)</pre></div><p>
+</p><p><span class="strong strong"><strong>Input</strong></span>:</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO430-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+datetime function name
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO430-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+date expression
+</p></td></tr></table></div><p><span class="strong strong"><strong>Output</strong></span>: integer</p><p><strong>Description: </strong>Extract fields from a datetime by specifying the name of a <a class="link" href="sql-functions-datetime.html" title="Date and Time Functions">datetime function</a>.
+The following</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT EXTRACT(DAY_OF_YEAR FROM CAST('2018-02-19T10:23:27Z' AS TIMESTAMP)) AS day;
 
       day
 ---------------
@@ -719,13 +841,13 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
 
       day
 ---------------
-50</pre></div></div><div class="navfooter"><span class="prev"><a href="_math_functions.html">
+50</pre></div></div></div><div class="navfooter"><span class="prev"><a href="sql-functions-aggs.html">
               « 
-              Math Functions</a>
+              Aggregate Functions</a>
            
         </span><span class="next">
            
-          <a href="sql-functions-aggregate.html">Aggregate Functions
+          <a href="sql-functions-search.html">Full-Text Search Functions
                »
             </a></span></div>
 <!-- end body -->
@@ -812,63 +934,77 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
               
                 
                   
-                    <li><a href="/products/x-pack">X-Pack</a></li>
+                    <li><a href="/products/stack">Stack Features (formerly X-Pack)</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/cloud/as-a-service">Elastic Cloud</a></li>
+                    <li><a href="/products/stack/security">Security</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/cloud/enterprise">Elastic Cloud Enterprise</a></li>
+                    <li><a href="/products/stack/alerting">Alerting</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/security">Security (formerly Shield)</a></li>
+                    <li><a href="/products/stack/canvas">Canvas</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/alerting">Alerting (via Watcher)</a></li>
+                    <li><a href="/products/stack/monitoring">Monitoring</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/monitoring">Monitoring (formerly Marvel)</a></li>
+                    <li><a href="/products/stack/graph">Graph</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/graph">Graph</a></li>
+                    <li><a href="/products/stack/reporting">Reporting</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/reporting">Reporting</a></li>
+                    <li><a href="/products/stack/machine-learning">Machine Learning</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/machine-learning">Machine Learning</a></li>
+                    <li><a href="/products/stack/elasticsearch-sql">Elasticsearch SQL</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/hadoop">ES-Hadoop</a></li>
+                    <li><a href="/products/hadoop">Elasticsearch-Hadoop</a></li>
                   
                 
+              
+                
+                  
+                    <li><a href="/products/ece">Elastic Cloud Enterprise</a></li>
+                  
+                
+              
+              </ul>
+              
+                <h3><a href=""></a></h3>
+              
+              
+              
+              <ul class="">
               
               </ul>
           </div>    
@@ -914,6 +1050,38 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
                 
                   
                     <li><a href="/solutions/app-search">App Search</a></li>
+                  
+                
+              
+              </ul>
+              
+                <h3><a href="/cloud">Elastic Cloud ></a></h3>
+              
+              
+              
+              <ul class="">
+              
+                
+                  
+                    <li><a href="/cloud/elasticsearch-service">Elasticsearch Service</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/aws-elasticsearch-service">AWS Elasticsearch Service Comparison</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/cloud/app-search-service">Elastic App Search Service</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/cloud/site-search-service">Elastic Site Search Service</a></li>
                   
                 
               
@@ -1001,6 +1169,14 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
                 
               
               </ul>
+              
+                <h3></h3>
+              
+              
+              
+              <ul class="">
+              
+              </ul>
           </div>    
       
           <div class="col-xs-6 col-sm-3 col-md-3">
@@ -1019,13 +1195,49 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
               
                 
                   
+                    <li><a href="/about/our-source-code">Our Source Code</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/about/teams">Teams</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/about/teams/board">Board of Directors</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/about/teams/leadership">Leadership</a></li>
+                  
+                
+              
+                
+                  
                     <li><a href="/contact">Contact</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/about/leadership">Leadership</a></li>
+                    <li><a href="/about/history-of-elasticsearch">Our Story</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/about/why-open-source">Why Open Source</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/about/distributed">Distributed by Intention</a></li>
                   
                 
               
@@ -1037,7 +1249,13 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
               
                 
                   
-                    <li><a href="/about/press">Press</a></li>
+                    <li><a href="/about/press">Media</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="https://ir.elastic.co">Investor Relations</a></li>
                   
                 
               
@@ -1046,6 +1264,14 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
                     <li><a href="https://www.elastic.shop">Elastic Store</a></li>
                   
                 
+              
+              </ul>
+              
+                <h3><a href=""></a></h3>
+              
+              
+              
+              <ul class="">
               
               </ul>
           </div>    
@@ -1059,15 +1285,15 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
 			    <div class="social-label">FOLLOW US</div>
 			    <ul class="social-icon-list">
           
-          		 	<li class="facebook"><a id="footer_facebook" href="https://www.facebook.com/elastic.co"></a></li>
+          		 	<li class="Facebook"><a id="footer_facebook" href="https://www.facebook.com/elastic.co">Facebook</a></li>
           
-          		 	<li class="twitter"><a id="footer_twitter" href="https://www.twitter.com/elastic"></a></li>
+          		 	<li class="Twitter"><a id="footer_twitter" href="https://www.twitter.com/elastic">Twitter</a></li>
           
-          		 	<li class="linkedin"><a id="footer_linkedin" href="https://www.linkedin.com/company/elastic-co"></a></li>
+          		 	<li class="LinkedIn"><a id="footer_linkedin" href="https://www.linkedin.com/company/elastic-co">LinkedIn</a></li>
           
-          		 	<li class="xing"><a id="footer_xing" href="https://www.xing.com/companies/elastic.co"></a></li>
+          		 	<li class="Xing"><a id="footer_xing" href="https://www.xing.com/companies/elastic.co">Xing</a></li>
           
-          		 	<li class="youtube"><a id="footer_youtube" href="https://www.youtube.com/user/elasticsearch"></a></li>
+          		 	<li class="YouTube"><a id="footer_youtube" href="https://www.youtube.com/user/elasticsearch">YouTube</a></li>
           
 		  		</ul>
 		     </div>
@@ -1082,14 +1308,13 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
 				<li><a href="/legal/trademarks">Trademarks</a></li>
 				<li><a href="/legal/terms-of-use">Terms of Use</a></li>
 				<li><a href="/legal/privacy-statement">Privacy</a></li>
-				
 				<li><a href="/brand">Brand</a></li>
 			</ul>
 			<div class="copyright-content">
 				<div class="footer-text">
-					<p>© 2018. All Rights Reserved - Elasticsearch
+					<p>© 2018. Elasticsearch B.V. All Rights Reserved
 					</p>
-					<p>Elasticsearch is a trademark of Elasticsearch BV, registered in the U.S. and in other countries.
+					<p>Elasticsearch is a trademark of Elasticsearch B.V., registered in the U.S. and in other countries.
 					</p>
 					<p>Apache, Apache Lucene, Apache Hadoop, Hadoop, HDFS and the yellow elephant logo are trademarks of the <a href="http://www.apache.org/">Apache Software Foundation</a> in the United States and/or other countries.
 					</p>
@@ -1109,8 +1334,8 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
 <style type="text/css">
 	
         
-            .facebook a {background:url("/assets/bltf546ff2e0a8f2de5/facebook.svg") no-repeat;}
-            .facebook a:before {
+            .Facebook a {background:url("/assets/bltf546ff2e0a8f2de5/facebook.svg") no-repeat;}
+            .Facebook a:before {
                 content: url("/assets/bltc24cf11c714ecfc4/facebook-hover.svg");
                 width:0;
                 height:0;
@@ -1118,12 +1343,12 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
             }
         
         
-            .facebook a:hover {background:url("/assets/bltc24cf11c714ecfc4/facebook-hover.svg")}		
+            .Facebook a:hover {background:url("/assets/bltc24cf11c714ecfc4/facebook-hover.svg")}		
         
 	
         
-            .twitter a {background:url("/assets/bltdd9556d6b24e2b85/twitter.svg") no-repeat;}
-            .twitter a:before {
+            .Twitter a {background:url("/assets/bltdd9556d6b24e2b85/twitter.svg") no-repeat;}
+            .Twitter a:before {
                 content: url("/assets/blt90b0372cc07a54d3/twitter-hover.svg");
                 width:0;
                 height:0;
@@ -1131,12 +1356,12 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
             }
         
         
-            .twitter a:hover {background:url("/assets/blt90b0372cc07a54d3/twitter-hover.svg")}		
+            .Twitter a:hover {background:url("/assets/blt90b0372cc07a54d3/twitter-hover.svg")}		
         
 	
         
-            .linkedin a {background:url("/assets/bltc4a77e0f52ce07f1/linkedin.svg") no-repeat;}
-            .linkedin a:before {
+            .LinkedIn a {background:url("/assets/bltc4a77e0f52ce07f1/linkedin.svg") no-repeat;}
+            .LinkedIn a:before {
                 content: url("/assets/blt01ce654380e4ea6c/linkedin-hover.svg");
                 width:0;
                 height:0;
@@ -1144,12 +1369,12 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
             }
         
         
-            .linkedin a:hover {background:url("/assets/blt01ce654380e4ea6c/linkedin-hover.svg")}		
+            .LinkedIn a:hover {background:url("/assets/blt01ce654380e4ea6c/linkedin-hover.svg")}		
         
 	
         
-            .xing a {background:url("/assets/bltc6347078dcc9ec76/xing.svg") no-repeat;}
-            .xing a:before {
+            .Xing a {background:url("/assets/bltc6347078dcc9ec76/xing.svg") no-repeat;}
+            .Xing a:before {
                 content: url("/assets/bltededebe5f7521a39/xing-hover.svg");
                 width:0;
                 height:0;
@@ -1157,12 +1382,12 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
             }
         
         
-            .xing a:hover {background:url("/assets/bltededebe5f7521a39/xing-hover.svg")}		
+            .Xing a:hover {background:url("/assets/bltededebe5f7521a39/xing-hover.svg")}		
         
 	
         
-            .youtube a {background:url("/assets/blt4982061ce1aebc7f/youtube.svg") no-repeat;}
-            .youtube a:before {
+            .YouTube a {background:url("/assets/blt4982061ce1aebc7f/youtube.svg") no-repeat;}
+            .YouTube a:before {
                 content: url("/assets/bltddeb6c6404ae81a5/youtube-hover.svg");
                 width:0;
                 height:0;
@@ -1170,28 +1395,18 @@ with <code class="literal">EXTRACT(&lt;datetime_function&gt; FROM &lt;expression
             }
         
         
-            .youtube a:hover {background:url("/assets/bltddeb6c6404ae81a5/youtube-hover.svg")}		
+            .YouTube a:hover {background:url("/assets/bltddeb6c6404ae81a5/youtube-hover.svg")}		
         
 	
 </style>
 
-<script type="text/javascript" src="https://l2.io/ip.js?var=myip"></script>
 <script src="//app-lon02.marketo.com/js/forms2/js/forms2.min.js"></script>
 <script>
 $(document).ready(function(){
 
-    var isEUCountry = function (country){
-        var EUcountries = ["AT","BE","BG","CY","CZ","DE","DK","EE","ES","FI","FR","GB","GR","HR","HU","IE","IT","LT","LU","LV","MT","NL","PL","PT","RO","SE","SI","SK"];
-
-        if(EUcountries.indexOf(country) > -1)
-            return true;
-
-        return false;
-    }
-
     var ipSuccess = function(data) {
-        country = data.countryCode;
-        if (isEUCountry(country)){
+        country = data.country_code;
+        if (data.in_eu){
                         
             marketo_id = "6196";
             
@@ -1201,7 +1416,6 @@ $(document).ready(function(){
         }
 
         $('.subscribe-form form.sb-form').attr('id', 'mktoForm_' + marketo_id);
-
         if(window.MktoForms2){
             MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", marketo_id,function(form){
                 form.onSuccess(function(form){
@@ -1216,15 +1430,12 @@ $(document).ready(function(){
     }
 
     var marketo_id;
-    var country;
-    if (typeof myip != 'undefined') {
-        $.ajax({
-            url: "/ip-data?myip="+myip,
-            async: true,
-            dataType: "json",
-            success: ipSuccess    
-        });
-    }
+
+    $.ajax({
+        url: "/gdpr-data"
+    }).success(function(data) {
+        ipSuccess(data);
+    });
 
 })
 </script>
@@ -1234,13 +1445,15 @@ $(document).ready(function(){
 
     
      <script type="text/javascript">
-	var suggestionsUrl = "https://search.elastic.co/suggest";	
+	var suggestionsUrl = "https://search.elastic.co/suggest";
 	var localeUrl = '{"relative_url_prefix":"/","code":"en-us","display_code":"en-us","url":"/guide_template"}';
 </script>
+<script src="/static/js/swiftype_app_search.umd.min.js"></script>
 <script src="/static/js/jquery.autocomplete.js"></script>
 <script type="text/javascript" src="/static/js/slick.min.js"></script>
 <script src="/static/js/nav-v5.js"></script>
-<script src="/static/js/script.js"></script> 
+<script src="/static/js/script.js"></script>
+ 
      
 <script type="text/javascript">
 $(document).ready(function(){

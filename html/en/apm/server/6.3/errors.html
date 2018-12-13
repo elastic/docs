@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Errors
         | APM Server Reference [6.3]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Server Reference [6.3]" /><link rel="up" href="event-types.html" title="Event Types" /><link rel="prev" href="spans.html" title="Spans" /><link rel="next" href="intake-api.html" title="Intake API" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Server/Reference/6.3" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.subject" content="APM" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.identifier" content="6.3" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Server Reference [6.3]" /><link rel="up" href="event-types.html" title="Event Types" /><link rel="prev" href="transactions.html" title="Transactions" /><link rel="next" href="rum.html" title="Real User Monitoring (RUM)" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Server/Reference/6.3" /><meta name="DC.subject" content="APM" /><meta name="DC.identifier" content="6.3" />
     
 
     
@@ -84,7 +84,7 @@
     <!-- For first- and second-generation iPad: -->
     <link rel="apple-touch-icon-precomposed" sizes="16x16" href="/favicon_16x16.png">
 
-	   
+	 
 
     <!-- css -->
     <link href="/static/css/main.css" rel="stylesheet">
@@ -100,41 +100,32 @@
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-    <script type="text/javascript">
-      // ---------------------------- set language based on browser language --------------------
-      var lang = '/'+(navigator.language || navigator.userLanguage).slice(0,2)+'/',
-        locales = {
-            '/en/': '/',
-            '/de/': '/de/',
-            '/fr/': '/fr/',
-            '/ja/':'/jp/',
-            '/ko/':'/kr/',
-            '/zh/':'/cn/'
-        }
-        localepages = ['/','/de/','/fr/','/jp/','/kr/','/cn/','/products','/de/products','/fr/products','/jp/products','/kr/products','/cn/products'],
-        locationpath = window.location.pathname,
-        localeUrl = '{"relative_url_prefix":"/","code":"en-us","display_code":"en-us","url":"/guide_template"}',
-        currentlocale = JSON.parse(localeUrl);
-    
-      if(localepages.indexOf(locationpath) != -1){
-        if($.cookie("c_lang")){
-          if($.cookie("c_lang") != currentlocale.relative_url_prefix){
-            var cookieurl = $.cookie("c_lang") + currentlocale.url.slice(1,currentlocale.url.length);
-            window.location = cookieurl;
-          }
-        }
-        else{
-          var locale_lang = "/";
-          if(locales[lang] != undefined){
-            locale_lang = locales[lang];
-          }
-          $.cookie("c_lang",locale_lang ,{ expires: 365, path: '/'}); 
-          window.location = localepages[localepages.indexOf(locationpath)];
-        }
-      }
-      
-      // --------------------- end of set language based on browser language -----------------
-      </script>
+
+  <script type="text/javascript">
+  // -------------------- set language based on browser language --------------------
+  var lang = '/'+(navigator.language || navigator.userLanguage).slice(0,2)+'/',
+      locales = {
+        '/en':'/',
+        '/de/': '/de/',
+        '/fr/': '/fr/',
+        '/ja/':'/jp/',
+        '/ko/':'/kr/',
+        '/zh/':'/cn/',
+        '/es/': '/es/'
+      },
+      localeUrl = '{"relative_url_prefix":"/","code":"en-us","display_code":"en-us","url":"/guide_template"}',
+      currentlocale = JSON.parse(localeUrl).relative_url_prefix;
+
+  if($.cookie("is_lang_detected") == undefined){
+    if(locales[lang] != undefined && locales[lang] != currentlocale){
+      locale_lang_url = locales[lang] + window.location.pathname.slice(1,window.location.pathname.length);
+      $.cookie("is_lang_detected",true ,{ path: '/'}); 
+      window.location = locale_lang_url;
+    } 
+  }
+        
+  // --------------------- end of set language based on browser language -----------------
+  </script>
 
 
 	
@@ -168,28 +159,78 @@
     <!-- new ga for staging server -->
 
     <!-- Elastic APM -->
-    
-    <script src="/static/js/elastic-apm-js-base.umd.min.js"></script>
-    <script type="text/javascript">
-      var active;
-      
-      active = Math.random() < 1
-      
-      elasticApm.init({
-      active: active,
-      serviceName: "elastic-co-frontend",
-      serverUrl: "https://elastic-co-apm-server.app.elstc.co"
-      })
-      elasticApm.setTags({env:"production"});
-      elasticApm.setInitialPageLoadName(window.location.href);
-    </script>
-    
-    <!-- Elastic APM -->
+<script src="/static/js/elastic-apm-js-base.umd.min.2.2.0.js"></script>
+
+
+<script type="text/javascript">
+  var active;
+  
+  active = Math.random() < 1 //0.9 
+  
+  elasticApm.init({
+    active: active,
+    serviceName: "elastic-co-frontend",
+    serverUrl: "https://elastic-co-apm-server.app.elstc.co"
+  })
+
+  var pageLoadName
+  var pathname = window.location.pathname.replace(/\/es|\/pt|\/jp|\/pt|\/fr|\/kr|\/cn|\/de/g, '')
+  var parts = pathname.split('/');
+
+  if (parts.length && parts[1] === 'blog') {
+    if (parts.length === 2) {
+      pageLoadName =  '/blog';
+    }
+    else if (parts[2] === 'category') {
+      pageLoadName =  '/blog/category';
+    }
+    else if (parts[2] === 'archive') {
+      pageLoadName =  '/blog/archive';
+    }
+    else {
+      pageLoadName =  '/blog/detail';
+    }
+  }
+  else if (parts.length && parts[1] === 'elasticon') {
+    if (parts.length === 2) {
+      pageLoadName =  '/elasticon';
+    }
+    else if (parts.length === 5 && (parts[2] === 'conf' || parts[2] === 'tour')) {
+      pageLoadName =  '/elasticon/overview';
+    }
+    else if (parts.length > 5 && (parts[2] === 'conf' || parts[2] === 'tour')) {
+      pageLoadName =  '/elasticon/video';
+    }
+  }
+  else if (parts.length && parts[1] === 'guide') {
+    pageLoadName =  '/guide';
+  }
+  else if (parts.length === 2 && parts[1] === 'videos') {
+    pageLoadName =  '/videos';
+  }
+  else if (parts.length > 2 && parts[1] === 'videos') {
+    pageLoadName =  '/videos/detail';
+  }
+  else if (parts.length > 2 && parts[1] === 'webinars') {
+    pageLoadName =  '/webinars/detail';
+  }
+  else {
+    pageLoadName =  window.location.pathname;
+  }
+
+  console.log('apm pageLoadName:', pageLoadName, parts)
+  elasticApm.setTags({env:"production"});
+  elasticApm.setInitialPageLoadName(pageLoadName);
+</script>
+
+<!-- Elastic APM -->
+
 
     <!-- Header Section -->
     
 <header class="header-wrapper">
   
+
 
 
   
@@ -229,6 +270,8 @@
             <li class="lang global-language">
                 
                   
+                
+                  
                     <a href="#">EN</a>
                   
                 
@@ -248,6 +291,13 @@
                     
                   
                   
+                  <li><a href="/de/" data-value="/de/" id="locale-select">Deutsch</a></li>
+                  
+                
+                  
+                    
+                  
+                  
                   <li><a href="#" data-value="/" id="locale-select">English</a></li>
                   
                 
@@ -255,14 +305,14 @@
                     
                   
                   
-                  <li><a href="/fr/" data-value="/fr/" id="locale-select">Français</a></li>
+                  <li><a href="/es/" data-value="/es/" id="locale-select">Español</a></li>
                   
                 
                   
                     
                   
                   
-                  <li><a href="/de/" data-value="/de/" id="locale-select">Deutsch</a></li>
+                  <li><a href="/fr/" data-value="/fr/" id="locale-select">Français</a></li>
                   
                 
                   
@@ -377,6 +427,8 @@
           <li class="hidden-xs lang global-language">
                 
                   
+                
+                  
                     <a href="#">EN</a>
                   
                 
@@ -396,6 +448,13 @@
                   
                 
               
+              <li><a class="" href="/de/" data-value="/de/">Deutsch</a></li>
+              
+              
+                
+                  
+                
+              
               <li><a class="" href="#" data-value="/">English</a></li>
               
               
@@ -403,14 +462,14 @@
                   
                 
               
-              <li><a class="" href="/fr/" data-value="/fr/">Français</a></li>
+              <li><a class="" href="/es/" data-value="/es/">Español</a></li>
               
               
                 
                   
                 
               
-              <li><a class="" href="/de/" data-value="/de/">Deutsch</a></li>
+              <li><a class="" href="/fr/" data-value="/fr/">Français</a></li>
               
               
                 
@@ -632,285 +691,38 @@
 				
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
-<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">APM Server Reference
+<div class="page_header">You are looking at documentation for an older release.
+Not what you want? See the
+<a href="../current/index.html">current release documentation</a>.
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">APM Server Reference
       [6.3]
-    </a></span> » <span class="breadcrumb-link"><a href="event-types.html">Event Types</a></span> » <span class="breadcrumb-node">Errors</span></div><div class="navheader"><span class="prev"><a href="spans.html">
+    </a></span> » <span class="breadcrumb-link"><a href="event-types.html">Event Types</a></span> » <span class="breadcrumb-node">Errors</span></div><div class="navheader"><span class="prev"><a href="transactions.html">
               « 
-              Spans</a>
+              Transactions</a>
            
         </span><span class="next">
            
-          <a href="intake-api.html">Intake API
+          <a href="rum.html">Real User Monitoring (RUM)
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="errors"></a>Errors<a href="https://github.com/elastic/apm-server/edit/6.3/docs/errors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>An error record represents one error event, captured by Elastic APM agents within one service.
-It is identified by a unique ID.</p><p>Some of the key attributes of an error are described in more detail:</p><h3><a id="errors-context"></a>Context<a href="https://github.com/elastic/apm-server/edit/6.3/docs/context.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>An event’s context bundles information regarding the environment in which it is recorded.
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="errors"></a>Errors<a href="https://github.com/elastic/apm-server/edit/6.3/docs/errors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>An error record represents one error event,
+captured by Elastic APM agents within one service.
+It is identified by a unique ID.
+An error event contains at least
+information about the original <code class="literal">exception</code> that occured
+or information about a <code class="literal">log</code> that was created when the exception occured.</p><p>Both the captured <code class="literal">exception</code> and the captured <code class="literal">log</code> of an error can contain <code class="literal">stack trace</code> information,
+helpful for debugging an error.</p><p>The <code class="literal">culprit</code> of an error gives some information about the origin of the error.</p><p>An error can be mapped to the <a class="link" href="transactions.html" title="Transactions">transaction</a> during which it happened,
+via the <code class="literal">transaction.id</code>.</p><p>An event’s context bundles information regarding the environment in which it is recorded.
 It describes the <code class="literal">service</code> in which the event is captured,
 the <code class="literal">system</code> in which the monitored service is running and the event’s <code class="literal">process</code> information.</p><p>It can also contain information about the authenticated <code class="literal">user</code>.</p><p>An event’s context can also include information about the request leading to the event and the response of processing the event.
 In case a http request is captured, it contains information about the <code class="literal">url</code>, <code class="literal">cookies</code>, <code class="literal">body</code>, <code class="literal">headers</code>, etc.</p><p>The agents provide some configuration options with which the users can also capture customized information.
 The non-indexed information is captured within a <code class="literal">custom</code> object,
-while the searchable information is stored within <code class="literal">tags</code>.</p><p>The context information is defined for <a class="link" href="transactions.html" title="Transactions">transaction</a> and <a class="link" href="errors.html" title="Errors">error</a> events.</p><h3><a id="errors-error"></a>Error<a href="https://github.com/elastic/apm-server/edit/6.3/docs/errors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>An error event contains at least
-information about the original <code class="literal">exception</code> that occured
-or information about a <code class="literal">log</code> that was created when the exception occured.</p><p>Both the captured <code class="literal">exception</code> and the captured <code class="literal">log</code> of an error can contain <code class="literal">stack trace</code> information,
-helpful for debugging an error.</p><p>The <code class="literal">culprit</code> of an error gives some information about the origin of the error.</p><p>Errors also contain a <code class="literal">grouping_key</code> which can be used to group together identical or similar errors.</p><p>An error can be mapped to the <a class="link" href="transactions.html" title="Transactions">transaction</a> during which it happened,
-via the <code class="literal">transaction.id</code>, indexed together with the error event.</p><h3><a id="error-example"></a>Example document<a href="https://github.com/elastic/apm-server/edit/6.3/docs/errors.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
-    "context": {
-        "custom": {
-            "and_objects": {
-                "foo": [
-                    "bar",
-                    "baz"
-                ]
-            },
-            "my_key": 1,
-            "some_other_value": "foo bar"
-        },
-        "process": {
-            "argv": [
-                "node",
-                "server.js"
-            ],
-            "pid": 1234,
-            "ppid": 7788,
-            "title": "node"
-        },
-        "request": {
-            "body": "Hello World",
-            "cookies": {
-                "c1": "v1",
-                "c2": "v2"
-            },
-            "env": {
-                "GATEWAY_INTERFACE": "CGI/1.1",
-                "SERVER_SOFTWARE": "nginx"
-            },
-            "headers": {
-                "array": [
-                    "foo",
-                    "bar",
-                    "baz"
-                ],
-                "content-type": "text/html",
-                "cookie": "c1=v1; c2=v2",
-                "some-other-header": "foo",
-                "user-agent": "Mozilla Chrome Edge"
-            },
-            "http_version": "1.1",
-            "method": "POST",
-            "socket": {
-                "encrypted": true,
-                "remote_address": "12.53.12.1"
-            },
-            "url": {
-                "full": "https://www.example.com/p/a/t/h?query=string#hash",
-                "hash": "#hash",
-                "hostname": "www.example.com",
-                "pathname": "/p/a/t/h",
-                "port": "8080",
-                "protocol": "https:",
-                "raw": "/p/a/t/h?query=string#hash",
-                "search": "?query=string"
-            }
-        },
-        "response": {
-            "finished": true,
-            "headers": {
-                "content-type": "application/json"
-            },
-            "headers_sent": true,
-            "status_code": 200
-        },
-        "service": {
-            "agent": {
-                "name": "elastic-node",
-                "version": "3.14.0"
-            },
-            "environment": "staging",
-            "framework": {
-                "name": "Express",
-                "version": "1.2.3"
-            },
-            "language": {
-                "name": "ecmascript",
-                "version": "8"
-            },
-            "name": "1234_service-12a3",
-            "runtime": {
-                "name": "node",
-                "version": "8.0.0"
-            },
-            "version": "5.1.3"
-        },
-        "system": {
-            "architecture": "x64",
-            "hostname": "prod1.example.com",
-            "platform": "darwin"
-        },
-        "tags": {
-            "organization_uuid": "9f0e9d64-c185-4d21-a6f4-4673ed561ec8"
-        },
-        "user": {
-            "email": "foo@example.com",
-            "id": 99,
-            "username": "foo"
-        }
-    },
-    "error": {
-        "culprit": "my.module.function_name",
-        "exception": {
-            "attributes": {
-                "foo": "bar"
-            },
-            "code": "42",
-            "handled": false,
-            "message": "The username root is unknown",
-            "module": "__builtins__",
-            "stacktrace": [
-                {
-                    "abs_path": "/real/file/name.py",
-                    "context": {
-                        "post": [
-                            "line4",
-                            "line5"
-                        ],
-                        "pre": [
-                            "line1",
-                            "line2"
-                        ]
-                    },
-                    "exclude_from_grouping": false,
-                    "filename": "file/name.py",
-                    "function": "foo",
-                    "library_frame": true,
-                    "line": {
-                        "column": 4,
-                        "context": "line3",
-                        "number": 3
-                    },
-                    "module": "App::MyModule",
-                    "vars": {
-                        "key": "value"
-                    }
-                },
-                {
-                    "abs_path": "/Users/watson/code/node_modules/elastic/lib/instrumentation/index.js",
-                    "context": {
-                        "post": [
-                            "    ins.currentTransaction = prev",
-                            "    return result",
-                            "}",
-                            "}",
-                            "",
-                            "Instrumentation.prototype._recoverTransaction = function (trans) {",
-                            "  if (this.currentTransaction === trans) return"
-                        ],
-                        "pre": [
-                            "  var trans = this.currentTransaction",
-                            "",
-                            "  return instrumented",
-                            "",
-                            "  function instrumented () {",
-                            "    var prev = ins.currentTransaction",
-                            "    ins.currentTransaction = trans"
-                        ]
-                    },
-                    "exclude_from_grouping": false,
-                    "filename": "lib/instrumentation/index.js",
-                    "function": "instrumented",
-                    "line": {
-                        "context": "    var result = original.apply(this, arguments)",
-                        "number": 102
-                    },
-                    "vars": {
-                        "key": "value"
-                    }
-                }
-            ],
-            "type": "DbError"
-        },
-        "grouping_key": "50f62f37edffc4630c6655ba3ecfcf46",
-        "id": "5f0e9d64-c185-4d21-a6f4-4673ed561ec8",
-        "log": {
-            "level": "warning",
-            "logger_name": "my.logger.name",
-            "message": "My service could not talk to the database named foobar",
-            "param_message": "My service could not talk to the database named %s",
-            "stacktrace": [
-                {
-                    "abs_path": "/real/file/name.py",
-                    "context": {
-                        "post": [
-                            "line4",
-                            "line5"
-                        ],
-                        "pre": [
-                            "line1",
-                            "line2"
-                        ]
-                    },
-                    "exclude_from_grouping": false,
-                    "filename": "/webpack/file/name.py",
-                    "function": "foo",
-                    "library_frame": false,
-                    "line": {
-                        "column": 4,
-                        "context": "line3",
-                        "number": 3
-                    },
-                    "module": "App::MyModule",
-                    "vars": {
-                        "key": "value"
-                    }
-                },
-                {
-                    "abs_path": "/Users/watson/code/node_modules/elastic/lib/instrumentation/index.js",
-                    "context": {
-                        "post": [
-                            "    ins.currentTransaction = prev",
-                            "    return result",
-                            "}",
-                            "}",
-                            "",
-                            "Instrumentation.prototype._recoverTransaction = function (trans) {",
-                            "  if (this.currentTransaction === trans) return"
-                        ],
-                        "pre": [
-                            "  var trans = this.currentTransaction",
-                            "",
-                            "  return instrumented",
-                            "",
-                            "  function instrumented () {",
-                            "    var prev = ins.currentTransaction",
-                            "    ins.currentTransaction = trans"
-                        ]
-                    },
-                    "exclude_from_grouping": false,
-                    "filename": "lib/instrumentation/index.js",
-                    "function": "instrumented",
-                    "line": {
-                        "context": "    var result = original.apply(this, arguments)",
-                        "number": 102
-                    },
-                    "vars": {
-                        "key": "value"
-                    }
-                }
-            ]
-        }
-    },
-    "processor": {
-        "event": "error",
-        "name": "error"
-    },
-    "transaction": {
-        "id": "945254c5-67a5-417e-8a4e-aa29efcbfb79"
-    }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="spans.html">
+while the searchable information is stored within <code class="literal">tags</code>.</p><p>Read more about how an <a class="link" href="error-indices.html" title="Error Indices">error document</a> is indexed in Elasticsearch.</p></div><div class="navfooter"><span class="prev"><a href="transactions.html">
               « 
-              Spans</a>
+              Transactions</a>
            
         </span><span class="next">
            
-          <a href="intake-api.html">Intake API
+          <a href="rum.html">Real User Monitoring (RUM)
                »
             </a></span></div>
 <!-- end body -->
@@ -997,63 +809,77 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
               
                 
                   
-                    <li><a href="/products/x-pack">X-Pack</a></li>
+                    <li><a href="/products/stack">Stack Features (formerly X-Pack)</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/cloud/as-a-service">Elastic Cloud</a></li>
+                    <li><a href="/products/stack/security">Security</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/cloud/enterprise">Elastic Cloud Enterprise</a></li>
+                    <li><a href="/products/stack/alerting">Alerting</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/security">Security (formerly Shield)</a></li>
+                    <li><a href="/products/stack/canvas">Canvas</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/alerting">Alerting (via Watcher)</a></li>
+                    <li><a href="/products/stack/monitoring">Monitoring</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/monitoring">Monitoring (formerly Marvel)</a></li>
+                    <li><a href="/products/stack/graph">Graph</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/graph">Graph</a></li>
+                    <li><a href="/products/stack/reporting">Reporting</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/reporting">Reporting</a></li>
+                    <li><a href="/products/stack/machine-learning">Machine Learning</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/x-pack/machine-learning">Machine Learning</a></li>
+                    <li><a href="/products/stack/elasticsearch-sql">Elasticsearch SQL</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/products/hadoop">ES-Hadoop</a></li>
+                    <li><a href="/products/hadoop">Elasticsearch-Hadoop</a></li>
                   
                 
+              
+                
+                  
+                    <li><a href="/products/ece">Elastic Cloud Enterprise</a></li>
+                  
+                
+              
+              </ul>
+              
+                <h3><a href=""></a></h3>
+              
+              
+              
+              <ul class="">
               
               </ul>
           </div>    
@@ -1099,6 +925,38 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
                 
                   
                     <li><a href="/solutions/app-search">App Search</a></li>
+                  
+                
+              
+              </ul>
+              
+                <h3><a href="/cloud">Elastic Cloud ></a></h3>
+              
+              
+              
+              <ul class="">
+              
+                
+                  
+                    <li><a href="/cloud/elasticsearch-service">Elasticsearch Service</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/aws-elasticsearch-service">AWS Elasticsearch Service Comparison</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/cloud/app-search-service">Elastic App Search Service</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/cloud/site-search-service">Elastic Site Search Service</a></li>
                   
                 
               
@@ -1186,6 +1044,14 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
                 
               
               </ul>
+              
+                <h3></h3>
+              
+              
+              
+              <ul class="">
+              
+              </ul>
           </div>    
       
           <div class="col-xs-6 col-sm-3 col-md-3">
@@ -1204,13 +1070,49 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
               
                 
                   
+                    <li><a href="/about/our-source-code">Our Source Code</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/about/teams">Teams</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/about/teams/board">Board of Directors</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/about/teams/leadership">Leadership</a></li>
+                  
+                
+              
+                
+                  
                     <li><a href="/contact">Contact</a></li>
                   
                 
               
                 
                   
-                    <li><a href="/about/leadership">Leadership</a></li>
+                    <li><a href="/about/history-of-elasticsearch">Our Story</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/about/why-open-source">Why Open Source</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="/about/distributed">Distributed by Intention</a></li>
                   
                 
               
@@ -1222,7 +1124,13 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
               
                 
                   
-                    <li><a href="/about/press">Press</a></li>
+                    <li><a href="/about/press">Media</a></li>
+                  
+                
+              
+                
+                  
+                    <li><a href="https://ir.elastic.co">Investor Relations</a></li>
                   
                 
               
@@ -1231,6 +1139,14 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
                     <li><a href="https://www.elastic.shop">Elastic Store</a></li>
                   
                 
+              
+              </ul>
+              
+                <h3><a href=""></a></h3>
+              
+              
+              
+              <ul class="">
               
               </ul>
           </div>    
@@ -1244,15 +1160,15 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
 			    <div class="social-label">FOLLOW US</div>
 			    <ul class="social-icon-list">
           
-          		 	<li class="facebook"><a id="footer_facebook" href="https://www.facebook.com/elastic.co"></a></li>
+          		 	<li class="Facebook"><a id="footer_facebook" href="https://www.facebook.com/elastic.co">Facebook</a></li>
           
-          		 	<li class="twitter"><a id="footer_twitter" href="https://www.twitter.com/elastic"></a></li>
+          		 	<li class="Twitter"><a id="footer_twitter" href="https://www.twitter.com/elastic">Twitter</a></li>
           
-          		 	<li class="linkedin"><a id="footer_linkedin" href="https://www.linkedin.com/company/elastic-co"></a></li>
+          		 	<li class="LinkedIn"><a id="footer_linkedin" href="https://www.linkedin.com/company/elastic-co">LinkedIn</a></li>
           
-          		 	<li class="xing"><a id="footer_xing" href="https://www.xing.com/companies/elastic.co"></a></li>
+          		 	<li class="Xing"><a id="footer_xing" href="https://www.xing.com/companies/elastic.co">Xing</a></li>
           
-          		 	<li class="youtube"><a id="footer_youtube" href="https://www.youtube.com/user/elasticsearch"></a></li>
+          		 	<li class="YouTube"><a id="footer_youtube" href="https://www.youtube.com/user/elasticsearch">YouTube</a></li>
           
 		  		</ul>
 		     </div>
@@ -1267,14 +1183,13 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
 				<li><a href="/legal/trademarks">Trademarks</a></li>
 				<li><a href="/legal/terms-of-use">Terms of Use</a></li>
 				<li><a href="/legal/privacy-statement">Privacy</a></li>
-				
 				<li><a href="/brand">Brand</a></li>
 			</ul>
 			<div class="copyright-content">
 				<div class="footer-text">
-					<p>© 2018. All Rights Reserved - Elasticsearch
+					<p>© 2018. Elasticsearch B.V. All Rights Reserved
 					</p>
-					<p>Elasticsearch is a trademark of Elasticsearch BV, registered in the U.S. and in other countries.
+					<p>Elasticsearch is a trademark of Elasticsearch B.V., registered in the U.S. and in other countries.
 					</p>
 					<p>Apache, Apache Lucene, Apache Hadoop, Hadoop, HDFS and the yellow elephant logo are trademarks of the <a href="http://www.apache.org/">Apache Software Foundation</a> in the United States and/or other countries.
 					</p>
@@ -1294,8 +1209,8 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
 <style type="text/css">
 	
         
-            .facebook a {background:url("/assets/bltf546ff2e0a8f2de5/facebook.svg") no-repeat;}
-            .facebook a:before {
+            .Facebook a {background:url("/assets/bltf546ff2e0a8f2de5/facebook.svg") no-repeat;}
+            .Facebook a:before {
                 content: url("/assets/bltc24cf11c714ecfc4/facebook-hover.svg");
                 width:0;
                 height:0;
@@ -1303,12 +1218,12 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
             }
         
         
-            .facebook a:hover {background:url("/assets/bltc24cf11c714ecfc4/facebook-hover.svg")}		
+            .Facebook a:hover {background:url("/assets/bltc24cf11c714ecfc4/facebook-hover.svg")}		
         
 	
         
-            .twitter a {background:url("/assets/bltdd9556d6b24e2b85/twitter.svg") no-repeat;}
-            .twitter a:before {
+            .Twitter a {background:url("/assets/bltdd9556d6b24e2b85/twitter.svg") no-repeat;}
+            .Twitter a:before {
                 content: url("/assets/blt90b0372cc07a54d3/twitter-hover.svg");
                 width:0;
                 height:0;
@@ -1316,12 +1231,12 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
             }
         
         
-            .twitter a:hover {background:url("/assets/blt90b0372cc07a54d3/twitter-hover.svg")}		
+            .Twitter a:hover {background:url("/assets/blt90b0372cc07a54d3/twitter-hover.svg")}		
         
 	
         
-            .linkedin a {background:url("/assets/bltc4a77e0f52ce07f1/linkedin.svg") no-repeat;}
-            .linkedin a:before {
+            .LinkedIn a {background:url("/assets/bltc4a77e0f52ce07f1/linkedin.svg") no-repeat;}
+            .LinkedIn a:before {
                 content: url("/assets/blt01ce654380e4ea6c/linkedin-hover.svg");
                 width:0;
                 height:0;
@@ -1329,12 +1244,12 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
             }
         
         
-            .linkedin a:hover {background:url("/assets/blt01ce654380e4ea6c/linkedin-hover.svg")}		
+            .LinkedIn a:hover {background:url("/assets/blt01ce654380e4ea6c/linkedin-hover.svg")}		
         
 	
         
-            .xing a {background:url("/assets/bltc6347078dcc9ec76/xing.svg") no-repeat;}
-            .xing a:before {
+            .Xing a {background:url("/assets/bltc6347078dcc9ec76/xing.svg") no-repeat;}
+            .Xing a:before {
                 content: url("/assets/bltededebe5f7521a39/xing-hover.svg");
                 width:0;
                 height:0;
@@ -1342,12 +1257,12 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
             }
         
         
-            .xing a:hover {background:url("/assets/bltededebe5f7521a39/xing-hover.svg")}		
+            .Xing a:hover {background:url("/assets/bltededebe5f7521a39/xing-hover.svg")}		
         
 	
         
-            .youtube a {background:url("/assets/blt4982061ce1aebc7f/youtube.svg") no-repeat;}
-            .youtube a:before {
+            .YouTube a {background:url("/assets/blt4982061ce1aebc7f/youtube.svg") no-repeat;}
+            .YouTube a:before {
                 content: url("/assets/bltddeb6c6404ae81a5/youtube-hover.svg");
                 width:0;
                 height:0;
@@ -1355,28 +1270,18 @@ via the <code class="literal">transaction.id</code>, indexed together with the e
             }
         
         
-            .youtube a:hover {background:url("/assets/bltddeb6c6404ae81a5/youtube-hover.svg")}		
+            .YouTube a:hover {background:url("/assets/bltddeb6c6404ae81a5/youtube-hover.svg")}		
         
 	
 </style>
 
-<script type="text/javascript" src="https://l2.io/ip.js?var=myip"></script>
 <script src="//app-lon02.marketo.com/js/forms2/js/forms2.min.js"></script>
 <script>
 $(document).ready(function(){
 
-    var isEUCountry = function (country){
-        var EUcountries = ["AT","BE","BG","CY","CZ","DE","DK","EE","ES","FI","FR","GB","GR","HR","HU","IE","IT","LT","LU","LV","MT","NL","PL","PT","RO","SE","SI","SK"];
-
-        if(EUcountries.indexOf(country) > -1)
-            return true;
-
-        return false;
-    }
-
     var ipSuccess = function(data) {
-        country = data.countryCode;
-        if (isEUCountry(country)){
+        country = data.country_code;
+        if (data.in_eu){
                         
             marketo_id = "6196";
             
@@ -1386,7 +1291,6 @@ $(document).ready(function(){
         }
 
         $('.subscribe-form form.sb-form').attr('id', 'mktoForm_' + marketo_id);
-
         if(window.MktoForms2){
             MktoForms2.loadForm("//app-lon02.marketo.com", "813-MAM-392", marketo_id,function(form){
                 form.onSuccess(function(form){
@@ -1401,15 +1305,12 @@ $(document).ready(function(){
     }
 
     var marketo_id;
-    var country;
-    if (typeof myip != 'undefined') {
-        $.ajax({
-            url: "/ip-data?myip="+myip,
-            async: true,
-            dataType: "json",
-            success: ipSuccess    
-        });
-    }
+
+    $.ajax({
+        url: "/gdpr-data"
+    }).success(function(data) {
+        ipSuccess(data);
+    });
 
 })
 </script>
@@ -1419,13 +1320,15 @@ $(document).ready(function(){
 
     
      <script type="text/javascript">
-	var suggestionsUrl = "https://search.elastic.co/suggest";	
+	var suggestionsUrl = "https://search.elastic.co/suggest";
 	var localeUrl = '{"relative_url_prefix":"/","code":"en-us","display_code":"en-us","url":"/guide_template"}';
 </script>
+<script src="/static/js/swiftype_app_search.umd.min.js"></script>
 <script src="/static/js/jquery.autocomplete.js"></script>
 <script type="text/javascript" src="/static/js/slick.min.js"></script>
 <script src="/static/js/nav-v5.js"></script>
-<script src="/static/js/script.js"></script> 
+<script src="/static/js/script.js"></script>
+ 
      
 <script type="text/javascript">
 $(document).ready(function(){

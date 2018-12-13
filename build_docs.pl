@@ -52,7 +52,7 @@ GetOptions(
     'all', 'push', 'update!',    #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
-    'lenient', 'verbose', 'reload_template', 'resource=s@'
+    'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor'
 ) || exit usage();
 
 our $Conf = LoadFile('conf.yaml');
@@ -235,20 +235,27 @@ sub check_kibana_links {
 
     say "Checking Kibana links";
 
-    my $re = qr|`\$\{baseUrl\}guide/(.+)\$\{urlVersion\}([^#`]+)(?:#([^`*]))?`|;
+# ${baseUrl}guide/en/elasticsearch/reference/${urlVersion}/modules-scripting-expression.html
+# ${ELASTIC_WEBSITE_URL}guide/en/beats/filebeat/${DOC_LINK_VERSION}
+# ${ELASTIC_DOCS}search-aggregations-bucket-datehistogram-aggregation.html
 
     my $extractor = sub {
         my $contents = shift;
         return sub {
-            while ( $contents =~ m{$re}g ) {
-                return ( $1 . $branch . $2, $3 );
+            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC_.+)\}[^`]+)`!g ) {
+                my $path = $1;
+                $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$branch/;
+                $path
+                    =~ s!\$\{ELASTIC_DOCS\}!en/elasticsearch/reference/$branch/!
+                    || $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
+                return ( split /#/, $path );
             }
             return;
         };
 
     };
 
-    my $src_path = 'src/ui/public/documentation_links/documentation_links.js';
+    my $src_path = 'src/ui/public/documentation_links/documentation_links';
     my $repo     = ES::Repo->get_repo('kibana');
 
     my @branches = sort map { $_->basename }
@@ -258,7 +265,10 @@ sub check_kibana_links {
         $branch = $_;
         next if $branch eq 'current' || $branch =~ /^\d/ && $branch lt 5;
         say "  Branch $branch";
-        my $source = $repo->show_file( $branch, $src_path );
+        my $source = eval {
+            $repo->show_file( $branch, $src_path . ".js" )    # javascript
+        } || $repo->show_file( $branch, $src_path . ".ts" );    # or typescript
+
         $link_checker->check_source( $source, $extractor,
             "Kibana [$branch]: $src_path" );
     }
@@ -465,10 +475,13 @@ sub init_env {
         file('resources/docbook-xsl-1.78.1/catalog.xml')->absolute,
         file('resources/docbook-xml-4.5/catalog.xml')->absolute;
 
+    print "Old PATH=$ENV{PATH}\n";
     $ENV{PATH}
         = dir('resources/asciidoc-8.6.8/')->absolute
+        . ':' . dir('resources/asciidoctor/bin')->absolute
         . ":$FindBin::RealBin:"
         . $ENV{PATH};
+    print "New PATH=$ENV{PATH}\n";
 
     eval { run( 'xsltproc', '--version' ) }
         or die "Please install <xsltproc>";
@@ -639,8 +652,9 @@ sub usage {
           --lenient         Ignore linking errors
           --lang            Defaults to 'en'
           --resource        Path to image dir - may be repeated
-          --skiplinkcheck     Omit the step that checks for broken links
+          --skiplinkcheck   Omit the step that checks for broken links
           --linkcheckonly   Skips the documentation builds. Checks links only.
+          --asciidoctor     Use asciidoctor instead of asciidoc.
 
         WARNING: Anything in the `out` dir will be deleted!
 

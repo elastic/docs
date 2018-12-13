@@ -48,13 +48,11 @@
         <xsl:value-of select="$local.book.section.title" />
       </xsl:attribute>
     </meta>
-    <meta name="description" content="{$meta-description}" />
     <meta name="DC.subject">
       <xsl:attribute name="content">
         <xsl:value-of select="$local.book.subject" />
       </xsl:attribute>
     </meta>
-    <meta name="description" content="{$meta-description}" />
     <meta name="DC.identifier">
       <xsl:attribute name="content">
         <xsl:value-of select="$local.book.version" />
