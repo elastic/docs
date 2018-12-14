@@ -182,30 +182,29 @@ sub build_all {
     my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide' );
 
     if ( $Opts->{linkcheckonly} ){
-      say "Skipping documentation builds."
+        say "Skipping documentation builds."
     }
     else {
-      build_entries( $build_dir, $temp_dir, $toc, @$contents );
-      $temp_dir->rmtree;
+        build_entries( $build_dir, $temp_dir, $toc, @$contents );
+        $temp_dir->rmtree;
 
-      say "Writing main TOC";
-      $toc->write( $build_dir, 0 );
+        say "Writing main TOC";
+        $toc->write( $build_dir, 0 );
 
-      say "Writing extra HTML redirects";
-      for ( @{ $Conf->{redirects} } ) {
-        write_html_redirect( $build_dir->subdir( $_->{prefix} ),
-            $_->{redirect} );
-      }
+        say "Writing extra HTML redirects";
+        for ( @{ $Conf->{redirects} } ) {
+            write_html_redirect( $build_dir->subdir( $_->{prefix} ),
+                    $_->{redirect} );
+        }
     }
     if ( $Opts->{skiplinkcheck} ) {
-      say "Skipped Checking links";
-      }
-     else {
-       say "Checking links";
-       check_links($build_dir);
-         }
-     push_changes($build_dir)
-       if $Opts->{push};
+        say "Skipped Checking links";
+    }
+    else {
+        say "Checking links";
+        check_links($build_dir);
+    }
+    push_changes($build_dir) if $Opts->{push};
 }
 
 #===================================
@@ -400,24 +399,24 @@ sub init_repos {
         delete $child_dirs{ $repo->git_dir->absolute };
 
         if ( $Opts->{linkcheckonly} ){
-          say "Skipping fetching repo $name."
+            say "Skipping fetching repo $name."
         }
         else {
-          $pm->start($name) and next;
-          eval {
-            $repo->update_from_remote();
-            1;
-          } or do {
+            $pm->start($name) and next;
+            eval {
+                $repo->update_from_remote();
+                1;
+            } or do {
 
-          # If creds are invalid, explcitily reject them to try to clear the cache
-            my $error = $@;
-            if ( $error =~ /Invalid username or password/ ) {
-                revoke_github_creds();
-            }
-            die $error;
-        };
-        $pm->finish;
-      }
+                # If creds are invalid, explcitily reject them to try to clear the cache
+                my $error = $@;
+                if ( $error =~ /Invalid username or password/ ) {
+                    revoke_github_creds();
+                }
+                die $error;
+            };
+            $pm->finish;
+        }
     }
     $pm->wait_all_children;
 
