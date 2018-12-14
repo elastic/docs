@@ -77,6 +77,7 @@ sub write {
     my $self = shift;
     my $new  = Dump( $self->shas );
     return if $new eq $self->{yaml};
+    $self->file->parent->mkpath;
     $self->file->spew( iomode => '>:utf8', $new );
     $self->{yaml} = $new;
 
