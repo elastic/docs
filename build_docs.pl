@@ -393,6 +393,8 @@ sub init_repos {
     my $target_repo = 0;
     my $target_repo_checkout = 0;
     if ( $Opts->{target_repo} ) {
+        # If we have a target repo check it out before the other repos so that
+        # we can use the tracker file in that repo.
         $target_repo = ES::Repo->new(
             name    => 'target_repo',
             dir     => $repos_dir,
@@ -418,6 +420,7 @@ sub init_repos {
         };
     }
 
+    # check out all remaining repos in parallel
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
     my $pm = proc_man( $Opts->{procs} * 3 );
     for my $name (@repo_names) {
