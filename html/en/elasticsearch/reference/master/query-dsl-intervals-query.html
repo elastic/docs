@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Simple Query String Query
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Intervals query
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="full-text-queries.html" title="Full text queries" /><link rel="prev" href="query-dsl-query-string-query.html" title="Query String Query" /><link rel="next" href="query-dsl-intervals-query.html" title="Intervals query" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="full-text-queries.html" title="Full text queries" /><link rel="prev" href="query-dsl-simple-query-string-query.html" title="Simple Query String Query" /><link rel="next" href="term-level-queries.html" title="Term level queries" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -696,130 +696,297 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL</a></span> » <span class="breadcrumb-link"><a href="full-text-queries.html">Full text queries</a></span> » <span class="breadcrumb-node">Simple Query String Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-query-string-query.html">
+    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL</a></span> » <span class="breadcrumb-link"><a href="full-text-queries.html">Full text queries</a></span> » <span class="breadcrumb-node">Intervals query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-simple-query-string-query.html">
               « 
-              Query String Query</a>
+              Simple Query String Query</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-intervals-query.html">Intervals query
+          <a href="term-level-queries.html">Term level queries
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-simple-query-string-query"></a>Simple Query String Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/simple-query-string-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A query that uses the SimpleQueryParser to parse its context. Unlike the
-regular <code class="literal">query_string</code> query, the <code class="literal">simple_query_string</code> query will never
-throw an exception, and discards invalid parts of the query. Here is
-an example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-intervals-query"></a>Intervals query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/intervals-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>An <code class="literal">intervals</code> query allows fine-grained control over the order and proximity of
+matching terms.  Matching rules are constructed from a small set of definitions,
+and the rules are then applied to terms from a particular <code class="literal">field</code>.</p><p>The definitions produce sequences of minimal intervals that span terms in a
+body of text.  These intervals can be further combined and filtered by
+parent sources.</p><p>The example below will search for the phrase <code class="literal">my favourite food</code> appearing
+before the terms <code class="literal">hot</code> and <code class="literal">water</code> or <code class="literal">cold</code> and <code class="literal">porridge</code> in any order, in
+the field <code class="literal">my_text</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _search
 {
   "query": {
-    "simple_query_string" : {
-        "query": "\"fried eggs\" +(eggplant | potato) -frittata",
-        "fields": ["title^5", "body"],
-        "default_operator": "and"
+    "intervals" : {
+      "my_text" : {
+        "all_of" : {
+          "ordered" : true,
+          "intervals" : [
+            {
+              "match" : {
+                "query" : "my favourite food",
+                "max_gaps" : 0,
+                "ordered" : true
+              }
+            },
+            {
+              "any_of" : {
+                "intervals" : [
+                  { "match" : { "query" : "hot water" } },
+                  { "match" : { "query" : "cold porridge" } }
+                ]
+              }
+            }
+          ]
+        },
+        "boost" : 2.0,
+        "_name" : "favourite_food"
+      }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-simple-query-string-query/1.json"></div><p>The <code class="literal">simple_query_string</code> top level parameters include:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Parameter </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">query</code></p></td><td align="left" valign="top"><p>The actual query to be parsed. See below for syntax.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">fields</code></p></td><td align="left" valign="top"><p>The fields to perform the parsed query against. Defaults to the
-<code class="literal">index.query.default_field</code> index settings, which in turn defaults to <code class="literal">*</code>. <code class="literal">*</code>
-extracts all fields in the mapping that are eligible to term queries and filters
-the metadata fields.</p>
-<p>WARNING: There is a limit on the number of fields that can be queried
-at once. It is defined by the <code class="literal">indices.query.bool.max_clause_count</code> <a class="xref" href="search-settings.html" title="Search Settings">Search Settings</a>
-which defaults to 1024.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">default_operator</code></p></td><td align="left" valign="top"><p>The default operator used if no explicit operator
-is specified. For example, with a default operator of <code class="literal">OR</code>, the query
-<code class="literal">capital of Hungary</code> is translated to <code class="literal">capital OR of OR Hungary</code>, and
-with default operator of <code class="literal">AND</code>, the same query is translated to
-<code class="literal">capital AND of AND Hungary</code>. The default value is <code class="literal">OR</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">analyzer</code></p></td><td align="left" valign="top"><p>Force the analyzer to use to analyze each term of the query when
-creating composite queries.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">flags</code></p></td><td align="left" valign="top"><p>A set of <a class="link" href="query-dsl-simple-query-string-query.html#supported-flags" title="Flagsedit">flags</a> specifying which features of the
-<code class="literal">simple_query_string</code> to enable. Defaults to <code class="literal">ALL</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">analyze_wildcard</code></p></td><td align="left" valign="top"><p>Whether terms of prefix queries should be automatically
-analyzed or not. If <code class="literal">true</code> a best effort will be made to analyze the prefix. However,
-some analyzers will be not able to provide a meaningful results
-based just on the prefix of a term. Defaults to <code class="literal">false</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">lenient</code></p></td><td align="left" valign="top"><p>If set to <code class="literal">true</code> will cause format based failures
-(like providing text to a numeric field) to be ignored.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">minimum_should_match</code></p></td><td align="left" valign="top"><p>The minimum number of clauses that must match for a
- document to be returned. See the
- <a class="link" href="query-dsl-minimum-should-match.html" title="Minimum Should Match"><code class="literal">minimum_should_match</code></a> documentation for the
- full list of options.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">quote_field_suffix</code></p></td><td align="left" valign="top"><p>A suffix to append to fields for quoted parts of
-the query string. This allows to use a field that has a different analysis chain
-for exact matching. Look <a class="link" href="mixing-exact-search-with-stemming.html" title="Mixing exact search with stemming">here</a> for a
-comprehensive example.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">auto_generate_synonyms_phrase_query</code></p></td><td align="left" valign="top"><p>Whether phrase queries should be automatically generated for multi terms synonyms.
-Defaults to <code class="literal">true</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">all_fields</code></p></td><td align="left" valign="top"><p><span class="deprecated">
-      [<span class="version">6.0.0</span>]
-      <span class="detail">Deprecated in 6.0.0. 
-set <code class="literal">fields</code> to <code class="literal">*</code> instead
-</span></span>
-Perform the query on all fields detected in the mapping that can
-be queried.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">fuzzy_prefix_length</code></p></td><td align="left" valign="top"><p>Set the prefix length for fuzzy queries. Default
-is <code class="literal">0</code>.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">fuzzy_max_expansions</code></p></td><td align="left" valign="top"><p>Controls the number of terms fuzzy queries will
-expand to. Defaults to <code class="literal">50</code></p></td></tr><tr><td align="left" valign="top"><p><code class="literal">fuzzy_transpositions</code></p></td><td align="left" valign="top"><p>Set to <code class="literal">false</code> to disable fuzzy transpositions (<code class="literal">ab</code> → <code class="literal">ba</code>).
-Default is <code class="literal">true</code>.</p></td></tr></tbody></table></div><h5><a id="_simple_query_string_syntax"></a>Simple Query String Syntax<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/simple-query-string-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <code class="literal">simple_query_string</code> supports the following special characters:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-<code class="literal">+</code> signifies AND operation
-</li><li class="listitem">
-<code class="literal">|</code> signifies OR operation
-</li><li class="listitem">
-<code class="literal">-</code> negates a single token
-</li><li class="listitem">
-<code class="literal">"</code> wraps a number of tokens to signify a phrase for searching
-</li><li class="listitem">
-<code class="literal">*</code> at the end of a term signifies a prefix query
-</li><li class="listitem">
-<code class="literal">(</code> and <code class="literal">)</code> signify precedence
-</li><li class="listitem">
-<code class="literal">~N</code> after a word signifies edit distance (fuzziness)
-</li><li class="listitem">
-<code class="literal">~N</code> after a phrase signifies slop amount
-</li></ul></div><p>In order to search for any of these special characters, they will need to
-be escaped with <code class="literal">\</code>.</p><p>Be aware that this syntax may have a different behavior depending on the
-<code class="literal">default_operator</code> value. For example, consider the following query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/1.json"></div><p>In the above example, the text <code class="literal">my favourite food is cold porridge</code> would
+match because the two intervals matching <code class="literal">my favourite food</code> and <code class="literal">cold
+porridge</code> appear in the correct order, but the text <code class="literal">when it's cold my
+favourite food is porridge</code> would not match, because the interval matching
+<code class="literal">cold porridge</code> starts before the interval matching <code class="literal">my favourite food</code>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="intervals-match"></a><code class="literal">match</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/intervals-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">match</code> rule matches analyzed text, and takes the following parameters:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">query</code>
+</p>
+</td><td valign="top">
+<p>
+The text to match.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">max_gaps</code>
+</p>
+</td><td valign="top">
+<p>
+Specify a maximum number of gaps between the terms in the text.  Terms that
+appear further apart than this will not match. If unspecified, or set to -1,
+then there is no width restriction on the match.  If set to 0 then the terms
+must appear next to each other.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">ordered</code>
+</p>
+</td><td valign="top">
+<p>
+Whether or not the terms must appear in their specified order.  Defaults to
+<code class="literal">false</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">analyzer</code>
+</p>
+</td><td valign="top">
+<p>
+Which analyzer should be used to analyze terms in the <code class="literal">query</code>.  By
+default, the search analyzer of the top-level field will be used.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">filter</code>
+</p>
+</td><td valign="top">
+<p>
+An optional <a class="link" href="query-dsl-intervals-query.html#interval_filter" title="filters">interval filter</a>
+</p>
+</td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="intervals-all_of"></a><code class="literal">all_of</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/intervals-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><code class="literal">all_of</code> returns returns matches that span a combination of other rules.</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">intervals</code>
+</p>
+</td><td valign="top">
+<p>
+An array of rules to combine.  All rules must produce a match in a
+document for the overall source to match.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">max_gaps</code>
+</p>
+</td><td valign="top">
+<p>
+Specify a maximum number of gaps between the rules.  Combinations that match
+across a distance greater than this will not match.  If set to -1 or
+unspecified, there is no restriction on this distance.  If set to 0, then the
+matches produced by the rules must all appear immediately next to each other.
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">ordered</code>
+</p>
+</td><td valign="top">
+<p>
+Whether the intervals produced by the rules should appear in the order in
+which they are specified.  Defaults to <code class="literal">false</code>
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">filter</code>
+</p>
+</td><td valign="top">
+<p>
+An optional <a class="link" href="query-dsl-intervals-query.html#interval_filter" title="filters">interval filter</a>
+</p>
+</td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="intervals-any_of"></a><code class="literal">any_of</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/intervals-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">any_of</code> rule emits intervals produced by any of its sub-rules.</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">intervals</code>
+</p>
+</td><td valign="top">
+<p>
+An array of rules to match
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">filter</code>
+</p>
+</td><td valign="top">
+<p>
+An optional <a class="link" href="query-dsl-intervals-query.html#interval_filter" title="filters">interval filter</a>
+</p>
+</td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="interval_filter"></a>filters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/intervals-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can filter intervals produced by any rules by their relation to the
+intervals produced by another rule.  The following example will return
+documents that have the words <code class="literal">hot</code> and <code class="literal">porridge</code> within 10 positions
+of each other, without the word <code class="literal">salty</code> in between:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _search
 {
-    "query": {
-        "simple_query_string" : {
-            "fields" : ["content"],
-            "query" : "foo bar -baz"
+  "query": {
+    "intervals" : {
+      "my_text" : {
+        "match" : {
+          "query" : "hot porridge",
+          "max_gaps" : 10,
+          "filter" : {
+            "not_containing" : {
+              "match" : {
+                "query" : "salty"
+              }
+            }
+          }
         }
+      }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-simple-query-string-query/2.json"></div><p>You may expect that documents containing only "foo" or "bar" will be returned,
-as long as they do not contain "baz", however, due to the <code class="literal">default_operator</code>
-being OR, this really means "match documents that contain "foo" or documents
-that contain "bar", or documents that don’t contain "baz". If this is unintended
-then the query can be switched to <code class="literal">"foo bar +-baz"</code> which will not return
-documents that contain "baz".</p><h4><a id="_default_field_2"></a>Default Field<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/simple-query-string-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>When not explicitly specifying the field to search on in the query
-string syntax, the <code class="literal">index.query.default_field</code> will be used to derive
-which fields to search on. It defaults to <code class="literal">*</code> and the query will automatically
-attempt to determine the existing fields in the index’s mapping that are queryable,
-and perform the search on those fields.</p><h4><a id="_multi_field_3"></a>Multi Field<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/simple-query-string-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The fields parameter can also include pattern based field names,
-allowing to automatically expand to the relevant fields (dynamically
-introduced fields included). For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/2.json"></div><p>The following filters are available:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
+<p>
+<code class="literal">containing</code>
+</p>
+</td><td valign="top">
+<p>
+Produces intervals that contain an interval from the filter rule
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">contained_by</code>
+</p>
+</td><td valign="top">
+<p>
+Produces intervals that are contained by an interval from the filter rule
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">not_containing</code>
+</p>
+</td><td valign="top">
+<p>
+Produces intervals that do not contain an interval from the filter rule
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">not_contained_by</code>
+</p>
+</td><td valign="top">
+<p>
+Produces intervals that are not contained by an interval from the filter rule
+</p>
+</td></tr><tr><td valign="top">
+<p>
+<code class="literal">not_overlapping</code>
+</p>
+</td><td valign="top">
+<p>
+Produces intervals that do not overlap with an interval from the filter rule
+</p>
+</td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="interval-minimization"></a>Minimization<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/intervals-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The intervals query always minimizes intervals, to ensure that queries can
+run in linear time.  This can sometimes cause surprising results, particularly
+when using <code class="literal">max_gaps</code> restrictions or filters.  For example, take the
+following query, searching for <code class="literal">salty</code> contained within the phrase <code class="literal">hot
+porridge</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _search
 {
-    "query": {
-        "simple_query_string" : {
-            "fields" : ["content", "name.*^5"],
-            "query" : "foo bar baz"
+  "query": {
+    "intervals" : {
+      "my_text" : {
+        "match" : {
+          "query" : "salty",
+          "filter" : {
+            "contained_by" : {
+              "match" : {
+                "query" : "hot porridge"
+              }
+            }
+          }
         }
+      }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-simple-query-string-query/3.json"></div><h4><a id="supported-flags"></a>Flags<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/simple-query-string-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p><code class="literal">simple_query_string</code> support multiple flags to specify which parsing features
-should be enabled. It is specified as a <code class="literal">|</code>-delimited string with the
-<code class="literal">flags</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/3.json"></div><p>This query will <span class="strong strong"><strong>not</strong></span> match a document containing the phrase <code class="literal">hot porridge is
+salty porridge</code>, because the intervals returned by the match query for <code class="literal">hot
+porridge</code> only cover the initial two terms in this document, and these do not
+overlap the intervals covering <code class="literal">salty</code>.</p><p>Another restriction to be aware of is the case of <code class="literal">any_of</code> rules that contain
+sub-rules which overlap.  In particular, if one of the rules is a strict
+prefix of the other, then the longer rule will never be matched, which can
+cause surprises when used in combination with <code class="literal">max_gaps</code>.  Consider the
+following query, searching for <code class="literal">the</code> immediately followed by <code class="literal">big</code> or <code class="literal">big bad</code>,
+immediately followed by <code class="literal">wolf</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _search
 {
-    "query": {
-        "simple_query_string" : {
-            "query" : "foo | bar + baz*",
-            "flags" : "OR|AND|PREFIX"
+  "query": {
+    "intervals" : {
+      "my_text" : {
+        "all_of" : {
+          "intervals" : [
+            { "match" : { "query" : "the" } },
+            { "any_of" : {
+                "intervals" : [
+                    { "match" : { "query" : "big" } },
+                    { "match" : { "query" : "big bad" } }
+                ] } },
+            { "match" : { "query" : "wolf" } }
+          ],
+          "max_gaps" : 0,
+          "ordered" : true
         }
+      }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-simple-query-string-query/4.json"></div><p>The available flags are:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Flag </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">ALL</code></p></td><td align="left" valign="top"><p>Enables all parsing features. This is the default.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">NONE</code></p></td><td align="left" valign="top"><p>Switches off all parsing features.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">AND</code></p></td><td align="left" valign="top"><p>Enables the <code class="literal">+</code> AND operator.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">OR</code></p></td><td align="left" valign="top"><p>Enables the <code class="literal">|</code> OR operator.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">NOT</code></p></td><td align="left" valign="top"><p>Enables the <code class="literal">-</code> NOT operator.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">PREFIX</code></p></td><td align="left" valign="top"><p>Enables the <code class="literal">*</code> Prefix operator.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">PHRASE</code></p></td><td align="left" valign="top"><p>Enables the <code class="literal">"</code> quotes operator used to search for phrases.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">PRECEDENCE</code></p></td><td align="left" valign="top"><p>Enables the <code class="literal">(</code> and <code class="literal">)</code> operators to control operator precedence.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">ESCAPE</code></p></td><td align="left" valign="top"><p>Enables <code class="literal">\</code> as the escape character.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">WHITESPACE</code></p></td><td align="left" valign="top"><p>Enables whitespaces as split characters.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">FUZZY</code></p></td><td align="left" valign="top"><p>Enables the <code class="literal">~N</code> operator after a word where N is an integer denoting the allowed edit distance for matching (see <a class="xref" href="common-options.html#fuzziness" title="Fuzzinessedit">Fuzziness<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/api-conventions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>).</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">SLOP</code></p></td><td align="left" valign="top"><p>Enables the <code class="literal">~N</code> operator after a phrase where N is an integer denoting the slop amount.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">NEAR</code></p></td><td align="left" valign="top"><p>Synonymous to <code class="literal">SLOP</code>.</p></td></tr></tbody></table></div><h4><a id="_synonyms_2"></a>Synonyms<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/simple-query-string-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">simple_query_string</code> query supports multi-terms synonym expansion with the <a class="link" href="analysis-synonym-graph-tokenfilter.html" title="Synonym Graph Token Filter">synonym_graph</a> token filter. When this filter is used, the parser creates a phrase query for each multi-terms synonyms.
-For example, the following synonym: <code class="literal">"ny, new york" would produce:</code></p><p><code class="literal">(ny OR ("new york"))</code></p><p>It is also possible to match multi terms synonyms with conjunctions instead:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /_search
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/4.json"></div><p>Counter-intuitively, this query <span class="strong strong"><strong>will not</strong></span> match the document <code class="literal">the big bad
+wolf</code>, because the <code class="literal">any_of</code> rule in the middle will only produce intervals
+for <code class="literal">big</code> - intervals for <code class="literal">big bad</code> being longer than those for <code class="literal">big</code>, while
+starting at the same position, and so being minimized away.  In these cases,
+it’s better to rewrite the query so that all of the options are explicitly
+laid out at the top level:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _search
 {
-   "query": {
-       "simple_query_string" : {
-           "query" : "ny city",
-           "auto_generate_synonyms_phrase_query" : false
-       }
-   }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-simple-query-string-query/5.json"></div><p>The example above creates a boolean query:</p><p><code class="literal">(ny OR (new AND york)) city)</code></p><p>that matches documents with the term <code class="literal">ny</code> or the conjunction <code class="literal">new AND york</code>.
-By default the parameter <code class="literal">auto_generate_synonyms_phrase_query</code> is set to <code class="literal">true</code>.</p></div><div class="navfooter"><span class="prev"><a href="query-dsl-query-string-query.html">
+  "query": {
+    "intervals" : {
+      "my_text" : {
+        "any_of" : {
+          "intervals" : [
+            { "match" : {
+                "query" : "the big bad wolf",
+                "ordered" : true,
+                "max_gaps" : 0 } },
+            { "match" : {
+                "query" : "the big wolf",
+                "ordered" : true,
+                "max_gaps" : 0 } }
+           ]
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/5.json"></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-simple-query-string-query.html">
               « 
-              Query String Query</a>
+              Simple Query String Query</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-intervals-query.html">Intervals query
+          <a href="term-level-queries.html">Term level queries
                »
             </a></span></div>
 <!-- end body -->
