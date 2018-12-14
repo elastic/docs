@@ -204,7 +204,7 @@ sub build_all {
     }
     push_changes($build_dir, $target_repo, $target_repo_checkout) if $Opts->{push};
 
-    # $temp_dir->rmtree;
+    $temp_dir->rmtree;
 }
 
 #===================================
