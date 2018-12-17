@@ -31,7 +31,12 @@ sub new {
         url     => $url,
         tracker => $args{tracker},
     }, $class;
-    $Repos{$name} = $self;
+    if ( $self->tracker ) {
+        # Only track repos that have a tracker. Other repos are for things like
+        # the target_branch.
+        $Repos{$name} = $self;
+    }
+    $self;
 }
 
 #===================================
@@ -59,8 +64,7 @@ sub update_from_remote {
         }
         1;
     }
-        or die "Error updating repo <$name>: $@";
-
+    or die "Error updating repo <$name>: $@";
 }
 
 #===================================
@@ -251,7 +255,7 @@ sub all_repo_branches {
         my $shas = $repo->tracker->shas_for_repo( $repo->name );
 
         for my $branch ( sort keys %$shas ) {
-            my $log = run( qw(git log --oneline), $shas->{$branch} );
+            my $log = run( qw(git log --oneline -1), $shas->{$branch} );
             my ($msg) = ( $log =~ /^\w+\s+([^\n]+)/ );
             push @out, sprintf "  %-35s %s   %s", $branch,
                 substr( $shas->{$branch}, 0, 8 ), $msg;
@@ -260,6 +264,19 @@ sub all_repo_branches {
 
     }
     return join "\n", @out;
+}
+
+#===================================
+sub checkout_to {
+#===================================
+    my ( $self, $destination ) = @_;
+
+    my $name = $self->name;
+    eval {
+        run qw(git clone), $self->git_dir, $destination;
+        1;
+    }
+    or die "Error checking out repo <$name>: $@";
 }
 
 #===================================
