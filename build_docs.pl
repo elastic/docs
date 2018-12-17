@@ -49,7 +49,7 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'update!',    #
+    'all', 'push', 'update!', 'target_repo=s',   #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor'
@@ -164,17 +164,16 @@ sub build_all {
     ensure_creds_cache_enabled() || enable_creds_cache() || exit(1);
     check_github_authed();
 
-    my $repos_dir = init_repos();
+    my ($repos_dir, $temp_dir, $target_repo, $target_repo_checkout) = init_repos();
 
     my $build_dir = $Conf->{paths}{build}
         or die "Missing <paths.build> in config";
-
-    $build_dir = dir($build_dir);
+    if ( $target_repo ) {
+        $build_dir = dir("$target_repo_checkout/$build_dir");
+    } else {
+        $build_dir = dir($build_dir);
+    }
     $build_dir->mkpath;
-
-    my $temp_dir = $repos_dir->subdir('.temp');
-    $temp_dir->rmtree;
-    $temp_dir->mkpath;
 
     my $contents = $Conf->{contents}
         or die "Missing <contents> configuration section";
@@ -186,7 +185,6 @@ sub build_all {
     }
     else {
         build_entries( $build_dir, $temp_dir, $toc, @$contents );
-        $temp_dir->rmtree;
 
         say "Writing main TOC";
         $toc->write( $build_dir, 0 );
@@ -204,7 +202,9 @@ sub build_all {
         say "Checking links";
         check_links($build_dir);
     }
-    push_changes($build_dir) if $Opts->{push};
+    push_changes($build_dir, $target_repo, $target_repo_checkout) if $Opts->{push};
+
+    $temp_dir->rmtree;
 }
 
 #===================================
@@ -377,6 +377,11 @@ sub init_repos {
 
     my %child_dirs = map { $_ => 1 } $repos_dir->children;
 
+    my $temp_dir = $repos_dir->subdir('.temp');
+    $temp_dir->rmtree;
+    $temp_dir->mkpath;
+    delete $child_dirs{ $temp_dir->absolute };
+
     my $conf = $Conf->{repos}
         or die "Missing <repos> in config";
 
@@ -385,10 +390,40 @@ sub init_repos {
     my $tracker_path = $Conf->{paths}{branch_tracker}
         or die "Missing <paths.branch_tracker> in config";
 
+    my $target_repo = 0;
+    my $target_repo_checkout = 0;
+    if ( $Opts->{target_repo} ) {
+        # If we have a target repo check it out before the other repos so that
+        # we can use the tracker file in that repo.
+        $target_repo = ES::Repo->new(
+            name    => 'target_repo',
+            dir     => $repos_dir,
+            user    => $Opts->{user},
+            url     => $Opts->{target_repo},
+            # intentionally not passing the tracker because we don't want to use it
+        );
+        delete $child_dirs{ $target_repo->git_dir->absolute };
+        $target_repo_checkout = "$temp_dir/target_repo";
+        $tracker_path = "$target_repo_checkout/$tracker_path";
+        eval {
+            $target_repo->update_from_remote();
+            say "Checking out target repo";
+            $target_repo->checkout_to($target_repo_checkout);
+            1;
+        } or do {
+            # If creds are invalid, explicitly reject them to try to clear the cache
+            my $error = $@;
+            if ( $error =~ /Invalid username or password/ ) {
+                revoke_github_creds();
+            }
+            die $error;
+        };
+    }
+
+    # check out all remaining repos in parallel
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
     my $pm = proc_man( $Opts->{procs} * 3 );
     for my $name (@repo_names) {
-
         my $repo = ES::Repo->new(
             name    => $name,
             dir     => $repos_dir,
@@ -407,8 +442,7 @@ sub init_repos {
                 $repo->update_from_remote();
                 1;
             } or do {
-
-                # If creds are invalid, explcitily reject them to try to clear the cache
+                # If creds are invalid, explicitly reject them to try to clear the cache
                 my $error = $@;
                 if ( $error =~ /Invalid username or password/ ) {
                     revoke_github_creds();
@@ -426,17 +460,22 @@ sub init_repos {
         say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
-    return $repos_dir;
+    return ($repos_dir, $temp_dir, $target_repo, $target_repo_checkout);
 }
 
 #===================================
 sub push_changes {
 #===================================
-    my $build_dir = shift;
+    my ($build_dir, $target_repo, $target_repo_checkout) = @_;
 
+    local $ENV{GIT_WORK_TREE} = $target_repo_checkout if $target_repo;
+    local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git' if $target_repo;
+
+    say 'Building revision.txt';
     $build_dir->file('revision.txt')
         ->spew( iomode => '>:utf8', ES::Repo->all_repo_branches );
 
+    say 'Preparing commit';
     run qw( git add -A), $build_dir;
 
     if ( run qw(git status -s -- ), $build_dir ) {
@@ -453,6 +492,11 @@ sub push_changes {
     } || '';
 
     if ( sha_for('HEAD') ne $remote_sha ) {
+        if ( $target_repo_checkout ) {
+            say "Pushing changes to bare repo";
+            run qw(git push origin HEAD );
+        }
+        local $ENV{GIT_DIR} = $target_repo->git_dir if $target_repo;
         if ( $Opts->{staging} ) {
             say "Force pushing changes to staging";
             run qw(git push -f origin HEAD );
