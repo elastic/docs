@@ -704,10 +704,11 @@ Not what you want? See the
            
           <a href="config-monitoring-indices.html">Configuring Indices for Monitoring
                »
-            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-monitoring"></a>Configuring monitoring in Elasticsearch<a href="https://github.com/elastic/elasticsearch/edit/6.4/docs/reference/monitoring/configuring-monitoring.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>By default, X-Pack monitoring is enabled but data collection is disabled. Advanced
-monitoring settings enable you to control how frequently data is collected,
-configure timeouts, and set the retention period for locally-stored monitoring
-indices. You can also adjust how monitoring data is displayed.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuring-monitoring"></a>Configuring monitoring in Elasticsearch<a href="https://github.com/elastic/elasticsearch/edit/6.4/docs/reference/monitoring/configuring-monitoring.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>If you enable the Elastic monitoring features in your cluster, you can optionally
+collect metrics about Elasticsearch. By default, monitoring is enabled but data
+collection is disabled.</p><p>Advanced monitoring settings enable you to control how frequently data is
+collected, configure timeouts, and set the retention period for locally-stored
+monitoring indices. You can also adjust how monitoring data is displayed.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 To collect monitoring data about your Elasticsearch cluster:
 </p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem">
 Verify that the <code class="literal">xpack.monitoring.enabled</code> and
@@ -733,19 +734,23 @@ as Kibana, Beats, and Logstash to a monitoring cluster:
 Verify that <code class="literal">xpack.monitoring.collection.enabled</code> settings are <code class="literal">true</code> on each
 node in the cluster.
 </li><li class="listitem">
-<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.4/xpack-monitoring.html" target="_top">Configure X-Pack monitoring across the Elastic Stack</a>.
+<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.4/xpack-monitoring.html" target="_top">Configure monitoring across the Elastic Stack</a>.
 </li></ol></div></li><li class="listitem"><p class="simpara">
 Identify where to store monitoring data.
-</p><p class="simpara">By default, X-Pack monitoring uses a <code class="literal">local</code> exporter that indexes monitoring data
-on the same cluster. See <a class="xref" href="es-monitoring-exporters.html#es-monitoring-default-exporter" title="Default exportersedit">Default exporters<a href="https://github.com/elastic/elasticsearch/edit/6.4/docs/reference/monitoring/exporters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a> and <a class="xref" href="local-exporter.html" title="Local Exporters">Local Exporters</a>.</p><p class="simpara">Alternatively, you can use an <code class="literal">http</code> exporter to send data to a separate
-monitoring cluster. See <a class="xref" href="http-exporter.html" title="HTTP Exporters">HTTP Exporters</a>.</p><p class="simpara">For more information about typical monitoring architectures,
+</p><p class="simpara">By default, Elasticsearch monitoring features use a <code class="literal">local</code> exporter that indexes
+monitoring data on the same cluster. See <a class="xref" href="es-monitoring-exporters.html#es-monitoring-default-exporter" title="Default exportersedit">Default exporters<a href="https://github.com/elastic/elasticsearch/edit/6.4/docs/reference/monitoring/exporters.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a> and
+<a class="xref" href="local-exporter.html" title="Local Exporters">Local Exporters</a>.</p><p class="simpara">Alternatively, you can use an <code class="literal">http</code> exporter to send data to a separate
+monitoring cluster. See <a class="xref" href="http-exporter.html" title="HTTP Exporters">HTTP Exporters</a>.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>The Elasticsearch monitoring features use ingest pipelines, therefore the
+cluster that stores the monitoring data must have at least one
+<a class="link" href="ingest.html" title="Ingest Node">ingest node</a>.</p></div></div><p class="simpara">For more information about typical monitoring architectures,
 see <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.4/how-monitoring-works.html" target="_top">How Monitoring Works</a>.</p></li><li class="listitem"><p class="simpara">
-If X-Pack security is enabled and you are using an <code class="literal">http</code> exporter to send data to
- a dedicated monitoring cluster:
+If Elasticsearch security features are enabled and you are using an <code class="literal">http</code> exporter
+to send data to a dedicated monitoring cluster:
 </p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
 Create a user on the monitoring cluster that has the
-<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.4/built-in-roles.html#built-in-roles-remote-monitoring-agent" target="_top"><code class="literal">remote_monitoring_agent</code> built-in role</a>. For example, the following request
-creates a <code class="literal">remote_monitor</code> user that has the <code class="literal">remote_monitoring_agent</code> role:
+<a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.4/built-in-roles.html#built-in-roles-remote-monitoring-agent" target="_top"><code class="literal">remote_monitoring_agent</code> built-in role</a>.
+For example, the following request creates a <code class="literal">remote_monitor</code> user that has the
+<code class="literal">remote_monitoring_agent</code> role:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">POST /_xpack/security/user/remote_monitor
 {
   "password" : "changeme",
@@ -753,8 +758,13 @@ creates a <code class="literal">remote_monitor</code> user that has the <code cl
   "full_name" : "Internal Agent For Remote Monitoring"
 }</pre></div><div class="console_widget" data-snippet="snippets/configuring-monitoring/1.json"></div></li><li class="listitem"><p class="simpara">
 On each node in the cluster that is being monitored, configure the <code class="literal">http</code>
-exporter to use the appropriate credentials when data is shipped to the monitoring cluster.
-</p><p class="simpara">If SSL/TLS is enabled on the monitoring cluster, you must use the HTTPS protocol in the <code class="literal">host</code> setting. You must also include the CA certificate in each node’s trusted certificates in order to verify the identities of the nodes in the monitoring cluster.</p><p class="simpara">The following example specifies the location of the PEM encoded certificate with the <code class="literal">certificate_authorities</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
+exporter to use the appropriate credentials when data is shipped to the
+monitoring cluster.
+</p><p class="simpara">If SSL/TLS is enabled on the monitoring cluster, you must use the HTTPS protocol
+in the <code class="literal">host</code> setting. You must also include the CA certificate in each node’s
+trusted certificates in order to verify the identities of the nodes in the
+monitoring cluster.</p><p class="simpara">The following example specifies the location of the PEM encoded certificate with
+the <code class="literal">certificate_authorities</code> setting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">xpack.monitoring.exporters:
   id1:
     type: http
     host: ["https://es-mon1:9200", "https://es-mon2:9200"]
@@ -779,12 +789,13 @@ The <code class="literal">username</code> and <code class="literal">password</co
       truststore.password: password
   id2:
     type: local</pre></div></li></ol></div></li><li class="listitem"><p class="simpara">
-If X-Pack security is enabled and you want to visualize monitoring data in Kibana,
-you must create users that have access to the Kibana indices and permission to
-read from the monitoring indices.
-</p><p class="simpara">You set up X-Pack monitoring UI users on the cluster where the monitoring data is
-stored, that is to say the monitoring cluster. To grant all of the necessary permissions, assign users the
-<code class="literal">monitoring_user</code> and <code class="literal">kibana_user</code> roles. For more information, see
+If the Elasticsearch security features are enabled and you want to visualize
+monitoring data in Kibana, you must create users that have access to the Kibana
+indices and permission to read from the monitoring indices.
+</p><p class="simpara">You set up Monitoring UI users on the cluster where the monitoring data is
+stored, that is to say the monitoring cluster. To grant all of the necessary
+permissions, assign users the <code class="literal">monitoring_user</code> and <code class="literal">kibana_user</code> roles. For
+more information, see
 <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.4/mapping-roles.html" target="_top">Mapping users and groups to roles</a>.</p></li><li class="listitem">
 Optional:
 <a class="link" href="config-monitoring-indices.html" title="Configuring Indices for Monitoring">Configure the indices that store the monitoring data</a>.
