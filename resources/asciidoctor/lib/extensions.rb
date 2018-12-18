@@ -3,5 +3,5 @@ require_relative 'added/extension'
 
 Extensions.register do
   preprocessor ElasticCompatPreprocessor
-  block_macro Added
+  block_macro AddedBlock
 end

@@ -12,7 +12,6 @@ include Asciidoctor
 #   added::[6.0.0-beta1]
 #
 class ElasticCompatPreprocessor < Extensions::Preprocessor
-  puts("registering ElasticCompatPreprocessor")
   def process document, reader
     lines = reader.read_lines
     for line in lines do

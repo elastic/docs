@@ -8,18 +8,17 @@ include Asciidoctor
 #
 #   added::[6.0.0-beta1]
 #
-class Added < Extensions::BlockMacroProcessor
+class AddedBlock < Extensions::BlockMacroProcessor
   use_dsl
   named :added
   name_positional_attributes 'version', 'passtext'
 
-  puts "registering Added"
-
   def process parent, reader, attrs
-    puts %(processing Added   #{reader.lines})
-    docbook = %(<note revisionflag="added" revision="#{attrs['version']}">
-        <simpara>#{attrs['passtext']}</simpara>
-    </note>)
+    docbook = <<~DOCBOOK
+    <note revisionflag="added" revision="#{attrs['version']}">
+      <simpara>#{attrs['passtext']}</simpara>
+    </note>
+    DOCBOOK
     
     create_pass_block parent, docbook, {}, subs: nil
   end
