@@ -13,11 +13,14 @@ include Asciidoctor
 #
 class ElasticCompatPreprocessor < Extensions::Preprocessor
   def process document, reader
+    # while reader.has_more_lines?
+    #   puts "#{reader.cursor}: #{reader.read_line}"
+    # end
     lines = reader.read_lines
     for line in lines do
       line.gsub!(/(added)\[([^\]]+)\]/, '\1::[\2]')
     end
-    reader.unshift_lines(lines)
+    reader.unshift_lines lines
     reader
   end
 end

@@ -21,7 +21,10 @@ class ConvertError < Exception
   def initialize warnings, result
     super('\n' + 
         warnings
-          .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
+          .map { |l|
+            puts l[:message][:source_location].inspect
+            "#{l[:severity]}: #{l[:message].inspect}"
+          }
           .join('\n'))
     @warnings = warnings
     @result = result
@@ -32,7 +35,6 @@ end
 # Convert an asciidoc string into docbook. If the conversion results in any
 # errors or warnings then raises a ConvertError.
 def convert input
-  puts "asdfasdf #{File.dirname(__FILE__)}"
   logger = Asciidoctor::MemoryLogger.new
   result = Asciidoctor.convert input, {
       :safe => :unsafe,  # Used to include "funny" files.
@@ -41,7 +43,7 @@ def convert input
       :doctype => :book,
       :attributes => {
         'docfile' => 'example.adoc',
-        'docdir' => "#{File.dirname(__FILE__)}",
+        'docdir' => File.dirname(__FILE__),
       },
     }
   if logger.messages != [] then

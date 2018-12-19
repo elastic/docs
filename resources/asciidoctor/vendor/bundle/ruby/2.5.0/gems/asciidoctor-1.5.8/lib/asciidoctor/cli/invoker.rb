@@ -98,6 +98,8 @@ module Asciidoctor
           # automatically calculate outfile based on infile
         end
 
+        puts "ASDFADSF #{opts}"
+
         if stdin
           # allows use of block to supply stdin, particularly useful for tests
           input = block_given? ? yield : STDIN
