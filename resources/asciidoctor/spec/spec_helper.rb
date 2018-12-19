@@ -21,10 +21,7 @@ class ConvertError < Exception
   def initialize warnings, result
     super('\n' + 
         warnings
-          .map { |l|
-            puts l[:message][:source_location].inspect
-            "#{l[:severity]}: #{l[:message].inspect}"
-          }
+          .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
           .join('\n'))
     @warnings = warnings
     @result = result
@@ -42,7 +39,6 @@ def convert input
       :logger => logger,
       :doctype => :book,
       :attributes => {
-        'docfile' => 'example.adoc',
         'docdir' => File.dirname(__FILE__),
       },
     }

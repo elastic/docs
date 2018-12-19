@@ -4,7 +4,7 @@ require 'elastic_compat/extension'
 RSpec.describe ElasticCompatPreprocessor do
   before(:each) do
     Extensions.register do
-      # preprocessor ElasticCompatPreprocessor
+      preprocessor ElasticCompatPreprocessor
       block_macro AddedBlock
     end
   end
@@ -13,21 +13,21 @@ RSpec.describe ElasticCompatPreprocessor do
     Extensions.unregister_all
   end
 
-  # it "invokes added without the ::" do
-  #   actual = convert <<~ASCIIDOC
-  #     == Example
-  #     added[some_version]
-  #   ASCIIDOC
-  #   expected = <<~DOCBOOK
-  #     <chapter id="_example">
-  #     <title>Example</title>
-  #     <note revisionflag="added" revision="some_version">
-  #       <simpara></simpara>
-  #     </note>
-  #     </chapter>
-  #   DOCBOOK
-  #   expect(actual).to eq(expected.strip)
-  # end
+  it "invokes added without the ::" do
+    actual = convert <<~ASCIIDOC
+      == Example
+      added[some_version]
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_example">
+      <title>Example</title>
+      <note revisionflag="added" revision="some_version">
+        <simpara></simpara>
+      </note>
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
 
   it "doesn't break line numbers" do
     input = <<~ASCIIDOC
