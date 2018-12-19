@@ -1104,7 +1104,6 @@ class PreprocessorReader < Reader
   # Returns this Reader object.
   def push_include data, file = nil, path = nil, lineno = 1, attributes = {}
     @include_stack << [@lines, @file, @dir, @path, @lineno, @maxdepth, @process_lines]
-    puts "stack #{@include_stack}"
     if (@file = file)
       # NOTE if file is not a string, assume it's a URI
       if ::String === file
@@ -1179,7 +1178,6 @@ class PreprocessorReader < Reader
   end
 
   def pop_include
-    puts "popping #{@include_stack}" + caller.join("\n\t")
     if @include_stack.size > 0
       @lines, @file, @dir, @path, @lineno, @maxdepth, @process_lines = @include_stack.pop
       # FIXME kind of a hack

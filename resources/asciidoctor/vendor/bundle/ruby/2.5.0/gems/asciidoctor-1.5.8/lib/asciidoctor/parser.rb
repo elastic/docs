@@ -1229,7 +1229,6 @@ class Parser
   #
   # Returns the Block that represents the parsed callout list.
   def self.parse_callout_list reader, match, parent, callouts
-    puts "$$$$ #{reader.cursor} #{reader.include_stack}"
     list_block = List.new(parent, :colist)
     next_index = 1
     autonum = 0
