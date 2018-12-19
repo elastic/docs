@@ -17,12 +17,12 @@ RSpec.describe AddedBlock do
       added::[some_version]
     ASCIIDOC
     expected = <<~DOCBOOK
-      <section id="_example">
+      <chapter id="_example">
       <title>Example</title>
       <note revisionflag="added" revision="some_version">
         <simpara></simpara>
       </note>
-      </section>
+      </chapter>
     DOCBOOK
     expect(actual).to eq(expected.strip)
   end
@@ -33,10 +33,10 @@ RSpec.describe AddedBlock do
       added[some_version]
     ASCIIDOC
     expected = <<~DOCBOOK
-      <section id="_example">
+      <chapter id="_example">
       <title>Example</title>
       <simpara>added[some_version]</simpara>
-      </section>
+      </chapter>
     DOCBOOK
     expect(actual).to eq(expected.strip)
   end
