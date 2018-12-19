@@ -127,7 +127,6 @@
   // --------------------- end of set language based on browser language -----------------
   </script>
 
-
 	
 	<link type="text/css" rel="stylesheet" href="/static/css/guide.css" />
 
@@ -904,7 +903,25 @@ Produces intervals that are not contained by an interval from the filter rule
 <p>
 Produces intervals that do not overlap with an interval from the filter rule
 </p>
-</td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="interval-minimization"></a>Minimization<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/intervals-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The intervals query always minimizes intervals, to ensure that queries can
+</td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="interval-script-filter"></a>Script filters<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/intervals-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>You can also filter intervals based on their start position, end position and
+internal gap count, using a script.  The script has access to an <code class="literal">interval</code>
+variable, with <code class="literal">start</code>, <code class="literal">end</code> and <code class="literal">gaps</code> methods:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST _search
+{
+  "query": {
+    "intervals" : {
+      "my_text" : {
+        "match" : {
+          "query" : "hot porridge",
+          "filter" : {
+            "script" : {
+              "source" : "interval.start &gt; 10 &amp;&amp; interval.end &lt; 20 &amp;&amp; interval.gaps == 0"
+            }
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/3.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="interval-minimization"></a>Minimization<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/intervals-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The intervals query always minimizes intervals, to ensure that queries can
 run in linear time.  This can sometimes cause surprising results, particularly
 when using <code class="literal">max_gaps</code> restrictions or filters.  For example, take the
 following query, searching for <code class="literal">salty</code> contained within the phrase <code class="literal">hot
@@ -926,7 +943,7 @@ porridge</code>:</p><div class="pre_wrapper"><pre class="programlisting prettypr
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/3.json"></div><p>This query will <span class="strong strong"><strong>not</strong></span> match a document containing the phrase <code class="literal">hot porridge is
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/4.json"></div><p>This query will <span class="strong strong"><strong>not</strong></span> match a document containing the phrase <code class="literal">hot porridge is
 salty porridge</code>, because the intervals returned by the match query for <code class="literal">hot
 porridge</code> only cover the initial two terms in this document, and these do not
 overlap the intervals covering <code class="literal">salty</code>.</p><p>Another restriction to be aware of is the case of <code class="literal">any_of</code> rules that contain
@@ -955,7 +972,7 @@ immediately followed by <code class="literal">wolf</code>:</p><div class="pre_wr
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/4.json"></div><p>Counter-intuitively, this query <span class="strong strong"><strong>will not</strong></span> match the document <code class="literal">the big bad
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/5.json"></div><p>Counter-intuitively, this query <span class="strong strong"><strong>will not</strong></span> match the document <code class="literal">the big bad
 wolf</code>, because the <code class="literal">any_of</code> rule in the middle will only produce intervals
 for <code class="literal">big</code> - intervals for <code class="literal">big bad</code> being longer than those for <code class="literal">big</code>, while
 starting at the same position, and so being minimized away.  In these cases,
@@ -980,7 +997,7 @@ laid out at the top level:</p><div class="pre_wrapper"><pre class="programlistin
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/5.json"></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-simple-query-string-query.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-intervals-query/6.json"></div></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-simple-query-string-query.html">
               « 
               Simple Query String Query</a>
            

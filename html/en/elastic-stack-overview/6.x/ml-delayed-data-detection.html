@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Profiling Queries
-        | Elasticsearch Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Handling delayed data
+        | Elastic Stack Overview [6.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-profile.html" title="Profile API" /><link rel="prev" href="search-profile.html" title="Profile API" /><link rel="next" href="_profiling_aggregations.html" title="Profiling Aggregations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Stack Overview [6.x]" /><link rel="up" href="ml-configuring.html" title="Configuring machine learning" /><link rel="prev" href="ml-configuring-transform.html" title="Transforming data with script fields" /><link rel="next" href="stopping-ml.html" title="Stopping machine learning" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elastic Stack/Overview/6.x" /><meta name="DC.subject" content="Elastic Stack" /><meta name="DC.identifier" content="6.x" />
     
 
     
@@ -126,7 +126,6 @@
         
   // --------------------- end of set language based on browser language -----------------
   </script>
-
 
 	
 	<link type="text/css" rel="stylesheet" href="/static/css/guide.css" />
@@ -694,430 +693,45 @@
 <div class="page_header">You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [master]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs</a></span> » <span class="breadcrumb-link"><a href="search-profile.html">Profile API</a></span> » <span class="breadcrumb-node">Profiling Queries</span></div><div class="navheader"><span class="prev"><a href="search-profile.html">
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elastic Stack Overview
+      [6.x]
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-ml.html">Machine learning in the Elastic Stack</a></span> » <span class="breadcrumb-link"><a href="ml-configuring.html">Configuring machine learning</a></span> » <span class="breadcrumb-node">Handling delayed data</span></div><div class="navheader"><span class="prev"><a href="ml-configuring-transform.html">
               « 
-              Profile API</a>
+              Transforming data with script fields</a>
            
         </span><span class="next">
            
-          <a href="_profiling_aggregations.html">Profiling Aggregations
+          <a href="stopping-ml.html">Stopping machine learning
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_profiling_queries"></a>Profiling Queries<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>The details provided by the Profile API directly expose Lucene class names and concepts, which means
-that complete interpretation of the results require fairly advanced knowledge of Lucene.  This
-page attempts to give a crash-course in how Lucene executes queries so that you can use the Profile API to successfully
-diagnose and debug queries, but it is only an overview.  For complete understanding, please refer
-to Lucene’s documentation and, in places, the code.</p><p>With that said, a complete understanding is often not required to fix a slow query.  It is usually
-sufficient to see that a particular component of a query is slow, and not necessarily understand why
-the <code class="literal">advance</code> phase of that query is the cause, for example.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_query_literal_section"></a><code class="literal">query</code> Section<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">query</code> section contains detailed timing of the query tree executed by Lucene on a particular shard.
-The overall structure of this query tree will resemble your original Elasticsearch query, but may be slightly
-(or sometimes very) different.  It will also use similar but not always identical naming.  Using our previous
-<code class="literal">match</code> query example, let’s analyze the <code class="literal">query</code> section:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"query": [
-    {
-       "type": "BooleanQuery",
-       "description": "message:some message:number",
-       "time_in_nanos": "1873811",
-       "breakdown": {...},               <a id="CO74-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-       "children": [
-          {
-             "type": "TermQuery",
-             "description": "message:some",
-             "time_in_nanos": "391943",
-             "breakdown": {...}
-          },
-          {
-             "type": "TermQuery",
-             "description": "message:number",
-             "time_in_nanos": "210682",
-             "breakdown": {...}
-          }
-       ]
-    }
-]</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO74-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The breakdown timings are omitted for simplicity
-</p></td></tr></table></div><p>Based on the profile structure, we can see that our <code class="literal">match</code> query was rewritten by Lucene into a BooleanQuery with two
-clauses (both holding a TermQuery).  The <code class="literal">type</code> field displays the Lucene class name, and often aligns with
-the equivalent name in Elasticsearch.  The <code class="literal">description</code> field displays the Lucene explanation text for the query, and
-is made available to help differentiating between parts of your query (e.g. both <code class="literal">message:search</code> and <code class="literal">message:test</code>
-are TermQuery’s and would appear identical otherwise.</p><p>The <code class="literal">time_in_nanos</code> field shows that this query took ~1.8ms for the entire BooleanQuery to execute.  The recorded time is inclusive
-of all children.</p><p>The <code class="literal">breakdown</code> field will give detailed stats about how the time was spent, we’ll look at
-that in a moment.  Finally, the <code class="literal">children</code> array lists any sub-queries that may be present.  Because we searched for two
-values ("search test"), our BooleanQuery holds two children TermQueries.  They have identical information (type, time,
-breakdown, etc).  Children are allowed to have their own children.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_timing_breakdown"></a>Timing Breakdown<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">breakdown</code> component lists detailed timing statistics about low-level Lucene execution:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"breakdown": {
-   "score": 51306,
-   "score_count": 4,
-   "build_scorer": 2935582,
-   "build_scorer_count": 1,
-   "match": 0,
-   "match_count": 0,
-   "create_weight": 919297,
-   "create_weight_count": 1,
-   "next_doc": 53876,
-   "next_doc_count": 5,
-   "advance": 0,
-   "advance_count": 0,
-   "compute_max_score": 0,
-   "compute_max_score_count": 0,
-   "shallow_advance": 0,
-   "shallow_advance_count": 0
-}</pre></div><p>Timings are listed in wall-clock nanoseconds and are not normalized at all.  All caveats about the overall
-<code class="literal">time_in_nanos</code> apply here.  The intention of the breakdown is to give you a feel for A) what machinery in Lucene is
-actually eating time, and B) the magnitude of differences in times between the various components.  Like the overall time,
-the breakdown is inclusive of all children times.</p><p>The meaning of the stats are as follows:</p><h4><a id="_all_parameters_3"></a>All parameters:<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">create_weight</code>
-</p>
-</td><td valign="top">
-<p>
-    A Query in Lucene must be capable of reuse across multiple IndexSearchers (think of it as the engine that
-    executes a search against a specific Lucene Index).  This puts Lucene in a tricky spot, since many queries
-    need to accumulate temporary state/statistics associated with the index it is being used against, but the
-    Query contract mandates that it must be immutable.
-    
-    
-    To get around this, Lucene asks each query to generate a Weight object which acts as a temporary context
-    object to hold state associated with this particular (IndexSearcher, Query) tuple.  The <code class="literal">weight</code> metric
-    shows how long this process takes
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">build_scorer</code>
-</p>
-</td><td valign="top">
-<p>
-    This parameter shows how long it takes to build a Scorer for the query.  A Scorer is the mechanism that
-    iterates over matching documents generates a score per-document (e.g. how well does "foo" match the document?).
-    Note, this records the time required to generate the Scorer object, not actually score the documents.  Some
-    queries have faster or slower initialization of the Scorer, depending on optimizations, complexity, etc.
-    
-    
-    This may also showing timing associated with caching, if enabled and/or applicable for the query
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">next_doc</code>
-</p>
-</td><td valign="top">
-<p>
-    The Lucene method <code class="literal">next_doc</code> returns Doc ID of the next document matching the query.  This statistic shows
-    the time it takes to determine which document is the next match, a process that varies considerably depending
-    on the nature of the query.   Next_doc is a specialized form of advance() which is more convenient for many
-    queries in Lucene.  It is equivalent to advance(docId() + 1)
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">advance</code>
-</p>
-</td><td valign="top">
-<p>
-    <code class="literal">advance</code> is the "lower level" version of next_doc: it serves the same purpose of finding the next matching
-    doc, but requires the calling query to perform extra tasks such as identifying and moving past skips, etc.
-    However,  not all queries can use next_doc, so <code class="literal">advance</code> is also timed for those queries.
-    
-    
-    Conjunctions (e.g. <code class="literal">must</code> clauses in a boolean) are typical consumers of <code class="literal">advance</code>
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">matches</code>
-</p>
-</td><td valign="top">
-<p>
-    Some queries, such as phrase queries, match documents using a "Two Phase" process.  First, the document is
-    "approximately" matched, and if it matches approximately, it is checked a second time with a more rigorous
-    (and expensive) process.  The second phase verification is what the <code class="literal">matches</code> statistic measures.
-    
-    
-    For example, a phrase query first checks a document approximately by ensuring all terms in the phrase are
-    present in the doc.  If all the terms are present, it then executes the second phase verification to ensure
-    the terms are in-order to form the phrase, which is relatively more expensive than just checking for presence
-    of the terms.
-    
-    
-    Because this two-phase process is only used by a handful of queries, the <code class="literal">metric</code> statistic will often be zero
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">score</code>
-</p>
-</td><td valign="top">
-<p>
-    This records the time taken to score a particular document via it’s Scorer
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">*_count</code>
-</p>
-</td><td valign="top">
-<p>
-    Records the number of invocations of the particular method.  For example, <code class="literal">"next_doc_count": 2,</code>
-    means the <code class="literal">nextDoc()</code> method was called on two different documents.  This can be used to help judge
-    how selective queries are, by comparing counts between different query components.
-</p>
-</td></tr></tbody></table></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_collectors_literal_section"></a><code class="literal">collectors</code> Section<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The Collectors portion of the response shows high-level execution details. Lucene works by defining a "Collector"
-which is responsible for coordinating the traversal, scoring and collection of matching documents.  Collectors
-are also how a single query can record aggregation results, execute unscoped "global" queries, execute post-query
-filters, etc.</p><p>Looking at the previous example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"collector": [
-   {
-      "name": "CancellableCollector",
-      "reason": "search_cancelled",
-      "time_in_nanos": "304311",
-      "children": [
-        {
-          "name": "SimpleTopScoreDocCollector",
-          "reason": "search_top_hits",
-          "time_in_nanos": "32273"
-        }
-      ]
-   }
-]</pre></div><p>We see a single collector named <code class="literal">SimpleTopScoreDocCollector</code> wrapped into <code class="literal">CancellableCollector</code>. <code class="literal">SimpleTopScoreDocCollector</code> is the default "scoring and sorting"
-<code class="literal">Collector</code> used by Elasticsearch.  The <code class="literal">reason</code> field attempts to give a plain english description of the class name.  The
-<code class="literal">time_in_nanos</code> is similar to the time in the Query tree: a wall-clock time inclusive of all children.  Similarly, <code class="literal">children</code> lists
-all sub-collectors. The <code class="literal">CancellableCollector</code> that wraps <code class="literal">SimpleTopScoreDocCollector</code> is used by Elasticsearch to detect if the current
-search was cancelled and stop collecting documents as soon as it occurs.</p><p>It should be noted that Collector times are <span class="strong strong"><strong>independent</strong></span> from the Query times.  They are calculated, combined
-and normalized independently!  Due to the nature of Lucene’s execution, it is impossible to "merge" the times
-from the Collectors into the Query section, so they are displayed in separate portions.</p><p>For reference, the various collector reason’s are:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">search_sorted</code>
-</p>
-</td><td valign="top">
-<p>
-    A collector that scores and sorts documents.  This is the most common collector and will be seen in most
-    simple searches
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">search_count</code>
-</p>
-</td><td valign="top">
-<p>
-    A collector that only counts the number of documents that match the query, but does not fetch the source.
-    This is seen when <code class="literal">size: 0</code> is specified
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">search_terminate_after_count</code>
-</p>
-</td><td valign="top">
-<p>
-    A collector that terminates search execution after <code class="literal">n</code> matching documents have been found.  This is seen
-    when the <code class="literal">terminate_after_count</code> query parameter has been specified
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">search_min_score</code>
-</p>
-</td><td valign="top">
-<p>
-    A collector that only returns matching documents that have a score greater than <code class="literal">n</code>.  This is seen when
-    the top-level parameter <code class="literal">min_score</code> has been specified.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">search_multi</code>
-</p>
-</td><td valign="top">
-<p>
-    A collector that wraps several other collectors.  This is seen when combinations of search, aggregations,
-    global aggs and post_filters are combined in a single search.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">search_timeout</code>
-</p>
-</td><td valign="top">
-<p>
-    A collector that halts execution after a specified period of time.  This is seen when a <code class="literal">timeout</code> top-level
-    parameter has been specified.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">aggregation</code>
-</p>
-</td><td valign="top">
-<p>
-    A collector that Elasticsearch uses to run aggregations against the query scope.  A single <code class="literal">aggregation</code>
-    collector is used to collect documents for <span class="strong strong"><strong>all</strong></span> aggregations, so you will see a list of aggregations
-    in the name rather.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">global_aggregation</code>
-</p>
-</td><td valign="top">
-<p>
-    A collector that executes an aggregation against the global query scope, rather than the specified query.
-    Because the global scope is necessarily different from the executed query, it must execute it’s own
-    match_all query (which you will see added to the Query section) to collect your entire dataset
-</p>
-</td></tr></tbody></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_rewrite_literal_section"></a><code class="literal">rewrite</code> Section<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>All queries in Lucene undergo a "rewriting" process.  A query (and its sub-queries) may be rewritten one or
-more times, and the process continues until the query stops changing.  This process allows Lucene to perform
-optimizations, such as removing redundant clauses, replacing one query for a more efficient execution path,
-etc.  For example a Boolean → Boolean → TermQuery can be rewritten to a TermQuery, because all the Booleans
-are unnecessary in this case.</p><p>The rewriting process is complex and difficult to display, since queries can change drastically.  Rather than
-showing the intermediate results, the total rewrite time is simply displayed as a value (in nanoseconds).  This
-value is cumulative and contains the total time for all queries being rewritten.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_a_more_complex_example"></a>A more complex example<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To demonstrate a slightly more complex query and the associated results, we can profile the following query:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /twitter/_search
-{
-  "profile": true,
-  "query": {
-    "term": {
-      "user": {
-        "value": "test"
-      }
-    }
-  },
-  "aggs": {
-    "my_scoped_agg": {
-      "terms": {
-        "field": "likes"
-      }
-    },
-    "my_global_agg": {
-      "global": {},
-      "aggs": {
-        "my_level_agg": {
-          "terms": {
-            "field": "likes"
-          }
-        }
-      }
-    }
-  },
-  "post_filter": {
-    "match": {
-      "message": "some"
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/_profiling_queries/1.json"></div><p>This example has:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-A query
-</li><li class="listitem">
-A scoped aggregation
-</li><li class="listitem">
-A global aggregation
-</li><li class="listitem">
-A post_filter
-</li></ul></div><p>And the response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-   ...
-   "profile": {
-         "shards": [
-            {
-               "id": "[P6-vulHtQRWuD4YnubWb7A][test][0]",
-               "searches": [
-                  {
-                     "query": [
-                        {
-                           "type": "TermQuery",
-                           "description": "message:some",
-                           "time_in_nanos": "409456",
-                           "breakdown": {
-                              "score": 0,
-                              "build_scorer_count": 1,
-                              "match_count": 0,
-                              "create_weight": 31584,
-                              "next_doc": 0,
-                              "match": 0,
-                              "create_weight_count": 1,
-                              "next_doc_count": 2,
-                              "score_count": 1,
-                              "build_scorer": 377872,
-                              "advance": 0,
-                              "advance_count": 0,
-                              "compute_max_score": 0,
-                              "compute_max_score_count": 0,
-                              "shallow_advance": 0,
-                              "shallow_advance_count": 0
-                           }
-                        },
-                        {
-                           "type": "TermQuery",
-                           "description": "user:test",
-                           "time_in_nanos": "303702",
-                           "breakdown": {
-                              "score": 0,
-                              "build_scorer_count": 1,
-                              "match_count": 0,
-                              "create_weight": 185215,
-                              "next_doc": 5936,
-                              "match": 0,
-                              "create_weight_count": 1,
-                              "next_doc_count": 2,
-                              "score_count": 1,
-                              "build_scorer": 112551,
-                              "advance": 0,
-                              "advance_count": 0,
-                              "compute_max_score": 0,
-                              "compute_max_score_count": 0,
-                              "shallow_advance": 0,
-                              "shallow_advance_count": 0
-                           }
-                        }
-                     ],
-                     "rewrite_time": 7208,
-                     "collector": [
-                        {
-                          "name": "CancellableCollector",
-                          "reason": "search_cancelled",
-                          "time_in_nanos": 2390,
-                          "children": [
-                            {
-                              "name": "MultiCollector",
-                              "reason": "search_multi",
-                              "time_in_nanos": 1820,
-                              "children": [
-                                {
-                                  "name": "FilteredCollector",
-                                  "reason": "search_post_filter",
-                                  "time_in_nanos": 7735,
-                                  "children": [
-                                    {
-                                      "name": "SimpleTopScoreDocCollector",
-                                      "reason": "search_top_hits",
-                                      "time_in_nanos": 1328
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "MultiBucketCollector: [[my_scoped_agg, my_global_agg]]",
-                                  "reason": "aggregation",
-                                  "time_in_nanos": 8273
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                     ]
-                  }
-               ],
-               "aggregations": [...] <a id="CO75-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            }
-         ]
-      }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO75-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The ``"aggregations"` portion has been omitted because it will be covered in the next section
-</p></td></tr></table></div><p>As you can see, the output is significantly verbose from before.  All the major portions of the query are
-represented:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-The first <code class="literal">TermQuery</code> (user:test) represents the main <code class="literal">term</code> query
-</li><li class="listitem">
-The second <code class="literal">TermQuery</code> (message:some) represents the <code class="literal">post_filter</code> query
-</li></ol></div><p>The Collector tree is fairly straightforward, showing how a single CancellableCollector wraps a MultiCollector
- which also wraps a FilteredCollector to execute the post_filter (and in turn wraps the normal scoring SimpleCollector),
- a BucketCollector to run all scoped aggregations.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_understanding_multitermquery_output"></a>Understanding MultiTermQuery output<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>A special note needs to be made about the <code class="literal">MultiTermQuery</code> class of queries.  This includes wildcards, regex and fuzzy
-queries.  These queries emit very verbose responses, and are not overly structured.</p><p>Essentially, these queries rewrite themselves on a per-segment basis.  If you imagine the wildcard query <code class="literal">b*</code>, it technically
-can match any token that begins with the letter "b".  It would be impossible to enumerate all possible combinations,
-so Lucene rewrites the query in context of the segment being evaluated.  E.g. one segment may contain the tokens
-<code class="literal">[bar, baz]</code>, so the query rewrites to a BooleanQuery combination of "bar" and "baz".  Another segment may only have the
-token <code class="literal">[bakery]</code>, so query rewrites to a single TermQuery for "bakery".</p><p>Due to this dynamic, per-segment rewriting, the clean tree structure becomes distorted and no longer follows a clean
-"lineage" showing how one query rewrites into the next.  At present time, all we can do is apologize, and suggest you
-collapse the details for that query’s children if it is too confusing.  Luckily, all the timing statistics are correct,
-just not the physical layout in the response, so it is sufficient to just analyze the top-level MultiTermQuery and
-ignore its children if you find the details too tricky to interpret.</p><p>Hopefully this will be fixed in future iterations, but it is a tricky problem to solve and still in-progress :)</p></div></div><div class="navfooter"><span class="prev"><a href="search-profile.html">
+            </a></span></div><div class="xpack section"><div class="titlepage"><div><div><h2 class="title"><a id="ml-delayed-data-detection"></a>Handling delayed data<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ml/delayed-data-detection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Delayed data are documents that are indexed late. That is to say, it is data
+related to a time that the datafeed has already processed.</p><p>When you create a datafeed, you can specify a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/ml-datafeed-resource.html" target="_top"><code class="literal">query_delay</code></a> setting.
+This setting enables the datafeed to wait for some time past real-time, which means any "late" data in this period
+is fully indexed before the datafeed tries to gather it. However, if the setting is set too low, the datafeed may query
+for data before it has been indexed and consequently miss that document. Conversely, if it is set too high,
+analysis drifts farther away from real-time. The balance that is struck depends upon each use case and
+the environmental factors of the cluster.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_why_worry_about_delayed_data"></a>Why worry about delayed data?<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ml/delayed-data-detection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This is a particularly prescient question. If data are delayed randomly (and consequently missing from analysis),
+the results of certain types of functions are not really affected. It all comes out ok in the end
+as the delayed data is distributed randomly. An example would be a <code class="literal">mean</code> metric for a field in a large collection of data.
+In this case, checking for delayed data may not provide much benefit. If data are consistently delayed, however, jobs with a <code class="literal">low_count</code> function may
+provide false positives. In this situation, it would be useful to see if data
+comes in after an anomaly is recorded so that you can determine a next course of action.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_how_do_we_detect_delayed_data"></a>How do we detect delayed data?<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ml/delayed-data-detection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>In addition to the <code class="literal">query_delay</code> field, there is a
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/ml-datafeed-resource.html#ml-datafeed-delayed-data-check-config" target="_top">delayed data check config</a>, which enables you to
+configure the datafeed to look in the past for delayed data. Every 15 minutes or every <code class="literal">check_window</code>,
+whichever is smaller, the datafeed triggers a document search over the configured indices. This search looks over a
+time span with a length of <code class="literal">check_window</code> ending with the latest finalized bucket. That time span is partitioned into buckets,
+whose length equals the bucket span of the associated job. The <code class="literal">doc_count</code> of those buckets are then compared with the
+job’s finalized analysis buckets to see whether any data has arrived since the analysis. If there is indeed missing data
+due to their ingest delay, the end user is notified.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_what_to_do_about_delayed_data"></a>What to do about delayed data?<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ml/delayed-data-detection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The most common course of action is to simply to do nothing. For many functions and situations ignoring the data is
+acceptable. However, if the amount of delayed data is too great or the situation calls for it, the next course
+of action to consider is to increase the <code class="literal">query_delay</code> of the datafeed. This increased delay allows more time for data to be
+indexed. If you have real-time constraints, however, an increased delay might not be desirable.
+In which case, you would have to <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/tune-for-indexing-speed.html" target="_top">tune for better indexing speed.</a></p></div></div><div class="navfooter"><span class="prev"><a href="ml-configuring-transform.html">
               « 
-              Profile API</a>
+              Transforming data with script fields</a>
            
         </span><span class="next">
            
-          <a href="_profiling_aggregations.html">Profiling Aggregations
+          <a href="stopping-ml.html">Stopping machine learning
                »
             </a></span></div>
 <!-- end body -->

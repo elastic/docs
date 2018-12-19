@@ -127,7 +127,6 @@
   // --------------------- end of set language based on browser language -----------------
   </script>
 
-
 	
 	<link type="text/css" rel="stylesheet" href="/static/css/guide.css" />
 
@@ -707,8 +706,8 @@ Not what you want? See the
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="analysis-common-grams-tokenfilter"></a>Common Grams Token Filter<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/analysis/tokenfilters/common-grams-tokenfilter.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Token filter that generates bigrams for frequently occurring terms.
 Single terms are still indexed. It can be used as an alternative to the
 <a class="link" href="analysis-stop-tokenfilter.html" title="Stop Token Filter">Stop Token Filter</a> when we don’t want to completely ignore common terms.</p><p>For example, the text "the quick brown is a fox" will be tokenized as
-"the", "the_quick", "quick", "brown", "brown_is", "is_a", "a_fox",
-"fox". Assuming "the", "is" and "a" are common words.</p><p>When <code class="literal">query_mode</code> is enabled, the token filter removes common words and
+"the", "the_quick", "quick", "brown", "brown_is", "is", "is_a", "a",
+"a_fox", "fox". Assuming "the", "is" and "a" are common words.</p><p>When <code class="literal">query_mode</code> is enabled, the token filter removes common words and
 single terms followed by a common word. This parameter should be enabled
 in the search analyzer.</p><p>For example, the query "the quick brown is a fox" will be tokenized as
 "the_quick", "quick", "brown_is", "is_a", "a_fox", "fox".</p><p>The following are settings that can be set:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Setting </th><th align="left" valign="top">Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">common_words</code></p></td><td align="left" valign="top"><p>A list of common words to use.</p></td></tr><tr><td align="left" valign="top"><p><code class="literal">common_words_path</code></p></td><td align="left" valign="top"><p>A path (either relative to <code class="literal">config</code> location, or
@@ -719,7 +718,7 @@ terms followed by a common word (defaults to <code class="literal">false</code>)
 {
     "settings": {
         "analysis": {
-            "my_analyzer": {
+            "analyzer": {
                 "index_grams": {
                     "tokenizer": "whitespace",
                     "filter": ["common_grams"]
@@ -732,17 +731,98 @@ terms followed by a common word (defaults to <code class="literal">false</code>)
             "filter": {
                 "common_grams": {
                     "type": "common_grams",
-                    "common_words": ["a", "an", "the"]
+                    "common_words": ["the", "is", "a"]
                 },
                 "common_grams_query": {
                     "type": "common_grams",
                     "query_mode": true,
-                    "common_words": ["a", "an", "the"]
+                    "common_words": ["the", "is", "a"]
                 }
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/analysis-common-grams-tokenfilter/1.json"></div></div><div class="navfooter"><span class="prev"><a href="analysis-hunspell-tokenfilter.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-common-grams-tokenfilter/1.json"></div><p>You can see the output by using e.g. the <code class="literal">_analyze</code> endpoint:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /common_grams_example/_analyze
+{
+  "analyzer" : "index_grams",
+  "text" : "the quick brown is a fox"
+}</pre></div><div class="console_widget" data-snippet="snippets/analysis-common-grams-tokenfilter/2.json"></div><p>And the response will be:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "tokens" : [
+    {
+      "token" : "the",
+      "start_offset" : 0,
+      "end_offset" : 3,
+      "type" : "word",
+      "position" : 0
+    },
+    {
+      "token" : "the_quick",
+      "start_offset" : 0,
+      "end_offset" : 9,
+      "type" : "gram",
+      "position" : 0,
+      "positionLength" : 2
+    },
+    {
+      "token" : "quick",
+      "start_offset" : 4,
+      "end_offset" : 9,
+      "type" : "word",
+      "position" : 1
+    },
+    {
+      "token" : "brown",
+      "start_offset" : 10,
+      "end_offset" : 15,
+      "type" : "word",
+      "position" : 2
+    },
+    {
+      "token" : "brown_is",
+      "start_offset" : 10,
+      "end_offset" : 18,
+      "type" : "gram",
+      "position" : 2,
+      "positionLength" : 2
+    },
+    {
+      "token" : "is",
+      "start_offset" : 16,
+      "end_offset" : 18,
+      "type" : "word",
+      "position" : 3
+    },
+    {
+      "token" : "is_a",
+      "start_offset" : 16,
+      "end_offset" : 20,
+      "type" : "gram",
+      "position" : 3,
+      "positionLength" : 2
+    },
+    {
+      "token" : "a",
+      "start_offset" : 19,
+      "end_offset" : 20,
+      "type" : "word",
+      "position" : 4
+    },
+    {
+      "token" : "a_fox",
+      "start_offset" : 19,
+      "end_offset" : 24,
+      "type" : "gram",
+      "position" : 4,
+      "positionLength" : 2
+    },
+    {
+      "token" : "fox",
+      "start_offset" : 21,
+      "end_offset" : 24,
+      "type" : "word",
+      "position" : 5
+    }
+  ]
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="analysis-hunspell-tokenfilter.html">
               « 
               Hunspell Token Filter</a>
            

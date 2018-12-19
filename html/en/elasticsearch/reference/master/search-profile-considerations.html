@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Profiling Aggregations
-        | Elasticsearch Reference [6.x]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Profiling Considerations
+        | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="search-profile.html" title="Profile API" /><link rel="prev" href="_profiling_queries.html" title="Profiling Queries" /><link rel="next" href="_profiling_considerations.html" title="Profiling Considerations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-profile.html" title="Profile API" /><link rel="prev" href="search-profile-aggregations.html" title="Profiling Aggregations" /><link rel="next" href="search-field-caps.html" title="Field Capabilities API" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -126,7 +126,6 @@
         
   // --------------------- end of set language based on browser language -----------------
   </script>
-
 
 	
 	<link type="text/css" rel="stylesheet" href="/static/css/guide.css" />
@@ -695,169 +694,41 @@
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [6.x]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs</a></span> » <span class="breadcrumb-link"><a href="search-profile.html">Profile API</a></span> » <span class="breadcrumb-node">Profiling Aggregations</span></div><div class="navheader"><span class="prev"><a href="_profiling_queries.html">
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs</a></span> » <span class="breadcrumb-link"><a href="search-profile.html">Profile API</a></span> » <span class="breadcrumb-node">Profiling Considerations</span></div><div class="navheader"><span class="prev"><a href="search-profile-aggregations.html">
               « 
-              Profiling Queries</a>
+              Profiling Aggregations</a>
            
         </span><span class="next">
            
-          <a href="_profiling_considerations.html">Profiling Considerations
+          <a href="search-field-caps.html">Field Capabilities API
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_profiling_aggregations"></a>Profiling Aggregations<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_aggregations_literal_section"></a><code class="literal">aggregations</code> Section<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">aggregations</code> section contains detailed timing of the aggregation tree executed by a particular shard.
-The overall structure of this aggregation tree will resemble your original Elasticsearch request.  Let’s
-execute the previous query again and look at the aggregation profile this time:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /twitter/_search
-{
-  "profile": true,
-  "query": {
-    "term": {
-      "user": {
-        "value": "test"
-      }
-    }
-  },
-  "aggs": {
-    "my_scoped_agg": {
-      "terms": {
-        "field": "likes"
-      }
-    },
-    "my_global_agg": {
-      "global": {},
-      "aggs": {
-        "my_level_agg": {
-          "terms": {
-            "field": "likes"
-          }
-        }
-      }
-    }
-  },
-  "post_filter": {
-    "match": {
-      "message": "some"
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/_profiling_aggregations/1.json"></div><p>Which yields the following aggregation profile output</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "profile" : {
-    "shards" : [
-      {
-        "aggregations" : [
-          {
-            "type" : "LongTermsAggregator",
-            "description" : "my_scoped_agg",
-            "time_in_nanos" : 195386,
-            "breakdown" : {
-              "reduce" : 0,
-              "build_aggregation" : 81171,
-              "build_aggregation_count" : 1,
-              "initialize" : 22753,
-              "initialize_count" : 1,
-              "reduce_count" : 0,
-              "collect" : 91456,
-              "collect_count" : 4
-            }
-          },
-          {
-            "type" : "GlobalAggregator",
-            "description" : "my_global_agg",
-            "time_in_nanos" : 190430,
-            "breakdown" : {
-              "reduce" : 0,
-              "build_aggregation" : 59990,
-              "build_aggregation_count" : 1,
-              "initialize" : 29619,
-              "initialize_count" : 1,
-              "reduce_count" : 0,
-              "collect" : 100815,
-              "collect_count" : 4
-            },
-            "children" : [
-              {
-                "type" : "LongTermsAggregator",
-                "description" : "my_level_agg",
-                "time_in_nanos" : 160329,
-                "breakdown" : {
-                  "reduce" : 0,
-                  "build_aggregation" : 55712,
-                  "build_aggregation_count" : 1,
-                  "initialize" : 10559,
-                  "initialize_count" : 1,
-                  "reduce_count" : 0,
-                  "collect" : 94052,
-                  "collect_count" : 4
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-}</pre></div><p>From the profile structure we can see that the <code class="literal">my_scoped_agg</code> is internally being run as a <code class="literal">LongTermsAggregator</code> (because the field it is
-aggregating, <code class="literal">likes</code>, is a numeric field).  At the same level, we see a <code class="literal">GlobalAggregator</code> which comes from <code class="literal">my_global_agg</code>.  That
-aggregation then has a child <code class="literal">LongTermsAggregator</code> which from the second terms aggregation on <code class="literal">likes</code>.</p><p>The <code class="literal">time_in_nanos</code> field shows the time executed by each aggregation, and is inclusive of all children.  While the overall time is useful,
-the <code class="literal">breakdown</code> field will give detailed stats about how the time was spent.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_timing_breakdown_2"></a>Timing Breakdown<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">breakdown</code> component lists detailed timing statistics about low-level Lucene execution:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"breakdown": {
-  "reduce": 0,
-  "reduce_count": 0,
-  "build_aggregation": 49765,
-  "build_aggregation_count": 300,
-  "initialize": 52785,
-  "initialize_count": 300,
-  "reduce_count": 0,
-  "collect": 3155490036,
-  "collect_count": 1800
-}</pre></div><p>Timings are listed in wall-clock nanoseconds and are not normalized at all.  All caveats about the overall
-<code class="literal">time</code> apply here.  The intention of the breakdown is to give you a feel for A) what machinery in Elasticsearch is
-actually eating time, and B) the magnitude of differences in times between the various components.  Like the overall time,
-the breakdown is inclusive of all children times.</p><p>The meaning of the stats are as follows:</p><h4><a id="_all_parameters_4"></a>All parameters:<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">initialise</code>
-</p>
-</td><td valign="top">
-<p>
-    This times how long it takes to create and initialise the aggregation before starting to collect documents.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">collect</code>
-</p>
-</td><td valign="top">
-<p>
-    This represents the cumulative time spent in the collect phase of the aggregation. This is where matching documents are passed to the aggregation and the state of the aggregator is updated based on the information contained in the documents.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">build_aggregation</code>
-</p>
-</td><td valign="top">
-<p>
-    This represents the time spent creating the shard level results of the aggregation ready to pass back to the reducing node after the collection of documents is finished.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">reduce</code>
-</p>
-</td><td valign="top">
-<p>
-    This is not currently used and will always report <code class="literal">0</code>. Currently aggregation profiling only times the shard level parts of the aggregation execution. Timing of the reduce phase will be added later.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">*_count</code>
-</p>
-</td><td valign="top">
-<p>
-    Records the number of invocations of the particular method.  For example, <code class="literal">"collect_count": 2,</code>
-    means the <code class="literal">collect()</code> method was called on two different documents.
-</p>
-</td></tr></tbody></table></div></div></div></div><div class="navfooter"><span class="prev"><a href="_profiling_queries.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-profile-considerations"></a>Profiling Considerations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_performance_notes"></a>Performance Notes<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Like any profiler, the Profile API introduces a non-negligible overhead to search execution.  The act of instrumenting
+low-level method calls such as <code class="literal">collect</code>, <code class="literal">advance</code> and <code class="literal">next_doc</code> can be fairly expensive, since these methods are called
+in tight loops.  Therefore, profiling should not be enabled in production settings by default, and should not
+be compared against non-profiled query times.  Profiling is just a diagnostic tool.</p><p>There are also cases where special Lucene optimizations are disabled, since they are not amenable to profiling.  This
+could cause some queries to report larger relative times than their non-profiled counterparts, but in general should
+not have a drastic effect compared to other components in the profiled query.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="profile-limitations"></a>Limitations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Profiling currently does not measure the search fetch phase nor the network overhead
+</li><li class="listitem">
+Profiling also does not account for time spent in the queue, merging shard responses on the coordinating node or
+additional work like e.g. building global ordinals (an internal data structure used to speed up search)
+</li><li class="listitem">
+Profiling statistics are currently not available for suggestions, highlighting, <code class="literal">dfs_query_then_fetch</code>
+</li><li class="listitem">
+Profiling of the reduce phase of aggregation is currently not available
+</li><li class="listitem">
+The Profiler is still highly experimental. The Profiler is instrumenting parts of Lucene that were
+never designed to be exposed in this manner, and so all results should be viewed as a best effort to provide detailed
+diagnostics.  We hope to improve this over time. If you find obviously wrong numbers, strange query structures or
+other bugs, please report them!
+</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="search-profile-aggregations.html">
               « 
-              Profiling Queries</a>
+              Profiling Aggregations</a>
            
         </span><span class="next">
            
-          <a href="_profiling_considerations.html">Profiling Considerations
+          <a href="search-field-caps.html">Field Capabilities API
                »
             </a></span></div>
 <!-- end body -->

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Profiling Aggregations
-        | Elasticsearch Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Beats version 6.5.4
+        | Beats Platform Reference [6.5]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="search-profile.html" title="Profile API" /><link rel="prev" href="_profiling_queries.html" title="Profiling Queries" /><link rel="next" href="_profiling_considerations.html" title="Profiling Considerations" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Beats Platform Reference [6.5]" /><link rel="up" href="release-notes.html" title="Release notes" /><link rel="prev" href="release-notes.html" title="Release notes" /><link rel="next" href="release-notes-6.5.3.html" title="Beats version 6.5.3" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Libbeat/Reference/6.5" /><meta name="DC.subject" content="libbeat" /><meta name="DC.identifier" content="6.5" />
     
 
     
@@ -126,7 +126,6 @@
         
   // --------------------- end of set language based on browser language -----------------
   </script>
-
 
 	
 	<link type="text/css" rel="stylesheet" href="/static/css/guide.css" />
@@ -691,173 +690,31 @@
 				
             <div class="col-xs-12 col-sm-8 col-md-8 guide-section">
             <!-- start body -->
-<div class="page_header">You are looking at preliminary documentation for a future release.
-Not what you want? See the
-<a href="../current/index.html">current release documentation</a>.
-</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [master]
-    </a></span> » <span class="breadcrumb-link"><a href="search.html">Search APIs</a></span> » <span class="breadcrumb-link"><a href="search-profile.html">Profile API</a></span> » <span class="breadcrumb-node">Profiling Aggregations</span></div><div class="navheader"><span class="prev"><a href="_profiling_queries.html">
+<div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Beats Platform Reference
+      [6.5]
+    </a></span> » <span class="breadcrumb-link"><a href="release-notes.html">Release notes</a></span> » <span class="breadcrumb-node">Beats version 6.5.4</span></div><div class="navheader"><span class="prev"><a href="release-notes.html">
               « 
-              Profiling Queries</a>
+              Release notes</a>
            
         </span><span class="next">
            
-          <a href="_profiling_considerations.html">Profiling Considerations
+          <a href="release-notes-6.5.3.html">Beats version 6.5.3
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_profiling_aggregations"></a>Profiling Aggregations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_literal_aggregations_literal_section"></a><code class="literal">aggregations</code> Section<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The <code class="literal">aggregations</code> section contains detailed timing of the aggregation tree executed by a particular shard.
-The overall structure of this aggregation tree will resemble your original Elasticsearch request.  Let’s
-execute the previous query again and look at the aggregation profile this time:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET /twitter/_search
-{
-  "profile": true,
-  "query": {
-    "term": {
-      "user": {
-        "value": "test"
-      }
-    }
-  },
-  "aggs": {
-    "my_scoped_agg": {
-      "terms": {
-        "field": "likes"
-      }
-    },
-    "my_global_agg": {
-      "global": {},
-      "aggs": {
-        "my_level_agg": {
-          "terms": {
-            "field": "likes"
-          }
-        }
-      }
-    }
-  },
-  "post_filter": {
-    "match": {
-      "message": "some"
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/_profiling_aggregations/1.json"></div><p>Which yields the following aggregation profile output</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-  "profile" : {
-    "shards" : [
-      {
-        "aggregations" : [
-          {
-            "type" : "LongTermsAggregator",
-            "description" : "my_scoped_agg",
-            "time_in_nanos" : 195386,
-            "breakdown" : {
-              "reduce" : 0,
-              "build_aggregation" : 81171,
-              "build_aggregation_count" : 1,
-              "initialize" : 22753,
-              "initialize_count" : 1,
-              "reduce_count" : 0,
-              "collect" : 91456,
-              "collect_count" : 4
-            }
-          },
-          {
-            "type" : "GlobalAggregator",
-            "description" : "my_global_agg",
-            "time_in_nanos" : 190430,
-            "breakdown" : {
-              "reduce" : 0,
-              "build_aggregation" : 59990,
-              "build_aggregation_count" : 1,
-              "initialize" : 29619,
-              "initialize_count" : 1,
-              "reduce_count" : 0,
-              "collect" : 100815,
-              "collect_count" : 4
-            },
-            "children" : [
-              {
-                "type" : "LongTermsAggregator",
-                "description" : "my_level_agg",
-                "time_in_nanos" : 160329,
-                "breakdown" : {
-                  "reduce" : 0,
-                  "build_aggregation" : 55712,
-                  "build_aggregation_count" : 1,
-                  "initialize" : 10559,
-                  "initialize_count" : 1,
-                  "reduce_count" : 0,
-                  "collect" : 94052,
-                  "collect_count" : 4
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-}</pre></div><p>From the profile structure we can see that the <code class="literal">my_scoped_agg</code> is internally being run as a <code class="literal">LongTermsAggregator</code> (because the field it is
-aggregating, <code class="literal">likes</code>, is a numeric field).  At the same level, we see a <code class="literal">GlobalAggregator</code> which comes from <code class="literal">my_global_agg</code>.  That
-aggregation then has a child <code class="literal">LongTermsAggregator</code> which from the second terms aggregation on <code class="literal">likes</code>.</p><p>The <code class="literal">time_in_nanos</code> field shows the time executed by each aggregation, and is inclusive of all children.  While the overall time is useful,
-the <code class="literal">breakdown</code> field will give detailed stats about how the time was spent.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_timing_breakdown_2"></a>Timing Breakdown<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>The <code class="literal">breakdown</code> component lists detailed timing statistics about low-level Lucene execution:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"breakdown": {
-  "reduce": 0,
-  "reduce_count": 0,
-  "build_aggregation": 49765,
-  "build_aggregation_count": 300,
-  "initialize": 52785,
-  "initialize_count": 300,
-  "reduce_count": 0,
-  "collect": 3155490036,
-  "collect_count": 1800
-}</pre></div><p>Timings are listed in wall-clock nanoseconds and are not normalized at all.  All caveats about the overall
-<code class="literal">time</code> apply here.  The intention of the breakdown is to give you a feel for A) what machinery in Elasticsearch is
-actually eating time, and B) the magnitude of differences in times between the various components.  Like the overall time,
-the breakdown is inclusive of all children times.</p><p>The meaning of the stats are as follows:</p><h4><a id="_all_parameters_4"></a>All parameters:<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/profile.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">initialise</code>
-</p>
-</td><td valign="top">
-<p>
-    This times how long it takes to create and initialise the aggregation before starting to collect documents.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">collect</code>
-</p>
-</td><td valign="top">
-<p>
-    This represents the cumulative time spent in the collect phase of the aggregation. This is where matching documents are passed to the aggregation and the state of the aggregator is updated based on the information contained in the documents.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">build_aggregation</code>
-</p>
-</td><td valign="top">
-<p>
-    This represents the time spent creating the shard level results of the aggregation ready to pass back to the reducing node after the collection of documents is finished.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">reduce</code>
-</p>
-</td><td valign="top">
-<p>
-    This is not currently used and will always report <code class="literal">0</code>. Currently aggregation profiling only times the shard level parts of the aggregation execution. Timing of the reduce phase will be added later.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">*_count</code>
-</p>
-</td><td valign="top">
-<p>
-    Records the number of invocations of the particular method.  For example, <code class="literal">"collect_count": 2,</code>
-    means the <code class="literal">collect()</code> method was called on two different documents.
-</p>
-</td></tr></tbody></table></div></div></div></div><div class="navfooter"><span class="prev"><a href="_profiling_queries.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="release-notes-6.5.4"></a>Beats version 6.5.4<a href="https://github.com/elastic/beats/edit/6.5/CHANGELOG.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p><a class="ulink" href="https://github.com/elastic/beats/compare/v6.5.3…v6.5.4" target="_top">View commits</a></p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_bugfixes"></a>Bugfixes<a href="https://github.com/elastic/beats/edit/6.5/CHANGELOG.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><span class="strong strong"><strong>Affecting all Beats</strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Update Golang to 1.10.6. This fixes an issue in remote certificate validation CVE-2018-16875. <a class="ulink" href="https://github.com/elastic/beats/pull/9563" target="_top">9563</a>
+</li></ul></div><p><span class="strong strong"><strong>Filebeat</strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Fix saved objects in filebeat haproxy dashboard. <a class="ulink" href="https://github.com/elastic/beats/pull/9417" target="_top">9417</a>
+</li><li class="listitem">
+Fixed a memory leak when harvesters are closed. <a class="ulink" href="https://github.com/elastic/beats/pull/7820" target="_top">7820</a>
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_added"></a>Added<a href="https://github.com/elastic/beats/edit/6.5/CHANGELOG.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><span class="strong strong"><strong>Filebeat</strong></span></p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Added support on Traefik for Common Log Format and Combined Log Format mixed which is the default Traefik format <a class="ulink" href="https://github.com/elastic/beats/issues/8015" target="_top">8015</a> <a class="ulink" href="https://github.com/elastic/beats/issues/6111" target="_top">6111</a> <a class="ulink" href="https://github.com/elastic/beats/pull/8768" target="_top">8768</a>.
+</li></ul></div></div></div><div class="navfooter"><span class="prev"><a href="release-notes.html">
               « 
-              Profiling Queries</a>
+              Release notes</a>
            
         </span><span class="next">
            
-          <a href="_profiling_considerations.html">Profiling Considerations
+          <a href="release-notes-6.5.3.html">Beats version 6.5.3
                »
             </a></span></div>
 <!-- end body -->
