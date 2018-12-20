@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Google Compute Engine Discovery
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Bootstrapping a cluster
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-discovery.html" title="Discovery" /><link rel="prev" href="modules-discovery-ec2.html" title="EC2 Discovery" /><link rel="next" href="modules-discovery-zen.html" title="Zen Discovery" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-discovery.html" title="Discovery and cluster formation" /><link rel="prev" href="modules-discovery-hosts-providers.html" title="Discovery" /><link rel="next" href="modules-discovery-adding-removing-nodes.html" title="Adding and removing nodes" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -695,22 +695,82 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery</a></span> » <span class="breadcrumb-node">Google Compute Engine Discovery</span></div><div class="navheader"><span class="prev"><a href="modules-discovery-ec2.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery and cluster formation</a></span> » <span class="breadcrumb-node">Bootstrapping a cluster</span></div><div class="navheader"><span class="prev"><a href="modules-discovery-hosts-providers.html">
               « 
-              EC2 Discovery</a>
+              Discovery</a>
            
         </span><span class="next">
            
-          <a href="modules-discovery-zen.html">Zen Discovery
+          <a href="modules-discovery-adding-removing-nodes.html">Adding and removing nodes
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-discovery-gce"></a>Google Compute Engine Discovery<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/gce.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Google Compute Engine (GCE) discovery allows to use the GCE APIs to perform automatic discovery (similar to multicast).
-It is available as a plugin. See <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/discovery-gce.html" target="_top">discovery-gce</a> for more information.</p></div><div class="navfooter"><span class="prev"><a href="modules-discovery-ec2.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-discovery-bootstrap-cluster"></a>Bootstrapping a cluster<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/bootstrapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Starting an Elasticsearch cluster for the very first time requires the initial
+set of <a class="link" href="modules-node.html#master-node" title="Master Eligible Nodeedit">master-eligible nodes</a> to be explicitly defined on one or
+more of the master-eligible nodes in the cluster. This is known as <span class="emphasis"><em>cluster
+bootstrapping</em></span>.  This is only required the very first time the cluster starts
+up: nodes that have already joined a cluster store this information in their
+data folder and freshly-started nodes that are joining an existing cluster
+obtain this information from the cluster’s elected master. This information is
+given using this setting:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">cluster.initial_master_nodes</code>
+</span></dt><dd>
+    Sets a list of the <a class="link" href="node.name.html" title="node.name">node names</a> or transport addresses of the
+    initial set of master-eligible nodes in a brand-new cluster. By default
+    this list is empty, meaning that this node expects to join a cluster that
+    has already been bootstrapped.
+</dd></dl></div><p>This setting can be given on the command line or in the <code class="literal">elasticsearch.yml</code>
+configuration file when starting up a master-eligible node. Once the cluster
+has formed this setting is no longer required and is ignored. It need not be set
+on master-ineligible nodes, nor on master-eligible nodes that are started to
+join an existing cluster. Note that master-eligible nodes should use storage
+that persists across restarts. If they do not, and
+<code class="literal">cluster.initial_master_nodes</code> is set, and a full cluster restart occurs, then
+another brand-new cluster will form and this may result in data loss.</p><p>It is technically sufficient to set <code class="literal">cluster.initial_master_nodes</code> on a single
+master-eligible node in the cluster, and only to mention that single node in the
+setting’s value, but this provides no fault tolerance before the cluster has
+fully formed. It is therefore better to bootstrap using at least three
+master-eligible nodes, each with a <code class="literal">cluster.initial_master_nodes</code> setting
+containing all three nodes.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>In alpha releases, all listed master-eligible nodes are required to be
+discovered before bootstrapping can take place. This requirement will be relaxed
+in production-ready releases.</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>You must set <code class="literal">cluster.initial_master_nodes</code> to the same list of nodes
+on each node on which it is set in order to be sure that only a single cluster
+forms during bootstrapping and therefore to avoid the risk of data loss.</p></div></div><p>For a cluster with 3 master-eligible nodes (with <a class="link" href="node.name.html" title="node.name">node names</a>
+<code class="literal">master-a</code>, <code class="literal">master-b</code> and <code class="literal">master-c</code>) the configuration will look as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cluster.initial_master_nodes:
+  - master-a
+  - master-b
+  - master-c</pre></div><p>Alternatively the IP addresses or hostnames (<a class="link" href="node.name.html" title="node.name">if node name defaults to the host name</a>) can be used. If there is more than one Elasticsearch node
+with the same IP address or hostname then the transport ports must also be given
+to specify exactly which node is meant:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">cluster.initial_master_nodes:
+  - 10.0.10.101
+  - 10.0.10.102:9300
+  - 10.0.10.102:9301
+  - master-node-hostname</pre></div><p>Like all node settings, it is also possible to specify the initial set of master
+nodes on the command-line that is used to start Elasticsearch:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-bash">$ bin/elasticsearch -Ecluster.initial_master_nodes=master-a,master-b,master-c</pre></div><h4><a id="_choosing_a_cluster_name"></a>Choosing a cluster name<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/bootstrapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <a class="link" href="cluster.name.html" title="cluster.name"><code class="literal">cluster.name</code></a> setting enables you to create multiple
+clusters which are separated from each other. Nodes verify that they agree on
+their cluster name when they first connect to each other, and Elasticsearch
+will only form a cluster from nodes that all have the same cluster name. The
+default value for the cluster name is <code class="literal">elasticsearch</code>, but it is recommended to
+change this to reflect the logical name of the cluster.</p><h4><a id="_auto_bootstrapping_in_development_mode"></a>Auto-bootstrapping in development mode<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/bootstrapping.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>If the cluster is running with a completely default configuration then it will
+automatically bootstrap a cluster based on the nodes that could be discovered to
+be running on the same host within a short time after startup. This means that
+by default it is possible to start up several nodes on a single machine and have
+them automatically form a cluster which is very useful for development
+environments and experimentation.  However, since nodes may not always
+successfully discover each other quickly enough this automatic bootstrapping
+cannot be relied upon and cannot be used in production deployments.</p><p>If any of the following settings are configured then auto-bootstrapping will not
+take place, and you must configure <code class="literal">cluster.initial_master_nodes</code> as described
+in the <a class="link" href="modules-discovery-bootstrap-cluster.html" title="Bootstrapping a cluster">section on cluster bootstrapping</a>:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">discovery.zen.hosts_provider</code>
+</li><li class="listitem">
+<code class="literal">discovery.zen.ping.unicast.hosts</code>
+</li><li class="listitem">
+<code class="literal">cluster.initial_master_nodes</code>
+</li></ul></div></div><div class="navfooter"><span class="prev"><a href="modules-discovery-hosts-providers.html">
               « 
-              EC2 Discovery</a>
+              Discovery</a>
            
         </span><span class="next">
            
-          <a href="modules-discovery-zen.html">Zen Discovery
+          <a href="modules-discovery-adding-removing-nodes.html">Adding and removing nodes
                »
             </a></span></div>
 <!-- end body -->

@@ -727,15 +727,17 @@ sudo sysctl -w vm.max_map_count=262144</pre></div></li></ul></div></div></div><p
 To bring up the cluster, use the
 <a class="link" href="docker.html#docker-prod-cluster-composefile"><code class="literal">docker-compose.yml</code></a> and just type:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">docker-compose up</pre></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p><code class="literal">docker-compose</code> is not pre-installed with Docker on Linux.
 Instructions for installing it can be found on the
-<a class="ulink" href="https://docs.docker.com/compose/install/#install-using-pip" target="_top">Docker Compose webpage</a>.</p></div></div><p>The node <code class="literal">elasticsearch</code> listens on <code class="literal">localhost:9200</code> while <code class="literal">elasticsearch2</code>
-talks to <code class="literal">elasticsearch</code> over a Docker network.</p><p>This example also uses
+<a class="ulink" href="https://docs.docker.com/compose/install/#install-using-pip" target="_top">Docker Compose webpage</a>.</p></div></div><p>The node <code class="literal">es01</code> listens on <code class="literal">localhost:9200</code> while <code class="literal">es02</code>
+talks to <code class="literal">es01</code> over a Docker network.</p><p>This example also uses
 <a class="ulink" href="https://docs.docker.com/engine/tutorials/dockervolumes" target="_top">Docker named volumes</a>,
-called <code class="literal">esdata1</code> and <code class="literal">esdata2</code> which will be created if not already present.</p><p><a id="docker-prod-cluster-composefile"></a><code class="literal">docker-compose.yml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">version: '2.2'
+called <code class="literal">esdata01</code> and <code class="literal">esdata02</code> which will be created if not already present.</p><p><a id="docker-prod-cluster-composefile"></a><code class="literal">docker-compose.yml</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">version: '2.2'
 services:
-  elasticsearch:
+  es01:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.0.0-alpha1
-    container_name: elasticsearch
+    container_name: es01
     environment:
+      - node.name=es01
+      - cluster.initial_master_nodes=es01,es02
       - cluster.name=docker-cluster
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -744,32 +746,34 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - esdata1:/usr/share/elasticsearch/data
+      - esdata01:/usr/share/elasticsearch/data
     ports:
       - 9200:9200
     networks:
       - esnet
-  elasticsearch2:
+  es02:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.0.0-alpha1
-    container_name: elasticsearch2
+    container_name: es02
     environment:
+      - node.name=es02
+      - discovery.zen.ping.unicast.hosts=es01
+      - cluster.initial_master_nodes=es01,es02
       - cluster.name=docker-cluster
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - "discovery.zen.ping.unicast.hosts=elasticsearch"
     ulimits:
       memlock:
         soft: -1
         hard: -1
     volumes:
-      - esdata2:/usr/share/elasticsearch/data
+      - esdata02:/usr/share/elasticsearch/data
     networks:
       - esnet
 
 volumes:
-  esdata1:
+  esdata01:
     driver: local
-  esdata2:
+  esdata02:
     driver: local
 
 networks:

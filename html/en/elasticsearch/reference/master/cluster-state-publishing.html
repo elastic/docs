@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>network.host
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Publishing the cluster state
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="important-settings.html" title="Important Elasticsearch configuration" /><link rel="prev" href="node.name.html" title="node.name" /><link rel="next" href="discovery-settings.html" title="Discovery and cluster formation settings" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-discovery.html" title="Discovery and cluster formation" /><link rel="prev" href="modules-discovery-adding-removing-nodes.html" title="Adding and removing nodes" /><link rel="next" href="no-master-block.html" title="No master block settings" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -695,33 +695,53 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="setup.html">Set up Elasticsearch</a></span> » <span class="breadcrumb-link"><a href="important-settings.html">Important Elasticsearch configuration</a></span> » <span class="breadcrumb-node"><code class="literal">network.host</code></span></div><div class="navheader"><span class="prev"><a href="node.name.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery and cluster formation</a></span> » <span class="breadcrumb-node">Publishing the cluster state</span></div><div class="navheader"><span class="prev"><a href="modules-discovery-adding-removing-nodes.html">
               « 
-              <code class="literal">node.name</code></a>
+              Adding and removing nodes</a>
            
         </span><span class="next">
            
-          <a href="discovery-settings.html">Discovery and cluster formation settings
+          <a href="no-master-block.html">No master block settings
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="network.host"></a><code class="literal">network.host</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/important-settings/network-host.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>By default, Elasticsearch binds to loopback addresses only — e.g. <code class="literal">127.0.0.1</code>
-and <code class="literal">[::1]</code>. This is sufficient to run a single development node on a server.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>In fact, more than one node can be started from the same <code class="literal">$ES_HOME</code>
-location on a single node.  This can be useful for testing Elasticsearch’s
-ability to form clusters, but it is not a configuration recommended for
-production.</p></div></div><p>In order to form a cluster with nodes on other servers, your
-node will need to bind to a non-loopback address. While there are many
-<a class="link" href="modules-network.html" title="Network Settings">network settings</a>, usually all you need to configure is
-<code class="literal">network.host</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">network.host: 192.168.1.10</pre></div><p>The <code class="literal">network.host</code> setting also understands some special values such as
-<code class="literal">_local_</code>, <code class="literal">_site_</code>, <code class="literal">_global_</code> and modifiers like <code class="literal">:ip4</code> and <code class="literal">:ip6</code>, details of
-which can be found in <a class="xref" href="modules-network.html#network-interface-values" title="Special values for network.hostedit">Special values for <code class="literal">network.host</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/network.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>.</p><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>As soon you provide a custom setting for <code class="literal">network.host</code>,
-Elasticsearch assumes that you are moving from development mode to production
-mode, and upgrades a number of system startup checks from warnings to
-exceptions. See <a class="xref" href="system-config.html#dev-vs-prod" title="Development mode vs production modeedit">Development mode vs production mode<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/sysconfig.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a> for more information.</p></div></div></div><div class="navfooter"><span class="prev"><a href="node.name.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="cluster-state-publishing"></a>Publishing the cluster state<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/publishing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The master node is the only node in a cluster that can make changes to the
+cluster state. The master node processes one batch of cluster state updates at
+a time, computing the required changes and publishing the updated cluster state
+to all the other nodes in the cluster. Each publication starts with the master
+broadcasting the updated cluster state to all nodes in the cluster.  Each node
+responds with an acknowledgement but does not yet apply the newly-received
+state. Once the master has collected acknowledgements from enough
+master-eligible nodes, the new cluster state is said to be <span class="emphasis"><em>committed</em></span> and the
+master broadcasts another message instructing nodes to apply the now-committed
+state. Each node receives this message, applies the updated state, and then
+sends a second acknowledgement back to the master.</p><p>The master allows a limited amount of time for each cluster state update to be
+completely published to all nodes. It is defined by the
+<code class="literal">cluster.publish.timeout</code> setting, which defaults to <code class="literal">30s</code>, measured from the
+time the publication started. If this time is reached before the new cluster
+state is committed then the cluster state change is rejected and the master
+considers itself to have failed. It stands down and starts trying to elect a
+new master.</p><p>If the new cluster state is committed before <code class="literal">cluster.publish.timeout</code> has
+elapsed, the master node considers the change to have succeeded. It waits until
+the timeout has elapsed or until it has received acknowledgements that each
+node in the cluster has applied the updated state, and then starts processing
+and publishing the next cluster state update. If some acknowledgements have not
+been received (i.e. some nodes have not yet confirmed that they have applied
+the current update), these nodes are said to be <span class="emphasis"><em>lagging</em></span> since their cluster
+states have fallen behind the master’s latest state. The master waits for the
+lagging nodes to catch up for a further time, <code class="literal">cluster.follower_lag.timeout</code>,
+which defaults to <code class="literal">90s</code>. If a node has still not successfully applied the
+cluster state update within this time then it is considered to have failed and
+is removed from the cluster.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Elasticsearch is a peer to peer based system, in which nodes communicate
+with one another directly. The high-throughput APIs (index, delete, search) do
+not normally interact with the master node. The responsibility of the master
+node is to maintain the global cluster state and reassign shards when nodes join or leave
+the cluster. Each time the cluster state is changed, the
+new state is published to all nodes in the cluster as described above.</p></div></div></div><div class="navfooter"><span class="prev"><a href="modules-discovery-adding-removing-nodes.html">
               « 
-              <code class="literal">node.name</code></a>
+              Adding and removing nodes</a>
            
         </span><span class="next">
            
-          <a href="discovery-settings.html">Discovery and cluster formation settings
+          <a href="no-master-block.html">No master block settings
                »
             </a></span></div>
 <!-- end body -->

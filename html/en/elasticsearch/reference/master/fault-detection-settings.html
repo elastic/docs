@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Azure Classic Discovery
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Cluster fault detection settings
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-discovery.html" title="Discovery" /><link rel="prev" href="modules-discovery.html" title="Discovery" /><link rel="next" href="modules-discovery-ec2.html" title="EC2 Discovery" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-discovery.html" title="Discovery and cluster formation" /><link rel="prev" href="master-election-settings.html" title="Master election settings" /><link rel="next" href="modules-discovery-quorums.html" title="Quorum-based decision making" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -695,22 +695,64 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery</a></span> » <span class="breadcrumb-node">Azure Classic Discovery</span></div><div class="navheader"><span class="prev"><a href="modules-discovery.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery and cluster formation</a></span> » <span class="breadcrumb-node">Cluster fault detection settings</span></div><div class="navheader"><span class="prev"><a href="master-election-settings.html">
               « 
-              Discovery</a>
+              Master election settings</a>
            
         </span><span class="next">
            
-          <a href="modules-discovery-ec2.html">EC2 Discovery
+          <a href="modules-discovery-quorums.html">Quorum-based decision making
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-discovery-azure-classic"></a>Azure Classic Discovery<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/azure.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Azure classic discovery allows to use the Azure Classic APIs to perform automatic discovery (similar to multicast).
-It is available as a plugin. See <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/discovery-azure-classic.html" target="_top">discovery-azure-classic</a> for more information.</p></div><div class="navfooter"><span class="prev"><a href="modules-discovery.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="fault-detection-settings"></a>Cluster fault detection settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/fault-detection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>An elected master periodically checks each of the nodes in the cluster in order
+to ensure that they are still connected and healthy, and in turn each node in
+the cluster periodically checks the health of the elected master. These checks
+are known respectively as <span class="emphasis"><em>follower checks</em></span> and <span class="emphasis"><em>leader checks</em></span>.</p><p>Elasticsearch allows for these checks occasionally to fail or timeout without
+taking any action, and will only consider a node to be truly faulty after a
+number of consecutive checks have failed. The following settings control the
+behaviour of fault detection.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">cluster.fault_detection.follower_check.interval</code>
+</span></dt><dd>
+    Sets how long the elected master waits between follower checks to each
+    other node in the cluster. Defaults to <code class="literal">1s</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.fault_detection.follower_check.timeout</code>
+</span></dt><dd>
+    Sets how long the elected master waits for a response to a follower check
+    before considering it to have failed. Defaults to <code class="literal">30s</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.fault_detection.follower_check.retry_count</code>
+</span></dt><dd>
+    Sets how many consecutive follower check failures must occur to each node
+    before the elected master considers that node to be faulty and removes it
+    from the cluster. Defaults to <code class="literal">3</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.fault_detection.leader_check.interval</code>
+</span></dt><dd>
+    Sets how long each node waits between checks of the elected master.
+    Defaults to <code class="literal">1s</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.fault_detection.leader_check.timeout</code>
+</span></dt><dd>
+    Sets how long each node waits for a response to a leader check from the
+    elected master before considering it to have failed. Defaults to <code class="literal">30s</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.fault_detection.leader_check.retry_count</code>
+</span></dt><dd>
+    Sets how many consecutive leader check failures must occur before a node
+    considers the elected master to be faulty and attempts to find or elect a
+    new master. Defaults to <code class="literal">3</code>.
+</dd></dl></div><p>If the elected master detects that a node has disconnected then this is treated
+as an immediate failure, bypassing the timeouts and retries listed above, and
+the master attempts to remove the node from the cluster. Similarly, if a node
+detects that the elected master has disconnected then this is treated as an
+immediate failure, bypassing the timeouts and retries listed above, and the
+follower restarts its discovery phase to try and find or elect a new master.</p></div><div class="navfooter"><span class="prev"><a href="master-election-settings.html">
               « 
-              Discovery</a>
+              Master election settings</a>
            
         </span><span class="next">
            
-          <a href="modules-discovery-ec2.html">EC2 Discovery
+          <a href="modules-discovery-quorums.html">Quorum-based decision making
                »
             </a></span></div>
 <!-- end body -->

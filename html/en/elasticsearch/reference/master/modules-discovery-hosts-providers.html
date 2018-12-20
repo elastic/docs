@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>EC2 Discovery
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Discovery
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-discovery.html" title="Discovery" /><link rel="prev" href="modules-discovery-azure-classic.html" title="Azure Classic Discovery" /><link rel="next" href="modules-discovery-gce.html" title="Google Compute Engine Discovery" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-discovery.html" title="Discovery and cluster formation" /><link rel="prev" href="modules-discovery.html" title="Discovery and cluster formation" /><link rel="next" href="modules-discovery-bootstrap-cluster.html" title="Bootstrapping a cluster" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -695,21 +695,125 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery</a></span> » <span class="breadcrumb-node">EC2 Discovery</span></div><div class="navheader"><span class="prev"><a href="modules-discovery-azure-classic.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery and cluster formation</a></span> » <span class="breadcrumb-node">Discovery</span></div><div class="navheader"><span class="prev"><a href="modules-discovery.html">
               « 
-              Azure Classic Discovery</a>
+              Discovery and cluster formation</a>
            
         </span><span class="next">
            
-          <a href="modules-discovery-gce.html">Google Compute Engine Discovery
+          <a href="modules-discovery-bootstrap-cluster.html">Bootstrapping a cluster
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-discovery-ec2"></a>EC2 Discovery<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/ec2.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>EC2 discovery is available as a plugin. See <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/discovery-ec2.html" target="_top">discovery-ec2</a> for more information.</p></div><div class="navfooter"><span class="prev"><a href="modules-discovery-azure-classic.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-discovery-hosts-providers"></a>Discovery<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Discovery is the process by which the cluster formation module finds other
+nodes with which to form a cluster. This process runs when you start an
+Elasticsearch node or when a node believes the master node failed and continues
+until the master node is found or a new master node is elected.</p><p>Discovery operates in two phases: First, each node probes the addresses of all
+known master-eligible nodes by connecting to each address and attempting to
+identify the node to which it is connected. Secondly it shares with the remote
+node a list of all of its known master-eligible peers and the remote node
+responds with <span class="emphasis"><em>its</em></span> peers in turn. The node then probes all the new nodes that
+it just discovered, requests their peers, and so on.</p><p>This process starts with a list of <span class="emphasis"><em>seed</em></span> addresses from one or more
+<a class="link" href="modules-discovery-hosts-providers.html#built-in-hosts-providers" title="Hosts providers">hosts providers</a>, together with the addresses of
+any master-eligible nodes that were in the last known cluster. The process
+operates in two phases: First, each node probes the seed addresses by
+connecting to each address and attempting to identify the node to which it is
+connected. Secondly it shares with the remote node a list of all of its known
+master-eligible peers and the remote node responds with <span class="emphasis"><em>its</em></span> peers in turn.
+The node then probes all the new nodes that it just discovered, requests their
+peers, and so on.</p><p>If the node is not master-eligible then it continues this discovery process
+until it has discovered an elected master node. If no elected master is
+discovered then the node will retry after <code class="literal">discovery.find_peers_interval</code> which
+defaults to <code class="literal">1s</code>.</p><p>If the node is master-eligible then it continues this discovery process until it
+has either discovered an elected master node or else it has discovered enough
+masterless master-eligible nodes to complete an election. If neither of these
+occur quickly enough then the node will retry after
+<code class="literal">discovery.find_peers_interval</code> which defaults to <code class="literal">1s</code>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="built-in-hosts-providers"></a>Hosts providers<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>By default the cluster formation module offers two hosts providers to configure
+the list of seed nodes: a <span class="emphasis"><em>settings</em></span>-based and a <span class="emphasis"><em>file</em></span>-based hosts provider.
+It can be extended to support cloud environments and other forms of hosts
+providers via <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/discovery.html" target="_top">discovery plugins</a>. Hosts providers are
+configured using the <code class="literal">discovery.zen.hosts_provider</code> setting, which defaults to
+the <span class="emphasis"><em>settings</em></span>-based hosts provider. Multiple hosts providers can be specified
+as a list.</p><h5><a id="settings-based-hosts-provider"></a>Settings-based hosts provider<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The settings-based hosts provider uses a node setting to configure a static list
+of hosts to use as seed nodes. These hosts can be specified as hostnames or IP
+addresses; hosts specified as hostnames are resolved to IP addresses during each
+round of discovery. Note that if you are in an environment where DNS resolutions
+vary with time, you might need to adjust your <a class="link" href="networkaddress-cache-ttl.html" title="DNS cache settings">JVM security settings</a>.</p><p>The list of hosts is set using the <a class="link" href="discovery-settings.html#unicast.hosts" title="discovery.zen.ping.unicast.hostsedit"><code class="literal">discovery.zen.ping.unicast.hosts</code></a> static
+setting.  For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">discovery.zen.ping.unicast.hosts:
+   - 192.168.1.10:9300
+   - 192.168.1.11 <a id="CO368-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+   - seeds.mydomain.com <a id="CO368-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO368-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The port will default to <code class="literal">transport.profiles.default.port</code> and fallback to
+    <code class="literal">transport.port</code> if not specified.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO368-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+A hostname that resolves to multiple IP addresses will try all resolved
+    addresses.
+</p></td></tr></table></div><p>Additionally, the <code class="literal">discovery.zen.ping.unicast.hosts.resolve_timeout</code> configures
+the amount of time to wait for DNS lookups on each round of discovery. This is
+specified as a <a class="link" href="common-options.html#time-units" title="Time unitsedit">time unit</a> and defaults to 5s.</p><p>Unicast discovery uses the <a class="link" href="modules-transport.html" title="Transport">transport</a> module to perform the
+discovery.</p><h5><a id="file-based-hosts-provider"></a>File-based hosts provider<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The file-based hosts provider configures a list of hosts via an external file.
+Elasticsearch reloads this file when it changes, so that the list of seed nodes
+can change dynamically without needing to restart each node. For example, this
+gives a convenient mechanism for an Elasticsearch instance that is run in a
+Docker container to be dynamically supplied with a list of IP addresses to
+connect to when those IP addresses may not be known at node startup.</p><p>To enable file-based discovery, configure the <code class="literal">file</code> hosts provider as follows:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">discovery.zen.hosts_provider: file</pre></div><p>Then create a file at <code class="literal">$ES_PATH_CONF/unicast_hosts.txt</code> in the format described
+below. Any time a change is made to the <code class="literal">unicast_hosts.txt</code> file the new changes
+will be picked up by Elasticsearch and the new hosts list will be used.</p><p>Note that the file-based discovery plugin augments the unicast hosts list in
+<code class="literal">elasticsearch.yml</code>. If there are valid unicast host entries in
+<code class="literal">discovery.zen.ping.unicast.hosts</code>, they are used in addition to those
+supplied in <code class="literal">unicast_hosts.txt</code>.</p><p>The <code class="literal">discovery.zen.ping.unicast.hosts.resolve_timeout</code> setting also applies to
+DNS lookups for nodes specified by address via file-based discovery. This is
+specified as a <a class="link" href="common-options.html#time-units" title="Time unitsedit">time unit</a> and defaults to 5s.</p><p>The format of the file is to specify one node entry per line.  Each node entry
+consists of the host (host name or IP address) and an optional transport port
+number.  If the port number is specified, is must come immediately after the
+host (on the same line) separated by a <code class="literal">:</code>.  If the port number is not
+specified, a default value of 9300 is used.</p><p>For example, this is an example of <code class="literal">unicast_hosts.txt</code> for a cluster with four
+nodes that participate in unicast discovery, some of which are not running on
+the default port:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-txt">10.10.10.5
+10.10.10.6:9305
+10.10.10.5:10005
+# an IPv6 address
+[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:9301</pre></div><p>Host names are allowed instead of IP addresses (similar to
+<code class="literal">discovery.zen.ping.unicast.hosts</code>), and IPv6 addresses must be specified in
+brackets with the port coming after the brackets.</p><p>You can also add comments to this file. All comments must appear on
+their lines starting with <code class="literal">#</code> (i.e. comments cannot start in the middle of a
+line).</p><h5><a id="ec2-hosts-provider"></a>EC2 hosts provider<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/discovery-ec2.html" target="_top">EC2 discovery plugin</a> adds a hosts provider
+that uses the <a class="ulink" href="https://github.com/aws/aws-sdk-java" target="_top">AWS API</a> to find a list of
+seed nodes.</p><h5><a id="azure-classic-hosts-provider"></a>Azure Classic hosts provider<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/discovery-azure-classic.html" target="_top">Azure Classic discovery plugin</a> adds
+a hosts provider that uses the Azure Classic API find a list of seed nodes.</p><h5><a id="gce-hosts-provider"></a>Google Compute Engine hosts provider<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/discovery-gce.html" target="_top">GCE discovery plugin</a> adds a hosts provider
+that uses the GCE API find a list of seed nodes.</p><h4><a id="_discovery_settings"></a>Discovery settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The discovery process is controlled by the following settings.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">discovery.find_peers_interval</code>
+</span></dt><dd>
+    Sets how long a node will wait before attempting another discovery round.
+    Defaults to <code class="literal">1s</code>.
+</dd><dt><span class="term">
+<code class="literal">discovery.request_peers_timeout</code>
+</span></dt><dd>
+    Sets how long a node will wait after asking its peers again before
+    considering the request to have failed. Defaults to <code class="literal">3s</code>.
+</dd><dt><span class="term">
+<code class="literal">discovery.probe.connect_timeout</code>
+</span></dt><dd>
+    Sets how long to wait when attempting to connect to each address. Defaults
+    to <code class="literal">3s</code>.
+</dd><dt><span class="term">
+<code class="literal">discovery.probe.handshake_timeout</code>
+</span></dt><dd>
+    Sets how long to wait when attempting to identify the remote node via a
+    handshake. Defaults to <code class="literal">1s</code>.
+</dd><dt><span class="term">
+<code class="literal">discovery.cluster_formation_warning_timeout</code>
+</span></dt><dd>
+    Sets how long a node will try to form a cluster before logging a warning
+    that the cluster did not form. Defaults to <code class="literal">10s</code>.
+</dd></dl></div><p>If a cluster has not formed after <code class="literal">discovery.cluster_formation_warning_timeout</code>
+has elapsed then the node will log a warning message that starts with the phrase
+<code class="literal">master not discovered</code> which describes the current state of the discovery
+process.</p></div></div><div class="navfooter"><span class="prev"><a href="modules-discovery.html">
               « 
-              Azure Classic Discovery</a>
+              Discovery and cluster formation</a>
            
         </span><span class="next">
            
-          <a href="modules-discovery-gce.html">Google Compute Engine Discovery
+          <a href="modules-discovery-bootstrap-cluster.html">Bootstrapping a cluster
                »
             </a></span></div>
 <!-- end body -->
