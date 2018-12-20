@@ -5,6 +5,7 @@ RSpec.describe ElasticCompatPreprocessor do
   before(:each) do
     Extensions.register do
       preprocessor ElasticCompatPreprocessor
+      include_processor ElasticIncludeTagged
       block_macro AddedBlock
     end
   end
@@ -13,7 +14,7 @@ RSpec.describe ElasticCompatPreprocessor do
     Extensions.unregister_all
   end
 
-  it "invokes added without the ::" do
+  it "invokes added[version]" do
     actual = convert <<~ASCIIDOC
       == Example
       added[some_version]
@@ -24,6 +25,26 @@ RSpec.describe ElasticCompatPreprocessor do
       <note revisionflag="added" revision="some_version">
         <simpara></simpara>
       </note>
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
+
+  it "invokes include-tagged::" do
+    actual = convert <<~ASCIIDOC
+      == Example
+      ["source","java",subs="attributes,callouts,macros"]
+      ----
+      include-tagged::resources/elastic_include_tagged/Example.java[t1]
+      ----
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_example">
+      <title>Example</title>
+      <programlisting language="java" linenumbering="unnumbered">System.err.println("I'm an example");
+      for (int i = 0; i < 10; i++) {
+          System.err.println(i); <1>
+      }</programlisting>
       </chapter>
     DOCBOOK
     expect(actual).to eq(expected.strip)
@@ -43,10 +64,7 @@ RSpec.describe ElasticCompatPreprocessor do
     input = <<~ASCIIDOC
       include::resources/elastic_compat/missing_callout.adoc[]
     ASCIIDOC
-    expect { puts convert(input) }.to raise_error(
+    expect { convert(input) }.to raise_error(
         ConvertError, /missing_callout.adoc: line 3: no callout found for <1>/)
   end
-
 end
-
-Extensions.unregister_all

@@ -11,12 +11,12 @@ include Asciidoctor
 class AddedBlock < Extensions::BlockMacroProcessor
   use_dsl
   named :added
-  name_positional_attributes 'version', 'passtext'
+  name_positional_attributes :version, :passtext
 
-  def process parent, reader, attrs
+  def process parent, target, attrs
     docbook = <<~DOCBOOK
-    <note revisionflag="added" revision="#{attrs['version']}">
-      <simpara>#{attrs['passtext']}</simpara>
+    <note revisionflag="added" revision="#{attrs[:version]}">
+      <simpara>#{attrs[:passtext]}</simpara>
     </note>
     DOCBOOK
     
