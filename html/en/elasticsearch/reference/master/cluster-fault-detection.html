@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>No master block settings
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Cluster fault detection
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-discovery.html" title="Discovery and cluster formation" /><link rel="prev" href="cluster-state-publishing.html" title="Publishing the cluster state" /><link rel="next" href="master-election-settings.html" title="Master election settings" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-discovery.html" title="Discovery and cluster formation" /><link rel="prev" href="modules-discovery-quorums.html" title="Quorum-based decision making" /><link rel="next" href="modules-discovery-settings.html" title="Discovery and cluster formation settings" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -695,46 +695,32 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery and cluster formation</a></span> » <span class="breadcrumb-node">No master block settings</span></div><div class="navheader"><span class="prev"><a href="cluster-state-publishing.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery and cluster formation</a></span> » <span class="breadcrumb-node">Cluster fault detection</span></div><div class="navheader"><span class="prev"><a href="modules-discovery-quorums.html">
               « 
-              Publishing the cluster state</a>
+              Quorum-based decision making</a>
            
         </span><span class="next">
            
-          <a href="master-election-settings.html">Master election settings
+          <a href="modules-discovery-settings.html">Discovery and cluster formation settings
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="no-master-block"></a>No master block settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/no-master-block.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>For the cluster to be fully operational, it must have an active master.  The
-<code class="literal">discovery.zen.no_master_block</code> settings controls what operations should be
-rejected when there is no active master.</p><p>The <code class="literal">discovery.zen.no_master_block</code> setting has two valid values:</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
-<p>
-<code class="literal">all</code>
-</p>
-</td><td valign="top">
-<p>
-All operations on the node—i.e. both read &amp; writes—will be rejected.
-This also applies for api cluster state read or write operations, like the get
-index settings, put mapping and cluster state api.
-</p>
-</td></tr><tr><td valign="top">
-<p>
-<code class="literal">write</code>
-</p>
-</td><td valign="top">
-<p>
-(default) Write operations will be rejected. Read operations will
-succeed, based on the last known cluster configuration.  This may result in
-partial reads of stale data as this node may be isolated from the rest of the
-cluster.
-</p>
-</td></tr></tbody></table></div><p>The <code class="literal">discovery.zen.no_master_block</code> setting doesn’t apply to nodes-based APIs
-(for example cluster stats, node info, and node stats APIs). Requests to these
-APIs will not be blocked and can run on any available node.</p></div><div class="navfooter"><span class="prev"><a href="cluster-state-publishing.html">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="cluster-fault-detection"></a>Cluster fault detection<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/fault-detection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The elected master periodically checks each of the nodes in the cluster to
+ensure that they are still connected and healthy. Each node in the cluster also periodically checks the health of the elected master. These checks
+are known respectively as <span class="emphasis"><em>follower checks</em></span> and <span class="emphasis"><em>leader checks</em></span>.</p><p>Elasticsearch allows these checks to occasionally fail or timeout without
+taking any action. It considers a node to be faulty only after a number of
+consecutive checks have failed. You can control fault detection behavior with
+<a class="link" href="modules-discovery-settings.html" title="Discovery and cluster formation settings"><code class="literal">cluster.fault_detection.*</code> settings</a>.</p><p>If the elected master detects that a node has disconnected, however, this
+situation is treated as an immediate failure. The master bypasses the timeout
+and retry setting values and attempts to remove the node from the cluster.
+Similarly, if a node detects that the elected master has disconnected, this
+situation is treated as an immediate failure. The node bypasses the timeout and
+retry settings and restarts its discovery phase to try and find or elect a new
+master.</p></div><div class="navfooter"><span class="prev"><a href="modules-discovery-quorums.html">
               « 
-              Publishing the cluster state</a>
+              Quorum-based decision making</a>
            
         </span><span class="next">
            
-          <a href="master-election-settings.html">Master election settings
+          <a href="modules-discovery-settings.html">Discovery and cluster formation settings
                »
             </a></span></div>
 <!-- end body -->

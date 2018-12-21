@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Cluster fault detection settings
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Discovery and cluster formation settings
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-discovery.html" title="Discovery and cluster formation" /><link rel="prev" href="master-election-settings.html" title="Master election settings" /><link rel="next" href="modules-discovery-quorums.html" title="Quorum-based decision making" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="modules-discovery.html" title="Discovery and cluster formation" /><link rel="prev" href="cluster-fault-detection.html" title="Cluster fault detection" /><link rel="next" href="modules-cluster.html" title="Shard allocation and cluster-level routing" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -695,22 +695,39 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery and cluster formation</a></span> » <span class="breadcrumb-node">Cluster fault detection settings</span></div><div class="navheader"><span class="prev"><a href="master-election-settings.html">
+    </a></span> » <span class="breadcrumb-link"><a href="modules.html">Modules</a></span> » <span class="breadcrumb-link"><a href="modules-discovery.html">Discovery and cluster formation</a></span> » <span class="breadcrumb-node">Discovery and cluster formation settings</span></div><div class="navheader"><span class="prev"><a href="cluster-fault-detection.html">
               « 
-              Master election settings</a>
+              Cluster fault detection</a>
            
         </span><span class="next">
            
-          <a href="modules-discovery-quorums.html">Quorum-based decision making
+          <a href="modules-cluster.html">Shard allocation and cluster-level routing
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="fault-detection-settings"></a>Cluster fault detection settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/fault-detection.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>An elected master periodically checks each of the nodes in the cluster in order
-to ensure that they are still connected and healthy, and in turn each node in
-the cluster periodically checks the health of the elected master. These checks
-are known respectively as <span class="emphasis"><em>follower checks</em></span> and <span class="emphasis"><em>leader checks</em></span>.</p><p>Elasticsearch allows for these checks occasionally to fail or timeout without
-taking any action, and will only consider a node to be truly faulty after a
-number of consecutive checks have failed. The following settings control the
-behaviour of fault detection.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">cluster.fault_detection.follower_check.interval</code>
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="modules-discovery-settings"></a>Discovery and cluster formation settings<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Discovery and cluster formation are affected by the following settings:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<a id="master-election-settings"></a><code class="literal">cluster.election.back_off_time</code>
+</span></dt><dd>
+    Sets the amount to increase the upper bound on the wait before an election
+    on each election failure. Note that this is <span class="emphasis"><em>linear</em></span> backoff. This defaults
+    to <code class="literal">100ms</code>
+</dd><dt><span class="term">
+<code class="literal">cluster.election.duration</code>
+</span></dt><dd>
+    Sets how long each election is allowed to take before a node considers it to
+    have failed and schedules a retry. This defaults to <code class="literal">500ms</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.election.initial_timeout</code>
+</span></dt><dd>
+    Sets the upper bound on how long a node will wait initially, or after the
+    elected master fails, before attempting its first election. This defaults
+    to <code class="literal">100ms</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.election.max_timeout</code>
+</span></dt><dd>
+    Sets the maximum upper bound on how long a node will wait before attempting
+    an first election, so that an network partition that lasts for a long time
+    does not result in excessively sparse elections. This defaults to <code class="literal">10s</code>
+</dd><dt><span class="term">
+<a id="fault-detection-settings"></a><code class="literal">cluster.fault_detection.follower_check.interval</code>
 </span></dt><dd>
     Sets how long the elected master waits between follower checks to each
     other node in the cluster. Defaults to <code class="literal">1s</code>.
@@ -741,18 +758,115 @@ behaviour of fault detection.</p><div class="variablelist"><dl class="variableli
     Sets how many consecutive leader check failures must occur before a node
     considers the elected master to be faulty and attempts to find or elect a
     new master. Defaults to <code class="literal">3</code>.
-</dd></dl></div><p>If the elected master detects that a node has disconnected then this is treated
-as an immediate failure, bypassing the timeouts and retries listed above, and
-the master attempts to remove the node from the cluster. Similarly, if a node
-detects that the elected master has disconnected then this is treated as an
-immediate failure, bypassing the timeouts and retries listed above, and the
-follower restarts its discovery phase to try and find or elect a new master.</p></div><div class="navfooter"><span class="prev"><a href="master-election-settings.html">
+</dd><dt><span class="term">
+<code class="literal">cluster.follower_lag.timeout</code>
+</span></dt><dd>
+    Sets how long the master node waits to receive acknowledgements for cluster
+    state updates from lagging nodes. The default value is <code class="literal">90s</code>. If a node does
+    not successfully apply the cluster state update within this period of time,
+    it is considered to have failed and is removed from the cluster. See
+    <a class="xref" href="cluster-state-publishing.html" title="Publishing the cluster state">Publishing the cluster state</a>.
+</dd><dt><span class="term">
+<code class="literal">cluster.initial_master_nodes</code>
+</span></dt><dd>
+    Sets a list of the <a class="link" href="node.name.html" title="node.name">node names</a> or transport addresses of the
+    initial set of master-eligible nodes in a brand-new cluster. By default
+    this list is empty, meaning that this node expects to join a cluster that
+    has already been bootstrapped. See <a class="xref" href="discovery-settings.html#initial_master_nodes" title="cluster.initial_master_nodesedit"><code class="literal">cluster.initial_master_nodes</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/important-settings/discovery-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>.
+</dd><dt><span class="term">
+<code class="literal">cluster.join.timeout</code>
+</span></dt><dd>
+    Sets how long a node will wait after sending a request to join a cluster
+    before it considers the request to have failed and retries. Defaults to
+    <code class="literal">60s</code>.
+</dd><dt><span class="term">
+<code class="literal">cluster.max_voting_config_exclusions</code>
+</span></dt><dd>
+    Sets a limit on the number of voting configuration exclusions at any one
+    time. The default value is <code class="literal">10</code>. See
+    <a class="xref" href="modules-discovery-adding-removing-nodes.html" title="Adding and removing nodes">Adding and removing nodes</a>.
+</dd><dt><span class="term">
+<code class="literal">cluster.publish.timeout</code>
+</span></dt><dd>
+    Sets how long the master node waits for each cluster state update to be
+    completely published to all nodes. The default value is <code class="literal">30s</code>. If this
+    period of time elapses, the cluster state change is rejected. See
+    <a class="xref" href="cluster-state-publishing.html" title="Publishing the cluster state">Publishing the cluster state</a>.
+</dd><dt><span class="term">
+<code class="literal">discovery.cluster_formation_warning_timeout</code>
+</span></dt><dd>
+    Sets how long a node will try to form a cluster before logging a warning
+    that the cluster did not form. Defaults to <code class="literal">10s</code>. If a cluster has not
+    formed after <code class="literal">discovery.cluster_formation_warning_timeout</code> has elapsed then
+    the node will log a warning message that starts with the phrase <code class="literal">master not discovered</code> which describes the current state of the discovery process.
+</dd><dt><span class="term">
+<code class="literal">discovery.find_peers_interval</code>
+</span></dt><dd>
+    Sets how long a node will wait before attempting another discovery round.
+    Defaults to <code class="literal">1s</code>.
+</dd><dt><span class="term">
+<code class="literal">discovery.probe.connect_timeout</code>
+</span></dt><dd>
+    Sets how long to wait when attempting to connect to each address. Defaults
+    to <code class="literal">3s</code>.
+</dd><dt><span class="term">
+<code class="literal">discovery.probe.handshake_timeout</code>
+</span></dt><dd>
+    Sets how long to wait when attempting to identify the remote node via a
+    handshake. Defaults to <code class="literal">1s</code>.
+</dd><dt><span class="term">
+<code class="literal">discovery.request_peers_timeout</code>
+</span></dt><dd>
+    Sets how long a node will wait after asking its peers again before
+    considering the request to have failed. Defaults to <code class="literal">3s</code>.
+</dd><dt><span class="term">
+<code class="literal">discovery.zen.hosts_provider</code>
+</span></dt><dd>
+    Specifies which type of <a class="link" href="modules-discovery-hosts-providers.html#built-in-hosts-providers" title="Hosts providers">hosts provider</a> provides
+    the list of seed nodes. By default, it is the
+    <a class="link" href="modules-discovery-hosts-providers.html#settings-based-hosts-provider" title="Settings-based hosts provideredit">settings-based hosts provider</a>.
+</dd><dt><span class="term">
+<a id="no-master-block"></a><code class="literal">discovery.zen.no_master_block</code>
+</span></dt><dd><p class="simpara">
+Specifies which operations are rejected when there is no active master in a
+cluster. This setting has two valid values:
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">all</code>
+</span></dt><dd>
+All operations on the node (both read and write operations) are rejected.
+This also applies for API cluster state read or write operations, like the get
+index settings, put mapping and cluster state API.
+</dd><dt><span class="term">
+<code class="literal">write</code>
+</span></dt><dd>
+(default) Write operations are rejected. Read operations succeed,
+based on the last known cluster configuration. This situation may result in
+partial reads of stale data as this node may be isolated from the rest of the
+cluster.
+</dd></dl></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The <code class="literal">discovery.zen.no_master_block</code> setting doesn’t apply to nodes-based APIs
+(for example, cluster stats, node info, and node stats APIs). Requests to these
+APIs are not be blocked and can run on any available node.
+</li><li class="listitem">
+For the cluster to be fully operational, it must have an active master.
+</li></ul></div></div></div></dd><dt><span class="term">
+<code class="literal">discovery.zen.ping.unicast.hosts</code>
+</span></dt><dd>
+    Provides a list of master-eligible nodes in the cluster. The list contains
+    either an array of hosts or a comma-delimited string. Each value has the
+    format <code class="literal">host:port</code> or <code class="literal">host</code>, where <code class="literal">port</code> defaults to the setting <code class="literal">transport.profiles.default.port</code>. Note that IPv6 hosts must be bracketed.
+    The default value is <code class="literal">127.0.0.1, [::1]</code>. See <a class="xref" href="discovery-settings.html#unicast.hosts" title="discovery.zen.ping.unicast.hostsedit"><code class="literal">discovery.zen.ping.unicast.hosts</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/setup/important-settings/discovery-settings.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>.
+</dd><dt><span class="term">
+<code class="literal">discovery.zen.ping.unicast.hosts.resolve_timeout</code>
+</span></dt><dd>
+    Sets the amount of time to wait for DNS lookups on each round of discovery. This is specified as a <a class="link" href="common-options.html#time-units" title="Time unitsedit">time unit</a> and defaults to <code class="literal">5s</code>.
+</dd></dl></div></div><div class="navfooter"><span class="prev"><a href="cluster-fault-detection.html">
               « 
-              Master election settings</a>
+              Cluster fault detection</a>
            
         </span><span class="next">
            
-          <a href="modules-discovery-quorums.html">Quorum-based decision making
+          <a href="modules-cluster.html">Shard allocation and cluster-level routing
                »
             </a></span></div>
 <!-- end body -->
