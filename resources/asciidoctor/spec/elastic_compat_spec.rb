@@ -1,5 +1,6 @@
 require 'added/extension'
 require 'elastic_compat/extension'
+require 'elastic_include_tagged/extension'
 
 RSpec.describe ElasticCompatPreprocessor do
   before(:each) do
