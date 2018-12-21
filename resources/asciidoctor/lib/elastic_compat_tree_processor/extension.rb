@@ -3,7 +3,7 @@ require 'asciidoctor/extensions'
 include Asciidoctor
 
 # TreeProcessor extension to automatically escape special characters in code
-# listings.
+# listings and always shift "callouts" after "specialcharacters".
 #
 # Turns
 #   ["source","java",subs="attributes,callouts,macros"]
@@ -15,7 +15,7 @@ include Asciidoctor
 #   <2> The categories retrieved
 #
 # Into
-#   ["source","java",subs="attributes,callouts,macros,specialcharacters"]
+#   ["source","java",subs="attributes,macros,specialcharacters,callouts"]
 #   --------------------------------------------------
 #   long count = response.count(); <1>
 #   List<CategoryDefinition> categories = response.categories(); <2>

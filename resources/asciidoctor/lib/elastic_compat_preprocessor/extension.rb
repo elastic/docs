@@ -24,8 +24,9 @@ class ElasticCompatPreprocessor < Extensions::Preprocessor
         if preprocess_include_directive "elastic-include-tagged:#{$1}", $2 then
           nil
         else
-          # the line was not a valid include line and is unchanged
-          # mark it as visited and return it
+          # the line was not a valid include line and we've logged a warning
+          # about it so we should do the asciidoctor standard thing and keep
+          # it intact. This is how we do that.
           @look_ahead += 1
           line
         end

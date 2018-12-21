@@ -122,5 +122,4 @@ RSpec.describe ElasticIncludeTagged do
     DOCBOOK
     expect(actual).to eq(expected.strip)
   end
-
 end
