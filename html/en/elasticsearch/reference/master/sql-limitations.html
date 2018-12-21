@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>SELECT
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>SQL Limitations
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="sql-commands.html" title="SQL Commands" /><link rel="prev" href="sql-syntax-describe-table.html" title="DESCRIBE TABLE" /><link rel="next" href="sql-syntax-show-columns.html" title="SHOW COLUMNS" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="xpack-sql.html" title="SQL access" /><link rel="prev" href="sql-syntax-reserved.html" title="Reserved keywords" /><link rel="next" href="es-monitoring.html" title="Monitoring Elasticsearch" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -695,239 +695,37 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="xpack-sql.html">SQL access</a></span> » <span class="breadcrumb-link"><a href="sql-commands.html">SQL Commands</a></span> » <span class="breadcrumb-node">SELECT</span></div><div class="navheader"><span class="prev"><a href="sql-syntax-describe-table.html">
+    </a></span> » <span class="breadcrumb-link"><a href="xpack-sql.html">SQL access</a></span> » <span class="breadcrumb-node">SQL Limitations</span></div><div class="navheader"><span class="prev"><a href="sql-syntax-reserved.html">
               « 
-              DESCRIBE TABLE</a>
+              Reserved keywords</a>
            
         </span><span class="next">
            
-          <a href="sql-syntax-show-columns.html">SHOW COLUMNS
+          <a href="es-monitoring.html">Monitoring Elasticsearch
                »
-            </a></span></div><div class="xpack section"><div class="titlepage"><div><div><h2 class="title"><a id="sql-syntax-select"></a>SELECT<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.</p></div></div><p><strong>Synopsis. </strong>
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT select_expr [, ...]
-[ FROM table_name ]
-[ WHERE condition ]
-[ GROUP BY grouping_element [, ...] ]
-[ HAVING condition]
-[ ORDER BY expression [ ASC | DESC ] [, ...] ]
-[ LIMIT [ count ] ]</pre></div><p>
-</p><p><strong>Description. </strong>Retrieves rows from zero or more tables.</p><p>The general execution of <code class="literal">SELECT</code> is as follows:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-All elements in the <code class="literal">FROM</code> list are computed (each element can be base or alias table). Currently <code class="literal">FROM</code> supports exactly one table. Do note however that the table name can be a pattern (see <a class="link" href="sql-syntax-select.html#sql-syntax-from" title="FROM Clauseedit">FROM Clause</a> below).
-</li><li class="listitem">
-If the <code class="literal">WHERE</code> clause is specified, all rows that do not satisfy the condition are eliminated from the output. (See <a class="link" href="sql-syntax-select.html#sql-syntax-where" title="WHERE Clauseedit">WHERE Clause</a> below.)
-</li><li class="listitem">
-If the <code class="literal">GROUP BY</code> clause is specified, or if there are aggregate function calls, the output is combined into groups of rows that match on one or more values, and the results of aggregate functions are computed. If the <code class="literal">HAVING</code> clause is present, it eliminates groups that do not satisfy the given condition. (See <a class="link" href="sql-syntax-select.html#sql-syntax-group-by" title="GROUP BYedit">GROUP BY Clause</a> and <a class="link" href="sql-syntax-select.html#sql-syntax-having" title="HAVINGedit">HAVING Clause</a> below.)
-</li><li class="listitem">
-The actual output rows are computed using the <code class="literal">SELECT</code> output expressions for each selected row or row group.
-</li><li class="listitem">
-If the <code class="literal">ORDER BY</code> clause is specified, the returned rows are sorted in the specified order. If <code class="literal">ORDER BY</code> is not given, the rows are returned in whatever order the system finds fastest to produce. (See <a class="link" href="sql-syntax-select.html#sql-syntax-order-by" title="ORDER BYedit">ORDER BY Clause</a> below.)
-</li><li class="listitem">
-If the <code class="literal">LIMIT</code> is specified, the <code class="literal">SELECT</code> statement only returns a subset of the result rows. (See <a class="link" href="sql-syntax-select.html#sql-syntax-limit" title="LIMITedit">LIMIT Clause</a> below.)
-</li></ol></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-syntax-select-list"></a><code class="literal">SELECT</code> List<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p><code class="literal">SELECT</code> list, namely the expressions between <code class="literal">SELECT</code> and <code class="literal">FROM</code>, represent the output rows of the <code class="literal">SELECT</code> statement.</p><p>As with a table, every output column of a <code class="literal">SELECT</code> has a name which can be either specified per column through the <code class="literal">AS</code> keyword :</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT 1 + 1 AS result;
-
-    result
----------------
-2</pre></div><p>Note: <code class="literal">AS</code> is an optional keyword however it helps with the readability and in some case ambiguity of the query
-which is why it is recommended to specify it.</p><p>assigned by Elasticsearch SQL if no name is given:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT 1 + 1;
-
-    1 + 1
---------------
-2</pre></div><p>or if it’s a simple column reference, use its name as the column name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT emp_no FROM emp LIMIT 1;
-
-    emp_no
----------------
-10001</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-syntax-select-wildcard"></a>Wildcard<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To select all the columns in the source, one can use <code class="literal">*</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT * FROM emp LIMIT 1;
-
-     birth_date     |    emp_no     |  first_name   |    gender     |     hire_date      |   languages   |   last_name   |    salary
---------------------+---------------+---------------+---------------+--------------------+---------------+---------------+---------------
-1953-09-02T00:00:00Z|10001          |Georgi         |M              |1986-06-26T00:00:00Z|2              |Facello        |57305</pre></div><p>which essentially returns all(top-level fields, sub-fields, such as multi-fields are ignored] columns found.</p><h4><a id="sql-syntax-from"></a>FROM Clause<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">FROM</code> clause specifies one table for the <code class="literal">SELECT</code> and has the following syntax:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">FROM table_name [ [ AS ] alias ]</pre></div><p>where:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">table_name</code>
-</span></dt><dd>
-Represents the name (optionally qualified) of an existing table, either a concrete or base one (actual index) or alias.
-</dd></dl></div><p>If the table name contains special SQL characters (such as <code class="literal">.</code>,<code class="literal">-</code>,<code class="literal">*</code>,etc…) use double quotes to escape them:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT * FROM "emp" LIMIT 1;
-
-     birth_date     |    emp_no     |  first_name   |    gender     |     hire_date      |   languages   |   last_name   |    salary
---------------------+---------------+---------------+---------------+--------------------+---------------+---------------+---------------
-1953-09-02T00:00:00Z|10001          |Georgi         |M              |1986-06-26T00:00:00Z|2              |Facello        |57305</pre></div><p>The name can be a <a class="link" href="multi-index.html" title="Multiple Indices">pattern</a> pointing to multiple indices (likely requiring quoting as mentioned above) with the restriction that <span class="strong strong"><strong>all</strong></span> resolved concrete tables have <span class="strong strong"><strong>exact mapping</strong></span>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT emp_no FROM "e*p" LIMIT 1;
-
-    emp_no
----------------
-10001</pre></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">alias</code>
-</span></dt><dd>
-A substitute name for the <code class="literal">FROM</code> item containing the alias. An alias is used for brevity or to eliminate ambiguity. When an alias is provided, it completely hides the actual name of the table and must be used in its place.
-</dd></dl></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT e.emp_no FROM emp AS e LIMIT 1;
-
-    emp_no
--------------
-10001</pre></div><h4><a id="sql-syntax-where"></a>WHERE Clause<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The optional <code class="literal">WHERE</code> clause is used to filter rows from the query and has the following syntax:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">WHERE condition</pre></div><p>where:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">condition</code>
-</span></dt><dd>
-Represents an expression that evaluates to a <code class="literal">boolean</code>. Only the rows that match the condition (to <code class="literal">true</code>) are returned.
-</dd></dl></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT last_name FROM emp WHERE emp_no = 10001;
-
-   last_name
----------------
-Facello</pre></div><h4><a id="sql-syntax-group-by"></a>GROUP BY<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">GROUP BY</code> clause is used to divide the results into groups of rows on matching values from the designated columns. It has the following syntax:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">GROUP BY grouping_element [, ...]</pre></div><p>where:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">grouping_element</code>
-</span></dt><dd>
-Represents an expression on which rows are being grouped <span class="emphasis"><em>on</em></span>. It can be a column name, alias or ordinal number of a column or an arbitrary expression of column values.
-</dd></dl></div><p>A common, group by column name:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender AS g FROM emp GROUP BY gender;
-
-       g
----------------
-null
-F
-M</pre></div><p>Grouping by output ordinal:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender FROM emp GROUP BY 1;
-
-    gender
----------------
-null
-F
-M</pre></div><p>Grouping by alias:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender AS g FROM emp GROUP BY g;
-
-       g
----------------
-null
-F
-M</pre></div><p>And grouping by column expression (typically used along-side an alias):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT languages + 1 AS l FROM emp GROUP BY l;
-
-       l
----------------
-null
-2
-3
-4
-5
-6</pre></div><p>Or a mixture of the above:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender g, languages l, COUNT(*) c FROM "emp" GROUP BY g, l ORDER BY languages ASC, gender DESC;
-
-       g       |       l       |       c
----------------+---------------+---------------
-M              |null           |7
-F              |null           |3
-M              |1              |9
-F              |1              |4
-null           |1              |2
-M              |2              |11
-F              |2              |5
-null           |2              |3
-M              |3              |11
-F              |3              |6
-M              |4              |11
-F              |4              |6
-null           |4              |1
-M              |5              |8
-F              |5              |9
-null           |5              |4</pre></div><p>When a <code class="literal">GROUP BY</code> clause is used in a <code class="literal">SELECT</code>, <span class="emphasis"><em>all</em></span> output expressions must be either aggregate functions or expressions used for grouping or derivatives of (otherwise there would be more than one possible value to return for each ungrouped column).</p><p>To wit:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender AS g, COUNT(*) AS c FROM emp GROUP BY gender;
-
-       g       |       c
----------------+---------------
-null           |10
-F              |33
-M              |57</pre></div><p>Expressions over aggregates used in output:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">schema::g:s|salary:i
-SELECT gender AS g, ROUND((MIN(salary) / 100)) AS salary FROM emp GROUP BY gender;
-
-       g       |    salary
----------------+---------------
-null           |253
-F              |260
-M              |259</pre></div><p>Multiple aggregates used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT gender AS g, KURTOSIS(salary) AS k, SKEWNESS(salary) AS s FROM emp GROUP BY gender;
-
-       g       |        k         |         s
----------------+------------------+-------------------
-null           |2.2215791166941923|-0.03373126000214023
-F              |1.7873117044424276|0.05504995122217512
-M              |2.280646181070106 |0.44302407229580243</pre></div><h5><a id="sql-syntax-group-by-implicit"></a>Implicit Grouping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>When an aggregation is used without an associated <code class="literal">GROUP BY</code>, an <span class="emphasis"><em>implicit grouping</em></span> is applied, meaning all selected rows are considered to form a single default, or implicit group.
-As such, the query emits only a single row (as there is only a single group).</p><p>A common example is counting the number of records:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT COUNT(*) AS count FROM emp;
-
-     count
----------------
-100</pre></div><p>Of course, multiple aggregations can be applied:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MIN(salary) AS min, MAX(salary) AS max, AVG(salary) AS avg, COUNT(*) AS count FROM emp;
-
-      min:i    |      max:i    |      avg:d    |     count:l
----------------+---------------+---------------+---------------
-25324          |74999          |48248.55       |100</pre></div><h4><a id="sql-syntax-having"></a>HAVING<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">HAVING</code> clause can be used <span class="emphasis"><em>only</em></span> along aggregate functions (and thus <code class="literal">GROUP BY</code>) to filter what groups are kept or not and has the following syntax:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">GROUP BY condition</pre></div><p>where:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">condition</code>
-</span></dt><dd>
-Represents an expression that evaluates to a <code class="literal">boolean</code>. Only groups that match the condition (to <code class="literal">true</code>) are returned.
-</dd></dl></div><p>Both <code class="literal">WHERE</code> and <code class="literal">HAVING</code> are used for filtering however there are several significant differences between them:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-<code class="literal">WHERE</code> works on individual <span class="strong strong"><strong>rows</strong></span>, <code class="literal">HAVING</code> works on the <span class="strong strong"><strong>groups</strong></span> created by ``GROUP BY``
-</li><li class="listitem">
-<code class="literal">WHERE</code> is evaluated <span class="strong strong"><strong>before</strong></span> grouping, <code class="literal">HAVING</code> is evaluated <span class="strong strong"><strong>after</strong></span> grouping
-</li></ol></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT languages AS l, COUNT(*) AS c FROM emp GROUP BY l HAVING c BETWEEN 15 AND 20;
-
-       l       |       c
----------------+---------------
-1              |15
-2              |19
-3              |17
-4              |18</pre></div><p>Further more, one can use multiple aggregate expressions inside <code class="literal">HAVING</code> even ones that are not used in the output (<code class="literal">SELECT</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MIN(salary) AS min, MAX(salary) AS max, MAX(salary) - MIN(salary) AS diff FROM emp GROUP BY languages HAVING diff - max % min &gt; 0 AND AVG(salary) &gt; 30000;
-
-      min      |      max      |     diff
----------------+---------------+---------------
-28336          |74999          |46663
-25976          |73717          |47741
-29175          |73578          |44403
-26436          |74970          |48534
-27215          |74572          |47357
-25324          |66817          |41493</pre></div><h5><a id="sql-syntax-having-group-by-implicit"></a>Implicit Grouping<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>As indicated above, it is possible to have a <code class="literal">HAVING</code> clause without a <code class="literal">GROUP BY</code>. In this case, the so-called <a class="link" href="sql-syntax-select.html#sql-syntax-group-by-implicit" title="Implicit Groupingedit"><span class="emphasis"><em>implicit grouping</em></span></a> is applied, meaning all selected rows are considered to form a single group and <code class="literal">HAVING</code> can be applied on any of the aggregate functions specified on this group.
-As such, the query emits only a single row (as there is only a single group) and <code class="literal">HAVING</code> condition returns either one row (the group) or zero if the condition fails.</p><p>In this example, <code class="literal">HAVING</code> matches:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT MIN(salary) AS min, MAX(salary) AS max FROM emp HAVING min &gt; 25000;
-
-      min      |      max
----------------+---------------
-25324          |74999</pre></div><h4><a id="sql-syntax-order-by"></a>ORDER BY<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">ORDER BY</code> clause is used to sort the results of <code class="literal">SELECT</code> by one or more expressions:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">ORDER BY expression [ ASC | DESC ] [, ...]</pre></div><p>where:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">expression</code>
-</span></dt><dd>
-Represents an input column, an output column or an ordinal number of the position (starting from one) of an output column. Additionally, ordering can be done based on the results <span class="emphasis"><em>score</em></span>.
-The direction, if not specified, is by default <code class="literal">ASC</code> (ascending).
-Regardless of the ordering specified, null values are ordered last (at the end).
-</dd></dl></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>When used along-side, <code class="literal">GROUP BY</code> expression can point <span class="emphasis"><em>only</em></span> to the columns used for grouping.</p></div></div><p>For example, the following query sorts by an arbitrary input field (<code class="literal">page_count</code>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT * FROM library ORDER BY page_count DESC LIMIT 5;
-
-     author      |        name        |  page_count   |    release_date
------------------+--------------------+---------------+--------------------
-Peter F. Hamilton|Pandora's Star      |768            |2004-03-02T00:00:00Z
-Vernor Vinge     |A Fire Upon the Deep|613            |1992-06-01T00:00:00Z
-Frank Herbert    |Dune                |604            |1965-06-01T00:00:00Z
-Alastair Reynolds|Revelation Space    |585            |2000-03-15T00:00:00Z
-James S.A. Corey |Leviathan Wakes     |561            |2011-06-02T00:00:00Z</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="sql-syntax-order-by-score"></a>Order By Score<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>When doing full-text queries in the <code class="literal">WHERE</code> clause, results can be returned based on their
-<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/guide/master/relevance-intro.html" target="_top">score</a> or <span class="emphasis"><em>relevance</em></span> to the given query.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>When doing multiple text queries in the <code class="literal">WHERE</code> clause then, their scores will be
-combined using the same rules as Elasticsearch’s
-<a class="link" href="query-dsl-bool-query.html" title="Bool Query">bool query</a>.</p></div></div><p>To sort based on the <code class="literal">score</code>, use the special function <code class="literal">SCORE()</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT SCORE(), * FROM library WHERE MATCH(name, 'dune') ORDER BY SCORE() DESC;
-
-    SCORE()    |    author     |       name        |  page_count   |    release_date
----------------+---------------+-------------------+---------------+--------------------
-2.2886353      |Frank Herbert  |Dune               |604            |1965-06-01T00:00:00Z
-1.8893257      |Frank Herbert  |Dune Messiah       |331            |1969-10-15T00:00:00Z
-1.6086556      |Frank Herbert  |Children of Dune   |408            |1976-04-21T00:00:00Z
-1.4005898      |Frank Herbert  |God Emperor of Dune|454            |1981-05-28T00:00:00Z</pre></div><p>Note that you can return <code class="literal">SCORE()</code> by using a full-text search predicate in the <code class="literal">WHERE</code> clause.
-This is possible even if <code class="literal">SCORE()</code> is not used for sorting:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT SCORE(), * FROM library WHERE MATCH(name, 'dune') ORDER BY page_count DESC;
-
-    SCORE()    |    author     |       name        |  page_count   |    release_date
----------------+---------------+-------------------+---------------+--------------------
-2.2886353      |Frank Herbert  |Dune               |604            |1965-06-01T00:00:00Z
-1.4005898      |Frank Herbert  |God Emperor of Dune|454            |1981-05-28T00:00:00Z
-1.6086556      |Frank Herbert  |Children of Dune   |408            |1976-04-21T00:00:00Z
-1.8893257      |Frank Herbert  |Dune Messiah       |331            |1969-10-15T00:00:00Z</pre></div><p>NOTE:
-Trying to return <code class="literal">score</code> from a non full-text query will return the same value for all results, as
-all are equally relevant.</p><h4><a id="sql-syntax-limit"></a>LIMIT<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/language/syntax/select.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">LIMIT</code> clause restricts (limits) the number of rows returns using the format:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">LIMIT ( count | ALL )</pre></div><p>where</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-count
-</span></dt><dd>
-is a positive integer or zero indicating the maximum <span class="strong strong"><strong>possible</strong></span> number of results being returned (as there might be less matches than the limit). If <code class="literal">0</code> is specified, no results are returned.
-</dd><dt><span class="term">
-ALL
-</span></dt><dd>
-indicates there is no limit and thus all results are being returned.
-</dd></dl></div><p>To return</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT first_name, last_name, emp_no FROM emp LIMIT 1;
-
-  first_name   |   last_name   |    emp_no
----------------+---------------+---------------
-Georgi         |Facello        |10001</pre></div></div></div><div class="navfooter"><span class="prev"><a href="sql-syntax-describe-table.html">
+            </a></span></div><div class="xpack chapter"><div class="titlepage"><div><div><h2 class="title"><a id="sql-limitations"></a>SQL Limitations<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/limitations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.</p></div></div><h3><a id="_nested_fields_in_literal_sys_columns_literal_and_literal_describe_table_literal"></a>Nested fields in <code class="literal">SYS COLUMNS</code> and <code class="literal">DESCRIBE TABLE</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/limitations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elasticsearch has a special type of relationship fields called <code class="literal">nested</code> fields. In Elasticsearch SQL they can be used by referencing their inner
+sub-fields. Even though <code class="literal">SYS COLUMNS</code> and <code class="literal">DESCRIBE TABLE</code> will still display them as having the type <code class="literal">NESTED</code>, they cannot
+be used in a query. One can only reference its sub-fields in the form:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">[nested_field_name].[sub_field_name]</pre></div><p>For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">SELECT dep.dep_name.keyword FROM test_emp GROUP BY languages;</pre></div><h3><a id="_multi_nested_fields"></a>Multi-nested fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/limitations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elasticsearch SQL doesn’t support multi-nested documents, so a query cannot reference more than one nested field in an index.
+This applies to multi-level nested fields, but also multiple nested fields defined on the same level. For example, for this index:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sql">       column         |     type      |    mapping
+----------------------+---------------+-------------
+nested_A              |STRUCT         |NESTED
+nested_A.nested_X     |STRUCT         |NESTED
+nested_A.nested_X.text|VARCHAR        |KEYWORD
+nested_A.text         |VARCHAR        |KEYWORD
+nested_B              |STRUCT         |NESTED
+nested_B.text         |VARCHAR        |KEYWORD</pre></div><p><code class="literal">nested_A</code> and <code class="literal">nested_B</code> cannot be used at the same time, nor <code class="literal">nested_A</code>/<code class="literal">nested_B</code> and <code class="literal">nested_A.nested_X</code> combination.
+For such situations, Elasticsearch SQL will display an error message.</p><h3><a id="_paginating_nested_inner_hits"></a>Paginating nested inner hits<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/limitations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When SELECTing a nested field, pagination will not work as expected, Elasticsearch SQL will return <span class="emphasis"><em>at least</em></span> the page size records.
+This is because of the way nested queries work in Elasticsearch: the root nested field will be returned and it’s matching inner nested fields as well,
+pagination taking place on the <span class="strong strong"><strong>root nested document and not on its inner hits</strong></span>.</p><h3><a id="_normalized_literal_keyword_literal_fields"></a>Normalized <code class="literal">keyword</code> fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/limitations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p><code class="literal">keyword</code> fields in Elasticsearch can be normalized by defining a <code class="literal">normalizer</code>. Such fields are not supported in Elasticsearch SQL.</p><h3><a id="_array_type_of_fields"></a>Array type of fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/limitations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Array fields are not supported due to the "invisible" way in which Elasticsearch handles an array of values: the mapping doesn’t indicate whether
+a field is an array (has multiple values) or not, so without reading all the data, Elasticsearch SQL cannot know whether a field is a single or multi value.</p><h3><a id="_sorting_by_aggregation"></a>Sorting by aggregation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/sql/limitations.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When doing aggregations (<code class="literal">GROUP BY</code>) Elasticsearch SQL relies on Elasticsearch’s <code class="literal">composite</code> aggregation for its support for paginating results.
+But this type of aggregation does come with a limitation: sorting can only be applied on the key used for the aggregation’s buckets. This
+means that queries like <code class="literal">SELECT * FROM test GROUP BY age ORDER BY COUNT(*)</code> are not possible.</p></div><div class="navfooter"><span class="prev"><a href="sql-syntax-reserved.html">
               « 
-              DESCRIBE TABLE</a>
+              Reserved keywords</a>
            
         </span><span class="next">
            
-          <a href="sql-syntax-show-columns.html">SHOW COLUMNS
+          <a href="es-monitoring.html">Monitoring Elasticsearch
                »
             </a></span></div>
 <!-- end body -->
