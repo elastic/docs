@@ -754,7 +754,61 @@ Using this API, we can find out that <code class="literal">my_index</code> is cu
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/_updates_to_executing_policies/3.json"></div><p>Updating <code class="literal">my_executing_policy</code> to have no rollover action and, instead, go directly into a newly introduced <code class="literal">warm</code> phase.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _ilm/policy/my_executing_policy
+}</pre></div><div class="console_widget" data-snippet="snippets/_updates_to_executing_policies/3.json"></div><p>We can update <code class="literal">my_executing_policy</code> to enter the hot phase after one day.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _ilm/policy/my_executing_policy
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "min_age": "1d", <a id="CO404-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "actions": {
+          "rollover": {
+            "max_docs": 1
+          }
+        }
+      },
+      "delete": {
+        "min_age": "10d",
+        "actions": {
+          "delete": {}
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/_updates_to_executing_policies/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO404-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+updated <code class="literal">min_age</code> from "0ms" to "1d"
+</p></td></tr></table></div><p>The index <code class="literal">my_index</code> has already entered the hot phase, so it will still
+use version 1 of the policy until it completes the hot phase.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "indices": {
+    "my_index": {
+      "index": "my_index",
+      "managed": true,
+      "policy": "my_executing_policy",
+      "lifecycle_date_millis": 1538475653281,
+      "phase": "hot",
+      "phase_time_millis": 1538475653317,
+      "action": "rollover",
+      "action_time_millis": 1538475653317,
+      "step": "check-rollover-ready",
+      "step_time_millis": 1538475653317,
+      "phase_execution": {
+        "policy": "my_executing_policy",
+        "modified_date_in_millis": 1538475653317,
+        "version": 1, <a id="CO405-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "phase_definition": {
+          "min_age": "0ms",
+          "actions": {
+            "rollover": {
+              "max_docs": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/_updates_to_executing_policies/5.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO405-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the version of the policy used for executing the hot phase
+</p></td></tr></table></div><p>We can also update <code class="literal">my_executing_policy</code> to have no rollover action and,
+instead, go directly into a newly introduced <code class="literal">warm</code> phase.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _ilm/policy/my_executing_policy
 {
   "policy": {
     "phases": {
@@ -774,8 +828,9 @@ Using this API, we can find out that <code class="literal">my_index</code> is cu
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/_updates_to_executing_policies/4.json"></div><p>Now, version 2 of this policy has no <code class="literal">hot</code> phase, but if we run the Explain API again, we will see that nothing has changed.
-The index <code class="literal">my_index</code> is still executing version 1 of the policy.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/_updates_to_executing_policies/6.json"></div><p>Now, version 3 of this policy has no <code class="literal">hot</code> phase, but if we run the
+Explain API again, we will see that nothing has changed. The index
+<code class="literal">my_index</code> is still executing version 1 of the policy.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "indices": {
     "my_index": {
       "index": "my_index",
@@ -791,7 +846,7 @@ The index <code class="literal">my_index</code> is still executing version 1 of 
       "phase_execution": {
         "policy": "my_executing_policy",
         "modified_date_in_millis": 1538475653317,
-        "version": 1,
+        "version": 1, <a id="CO406-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         "phase_definition": {
           "min_age": "0ms",
           "actions": {
@@ -803,8 +858,11 @@ The index <code class="literal">my_index</code> is still executing version 1 of 
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/_updates_to_executing_policies/5.json"></div><p>After indexing one document into <code class="literal">my_index</code> so that rollover succeeds and moves onto the next phase, we will notice something new. The
-index will move into the next phase in the updated version 2 of its policy.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/_updates_to_executing_policies/7.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO406-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+the version of the policy used for executing the hot phase
+</p></td></tr></table></div><p>After indexing one document into <code class="literal">my_index</code> so that rollover succeeds and
+moves onto the next phase, we will notice something new. The index will
+move into the next phase in the updated version 3 of its policy.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   "indices": {
     "my_index": {
       "index": "my_index",
@@ -820,7 +878,7 @@ index will move into the next phase in the updated version 2 of its policy.</p><
       "phase_execution": {
         "policy": "my_executing_policy",
         "modified_date_in_millis": 1538475653317,
-        "version": 2, <a id="CO404-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "version": 3, <a id="CO407-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         "phase_definition": {
           "min_age": "1d",
           "actions": {
@@ -832,8 +890,8 @@ index will move into the next phase in the updated version 2 of its policy.</p><
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/_updates_to_executing_policies/6.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO404-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The index has moved to using version 2 of the policy
+}</pre></div><div class="console_widget" data-snippet="snippets/_updates_to_executing_policies/8.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO407-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The index has moved to using version 3 of the policy
 </p></td></tr></table></div><p><code class="literal">my_index</code> will move to the next phase in the latest policy definition, which is the newly added <code class="literal">warm</code> phase.</p></div><div class="navfooter"><span class="prev"><a href="_updates_to_policies_not_managing_indices.html">
               « 
               Updates to policies not managing indices</a>
