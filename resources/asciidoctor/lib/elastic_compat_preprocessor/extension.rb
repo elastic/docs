@@ -7,9 +7,11 @@ include Asciidoctor
 #
 # Turns
 #   added[6.0.0-beta1]
+#   include-tagged::foo[tag]
 #
 # Into
 #   added::[6.0.0-beta1]
+#   include::elastic-include-tagged:foo[tag]
 #
 class ElasticCompatPreprocessor < Extensions::Preprocessor
   IncludeTaggedDirectiveRx = /^include-tagged::([^\[][^\[]*)\[(#{CC_ANY}+)?\]$/
