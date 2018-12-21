@@ -13,8 +13,6 @@ include Asciidoctor
 class ElasticIncludeTagged < Extensions::IncludeProcessor
   include Logging
 
-  CalloutRx = /\/\/ (<[^>]+>)\s*?\n/
-
   def handles? target
     target.sub!(/^elastic-include-tagged:/, '')
   end
@@ -52,7 +50,6 @@ class ElasticIncludeTagged < Extensions::IncludeProcessor
           if found_tag then
             line = line[indentation..-1]
             if line then
-              line.gsub!(CalloutRx, '\1')
               included_lines << line
             end
             next

@@ -30,9 +30,12 @@ class ElasticCompatTreeProcessor < Extensions::TreeProcessor
     end
   
     def process_blocks block
-      if block.context == :listing && block.style == "source"
+      if block.context == :listing && block.style == "source" &&
             false == block.subs.include?(:specialcharacters)
+        # callouts have to come *after* special characters
+        had_callouts = block.subs.delete(:callouts)
         block.subs << :specialcharacters
+        block.subs << :callouts if had_callouts
       end
       for subblock in block.context == :dlist ? block.blocks.flatten : block.blocks
         process_blocks subblock

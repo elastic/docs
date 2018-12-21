@@ -1,6 +1,6 @@
 require 'elastic_compat_tree_processor/extension'
 
-RSpec.describe ElasticCompatPreprocessor do
+RSpec.describe ElasticCompatTreeProcessor do
   before(:each) do
     Extensions.register do
       treeprocessor ElasticCompatTreeProcessor
@@ -14,7 +14,7 @@ RSpec.describe ElasticCompatPreprocessor do
   it "fixes up asciidoc style listings" do
     actual = convert <<~ASCIIDOC
       == Example
-      ["source","java",subs="attributes,callouts,macros,verbatim"]
+      ["source","java",subs="attributes,callouts,macros"]
       --------------------------------------------------
       long count = response.count(); <1>
       List<CategoryDefinition> categories = response.categories(); <2>
@@ -25,10 +25,16 @@ RSpec.describe ElasticCompatPreprocessor do
     expected = <<~DOCBOOK
       <chapter id="_example">
       <title>Example</title>
-      <programlisting language="java" linenumbering="unnumbered">System.err.println("I'm an example");
-      for (int i = 0; i < 10; i++) {
-          System.err.println(i); <1>
-      }</programlisting>
+      <programlisting language="java" linenumbering="unnumbered">long count = response.count(); <co id="CO1-1"/>
+      List&lt;CategoryDefinition&gt; categories = response.categories(); <co id="CO1-2"/></programlisting>
+      <calloutlist>
+      <callout arearefs="CO1-1">
+      <para>The count of categories that were matched</para>
+      </callout>
+      <callout arearefs="CO1-2">
+      <para>The categories retrieved</para>
+      </callout>
+      </calloutlist>
       </chapter>
     DOCBOOK
     expect(actual).to eq(expected.strip)

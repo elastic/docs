@@ -14,7 +14,7 @@ RSpec.describe ElasticIncludeTagged do
   it "includes a tag" do
     actual = convert <<~ASCIIDOC
       == Example
-      ["source","java",subs="attributes,callouts,macros"]
+      [source,java]
       ----
       include::elastic-include-tagged:resources/elastic_include_tagged/Example.java[t1]
       ----
@@ -23,8 +23,8 @@ RSpec.describe ElasticIncludeTagged do
       <chapter id="_example">
       <title>Example</title>
       <programlisting language="java" linenumbering="unnumbered">System.err.println("I'm an example");
-      for (int i = 0; i < 10; i++) {
-          System.err.println(i); <1>
+      for (int i = 0; i &lt; 10; i++) {
+          System.err.println(i); <co id="CO1-1"/>
       }</programlisting>
       </chapter>
     DOCBOOK
