@@ -777,7 +777,37 @@ promotion but instead would be repaired if replica shards are relocated
 which replicas can be out of sync with the primary shard is
 unbounded. Sequence numbers <a class="ulink" href="https://github.com/elastic/elasticsearch/issues/10708" target="_top">#10708</a> will provide a mechanism
 for syncing the remaining replicas with the newly-promoted primary
-shard.</p></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_completed"></a>Completed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/resiliency/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><h3><a id="_port_jepsen_tests_dealing_with_loss_of_acknowledged_writes_to_our_testing_framework_status_done_v5_0_0"></a>Port Jepsen tests dealing with loss of acknowledged writes to our testing framework (STATUS: DONE, V5.0.0)<a href="https://github.com/elastic/elasticsearch/edit/master/docs/resiliency/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>We have increased our test coverage to include scenarios tested by Jepsen that demonstrate loss of acknowledged writes, as described in
+shard.</p></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="_completed"></a>Completed<a href="https://github.com/elastic/elasticsearch/edit/master/docs/resiliency/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><h3><a id="_divergence_between_primary_and_replica_shard_copies_when_documents_deleted_status_done_v6_3_0"></a>Divergence between primary and replica shard copies when documents deleted (STATUS: DONE, V6.3.0)<a href="https://github.com/elastic/elasticsearch/edit/master/docs/resiliency/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Certain combinations of delays in performing activities related to the deletion
+of a document could result in the operations on that document being interpreted
+differently on different shard copies. This could lead to a divergence in the
+number of documents held in each copy.</p><p>Deleting an unacknowledged document that was concurrently being inserted using
+an auto-generated ID was erroneously sensitive to the order in which those
+operations were processed on each shard copy. Thanks to the introduction of
+sequence numbers (<a class="ulink" href="https://github.com/elastic/elasticsearch/issues/10708" target="_top">#10708</a>) it is now possible to detect these
+out-of-order operations, and this issue was fixed in <a class="ulink" href="https://github.com/elastic/elasticsearch/issues/28787" target="_top">#28787</a>.</p><p>Re-creating a document a specific interval after it was deleted could result in
+that document’s tombstone having being cleaned up on some, but not all, copies
+when processing the indexing operation that re-creates it. This resulted in
+varying behaviour across the shard copies. The problematic interval was set by
+the <code class="literal">index.gc_deletes</code> setting, which is 60 seconds by default. Again, sequence
+numbers (<a class="ulink" href="https://github.com/elastic/elasticsearch/issues/10708" target="_top">#10708</a>) gives us the machinery to detect these conflicting
+activities, and this issue was fixed in <a class="ulink" href="https://github.com/elastic/elasticsearch/issues/28790" target="_top">#28790</a>.</p><p>Under certain rare circumstances a replica might erroneously interpret a stale
+tombstone for a document as fresh, resulting in a concurrent indexing operation
+for that same document behaving differently on this replica than on the
+primary. This is fixed in <a class="ulink" href="https://github.com/elastic/elasticsearch/issues/29619" target="_top">#29619</a>. Triggering this issue required
+the following activities all to occur in a short time window, in a specific
+order on the primary and a different specific order on the replica:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+a document is deleted twice
+</li><li class="listitem">
+another document is indexed with the same ID as this first document
+</li><li class="listitem">
+another document is indexed with a completely different, auto-generated, ID
+</li><li class="listitem">
+two refreshes
+</li></ul></div><p>We found the first two of these issues by empirical testing, and then we built
+<a class="ulink" href="https://github.com/elastic/elasticsearch-formal-models/blob/master/ReplicaEngine/tla/ReplicaEngine.tla" target="_top">a
+formal model of the replica’s behaviour</a> using TLA+. Running the TLC model
+checker on this model found all three issues. We then applied the proposed
+fixes to the model and validated that the fixed design behaved as expected.</p><h3><a id="_port_jepsen_tests_dealing_with_loss_of_acknowledged_writes_to_our_testing_framework_status_done_v5_0_0"></a>Port Jepsen tests dealing with loss of acknowledged writes to our testing framework (STATUS: DONE, V5.0.0)<a href="https://github.com/elastic/elasticsearch/edit/master/docs/resiliency/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>We have increased our test coverage to include scenarios tested by Jepsen that demonstrate loss of acknowledged writes, as described in
 the Elasticsearch related blogs. We make heavy use of randomization to expand on the scenarios that can be tested and to introduce
 new error conditions.
 You can follow the work on the master branch of the
