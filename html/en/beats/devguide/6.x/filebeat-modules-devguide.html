@@ -797,7 +797,14 @@ expanded, which enables you to select one file or the other depending on the
 value of a variable. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">ingest_pipeline: ingest/{{.pipeline}}.json</pre></div><p>This example selects the ingest pipeline file based on the value of the
 <code class="literal">pipeline</code> variable. For the <code class="literal">pipeline</code> variable shown earlier, the path would
 resolve to <code class="literal">ingest/with_plugins.json</code> (assuming the variable value isn’t
-overridden at runtime.)</p><h4><a id="_config_yml"></a>config/*.yml<a href="https://github.com/elastic/beats/edit/6.x/docs/devguide/modules-dev-guide.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">config/</code> folder contains template files that generate Filebeat input
+overridden at runtime.)</p><p>In 6.6 and later, you can specify multiple ingest pipelines.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">ingest_pipeline:
+  - ingest/main.json
+  - ingest/plain_logs.json
+  - ingest/json_logs.json</pre></div><p>When multiple ingest pipelines are specified the first one in the list is
+considered to be the entry point pipeline.</p><p>One reason for using multiple pipelines might be to send all logs harvested
+by this fileset to the entry point pipeline and have it delegate different parts of
+the processing to other pipelines. You can read details about setting
+this up in <a class="link" href="filebeat-modules-devguide.html#ingest-json-entry-point-pipeline">the <code class="literal">ingest/*.json</code> section</a>.</p><h4><a id="_config_yml"></a>config/*.yml<a href="https://github.com/elastic/beats/edit/6.x/docs/devguide/modules-dev-guide.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">config/</code> folder contains template files that generate Filebeat input
 configurations. The Filebeat inputs are primarily responsible for tailing
 files, filtering, and multi-line stitching, so that’s what you configure in the
 template files.</p><p>A typical example looks like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">type: log
@@ -854,7 +861,48 @@ Here is an example for parsing the Nginx access logs.</p><div class="pre_wrapper
   }
 }</pre></div><p>Note that you should follow the convention of naming of fields prefixed with the
 module and fileset name: <code class="literal">{module}.{fileset}.field</code>, e.g.
-<code class="literal">nginx.access.remote_ip</code>. Also, please review our <a class="xref" href="event-conventions.html" title="Naming Conventions">Naming Conventions</a>.</p><p>While developing the pipeline definition, we recommend making use of the
+<code class="literal">nginx.access.remote_ip</code>. Also, please review our <a class="xref" href="event-conventions.html" title="Naming Conventions">Naming Conventions</a>.</p><p><a id="ingest-json-entry-point-pipeline"></a>In 6.6 and later, ingest pipelines can use the
+<a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/conditionals-with-multiple-pipelines.html" target="_top"><code class="literal">pipeline</code> processor</a> to delegate
+parts of the processings to other pipelines.</p><p>This can be useful if you want a fileset to ingest the same <span class="emphasis"><em>logical</em></span> information
+presented in different formats, e.g. csv vs. json versions of the same log files.
+Imagine an entry point ingest pipeline that detects the format of a log entry and then conditionally
+delegates further processing of that log entry, depending on the format, to another
+pipeline.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+  "processors": [
+    {
+      "grok": {
+        "field": "message",
+        "patterns": [
+          "^%{CHAR:first_char}"
+        ],
+        "pattern_definitions": {
+          "CHAR": "."
+        }
+      }
+    },
+    {
+      "pipeline": {
+        "if": "ctx.first_char == '{'",
+        "name": "{&lt; IngestPipeline "json-log-processing-pipeline" &gt;}" <a id="CO3-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      }
+    },
+    {
+      "pipeline": {
+        "if": "ctx.first_char != '{'",
+        "name": "{&lt; IngestPipeline "plain-log-processing-pipeline" &gt;}"
+      }
+    }
+  ]
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO3-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Use the <code class="literal">IngestPipeline</code> template function to resolve the name. This function converts the
+specified name into the fully qualified pipeline ID that is stored in Elasticsearch.
+</p></td></tr></table></div><p>In order for the above pipeline to work, Filebeat must load the entry point pipeline
+as well as any sub-pipelines into Elasticsearch. You can tell Filebeat to do
+so by specifying all the necessary pipelines for the fileset in its <code class="literal">manifest.yml</code>
+file. The first pipeline in the list is considered to be the entry point pipeline.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">ingest_pipeline:
+  - ingest/main.json
+  - ingest/plain_logs.json
+  - ingest/json_logs.json</pre></div><p>While developing the pipeline definition, we recommend making use of the
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.x/simulate-pipeline-api.html" target="_top">Simulate Pipeline API</a> for testing
 and quick iteration.</p><p>By default Filebeat does not update Ingest pipelines if already loaded. If you
 want to force updating your pipeline during development, use
