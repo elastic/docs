@@ -49,7 +49,7 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'update!', 'target_repo=s',   #
+    'all', 'push', 'update!', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth',  #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor'
@@ -159,10 +159,12 @@ sub build_local_pdf {
 #===================================
 sub build_all {
 #===================================
-    say "Checking GitHub username and password (or auth token for multi-factor auth)";
+    unless ( $Opts->{rely_on_ssh_auth} ) {
+        say "Checking GitHub username and password (or auth token for multi-factor auth)";
 
-    ensure_creds_cache_enabled() || enable_creds_cache() || exit(1);
-    check_github_authed();
+        ensure_creds_cache_enabled() || enable_creds_cache() || exit(1);
+        check_github_authed();
+    }
 
     my ($repos_dir, $temp_dir, $target_repo, $target_repo_checkout) = init_repos();
 
@@ -390,16 +392,23 @@ sub init_repos {
     my $tracker_path = $Conf->{paths}{branch_tracker}
         or die "Missing <paths.branch_tracker> in config";
 
+    my $reference_dir = dir($Opts->{reference});
+    if ( $reference_dir ) {
+        $reference_dir = $reference_dir->absolute;
+        die "Missing reference directory $reference_dir" unless -e $reference_dir;
+    }
+
     my $target_repo = 0;
     my $target_repo_checkout = 0;
     if ( $Opts->{target_repo} ) {
         # If we have a target repo check it out before the other repos so that
         # we can use the tracker file in that repo.
         $target_repo = ES::Repo->new(
-            name    => 'target_repo',
-            dir     => $repos_dir,
-            user    => $Opts->{user},
-            url     => $Opts->{target_repo},
+            name      => 'target_repo',
+            dir       => $repos_dir,
+            user      => $Opts->{user},
+            url       => $Opts->{target_repo},
+            reference => $reference_dir,
             # intentionally not passing the tracker because we don't want to use it
         );
         delete $child_dirs{ $target_repo->git_dir->absolute };
@@ -407,7 +416,7 @@ sub init_repos {
         $tracker_path = "$target_repo_checkout/$tracker_path";
         eval {
             $target_repo->update_from_remote();
-            say "Checking out target repo";
+            say " - Checking out: target_repo";
             $target_repo->checkout_to($target_repo_checkout);
             1;
         } or do {
@@ -424,12 +433,15 @@ sub init_repos {
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
     my $pm = proc_man( $Opts->{procs} * 3 );
     for my $name (@repo_names) {
+        my $url = $conf->{$name};
+        $url =~ s|https://([^/]+)/|git\@$1:| if ( $Opts->{rely_on_ssh_auth} );
         my $repo = ES::Repo->new(
-            name    => $name,
-            dir     => $repos_dir,
-            tracker => $tracker,
-            user    => $Opts->{user},
-            url     => $conf->{$name}
+            name      => $name,
+            dir       => $repos_dir,
+            tracker   => $tracker,
+            user      => $Opts->{user},
+            url       => $url,
+            reference => $reference_dir,
         );
         delete $child_dirs{ $repo->git_dir->absolute };
 
@@ -710,6 +722,10 @@ sub usage {
           --staging         Use the template from the staging website
                             and push to the staging branch
           --user            Specify which GitHub user to use, if not your own
+          --target_repo     Repository to which to commit docs
+          --reference       Directory of `--mirror` clones to use as a local cache
+          --rely_on_ssh_auth
+                            Skip the git auth check and translate configured repos into ssh
 
     General Opts:
           --staging         Use the template from the staging website

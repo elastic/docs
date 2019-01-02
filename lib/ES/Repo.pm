@@ -25,11 +25,21 @@ sub new {
 
     my $dir = $args{dir} or die "No <dir> specified for repo <$name>";
 
+    my $reference_dir = 0;
+    if ($args{reference}) {
+        my $reference_subdir = $url;
+        $reference_subdir =~ s|/$||;
+        $reference_subdir =~ s|:*/*\.git$||;
+        $reference_subdir =~ s/.*[\/:]//g;
+        $reference_dir = $args{reference}->subdir("$reference_subdir.git");
+    }
+
     my $self = bless {
-        name    => $name,
-        git_dir => $dir->subdir("$name.git"),
-        url     => $url,
-        tracker => $args{tracker},
+        name          => $name,
+        git_dir       => $dir->subdir("$name.git"),
+        url           => $url,
+        tracker       => $args{tracker},
+        reference_dir => $reference_dir,
     }, $class;
     if ( $self->tracker ) {
         # Only track repos that have a tracker. Other repos are for things like
@@ -60,7 +70,7 @@ sub update_from_remote {
         unless ( $self->_try_to_fetch ) {
             my $url = $self->url;
             say " - Cloning $name from <$url>";
-            run 'git', 'clone', '--bare', $url, $git_dir;
+            run 'git', 'clone', '--bare', $self->_reference_args, $url, $git_dir;
         }
         1;
     }
@@ -94,6 +104,17 @@ sub _try_to_fetch {
     say " - Fetching: " . $self->name;
     run qw(git fetch --prune origin +refs/heads/*:refs/heads/*);
     return 1;
+}
+
+#===================================
+sub _reference_args {
+#===================================
+    my $self = shift;
+    return () unless $self->reference_dir;
+    return ('--reference', $self->reference_dir) if -e $self->reference_dir;
+    say " - Reference missing so not caching: " . $self->reference_dir;
+    $self->{reference_dir} = 0;
+    return ();
 }
 
 #===================================
@@ -280,10 +301,11 @@ sub checkout_to {
 }
 
 #===================================
-sub name    { shift->{name} }
-sub git_dir { shift->{git_dir} }
-sub url     { shift->{url} }
-sub tracker { shift->{tracker} }
+sub name          { shift->{name} }
+sub git_dir       { shift->{git_dir} }
+sub url           { shift->{url} }
+sub tracker       { shift->{tracker} }
+sub reference_dir { shift->{reference_dir} }
 #===================================
 
 1
