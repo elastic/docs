@@ -392,8 +392,11 @@ sub init_repos {
     my $tracker_path = $Conf->{paths}{branch_tracker}
         or die "Missing <paths.branch_tracker> in config";
 
-    my $reference_dir = dir($Opts->{reference})->absolute;
-    die "Missing reference directory $reference_dir" unless -e $reference_dir;
+    my $reference_dir = dir($Opts->{reference});
+    if ( $reference_dir ) {
+        $reference_dir = $reference_dir->absolute;
+        die "Missing reference directory $reference_dir" unless -e $reference_dir;
+    }
 
     my $target_repo = 0;
     my $target_repo_checkout = 0;
@@ -431,7 +434,7 @@ sub init_repos {
     my $pm = proc_man( $Opts->{procs} * 3 );
     for my $name (@repo_names) {
         my $url = $conf->{$name};
-        $url =~ s|https://([^/]+)/|git@\1:| if ( $Opts->{rely_on_ssh_auth} );
+        $url =~ s|https://([^/]+)/|git\@$1:| if ( $Opts->{rely_on_ssh_auth} );
         my $repo = ES::Repo->new(
             name      => $name,
             dir       => $repos_dir,
