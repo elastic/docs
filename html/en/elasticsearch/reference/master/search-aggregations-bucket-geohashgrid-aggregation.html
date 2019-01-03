@@ -792,7 +792,59 @@ POST /museums/_search?size=0
             }
         }
     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-geohashgrid-aggregation/2.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_cell_dimensions_at_the_equator"></a>Cell dimensions at the equator<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/geohashgrid-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The table below shows the metric dimensions for cells covered by various string lengths of geohash.
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-geohashgrid-aggregation/2.json"></div><p>The geohashes returned by the <code class="literal">geohash_grid</code> aggregation can be also used for zooming in. To zoom into the
+first geohash <code class="literal">u17</code> returned in the previous example, it should be specified as both <code class="literal">top_left</code> and <code class="literal">bottom_right</code> corner:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST /museums/_search?size=0
+{
+    "aggregations" : {
+        "zoomed-in" : {
+            "filter" : {
+                "geo_bounding_box" : {
+                    "location" : {
+                        "top_left" : "u17",
+                        "bottom_right" : "u17"
+                    }
+                }
+            },
+            "aggregations":{
+                "zoom1":{
+                    "geohash_grid" : {
+                        "field": "location",
+                        "precision": 8
+                    }
+                }
+            }
+        }
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-aggregations-bucket-geohashgrid-aggregation/3.json"></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    ...
+    "aggregations" : {
+        "zoomed-in" : {
+            "doc_count" : 3,
+            "zoom1" : {
+                "buckets" : [
+                    {
+                        "key" : "u173zy3j",
+                        "doc_count" : 1
+                    },
+                    {
+                        "key" : "u173zvfz",
+                        "doc_count" : 1
+                    },
+                    {
+                        "key" : "u173zt90",
+                        "doc_count" : 1
+                    }
+                ]
+            }
+        }
+    }
+}</pre></div><p>For "zooming in" on the system that don’t support geohashes, the bucket keys should be translated into bounding boxes using
+one of available geohash libraries. For example, for javascript the <a class="ulink" href="https://github.com/sunng87/node-geohash" target="_top">node-geohash</a> library
+can be used:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">var geohash = require('ngeohash');
+
+// bbox will contain [ 52.03125, 4.21875, 53.4375, 5.625 ]
+//                   [   minlat,  minlon,  maxlat, maxlon]
+var bbox = geohash.decode_bbox('u17');</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_cell_dimensions_at_the_equator"></a>Cell dimensions at the equator<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/aggregations/bucket/geohashgrid-aggregation.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The table below shows the metric dimensions for cells covered by various string lengths of geohash.
 Cell dimensions vary with latitude and so the table is for the worst-case scenario at the equator.</p><div class="informaltable"><table cellpadding="4px" border="0"><colgroup><col /><col /></colgroup><tbody valign="top"><tr><td valign="top">
 <p>
 <span class="strong strong"><strong>GeoHash length</strong></span>
