@@ -118,7 +118,7 @@ RSpec.describe ElasticCompatPreprocessor do
     expect(actual).to eq(expected.strip)
   end
 
-  it "attribute only blocks don't pick up blocks with other stuff in it" do
+  it "attribute only blocks don't pick up blocks without attributes" do
     actual = convert <<~ASCIIDOC
       == Header
 
@@ -137,4 +137,32 @@ RSpec.describe ElasticCompatPreprocessor do
     DOCBOOK
     expect(actual).to eq(expected.strip)
   end
+
+  it "attribute only blocks don't pick up blocks with attributes and other stuff" do
+    actual = convert <<~ASCIIDOC
+      == Header
+
+      --
+      :attr: test
+      added[some_version]
+      --
+
+      [id="{attr}"]
+      == Header
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_header">
+      <title>Header</title>
+      <note revisionflag="added" revision="some_version">
+        <simpara></simpara>
+      </note>
+      </chapter>
+      <chapter id="test">
+      <title>Header</title>
+
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
+
 end
