@@ -68,4 +68,73 @@ RSpec.describe ElasticCompatPreprocessor do
     expect { convert(input) }.to raise_error(
         ConvertError, /missing_callout.adoc: line 3: no callout found for <1>/)
   end
+
+  it "un-blocks blocks containing only attributes" do
+    actual = convert <<~ASCIIDOC
+      :inheader: foo
+
+      = Test
+
+      --
+      :outheader: bar
+      --
+
+      [id="{inheader}-{outheader}"]
+      == Header
+
+      <<{inheader}-{outheader}>>
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="foo-bar">
+      <title>Header</title>
+      <simpara><xref linkend="foo-bar"/></simpara>
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
+
+  it "attribute only blocks don't break further processing" do
+    actual = convert <<~ASCIIDOC
+      :inheader: foo
+
+      = Test
+
+      --
+      :outheader: bar
+      --
+
+      == Header
+      added[some_version]
+
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_header">
+      <title>Header</title>
+      <note revisionflag="added" revision="some_version">
+        <simpara></simpara>
+      </note>
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
+
+  it "attribute only only pick up attribute blocks" do
+    actual = convert <<~ASCIIDOC
+      == Header
+
+      --
+      added[some_version]
+      --
+
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_header">
+      <title>Header</title>
+      <note revisionflag="added" revision="some_version">
+        <simpara></simpara>
+      </note>
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
 end

@@ -28,16 +28,20 @@ class ConvertError < Exception
   end
 end
 
+# Put asciidoctor into verbose mode so it'll log reference errors
+$VERBOSE = true
+
 ##
 # Convert an asciidoc string into docbook. If the conversion results in any
 # errors or warnings then raises a ConvertError.
 def convert input
   logger = Asciidoctor::MemoryLogger.new
   result = Asciidoctor.convert input, {
-      :safe => :unsafe,  # Used to include "funny" files.
-      :backend => :docbook45,
-      :logger => logger,
-      :doctype => :book,
+      :safe       => :unsafe,  # Used to include "funny" files.
+      :backend    => :docbook45,
+      :logger     => logger,
+      :doctype    => :book,
+      :verbose    => true,
       :attributes => {
         'docdir' => File.dirname(__FILE__),
       },
