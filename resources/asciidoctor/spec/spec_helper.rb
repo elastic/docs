@@ -41,7 +41,6 @@ def convert input
       :backend    => :docbook45,
       :logger     => logger,
       :doctype    => :book,
-      :verbose    => true,
       :attributes => {
         'docdir' => File.dirname(__FILE__),
       },
