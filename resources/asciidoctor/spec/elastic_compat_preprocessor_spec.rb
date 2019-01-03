@@ -118,7 +118,7 @@ RSpec.describe ElasticCompatPreprocessor do
     expect(actual).to eq(expected.strip)
   end
 
-  it "attribute only only pick up attribute blocks" do
+  it "attribute only blocks don't pick up blocks with other stuff in it" do
     actual = convert <<~ASCIIDOC
       == Header
 
