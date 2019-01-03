@@ -24,22 +24,22 @@ include Asciidoctor
 #   <2> The categories retrieved
 #
 class ElasticCompatTreeProcessor < Extensions::TreeProcessor
-    def process document
-      process_blocks document
-      nil
+  def process document
+    process_blocks document
+    nil
+  end
+
+  def process_blocks block
+    if block.context == :listing && block.style == "source" &&
+          false == block.subs.include?(:specialcharacters)
+      # callouts have to come *after* special characters
+      had_callouts = block.subs.delete(:callouts)
+      block.subs << :specialcharacters
+      block.subs << :callouts if had_callouts
     end
-  
-    def process_blocks block
-      if block.context == :listing && block.style == "source" &&
-            false == block.subs.include?(:specialcharacters)
-        # callouts have to come *after* special characters
-        had_callouts = block.subs.delete(:callouts)
-        block.subs << :specialcharacters
-        block.subs << :callouts if had_callouts
-      end
-      for subblock in block.context == :dlist ? block.blocks.flatten : block.blocks
-        process_blocks subblock
-      end
+    for subblock in block.context == :dlist ? block.blocks.flatten : block.blocks
+      process_blocks subblock
     end
   end
+end
   
