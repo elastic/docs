@@ -1,4 +1,4 @@
-require 'asciidoctor/extensions'
+require_relative '../scaffold.rb'
 
 include Asciidoctor
 
@@ -23,22 +23,14 @@ include Asciidoctor
 #   <1> The count of categories that were matched
 #   <2> The categories retrieved
 #
-class ElasticCompatTreeProcessor < Extensions::TreeProcessor
-  def process document
-    process_blocks document
-    nil
-  end
-
-  def process_blocks block
+class ElasticCompatTreeProcessor < TreeProcessorScaffold
+  def process_block block
     if block.context == :listing && block.style == "source" &&
           false == block.subs.include?(:specialcharacters)
       # callouts have to come *after* special characters
       had_callouts = block.subs.delete(:callouts)
       block.subs << :specialcharacters
       block.subs << :callouts if had_callouts
-    end
-    for subblock in block.context == :dlist ? block.blocks.flatten : block.blocks
-      process_blocks subblock
     end
   end
 end
