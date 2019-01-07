@@ -420,7 +420,7 @@ sub rawxsltopts {
     while (@_) {
         my $key = shift;
         my $val = shift;
-        push @opts, '--stringparam', $key, "'$val'";
+        push @opts, '--stringparam', $key, "$val";
     }
     return @opts;
 }
@@ -451,7 +451,7 @@ sub run (@) {
     my ( $out, $err, $ok );
 
     if ( $Opts->{verbose} ) {
-        say "Running: @args";
+        say 'Running: ' . join(' ', map { "\"$_\"" } @args);
         ( $out, $err, $ok ) = tee { system(@args) == 0 };
     }
     else {
