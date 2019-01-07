@@ -34,16 +34,19 @@ $VERBOSE = true
 ##
 # Convert an asciidoc string into docbook. If the conversion results in any
 # errors or warnings then raises a ConvertError.
-def convert input
+def convert input, extra_attributes = {}
   logger = Asciidoctor::MemoryLogger.new
+  attributes = {
+    'docdir' => File.dirname(__FILE__),
+  }
+  attributes.merge! extra_attributes
   result = Asciidoctor.convert input, {
       :safe       => :unsafe,  # Used to include "funny" files.
       :backend    => :docbook45,
       :logger     => logger,
       :doctype    => :book,
-      :attributes => {
-        'docdir' => File.dirname(__FILE__),
-      },
+      :attributes => attributes,
+      :sourcemap  => true,
     }
   if logger.messages != [] then
     raise ConvertError.new(logger.messages, result)

@@ -85,9 +85,8 @@ sub build_chunked {
                 '-d' => 'book',
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
-                '-a' => 'base_edit_url=' . $edit_url,
                 '-a' => 'root_dir=' . $root_dir,
-                $private ? ( '-a' => 'edit_url!' ) : (),
+                $private ? () : ( '-a' => "edit_url=$edit_url" ),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
@@ -206,10 +205,9 @@ sub build_single {
                 '-d' => $type,
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
-                '-a' => 'base_edit_url=' . $edit_url,
                 '-a' => 'root_dir=' . $root_dir,
+                $private ? () : ( '-a' => "edit_url=$edit_url" ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
-                $private ? ( '-a' => 'edit_url!' ) : (),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
