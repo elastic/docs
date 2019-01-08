@@ -16,7 +16,7 @@ include Asciidoctor
 class CrampedInclude < Extensions::Preprocessor
   def process document, reader
     def reader.prepare_lines data, opts = {}
-      super.unshift ''
+      super << ''
     end
     reader
   end

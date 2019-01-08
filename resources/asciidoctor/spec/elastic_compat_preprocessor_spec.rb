@@ -1,6 +1,7 @@
 require 'added/extension'
 require 'elastic_compat_preprocessor/extension'
 require 'elastic_include_tagged/extension'
+require 'shared_examples/does_not_break_line_numbers'
 
 RSpec.describe ElasticCompatPreprocessor do
   before(:each) do
@@ -14,6 +15,8 @@ RSpec.describe ElasticCompatPreprocessor do
   after(:each) do
     Extensions.unregister_all
   end
+
+  include_examples "doesn't break line numbers"
 
   it "invokes added[version]" do
     actual = convert <<~ASCIIDOC
@@ -49,24 +52,6 @@ RSpec.describe ElasticCompatPreprocessor do
       </chapter>
     DOCBOOK
     expect(actual).to eq(expected.strip)
-  end
-
-  it "doesn't break line numbers" do
-    input = <<~ASCIIDOC
-      ---
-      ---
-      <1> callout
-    ASCIIDOC
-    expect { convert(input) }.to raise_error(
-        ConvertError, /<stdin>: line 3: no callout found for <1>/)
-  end
-
-  it "doesn't break line numbers in included files" do
-    input = <<~ASCIIDOC
-      include::resources/elastic_compat_preprocessor/missing_callout.adoc[]
-    ASCIIDOC
-    expect { convert(input) }.to raise_error(
-        ConvertError, /missing_callout.adoc: line 3: no callout found for <1>/)
   end
 
   it "un-blocks blocks containing only attributes" do
