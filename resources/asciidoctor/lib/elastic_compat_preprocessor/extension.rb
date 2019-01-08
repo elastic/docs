@@ -31,8 +31,38 @@ include Asciidoctor
 # Because asciidoctor clears attributes set in a block. See
 # https://github.com/asciidoctor/asciidoctor/issues/2993
 #
+# Turns
+#   ["source","sh",subs="attributes"]
+#   --------------------------------------------
+#   wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip
+#   wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip.sha512
+#   shasum -a 512 -c elasticsearch-{version}.zip.sha512 <1>
+#   unzip elasticsearch-{version}.zip
+#   cd elasticsearch-{version}/ <2>
+#   --------------------------------------------
+#   <1> Compares the SHA of the downloaded `.zip` archive and the published checksum, which should output
+#       `elasticsearch-{version}.zip: OK`.
+#   <2> This directory is known as `$ES_HOME`.
+#
+# Into
+#   ["source","sh",subs="attributes,callouts"]
+#   --------------------------------------------
+#   wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip
+#   wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip.sha512
+#   shasum -a 512 -c elasticsearch-{version}.zip.sha512 <1>
+#   unzip elasticsearch-{version}.zip
+#   cd elasticsearch-{version}/ <2>
+#   --------------------------------------------
+#   <1> Compares the SHA of the downloaded `.zip` archive and the published checksum, which should output
+#       `elasticsearch-{version}.zip: OK`.
+#   <2> This directory is known as `$ES_HOME`.
+# Because asciidoc adds callouts to all "source" blocks. We'd *prefer* to do
+# this in the tree processor because it is less messy but we can't because
+# asciidoctor checks the `:callout` sub before giving us a chance to add it.
+#
 class ElasticCompatPreprocessor < Extensions::Preprocessor
   IncludeTaggedDirectiveRx = /^include-tagged::([^\[][^\[]*)\[(#{CC_ANY}+)?\]$/
+  SourceWithSubsRx = /^\["source", ?"[^"]+", ?subs="(#{CC_ANY}+)"\]$/
 
   def process document, reader
     reader.instance_variable_set :@in_attribute_only_block, false
@@ -46,8 +76,8 @@ class ElasticCompatPreprocessor < Extensions::Preprocessor
         else
           line
         end
-      elsif IncludeTaggedDirectiveRx =~ line then
-        if preprocess_include_directive "elastic-include-tagged:#{$1}", $2 then
+      elsif IncludeTaggedDirectiveRx =~ line
+        if preprocess_include_directive "elastic-include-tagged:#{$1}", $2
           nil
         else
           # the line was not a valid include line and we've logged a warning
@@ -61,12 +91,18 @@ class ElasticCompatPreprocessor < Extensions::Preprocessor
         lines.shift
         while Asciidoctor::AttributeEntryRx =~ (check_line = lines.shift)
         end
-        if check_line == '--' then
+        if check_line == '--'
           @in_attribute_only_block = true
           line.clear
         else
           line
         end
+      elsif SourceWithSubsRx =~ line
+        line = super
+        unless $1.include?('callouts')
+          line.sub! "subs=\"#{$1}\"", "subs=\"#{$1},callouts\""
+        end
+        line
       else
         line = super
         line&.gsub!(/(added)\[([^\]]*)\]/, '\1::[\2]')
