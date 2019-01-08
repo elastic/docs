@@ -1,5 +1,6 @@
 require 'added/extension'
 require 'cramped_include/extension'
+require 'shared_examples/does_not_break_line_numbers'
 
 RSpec.describe CrampedInclude do
   before(:each) do
@@ -11,6 +12,8 @@ RSpec.describe CrampedInclude do
   after(:each) do
     Extensions.unregister_all
   end
+
+  include_examples "doesn't break line numbers"
 
   it "allows cramped includes of callout lists" do
     actual = convert <<~ASCIIDOC
