@@ -1,4 +1,3 @@
-require 'added/extension'
 require 'cramped_include/extension'
 require 'shared_examples/does_not_break_line_numbers'
 
