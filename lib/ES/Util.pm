@@ -86,6 +86,9 @@ sub build_chunked {
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
                 '-a' => 'root_dir=' . $root_dir,
+                # Use ` to delimit monospaced literals because our docs
+                # expect that
+                '-a' => 'compat-mode=legacy',
                 $private ? () : ( '-a' => "edit_url=$edit_url" ),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
@@ -122,6 +125,9 @@ sub build_chunked {
                 '-a' => "lang=$lang",
                 '-a' => 'base_edit_url=' . $edit_url,
                 '-a' => 'root_dir=' . $root_dir,
+                # Use ` to delimit monospaced literals because our docs
+                # expect that
+                '-a' => 'compat-mode=legacy',
                 $private ? ( '-a' => 'edit_url!' ) : (),
                 '--xsl-file'      => 'resources/website_chunked.xsl',
                 '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
