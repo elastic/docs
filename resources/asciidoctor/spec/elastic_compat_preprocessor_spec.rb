@@ -165,4 +165,40 @@ RSpec.describe ElasticCompatPreprocessor do
     expect(actual).to eq(expected.strip)
   end
 
+  it "adds callouts to substitutions for source blocks if there aren't any" do
+    actual = convert <<~ASCIIDOC
+      == Example
+      ["source","sh",subs="attributes"]
+      --------------------------------------------
+      wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip
+      wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip.sha512
+      shasum -a 512 -c elasticsearch-{version}.zip.sha512 <1>
+      unzip elasticsearch-{version}.zip
+      cd elasticsearch-{version}/ <2>
+      --------------------------------------------
+      <1> Compares the SHA of the downloaded `.zip` archive and the published checksum, which should output
+          `elasticsearch-{version}.zip: OK`.
+      <2> This directory is known as `$ES_HOME`.
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_example">
+      <title>Example</title>
+      <programlisting language="sh" linenumbering="unnumbered">wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip
+      wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip.sha512
+      shasum -a 512 -c elasticsearch-{version}.zip.sha512 <1>
+      unzip elasticsearch-{version}.zip
+      cd elasticsearch-{version}/ <2></programlisting>
+      <calloutlist>
+      <callout arearefs="CO1-1">
+      <para>Compares the SHA of the downloaded <literal>.zip</literal> archive and the published checksum, which should output
+      <literal>elasticsearch-{version}.zip: OK</literal>.</para>
+      </callout>
+      <callout arearefs="CO1-2">
+      <para>This directory is known as <literal>$ES_HOME</literal>.</para>
+      </callout>
+      </calloutlist>
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
 end
