@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>?refresh
-        | Elasticsearch Reference [6.x]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Optimistic concurrency control
+        | Elasticsearch Reference [6.6]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.x]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs-multi-termvectors.html" title="Multi termvectors API" /><link rel="next" href="optimistic-concurrency-control.html" title="Optimistic concurrency control" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.x" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="6.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [6.6]" /><link rel="up" href="docs.html" title="Document APIs" /><link rel="prev" href="docs-refresh.html" title="?refresh" /><link rel="next" href="search.html" title="Search APIs" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/6.6" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="6.6" />
     
 
     
@@ -698,94 +698,79 @@
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
-      [6.x]
-    </a></span> » <span class="breadcrumb-link"><a href="docs.html">Document APIs</a></span> » <span class="breadcrumb-node"><code class="literal">?refresh</code></span></div><div class="navheader"><span class="prev"><a href="docs-multi-termvectors.html">
+      [6.6]
+    </a></span> » <span class="breadcrumb-link"><a href="docs.html">Document APIs</a></span> » <span class="breadcrumb-node">Optimistic concurrency control</span></div><div class="navheader"><span class="prev"><a href="docs-refresh.html">
               « 
-              Multi termvectors API</a>
+              <code class="literal">?refresh</code></a>
            
         </span><span class="next">
            
-          <a href="optimistic-concurrency-control.html">Optimistic concurrency control
+          <a href="search.html">Search APIs
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="docs-refresh"></a><code class="literal">?refresh</code><a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/docs/refresh.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <a class="link" href="docs-index_.html" title="Index API">Index</a>, <a class="link" href="docs-update.html" title="Update API">Update</a>, <a class="link" href="docs-delete.html" title="Delete API">Delete</a>, and
-<a class="link" href="docs-bulk.html" title="Bulk API">Bulk</a> APIs support setting <code class="literal">refresh</code> to control when changes made
-by this request are made visible to search. These are the allowed values:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-Empty string or <code class="literal">true</code>
-</span></dt><dd>
-Refresh the relevant primary and replica shards (not the whole index)
-immediately after the operation occurs, so that the updated document appears
-in search results immediately. This should <span class="strong strong"><strong>ONLY</strong></span> be done after careful thought
-and verification that it does not lead to poor performance, both from an
-indexing and a search standpoint.
-</dd><dt><span class="term">
-<code class="literal">wait_for</code>
-</span></dt><dd>
-Wait for the changes made by the request to be made visible by a refresh before
-replying. This doesn’t force an immediate refresh, rather, it waits for a
-refresh to happen. Elasticsearch automatically refreshes shards that have changed
-every <code class="literal">index.refresh_interval</code> which defaults to one second. That setting is
-<a class="link" href="index-modules.html#dynamic-index-settings" title="Dynamic index settingsedit">dynamic</a>. Calling the <a class="xref" href="indices-refresh.html" title="Refresh"><em>Refresh</em></a> API or
-setting <code class="literal">refresh</code> to <code class="literal">true</code> on any of the APIs that support it will also
-cause a refresh, in turn causing already running requests with <code class="literal">refresh=wait_for</code>
-to return.
-</dd><dt><span class="term">
-<code class="literal">false</code> (the default)
-</span></dt><dd>
-Take no refresh related actions. The changes made by this request will be made
-visible at some point after the request returns.
-</dd></dl></div><h3><a id="_choosing_which_setting_to_use"></a>Choosing which setting to use<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/docs/refresh.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Unless you have a good reason to wait for the change to become visible always
-use <code class="literal">refresh=false</code>, or, because that is the default, just leave the <code class="literal">refresh</code>
-parameter out of the URL. That is the simplest and fastest choice.</p><p>If you absolutely must have the changes made by a request visible synchronously
-with the request then you must pick between putting more load on
-Elasticsearch (<code class="literal">true</code>) and waiting longer for the response (<code class="literal">wait_for</code>). Here
-are a few points that should inform that decision:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
-The more changes being made to the index the more work <code class="literal">wait_for</code> saves
-compared to <code class="literal">true</code>. In the case that the index is only changed once every
-<code class="literal">index.refresh_interval</code> then it saves no work.
-</li><li class="listitem">
-<code class="literal">true</code> creates less efficient indexes constructs (tiny segments) that must
-later be merged into more efficient index constructs (larger segments). Meaning
-that the cost of <code class="literal">true</code> is payed at index time to create the tiny segment, at
-search time to search the tiny segment, and at merge time to make the larger
-segments.
-</li><li class="listitem">
-Never start multiple <code class="literal">refresh=wait_for</code> requests in a row. Instead batch them
-into a single bulk request with <code class="literal">refresh=wait_for</code> and Elasticsearch will start
-them all in parallel and return only when they have all finished.
-</li><li class="listitem">
-If the refresh interval is set to <code class="literal">-1</code>, disabling the automatic refreshes,
-then requests with <code class="literal">refresh=wait_for</code> will wait indefinitely until some action
-causes a refresh. Conversely, setting <code class="literal">index.refresh_interval</code> to something
-shorter than the default like <code class="literal">200ms</code> will make <code class="literal">refresh=wait_for</code> come back
-faster, but it’ll still generate inefficient segments.
-</li><li class="listitem">
-<code class="literal">refresh=wait_for</code> only affects the request that it is on, but, by forcing a
-refresh immediately, <code class="literal">refresh=true</code> will affect other ongoing request. In
-general, if you have a running system you don’t wish to disturb then
-<code class="literal">refresh=wait_for</code> is a smaller modification.
-</li></ul></div><h3><a id="_literal_refresh_wait_for_literal_can_force_a_refresh"></a><code class="literal">refresh=wait_for</code> Can Force a Refresh<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/docs/refresh.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>If a <code class="literal">refresh=wait_for</code> request comes in when there are already
-<code class="literal">index.max_refresh_listeners</code> (defaults to 1000) requests waiting for a refresh
-on that shard then that request will behave just as though it had <code class="literal">refresh</code> set
-to <code class="literal">true</code> instead: it will force a refresh. This keeps the promise that when a
-<code class="literal">refresh=wait_for</code> request returns that its changes are visible for search
-while preventing unchecked resource usage for blocked requests. If a request
-forced a refresh because it ran out of listener slots then its response will
-contain <code class="literal">"forced_refresh": true</code>.</p><p>Bulk requests only take up one slot on each shard that they touch no matter how
-many times they modify the shard.</p><h3><a id="_examples"></a>Examples<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/docs/refresh.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>These will create a document and immediately refresh the index so it is visible:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test/_doc/1?refresh
-{"test": "test"}
-PUT /test/_doc/2?refresh=true
-{"test": "test"}</pre></div><div class="console_widget" data-snippet="snippets/docs-refresh/1.json"></div><p>These will create a document without doing anything to make it visible for
-search:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test/_doc/3
-{"test": "test"}
-PUT /test/_doc/4?refresh=false
-{"test": "test"}</pre></div><div class="console_widget" data-snippet="snippets/docs-refresh/2.json"></div><p>This will create a document and wait for it to become visible for search:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT /test/_doc/4?refresh=wait_for
-{"test": "test"}</pre></div><div class="console_widget" data-snippet="snippets/docs-refresh/3.json"></div></div><div class="navfooter"><span class="prev"><a href="docs-multi-termvectors.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="optimistic-concurrency-control"></a>Optimistic concurrency control<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/concurrency-control.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Elasticsearch is distributed. When documents are created, updated, or deleted,
+the new version of the document has to be replicated to other nodes in the cluster.
+Elasticsearch is also asynchronous and concurrent, meaning that these replication
+requests are sent in parallel, and may arrive at their destination out of sequence.
+Elasticsearch needs a way of ensuring that an older version of a document never
+overwrites a newer version.</p><p>To ensure an older version of a document doesn’t overwrite a newer version, every
+operation performed to a document is assigned a sequence number by the primary
+shard that coordinates that change. The sequence number is increased with each
+operation and thus newer operations are guaranteed to have a higher sequence
+number than older operations. Elasticsearch can then use the sequence number of
+operations to make sure a newer document version is never overridden by
+a change that has a smaller sequence number assigned to it.</p><p>For example, the following indexing command will create a document and assign it
+an initial sequence number and primary term:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT products/_doc/1567
+{
+    "product" : "r2d2",
+    "details" : "A resourceful astromech droid"
+}</pre></div><div class="console_widget" data-snippet="snippets/optimistic-concurrency-control/1.json"></div><p>You can see the assigned sequence number and primary term in the
+the <code class="literal">_seq_no</code> and <code class="literal">_primary_term</code> fields of the response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "_shards" : {
+        "total" : 2,
+        "failed" : 0,
+        "successful" : 1
+    },
+    "_index" : "products",
+    "_type" : "_doc",
+    "_id" : "1567",
+    "_version" : 1,
+    "_seq_no" : 362,
+    "_primary_term" : 2,
+    "result" : "created"
+}</pre></div><p>Elasticsearch keeps tracks of the sequence number and primary of the last
+operation to have changed each of the document it stores. The sequence number
+and primary term are returned in the <code class="literal">_seq_no</code> and <code class="literal">_primary_term</code> fields in
+the response of the <a class="link" href="docs-get.html" title="Get API">GET API</a>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET products/_doc/1567</pre></div><div class="console_widget" data-snippet="snippets/optimistic-concurrency-control/2.json"></div><p>returns:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "_index" : "products",
+    "_type" : "_doc",
+    "_id" : "1567",
+    "_version" : 1,
+    "_seq_no" : 362,
+    "_primary_term" : 2,
+    "found": true,
+    "_source" : {
+        "product" : "r2d2",
+        "details" : "A resourceful astromech droid"
+    }
+}</pre></div><p>Note: The <a class="link" href="search-search.html" title="Search">Search API</a> can return the <code class="literal">_seq_no</code> and <code class="literal">_primary_term</code>
+for each search hit by requesting the <code class="literal">_seq_no</code> and <code class="literal">_primary_term</code> <a class="link" href="search-request-docvalue-fields.html" title="Doc value Fields">Doc Value Fields</a>.</p><p>The sequence number and the primary term uniquely identify a change. By noting down
+the sequence number and primary term returned, you can make sure to only change the
+document if no other change was made to it since you retrieved it. This
+is done by setting the <code class="literal">if_seq_no</code> and <code class="literal">if_primary_term</code> parameters of either the
+<a class="link" href="docs-index_.html" title="Index API">Index API</a> or the <a class="link" href="docs-delete.html" title="Delete API">Delete API</a>.</p><p>For example, the following indexing call will make sure to add a tag to the
+document without losing any potential change to the description or an addition
+of another tag by another API:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT products/_doc/1567?if_seq_no=362&amp;if_primary_term=2
+{
+    "product" : "r2d2",
+    "details" : "A resourceful astromech droid",
+    "tags": ["droid"]
+}</pre></div><div class="console_widget" data-snippet="snippets/optimistic-concurrency-control/3.json"></div></div><div class="navfooter"><span class="prev"><a href="docs-refresh.html">
               « 
-              Multi termvectors API</a>
+              <code class="literal">?refresh</code></a>
            
         </span><span class="next">
            
-          <a href="optimistic-concurrency-control.html">Optimistic concurrency control
+          <a href="search.html">Search APIs
                »
             </a></span></div>
 <!-- end body -->

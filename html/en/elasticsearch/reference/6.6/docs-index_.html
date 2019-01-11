@@ -750,69 +750,7 @@ section for more information on mapping definitions.</p><p>Automatic index creat
 Automatic mapping creation can be disabled by setting
 <code class="literal">index.mapper.dynamic</code> to <code class="literal">false</code> per-index as an index setting.</p><p>Automatic index creation can include a pattern based white/black list,
 for example, set <code class="literal">action.auto_create_index</code> to <code class="literal">+aaa*,-bbb*,+ccc*,-*</code> (+
-meaning allowed, and - meaning disallowed).</p><h3><a id="index-versioning"></a>Versioning<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each indexed document is given a version number. The associated
-<code class="literal">version</code> number is returned as part of the response to the index API
-request. The index API optionally allows for
-<a class="ulink" href="http://en.wikipedia.org/wiki/Optimistic_concurrency_control" target="_top">optimistic
-concurrency control</a> when the <code class="literal">version</code> parameter is specified. This
-will control the version of the document the operation is intended to be
-executed against. A good example of a use case for versioning is
-performing a transactional read-then-update. Specifying a <code class="literal">version</code> from
-the document initially read ensures no changes have happened in the
-meantime (when reading in order to update, it is recommended to set
-<code class="literal">preference</code> to <code class="literal">_primary</code>). For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter/_doc/1?version=2
-{
-    "message" : "elasticsearch now has versioning support, double cool!"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/2.json"></div><p><span class="strong strong"><strong>NOTE:</strong></span> versioning is completely real time, and is not affected by the
-near real time aspects of search operations. If no version is provided,
-then the operation is executed without any version checks.</p><p>By default, internal versioning is used that starts at 1 and increments
-with each update, deletes included. Optionally, the version number can be
-supplemented with an external value (for example, if maintained in a
-database). To enable this functionality, <code class="literal">version_type</code> should be set to
-<code class="literal">external</code>. The value provided must be a numeric, long value greater or equal to 0,
-and less than around 9.2e+18. When using the external version type, instead
-of checking for a matching version number, the system checks to see if
-the version number passed to the index request is greater than the
-version of the currently stored document. If true, the document will be
-indexed and the new version number used. If the value provided is less
-than or equal to the stored document’s version number, a version
-conflict will occur and the index operation will fail.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>External versioning supports the value 0 as a valid version number.
-This allows the version to be in sync with an external versioning system
-where version numbers start from zero instead of one. It has the side effect
-that documents with version number equal to zero cannot neither be updated
-using the <a class="link" href="docs-update-by-query.html" title="Update By Query API">Update-By-Query API</a> nor be deleted
-using the <a class="link" href="docs-delete-by-query.html" title="Delete By Query API">Delete By Query API</a> as long as their
-version number is equal to zero.</p></div></div><p>A nice side effect is that there is no need to maintain strict ordering
-of async indexing operations executed as a result of changes to a source
-database, as long as version numbers from the source database are used.
-Even the simple case of updating the Elasticsearch index using data from
-a database is simplified if external versioning is used, as only the
-latest version will be used if the index operations are out of order for
-whatever reason.</p><h4><a id="_version_types"></a>Version types<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Next to the <code class="literal">internal</code> &amp; <code class="literal">external</code> version types explained above, Elasticsearch
-also supports other types for specific use cases. Here is an overview of
-the different version types and their semantics.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-<code class="literal">internal</code>
-</span></dt><dd>
-only index the document if the given version is identical to the version
-of the stored document.
-</dd><dt><span class="term">
-<code class="literal">external</code> or <code class="literal">external_gt</code>
-</span></dt><dd>
-only index the document if the given version is strictly higher
-than the version of the stored document <span class="strong strong"><strong>or</strong></span> if there is no existing document. The given
-version will be used as the new version and will be stored with the new document. The supplied
-version must be a non-negative long number.
-</dd><dt><span class="term">
-<code class="literal">external_gte</code>
-</span></dt><dd>
-only index the document if the given version is <span class="strong strong"><strong>equal</strong></span> or higher
-than the version of the stored document. If there is no existing document
-the operation will succeed as well. The given version will be used as the new version
-and will be stored with the new document. The supplied version must be a non-negative long number.
-</dd></dl></div><p><span class="strong strong"><strong>NOTE</strong></span>: The <code class="literal">external_gte</code> version type is meant for special use cases and
-should be used with care. If used incorrectly, it can result in loss of data.
-There is another option, <code class="literal">force</code>, which is deprecated because it can cause
-primary and replica shards to diverge.</p><h3><a id="operation-type"></a>Operation Type<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation also accepts an <code class="literal">op_type</code> that can be used to force
+meaning allowed, and - meaning disallowed).</p><h3><a id="operation-type"></a>Operation Type<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation also accepts an <code class="literal">op_type</code> that can be used to force
 a <code class="literal">create</code> operation, allowing for "put-if-absent" behavior. When
 <code class="literal">create</code> is used, the index operation will fail if a document by that id
 already exists in the index.</p><p>Here is an example of using the <code class="literal">op_type</code> parameter:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter/_doc/1?op_type=create
@@ -820,12 +758,12 @@ already exists in the index.</p><p>Here is an example of using the <code class="
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/3.json"></div><p>Another option to specify <code class="literal">create</code> is to use the following uri:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter/_doc/1/_create
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/2.json"></div><p>Another option to specify <code class="literal">create</code> is to use the following uri:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter/_doc/1/_create
 {
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/4.json"></div><h3><a id="_automatic_id_generation"></a>Automatic ID Generation<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation can be executed without specifying the id. In such a
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/3.json"></div><h3><a id="_automatic_id_generation"></a>Automatic ID Generation<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation can be executed without specifying the id. In such a
 case, an id will be generated automatically. In addition, the <code class="literal">op_type</code>
 will automatically be set to <code class="literal">create</code>. Here is an example (note the
 <span class="strong strong"><strong>POST</strong></span> used instead of <span class="strong strong"><strong>PUT</strong></span>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_doc/
@@ -833,7 +771,7 @@ will automatically be set to <code class="literal">create</code>. Here is an exa
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/5.json"></div><p>The result of the above index operation is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/4.json"></div><p>The result of the above index operation is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "_shards" : {
         "total" : 2,
         "failed" : 0,
@@ -846,7 +784,11 @@ will automatically be set to <code class="literal">create</code>. Here is an exa
     "_seq_no" : 0,
     "_primary_term" : 1,
     "result": "created"
-}</pre></div><h3><a id="index-routing"></a>Routing<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default, shard placement — or <code class="literal">routing</code> — is controlled by using a
+}</pre></div><h3><a id="optimistic-concurrency-control-index"></a>Optimistic concurrency control<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Index operations can be made optional and only be performed if the last
+modification to the document was assigned the sequence number and primary
+term specified by the <code class="literal">if_seq_no</code> and <code class="literal">if_primary_term</code> parameters. If a
+mismatch is detected, the operation will result in a <code class="literal">VersionConflictException</code>
+and a status code of 409. See <a class="xref" href="optimistic-concurrency-control.html" title="Optimistic concurrency control"><em>Optimistic concurrency control</em></a> for more details.</p><h3><a id="index-routing"></a>Routing<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default, shard placement — or <code class="literal">routing</code> — is controlled by using a
 hash of the document’s id value. For more explicit control, the value
 fed into the hash function used by the router can be directly specified
 on a per-operation basis using the <code class="literal">routing</code> parameter. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/_doc?routing=kimchy
@@ -854,7 +796,7 @@ on a per-operation basis using the <code class="literal">routing</code> paramete
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/6.json"></div><p>In the example above, the "_doc" document is routed to a shard based on
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/5.json"></div><p>In the example above, the "_doc" document is routed to a shard based on
 the <code class="literal">routing</code> parameter provided: "kimchy".</p><p>When setting up explicit mapping, the <code class="literal">_routing</code> field can be optionally
 used to direct the index operation to extract the routing value from the
 document itself. This does come at the (very minimal) cost of an
@@ -923,7 +865,62 @@ to 5 minutes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/7.json"></div></div><div class="navfooter"><span class="prev"><a href="docs-replication.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/6.json"></div><h3><a id="index-versioning"></a>Versioning<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each indexed document is given a version number. By default,
+internal versioning is used that starts at 1 and increments
+with each update, deletes included. Optionally, the version number can be
+set to an external value (for example, if maintained in a
+database). To enable this functionality, <code class="literal">version_type</code> should be set to
+<code class="literal">external</code>. The value provided must be a numeric, long value greater or equal to 0,
+and less than around 9.2e+18.</p><p>When using the external version type, the system checks to see if
+the version number passed to the index request is greater than the
+version of the currently stored document. If true, the document will be
+indexed and the new version number used. If the value provided is less
+than or equal to the stored document’s version number, a version
+conflict will occur and the index operation will fail. For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter/_doc/1?version=2&amp;version_type=external
+{
+    "message" : "elasticsearch now has versioning support, double cool!"
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/7.json"></div><p><span class="strong strong"><strong>NOTE:</strong></span> versioning is completely real time, and is not affected by the
+near real time aspects of search operations. If no version is provided,
+then the operation is executed without any version checks.</p><p>The above will succeed since the the supplied version of 2 is higher than
+the current document version of 1. If the document was already updated
+and its version was set to 2 or higher, the indexing command will fail
+and result in a conflict (409 http status code).</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>External versioning supports the value 0 as a valid version number.
+This allows the version to be in sync with an external versioning system
+where version numbers start from zero instead of one. It has the side effect
+that documents with version number equal to zero can neither be updated
+using the <a class="link" href="docs-update-by-query.html" title="Update By Query API">Update-By-Query API</a> nor be deleted
+using the <a class="link" href="docs-delete-by-query.html" title="Delete By Query API">Delete By Query API</a> as long as their
+version number is equal to zero.</p></div></div><p>A nice side effect is that there is no need to maintain strict ordering
+of async indexing operations executed as a result of changes to a source
+database, as long as version numbers from the source database are used.
+Even the simple case of updating the Elasticsearch index using data from
+a database is simplified if external versioning is used, as only the
+latest version will be used if the index operations arrive out of order for
+whatever reason.</p><h4><a id="_version_types"></a>Version types<a href="https://github.com/elastic/elasticsearch/edit/6.6/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Next to the <code class="literal">external</code> version type explained above, Elasticsearch
+also supports other types for specific use cases. Here is an overview of
+the different version types and their semantics.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">internal</code>
+</span></dt><dd>
+only index the document if the given version is identical to the version
+of the stored document.
+</dd><dt><span class="term">
+<code class="literal">external</code> or <code class="literal">external_gt</code>
+</span></dt><dd>
+only index the document if the given version is strictly higher
+than the version of the stored document <span class="strong strong"><strong>or</strong></span> if there is no existing document. The given
+version will be used as the new version and will be stored with the new document. The supplied
+version must be a non-negative long number.
+</dd><dt><span class="term">
+<code class="literal">external_gte</code>
+</span></dt><dd>
+only index the document if the given version is <span class="strong strong"><strong>equal</strong></span> or higher
+than the version of the stored document. If there is no existing document
+the operation will succeed as well. The given version will be used as the new version
+and will be stored with the new document. The supplied version must be a non-negative long number.
+</dd></dl></div><p><span class="strong strong"><strong>NOTE</strong></span>: The <code class="literal">external_gte</code> version type is meant for special use cases and
+should be used with care. If used incorrectly, it can result in loss of data.
+There is another option, <code class="literal">force</code>, which is deprecated because it can cause
+primary and replica shards to diverge.</p></div><div class="navfooter"><span class="prev"><a href="docs-replication.html">
               « 
               Reading and Writing documents</a>
            
