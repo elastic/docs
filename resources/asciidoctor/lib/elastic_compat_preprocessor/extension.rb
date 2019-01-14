@@ -60,12 +60,28 @@ include Asciidoctor
 # this in the tree processor because it is less messy but we can't because
 # asciidoctor checks the `:callout` sub before giving us a chance to add it.
 #
+# Turns
+#   ----
+#   foo
+#   ------
+#
+# Into
+#   ----
+#   foo
+#   ----
+# Because Asciidoc permits these mismatches but asciidoctor does not. We'll
+# emit a warning because, permitted or not, they are bad style.
+#
 class ElasticCompatPreprocessor < Extensions::Preprocessor
+  include Logging
+
   IncludeTaggedDirectiveRx = /^include-tagged::([^\[][^\[]*)\[(#{CC_ANY}+)?\]$/
   SourceWithSubsRx = /^\["source", ?"[^"]+", ?subs="(#{CC_ANY}+)"\]$/
+  CodeBlockRx = /^-----*$/
 
   def process document, reader
     reader.instance_variable_set :@in_attribute_only_block, false
+    reader.instance_variable_set :@code_block_start, nil
     def reader.process_line line
       return line unless @process_lines
 
@@ -105,6 +121,17 @@ class ElasticCompatPreprocessor < Extensions::Preprocessor
         line
       else
         line = super
+        if CodeBlockRx =~ line
+          if @code_block_start
+            if line != @code_block_start
+              line.replace(@code_block_start)
+              logger.warn message_with_context "code block end doesn't match start", :source_location => cursor
+            end
+            @code_block_start = nil
+          else
+            @code_block_start = line
+          end
+        end
         line&.gsub!(/(added)\[([^\]]*)\]/, '\1::[\2]')
       end
     end

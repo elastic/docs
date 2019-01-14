@@ -186,4 +186,47 @@ RSpec.describe ElasticCompatPreprocessor do
     DOCBOOK
     expect(actual).to eq(expected.strip)
   end
+
+  it "fixes mismatched fencing on code blocks" do
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo
+      --------
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_example">
+      <title>Example</title>
+      <screen>foo</screen>
+      </chapter>
+    DOCBOOK
+    expect { convert(input) }.to raise_error { |error|
+      expect(error).to be_a(ConvertError)
+      expect(error.message).to match(/<stdin>: line 4: code block end doesn't match start/)
+      expect(error.result).to eq(expected.strip)
+    }
+  end
+
+  it "doesn't break table-style outputs" do
+    actual = convert <<~ASCIIDOC
+      == Example
+      [source,text]
+      --------------------------------------------------
+          author     |     name      |  page_count   | release_date
+      ---------------+---------------+---------------+------------------------
+      Dan Simmons    |Hyperion       |482            |1989-05-26T00:00:00.000Z
+      Frank Herbert  |Dune           |604            |1965-06-01T00:00:00.000Z
+      --------------------------------------------------
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_example">
+      <title>Example</title>
+      <programlisting language="text" linenumbering="unnumbered">    author     |     name      |  page_count   | release_date
+      ---------------+---------------+---------------+------------------------
+      Dan Simmons    |Hyperion       |482            |1989-05-26T00:00:00.000Z
+      Frank Herbert  |Dune           |604            |1965-06-01T00:00:00.000Z</programlisting>
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
 end
