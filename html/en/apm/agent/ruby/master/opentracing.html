@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>APM Ruby Agent Reference [master]
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>OpenTracing bridge
+        | APM Ruby Agent Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Ruby Agent Reference [master]" /><link rel="next" href="introduction.html" title="Introduction" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Ruby Agent/Reference/master" /><meta name="DC.subject" content="APM" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Ruby Agent Reference [master]" /><link rel="up" href="advanced.html" title="Advanced Topics" /><link rel="prev" href="custom-instrumentation.html" title="Custom instrumentation" /><link rel="next" href="supported-technologies.html" title="Supported technologies" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Ruby Agent/Reference/master" /><meta name="DC.subject" content="APM" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -696,17 +697,59 @@
 <div class="page_header">You are looking at preliminary documentation for a future release.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
-</div><div class="navheader"><span class="prev">
+</div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">APM Ruby Agent Reference
+      [master]
+    </a></span> » <span class="breadcrumb-link"><a href="advanced.html">Advanced Topics</a></span> » <span class="breadcrumb-node">OpenTracing bridge</span></div><div class="navheader"><span class="prev"><a href="custom-instrumentation.html">
+              « 
+              Custom instrumentation</a>
            
         </span><span class="next">
            
-          <a href="introduction.html">Introduction
+          <a href="supported-technologies.html">Supported technologies
                »
-            </a></span></div><div class="book" lang="en"><div class="titlepage"><div><div><h1 class="title"><a id="id-1"></a>APM Ruby Agent Reference</h1></div></div><hr /></div><!--START_TOC--><div class="toc"><ul class="toc"><li id="book_title"><span>APM Ruby Agent: <select><option value="master" selected>master</option><option value="2.x">2.x (current)</option><option value="1.x">1.x</option></select></span></li><li><span class="chapter"><a href="introduction.html">Introduction</a></span></li><li><span class="chapter"><a href="getting-started-rails.html">Getting started with Rails</a></span></li><li><span class="chapter"><a href="getting-started-rack.html">Getting started with Rack</a></span></li><li><span class="chapter"><a href="configuration.html">Configuration</a></span></li><li><span class="chapter"><a href="advanced.html">Advanced Topics</a></span><ul><li><span class="section"><a href="context.html">Adding additional context</a></span></li><li><span class="section"><a href="custom-instrumentation.html">Custom instrumentation</a></span></li><li><span class="section"><a href="opentracing.html">OpenTracing bridge</a></span></li></ul></li><li><span class="chapter"><a href="supported-technologies.html">Supported technologies</a></span></li><li><span class="chapter"><a href="api.html">Public API</a></span></li></ul></div><!--END_TOC--></div><div class="navfooter"><span class="prev">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="opentracing"></a>OpenTracing bridge<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Elastic APM OpenTracing bridge allows to create Elastic APM <code class="literal">Transactions</code> and <code class="literal">Spans</code>,
+using the OpenTracing API.
+In other words,
+it translates the calls to the OpenTracing API to Elastic APM and thus allows for reusing existing instrumentation.</p><p>The first span of a service will be converted to an Elastic APM <code class="literal">Transaction</code>,
+subsequent spans are mapped to Elastic APM <code class="literal">Span</code>.</p><h3><a id="operation-modes"></a>Operation Modes<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This bridge allows for different operation modes in combination with the Elastic APM Agent.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+Noop
+  If no Elastic APM agent is running, the bridge is in noop mode and does not actually record and report spans.
+</li><li class="listitem">
+Mix and Match
+  If you want to leverage the auto instrumentation of Elastic APM,
+  but also want do create custom spans or use the OpenTracing API to add custom tags to the spans created by Elastic APM,
+  you can just do that.
+  The OpenTracing bridge and the standard Elastic APM API interact seamlessly.
+</li><li class="listitem">
+Manual instrumentation
+  If you don’t want Elastic APM to auto-instrument known frameworks,
+  but instead only rely on manual instrumentation,
+  disable the auto instrumentation setting the configuration option <a class="link" href="configuration.html#config-instrument" title="instrumentedit"><code class="literal">instrument</code></a> to <code class="literal">false</code>.
+</li></ul></div><h3><a id="getting-started"></a>Getting started<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Either <code class="literal">require 'elastic_apm/opentracing'</code> during the boot of your app or specify the <code class="literal">require:</code> argument to your <code class="literal">Gemfile</code>, eg. <code class="literal">gem 'elastic_apm', require: 'elastic_apm/opentracing'</code>.</p><h3><a id="init-tracer"></a>Set Elastic APM as the global tracer<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><div class="pre_wrapper"><pre class="programlisting prettyprint lang-ruby">::OpenTracing.global_tracer = ElasticAPM::OpenTracing::Tracer.new</pre></div><h3><a id="elastic-apm-tags"></a>Elastic APM specific tags<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elastic APM defines some tags which are not included in the OpenTracing API but are relevant in the context of Elastic APM.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<code class="literal">type</code> - sets the type of the transaction,
+  for example <code class="literal">request</code>, <code class="literal">ext</code> or <code class="literal">db</code>
+</li><li class="listitem">
+<code class="literal">user.id</code> - sets the user id,
+  appears in the "User" tab in the transaction details in the Elastic APM UI
+</li><li class="listitem">
+<code class="literal">user.email</code> - sets the user email,
+  appears in the "User" tab in the transaction details in the Elastic APM UI
+</li><li class="listitem">
+<code class="literal">user.username</code> - sets the user name,
+  appears in the "User" tab in the transaction details in the Elastic APM UI
+</li><li class="listitem">
+<code class="literal">result</code> - sets the result of the transaction. Overrides the default value of <code class="literal">success</code>.
+  If the <code class="literal">error</code> tag is set to <code class="literal">true</code>, the default value is <code class="literal">error</code>.
+</li></ul></div><h3><a id="unsupported"></a>Caveats<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Not all features of the OpenTracing API are supported.</p><h4><a id="propagation"></a>Context propagation<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>This bridge only supports the format <code class="literal">OpenTracing::FORMAT_RACK</code>, using HTTP headers with capitalized names, prefixed with <code class="literal">HTTP_</code> as Rack does it.</p><p><code class="literal">OpenTracing::FORMAT_BINARY</code> is currently not supported.</p><h4><a id="references"></a>Span References<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Currently, this bridge only supports <code class="literal">child_of</code> references.
+Other references,
+like <code class="literal">follows_from</code> are not supported yet.</p><h4><a id="baggage"></a>Baggage<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The <code class="literal">Span.set_baggage</code> method is not supported.
+Baggage items are dropped with a warning log message.</p><h4><a id="logs"></a>Logs<a href="https://github.com/elastic/apm-agent-ruby/edit/master/docs/opentracing.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Logs are currently not supported.</p></div><div class="navfooter"><span class="prev"><a href="custom-instrumentation.html">
+              « 
+              Custom instrumentation</a>
            
         </span><span class="next">
            
-          <a href="introduction.html">Introduction
+          <a href="supported-technologies.html">Supported technologies
                »
             </a></span></div>
 <!-- end body -->
