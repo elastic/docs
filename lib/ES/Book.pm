@@ -139,7 +139,7 @@ sub new {
 #===================================
 sub build {
 #===================================
-    my $self = shift;
+    my ( $self, $rebuild ) = @_;
 
     say "Book: " . $self->title;
 
@@ -158,7 +158,7 @@ sub build {
     );
 
     for my $branch ( @{ $self->branches } ) {
-        $self->_build_book( $branch, $pm );
+        $self->_build_book( $branch, $pm, $rebuild );
 
         my $branch_title = $self->branch_title($branch);
         if ( $branch eq $self->current ) {
@@ -204,7 +204,7 @@ sub build {
 #===================================
 sub _build_book {
 #===================================
-    my ( $self, $branch, $pm ) = @_;
+    my ( $self, $branch, $pm, $rebuild ) = @_;
 
     my $branch_dir    = $self->dir->subdir($branch);
     my $source        = $self->source;
@@ -217,6 +217,7 @@ sub _build_book {
 
     return
            if -e $branch_dir
+        && !$rebuild
         && !$template->md5_changed($branch_dir)
         && !$source->has_changed( $self->title, $branch );
 
