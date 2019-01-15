@@ -707,8 +707,9 @@ Not what you want? See the
            
           <a href="painless-watcher-transform-context.html">Watcher transform context
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="painless-watcher-condition-context"></a>Watcher condition context<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-contexts/painless-watcher-condition-context.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Use a Painless script as a <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/condition-script.html" target="_top">watcher condition</a>
-to test if a response is necessary.</p><p><span class="strong strong"><strong>Variables</strong></span></p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="painless-watcher-condition-context"></a>Watcher condition context<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/painless/painless-contexts/painless-watcher-condition-context.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Use a Painless script as a <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/condition-script.html" target="_top">watch condition</a>
+that determines whether to execute a watch or a particular action within a watch.
+Condition scripts return a Boolean value to indicate the status of the condition.</p><p>The following variables are available in all watcher contexts.</p><p><span class="strong strong"><strong>Variables</strong></span></p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">params</code> (<code class="literal">Map</code>, read-only)
 </span></dt><dd>
         User-defined parameters passed in as part of the query.
@@ -717,31 +718,288 @@ to test if a response is necessary.</p><p><span class="strong strong"><strong>Va
 </span></dt><dd>
         The id of the watch.
 </dd><dt><span class="term">
-<code class="literal">ctx['execution_time']</code> (<code class="literal">ZonedDateTime</code>, read-only)
+<code class="literal">ctx['id']</code> (<code class="literal">String</code>, read-only)
 </span></dt><dd>
-        The start time for the watch.
-</dd><dt><span class="term">
-<code class="literal">ctx['trigger']['scheduled_time']</code> (<code class="literal">ZonedDateTime</code>, read-only)
-</span></dt><dd>
-        The scheduled trigger time for the watch.
-</dd><dt><span class="term">
-<code class="literal">ctx['trigger']['triggered_time']</code> (<code class="literal">ZonedDateTime</code>, read-only)
-</span></dt><dd>
-        The actual trigger time for the watch.
+        The server generated unique identifer for the run watch.
 </dd><dt><span class="term">
 <code class="literal">ctx['metadata']</code> (<code class="literal">Map</code>, read-only)
 </span></dt><dd>
-        Any metadata associated with the watch.
+        Metadata can be added to the top level of the watch definition. This
+        is user defined and is typically used to consolidate duplicate values
+        in a watch.
+</dd><dt><span class="term">
+<code class="literal">ctx['execution_time']</code> (<code class="literal">ZonedDateTime</code>, read-only)
+</span></dt><dd>
+        The time the watch began execution.
+</dd><dt><span class="term">
+<code class="literal">ctx['trigger']['scheduled_time']</code> (<code class="literal">ZonedDateTime</code>, read-only)
+</span></dt><dd>
+        The scheduled trigger time for the watch. This is the time the
+        watch should be executed.
+</dd><dt><span class="term">
+<code class="literal">ctx['trigger']['triggered_time']</code> (<code class="literal">ZonedDateTime</code>, read-only)
+</span></dt><dd>
+        The actual trigger time for the watch. This is the time the
+        watch was triggered for execution.
 </dd><dt><span class="term">
 <code class="literal">ctx['payload']</code> (<code class="literal">Map</code>, read-only)
 </span></dt><dd>
         The accessible watch data based upon the
         <a class="ulink" href="https://www.elastic.co/guide/en/elastic-stack-overview/6.x/input.html" target="_top">watch input</a>.
-</dd></dl></div><p><span class="strong strong"><strong>Return</strong></span></p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+</dd></dl></div><p><span class="strong strong"><strong>API</strong></span></p><p>The standard <a class="link" href="painless-api-reference.html" title="Painless API Reference">Painless API</a> is available.</p><p>To run this example, first follow the steps in
+<a class="link" href="painless-context-examples.html" title="Context examples">context examples</a>.</p><p><span class="strong strong"><strong>Return</strong></span></p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">boolean</code>
 </span></dt><dd>
-        Expects <code class="literal">true</code> if the condition is met, and <code class="literal">false</code> otherwise.
-</dd></dl></div><p><span class="strong strong"><strong>API</strong></span></p><p>The standard <a class="link" href="painless-api-reference.html" title="Painless API Reference">Painless API</a> is available.</p></div><div class="navfooter"><span class="prev"><a href="painless-analysis-predicate-context.html">
+        Expects <code class="literal">true</code> if the condition is met, and <code class="literal">false</code> if it is not.
+</dd></dl></div><p><span class="strong strong"><strong>API</strong></span></p><p>The standard <a class="link" href="painless-api-reference.html" title="Painless API Reference">Painless API</a> is available.</p><p><span class="strong strong"><strong>Example</strong></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless">POST _watcher/watch/_execute
+{
+  "watch" : {
+    "trigger" : { "schedule" : { "interval" : "24h" } },
+    "input" : {
+      "search" : {
+        "request" : {
+          "indices" : [ "seats" ],
+          "body" : {
+            "query" : {
+              "term": { "sold": "true"}
+            },
+            "aggs" : {
+              "theatres" : {
+                "terms" : { "field" : "play" },
+                "aggs" : {
+                  "money" : {
+                    "sum": { "field" : "cost" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "condition" : {
+      "script" :
+      """
+        return ctx.payload.aggregations.theatres.buckets.stream()       <a id="CO142-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          .filter(theatre -&gt; theatre.money.value &lt; 15000 ||
+                             theatre.money.value &gt; 50000)               <a id="CO142-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          .count() &gt; 0                                                  <a id="CO142-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+      """
+    },
+    "actions" : {
+      "my_log" : {
+        "logging" : {
+          "text" : "The output of the search was : {{ctx.payload.aggregations.theatres.buckets}}"
+        }
+      }
+    }
+  }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO142-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The Java Stream API is used in the condition. This API allows manipulation of
+the elements of the list in a pipeline.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO142-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The stream filter removes items that do not meet the filter criteria.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO142-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+If there is at least one item in the list, the condition evaluates to true and the watch is executed.
+</p></td></tr></table></div><p>The following action condition script controls execution of the my_log action based
+on the value of the seats sold for the plays in the data set. The script aggregates
+the total sold seats for each play and returns true if there is at least one play
+that has sold over $50,000.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless">POST _watcher/watch/_execute
+{
+  "watch" : {
+    "trigger" : { "schedule" : { "interval" : "24h" } },
+    "input" : {
+      "search" : {
+        "request" : {
+          "indices" : [ "seats" ],
+          "body" : {
+            "query" : {
+              "term": { "sold": "true"}
+            },
+            "aggs" : {
+              "theatres" : {
+                "terms" : { "field" : "play" },
+                "aggs" : {
+                  "money" : {
+                    "sum": { "field" : "cost" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "actions" : {
+      "my_log" : {
+        "condition": {                                                <a id="CO143-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "script" :
+          """
+            return ctx.payload.aggregations.theatres.buckets.stream()
+              .anyMatch(theatre -&gt; theatre.money.value &gt; 50000)       <a id="CO143-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+          """
+        },
+        "logging" : {
+          "text" : "At least one play has grossed over $50,000: {{ctx.payload.aggregations.theatres.buckets}}"
+        }
+      }
+    }
+  }
+}</pre></div><p>This example uses a nearly identical condition as the previous example. The
+differences below are subtle and are worth calling out.</p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO143-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The location of the condition is no longer at the top level, but is within
+an individual action.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO143-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Instead of a filter, <code class="literal">anyMatch</code> is used to return a boolean value
+</p></td></tr></table></div><p>The following example shows scripted watch and action conditions within the
+context of a complete watch. This watch also uses a scripted
+<a class="link" href="painless-watcher-transform-context.html" title="Watcher transform context">transform</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless">POST _watcher/watch/_execute
+{
+  "watch" : {
+    "metadata" : { "high_threshold": 50000, "low_threshold": 15000 },
+    "trigger" : { "schedule" : { "interval" : "24h" } },
+    "input" : {
+      "search" : {
+        "request" : {
+          "indices" : [ "seats" ],
+          "body" : {
+            "query" : {
+              "term": { "sold": "true"}
+            },
+            "aggs" : {
+              "theatres" : {
+                "terms" : { "field" : "play" },
+                "aggs" : {
+                  "money" : {
+                    "sum": { "field" : "cost" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "condition" : {
+      "script" :
+      """
+        return ctx.payload.aggregations.theatres.buckets.stream()
+          .anyMatch(theatre -&gt; theatre.money.value &lt; ctx.metadata.low_threshold ||
+                               theatre.money.value &gt; ctx.metadata.high_threshold)
+      """
+    },
+    "transform" : {
+      "script":
+      """
+        return [
+          'money_makers': ctx.payload.aggregations.theatres.buckets.stream()
+            .filter(t -&gt; {
+                return t.money.value &gt; ctx.metadata.high_threshold
+            })
+            .map(t -&gt; {
+                return ['play': t.key, 'total_value': t.money.value ]
+            }).collect(Collectors.toList()),
+          'duds' : ctx.payload.aggregations.theatres.buckets.stream()
+            .filter(t -&gt; {
+                return t.money.value &lt; ctx.metadata.low_threshold
+            })
+            .map(t -&gt; {
+                return ['play': t.key, 'total_value': t.money.value ]
+            }).collect(Collectors.toList())
+          ]
+      """
+    },
+    "actions" : {
+      "log_money_makers" : {
+        "condition": {
+          "script" : "return ctx.payload.money_makers.size() &gt; 0"
+        },
+        "transform": {
+          "script" :
+          """
+          def formatter = NumberFormat.getCurrencyInstance();
+          return [
+            'plays_value': ctx.payload.money_makers.stream()
+              .map(t-&gt; formatter.format(t.total_value) + ' for the play ' + t.play)
+              .collect(Collectors.joining(", "))
+          ]
+          """
+        },
+        "logging" : {
+          "text" : "The following plays contain the highest grossing total income: {{ctx.payload.plays_value}}"
+        }
+      },
+      "log_duds" : {
+        "condition": {
+          "script" : "return ctx.payload.duds.size() &gt; 0"
+        },
+        "transform": {
+          "script" :
+          """
+          def formatter = NumberFormat.getCurrencyInstance();
+          return [
+            'plays_value': ctx.payload.duds.stream()
+              .map(t-&gt; formatter.format(t.total_value) + ' for the play ' + t.play)
+              .collect(Collectors.joining(", "))
+          ]
+          """
+        },
+        "logging" : {
+          "text" : "The following plays need more advertising due to their low total income: {{ctx.payload.plays_value}}"
+        }
+      }
+    }
+  }
+}</pre></div><p>The following example shows the use of metadata and transforming dates into a readable format.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-Painless">POST _xpack/watcher/watch/_execute
+{
+  "watch" : {
+    "metadata" : { "min_hits": 10000 },
+    "trigger" : { "schedule" : { "interval" : "24h" } },
+    "input" : {
+      "search" : {
+        "request" : {
+          "indices" : [ "seats" ],
+          "body" : {
+            "query" : {
+              "term": { "sold": "true"}
+            },
+            "aggs" : {
+              "theatres" : {
+                "terms" : { "field" : "play" },
+                "aggs" : {
+                  "money" : {
+                    "sum": { "field" : "cost" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "condition" : {
+      "script" :
+      """
+        return ctx.payload.hits.total &gt; ctx.metadata.min_hits
+      """
+    },
+    "transform" : {
+      "script" :
+      """
+        def theDate = ZonedDateTime.ofInstant(ctx.execution_time.toInstant(), ctx.execution_time.getZone());
+        return ['human_date': DateTimeFormatter.RFC_1123_DATE_TIME.format(theDate),
+                'aggregations': ctx.payload.aggregations]
+      """
+    },
+    "actions" : {
+      "my_log" : {
+        "logging" : {
+          "text" : "The watch was successfully executed on {{ctx.payload.human_date}} and contained {{ctx.payload.aggregations.theatres.buckets.size}} buckets"
+        }
+      }
+    }
+  }
+}</pre></div></div><div class="navfooter"><span class="prev"><a href="painless-analysis-predicate-context.html">
               « 
               Analysis Predicate Context</a>
            
