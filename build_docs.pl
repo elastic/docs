@@ -49,7 +49,7 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'update!', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth',  #
+    'all', 'push', 'update!', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor'
@@ -309,7 +309,7 @@ sub build_entries {
             temp_dir => $temp_dir,
             %$entry
         );
-        $toc->add_entry( $book->build );
+        $toc->add_entry( $book->build($Opts->{rebuild}) );
     }
 
     return $toc;
@@ -726,6 +726,7 @@ sub usage {
           --reference       Directory of `--mirror` clones to use as a local cache
           --rely_on_ssh_auth
                             Skip the git auth check and translate configured repos into ssh
+          --rebuild         Rebuild all branches of every book regardless of what has changed
 
     General Opts:
           --staging         Use the template from the staging website
