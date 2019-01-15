@@ -39,4 +39,34 @@ RSpec.describe ElasticCompatTreeProcessor do
     DOCBOOK
     expect(actual).to eq(expected.strip)
   end
+
+  it "doesn't mind missing definitions" do
+    actual = convert <<~ASCIIDOC
+      == Example
+      `thing1`::
+
+        def1
+
+      `thing2`::
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_example">
+      <title>Example</title>
+      <variablelist>
+      <varlistentry>
+      <term><literal>thing1</literal></term>
+      <listitem>
+      <simpara>def1</simpara>
+      </listitem>
+      </varlistentry>
+      <varlistentry>
+      <term><literal>thing2</literal></term>
+      <listitem>
+      </listitem>
+      </varlistentry>
+      </variablelist>
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
 end
