@@ -79,8 +79,6 @@ sub build_chunked {
             $output = run(
                 'asciidoctor', '-v', '--trace',
                 '-r' => dir('resources/asciidoctor/lib/extensions.rb')->absolute,
-                # TODO figure out resource
-                # ( map { ( '--resource' => $_ ) } @$resources ),
                 '-b' => 'docbook45',
                 '-d' => 'book',
                 '-a' => 'showcomments=1',
@@ -94,6 +92,7 @@ sub build_chunked {
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
+                $resources ? ( '-a' => 'resources=' . join(',', @$resources)) : (),
                 '--destination-dir=' . $dest,
                 docinfo($index),
                 $index
@@ -108,7 +107,6 @@ sub build_chunked {
                 file('resources/website_chunked.xsl')->absolute,
                 "$dest/index.xml"
             );
-            # TODO copy_resources?
             # TODO clean the xml files
             1;
         } or do { $output = $@; $died = 1; };
@@ -205,8 +203,6 @@ sub build_single {
             $output = run(
                 'asciidoctor', '-v', '--trace',
                 '-r' => dir('resources/asciidoctor/lib/extensions.rb')->absolute,
-                # TODO figure out resource
-                # ( map { ( '--resource' => $_ ) } @$resources ),
                 '-b' => 'docbook45',
                 '-d' => $type,
                 '-a' => 'showcomments=1',
@@ -214,6 +210,7 @@ sub build_single {
                 '-a' => 'root_dir=' . $root_dir,
                 $private ? () : ( '-a' => "edit_url=$edit_url" ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
+                $resources ? ( '-a' => 'resources=' . join(',', @$resources)) : (),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
@@ -231,7 +228,6 @@ sub build_single {
                 file('resources/website.xsl')->absolute,
                 "$dest/index.xml"
             );
-            # TODO copy_resources?
             # TODO clean the xml file
             1;
         } or do { $output = $@; $died = 1; };
