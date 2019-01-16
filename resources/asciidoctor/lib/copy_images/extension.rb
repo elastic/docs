@@ -22,7 +22,7 @@ class CopyImages < TreeProcessorScaffold
     return if Helpers.uriish? uri       # Skip external images
     return unless @copied.add? uri      # Skip images we've copied before
     source = find_source block, uri
-    return unless source                # Skip images we can't find.
+    return unless source                # Skip images we can't find
     logger.info message_with_context "copying #{uri}", :source_location => block.source_location
     copy_image_proc = block.document.attr 'copy_image'
     if copy_image_proc
