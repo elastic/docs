@@ -224,7 +224,13 @@ sub _tracker_branch {
 sub edit_url {
 #===================================
     my ( $self, $branch ) = @_;
-    my $url = $self->url;
+    return edit_url_for_url_and_branch($self->url, $branch);
+}
+
+#===================================
+sub edit_url_for_url_and_branch {
+#===================================
+    my ( $url, $branch ) = @_;
     # If the url is in ssh form, then convert it to https
     $url =~ s/git@([^:]+):/https:\/\/$1\//;
     # Strip trailing .git as it isn't in the edit link
