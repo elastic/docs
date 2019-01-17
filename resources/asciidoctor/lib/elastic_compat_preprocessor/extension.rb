@@ -132,7 +132,8 @@ class ElasticCompatPreprocessor < Extensions::Preprocessor
             @code_block_start = line
           end
         end
-        line&.gsub!(/(added)\[([^\]]*)\]/, '\1::[\2]')
+        line&.gsub!(/^(added)\[([^\]]*)\]/, '\1::[\2]')
+        line&.gsub!(/(added)\[([^\]]*)\]/, '\1:[\2]')
       end
     end
     reader
