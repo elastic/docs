@@ -710,10 +710,14 @@ Not what you want? See the
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="_actions"></a>Actions<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ilm/policy-definitions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The below list shows the actions which are available in each phase.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
 Hot
 </p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+<a class="link" href="_actions.html#ilm-set-priority-action" title="Set Priority">Set Priority</a>
+</li><li class="listitem">
 <a class="link" href="_actions.html#ilm-rollover-action" title="Rollover">Rollover</a>
 </li></ul></div></li><li class="listitem"><p class="simpara">
 Warm
 </p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+<a class="link" href="_actions.html#ilm-set-priority-action" title="Set Priority">Set Priority</a>
+</li><li class="listitem">
 <a class="link" href="_actions.html#ilm-allocate-action" title="Allocate">Allocate</a>
 </li><li class="listitem">
 <a class="link" href="_actions.html#ilm-readonly-action" title="Read-Only">Read-Only</a>
@@ -724,7 +728,11 @@ Warm
 </li></ul></div></li><li class="listitem"><p class="simpara">
 Cold
 </p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+<a class="link" href="_actions.html#ilm-set-priority-action" title="Set Priority">Set Priority</a>
+</li><li class="listitem">
 <a class="link" href="_actions.html#ilm-allocate-action" title="Allocate">Allocate</a>
+</li><li class="listitem">
+<a class="link" href="_actions.html#ilm-freeze-action" title="Freeze">Freeze</a>
 </li></ul></div></li><li class="listitem"><p class="simpara">
 Delete
 </p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
@@ -948,7 +956,27 @@ succeeds.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lan
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/_actions/13.json"></div><p>The above example illustrates a policy which attempts to delete an
 index one day after the index has been rolled over. It does not
-delete the index one day after it has been created.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ilm-shrink-action"></a>Shrink<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ilm/policy-definitions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Index will be be made read-only when this action is run
+delete the index one day after it has been created.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ilm-set-priority-action"></a>Set Priority<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ilm/policy-definitions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Phases allowed: hot, warm, cold.</p><p>This action sets the <a class="link" href="recovery-prioritization.html" title="Index recovery prioritization">index priority</a> on the index as
+soon as the policy enters the hot, warm, or cold phase. Indices with a higher
+priority will be recovered before indices with lower priorities following a node
+restart. Generally, indexes in the hot phase should have the highest value and
+indexes in the cold phase should have the lowest values. For example:
+100 for the hot phase, 50 for the warm phase, and 0 for the cold phase.
+Indicies that don’t set this value have an implicit default priority of 1.</p><div class="table"><a id="ilm-set-priority-options"></a><p class="title"><strong>Table 64. Set Priority Options</strong></p><div class="table-contents"><table summary="Set Priority Options" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top"> Name         </th><th align="left" valign="top"> Required  </th><th align="left" valign="top"> Default     </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">priority</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The priority for the index. Must be 0 or greater.
+                                           The value may also be set to null to remove the priority.</p></td></tr></tbody></table></div></div><br class="table-break" /><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _ilm/policy/my_policy
+{
+  "policy": {
+    "phases": {
+      "warm": {
+        "actions": {
+          "set_priority" : {
+            "priority": 50
+          }
+        }
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/_actions/14.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ilm-shrink-action"></a>Shrink<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/ilm/policy-definitions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Index will be be made read-only when this action is run
 (see: <a class="link" href="index-modules.html#dynamic-index-settings" title="Dynamic index settingsedit">index.blocks.write</a>)</p></div></div><p>This action shrinks an existing index into a new index with fewer primary
 shards. It calls the <a class="link" href="indices-shrink-index.html" title="Shrink Index">Shrink API</a> to shrink the index.
 Since allocating all the primary shards of the index to one node is a
@@ -956,7 +984,7 @@ prerequisite, this action will first allocate the primary shards to a valid
 node. After shrinking, it will swap aliases pointing to the original index
 into the new shrunken index. The new index will also have a new name:
 "shrink-&lt;origin-index-name&gt;". So if the original index was called "logs",
-then the new index will be named "shrink-logs".</p><div class="table"><a id="ilm-shrink-options"></a><p class="title"><strong>Table 64. Shrink Options</strong></p><div class="table-contents"><table summary="Shrink Options" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top"> Name               </th><th align="left" valign="top"> Required  </th><th align="left" valign="top"> Default             </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">number_of_shards</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The number of shards
+then the new index will be named "shrink-logs".</p><div class="table"><a id="ilm-shrink-options"></a><p class="title"><strong>Table 65. Shrink Options</strong></p><div class="table-contents"><table summary="Shrink Options" cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /><col class="col_3" /><col class="col_4" /></colgroup><thead><tr><th align="left" valign="top"> Name               </th><th align="left" valign="top"> Required  </th><th align="left" valign="top"> Default             </th><th align="left" valign="top"> Description</th></tr></thead><tbody><tr><td align="left" valign="top"><p><code class="literal">number_of_shards</code></p></td><td align="left" valign="top"><p>yes</p></td><td align="left" valign="top"><p>-</p></td><td align="left" valign="top"><p>The number of shards
                                                          to shrink to. must be
                                                          a factor of the number
                                                          of shards in the
@@ -973,7 +1001,7 @@ then the new index will be named "shrink-logs".</p><div class="table"><a id="ilm
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/_actions/14.json"></div></div></div><div class="navfooter"><span class="prev"><a href="_phase_execution.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/_actions/15.json"></div></div></div><div class="navfooter"><span class="prev"><a href="_phase_execution.html">
               « 
               Phase Execution</a>
            
