@@ -49,7 +49,7 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'update!', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', #
+    'all', 'push', 'update!', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', 'no_fetch', #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor'
@@ -451,7 +451,7 @@ sub init_repos {
         else {
             $pm->start($name) and next;
             eval {
-                $repo->update_from_remote();
+                $repo->update_from_remote() unless $Opts->{no_fetch};
                 1;
             } or do {
                 # If creds are invalid, explicitly reject them to try to clear the cache
@@ -727,6 +727,7 @@ sub usage {
           --rely_on_ssh_auth
                             Skip the git auth check and translate configured repos into ssh
           --rebuild         Rebuild all branches of every book regardless of what has changed
+          --no_fetch        Skip fetching updates from source repos
 
     General Opts:
           --staging         Use the template from the staging website
