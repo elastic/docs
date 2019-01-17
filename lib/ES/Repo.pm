@@ -225,6 +225,9 @@ sub edit_url {
 #===================================
     my ( $self, $branch ) = @_;
     my $url = $self->url;
+    # If the url is in ssh form, then convert it to https
+    $url =~ s/git@([^:]+):/https:\/\/$1\//;
+    # Strip trailing .git as it isn't in the edit link
     $url =~ s/\.git$//;
     my $dir = Path::Class::dir( "edit", $branch )->cleanup->as_foreign('Unix');
     return "$url/$dir/";
