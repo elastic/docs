@@ -132,7 +132,7 @@ sub _reference_args {
 sub has_changed {
 #===================================
     my $self = shift;
-    my ( $title, $branch, $path ) = @_;
+    my ( $title, $branch, $path, $asciidoctor ) = @_;
 
     my $old
         = $self->tracker->sha_for_branch( $self->name,
@@ -145,6 +145,7 @@ sub has_changed {
         or die "Remote branch <origin/$branch> doesn't exist "
         . "in repo "
         . $self->name;
+    $new .= '|asciidoctor' if $asciidoctor;
 
     return if $old eq $new;
 
@@ -162,11 +163,12 @@ sub has_changed {
 sub mark_done {
 #===================================
     my $self = shift;
-    my ( $title, $branch, $path ) = @_;
+    my ( $title, $branch, $path, $asciidoctor ) = @_;
 
     local $ENV{GIT_DIR} = $self->git_dir;
 
     my $new = sha_for($branch);
+    $new .= '|asciidoctor' if $asciidoctor;
     $self->tracker->set_sha_for_branch( $self->name,
         $self->_tracker_branch(@_), $new );
 
@@ -296,7 +298,9 @@ sub all_repo_branches {
         my $shas = $repo->tracker->shas_for_repo( $repo->name );
 
         for my $branch ( sort keys %$shas ) {
-            my $log = run( qw(git log --oneline -1), $shas->{$branch} );
+            my $sha = $shas->{$branch};
+            $sha =~ s/\|.+$//;  # Strip |asciidoctor if it is in the hash
+            my $log = run( qw(git log --oneline -1), $sha );
             my ($msg) = ( $log =~ /^\w+\s+([^\n]+)/ );
             push @out, sprintf "  %-35s %s   %s", $branch,
                 substr( $shas->{$branch}, 0, 8 ), $msg;
