@@ -9,7 +9,15 @@ include Asciidoctor
 #   added[6.0.0-beta1]
 # Into
 #   added::[6.0.0-beta1]
-# Because `::` is required by asciidoctor but isn't by asciidoc.
+# Because `::` is required by asciidoctor to invoke block macros but isn't
+# required by asciidoc.
+#
+# Turns
+#   words words added[6.0.0-beta1]
+# Into
+#   words words added:[6.0.0-beta1]
+# Because `:` is required by asciidoctor to invoke inline macros but isn't
+# required by asciidoc.
 #
 # Turns
 #   include-tagged::foo[tag]
