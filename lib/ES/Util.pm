@@ -124,7 +124,7 @@ sub build_chunked {
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
                 '-a' => 'base_edit_url=' . $edit_url,
-                '-a' => 'repo_root=' . $root_dir,
+                '-a' => 'root_dir=' . $root_dir,
                 # Use ` to delimit monospaced literals because our docs
                 # expect that
                 '-a' => 'compat-mode=legacy',
@@ -211,7 +211,7 @@ sub build_single {
                 '-d' => $type,
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
-                '-a' => 'root_dir=' . $root_dir,
+                '-a' => 'repo_root=' . $root_dir,
                 $private ? () : ( '-a' => "edit_url=$edit_url" ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 # Disable warning on missing attributes because we have
