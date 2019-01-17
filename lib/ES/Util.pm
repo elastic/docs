@@ -109,7 +109,7 @@ sub build_chunked {
                 "$dest/index.xml"
             );
             # TODO copy_resources?
-            # TODO clean the xml files
+            unlink "$dest/index.xml";
             1;
         } or do { $output = $@; $died = 1; };
     }
@@ -232,7 +232,7 @@ sub build_single {
                 "$dest/index.xml"
             );
             # TODO copy_resources?
-            # TODO clean the xml file
+            unlink "$dest/index.xml";
             1;
         } or do { $output = $@; $died = 1; };
     }
