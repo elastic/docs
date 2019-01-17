@@ -85,7 +85,7 @@ sub build_chunked {
                 '-d' => 'book',
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
-                '-a' => 'root_dir=' . $root_dir,
+                '-a' => 'repo_root=' . $root_dir,
                 # Use ` to delimit monospaced literals because our docs
                 # expect that
                 '-a' => 'compat-mode=legacy',
@@ -124,7 +124,7 @@ sub build_chunked {
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
                 '-a' => 'base_edit_url=' . $edit_url,
-                '-a' => 'root_dir=' . $root_dir,
+                '-a' => 'repo_root=' . $root_dir,
                 # Use ` to delimit monospaced literals because our docs
                 # expect that
                 '-a' => 'compat-mode=legacy',
