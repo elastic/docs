@@ -132,7 +132,11 @@ class ElasticCompatPreprocessor < Extensions::Preprocessor
             @code_block_start = line
           end
         end
+        # First convert the "block" version of these macros. We convert them
+        # to block macros because they are at the start of the line....
         line&.gsub!(/^(added)\[([^\]]*)\]/, '\1::[\2]')
+        # Then convert the "inline" version of these macros. We convert them
+        # to inline macros because they are *not* at the start of the line....
         line&.gsub!(/(added)\[([^\]]*)\]/, '\1:[\2]')
       end
     end
