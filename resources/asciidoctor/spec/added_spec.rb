@@ -71,7 +71,7 @@ RSpec.describe Added do
     expect(actual).to eq(expected.strip)
   end
 
-  it "inline version is not invoked without the ::" do
+  it "inline version is not invoked without the :" do
     actual = convert <<~ASCIIDOC
       == Example
       words added[some_version]
