@@ -9,7 +9,15 @@ include Asciidoctor
 #   added[6.0.0-beta1]
 # Into
 #   added::[6.0.0-beta1]
-# Because `::` is required by asciidoctor but isn't by asciidoc.
+# Because `::` is required by asciidoctor to invoke block macros but isn't
+# required by asciidoc.
+#
+# Turns
+#   words words added[6.0.0-beta1]
+# Into
+#   words words added:[6.0.0-beta1]
+# Because `:` is required by asciidoctor to invoke inline macros but isn't
+# required by asciidoc.
 #
 # Turns
 #   include-tagged::foo[tag]
@@ -132,7 +140,12 @@ class ElasticCompatPreprocessor < Extensions::Preprocessor
             @code_block_start = line
           end
         end
-        line&.gsub!(/(added)\[([^\]]*)\]/, '\1::[\2]')
+        # First convert the "block" version of these macros. We convert them
+        # to block macros because they are at the start of the line....
+        line&.gsub!(/^(added)\[([^\]]*)\]/, '\1::[\2]')
+        # Then convert the "inline" version of these macros. We convert them
+        # to inline macros because they are *not* at the start of the line....
+        line&.gsub!(/(added)\[([^\]]*)\]/, '\1:[\2]')
       end
     end
     reader
