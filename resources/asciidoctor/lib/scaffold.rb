@@ -17,7 +17,10 @@ class TreeProcessorScaffold < Extensions::TreeProcessor
   def process_blocks block
     process_block block
     for subblock in block.context == :dlist ? block.blocks.flatten : block.blocks
-      process_blocks subblock
+      # subblock can be nil for definition lists without a definition.
+      # this is weird, but it is safe to skip nil here because subclasses
+      # can't change it anyway.
+      process_blocks subblock if subblock
     end
   end
 end
