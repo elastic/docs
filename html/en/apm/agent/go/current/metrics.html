@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>API Documentation
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Metrics
         | APM Go Agent Reference [1.x]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Go Agent Reference [1.x]" /><link rel="up" href="index.html" title="APM Go Agent Reference [1.x]" /><link rel="prev" href="configuration.html" title="Configuration" /><link rel="next" href="metrics.html" title="Metrics" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Go Agent/Reference/1.x" /><meta name="DC.subject" content="APM" /><meta name="DC.identifier" content="1.x" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="APM Go Agent Reference [1.x]" /><link rel="up" href="index.html" title="APM Go Agent Reference [1.x]" /><link rel="prev" href="api.html" title="API Documentation" /><link rel="next" href="opentracing.html" title="OpenTracing API" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/APM Go Agent/Reference/1.x" /><meta name="DC.subject" content="APM" /><meta name="DC.identifier" content="1.x" />
     
 
     
@@ -696,210 +696,72 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">APM Go Agent Reference
       [1.x]
-    </a></span> » <span class="breadcrumb-node">API Documentation</span></div><div class="navheader"><span class="prev"><a href="configuration.html">
+    </a></span> » <span class="breadcrumb-node">Metrics</span></div><div class="navheader"><span class="prev"><a href="api.html">
               « 
-              Configuration</a>
+              API Documentation</a>
            
         </span><span class="next">
            
-          <a href="metrics.html">Metrics
+          <a href="opentracing.html">OpenTracing API
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="api"></a>API Documentation<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>Below we cover the most commonly used parts of the API.</p><p>The Go agent is documented using standard godoc. For complete documentation,
-refer to the documentation at <a class="ulink" href="https://godoc.org/go.elastic.co/apm/" target="_top">godoc.org/go.elastic.co/apm</a>,
-or by using the "godoc" tool.</p><h3><a id="tracer-api"></a>Tracer API<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The initial point of contact your application will have with the Go agent
-is the <code class="literal">apm.Tracer</code> type, which provides methods for reporting
-transactions and errors.</p><p>To make instrumentation simpler the Go agent provides a pre-initialized
-tracer, <code class="literal">apm.DefaultTracer</code>. This tracer is always initialized and
-available for use. This tracer is configured with environment variables;
-see <a class="xref" href="configuration.html" title="Configuration"><em>Configuration</em></a> for details.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
-        "go.elastic.co/apm"
-)
-
-func main() {
-        tracer := apm.DefaultTracer
-        ...
-}</pre></div><h3><a id="transaction-api"></a>Transactions<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><h4><a id="tracer-api-start-transaction"></a><code class="literal">func (*Tracer) StartTransaction(name, type string) *Transaction</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>StartTransaction returns a new Transaction with the specified name and type,
-and with the start time set to the current time.. If you need to set the
-timestamp or set the parent <a class="link" href="api.html#trace-context" title="Trace Contextedit">trace context</a>, you should use
-<a class="link" href="api.html#tracer-api-start-transaction-options" title="func (*Tracer) StartTransactionOptions(name, type string, opts TransactionOptions) *Transactionedit">Tracer.StartTransactionOptions</a>.</p><p>This method should be called at the beginning of a transaction such as a web
-or RPC request. e.g.:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">transaction := apm.DefaultTracer.StartTransaction("GET /", "request")</pre></div><p>Transactions will be grouped by type and name in the Elastic APM UI.</p><p>After starting a transaction, you can record a result and add context to
-further describe the transaction.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">transaction.Result = "Success"
-transaction.Context.SetTag("region", "us-east-1")</pre></div><p>See <a class="xref" href="api.html#context-api" title="Contextedit">Context<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a> for more details on setting transaction context.</p><h4><a id="tracer-api-start-transaction-options"></a><code class="literal">func (*Tracer) StartTransactionOptions(name, type string, opts TransactionOptions) *Transaction</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>StartTransactionOptions is essentially the same as StartTransaction, but
-also accepts an options struct. This struct allows you to specify the
-parent <a class="link" href="api.html#trace-context" title="Trace Contextedit">trace context</a> and/or the transaction’s start time.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">opts := apm.TransactionOptions{
-        Start: time.Now(),
-        TraceContext: parentTraceContext,
-}
-transaction := apm.DefaultTracer.StartTransactionOptions("GET /", "request", opts)</pre></div><h4><a id="transaction-end"></a><code class="literal">func (*Transaction) End()</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>End enqueues the transaction for sending to the Elastic APM server.
-The Transaction must not be modified after this.</p><p>The transaction’s duration will be calculated as the amount of time
-elapsed since the transaction was started until this call. To override
-this behaviour, the transaction’s <code class="literal">Duration</code> field may be set before
-calling End.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">transaction.End()</pre></div><h4><a id="transaction-tracecontext"></a><code class="literal">func (*Transaction) TraceContext() TraceContext</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>TraceContext returns the transaction’s <a class="link" href="api.html#trace-context" title="Trace Contextedit">trace context</a>.</p><h4><a id="transaction-ensureparent"></a><code class="literal">func (*Transaction) EnsureParent() SpanID</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>EnsureParent returns the transaction’s parent span ID, generating and recording one if
-it did not previously have one.</p><p>EnsureParent enables correlation with spans created by the JavaScript Real User Monitoring
-(RUM) agent for the initial page load. If your backend service generates the HTML page
-dynamically, you can inject the trace and parent span ID into the page in order to initialize
-the JavaScript RUM agent, such that the web browser’s page load appears as the root of the
-trace.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">var initialPageTemplate = template.Must(template.New("").Parse(`
-&lt;html&gt;
-&lt;head&gt;
-&lt;script src="elastic-apm-js-base/dist/bundles/elastic-apm-js-base.umd.min.js"&gt;&lt;/script&gt;
-&lt;script&gt;
-  elasticApm.init({
-    serviceName: '',
-    serverUrl: 'http://localhost:8200',
-    pageLoadTraceId: {{.TraceContext.Trace}},
-    pageLoadSpanId: {{.EnsureParent}},
-    pageLoadSampled: {{.Sampled}},
-  })
-&lt;/script&gt;
-&lt;/head&gt;
-&lt;body&gt;...&lt;/body&gt;
-&lt;/html&gt;
-`))
-
-func initialPageHandler(w http.ResponseWriter, req *http.Request) {
-        err := initialPageTemplate.Execute(w, apm.TransactionFromContext(req.Context()))
-        if err != nil {
-                ...
-        }
-}</pre></div><p>See the <a class="ulink" href="https://www.elastic.co/guide/en/apm/agent/js-base/current/index.html" target="_top">JavaScript RUM agent documentation</a> for more information.</p><h4><a id="apm-context-with-transaction"></a><code class="literal">func ContextWithTransaction(context.Context, *Transaction) context.Context</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>ContextWithTransaction adds the transaction to the context, and returns the resulting context.</p><p>The transaction can be retrieved using <a class="link" href="api.html#apm-transaction-from-context" title="func TransactionFromContext(context.Context) *Transactionedit">apm.TransactionFromContext</a>.
-The context may also be passed into <a class="link" href="api.html#apm-start-span" title="func StartSpan(ctx context.Context, name, spanType string) (*Span, context.Context)edit">apm.StartSpan</a>, which uses
-TransactionFromContext under the covers to create a span as a child of the transaction.</p><h4><a id="apm-transaction-from-context"></a><code class="literal">func TransactionFromContext(context.Context) *Transaction</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>TransactionFromContext returns a transaction previously stored in the context using
-<a class="link" href="api.html#apm-context-with-transaction" title="func ContextWithTransaction(context.Context, *Transaction) context.Contextedit">apm.ContextWithTransaction</a>, or nil if the context
-does not contain a transaction.</p><h3><a id="span-api"></a>Spans<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To describe an activity within a transaction, we create spans. The Go agent
-has built-in support for generating spans for some activities, such as
-database queries. You can use the API to report spans specific to your
-application.</p><h4><a id="transaction-start-span"></a><code class="literal">func (*Transaction) StartSpan(name, spanType string, parent *Span) *Span</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>StartSpan starts and returns a new Span within the transaction, with the specified name,
-type, and optional parent span, and with the start time set to the current time.
-If you need to set the timestamp or parent <a class="link" href="api.html#trace-context" title="Trace Contextedit">trace context</a>, you should
-use <a class="link" href="api.html#transaction-start-span-options" title="func (*Transaction) StartSpanOptions(name, spanType string, opts SpanOptions) *Spanedit">Transaction.StartSpanOptions</a>.</p><p>If the span type contains two dots, they are assumed to separate the span type, subtype,
-and action; a single dot separates span type and subtype, and the action will not be set.</p><p>If the transaction is sampled, then the span’s ID will be set, and its stacktrace will
-be set if the tracer is configured accordingly. If the transaction is not sampled, then
-the returned span will be silently discarded when its End method is called. You can
-avoid any unnecessary computation for these dropped spans by calling the <a class="link" href="api.html#span-dropped" title="func (*Span) Dropped() booledit">Dropped</a>
-method.</p><p>As a convenience, it is valid to create a span on a nil Transaction; the resulting span
-will be non-nil and safe for use, but will not be reported to the APM server.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">span := tx.StartSpan("SELECT FROM foo", "db.mysql.query", nil)</pre></div><h4><a id="transaction-start-span-options"></a><code class="literal">func (*Transaction) StartSpanOptions(name, spanType string, opts SpanOptions) *Span</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>StartSpanOptions is essentially the same as StartSpan, but also accepts an options struct.
-This struct allows you to specify the parent <a class="link" href="api.html#trace-context" title="Trace Contextedit">trace context</a> and/or the
-spans’s start time. If the parent trace context is not specified in the options, then the
-span will be a direct child of the transaction. Otherwise, the parent trace context should
-belong to some span descended from the transaction.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">opts := apm.SpanOptions{
-        Start: time.Now(),
-        Parent: parentSpan.TraceContext(),
-}
-span := tx.StartSpanOptions("SELECT FROM foo", "db.mysql.query", opts)</pre></div><h4><a id="apm-start-span"></a><code class="literal">func StartSpan(ctx context.Context, name, spanType string) (*Span, context.Context)</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>StartSpan starts and returns a new Span within the sampled transaction and parent span
-in the context, if any. If the span isn’t dropped, it will be indluded in the resulting
-context.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">span, ctx := apm.StartSpan(ctx, "SELECT FROM foo", "db.mysql.query")</pre></div><h4><a id="span-end"></a><code class="literal">func (*Span) End()</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>End marks the span as complete. The Span must not be modified after this.</p><p>The span’s duration will be calculated as the amount of time elapsed
-since the span was started until this call. To override this behaviour,
-the span’s Duration field may be set before calling End.</p><h4><a id="span-dropped"></a><code class="literal">func (*Span) Dropped() bool</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Dropped indicates whether or not the span is dropped, meaning it will not be reported to
-the APM server. Spans are dropped when the created with a nil, ended, or non-sampled
-transaction, or one whose max spans limit has been reached.</p><h4><a id="span-tracecontext"></a><code class="literal">func (*Span) TraceContext() TraceContext</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>TraceContext returns the span’s <a class="link" href="api.html#trace-context" title="Trace Contextedit">trace context</a>.</p><h4><a id="apm-context-with-span"></a><code class="literal">func ContextWithSpan(context.Context, *Span) context.Context</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>ContextWithSpan adds the span to the context, and returns the resulting context.</p><p>The span can be retrieved using <a class="link" href="api.html#apm-span-from-context" title="func SpanFromContext(context.Context) *Spanedit">apm.SpanFromContext</a>.
-The context may also be passed into <a class="link" href="api.html#apm-start-span" title="func StartSpan(ctx context.Context, name, spanType string) (*Span, context.Context)edit">apm.StartSpan</a>, which uses
-SpanFromContext under the covers to create another span as a child of the span.</p><h4><a id="apm-span-from-context"></a><code class="literal">func SpanFromContext(context.Context) *Span</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>SpanFromContext returns a span previously stored in the context using
-<a class="link" href="api.html#apm-context-with-span" title="func ContextWithSpan(context.Context, *Span) context.Contextedit">apm.ContextWithSpan</a>, or nil if the context
-does not contain a span.</p><h3><a id="context-api"></a>Context<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>When reporting transactions and errors you can provide context to describe
-those events. Built-in instrumentation will typically provide some context,
-e.g. the URL and remote address for an HTTP request. You can also provide
-custom context and tags.</p><h4><a id="context-set-tag"></a><code class="literal">func (*Context) SetTag(key, value string)</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>SetTag tags the transaction or error with the given key and value. If the
-key contains any special characters (<code class="literal">.</code>, <code class="literal">*</code>, <code class="literal">"</code>), they will be replaced
-with underscores. Values longer than 1024 characters will be truncated.
-Tags will be indexed in Elasticsearch as keyword fields.</p><h4><a id="context-set-username"></a><code class="literal">func (*Context) SetUsername(username string)</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>SetUsername records the username of the user associated with the transaction.</p><h4><a id="context-set-user-id"></a><code class="literal">func (*Context) SetUserID(id string)</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>SetUserID records the ID of the user associated with the transaction.</p><h4><a id="context-set-user-email"></a><code class="literal">func (*Context) SetUserEmail(email string)</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>SetUserEmail records the email address of the user associated with the transaction.</p><h3><a id="error-api"></a>Errors<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Elastic APM provides two methods of capturing an error event: reporting an error log record,
-and reporting an "exception" (either a panic or an error in Go parlance).</p><h4><a id="tracer-new-error"></a><code class="literal">func (*Tracer) NewError(error) *Error</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>NewError returns a new Error with details taken from err.</p><p>The exception message will be set to <code class="literal">err.Error()</code>. The exception module and type will be set
-to the package and type name of the cause of the error, respectively, where the cause has the
-same definition as given by <a class="ulink" href="https://github.com/pkg/errors" target="_top">github.com/pkg/errors</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">e := apm.DefaultTracer.NewError(err)
-...
-e.Send()</pre></div><p>The provided error can implement any of several interfaces to provide additional information:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">// Errors implementing ErrorsStacktracer will have their stacktrace
-// set based on the result of the StackTrace method.
-type ErrorsStacktracer interface {
-    StackTrace() github.com/pkg/errors.StackTrace
-}
-
-// Errors implementing Stacktracer will have their stacktrace
-// set based on the result of the StackTrace method.
-type Stacktracer interface {
-    StackTrace() []go.elastic.co/apm/stacktrace.Frame
-}
-
-// Errors implementing Typer will have a "type" field set to the
-// result of the Type method.
-type Typer interface {
-        Type() string
-}
-
-// Errors implementing StringCoder will have a "code" field set to the
-// result of the Code method.
-type StringCoder interface {
-        Code() string
-}
-
-// Errors implementing NumberCoder will have a "code" field set to the
-// result of the Code method.
-type NumberCoder interface {
-        Code() float64
-}</pre></div><p>Errors created by with NewError will have their ID field populated with a unique ID.
-This can be used in your application for correlation.</p><h4><a id="tracer-new-error-log"></a><code class="literal">func (*Tracer) NewErrorLog(ErrorLogRecord) *Error</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>NewErrorLog returns a new Error for the given ErrorLogRecord:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">type ErrorLogRecord struct {
-        // Message holds the message for the log record,
-        // e.g. "failed to connect to %s".
-        //
-        // If this is empty, "[EMPTY]" will be used.
-        Message string
-
-        // MessageFormat holds the non-interpolated format
-        // of the log record, e.g. "failed to connect to %s".
-        //
-        // This is optional.
-        MessageFormat string
-
-        // Level holds the severity level of the log record.
-        //
-        // This is optional.
-        Level string
-
-        // LoggerName holds the name of the logger used.
-        //
-        // This is optional.
-        LoggerName string
-
-        // Error is an error associated with the log record.
-        //
-        // This is optional.
-        Error error
-}</pre></div><p>The resulting Error’s log stacktrace will not be set. Call the SetStacktrace method to set it, if desired.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">e := apm.DefaultTracer.NewErrorLog(apm.ErrorLogRecord{
-        Message: "Somebody set up us the bomb.",
-})
-...
-e.Send()</pre></div><h4><a id="error-set-transaction"></a><code class="literal">func (*Error) SetTransaction(*Transaction)</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>SetTransaction associates the error with the given transaction.</p><h4><a id="error-set-span"></a><code class="literal">func (*Error) SetSpan(*Span)</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>SetSpan associates the error with the given span, and the span’s transaction. When calling SetSpan,
-it is not necessary to also call SetTransaction.</p><h4><a id="error-send"></a><code class="literal">func (*Error) Send()</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Send enqueues the error for sending to the Elastic APM server.</p><h4><a id="tracer-recovered"></a><code class="literal">func (*Tracer) Recovered(interface{}) *Error</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Recovered returns an Error from the recovered value, optionally associating it with a transaction.
-The error is not sent; it is the responsibility of the caller to set the error’s context as desired,
-and then call its <code class="literal">Send</code> method.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">tx := apm.DefaultTracer.StartTransaction(...)
-defer tx.End()
-defer func() {
-        if v := recover(); v != nil {
-                e := apm.DefaultTracer.Recovered(v)
-                e.SetTransaction(tx)
-                e.Send()
-        }
-}()</pre></div><h4><a id="apm-captureerror"></a><code class="literal">func CaptureError(context.Context, error) *Error</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>CaptureError returns a new Error related to the sampled transaction and span present in the context,
-if any, and sets its exception details using the given error. The Error.Handled field will be set to
-true, and a stacktrace set.</p><p>If there is no transaction in the context, or it is not being sampled, CaptureError returns nil.
-As a convenience, if the provided error is nil, then CaptureError will also return nil.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">if err != nil {
-        e := apm.CaptureError(ctx, err)
-        e.Send()
-}</pre></div><h4><a id="trace-context"></a>Trace Context<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Trace context contains the ID for a transaction or span, the ID of the end-to-end trace to which the
-transaction or span belongs, and trace options such as flags relating to sampling. Trace context is
-propagated between processes, e.g. in HTTP headers, in order to correlate events originating from
-related services.</p><p>Elastic APM’s trace context is based on the <a class="ulink" href="https://w3c.github.io/trace-context/" target="_top">W3C Trace Context</a> draft.</p><h4><a id="error-context"></a>Error Context<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>Errors can be associated with context just like transactions. See <a class="xref" href="api.html#context-api" title="Contextedit">Context<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a> for details.
-In addition, errors can be associated with an active transaction or span using
-<a class="link" href="api.html#error-set-transaction" title="func (*Error) SetTransaction(*Transaction)edit">SetTransaction</a> or <a class="link" href="api.html#error-set-span" title="func (*Error) SetSpan(*Span)edit">SetSpan</a>, respectively.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">tx := apm.DefaultTracer.StartTransaction("GET /foo", "request")
-defer tx.End()
-e := apm.DefaultTracer.NewError(err)
-e.SetTransaction(tx)
-e.Send()</pre></div></div><div class="navfooter"><span class="prev"><a href="configuration.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a id="metrics"></a>Metrics<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/metrics.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h1></div></div></div><p>The Go agent periodically gathers and reports metrics. You can control how
+often metrics are reported with the <a class="xref" href="configuration.html#config-metrics-interval" title="ELASTIC_APM_METRICS_INTERVALedit"><code class="literal">ELASTIC_APM_METRICS_INTERVAL</code><a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/configuration.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a> configuration.</p><h3><a id="metrics-system"></a>System metrics<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/metrics.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Go agent reports basic system-level and process-level CPU and memory metrics.
+For more system metrics, consider installing <a class="ulink" href="https://www.elastic.co/guide/en/beats/metricbeat/current/index.html" target="_top">Metricbeat</a>
+on your hosts.</p><p>As of Elastic Stack version 6.6, these metrics will be visualized in the APM UI.</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">system.cpu.total.norm.pct</code></strong></span>
+</span></dt><dd><p class="simpara">type: scaled_float</p><p class="simpara">format: percent</p><p class="simpara">The percentage of CPU time in states other than Idle and IOWait, normalised by the number of cores.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">system.process.cpu.total.norm.pct</code></strong></span>
+</span></dt><dd><p class="simpara">type: scaled_float</p><p class="simpara">format: percent</p><p class="simpara">The percentage of CPU time spent by the process since the last event.
+This value is normalized by the number of CPU cores and it ranges from 0 to 100%.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">system.memory.total</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">Total memory.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">system.memory.actual.free</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">Actual free memory in bytes. It is calculated based on the OS.
+On Linux it consists of the free memory plus caches and buffers.
+On OSX it is a sum of free memory and the inactive memory.
+On Windows, this value does not include memory consumed by system caches and buffers.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">system.process.memory.size</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">The total virtual memory the process has.</p></dd></dl></div><h3><a id="metrics-golang"></a>Go runtime metrics<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/metrics.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The Go agent reports various Go runtime metrics.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>As of now, there are no built-in visualizations for these metrics,
+so you will need to create custom Kibana dashboards for them.</p></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.goroutines</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">Number of goroutines that currently exist.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.allocations.mallocs</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">Number of mallocs.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.allocations.frees</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">Number of frees.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.allocations.objects</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">Total number of allocated objects.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.allocations.total</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">Bytes allocated (even if freed) throughout the lifetime.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.allocations.allocated</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">Bytes allocated and not yet freed (same as Alloc from <a class="ulink" href="https://golang.org/pkg/runtime/#MemStats" target="_top">runtime.MemStats</a>).</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.allocations.idle</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">Bytes in idle spans.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.allocations.active</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">Bytes in non-idle spans.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.system.total</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">Total bytes obtained from system (sum of XxxSys from <a class="ulink" href="https://golang.org/pkg/runtime/#MemStats" target="_top">runtime.MemStats</a>).</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.system.obtained</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">Via HeapSys from <a class="ulink" href="https://golang.org/pkg/runtime/#MemStats" target="_top">runtime.MemStats</a>, bytes obtained from system.
+heap_sys = heap_idle + heap_inuse.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.system.stack</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">Bytes of stack memory obtained from the OS.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.system.released</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">Bytes released to the OS.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.gc.total_pause.ns</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">Total garbage collection duration in nanoseconds.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.gc.total_count</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">Total number of garbage collections.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.gc.next_gc_limit</code></strong></span>
+</span></dt><dd><p class="simpara">type: long</p><p class="simpara">format: bytes</p><p class="simpara">Target heap size of the next garbage collection cycle.</p></dd><dt><span class="term">
+<span class="strong strong"><strong><code class="literal">golang.heap.gc.cpu_fraction</code></strong></span>
+</span></dt><dd><p class="simpara">type: float</p><p class="simpara">Fraction of CPU time used by garbage collection.</p></dd></dl></div></div><div class="navfooter"><span class="prev"><a href="api.html">
               « 
-              Configuration</a>
+              API Documentation</a>
            
         </span><span class="next">
            
-          <a href="metrics.html">Metrics
+          <a href="opentracing.html">OpenTracing API
                »
             </a></span></div>
 <!-- end body -->
