@@ -5,10 +5,10 @@ require 'shared_examples/does_not_break_line_numbers'
 
 RSpec.describe ElasticCompatPreprocessor do
   before(:each) do
+    Extensions.register Added
     Extensions.register do
       preprocessor ElasticCompatPreprocessor
       include_processor ElasticIncludeTagged
-      block_macro AddedBlock
     end
   end
 
@@ -18,7 +18,7 @@ RSpec.describe ElasticCompatPreprocessor do
 
   include_examples "doesn't break line numbers"
 
-  it "invokes added[version]" do
+  it "invokes the added block macro when added[version] starts a line" do
     actual = convert <<~ASCIIDOC
       == Example
       added[some_version]
@@ -29,6 +29,21 @@ RSpec.describe ElasticCompatPreprocessor do
       <note revisionflag="added" revision="some_version">
         <simpara></simpara>
       </note>
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
+
+  it "invokes the added inline macro when added[version] is otherwise on the line" do
+    actual = convert <<~ASCIIDOC
+      == Example
+      words added[some_version]
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_example">
+      <title>Example</title>
+      <simpara>words <phrase revisionflag="added" revision="some_version"/>
+      </simpara>
       </chapter>
     DOCBOOK
     expect(actual).to eq(expected.strip)
