@@ -8,6 +8,9 @@ LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 
 ENV ASCIIDOCTOR_VERSION=1.5.8
 
+# NOCOMMIT trim these
+# NOCOMMIT add rspec for easy testing
+
 # Used by asciidoctor or its installation
 RUN apk add --no-cache \
 bash \
