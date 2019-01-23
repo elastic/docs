@@ -95,7 +95,7 @@ while [ $# -gt 0 ]; do
     ;;
   --open)
     DOCKER_RUN_ARGS+=('--publish')
-    DOCKER_RUN_ARGS+=('8000:8000')
+    DOCKER_RUN_ARGS+=('8000:8000/tcp')
     ;;
   *)
     ;;

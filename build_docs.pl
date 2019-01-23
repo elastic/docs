@@ -110,7 +110,6 @@ sub build_local {
 
     if ( $Opts->{open} ) {
         if ( my $pid = fork ) {
-
             # parent
             $SIG{INT} = sub {
                 kill -9, $pid;
@@ -127,16 +126,67 @@ sub build_local {
             exit;
         }
         else {
-            my $http = dir( 'resources', 'http.py' )->absolute;
-            close STDIN;
-            open( STDIN, "</dev/null" );
-            chdir $dir;
-            exec( $http '8000' );
+            if ( _running_in_docker() ) {
+                # We use nginx to serve files instead of the python built in web server
+                # when we're running inside docker because the python web server performs
+                # badly there. nginx is fine.
+                open(my $nginx_conf, '>', '/tmp/docs.conf') or dir("Couldn't write nginx conf to /tmp/docs/.conf");
+                print $nginx_conf <<"CONF";
+daemon off;
+error_log /dev/stdout crit;
+
+events {
+  worker_connections 64;
+}
+
+http {
+  log_format short '[\$time_local] "\$request" \$status';
+  access_log /dev/stdout short;
+  server {
+    listen 8000;
+    location / {
+      root $dir;
+      add_header 'Access-Control-Allow-Origin' '*';
+      if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
+      }
+    }
+    types {
+      text/html  html;
+      application/javascript  js;
+      text/css   css;
+    }
+  }
+}
+CONF
+                dir( '/run/nginx' )->mkpath;
+                close STDIN;
+                open( STDIN, "</dev/null" );
+                chdir $dir;
+                exec( 'nginx', '-c', '/tmp/docs.conf' );
+            } else {
+                my $http = dir( 'resources', 'http.py' )->absolute;
+                close STDIN;
+                open( STDIN, "</dev/null" );
+                chdir $dir;
+                exec( $http '8000' );
+            }
         }
     }
     else {
         say "See: $html";
     }
+}
+
+#===================================
+sub _running_in_docker {
+#===================================
+    # return 0;
+    my $root_cgroup = dir('/proc/1/cgroup');
+    return 0 unless ( -e $root_cgroup );
+    open(my $root_cgroup_file, $root_cgroup);
+    return grep {/docker/} <$root_cgroup_file>;
 }
 
 #===================================
