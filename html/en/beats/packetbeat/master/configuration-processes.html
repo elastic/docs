@@ -710,37 +710,21 @@ Not what you want? See the
             </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="configuration-processes"></a>Specify which processes to monitor<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/packetbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>This section of the <code class="literal">packetbeat.yml</code> config file is optional, but configuring
 the processes enables Packetbeat to show you not only the servers that the
 traffic is flowing between, but also the processes. Packetbeat can even show you
-the traffic between two processes running on the same host, which is particularly
-useful when you have many services running on the same server. By default,
-process matching is disabled.</p><p>When Packetbeat starts, and then periodically afterwards, it scans the process table for
-processes that match the configuration file. For each of these processes, it
-monitors which file descriptors it has opened. When a new packet is captured,
-it reads the list of active TCP and UDP connections and matches the corresponding one
-with the list of file descriptors.</p><p>All this information is available via system interfaces: The <code class="literal">/proc</code> file system
+the traffic between two processes running on the same host, which is
+particularly useful when you have many services running on the same server. By
+default, process enrichment is disabled.</p><p>When Packetbeat starts, and then periodically afterwards, it scans the process
+table for processes that match the configuration file. For each of these
+processes, it monitors which file descriptors it has opened. When a new packet
+is captured, it reads the list of active TCP and UDP connections and matches the
+corresponding one with the list of file descriptors.</p><p>All this information is available via system interfaces: The <code class="literal">/proc</code> file system
 in Linux and the IP Helper API (<code class="literal">iphlpapi.dll</code>) on Windows, so Packetbeat
 doesn’t need a kernel module.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Process monitoring is currently only supported on
       Linux and Windows systems. Packetbeat automatically disables
-      process monitoring when it detects other operating systems.</p></div></div><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">packetbeat.procs:
-  enabled: true
-  monitored:
-    - process: mysqld
-      cmdline_grep: mysqld
-
-    - process: pgsql
-      cmdline_grep: postgres
-
-    - process: nginx
-      cmdline_grep: nginx
-
-    - process: app
-      cmdline_grep: gunicorn</pre></div><p>When the process monitor is enabled, it will enrich all the events whose source
-or destination is a local process. The <code class="literal">cmdline</code> and/or <code class="literal">client_cmdline</code> fields
-will be added to an event, when the server side or client side of the connection
-belong to a local process, respectively. Additionally, you can specify a pattern
-using the <code class="literal">cmdline_grep</code> option, to also name those processes. This will cause
-the <code class="literal">proc</code> and <code class="literal">client_proc</code> fields to be added to an event, with the name of
-the matched process.</p><h3><a id="_configuration_options_13"></a>Configuration options<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/packetbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can specify the following process monitoring options in the <code class="literal">monitored</code> section
-of the <code class="literal">packetbeat.yml</code> config file:</p><h4><a id="_literal_process_literal"></a><code class="literal">process</code><a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/packetbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The name of the process as it will appear in the published transactions. The name
+      process monitoring when it detects other operating systems.</p></div></div><p>Example configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">packetbeat.procs.enabled: true</pre></div><p>When the process monitor is enabled, it will enrich all the events whose source
+or destination is a local process. The <code class="literal">source.process</code> and/or
+<code class="literal">destination.process</code> fields will be added to an event, when the server side or
+client side of the connection belong to a local process, respectively.</p><h3><a id="_configuration_options_13"></a>Configuration options<a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/packetbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>You can specify the following process monitoring options in the <code class="literal">monitored</code>
+section of the <code class="literal">packetbeat.yml</code> config file to customize the name of process:</p><h4><a id="_literal_process_literal"></a><code class="literal">process</code><a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/packetbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The name of the process as it will appear in the published transactions. The name
 doesn’t have to match the name of the executable, so feel free to choose something
 more descriptive (for example,  "myapp" instead of "gunicorn").</p><h4><a id="_literal_cmdline_grep_literal"></a><code class="literal">cmdline_grep</code><a href="https://github.com/elastic/beats/edit/master/packetbeat/docs/packetbeat-options.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The name used to identify the process at run time. When Packetbeat starts, and then
 periodically afterwards, it scans the process table for
