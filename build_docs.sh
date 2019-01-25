@@ -53,8 +53,8 @@ DIR="$(dirname "$(to_absolute_path "$0")")"
 DOCKER_RUN_ARGS=()
 DOCKER_RUN_ARGS+=('-it')   # NOCOMMIT does this make sense when running in CI?
 DOCKER_RUN_ARGS+=('--rm')
-DOCKER_RUN_ARGS+=('-v')
-DOCKER_RUN_ARGS+=("$DIR:/docs_build:cached")
+DOCKER_RUN_ARGS+=('--user' "$(id -u):$(id -g)")
+DOCKER_RUN_ARGS+=('-v' "$DIR:/docs_build:cached")
 
 # rewrite the arguments to be friendly to the docker image
 NEW_ARGS=()
@@ -63,8 +63,7 @@ while [ $# -gt 0 ]; do
   NEW_ARGS+=("$1")
   case "$1" in
   --all)
-    DOCKER_RUN_ARGS+=('-v')
-    DOCKER_RUN_ARGS+=("$HOME/.ssh/known_hosts:/root/.ssh/known_hosts:ro")
+    DOCKER_RUN_ARGS+=('-v' "$HOME/.ssh/known_hosts:/root/.ssh/known_hosts:ro")
     # DOCKER_RUN_ARGS+=('--mount')
     # DOCKER_RUN_ARGS+=("type=ssh")
     ;;
@@ -76,13 +75,11 @@ while [ $# -gt 0 ]; do
     fi
     DOC_FILE="$(to_absolute_path $1)"
     GIT_REPO_ROOT="$(find_git_repo_root "$(dirname "$DOC_FILE")")"
-    DOCKER_RUN_ARGS+=('-v')
-    DOCKER_RUN_ARGS+=("$GIT_REPO_ROOT:/doc:cached")
+    DOCKER_RUN_ARGS+=('-v' "$GIT_REPO_ROOT:/doc:cached")
     NEW_ARGS+=("/doc${DOC_FILE/$GIT_REPO_ROOT/}")
     ;;
   --open)
-    DOCKER_RUN_ARGS+=('--publish')
-    DOCKER_RUN_ARGS+=('8000:8000/tcp')
+    DOCKER_RUN_ARGS+=('--publish' '8000:8000/tcp')
     ;;
   --out)
     shift
@@ -90,8 +87,7 @@ while [ $# -gt 0 ]; do
       mkdir -p "$1"
       exit 1
     fi
-    DOCKER_RUN_ARGS+=('-v')
-    DOCKER_RUN_ARGS+=("$(dirname "$(to_absolute_path $1)"):/out:delegated")
+    DOCKER_RUN_ARGS+=('-v' "$(dirname "$(to_absolute_path $1)"):/out:delegated")
     NEW_ARGS+=("/out/$(basename "$1")")
     ;;
   --resource)
@@ -100,8 +96,7 @@ while [ $# -gt 0 ]; do
       echo "Can't find $1"
       exit 1
     fi
-    DOCKER_RUN_ARGS+=('-v')
-    DOCKER_RUN_ARGS+=("$(to_absolute_path $1):/resource_$RESOURCE_COUNT:cached")
+    DOCKER_RUN_ARGS+=('-v' "$(to_absolute_path $1):/resource_$RESOURCE_COUNT:cached")
     NEW_ARGS+=("/resource_$RESOURCE_COUNT")
     RESOURCE_COUNT+=1
     ;;
