@@ -1,7 +1,7 @@
 # The asciidoctor docker image doesn't really have versions so we build
 # directly on Alpine and install asciidoctor ourselves so we can pin its
 # version.
-FROM alpine:3.7
+FROM alpine:3.8
 
 LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 
