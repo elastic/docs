@@ -56,6 +56,11 @@ DOCKER_RUN_ARGS+=('--rm')
 DOCKER_RUN_ARGS+=('--user' "$(id -u):$(id -g)")
 DOCKER_RUN_ARGS+=('-v' "$DIR:/docs_build:cached")
 
+# Running read-only with a proper tmp directory gives us a little
+# performance boost and it is simple enough to do.
+DOCKER_RUN_ARGS+=('--read-only')
+DOCKER_RUN_ARGS+=('--tmpfs' '/tmp')
+
 # rewrite the arguments to be friendly to the docker image
 NEW_ARGS=()
 RESOURCE_COUNT=0

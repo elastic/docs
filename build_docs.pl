@@ -89,6 +89,7 @@ sub build_local {
     say "Building HTML from $doc";
 
     my $dir = dir( $Opts->{out} || 'html_docs' )->absolute($Old_Pwd);
+    # NOCOMMIT in docker we can't clean this up for some reason.
 
     $Opts->{resource}
         = [ map { dir($_)->absolute($Old_Pwd) } @{ $Opts->{resource} || [] } ];
