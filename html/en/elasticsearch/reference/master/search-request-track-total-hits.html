@@ -710,9 +710,18 @@ Not what you want? See the
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="search-request-track-total-hits"></a>Track total hits<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/track-total-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Generally the total hit count can’t be computed accurately without visiting all
 matches, which is costly for queries that match lots of documents. The
 <code class="literal">track_total_hits</code> parameter allows you to control how the total number of hits
-should be tracked. When set to <code class="literal">true</code> the search response will always track the
-number of hits that match the query accurately (e.g. <code class="literal">total.relation</code> will always
-be equal to <code class="literal">"eq"</code> when `track_total_hits is set to true).</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/_search
+should be tracked.
+Given that it is often enough to have a lower bound of the number of hits,
+such as "there are at least 10000 hits", the default is set to <code class="literal">10,000</code>.
+This means that requests will count the total hit accurately up to <code class="literal">10,000</code> hits.
+It’s is a good trade off to speed up searches if you don’t need the accurate number
+of hits after a certain threshold.</p><p>When set to <code class="literal">true</code> the search response will always track the number of hits that
+match the query accurately (e.g. <code class="literal">total.relation</code> will always be equal to <code class="literal">"eq"</code>
+when <code class="literal">track_total_hits is set to true). Otherwise the `"total.relation"</code> returned
+in the <code class="literal">"total"</code> object in the search response determines how the <code class="literal">"total.value"</code>
+should be interpreted. A value of <code class="literal">"gte"</code> means that the <code class="literal">"total.value"</code> is a
+lower bound of the total hits that match the query and a value of <code class="literal">"eq"</code> indicates
+that <code class="literal">"total.value"</code> is the accurate count.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/_search
 {
     "track_total_hits": true,
      "query": {
@@ -736,34 +745,9 @@ be equal to <code class="literal">"eq"</code> when `track_total_hits is set to t
 The total number of hits that match the query.
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO44-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The count is accurate (e.g. <code class="literal">"eq"</code> means equals).
-</p></td></tr></table></div><p>If you don’t need to track the total number of hits you can improve query times
-by setting this option to <code class="literal">false</code>. In such case the search can efficiently skip
-non-competitive hits because it doesn’t need to count all matches:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/_search
-{
-    "track_total_hits": false,
-     "query": {
-        "match" : {
-            "message" : "Elasticsearch"
-        }
-     }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-track-total-hits/2.json"></div><p>... returns:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
-    "_shards": ...
-    "timed_out": false,
-    "took": 10,
-    "hits" : { <a id="CO45-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        "max_score": 1.0,
-        "hits": ...
-    }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO45-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-The total number of hits is unknown.
-</p></td></tr></table></div><p>Given that it is often enough to have a lower bound of the number of hits,
-such as "there are at least 1000 hits", it is also possible to set
-<code class="literal">track_total_hits</code> as an integer that represents the number of hits to count
-accurately. The search can efficiently skip non-competitive document as soon
-as  collecting at least $<code class="literal">track_total_hits</code> documents. This is a good trade
-off to speed up searches if you don’t need the accurate number of hits after
-a certain threshold.</p><p>For instance the following query will track the total hit count that match
-the query accurately up to 100 documents:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/_search
+</p></td></tr></table></div><p>It is also possible to set <code class="literal">track_total_hits</code> to an integer.
+For instance the following query will accurately track the total hit count that match
+the query up to 100 documents:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/_search
 {
     "track_total_hits": 100,
      "query": {
@@ -771,23 +755,23 @@ the query accurately up to 100 documents:</p><div class="pre_wrapper"><pre class
             "message" : "Elasticsearch"
         }
      }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-track-total-hits/3.json"></div><p>The <code class="literal">hits.total.relation</code> in the response will indicate if the
-value returned in <code class="literal">hits.total.value</code> is accurate (<code class="literal">eq</code>) or a lower
-bound of the total (<code class="literal">gte</code>).</p><p>For instance the following response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-track-total-hits/2.json"></div><p>The <code class="literal">hits.total.relation</code> in the response will indicate if the
+value returned in <code class="literal">hits.total.value</code> is accurate (<code class="literal">"eq"</code>) or a lower
+bound of the total (<code class="literal">"gte"</code>).</p><p>For instance the following response:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "_shards": ...
     "timed_out": false,
     "took": 30,
     "hits" : {
         "max_score": 1.0,
         "total" : {
-            "value": 42,         <a id="CO46-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            "relation": "eq"     <a id="CO46-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+            "value": 42,         <a id="CO45-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "relation": "eq"     <a id="CO45-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
         },
         "hits": ...
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO46-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO45-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 42 documents match the query
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO46-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO45-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 and the count is accurate (<code class="literal">"eq"</code>)
 </p></td></tr></table></div><p>... indicates that the number of hits returned in the <code class="literal">total</code>
 is accurate.</p><p>If the total number of his that match the query is greater than the
@@ -797,16 +781,36 @@ will indicate that the returned value is a lower bound:</p><div class="pre_wrapp
     "hits" : {
         "max_score": 1.0,
         "total" : {
-            "value": 100,         <a id="CO47-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-            "relation": "gte"     <a id="CO47-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+            "value": 100,         <a id="CO46-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "relation": "gte"     <a id="CO46-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
         },
         "hits": ...
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO47-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO46-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 There are at least 100 documents that match the query
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO47-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-This is a lower bound (<code class="literal">gte</code>).
-</p></td></tr></table></div></div><div class="navfooter"><span class="prev"><a href="search-request-sort.html">
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO46-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+This is a lower bound (<code class="literal">"gte"</code>).
+</p></td></tr></table></div><p>If you don’t need to track the total number of hits at all you can improve query
+times by setting this option to <code class="literal">false</code>:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET twitter/_search
+{
+    "track_total_hits": false,
+     "query": {
+        "match" : {
+            "message" : "Elasticsearch"
+        }
+     }
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-track-total-hits/3.json"></div><p>... returns:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+    "_shards": ...
+    "timed_out": false,
+    "took": 10,
+    "hits" : { <a id="CO47-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+        "max_score": 1.0,
+        "hits": ...
+    }
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO47-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The total number of hits is unknown.
+</p></td></tr></table></div><p>Finally you can force an accurate count by setting <code class="literal">"track_total_hits"</code>
+to <code class="literal">true</code> in the request.</p></div><div class="navfooter"><span class="prev"><a href="search-request-sort.html">
               « 
               Sort</a>
            
