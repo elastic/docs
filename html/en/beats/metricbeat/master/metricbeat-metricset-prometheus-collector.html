@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Prometheus collector metricset
         | Metricbeat Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference [master]" /><link rel="up" href="metricbeat-module-prometheus.html" title="Prometheus module" /><link rel="prev" href="metricbeat-module-prometheus.html" title="Prometheus module" /><link rel="next" href="metricbeat-metricset-prometheus-stats.html" title="Prometheus stats metricset" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Metricbeat/Reference/master" /><meta name="DC.subject" content="Metricbeat" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Metricbeat Reference [master]" /><link rel="up" href="metricbeat-module-prometheus.html" title="Prometheus module" /><link rel="prev" href="metricbeat-module-prometheus.html" title="Prometheus module" /><link rel="next" href="metricbeat-module-rabbitmq.html" title="RabbitMQ module" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Metricbeat/Reference/master" /><meta name="DC.subject" content="Metricbeat" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -705,34 +705,55 @@ Not what you want? See the
            
         </span><span class="next">
            
-          <a href="metricbeat-metricset-prometheus-stats.html">Prometheus stats metricset
+          <a href="metricbeat-module-rabbitmq.html">RabbitMQ module
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="metricbeat-metricset-prometheus-collector"></a>Prometheus collector metricset<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/modules/prometheus/collector.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Prometheus <code class="literal">collector</code> metricset fetches data from <a class="ulink" href="https://prometheus.io/docs/instrumenting/exporters/" target="_top">prometheus exporters</a>.</p><p>All events with the same labels are grouped together as one event. The fields
-exported by this metricset vary depending on the Prometheus exporter that you’re
-using.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fields_88"></a>Fields<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/modules/prometheus/collector.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For a description of each field in the metricset, see the
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="metricbeat-metricset-prometheus-collector"></a>Prometheus collector metricset<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/modules/prometheus/collector.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The Prometheus <code class="literal">collector</code> metricset scrapes data from <a class="ulink" href="https://prometheus.io/docs/instrumenting/exporters/" target="_top">prometheus exporters</a>.</p><h3><a id="_scraping_from_a_prometheus_exporter"></a>Scraping from a Prometheus exporter<a href="https://github.com/elastic/beats/edit/master/metricbeat/module/prometheus/collector/_meta/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>To scrape metrics from a Prometheus exporter, configure the <code class="literal">hosts</code> field to it. The path
+to retrieve the metrics from (<code class="literal">/metrics</code> by default) can be configured with <code class="literal">metrics_path</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">- module: prometheus
+  period: 10s
+  hosts: ["localhost:9090"]
+  metrics_path: /metrics
+
+  #username: "user"
+  #password: "secret"
+
+  # This can be used for service account based authorization:
+  #bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+  #ssl.certificate_authorities:
+  #  - /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt</pre></div><h3><a id="_scraping_all_metrics_from_a_prometheus_server"></a>Scraping all metrics from a Prometheus server<a href="https://github.com/elastic/beats/edit/master/metricbeat/module/prometheus/collector/_meta/docs.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>This module can scrape all metrics stored in a Prometheus server, by using the
+<a class="ulink" href="https://prometheus.io/docs/prometheus/latest/federation/" target="_top">federation API</a>. By pointing this
+config to the Prometheus server:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">metricbeat.modules:
+- module: prometheus
+  period: 10s
+  hosts: ["localhost:9090"]
+  metrics_path: '/federate'
+  query:
+    'match[]': '{__name__!=""}'</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fields_88"></a>Fields<a href="https://github.com/elastic/beats/edit/master/metricbeat/docs/modules/prometheus/collector.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>For a description of each field in the metricset, see the
 <a class="link" href="exported-fields-prometheus.html" title="Prometheus fields">exported fields</a> section.</p><p>Here is an example document generated by this metricset:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
     "@timestamp": "2017-10-12T08:05:34.853Z",
-    "beat": {
+    "agent": {
         "hostname": "host.example.com",
         "name": "host.example.com"
     },
+    "event": {
+        "dataset": "prometheus.collector",
+        "duration": 115000,
+        "module": "prometheus"
+    },
     "metricset": {
-        "host": "prometheus:9090",
-        "module": "prometheus",
-        "name": "collector",
-        "namespace": "collector",
-        "rtt": 115
+        "name": "collector"
     },
     "prometheus": {
-        "collector": {
-            "label": {
-                "event": "add",
-                "role": "node"
-            },
-            "prometheus_sd_kubernetes_events_total": {
-                "value": 0
-            }
+        "labels": {
+            "interval": "15s"
+        },
+        "metrics": {
+            "prometheus_target_interval_length_seconds_count": 1,
+            "prometheus_target_interval_length_seconds_sum": 15.000226176
         }
+    },
+    "service": {
+        "address": "172.29.0.2:9090",
+        "type": "prometheus"
     }
 }</pre></div></div></div><div class="navfooter"><span class="prev"><a href="metricbeat-module-prometheus.html">
               « 
@@ -740,7 +761,7 @@ using.</p><div class="section"><div class="titlepage"><div><div><h3 class="title
            
         </span><span class="next">
            
-          <a href="metricbeat-metricset-prometheus-stats.html">Prometheus stats metricset
+          <a href="metricbeat-module-rabbitmq.html">RabbitMQ module
                »
             </a></span></div>
 <!-- end body -->
