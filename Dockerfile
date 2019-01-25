@@ -14,6 +14,7 @@ libxml2-utils \
 libxslt \
 make \
 nginx \
+openssh-client \
 perl \
 python2 \
 ruby \

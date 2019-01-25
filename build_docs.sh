@@ -10,6 +10,8 @@
 # Step 3 is to start the docker container. We start it in such a way
 # that is *should* remove itself when it is done.
 
+set -e
+
 function desymlink() {
   FILE="$1"
   while [ -h "$FILE" ] ; do
@@ -60,6 +62,12 @@ RESOURCE_COUNT=0
 while [ $# -gt 0 ]; do
   NEW_ARGS+=("$1")
   case "$1" in
+  --all)
+    DOCKER_RUN_ARGS+=('-v')
+    DOCKER_RUN_ARGS+=("$HOME/.ssh/known_hosts:/root/.ssh/known_hosts:ro")
+    # DOCKER_RUN_ARGS+=('--mount')
+    # DOCKER_RUN_ARGS+=("type=ssh")
+    ;;
   --doc)
     shift
     if [ ! -f "$1" ]; then
@@ -71,6 +79,10 @@ while [ $# -gt 0 ]; do
     DOCKER_RUN_ARGS+=('-v')
     DOCKER_RUN_ARGS+=("$GIT_REPO_ROOT:/doc:cached")
     NEW_ARGS+=("/doc${DOC_FILE/$GIT_REPO_ROOT/}")
+    ;;
+  --open)
+    DOCKER_RUN_ARGS+=('--publish')
+    DOCKER_RUN_ARGS+=('8000:8000/tcp')
     ;;
   --out)
     shift
@@ -93,10 +105,6 @@ while [ $# -gt 0 ]; do
     NEW_ARGS+=("/resource_$RESOURCE_COUNT")
     RESOURCE_COUNT+=1
     ;;
-  --open)
-    DOCKER_RUN_ARGS+=('--publish')
-    DOCKER_RUN_ARGS+=('8000:8000/tcp')
-    ;;
   *)
     ;;
   esac
@@ -104,8 +112,8 @@ while [ $# -gt 0 ]; do
 done
 
 # Build the docker image from stdin so we don't try to pack up everything in
-# this directory. It is huge and we don't need any of it because we'll mount
-# it all.
+# this directory. It is huge and we don't need any of it in the image because
+# we'll mount it into the image on startup.
 docker image build -t elastic/docs_build - < "$DIR/Dockerfile"
 # Run docker with the arguments we made above.
 docker run "${DOCKER_RUN_ARGS[@]}" elastic/docs_build /docs_build/build_docs.pl "${NEW_ARGS[@]}"
