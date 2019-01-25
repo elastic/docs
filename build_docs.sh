@@ -103,5 +103,9 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+# Build the docker image from stdin so we don't try to pack up everything in
+# this directory. It is huge and we don't need any of it because we'll mount
+# it all.
 docker image build -t elastic/docs_build - < "$DIR/Dockerfile"
+# Run docker with the arguments we made above.
 docker run "${DOCKER_RUN_ARGS[@]}" elastic/docs_build /docs_build/build_docs.pl "${NEW_ARGS[@]}"
