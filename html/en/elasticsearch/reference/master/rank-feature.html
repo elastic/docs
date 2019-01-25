@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Feature Query
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Rank feature datatype
         | Elasticsearch Reference [master]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="specialized-queries.html" title="Specialized queries" /><link rel="prev" href="query-dsl-percolate-query.html" title="Percolate Query" /><link rel="next" href="query-dsl-wrapper-query.html" title="Wrapper Query" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elasticsearch Reference [master]" /><link rel="up" href="mapping-types.html" title="Field datatypes" /><link rel="prev" href="parent-join.html" title="join datatype" /><link rel="next" href="rank-features.html" title="Rank features datatype" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/Elasticsearch/Reference/master" /><meta name="DC.subject" content="Elasticsearch" /><meta name="DC.identifier" content="master" />
     
 
     
@@ -699,182 +699,62 @@ Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 </div><div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elasticsearch Reference
       [master]
-    </a></span> » <span class="breadcrumb-link"><a href="query-dsl.html">Query DSL</a></span> » <span class="breadcrumb-link"><a href="specialized-queries.html">Specialized queries</a></span> » <span class="breadcrumb-node">Feature Query</span></div><div class="navheader"><span class="prev"><a href="query-dsl-percolate-query.html">
+    </a></span> » <span class="breadcrumb-link"><a href="mapping.html">Mapping</a></span> » <span class="breadcrumb-link"><a href="mapping-types.html">Field datatypes</a></span> » <span class="breadcrumb-node">Rank feature datatype</span></div><div class="navheader"><span class="prev"><a href="parent-join.html">
               « 
-              Percolate Query</a>
+              <code class="literal">join</code> datatype</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-wrapper-query.html">Wrapper Query
+          <a href="rank-features.html">Rank features datatype
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="query-dsl-feature-query"></a>Feature Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/feature-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>The <code class="literal">feature</code> query is a specialized query that only works on
-<a class="link" href="feature.html" title="Feature datatype"><code class="literal">feature</code></a> fields and <a class="link" href="feature-vector.html" title="Feature vector datatype"><code class="literal">feature_vector</code></a> fields.
-Its goal is to boost the score of documents based on the values of numeric
-features. It is typically put in a <code class="literal">should</code> clause of a
-<a class="link" href="query-dsl-bool-query.html" title="Bool Query"><code class="literal">bool</code></a> query so that its score is added to the score
-of the query.</p><p>Compared to using <a class="link" href="query-dsl-function-score-query.html" title="Function Score Query"><code class="literal">function_score</code></a> or other
-ways to modify the score, this query has the benefit of being able to
-efficiently skip non-competitive hits when
-<a class="link" href="search-uri-request.html" title="URI Search"><code class="literal">track_total_hits</code></a> is set to <code class="literal">false</code>. Speedups may be
-spectacular.</p><p>Here is an example that indexes various features:
- - <a class="ulink" href="https://en.wikipedia.org/wiki/PageRank" target="_top"><code class="literal">pagerank</code></a>, a measure of the
-   importance of a website,
- - <code class="literal">url_length</code>, the length of the url, which typically correlates negatively
-   with relevance,
- - <code class="literal">topics</code>, which associates a list of topics with every document alongside a
-   measure of how well the document is connected to this topic.</p><p>Then the example includes an example query that searches for <code class="literal">"2016"</code> and boosts
-based or <code class="literal">pagerank</code>, <code class="literal">url_length</code> and the <code class="literal">sports</code> topic.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test
+            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="rank-feature"></a>Rank feature datatype<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/mapping/types/rank-feature.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>A <code class="literal">rank_feature</code> field can index numbers so that they can later be used to boost
+documents in queries with a <a class="link" href="query-dsl-rank-feature-query.html" title="Rank Feature Query"><code class="literal">rank_feature</code></a> query.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
   "mappings": {
     "properties": {
       "pagerank": {
-        "type": "feature"
+        "type": "rank_feature" <a id="CO271-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
       },
       "url_length": {
-        "type": "feature",
-        "positive_score_impact": false
-      },
-      "topics": {
-        "type": "feature_vector"
+        "type": "rank_feature",
+        "positive_score_impact": false <a id="CO271-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
       }
     }
   }
 }
 
-PUT test/_doc/1
+PUT my_index/_doc/1
 {
-  "url": "http://en.wikipedia.org/wiki/2016_Summer_Olympics",
-  "content": "Rio 2016",
-  "pagerank": 50.3,
-  "url_length": 42,
-  "topics": {
-    "sports": 50,
-    "brazil": 30
-  }
+  "pagerank": 8,
+  "url_length": 22
 }
 
-PUT test/_doc/2
-{
-  "url": "http://en.wikipedia.org/wiki/2016_Brazilian_Grand_Prix",
-  "content": "Formula One motor race held on 13 November 2016 at the Autódromo José Carlos Pace in São Paulo, Brazil",
-  "pagerank": 50.3,
-  "url_length": 47,
-  "topics": {
-    "sports": 35,
-    "formula one": 65,
-    "brazil": 20
-  }
-}
-
-PUT test/_doc/3
-{
-  "url": "http://en.wikipedia.org/wiki/Deadpool_(film)",
-  "content": "Deadpool is a 2016 American superhero film",
-  "pagerank": 50.3,
-  "url_length": 37,
-  "topics": {
-    "movies": 60,
-    "super hero": 65
-  }
-}
-
-POST test/_refresh
-
-GET test/_search
+GET my_index/_search
 {
   "query": {
-    "bool": {
-      "must": [
-        {
-          "match": {
-            "content": "2016"
-          }
-        }
-      ],
-      "should": [
-        {
-          "feature": {
-            "field": "pagerank"
-          }
-        },
-        {
-          "feature": {
-            "field": "url_length",
-            "boost": 0.1
-          }
-        },
-        {
-          "feature": {
-            "field": "topics.sports",
-            "boost": 0.4
-          }
-        }
-      ]
+    "rank_feature": {
+      "field": "pagerank"
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-feature-query/1.json"></div><h3><a id="_supported_functions"></a>Supported functions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/feature-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The <code class="literal">feature</code> query supports 3 functions in order to boost scores using the
-values of features. If you do not know where to start, we recommend that you
-start with the <code class="literal">saturation</code> function, which is the default when no function is
-provided.</p><h4><a id="_saturation_2"></a>Saturation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/feature-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>This function gives a score that is equal to <code class="literal">S / (S + pivot)</code> where <code class="literal">S</code> is the
-value of the feature and <code class="literal">pivot</code> is a configurable pivot value so that the
-result will be less than <code class="literal">0.5</code> if <code class="literal">S</code> is less than pivot and greater than <code class="literal">0.5</code>
-otherwise. Scores are always is <code class="literal">(0, 1)</code>.</p><p>If the feature has a negative score impact then the function will be computed as
-<code class="literal">pivot / (S + pivot)</code>, which decreases when <code class="literal">S</code> increases.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test/_search
-{
-  "query": {
-    "feature": {
-      "field": "pagerank",
-      "saturation": {
-        "pivot": 8
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-feature-query/2.json"></div><p>If <code class="literal">pivot</code> is not supplied then Elasticsearch will compute a default value that
-will be approximately equal to the geometric mean of all feature values that
-exist in the index. We recommend this if you haven’t had the opportunity to
-train a good pivot value.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test/_search
-{
-  "query": {
-    "feature": {
-      "field": "pagerank",
-      "saturation": {}
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-feature-query/3.json"></div><h4><a id="_logarithm"></a>Logarithm<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/feature-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>This function gives a score that is equal to <code class="literal">log(scaling_factor + S)</code> where
-<code class="literal">S</code> is the value of the feature and <code class="literal">scaling_factor</code> is a configurable scaling
-factor. Scores are unbounded.</p><p>This function only supports features that have a positive score impact.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test/_search
-{
-  "query": {
-    "feature": {
-      "field": "pagerank",
-      "log": {
-        "scaling_factor": 4
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-feature-query/4.json"></div><h4><a id="_sigmoid_2"></a>Sigmoid<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/feature-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>This function is an extension of <code class="literal">saturation</code> which adds a configurable
-exponent. Scores are computed as <code class="literal">S^exp^ / (S^exp^ + pivot^exp^)</code>. Like for the
-<code class="literal">saturation</code> function, <code class="literal">pivot</code> is the value of <code class="literal">S</code> that gives a score of <code class="literal">0.5</code>
-and scores are in <code class="literal">(0, 1)</code>.</p><p><code class="literal">exponent</code> must be positive, but is typically in <code class="literal">[0.5, 1]</code>. A good value should
-be computed via training. If you don’t have the opportunity to do so, we recommend
-that you stick to the <code class="literal">saturation</code> function instead.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">GET test/_search
-{
-  "query": {
-    "feature": {
-      "field": "pagerank",
-      "sigmoid": {
-        "pivot": 7,
-        "exponent": 0.6
-      }
-    }
-  }
-}</pre></div><div class="console_widget" data-snippet="snippets/query-dsl-feature-query/5.json"></div></div><div class="navfooter"><span class="prev"><a href="query-dsl-percolate-query.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/rank-feature/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO271-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Rank feature fields must use the <code class="literal">rank_feature</code> field type
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO271-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Rank features that correlate negatively with the score need to declare it
+</p></td></tr></table></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p><code class="literal">rank_feature</code> fields only support single-valued fields and strictly positive
+values. Multi-valued fields and negative values will be rejected.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p><code class="literal">rank_feature</code> fields do not support querying, sorting or aggregating. They may
+only be used within <a class="link" href="query-dsl-rank-feature-query.html" title="Rank Feature Query"><code class="literal">rank_feature</code></a> queries.</p></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p><code class="literal">rank_feature</code> fields only preserve 9 significant bits for the precision, which
+translates to a relative error of about 0.4%.</p></div></div><p>Rank features that correlate negatively with the score should set
+<code class="literal">positive_score_impact</code> to <code class="literal">false</code> (defaults to <code class="literal">true</code>). This will be used by
+the <a class="link" href="query-dsl-rank-feature-query.html" title="Rank Feature Query"><code class="literal">rank_feature</code></a> query to modify the scoring formula
+in such a way that the score decreases with the value of the feature instead of
+increasing. For instance in web search, the url length is a commonly used
+feature which correlates negatively with scores.</p></div><div class="navfooter"><span class="prev"><a href="parent-join.html">
               « 
-              Percolate Query</a>
+              <code class="literal">join</code> datatype</a>
            
         </span><span class="next">
            
-          <a href="query-dsl-wrapper-query.html">Wrapper Query
+          <a href="rank-features.html">Rank features datatype
                »
             </a></span></div>
 <!-- end body -->
