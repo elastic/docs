@@ -51,7 +51,7 @@ function find_git_repo_root() {
 DIR="$(dirname "$(to_absolute_path "$0")")"
 
 DOCKER_RUN_ARGS=()
-DOCKER_RUN_ARGS+=('-it')   # NOCOMMIT does this make sense when running in CI?
+DOCKER_RUN_ARGS+=('-it')
 DOCKER_RUN_ARGS+=('--rm')
 DOCKER_RUN_ARGS+=('--user' "$(id -u):$(id -g)")
 DOCKER_RUN_ARGS+=('-v' "$DIR:/docs_build:cached")
@@ -111,9 +111,10 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+
 # Build the docker image from stdin so we don't try to pack up everything in
 # this directory. It is huge and we don't need any of it in the image because
 # we'll mount it into the image on startup.
 docker image build -t elastic/docs_build - < "$DIR/DebDockerfile"
 # Run docker with the arguments we made above.
-docker run "${DOCKER_RUN_ARGS[@]}" elastic/docs_build /docs_build/build_docs.pl "${NEW_ARGS[@]}"
+docker run "${DOCKER_RUN_ARGS[@]}" --security-opt seccomp=unconfined elastic/docs_build /docs_build/build_docs.pl ${NEW_ARGS[@]}
