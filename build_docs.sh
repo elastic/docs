@@ -53,13 +53,18 @@ DIR="$(dirname "$(to_absolute_path "$0")")"
 DOCKER_RUN_ARGS=()
 DOCKER_RUN_ARGS+=('-it')
 DOCKER_RUN_ARGS+=('--rm')
+
+# Make sure we create files as the current user because that is what
+# folks that use build_docs.pl expect.
 DOCKER_RUN_ARGS+=('--user' "$(id -u):$(id -g)")
-DOCKER_RUN_ARGS+=('-v' "$DIR:/docs_build:cached")
 
 # Running read-only with a proper tmp directory gives us a little
 # performance boost and it is simple enough to do.
 DOCKER_RUN_ARGS+=('--read-only')
 DOCKER_RUN_ARGS+=('--tmpfs' '/tmp')
+
+# Mount the docs build code so we can run it!
+DOCKER_RUN_ARGS+=('-v' "$DIR:/docs_build:cached")
 
 # rewrite the arguments to be friendly to the docker image
 NEW_ARGS=()
@@ -88,10 +93,6 @@ while [ $# -gt 0 ]; do
     ;;
   --out)
     shift
-    if [ ! -d "$1" ]; then
-      mkdir -p "$1"
-      exit 1
-    fi
     DOCKER_RUN_ARGS+=('-v' "$(dirname "$(to_absolute_path $1)"):/out:delegated")
     NEW_ARGS+=("/out/$(basename "$1")")
     ;;
@@ -124,4 +125,4 @@ echo "Building the docker image that will build the docs. Expect this to take so
 # Is it faster to inclue the image on build instead of mount on startup? On Linux? On Mac? Without privileged?
 docker image build -t elastic/docs_build - < "$DIR/DebDockerfile"
 # Run docker with the arguments we made above.
-docker run "${DOCKER_RUN_ARGS[@]}" --privileged elastic/docs_build /docs_build/build_docs.pl ${NEW_ARGS[@]}
+docker run "${DOCKER_RUN_ARGS[@]}" --cap-add SYS_PTRACE elastic/docs_build /docs_build/build_docs.pl ${NEW_ARGS[@]}
