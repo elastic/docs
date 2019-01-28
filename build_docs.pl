@@ -135,6 +135,7 @@ sub build_local {
                 print $nginx_conf <<"CONF";
 daemon off;
 error_log /dev/stdout crit;
+pid /run/nginx/nginx.pid;
 
 events {
   worker_connections 64;
@@ -161,7 +162,6 @@ http {
   }
 }
 CONF
-                dir( '/run/nginx' )->mkpath;
                 close STDIN;
                 open( STDIN, "</dev/null" );
                 chdir $dir;

@@ -90,6 +90,18 @@ while [ $# -gt 0 ]; do
     ;;
   --open)
     DOCKER_RUN_ARGS+=('--publish' '8000:8000/tcp')
+    # Rituals to make nginx run on the readonly filesystem
+    DOCKER_RUN_ARGS+=('--tmpfs' '/run/nginx')
+    DOCKER_RUN_ARGS+=('--tmpfs' '/var/log/nginx')
+    DOCKER_RUN_ARGS+=('--tmpfs' '/var/lib/nginx/body')
+    DOCKER_RUN_ARGS+=('--tmpfs' '/var/lib/nginx/fastcgi')
+    DOCKER_RUN_ARGS+=('--tmpfs' '/var/lib/nginx/proxy')
+    DOCKER_RUN_ARGS+=('--tmpfs' '/var/lib/nginx/uwsgi')
+    DOCKER_RUN_ARGS+=('--tmpfs' '/var/lib/nginx/scgi')
+    echo "------------------------ WARNING ------------------------"
+    echo "$(basename "$0") can't open a browser. It'll start the web" \
+        "server but you must open the browser yourself."
+    echo "------------------------ WARNING ------------------------"
     ;;
   --out)
     shift
@@ -113,16 +125,11 @@ while [ $# -gt 0 ]; do
 done
 
 
-echo "Building the docker image that will build the docs. Expect this to take somewhere" \
-    "between a hundred milliseconds and five minutes."
+echo "Building the docker image that will build the docs. Expect this to" \
+    "take somewhere between a hundred milliseconds and five minutes."
 # Build the docker image from stdin so we don't try to pack up everything in
 # this directory. It is huge and we don't need any of it in the image because
 # we'll mount it into the image on startup.
-# TO check
-# Is alpine faster on mac?                Still slow
-# Is alpine faster with --privileged      Still slow
-# Is --privileged faster on mac           A little. Not like on linux
-# Is it faster to inclue the image on build instead of mount on startup? On Linux? On Mac? Without privileged?
 docker image build -t elastic/docs_build - < "$DIR/DebDockerfile"
 # Run docker with the arguments we made above.
-docker run "${DOCKER_RUN_ARGS[@]}" --cap-add SYS_PTRACE elastic/docs_build /docs_build/build_docs.pl ${NEW_ARGS[@]}
+docker run "${DOCKER_RUN_ARGS[@]}" elastic/docs_build /docs_build/build_docs.pl ${NEW_ARGS[@]}
