@@ -112,9 +112,16 @@ while [ $# -gt 0 ]; do
 done
 
 
+echo "Building the docker image that will build the docs. Expect this to take somewhere" \
+    "between a hundred milliseconds and five minutes."
 # Build the docker image from stdin so we don't try to pack up everything in
 # this directory. It is huge and we don't need any of it in the image because
 # we'll mount it into the image on startup.
+# TO check
+# Is alpine faster on mac?                Still slow
+# Is alpine faster with --privileged      Still slow
+# Is --privileged faster on mac           A little. Not like on linux
+# Is it faster to inclue the image on build instead of mount on startup? On Linux? On Mac? Without privileged?
 docker image build -t elastic/docs_build - < "$DIR/DebDockerfile"
 # Run docker with the arguments we made above.
-docker run "${DOCKER_RUN_ARGS[@]}" --security-opt seccomp=unconfined elastic/docs_build /docs_build/build_docs.pl ${NEW_ARGS[@]}
+docker run "${DOCKER_RUN_ARGS[@]}" --privileged elastic/docs_build /docs_build/build_docs.pl ${NEW_ARGS[@]}

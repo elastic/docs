@@ -1,15 +1,20 @@
-# The asciidoctor docker image doesn't really have versions so we build
-# directly on Alpine and install asciidoctor ourselves so we can pin its
-# version.
+# Debian builds the docs about 20% faster than alpine. The image is larger
+# and takes longer to build but that is worth it.
 FROM debian:9.6
 
 LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 
 # Used by the docs build or asciidoctor
-RUN apt-get -qq update && apt-get -qq --no-install-recommends install \
+RUN \
+apt-get update -qq && \
+apt-get install -qq --no-install-recommends \
+apt-utils \
 bash \
+build-essential \
 curl \
+cmake \
 git \
+libxml2-dev \
 libxml2-utils \
 make \
 nginx \
@@ -17,17 +22,12 @@ openssh-client \
 perl-base \
 python \
 ruby \
+ruby-dev \
 strace \
 unzip \
-xsltproc
+xsltproc > /dev/null 2>&1
 
-# Install asciidoctor, but don't keep the -devel deps around
-RUN apt-get -qq --no-install-recommends install \
-build-essential \
-cmake \
-libxml2-dev \
-ruby-dev \
-&& gem install --no-document \
+RUN gem install --no-document \
 asciidoctor:1.5.8 \
 asciidoctor-diagram:1.5.12 \
 asciimath:1.0.8 \
