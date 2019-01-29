@@ -184,7 +184,6 @@ CONF
 #===================================
 sub _running_in_docker {
 #===================================
-    # return 0;
     my $root_cgroup = dir('/proc/1/cgroup');
     return 0 unless ( -e $root_cgroup );
     open(my $root_cgroup_file, $root_cgroup);
@@ -621,8 +620,18 @@ sub init_env {
     print "New PATH=$ENV{PATH}\n";
 
     if ( $running_in_docker ) {
-        open(my $override, '>', '/tmp/passwd') or dir("Couldn't write override user file");
-        print $override "manybubbles:x:1000:1000:manybubbles:/tmp:/bin/bash\n";
+        # If we're running in docker then we won't have a useful username
+        # so we hack one into place with nss wrapper.
+        open(my $override, '>', '/tmp/passwd')
+            or dir("Couldn't write override user file");
+        # We use the `id` command here because it fetches the id. The native
+        # perl way to do this (getpwuid($<)) doesn't work because it needs a
+        # complete user. And we *aren't* one.
+        my $uid = `id -u`;
+        my $gid = `id -g`;
+        chomp($uid);
+        chomp($gid);
+        print $override "docker:x:$uid:$gid:docker:/tmp:/bin/bash\n";
         close $override;
         $ENV{LD_PRELOAD} = '/usr/lib/libnss_wrapper.so';
         $ENV{NSS_WRAPPER_PASSWD} = '/tmp/passwd';
