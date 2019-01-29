@@ -66,7 +66,8 @@ DOCKER_RUN_ARGS+=('--tmpfs' '/tmp')
 # Mount the docs build code so we can run it!
 DOCKER_RUN_ARGS+=('-v' "$DIR:/docs_build:cached")
 
-# rewrite the arguments to be friendly to the docker image
+# rewrite the arguments to be friendly to the docker container
+SAW_OUT=false
 NEW_ARGS=()
 RESOURCE_COUNT=0
 while [ $# -gt 0 ]; do
@@ -105,6 +106,7 @@ while [ $# -gt 0 ]; do
     shift
     DOCKER_RUN_ARGS+=('-v' "$(dirname "$(to_absolute_path $1)"):/out:delegated")
     NEW_ARGS+=("/out/$(basename "$1")")
+    SAW_OUT=true
     ;;
   --reference)
     shift
@@ -145,6 +147,13 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
+if [ "$SAW_OUT" = false ]; then
+  # If you don't specify --out then we dump the output into html_docs in the
+  # the current directory to keep backwards compatibility with build_docs.pl.
+  DOCKER_RUN_ARGS+=('-v' "$(dirname "$(to_absolute_path .)"):/out:delegated")
+  NEW_ARGS+=('--out' "/out/html_docs")
+fi
 
 
 echo "Building the docker image that will build the docs. Expect this to" \
