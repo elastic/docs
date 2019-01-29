@@ -860,7 +860,9 @@ This limitation might be removed in the future.</pre></div></div></div><div clas
     }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/_actions/7.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ilm-rollover-action"></a>Rollover<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ilm/policy-definitions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Phases allowed: hot.</p><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>index format must match pattern <span class="emphasis"><em>^.*-\\d+$</em></span>, for example (<code class="literal">logs-000001</code>).</p></div></div><div class="warning admon"><div class="icon"><img alt="Warning" src="images/icons/warning.png" /></div><div class="admon_content"><p>The managed index must set <code class="literal">index.lifecycle.rollover_alias</code> as the
-alias to rollover. The index must also be the write index for the alias.</p></div></div><p>For example, if an index to be managed has an alias <code class="literal">my_data</code>. The managed
+alias to rollover. The index must also be the write index for the alias.</p></div></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If a policy using the Rollover action is used on a <a class="link" href="ccr-put-follow.html" title="Create follower API">follower index</a>, policy execution will wait until the leader index rolls over (or has
+<a class="link" href="skipping-rollover.html" title="Skipping Rollover">otherwise been marked as complete</a>), then convert the
+follower index into a regular index as if <a class="link" href="_actions.html#ilm-unfollow-action" title="Unfollow">the Unfollow action</a> had been used instead of rolling over.</p></div></div><p>For example, if an index to be managed has an alias <code class="literal">my_data</code>. The managed
 index "my_index" must be the write index for the alias. For more information, read
 <a class="link" href="indices-rollover-index.html#indices-rollover-is-write-index" title="Write Index Alias Behavioredit">Write Index Alias Behavior</a>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT my_index
 {
@@ -983,7 +985,10 @@ Indicies that don’t set this value have an implicit default priority of 1.</p>
     }
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/_actions/14.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ilm-shrink-action"></a>Shrink<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ilm/policy-definitions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Index will be be made read-only when this action is run
-(see: <a class="link" href="index-modules.html#dynamic-index-settings" title="Dynamic index settingsedit">index.blocks.write</a>)</p></div></div><p>This action shrinks an existing index into a new index with fewer primary
+(see: <a class="link" href="index-modules.html#dynamic-index-settings" title="Dynamic index settingsedit">index.blocks.write</a>)</p></div></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If a policy using the Shrink action is used on a <a class="link" href="ccr-put-follow.html" title="Create follower API">follower index</a>, policy execution will wait until the leader index rolls over (or has
+<a class="link" href="skipping-rollover.html" title="Skipping Rollover">otherwise been marked as complete</a>), then convert the
+follower index into a regular index as if <a class="link" href="_actions.html#ilm-unfollow-action" title="Unfollow">the Unfollow action</a> had been used before shrink is applied, as shrink cannot be safely
+applied to follower indices.</p></div></div><p>This action shrinks an existing index into a new index with fewer primary
 shards. It calls the <a class="link" href="indices-shrink-index.html" title="Shrink Index">Shrink API</a> to shrink the index.
 Since allocating all the primary shards of the index to one node is a
 prerequisite, this action will first allocate the primary shards to a valid
@@ -1007,10 +1012,21 @@ then the new index will be named "shrink-logs".</p><div class="table"><a id="ilm
       }
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/_actions/15.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ilm-unfollow-action"></a>Unfollow<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ilm/policy-definitions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>This action turns a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/ccr-apis.html" target="_top">ccr</a> follower index
+}</pre></div><div class="console_widget" data-snippet="snippets/_actions/15.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ilm-unfollow-action"></a>Unfollow<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/ilm/policy-definitions.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>This action may be used explicitly, as shown below, but this action is also run
+before <a class="link" href="_actions.html#ilm-rollover-action" title="Rollover">the Rollover action</a> and <a class="link" href="_actions.html#ilm-shrink-action" title="Shrink">the Shrink action</a> as described in the documentation for those actions.</p></div></div><p>This action turns a <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/ccr-apis.html" target="_top">ccr</a> follower index
 into a regular index. This can be desired when moving follower
 indices into the next phase. Also certain actions like shrink
-and rollover can then be performed safely on follower indices.</p><p>If the unfollow action encounters a follower index then
+and rollover can then be performed safely on follower indices.</p><p>This action will wait until is it safe to convert a follower index into a
+regular index. In particular, the following conditions must be met:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+The leader index must have <code class="literal">index.lifecycle.indexing_complete</code> set to <code class="literal">true</code>.
+This happens automatically if the leader index is rolled over using
+<a class="link" href="_actions.html#ilm-rollover-action" title="Rollover">the Rollover action</a>, or may be set manually using
+the <a class="link" href="indices-update-settings.html" title="Update Indices Settings">Index Settings API</a>.
+</li><li class="listitem">
+All operations performed on the leader index must have been replicated to the
+follower index. This ensures that no operations will be lost when the index is
+converted into a regular index.
+</li></ul></div><p>If the unfollow action encounters a follower index then
 the following operations will be performed on it:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 Pauses indexing following for the follower index.
 </li><li class="listitem">
