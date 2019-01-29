@@ -74,8 +74,6 @@ while [ $# -gt 0 ]; do
   case "$1" in
   --all)
     DOCKER_RUN_ARGS+=('-v' "$HOME/.ssh/known_hosts:/root/.ssh/known_hosts:ro")
-    # DOCKER_RUN_ARGS+=('--mount')
-    # DOCKER_RUN_ARGS+=("type=ssh")
     ;;
   --doc)
     shift
@@ -100,13 +98,37 @@ while [ $# -gt 0 ]; do
     DOCKER_RUN_ARGS+=('--tmpfs' '/var/lib/nginx/scgi')
     echo "------------------------ WARNING ------------------------"
     echo "$(basename "$0") can't open a browser. It'll start the web" \
-        "server but you must open the browser yourself."
+         "server but you must open the browser yourself."
     echo "------------------------ WARNING ------------------------"
     ;;
   --out)
     shift
     DOCKER_RUN_ARGS+=('-v' "$(dirname "$(to_absolute_path $1)"):/out:delegated")
     NEW_ARGS+=("/out/$(basename "$1")")
+    ;;
+  --reference)
+    shift
+    if [ ! -d "$1" ]; then
+      echo "Can't find $1"
+      exit 1
+    fi
+    DOCKER_RUN_ARGS+=('-v' "$(to_absolute_path $1):/reference:cached")
+    NEW_ARGS+=("/reference")
+    ;;
+  --rely_on_ssh_auth)
+    if [ "$SSH_AUTH_SOCK" != "" ]; then
+      # If we have SSH auth share it into the container.
+      if [ "$(uname -s)" != Linux* ]; then
+        echo "------------------------ WARNING ------------------------"
+        echo "Attempting to share ssh auth but this is unlikely to work" \
+             "outside of linux."
+        echo "------------------------ WARNING ------------------------"
+      fi
+      DOCKER_RUN_ARGS+=('-v' "$(dirname $SSH_AUTH_SOCK):$(dirname $SSH_AUTH_SOCK)")
+      DOCKER_RUN_ARGS+=('-e' "SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
+    fi
+    # Mount our known_hosts file into the VM so it won't ask about github
+    DOCKER_RUN_ARGS+=('-v' "$(to_absolute_path ~/.ssh/known_hosts):/tmp/.ssh/known_hosts:cached")
     ;;
   --resource)
     shift

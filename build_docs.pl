@@ -56,6 +56,7 @@ GetOptions(
 ) || exit usage();
 
 our $Conf = LoadFile('conf.yaml');
+our $running_in_docker = _running_in_docker();
 
 checkout_staging_or_master();
 update_self() if $Opts->{update};
@@ -127,7 +128,7 @@ sub build_local {
             exit;
         }
         else {
-            if ( _running_in_docker() ) {
+            if ( $running_in_docker ) {
                 # We use nginx to serve files instead of the python built in web server
                 # when we're running inside docker because the python web server performs
                 # badly there. nginx is fine.
@@ -162,6 +163,7 @@ http {
   }
 }
 CONF
+                close $nginx_conf;
                 close STDIN;
                 open( STDIN, "</dev/null" );
                 chdir $dir;
@@ -618,6 +620,15 @@ sub init_env {
         . ":$FindBin::RealBin:"
         . $ENV{PATH};
     print "New PATH=$ENV{PATH}\n";
+
+    if ( $running_in_docker ) {
+        open(my $override, '>', '/tmp/passwd') or dir("Couldn't write override user file");
+        print $override "manybubbles:x:1000:1000:manybubbles:/tmp:/bin/bash\n";
+        close $override;
+        $ENV{LD_PRELOAD} = '/usr/lib/libnss_wrapper.so';
+        $ENV{NSS_WRAPPER_PASSWD} = '/tmp/passwd';
+        $ENV{NSS_WRAPPER_GROUP} = '/etc/group';
+    }
 
     eval { run( 'xsltproc', '--version' ) }
         or die "Please install <xsltproc>";
