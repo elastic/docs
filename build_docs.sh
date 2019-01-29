@@ -73,9 +73,6 @@ RESOURCE_COUNT=0
 while [ $# -gt 0 ]; do
   NEW_ARGS+=("$1")
   case "$1" in
-  --all)
-    DOCKER_RUN_ARGS+=('-v' "$HOME/.ssh/known_hosts:/root/.ssh/known_hosts:ro")
-    ;;
   --doc)
     shift
     if [ ! -f "$1" ]; then
@@ -84,7 +81,7 @@ while [ $# -gt 0 ]; do
     fi
     DOC_FILE="$(to_absolute_path $1)"
     GIT_REPO_ROOT="$(find_git_repo_root "$(dirname "$DOC_FILE")")"
-    DOCKER_RUN_ARGS+=('-v' "$GIT_REPO_ROOT:/doc:cached")
+    DOCKER_RUN_ARGS+=('-v' "$GIT_REPO_ROOT:/doc:ro,cached")
     NEW_ARGS+=("/doc${DOC_FILE/$GIT_REPO_ROOT/}")
     ;;
   --open)
@@ -114,7 +111,7 @@ while [ $# -gt 0 ]; do
       echo "Can't find $1"
       exit 1
     fi
-    DOCKER_RUN_ARGS+=('-v' "$(to_absolute_path $1):/reference:cached")
+    DOCKER_RUN_ARGS+=('-v' "$(to_absolute_path $1):/reference:ro,cached")
     NEW_ARGS+=("/reference")
     ;;
   --rely_on_ssh_auth)
@@ -126,11 +123,11 @@ while [ $# -gt 0 ]; do
              "outside of linux."
         echo "------------------------ WARNING ------------------------"
       fi
-      DOCKER_RUN_ARGS+=('-v' "$(dirname $SSH_AUTH_SOCK):$(dirname $SSH_AUTH_SOCK)")
+      DOCKER_RUN_ARGS+=('-v' "$(dirname $SSH_AUTH_SOCK):$(dirname $SSH_AUTH_SOCK):ro")
       DOCKER_RUN_ARGS+=('-e' "SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
     fi
     # Mount our known_hosts file into the VM so it won't ask about github
-    DOCKER_RUN_ARGS+=('-v' "$(to_absolute_path ~/.ssh/known_hosts):/tmp/.ssh/known_hosts:cached")
+    DOCKER_RUN_ARGS+=('-v' "$(to_absolute_path ~/.ssh/known_hosts):/tmp/.ssh/known_hosts:ro,cached")
     ;;
   --resource)
     shift
@@ -138,7 +135,7 @@ while [ $# -gt 0 ]; do
       echo "Can't find $1"
       exit 1
     fi
-    DOCKER_RUN_ARGS+=('-v' "$(to_absolute_path $1):/resource_$RESOURCE_COUNT:cached")
+    DOCKER_RUN_ARGS+=('-v' "$(to_absolute_path $1):/resource_$RESOURCE_COUNT:ro,cached")
     NEW_ARGS+=("/resource_$RESOURCE_COUNT")
     RESOURCE_COUNT+=1
     ;;
