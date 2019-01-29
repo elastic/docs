@@ -972,7 +972,9 @@ usingSettings.Expect("nestProp").ForField(Field&lt;Precedence&gt;(p =&gt; p.Nest
 usingSettings.Expect("jsonProp").ForField(Field&lt;Precedence&gt;(p =&gt; p.JsonProperty));
 usingSettings.Expect("ask").ForField(Field&lt;Precedence&gt;(p =&gt; p.AskSerializer));
 usingSettings.Expect("data").ForField(Field&lt;Precedence&gt;(p =&gt; p.DataMember));
-usingSettings.Expect("DEFAULTFIELDNAMEINFERRER").ForField(Field&lt;Precedence&gt;(p =&gt; p.DefaultFieldNameInferrer));</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO68-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+usingSettings.Expect("DEFAULTFIELDNAMEINFERRER").ForField(Field&lt;Precedence&gt;(p =&gt; p.DefaultFieldNameInferrer));
+
+var x = Field&lt;Project&gt;(p =&gt; p.Name, 1.0);</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO68-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Rename on the mapping for the <code class="literal">Precedence</code> type
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO68-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Default inference for a field, if no other rules apply or are specified for a given field
@@ -1022,7 +1024,35 @@ usingSettings.Expect(new []
         Id = 1,
         Description = "this property will be renamed for Child",
         IgnoreMe = "this property will be ignored (won't be serialized) for Child",
-    });</pre></div></div></div><div class="navfooter"><span class="prev"><a href="ids-inference.html">
+    });
+
+public class SourceModel
+{
+    [PropertyName("gexo")]
+    public GeoModel Geo { get; set; }
+}
+
+public class GeoModel
+{
+    [JsonProperty("country_iso_code")]
+    public string CountryIsoCode { get; set; }
+}
+
+var usingSettings = WithConnectionSettings(s =&gt; s)
+        .WithSourceSerializer(JsonNetSerializer.Default);
+
+usingSettings.Expect("gexo").ForField(Field&lt;SourceModel&gt;(p=&gt;p.Geo));
+usingSettings.Expect("country_iso_code").ForField(Field&lt;GeoModel&gt;(p=&gt;p.CountryIsoCode));
+usingSettings.Expect(new []
+    {
+        "country_iso_code",
+    }).AsPropertiesOf(new GeoModel { CountryIsoCode = "nl" });
+usingSettings.Expect(new []
+    {
+        "gexo",
+    }).AsPropertiesOf(new SourceModel { Geo = new GeoModel { CountryIsoCode = "nl" } });
+
+usingSettings.Expect("gexo.country_iso_code").ForField(Field&lt;SourceModel&gt;(p=&gt;p.Geo.CountryIsoCode));</pre></div></div></div><div class="navfooter"><span class="prev"><a href="ids-inference.html">
               « 
               Ids inference</a>
            

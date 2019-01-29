@@ -64,6 +64,29 @@ RSpec.describe EditMe do
     expect(convert input, attributes).to eq(expected.strip)
   end
 
+  it "respects the repo_root attribute" do
+    attributes = {
+      'edit_url' => 'www.example.com/docs/',
+      'repo_root' => File.dirname(File.dirname(__FILE__)),
+    }
+    input = <<~ASCIIDOC
+      include::resources/edit_me/chapter1.adoc[]
+
+      include::resources/edit_me/chapter2.adoc[]
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_chapter_1">
+      <title>Chapter 1<ulink role="edit_me" url="www.example.com/docs/spec/resources/edit_me/chapter1.adoc">Edit me</ulink></title>
+      <simpara>Words.</simpara>
+      </chapter>
+      <chapter id="_chapter_2">
+      <title>Chapter 2<ulink role="edit_me" url="www.example.com/docs/spec/resources/edit_me/chapter2.adoc">Edit me</ulink></title>
+      <simpara>Words.</simpara>
+      </chapter>
+    DOCBOOK
+    expect(convert input, attributes).to eq(expected.strip)
+  end
+
   it "does not add a link to each chapter title if edit_link is not set" do
     input = <<~ASCIIDOC
       include::resources/edit_me/chapter1.adoc[]

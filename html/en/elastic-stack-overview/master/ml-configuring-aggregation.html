@@ -810,6 +810,45 @@ pipeline aggregation to find the first order derivative of the counter
       }
     }
   }
+}</pre></div><p>Datafeeds not only supports multi-bucket aggregations, but also single bucket aggregations.
+The following shows two <code class="literal">filter</code> aggregations, each gathering the number of unique entries for
+the <code class="literal">error</code> field.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+  "job_id":"servers-unique-errors",
+  "indices": ["logs-*"],
+  "aggregations": {
+    "buckets": {
+      "date_histogram": {
+        "field": "time",
+        "interval": "360s",
+        "time_zone": "UTC"
+      },
+      "aggregations": {
+        "time": {
+          "max": {"field": "time"}
+        }
+        "server1": {
+          "filter": {"term": {"source": "server-name-1"}},
+          "aggregations": {
+            "server1_error_count": {
+              "value_count": {
+                "field": "error"
+              }
+            }
+          }
+        },
+        "server2": {
+          "filter": {"term": {"source": "server-name-2"}},
+          "aggregations": {
+            "server2_error_count": {
+              "value_count": {
+                "field": "error"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }</pre></div><p>When you define an aggregation in a datafeed, it must have the following form:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"aggregations": {
   ["bucketing_aggregation": {
     "bucket_agg": {

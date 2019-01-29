@@ -1,0 +1,90 @@
+PUT test
+{
+  "mappings": {
+    "properties": {
+      "pagerank": {
+        "type": "rank_feature"
+      },
+      "url_length": {
+        "type": "rank_feature",
+        "positive_score_impact": false
+      },
+      "topics": {
+        "type": "rank_features"
+      }
+    }
+  }
+}
+
+PUT test/_doc/1
+{
+  "url": "http://en.wikipedia.org/wiki/2016_Summer_Olympics",
+  "content": "Rio 2016",
+  "pagerank": 50.3,
+  "url_length": 42,
+  "topics": {
+    "sports": 50,
+    "brazil": 30
+  }
+}
+
+PUT test/_doc/2
+{
+  "url": "http://en.wikipedia.org/wiki/2016_Brazilian_Grand_Prix",
+  "content": "Formula One motor race held on 13 November 2016 at the Autódromo José Carlos Pace in São Paulo, Brazil",
+  "pagerank": 50.3,
+  "url_length": 47,
+  "topics": {
+    "sports": 35,
+    "formula one": 65,
+    "brazil": 20
+  }
+}
+
+PUT test/_doc/3
+{
+  "url": "http://en.wikipedia.org/wiki/Deadpool_(film)",
+  "content": "Deadpool is a 2016 American superhero film",
+  "pagerank": 50.3,
+  "url_length": 37,
+  "topics": {
+    "movies": 60,
+    "super hero": 65
+  }
+}
+
+POST test/_refresh
+
+GET test/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "content": "2016"
+          }
+        }
+      ],
+      "should": [
+        {
+          "rank_feature": {
+            "field": "pagerank"
+          }
+        },
+        {
+          "rank_feature": {
+            "field": "url_length",
+            "boost": 0.1
+          }
+        },
+        {
+          "rank_feature": {
+            "field": "topics.sports",
+            "boost": 0.4
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,3 +1,4 @@
+require 'pathname'
 require_relative '../scaffold.rb'
 
 include Asciidoctor
@@ -18,9 +19,16 @@ class EditMe < TreeProcessorScaffold
   def process_block block
     if [:preamble, :section, :floating_title].include? block.context
       def block.title
+        path = source_path
         url = @document.attributes['edit_url']
         url += '/' unless url.end_with?('/')
-        url += source_path
+        repo_root = @document.attributes['repo_root']
+        if repo_root
+          repo_root = Pathname.new repo_root
+          base_dir = Pathname.new @document.base_dir
+          url += "#{base_dir.relative_path_from(repo_root)}/"
+        end
+        url += path
         "#{super}<ulink role=\"edit_me\" url=\"#{url}\">Edit me</ulink>"
       end
       if :preamble == block.context

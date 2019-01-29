@@ -708,7 +708,7 @@
 used to paginate all buckets from a multi-level aggregation efficiently.
 This aggregation provides a way to stream all buckets of a specific aggregation
 similarly to what scroll does for documents.</p><p>The composite buckets are built from the combinations of the values extracted/created
-for each document and each combination is considered as a composite bucket.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Only available in Elasticsearch 6.1.0+</p></div></div><p>Be sure to read the Elasticsearch documentation on <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.4/search-aggregations-bucket-composite-aggregation.html" target="_top">Composite Aggregation</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_119"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+for each document and each combination is considered as a composite bucket.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Only available in Elasticsearch 6.1.0+</p></div></div><p>Be sure to read the Elasticsearch documentation on <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.4/search-aggregations-bucket-composite-aggregation.html" target="_top">Composite Aggregation</a>.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_120"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
 .Composite("my_buckets", date =&gt; date
     .Sources(s =&gt; s
         .Terms("branches", t =&gt; t
@@ -731,22 +731,22 @@ for each document and each combination is considered as a composite bucket.</p><
             )
         )
     )
-)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_119"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new CompositeAggregation("my_buckets")
+)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_120"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new CompositeAggregation("my_buckets")
 {
     Sources = new List&lt;ICompositeAggregationSource&gt;
     {
         new TermsCompositeAggregationSource("branches")
         {
-            Field = Infer.Field&lt;Project&gt;(f =&gt; f.Branches.Suffix("keyword"))
+            Field = Field&lt;Project&gt;(f =&gt; f.Branches.Suffix("keyword"))
         },
         new DateHistogramCompositeAggregationSource("started")
         {
-            Field = Infer.Field&lt;Project&gt;(f =&gt; f.StartedOn),
+            Field = Field&lt;Project&gt;(f =&gt; f.StartedOn),
             Interval = DateInterval.Month
         },
         new HistogramCompositeAggregationSource("branch_count")
         {
-            Field = Infer.Field&lt;Project&gt;(f =&gt; f.RequiredBranches),
+            Field = Field&lt;Project&gt;(f =&gt; f.RequiredBranches),
             Interval = 1
         }
     },
@@ -804,7 +804,7 @@ for each document and each combination is considered as a composite bucket.</p><
     }
   }
 }</pre></div><p>
-</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_31"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Each Composite aggregation bucket key is a <code class="literal">CompositeKey</code> type, a specialized
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_32"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Each Composite aggregation bucket key is a <code class="literal">CompositeKey</code> type, a specialized
 <code class="literal">IReadOnlyDictionary&lt;string, object&gt;</code> type with methods to convert values to supported types</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 
 var composite = response.Aggregations.Composite("my_buckets");
@@ -812,10 +812,9 @@ composite.Should().NotBeNull();
 composite.Buckets.Should().NotBeNullOrEmpty();
 composite.AfterKey.Should().NotBeNull();
 if (TestConfiguration.Instance.InRange("&gt;=6.3.0"))
-{
-    composite.AfterKey.Should().HaveCount(3)
+    composite.AfterKey.Should()
+        .HaveCount(3)
         .And.ContainKeys("branches", "started", "branch_count");
-}
 foreach (var item in composite.Buckets)
 {
     var key = item.Key;
@@ -841,7 +840,7 @@ foreach (var item in composite.Buckets)
         nestedTerms.Buckets.Count.Should().BeGreaterThan(0);
     }
 }</pre></div><h3><a id="_missing_buckets"></a>Missing buckets<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>By default documents without a value for a given source are ignored.
-It is possible to include them in the response by setting missing_bucket to <code class="literal">true</code> (defaults to <code class="literal">false</code>):</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Only available in Elasticsearch 6.4.0+</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_120"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
+It is possible to include them in the response by setting missing_bucket to <code class="literal">true</code> (defaults to <code class="literal">false</code>):</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Only available in Elasticsearch 6.4.0+</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_fluent_dsl_example_121"></a>Fluent DSL example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">a =&gt; a
 .Composite("my_buckets", date =&gt; date
     .Sources(s =&gt; s
         .Terms("branches", t =&gt; t
@@ -858,13 +857,13 @@ It is possible to include them in the response by setting missing_bucket to <cod
             )
         )
     )
-)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_120"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new CompositeAggregation("my_buckets")
+)</pre></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_object_initializer_syntax_example_121"></a>Object Initializer syntax example<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">new CompositeAggregation("my_buckets")
 {
     Sources = new List&lt;ICompositeAggregationSource&gt;
     {
         new TermsCompositeAggregationSource("branches")
         {
-            Field = Infer.Field&lt;Project&gt;(f =&gt; f.Branches.Suffix("keyword")),
+            Field = Field&lt;Project&gt;(f =&gt; f.Branches.Suffix("keyword")),
             MissingBucket = true,
             Order = SortOrder.Ascending
         }
@@ -909,7 +908,7 @@ It is possible to include them in the response by setting missing_bucket to <cod
     }
   }
 }</pre></div><p>
-</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_32"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Each Composite aggregation bucket key is an <code class="literal">CompositeKey</code>, a specialized
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_handling_responses_33"></a>Handling Responses<a href="https://github.com/elastic/elasticsearch-net/edit/6.x/docs/aggregations/bucket/composite/composite-aggregation-usage.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>Each Composite aggregation bucket key is an <code class="literal">CompositeKey</code>, a specialized
 <code class="literal">IReadOnlyDictionary&lt;string, object&gt;</code> type with methods to convert values to supported types</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-csharp">response.ShouldBeValid();
 
 var composite = response.Aggregations.Composite("my_buckets");

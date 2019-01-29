@@ -49,7 +49,7 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'update!', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', #
+    'all', 'push', 'update!', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', 'no_fetch', #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor'
@@ -93,13 +93,15 @@ sub build_local {
     $Opts->{resource}
         = [ map { dir($_)->absolute($Old_Pwd) } @{ $Opts->{resource} || [] } ];
 
+    _guess_opts_from_file($index);
+
     if ( $Opts->{single} ) {
         $dir->rmtree;
         $dir->mkpath;
-        build_single( $index, $dir, %$Opts, root_dir => $index->parent );
+        build_single( $index, $dir, %$Opts );
     }
     else {
-        build_chunked( $index, $dir, %$Opts, root_dir => $index->parent );
+        build_chunked( $index, $dir, %$Opts );
     }
 
     say "Done";
@@ -135,6 +137,34 @@ sub build_local {
     else {
         say "See: $html";
     }
+}
+
+#===================================
+sub _guess_opts_from_file {
+#===================================
+    my $index = shift;
+
+    my $dir = $index->parent;
+    while ($dir ne '/') {
+        $dir = $dir->parent;
+        my $git_dir = $dir->subdir('.git');
+        if (-d $git_dir) {
+            $Opts->{root_dir} = $dir;
+            local $ENV{GIT_DIR} = $git_dir;
+            my $remotes = eval { run qw(git remote -v) } || '';
+            if ($remotes !~ /\s+(\S+[\/:]elastic\/\S+)/) {
+                say "Couldn't find edit url because there isn't an Elastic clone";
+                say "$remotes";
+                return;
+            }
+            my $remote = $1;
+            my $branch = eval {run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
+            $Opts->{edit_url} = ES::Repo::edit_url_for_url_and_branch($remote, $branch);
+            return;
+        }
+    }
+    say "Couldn't find edit url because the document doesn't look like it is in git";
+    $Opts->{root_dir} = $index->parent;
 }
 
 #===================================
@@ -451,7 +481,7 @@ sub init_repos {
         else {
             $pm->start($name) and next;
             eval {
-                $repo->update_from_remote();
+                $repo->update_from_remote() unless $Opts->{no_fetch};
                 1;
             } or do {
                 # If creds are invalid, explicitly reject them to try to clear the cache
@@ -727,6 +757,7 @@ sub usage {
           --rely_on_ssh_auth
                             Skip the git auth check and translate configured repos into ssh
           --rebuild         Rebuild all branches of every book regardless of what has changed
+          --no_fetch        Skip fetching updates from source repos
 
     General Opts:
           --staging         Use the template from the staging website

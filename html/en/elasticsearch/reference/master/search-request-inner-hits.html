@@ -788,14 +788,14 @@ The name to be used for the particular inner hit definition in the response. Use
 <a class="link" href="search-request-docvalue-fields.html" title="Doc value Fields">Doc value fields</a>
 </li><li class="listitem">
 <a class="link" href="search-request-version.html" title="Version">Include versions</a>
-</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="nested-inner-hits"></a>Nested inner hits<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The nested <code class="literal">inner_hits</code> can be used to include nested inner objects as inner hits to a search hit.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test?include_type_name=true
+</li><li class="listitem">
+<a class="link" href="search-request-seq-no-primary-term.html" title="Sequence Numbers and Primary Term">Include Sequence Numbers and Primary Terms</a>
+</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="nested-inner-hits"></a>Nested inner hits<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The nested <code class="literal">inner_hits</code> can be used to include nested inner objects as inner hits to a search hit.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test
 {
   "mappings": {
-    "_doc": {
-      "properties": {
-        "comments": {
-          "type": "nested"
-        }
+    "properties": {
+      "comments": {
+        "type": "nested"
       }
     }
   }
@@ -824,10 +824,10 @@ POST test/_search
       "query": {
         "match": {"comments.number" : 2}
       },
-      "inner_hits": {} <a id="CO54-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "inner_hits": {} <a id="CO56-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-inner-hits/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO54-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-inner-hits/1.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO56-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The inner hit definition in the nested query. No other options need to be defined.
 </p></td></tr></table></div><p>An example of a response snippet that could be generated from the above search request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
   ...,
@@ -845,7 +845,7 @@ The inner hit definition in the nested query. No other options need to be define
         "_score": 1.0,
         "_source": ...,
         "inner_hits": {
-          "comments": { <a id="CO55-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "comments": { <a id="CO57-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
             "hits": {
               "total" : {
                   "value": 1,
@@ -874,7 +874,7 @@ The inner hit definition in the nested query. No other options need to be define
       }
     ]
   }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO55-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO57-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The name used in the inner hit definition in the search request. A custom key can be used via the <code class="literal">name</code> option.
 </p></td></tr></table></div><p>The <code class="literal">_nested</code> metadata is crucial in the above example, because it defines from what inner nested object this inner hit
 came from. The <code class="literal">field</code> defines the object array field the nested hit is from and the <code class="literal">offset</code> relative to its location
@@ -888,14 +888,12 @@ its <code class="literal">_source</code> field. To include the source of just th
 the relevant bit for the nested document is included as source in the inner hit. Doing this for each matching nested document
 has an impact on the time it takes to execute the entire search request, especially when <code class="literal">size</code> and the inner hits’ <code class="literal">size</code>
 are set higher than the default. To avoid the relatively expensive source extraction for nested inner hits, one can disable
-including the source and solely rely on doc values fields. Like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test?include_type_name=true
+including the source and solely rely on doc values fields. Like this:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test
 {
   "mappings": {
-    "_doc": {
-      "properties": {
-        "comments": {
-          "type": "nested"
-        }
+    "properties": {
+      "comments": {
+        "type": "nested"
       }
     }
   }
@@ -937,17 +935,15 @@ POST test/_search
   }
 }</pre></div><div class="console_widget" data-snippet="snippets/search-request-inner-hits/2.json"></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="hierarchical-nested-inner-hits"></a>Hierarchical levels of nested object fields and inner hits.<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>If a mapping has multiple levels of hierarchical nested object fields each level can be accessed via dot notated path.
 For example if there is a <code class="literal">comments</code> nested field that contains a <code class="literal">votes</code> nested field and votes should directly be returned
-with the root hits then the following path can be defined:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test?include_type_name=true
+with the root hits then the following path can be defined:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test
 {
   "mappings": {
-    "_doc": {
-      "properties": {
-        "comments": {
-          "type": "nested",
-          "properties": {
-            "votes": {
-              "type": "nested"
-            }
+    "properties": {
+      "comments": {
+        "type": "nested",
+        "properties": {
+          "votes": {
+            "type": "nested"
           }
         }
       }
@@ -1004,7 +1000,7 @@ POST test/_search
         "_score": 0.6931472,
         "_source": ...,
         "inner_hits": {
-          "comments.votes": { <a id="CO56-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          "comments.votes": { <a id="CO58-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
             "hits": {
               "total" : {
                   "value": 1,
@@ -1037,16 +1033,14 @@ POST test/_search
       }
     ]
   }
-}</pre></div><p>This indirect referencing is only supported for nested inner hits.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="parent-child-inner-hits"></a>Parent/child inner hits<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The parent/child <code class="literal">inner_hits</code> can be used to include parent or child:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test?include_type_name=true
+}</pre></div><p>This indirect referencing is only supported for nested inner hits.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="parent-child-inner-hits"></a>Parent/child inner hits<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/search/request/inner-hits.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>The parent/child <code class="literal">inner_hits</code> can be used to include parent or child:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT test
 {
   "mappings": {
-    "_doc": {
-      "properties": {
-        "my_join_field": {
-          "type": "join",
-          "relations": {
-            "my_parent": "my_child"
-          }
+    "properties": {
+      "my_join_field": {
+        "type": "join",
+        "relations": {
+          "my_parent": "my_child"
         }
       }
     }
@@ -1078,10 +1072,10 @@ POST test/_search
           "number": 1
         }
       },
-      "inner_hits": {}    <a id="CO56-2"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+      "inner_hits": {}    <a id="CO58-2"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
     }
   }
-}</pre></div><div class="console_widget" data-snippet="snippets/search-request-inner-hits/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO56-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO56-2"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}</pre></div><div class="console_widget" data-snippet="snippets/search-request-inner-hits/4.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO58-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> <a href="#CO58-2"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The inner hit definition like in the nested example.
 </p></td></tr></table></div><p>An example of a response snippet that could be generated from the above search request:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     ...,

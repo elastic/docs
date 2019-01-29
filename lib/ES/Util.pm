@@ -83,7 +83,7 @@ sub build_chunked {
                 '-d' => 'book',
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
-                '-a' => 'root_dir=' . $root_dir,
+                '-a' => 'repo_root=' . $root_dir,
                 # Use ` to delimit monospaced literals because our docs
                 # expect that
                 '-a' => 'compat-mode=legacy',
@@ -107,7 +107,7 @@ sub build_chunked {
                 file('resources/website_chunked.xsl')->absolute,
                 "$dest/index.xml"
             );
-            # TODO clean the xml files
+            unlink "$dest/index.xml";
             1;
         } or do { $output = $@; $died = 1; };
     }
@@ -207,7 +207,7 @@ sub build_single {
                 '-d' => $type,
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
-                '-a' => 'root_dir=' . $root_dir,
+                '-a' => 'repo_root=' . $root_dir,
                 $private ? () : ( '-a' => "edit_url=$edit_url" ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 $resources ? ( '-a' => 'resources=' . join(',', @$resources)) : (),
@@ -228,7 +228,7 @@ sub build_single {
                 file('resources/website.xsl')->absolute,
                 "$dest/index.xml"
             );
-            # TODO clean the xml file
+            unlink "$dest/index.xml";
             1;
         } or do { $output = $@; $died = 1; };
     }

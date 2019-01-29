@@ -805,7 +805,7 @@ func serverHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-        http.ListenAndServe(":8080", apmhttp.Wrap(serverHandler))
+        http.ListenAndServe(":8080", apmhttp.Wrap(http.HandlerFunc(serverHandler)))
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmhttprouter"></a>module/apmhttprouter<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmhttprouter provides a low-level middleware handler for <a class="ulink" href="https://github.com/julienschmidt/httprouter" target="_top">httprouter</a>.</p><p>For each request, a transaction is stored in the request context, which can be obtained via
 <a class="ulink" href="https://golang.org/pkg/net/http/#Request" target="_top">http.Request</a><code class="literal">.Context()</code> in your handler.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
         "github.com/julienschmidt/httprouter"
@@ -939,7 +939,7 @@ func main() {
         ...
 }</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmlogrus"></a>module/apmlogrus<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmlogrus provides a <a class="ulink" href="https://github.com/sirupsen/logrus" target="_top">logrus</a> Hook
 implementation for sending error messages to Elastic APM, as well as a function
-for adding trace ID fields to errors.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+for adding trace context fields to log records.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
         "github.com/sirupsen/logrus"
 
         "go.elastic.co/apm/module/apmlogrus"
@@ -957,7 +957,31 @@ func handleRequest(w http.ResponseWriter, req *http.Request) {
         logrus.WithFields(traceContextFields).Debug("handling request")
 
         // Output:
-        // {"level":"debug","msg":"beep","span.id":"0e134f39535a75c0","time":"1970-01-01T00:00:00Z","trace.id":"67829ae467e896fb2b87ec2de50f6c0e","transaction.id":"67829ae467e896fb"}
+        // {"level":"debug","msg":"handling request","time":"1970-01-01T00:00:00Z","trace.id":"67829ae467e896fb2b87ec2de50f6c0e","transaction.id":"67829ae467e896fb"}
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="builtin-modules-apmzap"></a>module/apmzap<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>Package apmzap provides a <a class="ulink" href="https://godoc.org/go.uber.org/zap/zapcore#Core" target="_top">go.uber.org/zap/zapcore.Core</a>
+implementation for sending error messages to Elastic APM, as well as a function
+for adding trace context fields to log records.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-go">import (
+        "go.uber.org/zap"
+
+        "go.elastic.co/apm/module/apmzap"
+)
+
+// apmzap.Core.WrapCore will wrap the core created by zap.NewExample
+// such that logs are also sent to the apmzap.Core.
+//
+// apmzap.Core will send "error", "panic", and "fatal" level log
+// messages to Elastic APM.
+var logger = zap.NewExample(zap.WrapCore((&amp;apmzap.Core{}).WrapCore))
+
+func handleRequest(w http.ResponseWriter, req *http.Request) {
+        // apmzap.TraceContext extracts the transaction and span (if any)
+        // from the given context, and returns zap.Fields containing the
+        // trace, transaction, and span IDs.
+        traceContextFields := apmzap.TraceContext(req.Context())
+        logger.With(traceContextFields...).Debug("handling request")
+
+        // Output:
+        // {"level":"debug","msg":"handling request","trace.id":"67829ae467e896fb2b87ec2de50f6c0e","transaction.id":"67829ae467e896fb"}
 }</pre></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="custom-instrumentation"></a>Custom instrumentation<a href="https://github.com/elastic/apm-agent-go/edit/1.x/docs/instrumenting.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>To report on the performance of transactions served by your application, you can use the Go
 agent’s <a class="link" href="api.html" title="API Documentation">API</a>. Instrumentation refers to modifying your application code to report:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 transactions

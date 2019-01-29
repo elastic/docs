@@ -736,22 +736,47 @@ into the "twitter" index, under a type called "tweet" with an id of 1:</p><div c
 </li></ul></div><p>The index operation is successful in the case <code class="literal">successful</code> is at least 1.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Replica shards may not all be started when an indexing operation successfully returns (by default, only the
         primary is required, but this behavior can be <a class="link" href="docs-index_.html#index-wait-for-active-shards" title="Wait For Active Shardsedit">changed</a>). In that case,
         <code class="literal">total</code> will be equal to the total shards based on the <code class="literal">number_of_replicas</code> setting and <code class="literal">successful</code> will be
-        equal to the number of shards started (primary plus replicas). If there were no failures, the <code class="literal">failed</code> will be 0.</p></div></div><h3><a id="index-creation"></a>Automatic Index Creation<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation automatically creates an index if it has not been
-created before (check out the
-<a class="link" href="indices-create-index.html" title="Create Index">create index API</a> for manually
-creating an index), and also automatically creates a
-dynamic type mapping for the specific type if one has not yet been
-created (check out the <a class="link" href="indices-put-mapping.html" title="Put Mapping">put mapping</a>
-API for manually creating a type mapping).</p><p>The mapping itself is very flexible and is schema-free. New fields and
-objects will automatically be added to the mapping definition of the
-type specified. Check out the <a class="link" href="mapping.html" title="Mapping">mapping</a>
-section for more information on mapping definitions.</p><p>Automatic index creation can be disabled by setting
-<code class="literal">action.auto_create_index</code> to <code class="literal">false</code> in the config file of all nodes,
-or via the cluster update settings API.
-Automatic mapping creation can be disabled by setting
-<code class="literal">index.mapper.dynamic</code> to <code class="literal">false</code> per-index as an index setting.</p><p>Automatic index creation can include a pattern based white/black list,
-for example, set <code class="literal">action.auto_create_index</code> to <code class="literal">+aaa*,-bbb*,+ccc*,-*</code> (+
-meaning allowed, and - meaning disallowed).</p><h3><a id="index-versioning"></a>Versioning<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each indexed document is given a version number. The associated
+        equal to the number of shards started (primary plus replicas). If there were no failures, the <code class="literal">failed</code> will be 0.</p></div></div><h3><a id="index-creation"></a>Automatic Index Creation<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation automatically creates an index if it does not already
+exist, and applies any <a class="link" href="indices-templates.html" title="Index Templates">index templates</a> that are
+configured. The index operation also creates a dynamic type mapping for the
+specified type if one does not already exist. By default, new fields and
+objects will automatically be added to the mapping definition for the specified
+type if needed. Check out the <a class="link" href="mapping.html" title="Mapping">mapping</a> section for more information
+on mapping definitions, and the the <a class="link" href="indices-put-mapping.html" title="Put Mapping">put mapping</a> API for
+information about updating type mappings manually.</p><p>Automatic index creation is controlled by the <code class="literal">action.auto_create_index</code>
+setting. This setting defaults to <code class="literal">true</code>, meaning that indices are always
+automatically created. Automatic index creation can be permitted only for
+indices matching certain patterns by changing the value of this setting to a
+comma-separated list of these patterns. It can also be explicitly permitted and
+forbidden by prefixing patterns in the list with a <code class="literal">+</code> or <code class="literal">-</code>.  Finally it can
+be completely disabled by changing this setting to <code class="literal">false</code>.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _cluster/settings
+{
+    "persistent": {
+        "action.auto_create_index": "twitter,index10,-index1*,+ind*" <a id="CO18-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    }
+}
+
+PUT _cluster/settings
+{
+    "persistent": {
+        "action.auto_create_index": "false" <a id="CO18-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>
+    }
+}
+
+PUT _cluster/settings
+{
+    "persistent": {
+        "action.auto_create_index": "true" <a id="CO18-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>
+    }
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/2.json"></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Permit only the auto-creation of indices called <code class="literal">twitter</code>, <code class="literal">index10</code>, no
+other index matching <code class="literal">index1*</code>, and any other index matching <code class="literal">ind*</code>. The
+patterns are matched in the order in which they are given.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Completely disable the auto-creation of indices.
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO18-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Permit the auto-creation of indices with any name. This is the default.
+</p></td></tr></table></div><h3><a id="index-versioning"></a>Versioning<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>Each indexed document is given a version number. The associated
 <code class="literal">version</code> number is returned as part of the response to the index API
 request. The index API optionally allows for
 <a class="ulink" href="http://en.wikipedia.org/wiki/Optimistic_concurrency_control" target="_top">optimistic
@@ -764,7 +789,7 @@ meantime (when reading in order to update, it is recommended to set
 <code class="literal">preference</code> to <code class="literal">_primary</code>). For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter/tweet/1?version=2
 {
     "message" : "elasticsearch now has versioning support, double cool!"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/2.json"></div><p><span class="strong strong"><strong>NOTE:</strong></span> versioning is completely real time, and is not affected by the
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/3.json"></div><p><span class="strong strong"><strong>NOTE:</strong></span> versioning is completely real time, and is not affected by the
 near real time aspects of search operations. If no version is provided,
 then the operation is executed without any version checks.</p><p>By default, internal versioning is used that starts at 1 and increments
 with each update, deletes included. Optionally, the version number can be
@@ -821,12 +846,12 @@ already exists in the index.</p><p>Here is an example of using the <code class="
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/3.json"></div><p>Another option to specify <code class="literal">create</code> is to use the following uri:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter/tweet/1/_create
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/4.json"></div><p>Another option to specify <code class="literal">create</code> is to use the following uri:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT twitter/tweet/1/_create
 {
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/4.json"></div><h3><a id="_automatic_id_generation"></a>Automatic ID Generation<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation can be executed without specifying the id. In such a
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/5.json"></div><h3><a id="_automatic_id_generation"></a>Automatic ID Generation<a href="https://github.com/elastic/elasticsearch/edit/6.0/docs/reference/docs/index_.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>The index operation can be executed without specifying the id. In such a
 case, an id will be generated automatically. In addition, the <code class="literal">op_type</code>
 will automatically be set to <code class="literal">create</code>. Here is an example (note the
 <span class="strong strong"><strong>POST</strong></span> used instead of <span class="strong strong"><strong>PUT</strong></span>):</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">POST twitter/tweet/
@@ -834,7 +859,7 @@ will automatically be set to <code class="literal">create</code>. Here is an exa
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/5.json"></div><p>The result of the above index operation is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/6.json"></div><p>The result of the above index operation is:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">{
     "_shards" : {
         "total" : 2,
         "failed" : 0,
@@ -855,7 +880,7 @@ on a per-operation basis using the <code class="literal">routing</code> paramete
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/6.json"></div><p>In the example above, the "tweet" document is routed to a shard based on
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/7.json"></div><p>In the example above, the "tweet" document is routed to a shard based on
 the <code class="literal">routing</code> parameter provided: "kimchy".</p><p>When setting up explicit mapping, the <code class="literal">_routing</code> field can be optionally
 used to direct the index operation to extract the routing value from the
 document itself. This does come at the (very minimal) cost of an
@@ -924,7 +949,7 @@ to 5 minutes:</p><div class="pre_wrapper"><pre class="programlisting prettyprint
     "user" : "kimchy",
     "post_date" : "2009-11-15T14:12:12",
     "message" : "trying out Elasticsearch"
-}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/7.json"></div></div><div class="navfooter"><span class="prev"><a href="docs-replication.html">
+}</pre></div><div class="console_widget" data-snippet="snippets/docs-index_/8.json"></div></div><div class="navfooter"><span class="prev"><a href="docs-replication.html">
               « 
               Reading and Writing documents</a>
            

@@ -734,47 +734,32 @@ document.</p></div><div class="section"><div class="titlepage"><div><div><h3 cla
 Besides these functions, there are a number of predefined functions
 that can help you with scoring. We suggest you to use them instead of
 rewriting equivalent functions of your own, as these functions try
-to be the most efficient by using the internal mechanisms.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_rational"></a>rational<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/script-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p><span class="inlinemediaobject"><span class="phrase"></span></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"script" : {
-    "source" : "rational(doc['likes'].value, 1)"
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_sigmoid"></a>sigmoid<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/script-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p><span class="inlinemediaobject"><span class="phrase"></span></span></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"script" : {
+to be the most efficient by using the internal mechanisms.</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_saturation"></a>saturation<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/script-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p><code class="literal">saturation(value,k) = value/(k + value)</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"script" : {
+    "source" : "saturation(doc['likes'].value, 1)"
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_sigmoid"></a>sigmoid<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/script-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p><code class="literal">sigmoid(value, k, a) = value^a/ (k^a + value^a)</code></p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"script" : {
     "source" : "sigmoid(doc['likes'].value, 2, 1)"
-}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="random-functions"></a>Random functions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/script-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>There are two predefined ways to produce random values:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-‘randomNotReproducible()` uses <code class="literal">java.util.Random</code> class
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="random-functions"></a>Random functions<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/script-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>There are two predefined ways to produce random values:
+<code class="literal">randomNotReproducible</code> and <code class="literal">randomReproducible</code>.</p><p>‘randomNotReproducible()` uses <code class="literal">java.util.Random</code> class
 to generate a random value of the type <code class="literal">long</code>.
-The generated values are not reproducible between requests’ invocations.
-</p><pre class="literallayout">[source,js]
---------------------------------------------------
-"script" : {
+The generated values are not reproducible between requests’ invocations.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"script" : {
     "source" : "randomNotReproducible()"
-}
---------------------------------------------------
-// NOTCONSOLE</pre></li><li class="listitem">
-<code class="literal">randomReproducible(String seedValue, int seed)</code> produces
+}</pre></div><p><code class="literal">randomReproducible(String seedValue, int seed)</code> produces
 reproducible random values of type <code class="literal">long</code>. This function requires
-more computational time and memory than the non-reproducible version.
-</li></ol></div><p>A good candidate for the <code class="literal">seedValue</code> is document field values that
+more computational time and memory than the non-reproducible version.</p><p>A good candidate for the <code class="literal">seedValue</code> is document field values that
 are unique across documents and already pre-calculated and preloaded
 in the memory. For example, values of the document’s <code class="literal">_seq_no</code> field
 is a good candidate, as documents on the same shard have unique values
-for the <code class="literal">_seq_no</code> field.</p><pre class="literallayout">[source,js]
---------------------------------------------------
-"script" : {
+for the <code class="literal">_seq_no</code> field.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"script" : {
     "source" : "randomReproducible(Long.toString(doc['_seq_no'].value), 100)"
-}
---------------------------------------------------
-// NOTCONSOLE</pre><p>A drawback of using <code class="literal">_seq_no</code> is that generated values change if
+}</pre></div><p>A drawback of using <code class="literal">_seq_no</code> is that generated values change if
 documents are updated. Another drawback is not absolute uniqueness, as
 documents from different shards with the same sequence numbers
 generate the same random values.</p><p>If you need random values to be distinct across different shards,
 you can use a field with unique values across shards,
 such as  <code class="literal">_id</code>, but watch out for the memory usage as all
-these unique values need to be loaded into memory.</p><pre class="literallayout">[source,js]
---------------------------------------------------
-"script" : {
+these unique values need to be loaded into memory.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"script" : {
     "source" : "randomReproducible(doc['_id'].value, 100)"
-}
---------------------------------------------------
-// NOTCONSOLE</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="decay-functions"></a>Decay functions for numeric fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/script-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>You can read more about decay functions
+}</pre></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="decay-functions"></a>Decay functions for numeric fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/script-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>You can read more about decay functions
 <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-function-score-query.html#function-decay" target="_top">here</a>.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">double decayNumericLinear(double origin, double scale, double offset, double decay, double docValue)</code>
 </li><li class="listitem">
@@ -783,14 +768,14 @@ these unique values need to be loaded into memory.</p><pre class="literallayout"
 <code class="literal">double decayNumericGauss(double origin, double scale, double offset, double decay, double docValue)</code>
 </li></ul></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">"script" : {
     "source" : "decayNumericLinear(params.origin, params.scale, params.offset, params.decay, doc['dval'].value)",
-    "params": { <a id="CO225-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+    "params": { <a id="CO227-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
         "origin": 20,
         "scale": 10,
         "decay" : 0.5,
         "offset" : 0
     }
-}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO225-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
-Use <code class="literal">params</code> to compile a script only once for different values of parameters
+}</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO227-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+Using <code class="literal">params</code> allows to compile the script only once, even if params change.
 </p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_decay_functions_for_geo_fields"></a>Decay functions for geo fields<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/script-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 <code class="literal">double decayGeoLinear(String originStr, String scaleStr, String offsetStr, double decay, GeoPoint docValue)</code>
 </li><li class="listitem">
@@ -824,7 +809,7 @@ and default time zone. Also calculations with <code class="literal">now</code> a
 There are faster alternative query types that can efficiently skip
 non-competitive hits:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
 If you want to boost documents on some static fields, use
- <a class="link" href="query-dsl-feature-query.html" title="Feature Query">Feature Query</a>.
+ <a class="link" href="query-dsl-rank-feature-query.html" title="Rank Feature Query">Rank Feature Query</a>.
 </li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="_transition_from_function_score_query"></a>Transition from Function Score Query<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/script-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3></div></div></div><p>We are deprecating <a class="link" href="query-dsl-function-score-query.html" title="Function Score Query">Function Score</a>, and
 Script Score Query will be a substitute for it.</p><p>Here we describe how Function Score Query’s functions can be
 equivalently implemented in Script Score Query:</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="_literal_script_score_literal"></a><code class="literal">script_score</code><a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/query-dsl/script-score-query.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4></div></div></div><p>What you used in <code class="literal">script_score</code> of the Function Score query, you
