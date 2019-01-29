@@ -717,6 +717,8 @@ Not what you want? See the
 <a class="link" href="ece-configure-hosts.html#ece-configure-hosts-xenial" title="Ubuntu 16.04 LTS (Xenial Xerus)">Ubuntu 16.04 LTS (Xenial Xerus)</a>
 </li><li class="listitem">
 <a class="link" href="ece-configure-hosts.html#ece-configure-hosts-rhel-centos" title="Red Hat Enterprise Linux (RHEL) 7 and CentOS 7">Red Hat Enterprise Linux (RHEL) 7 and CentOS 7</a>
+</li><li class="listitem">
+<a class="link" href="ece-configure-hosts.html#ece-configure-hosts-sles12" title="SUSE Linux Enterprise Server (SLES) 12">SUSE Linux Enterprise Server (SLES) 12</a>
 </li></ul></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ece-configure-hosts-trusty"></a>Ubuntu 14.04 LTS (Trusty Tahr)</h3></div></div></div><p>The following instructions show you how to prepare your hosts on Ubuntu Trusty.</p><h4><a id="ece-install_a_supported_linux_kernel"></a>Install a Supported Linux Kernel</h4><p>Elastic Cloud Enterprise requires 3.10 or higher. The steps shown here install kernel 4.4.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Refresh the package index files from their sources:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo apt-get update</pre></div></li><li class="listitem"><p class="simpara">
@@ -1056,6 +1058,132 @@ net.core.netdev_max_backlog=32768
 SETTINGS</pre></div></li><li class="listitem"><p class="simpara">
 Pin the Docker version to ensure that the <code class="literal">docker-engine</code> package does not get upgraded:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">echo "exclude=docker-engine" | sudo tee -a /etc/yum.conf</pre></div></li><li class="listitem"><p class="simpara">
+Reboot your system to ensure that all configuration changes take effect:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-literal">sudo reboot</pre></div></li><li class="listitem"><p class="simpara">
+After rebooting, verify that your Docker settings persist as expected:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-literal">sudo docker info | grep Root</pre></div><p class="simpara">If the command returns <code class="literal">Docker Root Dir: /mnt/data/docker</code>, then your changes were applied successfully and persist as expected.</p><p class="simpara">If the command returns <code class="literal">Docker Root Dir: /var/lib/docker</code>, then you need to troubleshoot the previous configuration steps until the Docker settings are applied successfully before continuing with the installation process. For more information, see <a class="ulink" href="https://docs.docker.com/engine/admin/systemd/#/custom-docker-daemon-options" target="_top">Custom Docker daemon options</a> in the Docker documentation.</p></li><li class="listitem">
+Repeat these steps on other hosts that you want to use with Elastic Cloud Enterprise or follow the steps in the next section to start installing Elastic Cloud Enterprise.
+</li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ece-configure-hosts-sles12"></a>SUSE Linux Enterprise Server (SLES) 12</h3></div></div></div><p>The following instructions show you how to prepare your hosts on SLES 12.</p><p>If you want to install Elastic Cloud Enterprise on your own hosts, the steps for preparing your hosts can take a bit of time. There are two ways you can approach this:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<span class="strong strong"><strong>Think like a minimalist</strong></span>: <a class="link" href="ece-configure-hosts.html#ece-install-docker-sles12" title="Install Docker Version 1.11">Install the correct version of Docker</a> on hosts that meet the <a class="link" href="ece-prereqs.html" title="Prerequisites">prerequisites</a> for Elastic Cloud Enterprise, then skip ahead and <a class="link" href="ece-installing.html" title="Install ECE With Internet Access">install Elastic Cloud Enterprise</a>. This approach is similar to the <a class="link" href="ece-quick-start.html" title="Quick Start Guide">Quick Start Guide</a>. Be aware that some checks during the installation can fail with this approach, which will mean doing further host preparation work before retrying the installation.
+</li><li class="listitem">
+<span class="strong strong"><strong>Cover your bases</strong></span>: If you want to make absolutely sure that your installation of Elastic Cloud Enterprise can succeed on hosts that meet the <a class="link" href="ece-prereqs.html" title="Prerequisites">prerequisites</a>, or if any of the checks during the installation failed previously, run through the full preparation steps in this section and then and <a class="link" href="ece-installing.html" title="Install ECE With Internet Access">install Elastic Cloud Enterprise</a>. You’ll do a bit more work now, but life will be simpler later on.
+</li></ul></div><p>Regardless of which approach you take, the steps in this section need to be performed on every host that you want to use with Elastic Cloud Enterprise.</p><h4><a id="ece-install-docker-sles12"></a>Install Docker Version 1.11</h4><p>We recommend that you install Elastic Cloud Enterprise with 1.11.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Remove the preinstalled version of Docker to avoid any conflicts:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo zypper rm -y docker docker-runc</pre></div></li><li class="listitem"><p class="simpara">
+Recommended: Add the Docker repository to make installing the correct version of Docker easier:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo zypper ar -t YUM https://packages.docker.com/1.11/yum/repo/main/opensuse/12.3 docker-1.11
+sudo rpm --import 'https://sks-keyservers.net/pks/lookup?op=get&amp;search=0xee6d536cf7dc86e2d7d56f59a178ac6c6238f52e'
+sudo zypper refresh</pre></div></li><li class="listitem"><p class="simpara">
+Install the correct version of the <code class="literal">docker-engine</code> package:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo zypper install -y docker-engine-1.11.2.cs8-1</pre></div></li></ol></div><h4><a id="ece-install-docker-latest-sles12"></a>Install Docker Version 18.09</h4><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Add the SLES Virtualization:containers repository:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo zypper ar -t https://download.opensuse.org/repositories/Virtualization:containers/SLE_12_SP3/Virtualization:containers.repo
+sudo zypper refresh</pre></div></li><li class="listitem"><p class="simpara">
+Install the correct version of the <code class="literal">docker</code> package:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo zypper install -y docker-18.09.0_ce-310.1</pre></div></li></ol></div><h4><a id="ece-xfs-setup-sles12"></a>Recommended: Set Up XFS on SLES</h4><p>Elastic Cloud Enterprise can run without XFS, but XFS is required to support disk space quotas for Elasticsearch data directories. Some Linux distributions such as RHEL and CentOS already provide XFS as the default file system. On SLES 12, we recommend that you set up an XFS file system first.</p><p>Disk space quotas set a limit on the amount of disk space an Elasticsearch cluster node can use. Currently, quotas are calculated by
+a static ratio of 1:32, which means that for every 1 GB of RAM a cluster is given, a cluster node is allowed to consume 32 GB of disk space.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>Using LVM, <code class="literal">mdadm</code>, or a combination of the two for block device management is possible, but the
+configuration is not covered here, nor is it provided as part of supporting Elastic Cloud Enterprise.</p></div></div><p><span class="strong strong"><strong>Example:</strong></span> Set up XFS on a single, pre-partitioned block device named <code class="literal">/dev/xvdg1</code>.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Format the partition:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo mkfs.xfs /dev/xvdg1</pre></div></li><li class="listitem"><p class="simpara">
+Create the <code class="literal">/mnt/data/</code> directory as a mount point:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo install -o $USER -g $USER -d -m 700 /mnt/data</pre></div></li><li class="listitem"><p class="simpara">
+Add an entry to the <code class="literal">/etc/fstab</code> file for the new XFS volume. The
+default filesystem path used by Elastic Cloud Enterprise is <code class="literal">/mnt/data</code>.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">/dev/xvdg1      /mnt/data       xfs     defaults,pquota,prjquota,x-systemd.automount  0 0</pre></div></li><li class="listitem"><p class="simpara">
+Regenerate the mount files:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo mount -a</pre></div></li></ol></div><h4><a id="ece-update_the_configurations_settings_3"></a>Update the Configurations Settings</h4><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Stop the Docker service:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo systemctl stop docker</pre></div></li><li class="listitem"><p class="simpara">
+Enable cgroup accounting for memory and swap space.
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+In the <code class="literal">/etc/default/grub</code> file, ensure that the <code class="literal">GRUB_CMDLINE_LINUX=</code> variable includes these values:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">cgroup_enable=memory swapaccount=1 cgroup.memory=nokmem</pre></div></li><li class="listitem"><p class="simpara">
+Update your Grub configuration:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo update-bootloader</pre></div></li></ol></div></li><li class="listitem"><p class="simpara">
+If you plan to run Elasticsearch 5.0 and later: Update the <code class="literal">/etc/sysctl.conf</code> file to set the maximum number of mapped memory areas a process can have:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf</pre></div></li><li class="listitem"><p class="simpara">
+Verify that IPv4 forwarding is enabled:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">cat /proc/sys/net/ipv4/ip_forward</pre></div><p class="simpara">If the output of this command is not <code class="literal">1</code>, you must enable IPv4 forwarding so that Docker can work as expected:</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+Update the <code class="literal">/etc/sysctl.conf</code> file to include this line:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">net.ipv4.ip_forward = 1</pre></div></li><li class="listitem"><p class="simpara">
+Restart the network service:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo sysctl -p</pre></div></li><li class="listitem"><p class="simpara">
+Verify that the change is applied:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">cat /proc/sys/net/ipv4/ip_forward</pre></div><p class="simpara">The output <code class="literal">1</code> indicates that IPv4 forwarding is turned on.</p></li></ol></div></li><li class="listitem"><p class="simpara">
+Adjust the system limits.
+</p><p class="simpara">Add the following configuration values to the <code class="literal">/etc/security/limits.conf</code> file. These values are derived from our experience with the Elastic Cloud hosted offering and should be used for Elastic Cloud Enterprise as well.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>If you are using a user name other than <code class="literal">elastic</code>, adjust the configuration values accordingly.</p></div></div><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">*                soft    nofile         1024000
+*                hard    nofile         1024000
+*                soft    memlock        unlimited
+*                hard    memlock        unlimited
+elastic          soft    nofile         1024000
+elastic          hard    nofile         1024000
+elastic          soft    memlock        unlimited
+elastic          hard    memlock        unlimited
+root             soft    nofile         1024000
+root             hard    nofile         1024000
+root             soft    memlock        unlimited</pre></div></li><li class="listitem"><p class="simpara">
+If you did not create the mount point earlier (if you did not set up XFS), create the <code class="literal">/mnt/data/</code> directory as a mount point:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo install -o $USER -g $USER -d -m 700 /mnt/data</pre></div></li><li class="listitem"><p class="simpara">
+If you <a class="link" href="ece-configure-hosts.html#ece-xfs-setup-sles12" title="Recommended: Set Up XFS on SLES">set up a new device with XFS</a> earlier:
+</p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+Mount the block device (change the device name if you use a different device than <code class="literal">/dev/xvdg1</code>):
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo mount /dev/xvdg1</pre></div></li><li class="listitem"><p class="simpara">
+Set the permissions on the newly mounted device:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo chown $USER:$USER /mnt/data</pre></div></li></ol></div></li><li class="listitem"><p class="simpara">
+Create the <code class="literal">/mnt/data/docker</code> directory for the Docker service storage:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo install -o $USER -g $USER -d -m 700 /mnt/data/docker</pre></div></li></ol></div><h5><a id="ece-configure-docker-daemon-sles12"></a>Configure the Docker Daemon Options</h5><p>Depending on the installed Docker version, you need to perform slightly different system configurations.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Update <code class="literal">/etc/systemd/system/docker.service.d/docker.conf</code>. If the file path and file do not exist, create them first.
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+Docker version 1.11
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">[Unit]
+Description=Docker Service
+After=network.target docker.socket
+
+[Service]
+Environment="DOCKER_OPTS=-H unix:///run/docker.sock -g /mnt/data/docker --storage-driver=overlay --bip=172.17.42.1/16"
+ExecStart=
+ExecStart=/usr/bin/docker daemon $DOCKER_OPTS
+Restart=on-failure
+RestartSec=1s
+TimeoutSec=20</pre></div></li><li class="listitem"><p class="simpara">
+Docker version 18.09
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">[[Unit]
+ Description=Docker Service
+ After=network.target docker.socket
+
+ [Service]
+ Environment="DOCKER_OPTS=-H unix:///run/docker.sock -g /mnt/data/docker --storage-driver=overlay --bip=172.17.42.1/16"
+ ExecStart=
+ ExecStart=/usr/bin/dockerd $DOCKER_OPTS
+ Restart=on-failure
+ RestartSec=1s
+ TimeoutSec=20</pre></div></li></ul></div></li><li class="listitem"><p class="simpara">
+Apply the updated Docker daemon configuration:
+</p><p class="simpara">Reload the Docker daemon configuration:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo systemctl daemon-reload</pre></div><p class="simpara">Restart the Docker service:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo systemctl restart docker</pre></div><p class="simpara">Enable Docker to start on boot:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo systemctl enable docker</pre></div></li><li class="listitem"><p class="simpara">
+Enable your user to communicate with the Docker subsystem by adding it to the <code class="literal">docker</code> group:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">sudo usermod -aG docker $USER</pre></div></li><li class="listitem"><p class="simpara">
+Recommended: Tune your network settings.
+</p><p class="simpara">Create a <code class="literal">70-cloudenterprise.conf</code> file in the <code class="literal">/etc/sysctl.d/</code> file path that includes these network settings:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">cat &lt;&lt; SETTINGS | sudo tee /etc/sysctl.d/70-cloudenterprise.conf
+net.ipv4.tcp_max_syn_backlog=65536
+net.core.somaxconn=32768
+net.core.netdev_max_backlog=32768
+net.ipv4.tcp_keepalive_time=1800
+net.netfilter.nf_conntrack_tcp_timeout_established=7200
+net.netfilter.nf_conntrack_max=262140
+SETTINGS</pre></div><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p class="simpara">
+Ensure settings in /etc/sysctl.d/*.conf are applied on boot
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">SCRIPT_LOCATION="/var/lib/cloud/scripts/per-boot/00-load-sysctl-settings"
+sudo sh -c "cat &lt;&lt; EOF &gt; ${SCRIPT_LOCATION}
+#!/bin/bash
+
+set -x
+
+lsmod | grep ip_conntrack || modprobe ip_conntrack
+
+sysctl --system
+EOF
+"
+sudo chmod +x ${SCRIPT_LOCATION}</pre></div></li></ol></div></li><li class="listitem"><p class="simpara">
 Reboot your system to ensure that all configuration changes take effect:
 </p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-literal">sudo reboot</pre></div></li><li class="listitem"><p class="simpara">
 After rebooting, verify that your Docker settings persist as expected:
