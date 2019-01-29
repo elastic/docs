@@ -51,7 +51,8 @@ function find_git_repo_root() {
 DIR="$(dirname "$(to_absolute_path "$0")")"
 
 DOCKER_RUN_ARGS=()
-DOCKER_RUN_ARGS+=('-it')
+
+# Remove the container when we are done with it.
 DOCKER_RUN_ARGS+=('--rm')
 
 # Make sure we create files as the current user because that is what
@@ -65,6 +66,10 @@ DOCKER_RUN_ARGS+=('--tmpfs' '/tmp')
 
 # Mount the docs build code so we can run it!
 DOCKER_RUN_ARGS+=('-v' "$DIR:/docs_build:cached")
+
+# Seccomp adds a *devestating* performance overhead if you happen
+# to have it installed.
+DOCKER_RUN_ARGS+=('--security-opt' 'seccomp=unconfined')
 
 # rewrite the arguments to be friendly to the docker container
 SAW_OUT=false
@@ -152,6 +157,11 @@ if [ "$SAW_OUT" = false ]; then
   NEW_ARGS+=('--out' "/out/html_docs")
 fi
 
+tty -s
+if [ "0" == "$?" ]; then
+  # Emulate a terminal so things like ctrl-c work.
+  DOCKER_RUN_ARGS+=('-it')
+fi
 
 echo "Building the docker image that will build the docs. Expect this to" \
     "take somewhere between a hundred milliseconds and five minutes."
