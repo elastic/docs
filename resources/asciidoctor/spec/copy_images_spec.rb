@@ -3,6 +3,8 @@ require 'fileutils'
 require 'tmpdir'
 
 RSpec.describe CopyImages do
+  RSpec::Matchers.define_negated_matcher :not_match, :match
+
   before(:each) do
     Extensions.register do
       tree_processor CopyImages
@@ -31,10 +33,7 @@ RSpec.describe CopyImages do
       == Example
       image::resources/copy_images/example1.png[]
     ASCIIDOC
-    expect { convert input, attributes }.to raise_error { |error|
-      expect(error).to be_a(ConvertError)
-      expect(error.message).to match(/INFO: <stdin>: line 2: copying resources\/copy_images\/example1.png/)
-    }
+    convert input, attributes, match(/INFO: <stdin>: line 2: copying resources\/copy_images\/example1.png/)
     expect(copied).to eq([
         ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
     ])
@@ -47,10 +46,7 @@ RSpec.describe CopyImages do
       == Example
       image::example1.png[]
     ASCIIDOC
-    expect { convert input, attributes }.to raise_error { |error|
-      expect(error).to be_a(ConvertError)
-      expect(error.message).to match(/INFO: <stdin>: line 2: copying example1.png/)
-    }
+    convert input, attributes, match(/INFO: <stdin>: line 2: copying example1.png/)
     expect(copied).to eq([
         ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
     ])
@@ -63,10 +59,7 @@ RSpec.describe CopyImages do
       == Example
       image::copy_images/example1.png[]
     ASCIIDOC
-    expect { convert input, attributes }.to raise_error { |error|
-      expect(error).to be_a(ConvertError)
-      expect(error.message).to match(/INFO: <stdin>: line 2: copying copy_images\/example1.png/)
-    }
+    convert input, attributes, match(/INFO: <stdin>: line 2: copying copy_images\/example1.png/)
     expect(copied).to eq([
         ["copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
     ])
@@ -79,18 +72,14 @@ RSpec.describe CopyImages do
       == Example
       image::not_found.jpg[]
     ASCIIDOC
-    expect { convert input, attributes }.to raise_error { |error|
-      expect(error).to be_a(ConvertError)
-      expect(error.message).to match(/
-          WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
-            "#{spec_dir}\/not_found.jpg",\s
-            "#{spec_dir}\/resources\/not_found.jpg",\s
-            .+
-            "#{spec_dir}\/resources\/copy_images\/not_found.jpg"
-            .+
-          \]/x)
-      expect(error.message).not_to match(/INFO: <stdin>/)
-    }
+    convert input, attributes, match(/
+        WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
+          "#{spec_dir}\/not_found.jpg",\s
+          "#{spec_dir}\/resources\/not_found.jpg",\s
+          .+
+          "#{spec_dir}\/resources\/copy_images\/not_found.jpg"
+          .+
+        \]/x).and(not_match(/INFO: <stdin>/))
     expect(copied).to eq([])
   end
 
@@ -105,11 +94,8 @@ RSpec.describe CopyImages do
       image::resources/copy_images/example1.png[]
       image::resources/copy_images/example2.png[]
       ASCIIDOC
-    expect { convert input, attributes }.to raise_error { |error|
-      expect(error).to be_a(ConvertError)
-      expect(error.message).to match(/INFO: <stdin>: line 2: copying resources\/copy_images\/example1.png/)
-      expect(error.message).to match(/INFO: <stdin>: line 4: copying resources\/copy_images\/example2.png/)
-    }
+    convert input, attributes, match(/INFO: <stdin>: line 2: copying resources\/copy_images\/example1.png/).and(
+        match(/INFO: <stdin>: line 4: copying resources\/copy_images\/example2.png/))
     expect(copied).to eq([
         ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
         ["resources/copy_images/example2.png", "#{spec_dir}/resources/copy_images/example2.png"],
@@ -141,11 +127,8 @@ RSpec.describe CopyImages do
         == Example
         image::tmp_example1.png[]
       ASCIIDOC
-      expect { convert input, attributes }.to raise_error { |error|
-        expect(error).to be_a(ConvertError)
-        expect(error.message).to match(/INFO: <stdin>: line 2: copying tmp_example1.png/)
-        # NOCOMMIT full paths in logs too, I think
-      }
+      # NOCOMMIT full paths in logs too, I think
+      convert input, attributes, match(/INFO: <stdin>: line 2: copying tmp_example1.png/)
       expect(copied).to eq([
           ["tmp_example1.png", "#{tmp}/tmp_example1.png"]
       ])
@@ -166,10 +149,7 @@ RSpec.describe CopyImages do
         == Example
         image::tmp_example1.png[]
       ASCIIDOC
-      expect { convert input, attributes }.to raise_error { |error|
-        expect(error).to be_a(ConvertError)
-        expect(error.message).to match(/INFO: <stdin>: line 2: copying tmp_example1.png/)
-      }
+      convert input, attributes, match(/INFO: <stdin>: line 2: copying tmp_example1.png/)
       expect(copied).to eq([
           ["tmp_example1.png", "#{tmp}/tmp_example1.png"]
       ])
@@ -185,16 +165,12 @@ RSpec.describe CopyImages do
         == Example
         image::not_found.png[]
       ASCIIDOC
-      expect { convert input, attributes }.to raise_error { |error|
-        expect(error).to be_a(ConvertError)
-        expect(error.message).to match(/
-            WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
-              "#{spec_dir}\/not_found.png",\s
-              "#{tmp}\/not_found.png"
-              .+
-            \]/x)
-        expect(error.message).not_to match(/INFO: <stdin>/)
-      }
+      convert input, attributes, match(/
+          WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
+            "#{spec_dir}\/not_found.png",\s
+            "#{tmp}\/not_found.png"
+            .+
+          \]/x).and(not_match(/INFO: <stdin>/))
       expect(copied).to eq([])
     }
   end
@@ -208,17 +184,13 @@ RSpec.describe CopyImages do
         == Example
         image::not_found.png[]
       ASCIIDOC
-      expect { convert input, attributes }.to raise_error { |error|
-        expect(error).to be_a(ConvertError)
-        expect(error.message).to match(/
-            WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
-              "#{spec_dir}\/not_found.png",\s
-              "#{tmp}\/not_found.png",\s
-              "\/dummy2\/not_found.png"
-              .+
-            \]/x)
-        expect(error.message).not_to match(/INFO: <stdin>/)
-      }
+      convert input, attributes, match(/
+          WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
+            "#{spec_dir}\/not_found.png",\s
+            "#{tmp}\/not_found.png",\s
+            "\/dummy2\/not_found.png"
+            .+
+          \]/x).and(not_match(/INFO: <stdin>/))
       expect(copied).to eq([])
     }
   end
