@@ -1,36 +1,35 @@
-# The asciidoctor docker image doesn't really have versions so we build
-# directly on Alpine and install asciidoctor ourselves so we can pin its
-# version.
-FROM alpine:3.8
+# Debian builds the docs about 20% faster than alpine. The image is larger
+# and takes longer to build but that is worth it.
+FROM bitnami/minideb:stretch
 
 LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 
 # Used by the docs build or asciidoctor
-RUN apk add --no-cache \
+RUN install_packages \
 bash \
+build-essential \
 curl \
+cmake \
 git \
+libnss-wrapper \
+libxml2-dev \
 libxml2-utils \
-libxslt \
 make \
 nginx \
 openssh-client \
-perl \
-python2 \
+perl-base \
+python \
 ruby \
-ruby-mathematical \
-unzip \
-which
-
-# Install asciidoctor, but don't keep the -devel deps around
-RUN apk add --no-cache --virtual .rubymakedepends \
-build-base \
-libxml2-dev \
 ruby-dev \
-&& gem install --no-document \
+unzip \
+xsltproc
+
+# We mount this log directory as tmp directory so we can't have
+# files there.
+RUN rm -rf /var/log/nginx
+
+RUN gem install --no-document \
 asciidoctor:1.5.8 \
 asciidoctor-diagram:1.5.12 \
-asciidoctor-mathematical:0.2.2 \
 asciimath:1.0.8 \
-thread_safe:0.3.6 \
-&& apk del -r --no-cache .rubymakedepends
+thread_safe:0.3.6

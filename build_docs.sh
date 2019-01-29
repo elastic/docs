@@ -152,6 +152,6 @@ echo "Building the docker image that will build the docs. Expect this to" \
 # Build the docker image from stdin so we don't try to pack up everything in
 # this directory. It is huge and we don't need any of it in the image because
 # we'll mount it into the image on startup.
-docker image build -t elastic/docs_build - < "$DIR/DebDockerfile"
+docker image build -t elastic/docs_build - < "$DIR/Dockerfile"
 # Run docker with the arguments we made above.
 docker run "${DOCKER_RUN_ARGS[@]}" elastic/docs_build /docs_build/build_docs.pl ${NEW_ARGS[@]}
