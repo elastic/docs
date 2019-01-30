@@ -17,7 +17,7 @@ RSpec.describe CopyImages do
 
   private
   def copy_attributes copied
-    {
+    return {
       'copy_image' => Proc.new { |uri, source|
         copied << [uri, source]
       }
