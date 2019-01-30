@@ -86,24 +86,36 @@ RSpec.describe ElasticIncludeTagged do
     input = <<~ASCIIDOC
       include::elastic-include-tagged:resources/elastic_include_tagged/DoesNotExist.java[doesn't-matter]
     ASCIIDOC
-    expect { convert(input) }.to raise_error(
-        ConvertError, /<stdin>: line 2: include file not found/)
+    expected = <<~DOCBOOK
+      <preface>
+      <title></title>
+      <simpara>Unresolved directive in &lt;stdin&gt; - include::resources/elastic_include_tagged/DoesNotExist.java[{1&#8658;"doesn&#8217;t-matter"}]</simpara>
+      </preface>
+    DOCBOOK
+    actual = convert input, {}, match(/<stdin>: line 2: include file not found/)
+    expect(actual).to eq(expected.strip)
   end
 
   it "warns if the start tag is missing" do
     input = <<~ASCIIDOC
       include::elastic-include-tagged:resources/elastic_include_tagged/Example.java[missing-start]
     ASCIIDOC
-    expect { convert(input) }.to raise_error(
-        ConvertError, /<stdin>: line 2: elastic-include-tagged missing start tag \[missing-start\]/)
+    actual = convert input, {}, match(/<stdin>: line 2: elastic-include-tagged missing start tag \[missing-start\]/)
+    expect(actual).to eq('')
   end
 
   it "warns if the end tag is missing" do
     input = <<~ASCIIDOC
       include::elastic-include-tagged:resources/elastic_include_tagged/Example.java[missing-end]
     ASCIIDOC
-    expect { convert(input) }.to raise_error(
-        ConvertError, /resources\/elastic_include_tagged\/Example.java: line \d+: elastic-include-tagged missing end tag \[missing-end\]/)
+    expected = <<~DOCBOOK
+      <preface>
+      <title></title>
+      <simpara>System.err.println("this tag doesn&#8217;t have any end");</simpara>
+      </preface>
+    DOCBOOK
+    actual = convert input, {}, match(/resources\/elastic_include_tagged\/Example.java: line \d+: elastic-include-tagged missing end tag \[missing-end\]/)
+    expect(actual).to eq(expected.strip)
   end
 
   it "isn't invoked by include-tagged::" do

@@ -12,29 +12,12 @@ RSpec.configure do |config|
   end
 end
 
-##
-# Error thrown when the conversion results in a warning.
-class ConvertError < Exception
-  attr_reader :warnings
-  attr_reader :result
-
-  def initialize warnings, result
-    super('\n' + 
-        warnings
-          .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
-          .join('\n'))
-    @warnings = warnings
-    @result = result
-  end
-end
-
 # Put asciidoctor into verbose mode so it'll log reference errors
 $VERBOSE = true
 
 ##
-# Convert an asciidoc string into docbook. If the conversion results in any
-# errors or warnings then raises a ConvertError.
-def convert input, extra_attributes = {}
+# Convert an asciidoc string into docbook.
+def convert input, extra_attributes = {}, warnings_matcher = eq('')
   logger = Asciidoctor::MemoryLogger.new
   attributes = {
     'docdir' => File.dirname(__FILE__),
@@ -48,8 +31,9 @@ def convert input, extra_attributes = {}
       :attributes => attributes,
       :sourcemap  => true,
     }
-  if logger.messages != [] then
-    raise ConvertError.new(logger.messages, result)
-  end
+  warnings_string = logger.messages
+        .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
+        .join('\n')
+  expect(warnings_string).to warnings_matcher
   result
 end
