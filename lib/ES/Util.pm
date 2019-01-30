@@ -93,6 +93,7 @@ sub build_chunked {
                 # '-a' => 'attribute-missing=warn',
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 $resources ? ( '-a' => 'resources=' . join(',', @$resources)) : (),
+                '-a' => 'inline-callouts',
                 '--destination-dir=' . $dest,
                 docinfo($index),
                 $index
@@ -211,6 +212,7 @@ sub build_single {
                 $private ? () : ( '-a' => "edit_url=$edit_url" ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 $resources ? ( '-a' => 'resources=' . join(',', @$resources)) : (),
+                '-a' => 'inline-callouts',
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',

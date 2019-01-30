@@ -6,6 +6,9 @@ require_relative 'elastic_compat_tree_processor/extension'
 require_relative 'elastic_compat_preprocessor/extension'
 require_relative 'elastic_include_tagged/extension'
 
+# This extensions is special because it is evil - just loading it is enough
+require_relative 'inline_callout/extension'
+
 Extensions.register Added
 Extensions.register do
   # Enable storing the source locations so we can look at them. This is required
