@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Microsoft Azure Virtual Machines
         | Elastic Cloud Enterprise Reference [2.1]
       | Elastic
-    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Enterprise Reference [2.1]" /><link rel="up" href="ece-configuring.html" title="Prepare Your Environment" /><link rel="prev" href="ece-configure-gcp.html" title="Google Cloud Platform (GCP)" /><link rel="next" href="ece-installing.html" title="Install ECE With Internet Access" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/CloudEnterprise/Reference/2.1" /><meta name="DC.subject" content="ECE" /><meta name="DC.identifier" content="2.1" />
+    </title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="Elastic Cloud Enterprise Reference [2.1]" /><link rel="up" href="ece-configuring.html" title="Preparing Your Environment" /><link rel="prev" href="ece-configure-gcp.html" title="Google Cloud Platform (GCP)" /><link rel="next" href="ece-set_up_azure_resource_group_and_networking.html" title="Set Up Azure Resource Group and Networking" /><meta name="description" content="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." /><meta name="DC.type" content="Learn/Docs/CloudEnterprise/Reference/2.1" /><meta name="DC.subject" content="ECE" /><meta name="DC.identifier" content="2.1" />
     
 
     
@@ -696,44 +696,21 @@
             <!-- start body -->
 <div class="breadcrumbs"><span class="breadcrumb-link"><a href="index.html">Elastic Cloud Enterprise Reference
       [2.1]
-    </a></span> » <span class="breadcrumb-link"><a href="ece-getting-started.html">Getting Started</a></span> » <span class="breadcrumb-link"><a href="ece-configuring.html">Prepare Your Environment</a></span> » <span class="breadcrumb-node">Microsoft Azure Virtual Machines</span></div><div class="navheader"><span class="prev"><a href="ece-configure-gcp.html">
+    </a></span> » <span class="breadcrumb-link"><a href="ece-configuring.html">Preparing Your Environment</a></span> » <span class="breadcrumb-node">Microsoft Azure Virtual Machines</span></div><div class="navheader"><span class="prev"><a href="ece-configure-gcp.html">
               « 
               Google Cloud Platform (GCP)</a>
            
         </span><span class="next">
            
-          <a href="ece-installing.html">Install ECE With Internet Access
+          <a href="ece-set_up_azure_resource_group_and_networking.html">Set Up Azure Resource Group and Networking
                »
-            </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="ece-configure-azure"></a>Microsoft Azure Virtual Machines</h2></div></div></div><p>With the availability of virtual machines with Linux-based operating systems, you can now use Microsoft Azure to host Elastic Cloud Enterprise.</p><p>The following instructions are for Ubuntu 14.04 LTS virtual machines, but you can use any of the <a class="link" href="ece-prereqs-software.html" title="Software">supported operating systems</a> so long as the prerequisites are met.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You must run these commands from the Azure CLI, version 2.0 or later. You can download and run Azure CLI locally, or you can use the <span class="strong strong"><strong>Cloud Shell &gt;_</strong></span> button to open it in the Azure portal. Alternatively, you can use the Azure portal UI to create your virtual machines.</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ece-set_up_azure_resource_group_and_networking"></a>Set Up Azure Resource Group and Networking</h3></div></div></div><p>If you don’t have an existing resource group, you’ll need to make some and configure the security settings to allow them to connect appropriately.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Create a resource group:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">az group create --name &lt;resourcename&gt; --location &lt;region&gt;</pre></div></li><li class="listitem"><p class="simpara">
-Create your network security group:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">az network nsg create --resource-group &lt;resourcename&gt; --name &lt;securityname&gt; --location &lt;region&gt;</pre></div></li><li class="listitem"><p class="simpara">
-Add several rules for inbound and outbound network traffic.
-</p><p class="simpara">These rules make sure that the Cloud UI can be accessed, talk to each other, and that they can reach the internet. You might need to create several rules to enable the <a class="link" href="ece-prereqs-networking.html" title="Networking">full list of ports and their uses</a>.</p><p class="simpara">The following commands add port 22 to be able to connect over SSH for installation and troubleshooting, port 12443 for HTTPS, port 9243 to access your Elasticsearch clusters and Kibana instances, and port 12400 to access the Cloud UI:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">az network nsg rule create --resource-group &lt;resourcename&gt; --nsg-name &lt;securityname&gt; --name ssh --access Allow --protocol Tcp --direction Inbound --priority 100 --source-address-prefix Internet --source-port-range "*" --destination-address-prefix "*" --destination-port-range 22
-
-az network nsg rule create --resource-group &lt;resourcename&gt; --nsg-name &lt;securityname&gt; --name https --access Allow --protocol Tcp --direction Inbound --priority 200 --source-address-prefix Internet --source-port-range "*" --destination-address-prefix "*" --destination-port-range 12443
-
-az network nsg rule create --resource-group &lt;resourcename&gt; --nsg-name &lt;securityname&gt; --name ece-frontend --access Allow --protocol Tcp --direction Inbound --priority 300 --source-address-prefix Internet --source-port-range "*" --destination-address-prefix "*" --destination-port-range 9243
-
-az network nsg rule create --resource-group &lt;resourcename&gt; --nsg-name &lt;securityname&gt; --name admin-ui --access Allow --protocol Tcp --direction Inbound --priority 400 --source-address-prefix Internet --source-port-range "*" --destination-address-prefix "*" --destination-port-range 12400</pre></div></li><li class="listitem"><p class="simpara">
-Create a virtual network:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">az network vnet create --resource-group &lt;resourcename&gt; --name &lt;vnetname&gt; --address-prefix 10.0.0.0/16 --subnet-name &lt;default&gt;</pre></div></li><li class="listitem"><p class="simpara">
-Associate the virtual network subnet with your network security group.
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">az network vnet subnet update --resource-group &lt;resourcename&gt; --vnet-name &lt;vnetname&gt; --name default --network-security-group &lt;securityname&gt;</pre></div></li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="ece-create_your_hosts"></a>Create Your Hosts</h3></div></div></div><p>These steps guide you through creating three Ubuntu 14.04 LTS virtual machines on the Standard DS11 V2 instance types with 16 GB RAM.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
-Create your first virtual machine.
-This is the first machine that you install Elastic Cloud Enterprise on and it includes a 128 GB attached data disk. This command sets a status public IP address and generates your SSH keys.
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">az vm create --resource-group &lt;resourcename&gt; --name ece-node-01 --image Canonical:UbuntuServer:14.04.4-LTS:latest --size Standard_D11_v2 --data-disk-sizes-gb 128 --public-ip-address-allocation static --vnet-name &lt;vnetname&gt; --subnet default --nsg &lt;securityname&gt; --generate-ssh-keys</pre></div><div class="important admon"><div class="icon"><img alt="Important" src="images/icons/important.png" /></div><div class="admon_content"><p>If you are using machines without permanent storage, back up your keys to a safe location.</p></div></div></li><li class="listitem">
-Create two more virtual machines with unique node names.
-</li><li class="listitem">
-Complete the other <a class="link" href="ece-configure-hosts.html#ece-configure-hosts-trusty" title="Ubuntu 14.04 LTS (Trusty Tahr)">environment preparations</a> for each virtual machine.
-</li></ol></div><p>Next steps: When your Microsoft Azure virtual machines are up and running, you can connect to them and <a class="link" href="ece-installing.html" title="Install ECE With Internet Access">install Elastic Cloud Enterprise</a> for simple installs or review the <a class="link" href="ece-playbook.html" title="Playbook for Production">playbook for production</a>.</p></div></div><div class="navfooter"><span class="prev"><a href="ece-configure-gcp.html">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="ece-configure-azure"></a>Microsoft Azure Virtual Machines</h2></div></div></div><p>With the availability of virtual machines with Linux-based operating systems, you can now use Microsoft Azure to host Elastic Cloud Enterprise.</p><p>The following instructions are for Ubuntu 14.04 LTS virtual machines, but you can use any of the <a class="link" href="ece-prereqs-software.html" title="Software">supported operating systems</a> so long as the prerequisites are met.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>You must run these commands from the Azure CLI, version 2.0 or later. You can download and run Azure CLI locally, or you can use the <span class="strong strong"><strong>Cloud Shell &gt;_</strong></span> button to open it in the Azure portal. Alternatively, you can use the Azure portal UI to create your virtual machines.</p></div></div></div><div class="navfooter"><span class="prev"><a href="ece-configure-gcp.html">
               « 
               Google Cloud Platform (GCP)</a>
            
         </span><span class="next">
            
-          <a href="ece-installing.html">Install ECE With Internet Access
+          <a href="ece-set_up_azure_resource_group_and_networking.html">Set Up Azure Resource Group and Networking
                »
             </a></span></div>
 <!-- end body -->
