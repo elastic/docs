@@ -1,4 +1,5 @@
 require_relative 'added/extension'
+require_relative 'copy_images/extension'
 require_relative 'cramped_include/extension'
 require_relative 'edit_me/extension'
 require_relative 'elastic_compat_tree_processor/extension'
@@ -12,6 +13,7 @@ Extensions.register do
   document.sourcemap = true
   preprocessor CrampedInclude
   preprocessor ElasticCompatPreprocessor
+  treeprocessor CopyImages
   treeprocessor EditMe
   treeprocessor ElasticCompatTreeProcessor
   include_processor ElasticIncludeTagged
