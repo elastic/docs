@@ -12,8 +12,8 @@ include Asciidoctor
 #   POST <1> /_search/scroll <2>
 #
 # NOTE: This isn't an asciidoctor extension so much as a hack. Just including
-# the file causes us to hack asciidoctor to enable the behavior. By default we
-# don't do anything if you don't set the the `inline-callouts` attribute so
+# the file causes us to monkey patch its code into asciidoctor. By  default we
+# don't change asciidoctor, but if you set the `inline-callouts` attribute so
 # you need to *ask* for the change in behavior.
 #
 module InlineCallout
