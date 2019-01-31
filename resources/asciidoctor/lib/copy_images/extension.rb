@@ -17,9 +17,23 @@ class CopyImages < TreeProcessorScaffold
   end
 
   def process_block block
-    return unless block.context == :image
-    uri = block.image_uri(block.attr 'target')
-    return if Helpers.uriish? uri       # Skip external images
+    if block.context == :image
+      uri = block.image_uri(block.attr 'target')
+      return if Helpers.uriish? uri # Skip external images
+      copy_image block, uri
+    else
+      extension = block.attr 'copy-callout-images'
+      if block.parent && block.parent.context == :colist
+        id = block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
+          copy_image block, "images/icons/callouts/#{$1}.#{extension}"
+        }
+      else
+        return
+      end
+    end
+  end
+
+  def copy_image block, uri
     return unless @copied.add? uri      # Skip images we've copied before
     source = find_source block, uri
     return unless source                # Skip images we can't find

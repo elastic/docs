@@ -33,7 +33,7 @@ def convert input, extra_attributes = {}, warnings_matcher = eq('')
     }
   warnings_string = logger.messages
         .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
-        .join('\n')
+        .join("\n")
   expect(warnings_string).to warnings_matcher
   result
 end

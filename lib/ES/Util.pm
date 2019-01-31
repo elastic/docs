@@ -75,6 +75,9 @@ sub build_chunked {
         # Emulate asciidoc_dir because we use it to find shared asciidoc files
         # but asciidoctor doesn't support it.
         my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
+        # We use the callouts from asciidoc so add it as a resource so we
+        # can find them
+        push @$resources, $asciidoc_dir;
         eval {
             $output = run(
                 'asciidoctor', '-v', '--trace',
@@ -92,7 +95,8 @@ sub build_chunked {
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
-                $resources ? ( '-a' => 'resources=' . join(',', @$resources)) : (),
+                '-a' => 'resources=' . join(',', @$resources),
+                '-a' => 'copy-callout-images=png',
                 '--destination-dir=' . $dest,
                 docinfo($index),
                 $index
@@ -107,7 +111,7 @@ sub build_chunked {
                 file('resources/website_chunked.xsl')->absolute,
                 "$dest/index.xml"
             );
-            unlink "$dest/index.xml";
+            # unlink "$dest/index.xml";
             1;
         } or do { $output = $@; $died = 1; };
     }
@@ -198,7 +202,9 @@ sub build_single {
         # Emulate asciidoc_dir because we use it to find shared asciidoc files
         # but asciidoctor doesn't support it.
         my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
-
+        # We use the callouts from asciidoc so add it as a resource so we
+        # can find them
+        push @$resources, $asciidoc_dir;
         eval {
             $output = run(
                 'asciidoctor', '-v', '--trace',
@@ -210,7 +216,7 @@ sub build_single {
                 '-a' => 'repo_root=' . $root_dir,
                 $private ? () : ( '-a' => "edit_url=$edit_url" ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
-                $resources ? ( '-a' => 'resources=' . join(',', @$resources)) : (),
+                '-a' => 'resources=' . join(',', @$resources),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
