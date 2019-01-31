@@ -194,4 +194,130 @@ RSpec.describe CopyImages do
       expect(copied).to eq([])
     }
   end
+
+  it "copies a images for callouts when requested (png)" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'png'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1> <2>
+      ----
+      <1> words
+      <2> words
+    ASCIIDOC
+    expected_warnings = <<~WARNINGS
+      INFO: <stdin>: line 5: copying images/icons/callouts/1.png
+      INFO: <stdin>: line 6: copying images/icons/callouts/2.png
+    WARNINGS
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["images/icons/callouts/1.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.png"],
+        ["images/icons/callouts/2.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/2.png"],
+    ])
+  end
+
+  it "copies a images for callouts when requested (gif)" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'gif'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1>
+      ----
+      <1> words
+    ASCIIDOC
+    expected_warnings = <<~WARNINGS
+      INFO: <stdin>: line 5: copying images/icons/callouts/1.gif
+    WARNINGS
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["images/icons/callouts/1.gif", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.gif"],
+    ])
+  end
+
+  it "has a nice error message when a callout image is missing" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'gif'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1> <2>
+      ----
+      <1> words
+      <2> words
+    ASCIIDOC
+    convert input, attributes, match(/
+    WARN:\ <stdin>:\ line\ 6:\ can't\ read\ image\ at\ any\ of\ \[
+      "#{spec_dir}\/images\/icons\/callouts\/2.gif",\s
+      "#{spec_dir}\/resources\/images\/icons\/callouts\/2.gif",\s
+      .+
+      "#{spec_dir}\/resources\/copy_images\/images\/icons\/callouts\/2.gif"
+      .+
+    \]/x).and(match(/INFO: <stdin>: line 5: copying images\/icons\/callouts\/1.gif/))
+    expect(copied).to eq([
+        ["images/icons/callouts/1.gif", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.gif"],
+    ])
+  end
+
+  it "only copies callout images one time" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'png'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1>
+      ----
+      <1> words
+
+      ----
+      foo <1>
+      ----
+      <1> words
+    ASCIIDOC
+    expected_warnings = <<~WARNINGS
+      INFO: <stdin>: line 5: copying images/icons/callouts/1.png
+    WARNINGS
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["images/icons/callouts/1.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.png"],
+    ])
+  end
+
+  it "supports callout lists with multiple callouts per item" do
+    # This is a *super* weird case but we have it in Elasticsearch.
+    # The only way I can make callout lists be for two things is by making
+    # blocks with callouts but only having a single callout list below both.
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'png'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1>
+      ----
+
+      ----
+      foo <1>
+      ----
+      <1> words
+    ASCIIDOC
+    expected_warnings = <<~WARNINGS
+      INFO: <stdin>: line 9: copying images/icons/callouts/1.png
+      INFO: <stdin>: line 9: copying images/icons/callouts/2.png
+    WARNINGS
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["images/icons/callouts/1.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.png"],
+        ["images/icons/callouts/2.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/2.png"],
+    ])
+  end
+
+  it "doesn't copy callout images if the extension isn't set" do
+
+  end
 end
