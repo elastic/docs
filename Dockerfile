@@ -1,8 +1,8 @@
-LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
-
 # Debian builds the docs about 20% faster than alpine. The image is larger
 # and takes longer to build but that is worth it.
 FROM bitnami/minideb:stretch
+
+LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 
 # Used by the docs build or asciidoctor
 RUN install_packages \
