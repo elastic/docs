@@ -34,7 +34,6 @@ module InlineCallout
       autonum = 0
       callout_rx = (document.attr? 'inline-callouts') ? InlineCalloutScanRx : CalloutScanRx
       text.scan(callout_rx) {
-        # lead with assignments for Ruby 1.8.7 compat
         captured, num = $&, $2
         document.callouts.register num == '.' ? (autonum += 1).to_s : num unless captured.start_with? '\\'
         # we have to mark as found even if it's escaped so it can be unescaped
