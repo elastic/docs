@@ -71,7 +71,6 @@ while [ $# -gt 0 ]; do
     fi
     DOC_FILE="$(to_absolute_path $1)"
     GIT_REPO_ROOT="$(cd "$(dirname "$DOC_FILE")" && git rev-parse --show-toplevel)"
-    pwd
     DOCKER_RUN_ARGS+=('-v' "$GIT_REPO_ROOT:/doc:ro,cached")
     NEW_ARGS+=("/doc${DOC_FILE/$GIT_REPO_ROOT/}")
     ;;
@@ -108,7 +107,7 @@ while [ $# -gt 0 ]; do
   --rely_on_ssh_auth)
     if [ "$SSH_AUTH_SOCK" != "" ]; then
       # If we have SSH auth share it into the container.
-      if [ "$(uname -s)" != Linux* ]; then
+      if [ "$(uname -s)" != Linux ]; then
         echo "------------------------ WARNING ------------------------"
         echo "Attempting to share ssh auth but this is unlikely to work" \
              "outside of linux."

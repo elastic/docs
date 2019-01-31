@@ -1,0 +1,177 @@
+#!/usr/bin/env python2
+
+# Build the docs with docker!
+#
+# Step 1 is to build a docker image based on the asciidoctor image.
+# Step 2 is to translate the arguments that build_docs.pl supports into
+# a list of arguments to be passed to start the docker container and a
+# list of arguments to be passed to the build_docs.pl process that is
+# started in the docker container.
+# Step 3 is to start the docker container. We start it in such a way
+# that is *should* remove itself when it is done.
+#
+# I'm aware that this is a fairly non-standard way to use docker but
+# for the most part all we want docker for is to get us into a consistent
+# environment it'll do the trick. At least for now.
+
+import logging
+from os import environ, getgid, getuid
+from os.path import basename, dirname, exists, isdir, join, realpath
+import subprocess
+from sys import platform, stdout
+import time
+
+DOCKER_BUILD_QUIET_TIME = 3 # seconds
+
+DIR = dirname(realpath(__file__))
+logger = logging.getLogger('build_docs')
+
+def build_docker_image():
+    logger.info('Building the docker image that will build the docs. Expect '
+        + 'this to take somewhere between a hundred milliseconds and '
+        + 'five minutes.')
+    with open(join(DIR, 'Dockerfile')) as dockerfile:
+        # We attempt to spool up the output from docker build so we can hide it
+        # if the command is successful *and* runs quickly. If it takes longer
+        # than the DOCKER_BUILD_QUIET_TIME then we log all of the output. I
+        # know this is a little sneaky, but folks run this from the command
+        # line so frequently that they'll appreciate cleaner output. I hope.
+        cmd = ["docker", "image", "build", "-t", "elastic/docs_build", "-"]
+        build = subprocess.Popen(
+            cmd,
+            stdin = dockerfile,
+            stdout = subprocess.PIPE,
+            stderr = subprocess.STDOUT)
+        docker_logger = logging.getLogger('docker build')
+        start_logging_at = time.time() + DOCKER_BUILD_QUIET_TIME
+        acc = []
+        while True:
+            line = build.stdout.readline()
+            if line != '':
+                line = line.rstrip()
+                if time.time() >= start_logging_at:
+                    for line in acc:
+                        docker_logger.info(line)
+                    acc = []
+                    docker_logger.info(line)
+                else:
+                    acc.append(line)
+            else:
+                break
+        build.wait()
+        if build.returncode != 0:
+            for line in acc:
+                docker_logger.error(line)
+            raise subprocess.CalledProcessError(build.returncode, cmd)
+
+def run_build_docs(args):
+    docker_args = []
+    build_docs_args = []
+
+    # Remove the container immediately when we're done building the docs
+    docker_args.append('--rm')
+    # Make sure we create files as the current user because that is what
+    # folks that use build_docs.pl expect.
+    docker_args.extend(['--user', '%d:%d' % (getuid(), getgid())])
+    # Running read-only with a proper tmp directory gives us a little
+    # performance boost and it is simple enough to do.
+    docker_args.extend(['--read-only', '--tmpfs', '/tmp'])
+    # Mount the docs build code so we can run it!
+    docker_args.extend(['-v', '%s:/docs_build:cached' % DIR])
+    # Seccomp adds a *devestating* performance overhead if you happen
+    # to have it installed.
+    docker_args.extend(['--security-opt', 'seccomp=unconfined'])
+
+    if stdout.isatty:
+        # Emulate a terminal so things like ctrl-c work.
+        docker_args.append('-it')
+
+    saw_out = False
+    resource_count = 0
+    a = 0
+    while a < len(args):
+        build_docs_args.append(args[a])
+        if args[a] == '--doc':
+            a += 1
+            doc_file = realpath(args[a])
+            if not exists(doc_file):
+                raise IOError("Can't find --doc %s" % doc_file)
+            repo_root = subprocess.check_output(
+                ['git', 'rev-parse', '--show-toplevel'],
+                cwd = dirname(doc_file)).strip()
+            docker_args.extend(['-v', repo_root + ':/doc:ro,cached'])
+            build_docs_args.append('/doc' + doc_file.replace(repo_root, ''))
+        elif args[a] == '--open':
+            docker_args.extend(['--publish', '8000:8000/tcp'])
+            # Ritual to make nginx run on the readonly filesystem
+            docker_args.extend(['--tmpfs', '/run/nginx',
+                    '--tmpfs', '/var/log/nginx',
+                    '--tmpfs', '/var/lib/nginx/body',
+                    '--tmpfs', '/var/lib/nginx/fastcgi',
+                    '--tmpfs', '/var/lib/nginx/proxy',
+                    '--tmpfs', '/var/lib/nginx/uwsgi',
+                    '--tmpfs', '/var/lib/nginx/scgi'])
+            logger.warn("Can't open a browser. I'll start the web server but "
+                    + "you must open the browser yourself and go "
+                    + "to localhost:8000.")
+        elif args[a] == '--out':
+            a += 1
+            out_dir = realpath(args[a])
+            docker_args.extend(['-v', '%s:/out:delegated' % dirname(out_dir)])
+            build_docs_args.append('/out/%s' % basename(out_dir))
+            saw_out = True
+        elif args[a] == '--reference':
+            a += 1
+            reference_dir = realpath(args[a])
+            if not exists(doc_file):
+                raise IOError("Can't find --reference %s" % reference_dir)
+            docker_args.extend(['-v', '%s:/reference:ro,cached' % reference_dir])
+            build_docs_args.append('/reference')
+        elif args[a] == '--rely_on_ssh_auth':
+            if 'SSH_AUTH_SOCK' in environ:
+                # If we have SSH auth share it into the container.
+                if not platform.startswith('linux'):
+                    logger.warn('Attempting to share ssh auth but this is '
+                        + 'unlikely to work outside of linux.')
+                auth_sock = realpath(environ['SSH_AUTH_SOCK'])
+                auth_sock_dir = dirname(auth_sock)
+                docker_args.extend(['-v', '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)])
+                docker_args.extend(['-e', 'SSH_AUTH_SOCK=%s' % auth_sock])
+            # Mount our known_hosts file into the VM so it won't ask about github
+            known_hosts = realpath('~/.ssh/known_hosts')
+            docker_args.extend(['-v', '%s:/tmp/.ssh/known_hosts:ro,cached' % known_hosts])
+        elif args[a] == '--resource':
+            a += 1
+            resource_dir = realpath(args[a])
+            if not isdir(resource_dir):
+                raise IOError("Can't find --resource %s" % resource_dir)
+            docker_args.extend(['-v', "%s:/resource_%d:ro,cached" % (resource_dir, resource_count)])
+            build_docs_args.append('/resource_%d' % resource_count)
+            resource_count += 1
+        a += 1
+
+    if not saw_out:
+        # If you don't specify --out then we dump the output into $cwd/html_docs
+        # to keep backwards compatibility with build_docs.pl.
+        docker_args.extend(['-v', '%s:/out:delegated' % dirname(realpath('.'))])
+        build_docs_args.extend(['--out', "/out/html_docs"])
+
+    args = []
+    args.extend(['docker', 'run'])
+    args.extend(docker_args)
+    args.extend(['elastic/docs_build', '/docs_build/build_docs.pl'])
+    args.extend(build_docs_args)
+    subprocess.check_call(args)
+
+if __name__ == '__main__':
+    from sys import argv
+    try:
+        logging.basicConfig(level = logging.INFO)
+        build_docker_image()
+        run_build_docs(argv[1:])
+    except IOError, e:
+        print(e)
+        exit(1)
+    except subprocess.CalledProcessError, e:
+        print(e)
+        exit(e.returncode)
