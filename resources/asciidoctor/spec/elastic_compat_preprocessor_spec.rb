@@ -215,11 +215,8 @@ RSpec.describe ElasticCompatPreprocessor do
       <screen>foo</screen>
       </chapter>
     DOCBOOK
-    expect { convert(input) }.to raise_error { |error|
-      expect(error).to be_a(ConvertError)
-      expect(error.message).to match(/<stdin>: line 4: code block end doesn't match start/)
-      expect(error.result).to eq(expected.strip)
-    }
+    actual = convert input, {}, match(/<stdin>: line 4: code block end doesn't match start/)
+    expect(actual).to eq(expected.strip)
   end
 
   it "doesn't break table-style outputs" do
