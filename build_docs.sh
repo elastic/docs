@@ -33,21 +33,6 @@ function to_absolute_path() {
   echo "$(pwd -P)/$(basename "$FILE")"
 }
 
-# Find the root of a git repo for a given directory if
-# possible, otherwise returning the directory itself.
-function find_git_repo_root() {
-  cd $1
-  while [ ! -d ".git" ]; do
-    if [ "$PWD" = "/" ]; then
-      # Not in a git repo
-      echo "$1"
-      return
-    fi
-    cd ..
-  done
-  echo "$PWD"
-}
-
 DIR="$(dirname "$(to_absolute_path "$0")")"
 
 DOCKER_RUN_ARGS=()
@@ -85,7 +70,8 @@ while [ $# -gt 0 ]; do
       exit 1
     fi
     DOC_FILE="$(to_absolute_path $1)"
-    GIT_REPO_ROOT="$(find_git_repo_root "$(dirname "$DOC_FILE")")"
+    GIT_REPO_ROOT="$(cd "$(dirname "$DOC_FILE")" && git rev-parse --show-toplevel)"
+    pwd
     DOCKER_RUN_ARGS+=('-v' "$GIT_REPO_ROOT:/doc:ro,cached")
     NEW_ARGS+=("/doc${DOC_FILE/$GIT_REPO_ROOT/}")
     ;;
