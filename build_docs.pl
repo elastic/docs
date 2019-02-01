@@ -115,7 +115,7 @@ sub build_local {
             $SIG{INT} = sub {
                 kill -9, $pid;
             };
-            if ( $Opts->{open} ) {
+            if ( $Opts->{open} && not $running_in_docker ) {
                 sleep 1;
                 say "Opening: " . $html;
                 say "Press Ctrl-C to exit the web server";
@@ -134,7 +134,7 @@ sub build_local {
                 open(my $nginx_conf, '>', '/tmp/docs.conf') or dir("Couldn't write nginx conf to /tmp/docs/.conf");
                 print $nginx_conf <<"CONF";
 daemon off;
-error_log /dev/stdout crit;
+error_log /dev/stdout info;
 pid /run/nginx/nginx.pid;
 
 events {
@@ -142,6 +142,7 @@ events {
 }
 
 http {
+  error_log /dev/stdout crit;
   log_format short '[\$time_local] "\$request" \$status';
   access_log /dev/stdout short;
   server {
@@ -620,6 +621,53 @@ sub init_env {
     print "New PATH=$ENV{PATH}\n";
 
     if ( $running_in_docker ) {
+        # If we're in docker we're relying on closing stdin to cause an orderly
+        # shutdown because it is really the only way for us to know for sure
+        # that the python build_docs process that runs on the host is dead.
+        # Since perl's threads are "not recommended" we fork early in the run
+        # process and have the parent synchronously wait read from stdin. A few
+        # things can happen here and each has a comment below:
+        if ( my $child_pid = fork ) {
+            $SIG{CHLD} = sub {
+                # The child process exits so we should exit with whatever
+                # exit code it gave us. This can also come about because the
+                # child process is killed.
+                use POSIX ":sys_wait_h";
+                my $child_status = 'missing';
+                while ((my $child = waitpid(-1, WNOHANG)) > 0) {
+                    $child_status = $? if ( $child == $child_pid );
+                }
+                die "Couldn't find child status" if ( $child_status eq 'missing');
+                exit $child_status >> 8;
+            };
+            $SIG{INT} = sub {
+                # We're interrupted. This'll happen if we somehow end up in
+                # the foreground. It isn't likely, but if it does happen we
+                # should interrupt the child just in case it wasn't already
+                # interrupted and then exit with whatever code the child exits
+                # with.
+                kill 'INT', $child_pid;
+                wait;
+                exit $? >> 8;
+            };
+            $SIG{TERM} = sub {
+                # We're terminated. We should pass on the love to the
+                # child process and return its exit code.
+                kill 'TERM', $child_pid;
+                wait;
+                exit $? >> 8;
+            };
+            while (<>) {}
+            # STDIN is closed. This'll happen if the python build_docs process
+            # on the host dies for some reason. When the host process dies we
+            # should do our best to die too so the docker container exits and
+            # is removed. We do that by interrupting the child and exiting with
+            # whatever exit code it exits with.
+            kill 'TERM', $child_pid;
+            wait;
+            exit $? >> 8;
+        }
+
         # If we're running in docker then we won't have a useful username
         # so we hack one into place with nss wrapper.
         open(my $override, '>', '/tmp/passwd')

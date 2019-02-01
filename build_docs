@@ -22,6 +22,7 @@ from os.path import basename, dirname, exists, isdir, join, realpath
 import subprocess
 from sys import platform, stdout
 import time
+import webbrowser
 
 DOCKER_BUILD_QUIET_TIME = 3  # seconds
 
@@ -30,44 +31,39 @@ logger = logging.getLogger('build_docs')
 
 
 def build_docker_image():
-    logger.info('Building the docker image that will build the docs. Expect ' +
-                'this to take somewhere between a hundred milliseconds and ' +
-                'five minutes.')
+    docker_logger = logging.getLogger('docker build')
+    docker_logger.info('Building the docker image that will build the docs. ' +
+                       'Expect this to take somewhere between a hundred ' +
+                       'milliseconds and five minutes.')
     with open(join(DIR, 'Dockerfile')) as dockerfile:
         # We attempt to spool up the output from docker build so we can hide it
         # if the command is successful *and* runs quickly. If it takes longer
         # than the DOCKER_BUILD_QUIET_TIME then we log all of the output. I
         # know this is a little sneaky, but folks run this from the command
         # line so frequently that they'll appreciate cleaner output. I hope.
+        start_logging_at = time.time() + DOCKER_BUILD_QUIET_TIME
+        acc = []
+
+        def handle_line(line):
+            if time.time() >= start_logging_at:
+                for line in acc:
+                    docker_logger.info(line)
+                del acc[:]
+                docker_logger.info(line)
+            else:
+                acc.append(line)
+
         cmd = ["docker", "image", "build", "-t", "elastic/docs_build", "-"]
         build = subprocess.Popen(
             cmd,
             stdin=dockerfile,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
-        docker_logger = logging.getLogger('docker build')
-        start_logging_at = time.time() + DOCKER_BUILD_QUIET_TIME
-        acc = []
-        # `for line in build.stdout` buffers the lines into many chunks which
-        # isn't pleasant to use on the command line because it makes it looks
-        # like everything is happening in bursts. The implementation below
-        # spits the lines out as they come.
-        line = build.stdout.readline()
-        while line:
-            line = line.rstrip()
-            if time.time() >= start_logging_at:
-                for line in acc:
-                    docker_logger.info(line)
-                acc = []
-                docker_logger.info(line)
-            else:
-                acc.append(line)
-            line = build.stdout.readline()
-        build.wait()
+        handle_popen(build, handle_line)
         if build.returncode != 0:
             for line in acc:
-                docker_logger.error(line)
-            raise subprocess.CalledProcessError(build.returncode, cmd)
+                handle_error_line(line)
+            raise subprocess.CalledProcessError(popen.returncode, cmd)
 
 
 def run_build_docs(args):
@@ -87,13 +83,13 @@ def run_build_docs(args):
     # Seccomp adds a *devestating* performance overhead if you happen
     # to have it installed.
     docker_args.extend(['--security-opt', 'seccomp=unconfined'])
-
-    if stdout.isatty:
-        # Emulate a terminal so things like ctrl-c work.
-        docker_args.append('-it')
+    # Keep stdin open so the docs build can use closing it as a signal that
+    # it needs to die.
+    docker_args.append('-i')
 
     # NOCOMMIT handle "tell me who you are"!
 
+    open_browser = False
     args = Args(args)
     saw_out = False
     expected_return_code = 0
@@ -120,9 +116,7 @@ def run_build_docs(args):
                                 '--tmpfs', '/var/lib/nginx/proxy',
                                 '--tmpfs', '/var/lib/nginx/uwsgi',
                                 '--tmpfs', '/var/lib/nginx/scgi'])
-            logger.warn("Can't open a browser. I'll start the web server " +
-                        " but you must open the browser yourself and go " +
-                        "to localhost:8000.")
+            open_browser = True
         elif arg == '--out':
             out_dir = realpath(args.next_arg_or_err())
             docker_args.extend(['-v', '%s:/out:delegated' % dirname(out_dir)])
@@ -173,13 +167,28 @@ def run_build_docs(args):
                             '%s:/out:delegated' % dirname(realpath('.'))])
         build_docs_args.extend(['--out', "/out/html_docs"])
 
-    args = []
-    args.extend(['docker', 'run'])
-    args.extend(docker_args)
-    args.extend(['elastic/docs_build', '/docs_build/build_docs.pl'])
-    args.extend(build_docs_args)
-    docker_run = subprocess.Popen(args)
-    docker_run.wait()
+    def handle_line(line):
+        logger.info(line)
+        if open_browser and 'start worker processes' in line:
+            webbrowser.open('localhost:8000', new=1, autoraise=False)
+
+    cmd = []
+    cmd.extend(['docker', 'run'])
+    cmd.extend(docker_args)
+    cmd.extend(['elastic/docs_build', '/docs_build/build_docs.pl'])
+    cmd.extend(build_docs_args)
+    docker_run = subprocess.Popen(
+            cmd,
+            # Use a PIPE for stdin so if our process dies then the docs build
+            # sees stdin close which it will use as a signal to die.
+            stdin=subprocess.PIPE,
+            # Capture stderr and stdout so we can look for the signal that the
+            # browser is ready to open and so that we can log them with
+            # a prefix.
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+    handle_popen(docker_run, handle_line)
+    print("child returned %d" % docker_run.returncode)
     if docker_run.returncode != expected_return_code:
         subprocess.CalledProcessError(docker_run.returncode, args)
 
@@ -211,6 +220,22 @@ class Args:
         return next_arg
 
 
+def handle_popen(popen, handle_line):
+    """Reads lines from a Popen object that is running and waits for it
+    to complete.
+    """
+    # `for line in build.stdout` buffers the lines into many chunks which
+    # isn't pleasant to use on the command line because it makes it looks
+    # like everything is happening in bursts. The implementation below
+    # spits the lines out as they come.
+    line = popen.stdout.readline()
+    while line:
+        line = line.rstrip()
+        handle_line(line)
+        line = popen.stdout.readline()
+    popen.wait()
+
+
 class ArgError(Exception):
     pass
 
@@ -220,7 +245,6 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
         build_docker_image()
         run_build_docs(argv[1:])
-        # NOCOMMIT replace IOError
     except ArgError, e:
         print(e)
         exit(1)
