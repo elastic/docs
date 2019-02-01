@@ -88,22 +88,25 @@ def run_build_docs(args):
         # Emulate a terminal so things like ctrl-c work.
         docker_args.append('-it')
 
+    #NOCOMMIT handle "tell me who you are"!
+
+    args = Args(args)
     saw_out = False
+    expected_return_code = 0
     resource_count = 0
-    a = 0
-    while a < len(args):
-        build_docs_args.append(args[a])
-        if args[a] == '--doc':
-            a += 1
-            doc_file = realpath(args[a])
+    arg = args.next_arg()
+    while arg is not None:
+        build_docs_args.append(arg)
+        if arg == '--doc':
+            doc_file = realpath(args.next_arg_or_err())
             if not exists(doc_file):
-                raise IOError("Can't find --doc %s" % doc_file)
+                raise ArgError("Can't find --doc %s" % doc_file)
             repo_root = subprocess.check_output(
                 ['git', 'rev-parse', '--show-toplevel'],
                 cwd = dirname(doc_file)).strip()
             docker_args.extend(['-v', repo_root + ':/doc:ro,cached'])
             build_docs_args.append('/doc' + doc_file.replace(repo_root, ''))
-        elif args[a] == '--open':
+        elif arg == '--open':
             docker_args.extend(['--publish', '8000:8000/tcp'])
             # Ritual to make nginx run on the readonly filesystem
             docker_args.extend(['--tmpfs', '/run/nginx',
@@ -116,20 +119,18 @@ def run_build_docs(args):
             logger.warn("Can't open a browser. I'll start the web server but "
                     + "you must open the browser yourself and go "
                     + "to localhost:8000.")
-        elif args[a] == '--out':
-            a += 1
-            out_dir = realpath(args[a])
+        elif arg == '--out':
+            out_dir = realpath(args.next_arg_or_err())
             docker_args.extend(['-v', '%s:/out:delegated' % dirname(out_dir)])
             build_docs_args.append('/out/%s' % basename(out_dir))
             saw_out = True
-        elif args[a] == '--reference':
-            a += 1
-            reference_dir = realpath(args[a])
-            if not exists(doc_file):
-                raise IOError("Can't find --reference %s" % reference_dir)
+        elif arg == '--reference':
+            reference_dir = realpath(args.next_arg_or_err())
+            if not exists(reference_dir):
+                raise ArgError("Can't find --reference %s" % reference_dir)
             docker_args.extend(['-v', '%s:/reference:ro,cached' % reference_dir])
             build_docs_args.append('/reference')
-        elif args[a] == '--rely_on_ssh_auth':
+        elif arg == '--rely_on_ssh_auth':
             if 'SSH_AUTH_SOCK' in environ:
                 # If we have SSH auth share it into the container.
                 if not platform.startswith('linux'):
@@ -140,17 +141,19 @@ def run_build_docs(args):
                 docker_args.extend(['-v', '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)])
                 docker_args.extend(['-e', 'SSH_AUTH_SOCK=%s' % auth_sock])
             # Mount our known_hosts file into the VM so it won't ask about github
-            known_hosts = realpath('~/.ssh/known_hosts')
-            docker_args.extend(['-v', '%s:/tmp/.ssh/known_hosts:ro,cached' % known_hosts])
-        elif args[a] == '--resource':
-            a += 1
-            resource_dir = realpath(args[a])
+            known_hosts = realpath('%s/.ssh/known_hosts' % environ['HOME'])
+            if exists(known_hosts):
+                docker_args.extend(['-v', '%s:/tmp/.ssh/known_hosts:ro,cached' % known_hosts])
+        elif arg == '--resource':
+            resource_dir = realpath(args.next_arg_or_err())
             if not isdir(resource_dir):
-                raise IOError("Can't find --resource %s" % resource_dir)
+                raise ArgError("Can't find --resource %s" % resource_dir)
             docker_args.extend(['-v', "%s:/resource_%d:ro,cached" % (resource_dir, resource_count)])
             build_docs_args.append('/resource_%d' % resource_count)
             resource_count += 1
-        a += 1
+        elif arg == '--help':
+            expected_return_code = 1
+        arg = args.next_arg()
 
     if not saw_out:
         # If you don't specify --out then we dump the output into $cwd/html_docs
@@ -163,7 +166,41 @@ def run_build_docs(args):
     args.extend(docker_args)
     args.extend(['elastic/docs_build', '/docs_build/build_docs.pl'])
     args.extend(build_docs_args)
-    subprocess.check_call(args)
+    docker_run = subprocess.Popen(args)
+    docker_run.wait()
+    if docker_run.returncode != expected_return_code:
+        subprocess.CalledProcessError(docker_run.returncode, args)
+
+
+class Args:
+    def __init__(self, args):
+        # Replace equals delimited arguments with the space delimiated versions
+        # so it is simpler to iterate over them
+        self.args = []
+        for arg in args:
+            split = arg.split('=')
+            if len(split) > 2:
+                raise UserError('Invalid argument [%s]' % arg)
+            self.args.extend(split)
+        self.current = 0
+
+    def next_arg(self):
+        if self.current >= len(self.args):
+            return None
+        result = self.args[self.current]
+        self.current += 1
+        return result
+
+    def next_arg_or_err(self):
+        prev = self.args[self.current - 1]
+        next_arg = self.next_arg()
+        if next_arg is None:
+            raise ArgError("Missing argument for %s" % prev)
+        return next_arg
+
+
+class ArgError(Exception):
+    pass
 
 if __name__ == '__main__':
     from sys import argv
@@ -171,7 +208,8 @@ if __name__ == '__main__':
         logging.basicConfig(level = logging.INFO)
         build_docker_image()
         run_build_docs(argv[1:])
-    except IOError, e:
+        # NOCOMMIT replace IOError
+    except ArgError, e:
         print(e)
         exit(1)
     except subprocess.CalledProcessError, e:
