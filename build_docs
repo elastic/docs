@@ -48,19 +48,21 @@ def build_docker_image():
         docker_logger = logging.getLogger('docker build')
         start_logging_at = time.time() + DOCKER_BUILD_QUIET_TIME
         acc = []
-        while True:
-            line = build.stdout.readline()
-            if line != '':
-                line = line.rstrip()
-                if time.time() >= start_logging_at:
-                    for line in acc:
-                        docker_logger.info(line)
-                    acc = []
+        # `for line in build.stdout` buffers the lines into many chunks which
+        # isn't pleasant to use on the command line because it makes it looks
+        # like everything is happening in bursts. The implementation below
+        # spits the lines out as they come.
+        line = build.stdout.readline()
+        while line:
+            line = line.rstrip()
+            if time.time() >= start_logging_at:
+                for line in acc:
                     docker_logger.info(line)
-                else:
-                    acc.append(line)
+                acc = []
+                docker_logger.info(line)
             else:
-                break
+                acc.append(line)
+            line = build.stdout.readline()
         build.wait()
         if build.returncode != 0:
             for line in acc:
