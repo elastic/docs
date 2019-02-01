@@ -122,6 +122,11 @@ def run_build_docs(args):
             docker_args.extend(['-v', '%s:/out:delegated' % dirname(out_dir)])
             build_docs_args.append('/out/%s' % basename(out_dir))
             saw_out = True
+        elif arg == '--push':
+            git_config = '%s/.gitconfig' % environ['HOME']
+            if exists(git_config):
+                docker_args.extend(
+                        ['-v', '%s:/tmp/.gitconfig:ro,cached' % git_config])
         elif arg == '--reference':
             reference_dir = realpath(args.next_arg_or_err())
             if not exists(reference_dir):
@@ -138,14 +143,15 @@ def run_build_docs(args):
                 auth_sock = realpath(environ['SSH_AUTH_SOCK'])
                 auth_sock_dir = dirname(auth_sock)
                 docker_args.extend(
-                    ['-v', '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)])
+                        ['-v', '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)])
                 docker_args.extend(['-e', 'SSH_AUTH_SOCK=%s' % auth_sock])
             known_hosts = realpath('%s/.ssh/known_hosts' % environ['HOME'])
             if exists(known_hosts):
                 # If we have known_hosts mount them into the container so it
                 # won't ask about github
-                docker_args.extend(
-                    ['-v', '%s:/tmp/.ssh/known_hosts:ro,cached' % known_hosts])
+                docker_args.extend([
+                        '-v',
+                        '%s:/tmp/.ssh/known_hosts:ro,cached' % known_hosts])
         elif arg == '--resource':
             resource_dir = realpath(args.next_arg_or_err())
             if not isdir(resource_dir):
