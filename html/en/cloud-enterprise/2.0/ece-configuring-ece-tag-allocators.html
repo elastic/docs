@@ -743,6 +743,45 @@ Select one of the allocators and locate the <span class="strong strong"><strong>
 Enter values into the <span class="strong strong"><strong>Key</strong></span> and <span class="strong strong"><strong>Value</strong></span> fields, and then click <span class="strong strong"><strong>Add tag</strong></span>. For example: You could add <code class="literal">SSD: true</code> and <code class="literal">highCPU: true</code> tags from our <a class="link" href="ece-configuring-ece-tag-allocators.html#allocator-sample-tags">example tags</a> if your allocator meets these criteria.
 </p><div class="informalfigure"><div class="mediaobject"><img src="images/ece-tagging-ui.png" alt="Adding key-value pairs as an allocator tags" /></div></div></li><li class="listitem">
 Repeat the previous step until you have added all of the tags that you want to use to characterize the hardware of this allocator.
+</li><li class="listitem">
+Repeat the previous steps for your other allocators until you have tagged all of them.
+</li></ol></div><p>To tag an allocator through the RESTful API:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
+Get a list of the allocators in your ECE installation:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -k -X GET -u USER<a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>:PASSWORD<a id="CO1-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span> https://COORDINATOR_HOST<a id="CO1-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>:12443/api/v1/platform/infrastructure/allocators/</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+A user with sufficient privileges, such as the <code class="literal">admin</code> user
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The password for the user
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO1-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+A host that you installed Elastic Cloud Enterprise on that holds the coordinator role, such as a host where you can log into the Cloud UI.
+</p></td></tr></table></div></li><li class="listitem"><p class="simpara">
+Check what tags have already been assigned to your allocators.
+In a new or newly upgraded ECE installation, this command returns <code class="literal">[]</code>, which means that you have not assigned any tags, yet.
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -k -X GET -u USER:PASSWORD https://COORDINATOR_HOST:12443/api/v1/platform/infrastructure/allocators/ALLOCATOR_ID<a id="CO2-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>/metadata</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO2-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+The value of the <code class="literal">allocator_id</code> field for one of your allocators as returned by the <code class="literal">/api/v1/platform/infrastructure/allocators/</code> API endpoint.
+</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>The examples in this section all use HTTPS over port 12443 and run against a host that holds the coordinator role. Using HTTPS requires that you have <a class="link" href="ece-manage-certificates.html" title="Manage Security Certificates">a TLS certificate already installed</a>. For testing purposes only, you can specify the <code class="literal">-k</code> option to turn off certificate verification, as shown in our examples, or use HTTP over port 12400 until you get your TLS certificate sorted out.</p></div></div></td></tr></table></div></li><li class="listitem"><p class="simpara">
+Tag an allocator by assigning it the tags that you might need.
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p class="simpara">
+Example: To assign a single <code class="literal">highCPU: true</code> tag to an allocator:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -k -X PUT -u USER:PASSWORD https://COORDINATOR_HOST:12443/api/v1/platform/infrastructure/allocators/ALLOCATOR_ID/metadata/highCPU  -H 'content-type: application/json' -d '{ "value": "true" }'
+[{
+  "key": "highCPU",
+  "value": "true"
+}]</pre></div><p class="simpara">After the API call completes successfully, ECE returns JSON output to show that the operation was successful.</p></li><li class="listitem"><p class="simpara">
+Example: To assign multiple tags to an allocator with a single command:
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -k -X PUT -u USER:PASSWORD https://COORDINATOR_HOST:12443/api/v1/platform/infrastructure/allocators/ALLOCATOR_ID/metadata -H 'content-type: application/json' -d '
+{
+  "items": [
+    {
+      "key": "highCPU",
+      "value": "true"
+    },
+    {
+      "key": "SSD",
+      "value": "true"
+    }
+  ]
+}'</pre></div><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>When you assign multiple tags to an allocator as shown, any tags you assigned previously get replaced. That is, existing tags are not preserved and they do not get merged with new tags. If in doubt, &lt;&lt;[check-allocator-tag,check which tags have already been assigned&gt;&gt; and make sure you include those tags that you want to keep along with new tags.</p></div></div></li></ul></div></li><li class="listitem">
+Repeat the previous step for your other allocators until you have tagged all of them.
 </li></ol></div></div><div class="navfooter"><span class="prev"><a href="ece-configuring-ece-templates.html">
               « 
               Configure Deployment Templates</a>
