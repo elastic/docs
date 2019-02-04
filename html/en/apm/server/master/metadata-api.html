@@ -710,6 +710,8 @@ Not what you want? See the
             </a></span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a id="metadata-api"></a>Metadata<a href="https://github.com/elastic/apm-server/edit/master/docs/metadata-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h2></div></div></div><p>Every new connection to the APM Server starts with a <code class="literal">metadata</code> stanza.
 This provides general metadata concerning the other objects in the stream.</p><p>Rather than send this metadata information from the agent multiple times,
 the APM Server hangs on to this information and applies it to other objects in the stream as necessary.</p><div class="tip admon"><div class="icon"><img alt="Tip" src="images/icons/tip.png" /></div><div class="admon_content"><p>Metadata is stored under <code class="literal">context</code> when viewing documents in Elasticsearch.</p></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="xref" href="metadata-api.html#kubernetes-data" title="Kubernetes dataedit">Kubernetes data<a href="https://github.com/elastic/apm-server/edit/master/docs/metadata-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
+</li><li class="listitem">
 <a class="xref" href="metadata-api.html#metadata-schema" title="Metadata Schemaedit">Metadata Schema<a href="https://github.com/elastic/apm-server/edit/master/docs/metadata-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
 </li><li class="listitem">
 <a class="xref" href="metadata-api.html#metadata-service-schema" title="Service Schemaedit">Service Schema<a href="https://github.com/elastic/apm-server/edit/master/docs/metadata-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
@@ -719,7 +721,22 @@ the APM Server hangs on to this information and applies it to other objects in t
 <a class="xref" href="metadata-api.html#metadata-system-schema" title="System Schemaedit">System Schema<a href="https://github.com/elastic/apm-server/edit/master/docs/metadata-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
 </li><li class="listitem">
 <a class="xref" href="metadata-api.html#metadata-user-schema" title="User Schemaedit">User Schema<a href="https://github.com/elastic/apm-server/edit/master/docs/metadata-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></a>
-</li></ul></div><h4><a id="metadata-schema"></a>Metadata Schema<a href="https://github.com/elastic/apm-server/edit/master/docs/metadata-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The APM Server uses JSON Schema for validating requests. The specification for metadata is defined below:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
+</li></ul></div><h4><a id="kubernetes-data"></a>Kubernetes data<a href="https://github.com/elastic/apm-server/edit/master/docs/metadata-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>APM agents automatically read kubernetes data and add it to the metadata that is sent to the APM Server. In most instances, agents are able to read this data from inside the container. If this is not the case, or if you wish to override this data, you can set environment variables for the agents to read. These environment variable are set via the kubernetes <a class="ulink" href="https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/#use-pod-fields-as-values-for-environment-variables" target="_top">Downward API</a>. Here’s how you would add the environment variables to your kubernetes pod spec:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">         - name: KUBERNETES_NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: KUBERNETES_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: KUBERNETES_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid</pre></div><p>The table below maps these environment variables to the APM metadata event field:</p><div class="informaltable"><table cellpadding="4px" border="1"><colgroup><col class="col_1" /><col class="col_2" /></colgroup><thead><tr><th align="left" valign="top">Environment variable </th><th align="left" valign="top">Metadata field name</th></tr></thead><tbody><tr><td align="left" valign="top"><p>KUBERNETES_NODE_NAME</p></td><td align="left" valign="top"><p>system.kubernetes.node.name</p></td></tr><tr><td align="left" valign="top"><p>KUBERNETES_POD_NAME</p></td><td align="left" valign="top"><p>system.kubernetes.pod.name</p></td></tr><tr><td align="left" valign="top"><p>KUBERNETES_NAMESPACE</p></td><td align="left" valign="top"><p>system.kubernetes.namespace</p></td></tr><tr><td align="left" valign="top"><p>KUBERNETES_POD_UID</p></td><td align="left" valign="top"><p>system.kubernetes.pod.uid</p></td></tr></tbody></table></div><h4><a id="metadata-schema"></a>Metadata Schema<a href="https://github.com/elastic/apm-server/edit/master/docs/metadata-api.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h4><p>The APM Server uses JSON Schema for validating requests. The specification for metadata is defined below:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-json">{
     "$id": "doc/spec/metadata.json",
     "title": "Metadata",
     "description": "Metadata concerning the other objects in the stream.",

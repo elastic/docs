@@ -33,7 +33,8 @@ RSpec.describe CopyImages do
       == Example
       image::resources/copy_images/example1.png[]
     ASCIIDOC
-    convert input, attributes, match(/INFO: <stdin>: line 2: copying resources\/copy_images\/example1.png/)
+    convert input, attributes,
+        eq("INFO: <stdin>: line 2: copying #{spec_dir}\/resources\/copy_images\/example1.png")
     expect(copied).to eq([
         ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
     ])
@@ -46,7 +47,8 @@ RSpec.describe CopyImages do
       == Example
       image::example1.png[]
     ASCIIDOC
-    convert input, attributes, match(/INFO: <stdin>: line 2: copying example1.png/)
+    convert input, attributes,
+        eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
     expect(copied).to eq([
         ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
     ])
@@ -59,7 +61,8 @@ RSpec.describe CopyImages do
       == Example
       image::copy_images/example1.png[]
     ASCIIDOC
-    convert input, attributes, match(/INFO: <stdin>: line 2: copying copy_images\/example1.png/)
+    convert input, attributes,
+        eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
     expect(copied).to eq([
         ["copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
     ])
@@ -93,9 +96,12 @@ RSpec.describe CopyImages do
       image::resources/copy_images/example2.png[]
       image::resources/copy_images/example1.png[]
       image::resources/copy_images/example2.png[]
-      ASCIIDOC
-    convert input, attributes, match(/INFO: <stdin>: line 2: copying resources\/copy_images\/example1.png/).and(
-        match(/INFO: <stdin>: line 4: copying resources\/copy_images\/example2.png/))
+    ASCIIDOC
+    expected_warnings = <<~LOG
+      INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png
+      INFO: <stdin>: line 4: copying #{spec_dir}/resources/copy_images/example2.png
+    LOG
+    convert input, attributes, eq(expected_warnings.strip)
     expect(copied).to eq([
         ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
         ["resources/copy_images/example2.png", "#{spec_dir}/resources/copy_images/example2.png"],
@@ -127,8 +133,8 @@ RSpec.describe CopyImages do
         == Example
         image::tmp_example1.png[]
       ASCIIDOC
-      # NOCOMMIT full paths in logs too, I think
-      convert input, attributes, match(/INFO: <stdin>: line 2: copying tmp_example1.png/)
+      convert input, attributes,
+          eq("INFO: <stdin>: line 2: copying #{tmp}/tmp_example1.png")
       expect(copied).to eq([
           ["tmp_example1.png", "#{tmp}/tmp_example1.png"]
       ])
@@ -149,7 +155,8 @@ RSpec.describe CopyImages do
         == Example
         image::tmp_example1.png[]
       ASCIIDOC
-      convert input, attributes, match(/INFO: <stdin>: line 2: copying tmp_example1.png/)
+      convert input, attributes,
+          eq("INFO: <stdin>: line 2: copying #{tmp}/tmp_example1.png")
       expect(copied).to eq([
           ["tmp_example1.png", "#{tmp}/tmp_example1.png"]
       ])
