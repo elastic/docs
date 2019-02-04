@@ -202,7 +202,7 @@ RSpec.describe CopyImages do
     }
   end
 
-  it "copies a images for callouts when requested (png)" do
+  it "copies images for callouts when requested (png)" do
     copied = []
     attributes = copy_attributes copied
     attributes['copy-callout-images'] = 'png'
@@ -225,7 +225,7 @@ RSpec.describe CopyImages do
     ])
   end
 
-  it "copies a images for callouts when requested (gif)" do
+  it "copies images for callouts when requested (gif)" do
     copied = []
     attributes = copy_attributes copied
     attributes['copy-callout-images'] = 'gif'
