@@ -46,8 +46,13 @@ class CopyImages < TreeProcessorScaffold
     checked = []
 
     resources = block.document.attr 'resources'
-    if resources
-      to_check += CSV.parse_line(resources)
+    if resources and not resources.empty?
+      begin
+        to_check += CSV.parse_line(resources)
+      rescue CSV::MalformedCSVError => error
+        logger.error message_with_context "Error loading [resources]: #{error}",
+            :source_location => block.source_location
+      end
     end
 
     while (dir = to_check.shift)

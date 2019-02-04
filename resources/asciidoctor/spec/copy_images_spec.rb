@@ -163,6 +163,39 @@ RSpec.describe CopyImages do
     }
   end
 
+  it "doesn't mind an empty resources attribute" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['resources'] = ''
+    input = <<~ASCIIDOC
+      == Example
+      image::example1.png[]
+    ASCIIDOC
+    convert input, attributes,
+        eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
+    expect(copied).to eq([
+        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+    ])
+  end
+
+  it "has a nice error message if resources is invalid CSV" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['resources'] = '"'
+    input = <<~ASCIIDOC
+      == Example
+      image::example1.png[]
+    ASCIIDOC
+    expected_warnings = <<~LOG
+      ERROR: <stdin>: line 2: Error loading [resources]: Unclosed quoted field on line 1.
+      INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png
+    LOG
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+    ])
+  end
+
   it "has a nice error message when it can't find a file with single valued resources attribute" do
     Dir.mktmpdir {|tmp|
       copied = []
