@@ -215,8 +215,8 @@ RSpec.describe CopyImages do
       <2> words
     ASCIIDOC
     expected_warnings = <<~WARNINGS
-      INFO: <stdin>: line 5: copying images/icons/callouts/1.png
-      INFO: <stdin>: line 6: copying images/icons/callouts/2.png
+      INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.png
+      INFO: <stdin>: line 6: copying #{spec_dir}/resources/copy_images/images/icons/callouts/2.png
     WARNINGS
     convert input, attributes, eq(expected_warnings.strip)
     expect(copied).to eq([
@@ -237,7 +237,7 @@ RSpec.describe CopyImages do
       <1> words
     ASCIIDOC
     expected_warnings = <<~WARNINGS
-      INFO: <stdin>: line 5: copying images/icons/callouts/1.gif
+      INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.gif
     WARNINGS
     convert input, attributes, eq(expected_warnings.strip)
     expect(copied).to eq([
@@ -264,7 +264,7 @@ RSpec.describe CopyImages do
       .+
       "#{spec_dir}\/resources\/copy_images\/images\/icons\/callouts\/2.gif"
       .+
-    \]/x).and(match(/INFO: <stdin>: line 5: copying images\/icons\/callouts\/1.gif/))
+    \]/x).and(match(/INFO: <stdin>: line 5: copying #{spec_dir}\/resources\/copy_images\/images\/icons\/callouts\/1.gif/))
     expect(copied).to eq([
         ["images/icons/callouts/1.gif", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.gif"],
     ])
@@ -287,7 +287,7 @@ RSpec.describe CopyImages do
       <1> words
     ASCIIDOC
     expected_warnings = <<~WARNINGS
-      INFO: <stdin>: line 5: copying images/icons/callouts/1.png
+      INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.png
     WARNINGS
     convert input, attributes, eq(expected_warnings.strip)
     expect(copied).to eq([
@@ -314,8 +314,8 @@ RSpec.describe CopyImages do
       <1> words
     ASCIIDOC
     expected_warnings = <<~WARNINGS
-      INFO: <stdin>: line 9: copying images/icons/callouts/1.png
-      INFO: <stdin>: line 9: copying images/icons/callouts/2.png
+      INFO: <stdin>: line 9: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.png
+      INFO: <stdin>: line 9: copying #{spec_dir}/resources/copy_images/images/icons/callouts/2.png
     WARNINGS
     convert input, attributes, eq(expected_warnings.strip)
     expect(copied).to eq([
