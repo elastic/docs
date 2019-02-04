@@ -37,7 +37,7 @@ class CopyImages < TreeProcessorScaffold
     return unless @copied.add? uri      # Skip images we've copied before
     source = find_source block, uri
     return unless source                # Skip images we can't find
-    logger.info message_with_context "copying #{uri}", :source_location => block.source_location
+    logger.info message_with_context "copying #{source}", :source_location => block.source_location
     copy_image_proc = block.document.attr 'copy_image'
     if copy_image_proc
       # Delegate to a proc for copying if one is defined. Used for testing.
