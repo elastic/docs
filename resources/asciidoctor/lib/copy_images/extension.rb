@@ -23,12 +23,10 @@ class CopyImages < TreeProcessorScaffold
       copy_image block, uri
     else
       extension = block.attr 'copy-callout-images'
-      if block.parent && block.parent.context == :colist
+      if extension && block.parent && block.parent.context == :colist
         id = block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
           copy_image block, "images/icons/callouts/#{$1}.#{extension}"
         }
-      else
-        return
       end
     end
   end

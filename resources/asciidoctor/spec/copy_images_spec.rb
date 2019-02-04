@@ -325,6 +325,21 @@ RSpec.describe CopyImages do
   end
 
   it "doesn't copy callout images if the extension isn't set" do
+    copied = []
+    attributes = copy_attributes copied
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1>
+      ----
+      <1> words
 
+      ----
+      foo <1>
+      ----
+      <1> words
+    ASCIIDOC
+    convert input, attributes
+    expect(copied).to eq([])
   end
 end
