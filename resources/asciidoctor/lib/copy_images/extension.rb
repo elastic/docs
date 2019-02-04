@@ -8,6 +8,12 @@ include Asciidoctor
 ##
 # Copies images that are referenced into the same directory as the output files.
 #
+# It finds the images by looking in a comma separated list of directories
+# defined by the `resources` attribute.
+#
+# It can also be configured to copy the images that number callout lists by
+# setting `copy-callout-images` to the file extension of the images to copy.
+#
 class CopyImages < TreeProcessorScaffold
   include Logging
 
@@ -21,13 +27,12 @@ class CopyImages < TreeProcessorScaffold
       uri = block.image_uri(block.attr 'target')
       return if Helpers.uriish? uri # Skip external images
       copy_image block, uri
-    else
-      extension = block.attr 'copy-callout-images'
-      if extension && block.parent && block.parent.context == :colist
-        id = block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
-          copy_image block, "images/icons/callouts/#{$1}.#{extension}"
-        }
-      end
+    elsif (extension = block.document.attr 'copy-callout-images') &&
+        block.parent &&
+        block.parent.context == :colist
+      id = block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
+        copy_image block, "images/icons/callouts/#{$1}.#{extension}"
+      }
     end
   end
 
