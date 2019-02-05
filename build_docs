@@ -22,7 +22,7 @@ import logging
 from os import environ, getgid, getuid
 from os.path import basename, dirname, exists, isdir, join, realpath
 import subprocess
-from sys import platform, stdout
+from sys import platform, version_info
 import time
 import webbrowser
 
@@ -56,11 +56,7 @@ def build_docker_image():
                 acc.append(line)
 
         cmd = ["docker", "image", "build", "-t", "elastic/docs_build", "-"]
-        build = subprocess.Popen(
-            cmd,
-            stdin=dockerfile,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+        build = common_popen(cmd, dockerfile)
         handle_popen(build, handle_line)
         if build.returncode != 0:
             for line in acc:
@@ -105,7 +101,7 @@ def run_build_docs(args):
                 raise ArgError("Can't find --doc %s" % doc_file)
             repo_root = subprocess.check_output(
                 ['git', 'rev-parse', '--show-toplevel'],
-                cwd=dirname(doc_file)).strip()
+                cwd=dirname(doc_file)).decode('utf-8').strip()
             docker_args.extend(['-v', repo_root + ':/doc:ro,cached'])
             build_docs_args.append('/doc' + doc_file.replace(repo_root, ''))
         elif arg == '--open':
@@ -190,16 +186,9 @@ def run_build_docs(args):
     cmd.extend(docker_args)
     cmd.extend(['elastic/docs_build', '/docs_build/build_docs.pl'])
     cmd.extend(build_docs_args)
-    docker_run = subprocess.Popen(
-            cmd,
-            # Use a PIPE for stdin so if our process dies then the docs build
-            # sees stdin close which it will use as a signal to die.
-            stdin=subprocess.PIPE,
-            # Capture stderr and stdout so we can look for the signal that the
-            # browser is ready to open and so that we can log them with
-            # a prefix.
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+    # Use a PIPE for stdin so if our process dies then the docs build  sees
+    # stdin close which it will use as a signal to die.
+    docker_run = common_popen(cmd, subprocess.PIPE)
     handle_popen(docker_run, handle_line)
     if docker_run.returncode != expected_return_code:
         subprocess.CalledProcessError(docker_run.returncode, args)
@@ -232,6 +221,14 @@ class Args:
         return next_arg
 
 
+def common_popen(cmd, stdin):
+    """Start a subprocess in a way that is compatible with handle_popen.
+    """
+    return subprocess.Popen(cmd,
+                            stdin=stdin,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
+
 def handle_popen(popen, handle_line):
     """Reads lines from a Popen object that is running and waits for it
     to complete.
@@ -240,12 +237,22 @@ def handle_popen(popen, handle_line):
     # isn't pleasant to use on the command line because it makes it looks
     # like everything is happening in bursts. The implementation below
     # spits the lines out as they come.
-    line = popen.stdout.readline()
+    line = decode(popen.stdout.readline())
     while line:
         line = line.rstrip()
         handle_line(line)
-        line = popen.stdout.readline()
+        line = decode(popen.stdout.readline())
     popen.wait()
+
+
+def decode(bytes_or_str):
+    """Decode the result of reading from popen's stdout. In python 2 the
+    parameter will by a str already so we just return it. In python 3 we
+    have to decode it.
+    """
+    if version_info[0] < 3:
+        return bytes_or_str
+    return bytes_or_str.decode('utf-8')
 
 
 class ArgError(Exception):
@@ -257,9 +264,9 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
         build_docker_image()
         run_build_docs(argv[1:])
-    except ArgError, e:
+    except ArgError as e:
         print(e)
         exit(1)
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         print(e)
         exit(e.returncode)
