@@ -33,7 +33,8 @@ RSpec.describe CopyImages do
       == Example
       image::resources/copy_images/example1.png[]
     ASCIIDOC
-    convert input, attributes, match(/INFO: <stdin>: line 2: copying resources\/copy_images\/example1.png/)
+    convert input, attributes,
+        eq("INFO: <stdin>: line 2: copying #{spec_dir}\/resources\/copy_images\/example1.png")
     expect(copied).to eq([
         ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
     ])
@@ -46,7 +47,8 @@ RSpec.describe CopyImages do
       == Example
       image::example1.png[]
     ASCIIDOC
-    convert input, attributes, match(/INFO: <stdin>: line 2: copying example1.png/)
+    convert input, attributes,
+        eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
     expect(copied).to eq([
         ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
     ])
@@ -59,7 +61,8 @@ RSpec.describe CopyImages do
       == Example
       image::copy_images/example1.png[]
     ASCIIDOC
-    convert input, attributes, match(/INFO: <stdin>: line 2: copying copy_images\/example1.png/)
+    convert input, attributes,
+        eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
     expect(copied).to eq([
         ["copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
     ])
@@ -93,9 +96,12 @@ RSpec.describe CopyImages do
       image::resources/copy_images/example2.png[]
       image::resources/copy_images/example1.png[]
       image::resources/copy_images/example2.png[]
-      ASCIIDOC
-    convert input, attributes, match(/INFO: <stdin>: line 2: copying resources\/copy_images\/example1.png/).and(
-        match(/INFO: <stdin>: line 4: copying resources\/copy_images\/example2.png/))
+    ASCIIDOC
+    expected_warnings = <<~LOG
+      INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png
+      INFO: <stdin>: line 4: copying #{spec_dir}/resources/copy_images/example2.png
+    LOG
+    convert input, attributes, eq(expected_warnings.strip)
     expect(copied).to eq([
         ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
         ["resources/copy_images/example2.png", "#{spec_dir}/resources/copy_images/example2.png"],
@@ -127,8 +133,8 @@ RSpec.describe CopyImages do
         == Example
         image::tmp_example1.png[]
       ASCIIDOC
-      # NOCOMMIT full paths in logs too, I think
-      convert input, attributes, match(/INFO: <stdin>: line 2: copying tmp_example1.png/)
+      convert input, attributes,
+          eq("INFO: <stdin>: line 2: copying #{tmp}/tmp_example1.png")
       expect(copied).to eq([
           ["tmp_example1.png", "#{tmp}/tmp_example1.png"]
       ])
@@ -149,7 +155,8 @@ RSpec.describe CopyImages do
         == Example
         image::tmp_example1.png[]
       ASCIIDOC
-      convert input, attributes, match(/INFO: <stdin>: line 2: copying tmp_example1.png/)
+      convert input, attributes,
+          eq("INFO: <stdin>: line 2: copying #{tmp}/tmp_example1.png")
       expect(copied).to eq([
           ["tmp_example1.png", "#{tmp}/tmp_example1.png"]
       ])
@@ -193,5 +200,146 @@ RSpec.describe CopyImages do
           \]/x).and(not_match(/INFO: <stdin>/))
       expect(copied).to eq([])
     }
+  end
+
+  it "copies images for callouts when requested (png)" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'png'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1> <2>
+      ----
+      <1> words
+      <2> words
+    ASCIIDOC
+    expected_warnings = <<~WARNINGS
+      INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.png
+      INFO: <stdin>: line 6: copying #{spec_dir}/resources/copy_images/images/icons/callouts/2.png
+    WARNINGS
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["images/icons/callouts/1.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.png"],
+        ["images/icons/callouts/2.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/2.png"],
+    ])
+  end
+
+  it "copies images for callouts when requested (gif)" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'gif'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1>
+      ----
+      <1> words
+    ASCIIDOC
+    expected_warnings = <<~WARNINGS
+      INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.gif
+    WARNINGS
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["images/icons/callouts/1.gif", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.gif"],
+    ])
+  end
+
+  it "has a nice error message when a callout image is missing" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'gif'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1> <2>
+      ----
+      <1> words
+      <2> words
+    ASCIIDOC
+    convert input, attributes, match(/
+    WARN:\ <stdin>:\ line\ 6:\ can't\ read\ image\ at\ any\ of\ \[
+      "#{spec_dir}\/images\/icons\/callouts\/2.gif",\s
+      "#{spec_dir}\/resources\/images\/icons\/callouts\/2.gif",\s
+      .+
+      "#{spec_dir}\/resources\/copy_images\/images\/icons\/callouts\/2.gif"
+      .+
+    \]/x).and(match(/INFO: <stdin>: line 5: copying #{spec_dir}\/resources\/copy_images\/images\/icons\/callouts\/1.gif/))
+    expect(copied).to eq([
+        ["images/icons/callouts/1.gif", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.gif"],
+    ])
+  end
+
+  it "only copies callout images one time" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'png'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1>
+      ----
+      <1> words
+
+      ----
+      foo <1>
+      ----
+      <1> words
+    ASCIIDOC
+    expected_warnings = <<~WARNINGS
+      INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.png
+    WARNINGS
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["images/icons/callouts/1.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.png"],
+    ])
+  end
+
+  it "supports callout lists with multiple callouts per item" do
+    # This is a *super* weird case but we have it in Elasticsearch.
+    # The only way I can make callout lists be for two things is by making
+    # blocks with callouts but only having a single callout list below both.
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'png'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1>
+      ----
+
+      ----
+      foo <1>
+      ----
+      <1> words
+    ASCIIDOC
+    expected_warnings = <<~WARNINGS
+      INFO: <stdin>: line 9: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.png
+      INFO: <stdin>: line 9: copying #{spec_dir}/resources/copy_images/images/icons/callouts/2.png
+    WARNINGS
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["images/icons/callouts/1.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.png"],
+        ["images/icons/callouts/2.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/2.png"],
+    ])
+  end
+
+  it "doesn't copy callout images if the extension isn't set" do
+    copied = []
+    attributes = copy_attributes copied
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1>
+      ----
+      <1> words
+
+      ----
+      foo <1>
+      ----
+      <1> words
+    ASCIIDOC
+    convert input, attributes
+    expect(copied).to eq([])
   end
 end

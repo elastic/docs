@@ -1024,7 +1024,66 @@ POST _reindex
       ctx._type = '_doc';
     """
   }
-}</pre></div></div><div class="navfooter"><span class="prev"><a href="mapping.html">
+}</pre></div><h3><a id="_index_templates"></a>Index templates<a href="https://github.com/elastic/elasticsearch/edit/6.x/docs/reference/mapping/removal_of_types.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h3><p>It is recommended to make index templates typeless before upgrading to 7.0 by
+re-adding them with <code class="literal">include_type_name</code> set to <code class="literal">false</code>.</p><p>In case typeless templates are used with typed index creation calls or typed
+templates are used with typeless index creation calls, the template will still
+be applied but the index creation call decides whether there should be a type
+or not. For instance in the below example, <code class="literal">index-1-01</code> will have a type in
+spite of the fact that it matches a template that is typeless, and <code class="literal">index-2-01</code>
+will be typeless in spite of the fact that it matches a template that defines
+a type. Both <code class="literal">index-1-01</code> and <code class="literal">index-2-01</code> will inherit the <code class="literal">foo</code> field from
+the template that they match.</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-js">PUT _template/template1?include_type_name=false
+{
+  "index_patterns":[ "index-1-*" ],
+  "mappings": {
+    "properties": {
+      "foo": {
+        "type": "keyword"
+      }
+    }
+  }
+}
+
+PUT _template/template2?include_type_name=true
+{
+  "index_patterns":[ "index-2-*" ],
+  "mappings": {
+    "type": {
+      "properties": {
+        "foo": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}
+
+PUT index-1-01?include_type_name=true
+{
+  "mappings": {
+    "type": {
+      "properties": {
+        "bar": {
+          "type": "long"
+        }
+      }
+    }
+  }
+}
+
+PUT index-2-01?include_type_name=false
+{
+  "mappings": {
+    "properties": {
+      "bar": {
+        "type": "long"
+      }
+    }
+  }
+}</pre></div><div class="console_widget" data-snippet="snippets/removal-of-types/1.json"></div><p>In case of implicit index creation, because of documents that get indexed in
+an index that doesn’t exist yet, the template is always honored. This is
+usually not a problem due to the fact that typless index calls work on typed
+indices.</p></div><div class="navfooter"><span class="prev"><a href="mapping.html">
               « 
               Mapping</a>
            

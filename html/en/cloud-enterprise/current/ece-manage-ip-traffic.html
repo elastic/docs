@@ -704,7 +704,15 @@
            
           <a href="ece-retrieve-passwords.html">Retrieve user passwords
                »
-            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="ece-manage-ip-traffic"></a>Manage your IP filtering rule sets</h2></div></div></div><p>Add another layer of security to your installation and deployments by restricting inbound IP address traffic to <span class="emphasis"><em>only</em></span> the sources that you trust. In the quickly changing world of spoofed IP addresses and security compromises, you can conveniently manage rule sets across multiple deployments with a change at the platform level — saving you time and enforcing more consistent security measures. You can test out rule sets before applying them to production deployments and then quickly add them where needed.</p><p>Elastic Cloud Enterprise supports IP filtering rules with IPv4, IPv6, or a range of addresses with Classless Inter-Domain Routing (CIDR) for HTTP and transport protocols. This feature is available for deployments at version 2.4.6 and newer.</p><p>You can create multiple rule sets; however, traffic is not filtered until the rule set with at least one rule is applied to the deployment. When the first rule is applied, it also enables the implicit Deny All rule for unwanted traffic.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>No need to worry about traffic between the instances in your deployment, that traffic is automatically allowed.</p></div></div><h3><a id="ece-before_you_begin_8"></a>Before you begin</h3><p>You must <a class="link" href="ece-manage-elastic-stack.html" title="Manage Elastic Stack versions">re-upload the Elastic Stack packs</a> to take advantage of IP filtering.</p><h3><a id="ece-create-rule-set"></a>Create an IP filtering rule set</h3><p>You can combine any rules into a set, so we recommend that you group the rules according to what they allow, and make sure to label them accordingly. Since multiple sets can be applied to a deployment, you can be as granular in your sets as you feel is necessary.</p><p>To create a rule set:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+            </a></span></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="ece-manage-ip-traffic"></a>Manage your IP filtering rule sets</h2></div></div></div><p>Add another layer of security to your installation and deployments by restricting inbound IP address traffic to <span class="emphasis"><em>only</em></span> the sources that you trust. In the quickly changing world of spoofed IP addresses and security compromises, you can conveniently manage rule sets across multiple deployments with a change at the platform level — saving you time and enforcing more consistent security measures. You can test out rule sets before applying them to production deployments and then quickly add them where needed.</p><p>Elastic Cloud Enterprise supports IP filtering rules with IPv4, IPv6, or a range of addresses with Classless Inter-Domain Routing (CIDR) for HTTP and transport protocols. This feature is available for deployments at version 2.4.6 and newer.</p><p>You can create multiple rule sets; however, traffic is not filtered until the rule set with at least one rule is applied to the deployment. When the first rule is applied, it also enables the implicit Deny All rule for unwanted traffic.</p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>No need to worry about traffic between the instances in your deployment, that traffic is automatically allowed.</p></div></div><h3><a id="ece-before_you_begin_8"></a>Before you begin</h3><p>You must:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+<a class="link" href="ece-manage-elastic-stack.html" title="Manage Elastic Stack versions">Re-upload the Elastic Stack packs</a> to take advantage of IP filtering.
+</li><li class="listitem">
+Make sure your <a class="link" href="ece-load-balancers.html" title="Load balancers">load balancer</a> handles the <code class="literal">X-Forwarded-For</code> header appropriately for HTTP requests to prevent IP address spoofing. Make sure the proxy protocol is enabled for transport protocol (9343).
+</li></ul></div><p>You should also be aware:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+IP filtering can be bypassed by users with permissions to create or modify watches in clusters in the same Elastic Cloud Enterprise environment.
+</li><li class="listitem">
+In 2.1.0, port 9343 (encrypted transport) traffic all appears to come from the IP address of the load balancer. In order to use IP traffic management, the load balancer must terminate TLS, add the proxy protocol header, and then route traffic to the 9300 port of the proxy.
+</li></ul></div><h3><a id="ece-create-rule-set"></a>Create an IP filtering rule set</h3><p>You can combine any rules into a set, so we recommend that you group the rules according to what they allow, and make sure to label them accordingly. Since multiple sets can be applied to a deployment, you can be as granular in your sets as you feel is necessary.</p><p>To create a rule set:</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 <a class="link" href="ece-login.html" title="Log into the Cloud UI">Log into the Cloud UI</a>.
 </li><li class="listitem">
 From the <span class="strong strong"><strong>Platform</strong></span> menu, select <span class="strong strong"><strong>Security</strong></span>.
@@ -714,12 +722,12 @@ Create your rule set, providing a meaningful name and description.
 Add one or more rules using IPv4, IPv6, or a range of addresses with CIDR.
 </p><div class="note admon"><div class="icon"><img alt="Note" src="images/icons/note.png" /></div><div class="admon_content"><p>DNS names are not supported in rules.</p></div></div></li></ol></div><p>The next step is to <a class="link" href="ece-filter-ip-traffic.html" title="Filter IP traffic">associate one or more rule sets</a> with your deployments.</p><h3><a id="ece-api-rule-set"></a>Use the API to add multiple rule sets</h3><p>You can add rules and rule sets in bulk through the API.</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p class="simpara">
 Add rule sets:
-</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -X POST -u USERNAME:PASSWORD<a id="CO5-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> https://ECE_HOST<a id="CO5-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>:12433/api/v1/deployments/ip-filtering/rulesets -H 'content-type: application/json' -d '{
-  "name": "RULE_SET_NAME<a id="CO5-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>",
-  "description": "RULE_SET_DESCRIPTION<a id="CO5-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>",
+</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-sh">curl -X POST -u USERNAME:PASSWORD<a id="CO9-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span> https://ECE_HOST<a id="CO9-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span>:12433/api/v1/deployments/ip-filtering/rulesets -H 'content-type: application/json' -d '{
+  "name": "RULE_SET_NAME<a id="CO9-3"></a><span><img src="images/icons/callouts/3.png" alt="" /></span>",
+  "description": "RULE_SET_DESCRIPTION<a id="CO9-4"></a><span><img src="images/icons/callouts/4.png" alt="" /></span>",
   "rules": [
     {
-      "description": "RULE_DESCRIPTION<a id="CO5-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>",
+      "description": "RULE_DESCRIPTION<a id="CO9-5"></a><span><img src="images/icons/callouts/5.png" alt="" /></span>",
       "source": "192.0.2.0/241"
     },
     {
@@ -727,15 +735,15 @@ Add rule sets:
       "source": "203.0.113.0/24"
     }
   ]
-}'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+}'</pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The <code class="literal">admin</code> user credentials
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 A host that you installed Elastic Cloud Enterprise on that holds the coordinator role, such as a host where you can log into the Cloud UI
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-3"><span><img src="images/icons/callouts/3.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 The name of the rule set, used in the drop-down menu
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-4"><span><img src="images/icons/callouts/4.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Details about the rule set (optional)
-</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO5-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
+</p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO9-5"><span><img src="images/icons/callouts/5.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 Details about the IP address (optional)
 </p></td></tr></table></div></li><li class="listitem"><p class="simpara">
 Verify the rule sets:
