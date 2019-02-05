@@ -49,7 +49,7 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'update!', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', 'no_fetch', #
+    'all', 'push', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', 'no_fetch', #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor'
@@ -57,8 +57,6 @@ GetOptions(
 
 our $Conf = LoadFile('conf.yaml');
 
-checkout_staging_or_master();
-update_self() if $Opts->{update};
 init_env();
 
 my $template_urls
@@ -539,14 +537,8 @@ sub push_changes {
             run qw(git push origin HEAD );
         }
         local $ENV{GIT_DIR} = $target_repo->git_dir if $target_repo;
-        if ( $Opts->{staging} ) {
-            say "Force pushing changes to staging";
-            run qw(git push -f origin HEAD );
-        }
-        else {
-            say "Pushing changes";
-            run qw(git push origin HEAD );
-        }
+        say "Pushing changes";
+        run qw(git push origin HEAD );
     }
     else {
         say "No changes to push";
@@ -660,54 +652,6 @@ INFO
 }
 
 #===================================
-sub checkout_staging_or_master {
-#===================================
-    my $current = eval { run qw(git symbolic-ref --short HEAD) } || 'DETACHED';
-    chomp $current;
-
-    my $build_dir = $Conf->{paths}{build}
-        or die "Missing <paths.build> in config";
-
-    $build_dir = dir($build_dir);
-    $build_dir->mkpath;
-
-    if ( $Opts->{staging} ) {
-        return say "*** USING staging BRANCH ***"
-            if $current eq 'staging';
-
-        say "*** SWITCHING FROM $current TO staging BRANCH ***";
-        run qw(git checkout -B staging);
-        restart();
-    }
-    elsif ( $current eq 'staging' ) {
-        say "*** SWITCHING FROM staging TO master BRANCH ***";
-        run qw(git checkout master);
-        restart();
-    }
-    elsif ( $current ne 'master' ) {
-        say "*** USING $current BRANCH ***";
-    }
-}
-
-#===================================
-sub update_self {
-#===================================
-    say "Updating docs checkout";
-    my $current = eval { run qw(git symbolic-ref --short HEAD) } || 'DETACHED';
-    chomp $current;
-    my $remote
-        = eval { run qw(git rev-parse --abbrev-ref --symbolic-full-name @{u}) }
-        || die
-        "Couldn't update branch <$current> as it is not tracking an upstream branch\n";
-    chomp $remote;
-    run qw(git fetch);
-    run qw(git clean -df);
-    run qw(git reset --hard ), $remote;
-    push @Old_ARGV, "--noupdate";
-    restart();
-}
-
-#===================================
 sub restart {
 #===================================
     # reexecute script in case it has changed
@@ -749,8 +693,6 @@ sub usage {
 
         Opts:
           --push            Commit the updated docs and push to origin
-          --staging         Use the template from the staging website
-                            and push to the staging branch
           --user            Specify which GitHub user to use, if not your own
           --target_repo     Repository to which to commit docs
           --reference       Directory of `--mirror` clones to use as a local cache
@@ -763,7 +705,6 @@ sub usage {
           --staging         Use the template from the staging website
           --reload_template Force retrieving the latest web template
           --procs           Number of processes to run in parallel, defaults to 3
-          --update          Update the docs checkout (losing any changes!)
           --verbose
 
 USAGE
