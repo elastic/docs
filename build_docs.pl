@@ -473,8 +473,8 @@ sub init_repos {
         die "Missing reference directory $reference_dir" unless -e $reference_dir;
     }
 
-    # If we have a target repo check it out before the other repos so that
-    # we can use the tracker file in that repo.
+    # Check out the target repo before the other repos so that
+    # we can use the tracker file that it contains.
     my $target_repo = ES::Repo->new(
         name      => 'target_repo',
         dir       => $repos_dir,
