@@ -150,13 +150,16 @@ def run_build_docs(args):
                     docker_args.extend(['--tmpfs', '/run'])
                     docker_args.extend(['--tmpfs', '/root'])
                     docker_args.extend(['--publish', '8022:22/tcp'])
-                    docker_args.extend(['-e', 'SSH_AUTH_SOCK=/tmp/forwarded_ssh_auth'])
+                    docker_args.extend(
+                            ['-e', 'SSH_AUTH_SOCK=/tmp/forwarded_ssh_auth'])
                     should_forward_ssh_auth_into_container = True
                 else:
                     auth_sock = realpath(environ['SSH_AUTH_SOCK'])
                     auth_sock_dir = dirname(auth_sock)
-                    docker_args.extend(
-                            ['-v', '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)])
+                    docker_args.extend([
+                            '-v',
+                            '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)
+                    ])
                     docker_args.extend(['-e', 'SSH_AUTH_SOCK=%s' % auth_sock])
             known_hosts = realpath('%s/.ssh/known_hosts' % environ['HOME'])
             if exists(known_hosts):
@@ -185,7 +188,6 @@ def run_build_docs(args):
         docker_args.extend(['-v',
                             '%s:/out:delegated' % dirname(realpath('.'))])
         build_docs_args.extend(['--out', "/out/html_docs"])
-                
 
     cmd = []
     cmd.extend(['docker', 'run'])
@@ -195,6 +197,7 @@ def run_build_docs(args):
     # Use a PIPE for stdin so if our process dies then the docs build  sees
     # stdin close which it will use as a signal to die.
     docker_run = common_popen(cmd, subprocess.PIPE)
+
     def handle_line(line):
         logger.info(line)
         if open_browser and 'start worker processes' in line:
@@ -205,10 +208,10 @@ def run_build_docs(args):
                 environ['BROWSER'] = 'open'
             webbrowser.open('http://localhost:8000', new=1, autoraise=False)
         if should_forward_ssh_auth_into_container:
-            match = re.match('Waiting for ssh auth to be forwarded to (.+)', line)
+            match = re.match('Waiting for ssh auth to be forwarded to (.+)',
+                             line)
             if match:
                 forward_ssh_auth_into_container(match.group(1), docker_run)
-
 
     handle_popen(docker_run, handle_line)
     if docker_run.returncode != expected_return_code:
@@ -226,22 +229,23 @@ def forward_ssh_auth_into_container(container, docker_run):
     4. symlink it into the spot where the perl script expects it to be
     """
     ssh_setup_logger = logging.getLogger('ssh setup')
+
     def log_line(line):
         ssh_setup_logger.info(line)
 
-
     ssh_setup_logger.info('Getting public key to forward to container')
     public_keys = []
+
     def record_public_key(public_key):
         public_keys.append(public_key)
-
 
     cmd = ['ssh-add', '-L']
     get_ssh_public_key = common_popen(cmd, subprocess.PIPE)
     handle_popen(get_ssh_public_key, record_public_key)
     keys = "\n".join(public_keys) + "\n"
     if get_ssh_public_key.returncode != 0:
-        raise subprocess.CalledProcessError(get_ssh_public_key.returncode, cmd, keys)
+        raise subprocess.CalledProcessError(get_ssh_public_key.returncode,
+                                            cmd, keys)
 
     ssh_setup_logger.info('Setting up ssh on container')
     cmd = [
@@ -252,23 +256,25 @@ def forward_ssh_auth_into_container(container, docker_run):
         container,
         'bash', '-c',
         'mkdir -m700 /root/.ssh && ' +
-            'cat > /root/.ssh/authorized_keys && ' +
-            'chmod 600 /root/.ssh/authorized_keys &&' +
-            'service ssh start'
+        'cat > /root/.ssh/authorized_keys && ' +
+        'chmod 600 /root/.ssh/authorized_keys &&' +
+        'service ssh start'
     ]
     setup_ssh = common_popen(cmd, subprocess.PIPE)
-    setup_ssh.stdin.write(keys)
+    setup_ssh.stdin.write(encode(keys))
     setup_ssh.stdin.close()
     line = decode(setup_ssh.stdout.readline()).rstrip()
     ssh_setup_logger.info(line)
     setup_ssh.wait()
-    if setup_ssh.returncode != 0 or line != 'Starting OpenBSD Secure Shell server: sshd.':
+    if (setup_ssh.returncode != 0 or
+            line != 'Starting OpenBSD Secure Shell server: sshd.'):
         handle_popen(setup_ssh, log_line)
         raise subprocess.CalledProcessError(setup_ssh.returncode, cmd)
 
-    ssh_setup_logger.info("Forwarding auth socket. IMPORTANT - If this " +
-            "process takes more than a few minutes it has hung and should " +
-            "be manually aborted. I'm very sorry.")
+    ssh_setup_logger.info(
+            "Forwarding auth socket. IMPORTANT - If this process takes more " +
+            "than a few seconds it has hung and should be manually aborted. " +
+            "I'm very sorry.")
     cmd = [
         'ssh',
         '-o', 'StrictHostKeyChecking=no',
@@ -278,9 +284,13 @@ def forward_ssh_auth_into_container(container, docker_run):
         '-p', '8022'
     ]
     setup_auth_socket = common_popen(cmd, subprocess.PIPE)
-    setup_auth_socket.stdin.write('ln -s $SSH_AUTH_SOCK /tmp/forwarded_ssh_auth\n')
-    setup_auth_socket.stdin.write('chmod 777 -R $(dirname $SSH_AUTH_SOCK)\n')
-    setup_auth_socket.stdin.write('echo Done! SSH should work in the container now\n')
+    setup_auth_socket.stdin.write(
+            encode('ln -s $SSH_AUTH_SOCK /tmp/forwarded_ssh_auth\n'))
+    setup_auth_socket.stdin.write(
+            encode('chmod 777 -R $(dirname $SSH_AUTH_SOCK)\n'))
+    setup_auth_socket.stdin.write(
+            encode('echo Done! SSH should work in the container now\n'))
+    setup_auth_socket.stdin.flush()
     # We intentionally leave stdin open here to keep the auth socket in place
     # for the duration of the run.
     line = decode(setup_auth_socket.stdout.readline())
@@ -288,7 +298,8 @@ def forward_ssh_auth_into_container(container, docker_run):
         line = line.rstrip()
         ssh_setup_logger.info(line)
         if line == 'Done! SSH should work in the container now':
-            docker_run.stdin.write('ready\n')
+            docker_run.stdin.write(encode('ready\n'))
+            docker_run.stdin.flush()
             return
         line = decode(setup_auth_socket.stdout.readline())
     # The ssh connection terminated without giving our signal that it set up
@@ -357,6 +368,16 @@ def decode(bytes_or_str):
     if version_info[0] < 3:
         return bytes_or_str
     return bytes_or_str.decode('utf-8')
+
+
+def encode(str_to_write):
+    """Encode a str to be written to popen's stdin. In python 2 the
+    parameter can be written as a string so we just return it. In python 3 we
+    need to encode it into a utf-8 bytes sequence.
+    """
+    if version_info[0] < 3:
+        return str_to_write
+    return str_to_write.encode('utf-8')
 
 
 class ArgError(Exception):
