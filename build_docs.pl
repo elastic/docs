@@ -610,6 +610,12 @@ sub init_env {
                 && $ENV{SSH_AUTH_SOCK} eq '/tmp/forwarded_ssh_auth') {
             print "Waiting for ssh auth to be forwarded to " . hostname . "\n";
             while (<>) {
+                # Read from stdin waiting for the signal that we're ready. We
+                # use stdin here because it prevents us from leaving the docker
+                # container running if something goes wrong with the forwarding
+                # process. The mechanism of action is that when something goes
+                # wrong build_docs will die, closing stdin. That will cause us
+                # to drop out of this loop and cause the process to terminate.
                 last if ($_ eq "ready\n");
             }
             die '/tmp/forwarded_ssh_auth is missing' unless (-e '/tmp/forwarded_ssh_auth');

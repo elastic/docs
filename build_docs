@@ -147,12 +147,6 @@ def run_build_docs(args):
             if 'SSH_AUTH_SOCK' in environ:
                 # If we have SSH auth share it into the container.
                 if not platform.startswith('linux'):
-                    # NOCOMMIT rewrite warning?
-                    # logger.warn("Sharing auth socket over locally bound " +
-                    #             "port because mac docker doesn't support " +
-                    #             "unix sockets. This is much less secure " +
-                    #             "but is reasonably safe in single user " +
-                    #             "environments.")
                     docker_args.extend(['--tmpfs', '/run'])
                     docker_args.extend(['--tmpfs', '/root'])
                     docker_args.extend(['--publish', '8022:22/tcp'])
@@ -272,7 +266,9 @@ def forward_ssh_auth_into_container(container, docker_run):
         handle_popen(setup_ssh, log_line)
         raise subprocess.CalledProcessError(setup_ssh.returncode, cmd)
 
-    ssh_setup_logger.info("Forwarding auth socket")
+    ssh_setup_logger.info("Forwarding auth socket. IMPORTANT - If this " +
+            "process takes more than a few minutes it has hung and should " +
+            "be manually aborted. I'm very sorry.")
     cmd = [
         'ssh',
         '-o', 'StrictHostKeyChecking=no',
