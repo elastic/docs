@@ -26,9 +26,9 @@ RUN install_packages \
   unzip \
   xsltproc
 
-# We mount this log directory as tmp directory so we can't have
-# files there.
-RUN rm -rf /var/log/nginx
+# We mount these directories with tmpfs so we can write to them while so they
+# have to be empty.
+RUN rm -rf /var/log/nginx && rm -rf /run
 
 RUN gem install --no-document \
   asciidoctor:1.5.8 \

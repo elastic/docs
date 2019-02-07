@@ -232,6 +232,10 @@ def forward_ssh_auth_into_container(container, docker_run):
     4. symlink it into the spot where the perl script expects it to be
     """
     ssh_setup_logger = logging.getLogger('ssh setup')
+    def log_line(line):
+        ssh_setup_logger.info(line)
+
+
     ssh_setup_logger.info('Getting public key to forward to container')
     public_keys = []
     def record_public_key(public_key):
@@ -262,11 +266,11 @@ def forward_ssh_auth_into_container(container, docker_run):
     setup_ssh.stdin.write(keys)
     setup_ssh.stdin.close()
     line = decode(setup_ssh.stdout.readline()).rstrip()
-    if line != 'Starting OpenBSD Secure Shell server: sshd.':
-        raise subprocess.CalledProcessError(1, cmd, line)
+    ssh_setup_logger.info(line)
     setup_ssh.wait()
-    if setup_ssh.returncode != 0:
-        raise subprocess.CalledProcessError(setup_ssh.returncode, cmd, line)
+    if setup_ssh.returncode != 0 or line != 'Starting OpenBSD Secure Shell server: sshd.':
+        handle_popen(setup_ssh, log_line)
+        raise subprocess.CalledProcessError(setup_ssh.returncode, cmd)
 
     ssh_setup_logger.info("Forwarding auth socket")
     cmd = [
