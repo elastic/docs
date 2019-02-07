@@ -236,6 +236,8 @@ sub build_local_pdf {
 #===================================
 sub build_all {
 #===================================
+    die "--target_repo is required with --all" unless ( $Opts->{target_repo} );
+
     unless ( $Opts->{rely_on_ssh_auth} ) {
         say "Checking GitHub username and password (or auth token for multi-factor auth)";
 
@@ -247,11 +249,7 @@ sub build_all {
 
     my $build_dir = $Conf->{paths}{build}
         or die "Missing <paths.build> in config";
-    if ( $target_repo ) {
-        $build_dir = dir("$target_repo_checkout/$build_dir");
-    } else {
-        $build_dir = dir($build_dir);
-    }
+    $build_dir = dir("$target_repo_checkout/$build_dir");
     $build_dir->mkpath;
 
     my $contents = $Conf->{contents}
@@ -475,36 +473,32 @@ sub init_repos {
         die "Missing reference directory $reference_dir" unless -e $reference_dir;
     }
 
-    my $target_repo = 0;
-    my $target_repo_checkout = 0;
-    if ( $Opts->{target_repo} ) {
-        # If we have a target repo check it out before the other repos so that
-        # we can use the tracker file in that repo.
-        $target_repo = ES::Repo->new(
-            name      => 'target_repo',
-            dir       => $repos_dir,
-            user      => $Opts->{user},
-            url       => $Opts->{target_repo},
-            reference => $reference_dir,
-            # intentionally not passing the tracker because we don't want to use it
-        );
-        delete $child_dirs{ $target_repo->git_dir->absolute };
-        $target_repo_checkout = "$temp_dir/target_repo";
-        $tracker_path = "$target_repo_checkout/$tracker_path";
-        eval {
-            $target_repo->update_from_remote();
-            say " - Checking out: target_repo";
-            $target_repo->checkout_to($target_repo_checkout);
-            1;
-        } or do {
-            # If creds are invalid, explicitly reject them to try to clear the cache
-            my $error = $@;
-            if ( $error =~ /Invalid username or password/ ) {
-                revoke_github_creds();
-            }
-            die $error;
-        };
-    }
+    # Check out the target repo before the other repos so that
+    # we can use the tracker file that it contains.
+    my $target_repo = ES::Repo->new(
+        name      => 'target_repo',
+        dir       => $repos_dir,
+        user      => $Opts->{user},
+        url       => $Opts->{target_repo},
+        reference => $reference_dir,
+        # intentionally not passing the tracker because we don't want to use it
+    );
+    delete $child_dirs{ $target_repo->git_dir->absolute };
+    my $target_repo_checkout = "$temp_dir/target_repo";
+    $tracker_path = "$target_repo_checkout/$tracker_path";
+    eval {
+        $target_repo->update_from_remote();
+        say " - Checking out: target_repo";
+        $target_repo->checkout_to($target_repo_checkout);
+        1;
+    } or do {
+        # If creds are invalid, explicitly reject them to try to clear the cache
+        my $error = $@;
+        if ( $error =~ /Invalid username or password/ ) {
+            revoke_github_creds();
+        }
+        die $error;
+    };
 
     # check out all remaining repos in parallel
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
@@ -557,8 +551,8 @@ sub push_changes {
 #===================================
     my ($build_dir, $target_repo, $target_repo_checkout) = @_;
 
-    local $ENV{GIT_WORK_TREE} = $target_repo_checkout if $target_repo;
-    local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git' if $target_repo;
+    local $ENV{GIT_WORK_TREE} = $target_repo_checkout;
+    local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git';
 
     say 'Building revision.txt';
     $build_dir->file('revision.txt')
@@ -581,10 +575,8 @@ sub push_changes {
     } || '';
 
     if ( sha_for('HEAD') ne $remote_sha ) {
-        if ( $target_repo_checkout ) {
-            say "Pushing changes to bare repo";
-            run qw(git push origin HEAD );
-        }
+        say "Pushing changes to bare repo";
+        run qw(git push origin HEAD );
         local $ENV{GIT_DIR} = $target_repo->git_dir if $target_repo;
         say "Pushing changes";
         run qw(git push origin HEAD );
@@ -804,12 +796,12 @@ sub usage {
 
     Build docs from all repos in conf.yaml:
 
-        $0 --all [opts]
+        $0 --all --target_repo <target> [opts]
 
         Opts:
+          --target_repo     Repository to which to commit docs
           --push            Commit the updated docs and push to origin
           --user            Specify which GitHub user to use, if not your own
-          --target_repo     Repository to which to commit docs
           --reference       Directory of `--mirror` clones to use as a local cache
           --rely_on_ssh_auth
                             Skip the git auth check and translate configured repos into ssh
