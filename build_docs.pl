@@ -49,16 +49,21 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'update!', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', 'no_fetch', #
+    'all', 'push', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', 'no_fetch', #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
-    'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor'
+    'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
 ) || exit usage();
 
 our $Conf = LoadFile('conf.yaml');
+# The script supports running outside of docker, in any docker container *and*
+# running in a docker container that we maintain. If we run in a docker
+# container that we maintain then the script will change how it functions
+# to support all of its command line arguments properly. At some point we
+# will drop support for running outside of our docker image and this will
+# always be true, but we aren't there yet.
+our $running_in_standard_docker = $Opts->{in_standard_docker};
 
-checkout_staging_or_master();
-update_self() if $Opts->{update};
 init_env();
 
 my $template_urls
@@ -110,12 +115,11 @@ sub build_local {
 
     if ( $Opts->{open} ) {
         if ( my $pid = fork ) {
-
             # parent
             $SIG{INT} = sub {
                 kill -9, $pid;
             };
-            if ( $Opts->{open} ) {
+            if ( $Opts->{open} && not $running_in_standard_docker ) {
                 sleep 1;
                 say "Opening: " . $html;
                 say "Press Ctrl-C to exit the web server";
@@ -127,11 +131,54 @@ sub build_local {
             exit;
         }
         else {
-            my $http = dir( 'resources', 'http.py' )->absolute;
-            close STDIN;
-            open( STDIN, "</dev/null" );
-            chdir $dir;
-            exec( $http '8000' );
+            if ( $running_in_standard_docker ) {
+                # We use nginx to serve files instead of the python built in web server
+                # when we're running inside docker because the python web server performs
+                # badly there. nginx is fine.
+                open(my $nginx_conf, '>', '/tmp/docs.conf') or dir("Couldn't write nginx conf to /tmp/docs/.conf");
+                print $nginx_conf <<"CONF";
+daemon off;
+error_log /dev/stdout info;
+pid /run/nginx/nginx.pid;
+
+events {
+  worker_connections 64;
+}
+
+http {
+  error_log /dev/stdout crit;
+  log_format short '[\$time_local] "\$request" \$status';
+  access_log /dev/stdout short;
+  server {
+    listen 8000;
+    location / {
+      root $dir;
+      add_header 'Access-Control-Allow-Origin' '*';
+      if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
+      }
+    }
+    types {
+      text/html  html;
+      application/javascript  js;
+      text/css   css;
+    }
+  }
+}
+CONF
+                close $nginx_conf;
+                close STDIN;
+                open( STDIN, "</dev/null" );
+                chdir $dir;
+                exec( 'nginx', '-c', '/tmp/docs.conf' );
+            } else {
+                my $http = dir( 'resources', 'http.py' )->absolute;
+                close STDIN;
+                open( STDIN, "</dev/null" );
+                chdir $dir;
+                exec( $http '8000' );
+            }
         }
     }
     else {
@@ -539,14 +586,8 @@ sub push_changes {
             run qw(git push origin HEAD );
         }
         local $ENV{GIT_DIR} = $target_repo->git_dir if $target_repo;
-        if ( $Opts->{staging} ) {
-            say "Force pushing changes to staging";
-            run qw(git push -f origin HEAD );
-        }
-        else {
-            say "Pushing changes";
-            run qw(git push origin HEAD );
-        }
+        say "Pushing changes";
+        run qw(git push origin HEAD );
     }
     else {
         say "No changes to push";
@@ -567,6 +608,72 @@ sub init_env {
         . ":$FindBin::RealBin:"
         . $ENV{PATH};
     print "New PATH=$ENV{PATH}\n";
+
+    if ( $running_in_standard_docker ) {
+        # If we're in docker we're relying on closing stdin to cause an orderly
+        # shutdown because it is really the only way for us to know for sure
+        # that the python build_docs process that runs on the host is dead.
+        # Since perl's threads are "not recommended" we fork early in the run
+        # process and have the parent synchronously wait read from stdin. A few
+        # things can happen here and each has a comment below:
+        if ( my $child_pid = fork ) {
+            $SIG{CHLD} = sub {
+                # The child process exits so we should exit with whatever
+                # exit code it gave us. This can also come about because the
+                # child process is killed.
+                use POSIX ":sys_wait_h";
+                my $child_status = 'missing';
+                while ((my $child = waitpid(-1, WNOHANG)) > 0) {
+                    $child_status = $? if ( $child == $child_pid );
+                }
+                die "Couldn't find child status" if ( $child_status eq 'missing');
+                exit $child_status >> 8;
+            };
+            $SIG{INT} = sub {
+                # We're interrupted. This'll happen if we somehow end up in
+                # the foreground. It isn't likely, but if it does happen we
+                # should interrupt the child just in case it wasn't already
+                # interrupted and then exit with whatever code the child exits
+                # with.
+                kill 'INT', $child_pid;
+                wait;
+                exit $? >> 8;
+            };
+            $SIG{TERM} = sub {
+                # We're terminated. We should pass on the love to the
+                # child process and return its exit code.
+                kill 'TERM', $child_pid;
+                wait;
+                exit $? >> 8;
+            };
+            while (<>) {}
+            # STDIN is closed. This'll happen if the python build_docs process
+            # on the host dies for some reason. When the host process dies we
+            # should do our best to die too so the docker container exits and
+            # is removed. We do that by interrupting the child and exiting with
+            # whatever exit code it exits with.
+            kill 'TERM', $child_pid;
+            wait;
+            exit $? >> 8;
+        }
+
+        # If we're running in docker then we won't have a useful username
+        # so we hack one into place with nss wrapper.
+        open(my $override, '>', '/tmp/passwd')
+            or dir("Couldn't write override user file");
+        # We use the `id` command here because it fetches the id. The native
+        # perl way to do this (getpwuid($<)) doesn't work because it needs a
+        # complete user. And we *aren't* one.
+        my $uid = `id -u`;
+        my $gid = `id -g`;
+        chomp($uid);
+        chomp($gid);
+        print $override "docker:x:$uid:$gid:docker:/tmp:/bin/bash\n";
+        close $override;
+        $ENV{LD_PRELOAD} = '/usr/lib/libnss_wrapper.so';
+        $ENV{NSS_WRAPPER_PASSWD} = '/tmp/passwd';
+        $ENV{NSS_WRAPPER_GROUP} = '/etc/group';
+    }
 
     eval { run( 'xsltproc', '--version' ) }
         or die "Please install <xsltproc>";
@@ -660,54 +767,6 @@ INFO
 }
 
 #===================================
-sub checkout_staging_or_master {
-#===================================
-    my $current = eval { run qw(git symbolic-ref --short HEAD) } || 'DETACHED';
-    chomp $current;
-
-    my $build_dir = $Conf->{paths}{build}
-        or die "Missing <paths.build> in config";
-
-    $build_dir = dir($build_dir);
-    $build_dir->mkpath;
-
-    if ( $Opts->{staging} ) {
-        return say "*** USING staging BRANCH ***"
-            if $current eq 'staging';
-
-        say "*** SWITCHING FROM $current TO staging BRANCH ***";
-        run qw(git checkout -B staging);
-        restart();
-    }
-    elsif ( $current eq 'staging' ) {
-        say "*** SWITCHING FROM staging TO master BRANCH ***";
-        run qw(git checkout master);
-        restart();
-    }
-    elsif ( $current ne 'master' ) {
-        say "*** USING $current BRANCH ***";
-    }
-}
-
-#===================================
-sub update_self {
-#===================================
-    say "Updating docs checkout";
-    my $current = eval { run qw(git symbolic-ref --short HEAD) } || 'DETACHED';
-    chomp $current;
-    my $remote
-        = eval { run qw(git rev-parse --abbrev-ref --symbolic-full-name @{u}) }
-        || die
-        "Couldn't update branch <$current> as it is not tracking an upstream branch\n";
-    chomp $remote;
-    run qw(git fetch);
-    run qw(git clean -df);
-    run qw(git reset --hard ), $remote;
-    push @Old_ARGV, "--noupdate";
-    restart();
-}
-
-#===================================
 sub restart {
 #===================================
     # reexecute script in case it has changed
@@ -749,8 +808,6 @@ sub usage {
 
         Opts:
           --push            Commit the updated docs and push to origin
-          --staging         Use the template from the staging website
-                            and push to the staging branch
           --user            Specify which GitHub user to use, if not your own
           --target_repo     Repository to which to commit docs
           --reference       Directory of `--mirror` clones to use as a local cache
@@ -763,8 +820,9 @@ sub usage {
           --staging         Use the template from the staging website
           --reload_template Force retrieving the latest web template
           --procs           Number of processes to run in parallel, defaults to 3
-          --update          Update the docs checkout (losing any changes!)
           --verbose
+          --in_standard_docker
+                            Specified by build_docs when running in its container
 
 USAGE
 }

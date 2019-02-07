@@ -729,14 +729,14 @@ occur quickly enough then the node will retry after
 the list of seed nodes: a <span class="emphasis"><em>settings</em></span>-based and a <span class="emphasis"><em>file</em></span>-based hosts provider.
 It can be extended to support cloud environments and other forms of hosts
 providers via <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/discovery.html" target="_top">discovery plugins</a>. Hosts providers are
-configured using the <code class="literal">discovery.zen.hosts_provider</code> setting, which defaults to
+configured using the <code class="literal">discovery.seed_providers</code> setting, which defaults to
 the <span class="emphasis"><em>settings</em></span>-based hosts provider. Multiple hosts providers can be specified
 as a list.</p><h5><a id="settings-based-hosts-provider"></a>Settings-based hosts provider<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The settings-based hosts provider uses a node setting to configure a static list
 of hosts to use as seed nodes. These hosts can be specified as hostnames or IP
 addresses; hosts specified as hostnames are resolved to IP addresses during each
 round of discovery. Note that if you are in an environment where DNS resolutions
-vary with time, you might need to adjust your <a class="link" href="networkaddress-cache-ttl.html" title="DNS cache settings">JVM security settings</a>.</p><p>The list of hosts is set using the <a class="link" href="discovery-settings.html#unicast.hosts" title="discovery.zen.ping.unicast.hostsedit"><code class="literal">discovery.zen.ping.unicast.hosts</code></a> static
-setting.  For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">discovery.zen.ping.unicast.hosts:
+vary with time, you might need to adjust your <a class="link" href="networkaddress-cache-ttl.html" title="DNS cache settings">JVM security settings</a>.</p><p>The list of hosts is set using the <a class="link" href="discovery-settings.html#unicast.hosts" title="discovery.seed_hostsedit"><code class="literal">discovery.seed_hosts</code></a> static
+setting.  For example:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yaml">discovery.seed_hosts:
    - 192.168.1.10:9300
    - 192.168.1.11 <a id="CO374-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
    - seeds.mydomain.com <a id="CO374-2"></a><span><img src="images/icons/callouts/2.png" alt="" /></span></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#CO374-1"><span><img src="images/icons/callouts/1.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
@@ -745,23 +745,23 @@ The port will default to <code class="literal">transport.profiles.default.port</
 </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#CO374-2"><span><img src="images/icons/callouts/2.png" alt="" /></span></a> </p></td><td valign="top" align="left"><p>
 A hostname that resolves to multiple IP addresses will try all resolved
     addresses.
-</p></td></tr></table></div><p>Additionally, the <code class="literal">discovery.zen.ping.unicast.hosts.resolve_timeout</code> configures
-the amount of time to wait for DNS lookups on each round of discovery. This is
-specified as a <a class="link" href="common-options.html#time-units" title="Time unitsedit">time unit</a> and defaults to 5s.</p><p>Unicast discovery uses the <a class="link" href="modules-transport.html" title="Transport">transport</a> module to perform the
+</p></td></tr></table></div><p>Additionally, the <code class="literal">discovery.seed_resolver.timeout</code> configures the amount of
+time to wait for DNS lookups on each round of discovery. This is specified as a
+<a class="link" href="common-options.html#time-units" title="Time unitsedit">time unit</a> and defaults to 5s.</p><p>Unicast discovery uses the <a class="link" href="modules-transport.html" title="Transport">transport</a> module to perform the
 discovery.</p><h5><a id="file-based-hosts-provider"></a>File-based hosts provider<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The file-based hosts provider configures a list of hosts via an external file.
 Elasticsearch reloads this file when it changes, so that the list of seed nodes
 can change dynamically without needing to restart each node. For example, this
 gives a convenient mechanism for an Elasticsearch instance that is run in a
 Docker container to be dynamically supplied with a list of IP addresses to
 connect to when those IP addresses may not be known at node startup.</p><p>To enable file-based discovery, configure the <code class="literal">file</code> hosts provider as follows
-in the <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yml">discovery.zen.hosts_provider: file</pre></div><p>Then create a file at <code class="literal">$ES_PATH_CONF/unicast_hosts.txt</code> in the format described
+in the <code class="literal">elasticsearch.yml</code> file:</p><div class="pre_wrapper"><pre class="programlisting prettyprint lang-yml">discovery.seed_providers: file</pre></div><p>Then create a file at <code class="literal">$ES_PATH_CONF/unicast_hosts.txt</code> in the format described
 below. Any time a change is made to the <code class="literal">unicast_hosts.txt</code> file the new changes
 will be picked up by Elasticsearch and the new hosts list will be used.</p><p>Note that the file-based discovery plugin augments the unicast hosts list in
-<code class="literal">elasticsearch.yml</code>. If there are valid unicast host entries in
-<code class="literal">discovery.zen.ping.unicast.hosts</code>, they are used in addition to those
-supplied in <code class="literal">unicast_hosts.txt</code>.</p><p>The <code class="literal">discovery.zen.ping.unicast.hosts.resolve_timeout</code> setting also applies to
-DNS lookups for nodes specified by address via file-based discovery. This is
-specified as a <a class="link" href="common-options.html#time-units" title="Time unitsedit">time unit</a> and defaults to 5s.</p><p>The format of the file is to specify one node entry per line.  Each node entry
+<code class="literal">elasticsearch.yml</code>. If there are valid seed addresses in
+<code class="literal">discovery.seed_hosts</code> then they are used in addition to those supplied in
+<code class="literal">unicast_hosts.txt</code>.</p><p>The <code class="literal">discovery.seed_resolver.timeout</code> setting also applies to DNS lookups for
+seed addresses given via file-based discovery. This is specified as a
+<a class="link" href="common-options.html#time-units" title="Time unitsedit">time unit</a> and defaults to 5s.</p><p>The format of the file is to specify one node entry per line.  Each node entry
 consists of the host (host name or IP address) and an optional transport port
 number.  If the port number is specified, is must come immediately after the
 host (on the same line) separated by a <code class="literal">:</code>.  If the port number is not
@@ -772,7 +772,7 @@ the default port:</p><div class="pre_wrapper"><pre class="programlisting prettyp
 10.10.10.5:10005
 # an IPv6 address
 [2001:0db8:85a3:0000:0000:8a2e:0370:7334]:9301</pre></div><p>Host names are allowed instead of IP addresses (similar to
-<code class="literal">discovery.zen.ping.unicast.hosts</code>), and IPv6 addresses must be specified in
+<code class="literal">discovery.seed_hosts</code>), and IPv6 addresses must be specified in
 brackets with the port coming after the brackets.</p><p>You can also add comments to this file. All comments must appear on
 their lines starting with <code class="literal">#</code> (i.e. comments cannot start in the middle of a
 line).</p><h5><a id="ec2-hosts-provider"></a>EC2 hosts provider<a href="https://github.com/elastic/elasticsearch/edit/master/docs/reference/modules/discovery/discovery.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a></h5><p>The <a class="ulink" href="https://www.elastic.co/guide/en/elasticsearch/plugins/master/discovery-ec2.html" target="_top">EC2 discovery plugin</a> adds a hosts provider

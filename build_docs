@@ -1,0 +1,285 @@
+#!/usr/bin/env python
+
+# Build the docs with docker!
+#
+# Step 1 is to build a docker image based on the asciidoctor image.
+# Step 2 is to translate the arguments that build_docs.pl supports into
+# a list of arguments to be passed to start the docker container and a
+# list of arguments to be passed to the build_docs.pl process that is
+# started in the docker container.
+# Step 3 is to start the docker container. We start it in such a way
+# that is *should* remove itself when it is done.
+#
+# I'm aware that this is a fairly non-standard way to use docker but
+# for the most part all we want docker for is to get us into a consistent
+# environment it'll do the trick. At least for now.
+#
+# The shebang line on this script has a story too! As written it targets
+# "whatever version of python you have in the command line". Originally
+# we wanted to target just python2 because that is a nice "lowest common
+# denominator". But macOS doesn't have a `python2` executable, only
+# `python`. So we have to shebang for `python`. PEP 394 says that if we
+# do that we must make the script compatible with `python3` *and*
+# `python2`. And it doesn't just say that to be dictatorial! Arch Linux's
+# `python` command *is* `python3`. So, if we want to be compatible with
+# Arch, we have to support both. And we'd prefer that this script be
+# compatible with everything.
+
+from __future__ import print_function
+
+import logging
+from os import environ, getgid, getuid
+from os.path import basename, dirname, exists, isdir, join, realpath
+import subprocess
+from sys import platform, version_info
+import time
+import webbrowser
+
+DOCKER_BUILD_QUIET_TIME = 3  # seconds
+
+DIR = dirname(realpath(__file__))
+logger = logging.getLogger('build_docs')
+
+
+def build_docker_image():
+    docker_logger = logging.getLogger('docker build')
+    docker_logger.info('Building the docker image that will build the docs. ' +
+                       'Expect this to take somewhere between a hundred ' +
+                       'milliseconds and five minutes.')
+    with open(join(DIR, 'Dockerfile')) as dockerfile:
+        # We attempt to spool up the output from docker build so we can hide it
+        # if the command is successful *and* runs quickly. If it takes longer
+        # than the DOCKER_BUILD_QUIET_TIME then we log all of the output. I
+        # know this is a little sneaky, but folks run this from the command
+        # line so frequently that they'll appreciate cleaner output. I hope.
+        start_logging_at = time.time() + DOCKER_BUILD_QUIET_TIME
+        acc = []
+
+        def handle_line(line):
+            if time.time() >= start_logging_at:
+                for line in acc:
+                    docker_logger.info(line)
+                del acc[:]
+                docker_logger.info(line)
+            else:
+                acc.append(line)
+
+        cmd = ["docker", "image", "build", "-t", "elastic/docs_build", "-"]
+        build = common_popen(cmd, dockerfile)
+        handle_popen(build, handle_line)
+        if build.returncode != 0:
+            for line in acc:
+                docker_logger.error(line)
+            raise subprocess.CalledProcessError(build.returncode, cmd)
+
+
+def run_build_docs(args):
+    docker_args = []
+    build_docs_args = []
+
+    # Remove the container immediately when we're done building the docs
+    docker_args.append('--rm')
+    # Make sure we create files as the current user because that is what
+    # folks that use build_docs.pl expect.
+    docker_args.extend(['--user', '%d:%d' % (getuid(), getgid())])
+    # Running read-only with a proper tmp directory gives us a little
+    # performance boost and it is simple enough to do.
+    docker_args.extend(['--read-only', '--tmpfs', '/tmp'])
+    # Mount the docs build code so we can run it!
+    docker_args.extend(['-v', '%s:/docs_build:cached' % DIR])
+    # Seccomp adds a *devestating* performance overhead if you happen
+    # to have it installed.
+    docker_args.extend(['--security-opt', 'seccomp=unconfined'])
+    # Keep stdin open so the docs build can use closing it as a signal that
+    # it needs to die.
+    docker_args.append('-i')
+
+    build_docs_args.append('--in_standard_docker')
+
+    open_browser = False
+    args = Args(args)
+    saw_out = False
+    expected_return_code = 0
+    resource_count = 0
+    arg = args.next_arg()
+    while arg is not None:
+        build_docs_args.append(arg)
+        if arg == '--doc':
+            doc_file = realpath(args.next_arg_or_err())
+            if not exists(doc_file):
+                raise ArgError("Can't find --doc %s" % doc_file)
+            repo_root = subprocess.check_output(
+                ['git', 'rev-parse', '--show-toplevel'],
+                cwd=dirname(doc_file)).decode('utf-8').strip()
+            docker_args.extend(['-v', repo_root + ':/doc:ro,cached'])
+            build_docs_args.append('/doc' + doc_file.replace(repo_root, ''))
+        elif arg == '--open':
+            docker_args.extend(['--publish', '8000:8000/tcp'])
+            # Ritual to make nginx run on the readonly filesystem
+            docker_args.extend(['--tmpfs', '/run/nginx',
+                                '--tmpfs', '/var/log/nginx',
+                                '--tmpfs', '/var/lib/nginx/body',
+                                '--tmpfs', '/var/lib/nginx/fastcgi',
+                                '--tmpfs', '/var/lib/nginx/proxy',
+                                '--tmpfs', '/var/lib/nginx/uwsgi',
+                                '--tmpfs', '/var/lib/nginx/scgi'])
+            open_browser = True
+        elif arg == '--out':
+            out_dir = realpath(args.next_arg_or_err())
+            docker_args.extend(['-v', '%s:/out:delegated' % dirname(out_dir)])
+            build_docs_args.append('/out/%s' % basename(out_dir))
+            saw_out = True
+        elif arg == '--push':
+            git_config = '%s/.gitconfig' % environ['HOME']
+            if exists(git_config):
+                docker_args.extend(
+                        ['-v', '%s:/.gitconfig:ro,cached' % git_config])
+        elif arg == '--reference':
+            reference_dir = realpath(args.next_arg_or_err())
+            if not exists(reference_dir):
+                raise ArgError("Can't find --reference %s" % reference_dir)
+            docker_args.extend(['-v',
+                                '%s:/reference:ro,cached' % reference_dir])
+            build_docs_args.append('/reference')
+        elif arg == '--rely_on_ssh_auth':
+            if 'SSH_AUTH_SOCK' in environ:
+                # If we have SSH auth share it into the container.
+                if not platform.startswith('linux'):
+                    logger.warn('Attempting to share ssh auth but this is ' +
+                                'unlikely to work outside of linux.')
+                auth_sock = realpath(environ['SSH_AUTH_SOCK'])
+                auth_sock_dir = dirname(auth_sock)
+                docker_args.extend(
+                        ['-v', '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)])
+                docker_args.extend(['-e', 'SSH_AUTH_SOCK=%s' % auth_sock])
+            known_hosts = realpath('%s/.ssh/known_hosts' % environ['HOME'])
+            if exists(known_hosts):
+                # If we have known_hosts mount them into the container so it
+                # won't ask about github
+                docker_args.extend([
+                        '-v',
+                        '%s:/tmp/.ssh/known_hosts:ro,cached' % known_hosts])
+        elif arg == '--resource':
+            resource_dir = realpath(args.next_arg_or_err())
+            if not isdir(resource_dir):
+                raise ArgError("Can't find --resource %s" % resource_dir)
+            docker_args.extend([
+                '-v',
+                '%s:/resource_%d:ro,cached' % (resource_dir, resource_count)
+            ])
+            build_docs_args.append('/resource_%d' % resource_count)
+            resource_count += 1
+        elif arg == '--help':
+            expected_return_code = 1
+        arg = args.next_arg()
+
+    if not saw_out:
+        # If you don't specify --out then we dump the output into
+        # $cwd/html_docsto keep backwards compatibility with build_docs.pl.
+        docker_args.extend(['-v',
+                            '%s:/out:delegated' % dirname(realpath('.'))])
+        build_docs_args.extend(['--out', "/out/html_docs"])
+
+    def handle_line(line):
+        logger.info(line)
+        if open_browser and 'start worker processes' in line:
+            if platform == "darwin" and 'BROWSER' not in environ:
+                # On mac webbrowser seeem to want to default to safari which
+                # is weird. If we tell it that the browser's name is `open`
+                # we'll get whatever the user set as their default browser.
+                environ['BROWSER'] = 'open'
+            webbrowser.open('http://localhost:8000', new=1, autoraise=False)
+
+    cmd = []
+    cmd.extend(['docker', 'run'])
+    cmd.extend(docker_args)
+    cmd.extend(['elastic/docs_build', '/docs_build/build_docs.pl'])
+    cmd.extend(build_docs_args)
+    # Use a PIPE for stdin so if our process dies then the docs build  sees
+    # stdin close which it will use as a signal to die.
+    docker_run = common_popen(cmd, subprocess.PIPE)
+    handle_popen(docker_run, handle_line)
+    if docker_run.returncode != expected_return_code:
+        subprocess.CalledProcessError(docker_run.returncode, args)
+
+
+class Args:
+    def __init__(self, args):
+        # Replace equals delimited arguments with the space delimiated versions
+        # so it is simpler to iterate over them
+        self.args = []
+        for arg in args:
+            split = arg.split('=')
+            if len(split) > 2:
+                raise UserError('Invalid argument [%s]' % arg)
+            self.args.extend(split)
+        self.current = 0
+
+    def next_arg(self):
+        if self.current >= len(self.args):
+            return None
+        result = self.args[self.current]
+        self.current += 1
+        return result
+
+    def next_arg_or_err(self):
+        prev = self.args[self.current - 1]
+        next_arg = self.next_arg()
+        if next_arg is None:
+            raise ArgError("Missing argument for %s" % prev)
+        return next_arg
+
+
+def common_popen(cmd, stdin):
+    """Start a subprocess in a way that is compatible with handle_popen.
+    """
+    return subprocess.Popen(cmd,
+                            stdin=stdin,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
+
+
+def handle_popen(popen, handle_line):
+    """Reads lines from a Popen object that is running and waits for it
+    to complete.
+    """
+    # `for line in build.stdout` buffers the lines into many chunks which
+    # isn't pleasant to use on the command line because it makes it looks
+    # like everything is happening in bursts. The implementation below
+    # spits the lines out as they come.
+    line = decode(popen.stdout.readline())
+    while line:
+        line = line.rstrip()
+        handle_line(line)
+        line = decode(popen.stdout.readline())
+    popen.wait()
+
+
+def decode(bytes_or_str):
+    """Decode the result of reading from popen's stdout. In python 2 the
+    parameter will by a str already so we just return it. In python 3 we
+    have to decode it.
+    """
+    if version_info[0] < 3:
+        return bytes_or_str
+    return bytes_or_str.decode('utf-8')
+
+
+class ArgError(Exception):
+    pass
+
+if __name__ == '__main__':
+    from sys import argv
+    try:
+        logging.basicConfig(level=logging.INFO)
+        build_docker_image()
+        run_build_docs(argv[1:])
+    except ArgError as e:
+        print(e)
+        exit(1)
+    except subprocess.CalledProcessError as e:
+        print(e)
+        exit(e.returncode)
+    except KeyboardInterrupt:
+        # Just quit if we get ctrl-c
+        exit(1)

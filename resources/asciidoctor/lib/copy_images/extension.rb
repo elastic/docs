@@ -8,6 +8,12 @@ include Asciidoctor
 ##
 # Copies images that are referenced into the same directory as the output files.
 #
+# It finds the images by looking in a comma separated list of directories
+# defined by the `resources` attribute.
+#
+# It can also be configured to copy the images that number callout lists by
+# setting `copy-callout-images` to the file extension of the images to copy.
+#
 class CopyImages < TreeProcessorScaffold
   include Logging
 
@@ -17,9 +23,20 @@ class CopyImages < TreeProcessorScaffold
   end
 
   def process_block block
-    return unless block.context == :image
-    uri = block.image_uri(block.attr 'target')
-    return if Helpers.uriish? uri       # Skip external images
+    if block.context == :image
+      uri = block.image_uri(block.attr 'target')
+      return if Helpers.uriish? uri # Skip external images
+      copy_image block, uri
+    elsif (extension = block.document.attr 'copy-callout-images') &&
+        block.parent &&
+        block.parent.context == :colist
+      id = block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
+        copy_image block, "images/icons/callouts/#{$1}.#{extension}"
+      }
+    end
+  end
+
+  def copy_image block, uri
     return unless @copied.add? uri      # Skip images we've copied before
     source = find_source block, uri
     return unless source                # Skip images we can't find
@@ -46,8 +63,13 @@ class CopyImages < TreeProcessorScaffold
     checked = []
 
     resources = block.document.attr 'resources'
-    if resources
-      to_check += CSV.parse_line(resources)
+    if resources and not resources.empty?
+      begin
+        to_check += CSV.parse_line(resources)
+      rescue CSV::MalformedCSVError => error
+        logger.error message_with_context "Error loading [resources]: #{error}",
+            :source_location => block.source_location
+      end
     end
 
     while (dir = to_check.shift)
