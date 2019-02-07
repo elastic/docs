@@ -1,11 +1,11 @@
-require 'added/extension'
+require 'change_admonishment/extension'
 require 'elastic_compat_preprocessor/extension'
 require 'elastic_include_tagged/extension'
 require 'shared_examples/does_not_break_line_numbers'
 
 RSpec.describe ElasticCompatPreprocessor do
   before(:each) do
-    Extensions.register Added
+    Extensions.register ChangeAdmonishment
     Extensions.register do
       preprocessor ElasticCompatPreprocessor
       include_processor ElasticIncludeTagged
@@ -18,36 +18,42 @@ RSpec.describe ElasticCompatPreprocessor do
 
   include_examples "doesn't break line numbers"
 
-  it "invokes the added block macro when added[version] starts a line" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      added[some_version]
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <note revisionflag="added" revision="some_version">
+  [
+      ['added', 'added'],
+      ['coming', 'changed'],
+      ['deprecated', 'deleted']
+  ].each { |(name, revisionflag)|
+    it "invokes the #{name} block macro when #{name}[version] starts a line" do
+      actual = convert <<~ASCIIDOC
+        == Example
+        #{name}[some_version]
+      ASCIIDOC
+      expected = <<~DOCBOOK
+        <chapter id="_example">
+        <title>Example</title>
+        <note revisionflag="#{revisionflag}" revision="some_version">
         <simpara></simpara>
-      </note>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
-  end
+        </note>
+        </chapter>
+      DOCBOOK
+      expect(actual).to eq(expected.strip)
+    end
 
-  it "invokes the added inline macro when added[version] is otherwise on the line" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      words added[some_version]
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <simpara>words <phrase revisionflag="added" revision="some_version"/>
-      </simpara>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
-  end
+    it "invokes the #{name} inline macro when #{name}[version] is otherwise on the line" do
+      actual = convert <<~ASCIIDOC
+        == Example
+        words #{name}[some_version]
+      ASCIIDOC
+      expected = <<~DOCBOOK
+        <chapter id="_example">
+        <title>Example</title>
+        <simpara>words <phrase revisionflag="#{revisionflag}" revision="some_version"/>
+        </simpara>
+        </chapter>
+      DOCBOOK
+      expect(actual).to eq(expected.strip)
+    end
+  }
 
   it "invokes include-tagged::" do
     actual = convert <<~ASCIIDOC
@@ -111,7 +117,7 @@ RSpec.describe ElasticCompatPreprocessor do
       <chapter id="_header">
       <title>Header</title>
       <note revisionflag="added" revision="some_version">
-        <simpara></simpara>
+      <simpara></simpara>
       </note>
       </chapter>
     DOCBOOK
@@ -131,7 +137,7 @@ RSpec.describe ElasticCompatPreprocessor do
       <chapter id="_header">
       <title>Header</title>
       <note revisionflag="added" revision="some_version">
-        <simpara></simpara>
+      <simpara></simpara>
       </note>
       </chapter>
     DOCBOOK
@@ -154,7 +160,7 @@ RSpec.describe ElasticCompatPreprocessor do
       <chapter id="_header">
       <title>Header</title>
       <note revisionflag="added" revision="some_version">
-        <simpara></simpara>
+      <simpara></simpara>
       </note>
       </chapter>
       <chapter id="test">
