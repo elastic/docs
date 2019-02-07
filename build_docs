@@ -100,6 +100,7 @@ def run_build_docs(args):
     open_browser = False
     args = Args(args)
     saw_out = False
+    should_forward_ssh_auth_into_container = False
     expected_return_code = 0
     resource_count = 0
     arg = args.next_arg()
@@ -145,41 +146,18 @@ def run_build_docs(args):
         elif arg == '--rely_on_ssh_auth':
             if 'SSH_AUTH_SOCK' in environ:
                 # If we have SSH auth share it into the container.
-                if platform.startswith('darwin'):
-                    logger.warn("Sharing auth socket over locally bound " +
-                                "port because mac docker doesn't support " +
-                                "unix sockets. This is much less secure " +
-                                "but is reasonably safe in single user " +
-                                "environments.")
-                    # Mac docker can't share the SSH_AUTH unix socket so we
-                    # try to rig up something over a private ip to share
-                    # the socket. This technique comes from
-                    # https://forums.docker.com/t/can-we-re-use-the-osx-ssh-agent-socket-in-a-container/8152/18
-                    # and we should discard it in favor of native support for
-                    # sharing sockets or ssh auth of any sort when
-                    # docker-for-mac gets such a feature
-                    cmd = [
-                            'socat', '-d', '-d',
-                            'TCP-LISTEN:0,reuseaddr,fork,bind=127.0.0.1',
-                            'UNIX-CLIENT:$SSH_AUTH_SOCK',
-                    ]
-                    socat = common_popen(cmd, stdin=subprocess.PIPE)
-                    port = None
-                    # Find the port
-                    line = decode(socat.stdout.readline())
-                    while line:
-                        line = line.rstrip()
-                        matcher = re.search('127\.0\.0\.1:(\d+)$', line)
-                        if matcher:
-                            port = int(matcher.group(1))
-                            break
-                        else:
-                            logger.warn("unexepected line %s" % line)
-                        line = decode(socat.stdout.readline())
-                    # Now that we have the port we leave the socat process
-                    # running forever.
-                    docker_args.extend(['-e', 'SSH_AUTH_SOCK=/tmp/socat_ssh_auth_from_%d' % port])
-                    # TODO kill socat when we die!?
+                if not platform.startswith('linux'):
+                    # NOCOMMIT rewrite warning?
+                    # logger.warn("Sharing auth socket over locally bound " +
+                    #             "port because mac docker doesn't support " +
+                    #             "unix sockets. This is much less secure " +
+                    #             "but is reasonably safe in single user " +
+                    #             "environments.")
+                    docker_args.extend(['--tmpfs', '/run'])
+                    docker_args.extend(['--tmpfs', '/root'])
+                    docker_args.extend(['--publish', '8022:22/tcp'])
+                    docker_args.extend(['-e', 'SSH_AUTH_SOCK=/tmp/forwarded_ssh_auth'])
+                    should_forward_ssh_auth_into_container = True
                 else:
                     auth_sock = realpath(environ['SSH_AUTH_SOCK'])
                     auth_sock_dir = dirname(auth_sock)
@@ -213,16 +191,7 @@ def run_build_docs(args):
         docker_args.extend(['-v',
                             '%s:/out:delegated' % dirname(realpath('.'))])
         build_docs_args.extend(['--out', "/out/html_docs"])
-
-    def handle_line(line):
-        logger.info(line)
-        if open_browser and 'start worker processes' in line:
-            if platform == "darwin" and 'BROWSER' not in environ:
-                # On mac webbrowser seeem to want to default to safari which
-                # is weird. If we tell it that the browser's name is `open`
-                # we'll get whatever the user set as their default browser.
-                environ['BROWSER'] = 'open'
-            webbrowser.open('http://localhost:8000', new=1, autoraise=False)
+                
 
     cmd = []
     cmd.extend(['docker', 'run'])
@@ -232,9 +201,100 @@ def run_build_docs(args):
     # Use a PIPE for stdin so if our process dies then the docs build  sees
     # stdin close which it will use as a signal to die.
     docker_run = common_popen(cmd, subprocess.PIPE)
+    def handle_line(line):
+        logger.info(line)
+        if open_browser and 'start worker processes' in line:
+            if platform == "darwin" and 'BROWSER' not in environ:
+                # On mac webbrowser seeem to want to default to safari which
+                # is weird. If we tell it that the browser's name is `open`
+                # we'll get whatever the user set as their default browser.
+                environ['BROWSER'] = 'open'
+            webbrowser.open('http://localhost:8000', new=1, autoraise=False)
+        if should_forward_ssh_auth_into_container:
+            match = re.match('Waiting for ssh auth to be forwarded to (.+)', line)
+            if match:
+                forward_ssh_auth_into_container(match.group(1), docker_run)
+
+
     handle_popen(docker_run, handle_line)
     if docker_run.returncode != expected_return_code:
-        subprocess.CalledProcessError(docker_run.returncode, args)
+        subprocess.CalledProcessError(docker_run.returncode, cmd)
+
+
+def forward_ssh_auth_into_container(container, docker_run):
+    """Forwards the authorized keys into the container by sshing into it.
+
+    This requires a few steps:
+    1. copy your public key into the docker container's authorized_keys and
+       start sshd.
+    2. ssh into the container, forwarding your SSH_AUTH_SOCKET
+    3. chmod the auth socket so it is usable by the docs user
+    4. symlink it into the spot where the perl script expects it to be
+    """
+    ssh_setup_logger = logging.getLogger('ssh setup')
+    ssh_setup_logger.info('Getting public key to forward to container')
+    public_keys = []
+    def record_public_key(public_key):
+        public_keys.append(public_key)
+
+
+    cmd = ['ssh-add', '-L']
+    get_ssh_public_key = common_popen(cmd, subprocess.PIPE)
+    handle_popen(get_ssh_public_key, record_public_key)
+    keys = "\n".join(public_keys) + "\n"
+    if get_ssh_public_key.returncode != 0:
+        raise subprocess.CalledProcessError(get_ssh_public_key.returncode, cmd, keys)
+
+    ssh_setup_logger.info('Setting up ssh on container')
+    cmd = [
+        'docker', 'exec',
+        # Override the default user back to root instead of the docs user
+        '-u', '0:0',
+        '-i',
+        container,
+        'bash', '-c',
+        'mkdir -m700 /root/.ssh && ' +
+            'cat > /root/.ssh/authorized_keys && ' +
+            'chmod 600 /root/.ssh/authorized_keys &&' +
+            'service ssh start'
+    ]
+    setup_ssh = common_popen(cmd, subprocess.PIPE)
+    setup_ssh.stdin.write(keys)
+    setup_ssh.stdin.close()
+    line = decode(setup_ssh.stdout.readline()).rstrip()
+    if line != 'Starting OpenBSD Secure Shell server: sshd.':
+        raise subprocess.CalledProcessError(1, cmd, line)
+    setup_ssh.wait()
+    if setup_ssh.returncode != 0:
+        raise subprocess.CalledProcessError(setup_ssh.returncode, cmd, line)
+
+    ssh_setup_logger.info("Forwarding auth socket")
+    cmd = [
+        'ssh',
+        '-o', 'StrictHostKeyChecking=no',
+        '-o', 'UserKnownHostsFile=/dev/null',
+        '-o', 'LogLevel=QUIET',
+        '-AT', 'root@localhost',
+        '-p', '8022'
+    ]
+    setup_auth_socket = common_popen(cmd, subprocess.PIPE)
+    setup_auth_socket.stdin.write('ln -s $SSH_AUTH_SOCK /tmp/forwarded_ssh_auth\n')
+    setup_auth_socket.stdin.write('chmod 777 -R $(dirname $SSH_AUTH_SOCK)\n')
+    setup_auth_socket.stdin.write('echo Done! SSH should work in the container now\n')
+    # We intentionally leave stdin open here to keep the auth socket in place
+    # for the duration of the run.
+    line = decode(setup_auth_socket.stdout.readline())
+    while line:
+        line = line.rstrip()
+        ssh_setup_logger.info(line)
+        if line == 'Done! SSH should work in the container now':
+            docker_run.stdin.write('ready\n')
+            return
+        line = decode(setup_auth_socket.stdout.readline())
+    # The ssh connection terminated without giving our signal that it set up
+    # the forwarding successfully. So lets log it and tell the user
+    # we've failed.
+    raise subprocess.CalledProcessError(setup_auth_socket.returncode, cmd)
 
 
 class Args:

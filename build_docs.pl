@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+# Flush on every print even if we're writing to a pipe (like docker).
+$| = 1;
+
 use strict;
 use warnings;
 use v5.10;
@@ -39,6 +42,7 @@ use Getopt::Long;
 use YAML qw(LoadFile);
 use Path::Class qw(dir file);
 use Browser::Open qw(open_browser);
+use Sys::Hostname;
 
 use ES::BranchTracker();
 use ES::Repo();
@@ -602,21 +606,18 @@ sub init_env {
     print "New PATH=$ENV{PATH}\n";
 
     if ( $running_in_standard_docker ) {
-        my $socat_pid = -1;
         if (exists $ENV{SSH_AUTH_SOCK}
-                && $ENV{SSH_AUTH_SOCK} =~ m/\/tmp\/socat_ssh_auth_from_(\d+)/) {
-            my $socket_location = $ENV{SSH_AUTH_SOCK};
-            my $forwarding_port = $1;
-            unless ( $socat_pid = fork ) {
-                exec(
-                        'socat',
-                        "UNIX-LISTEN:$socket_location,reuseaddr,fork",
-                        "TCP:192.168.65.1:$forwarding_port");
+                && $ENV{SSH_AUTH_SOCK} eq '/tmp/forwarded_ssh_auth') {
+            print "Waiting for ssh auth to be forwarded to " . hostname . "\n";
+            while (<>) {
+                last if ($_ eq "ready\n");
             }
+            die '/tmp/forwarded_ssh_auth is missing' unless (-e '/tmp/forwarded_ssh_auth');
+            print "Found ssh auth\n";
         }
         # If we're in docker we're relying on closing stdin to cause an orderly
         # shutdown because it is really the only way for us to know for sure
-        # that the python build_docs process that runs on the host is dead.
+        # that the python build_docs process thats on the host is dead.
         # Since perl's threads are "not recommended" we fork early in the run
         # process and have the parent synchronously wait read from stdin. A few
         # things can happen here and each has a comment below:
@@ -631,8 +632,6 @@ sub init_env {
                     my $status = $? >> 8;
                     if ( $child == $child_pid ) {
                         $child_status = $status;
-                    } elsif ( $child == $socat_pid ) {
-                        die "socat failed with status [$status]\n";
                     } else {
                         # Some other subprocess died on us. The calling code
                         # will handle it.
