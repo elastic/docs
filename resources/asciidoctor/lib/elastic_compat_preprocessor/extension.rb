@@ -7,15 +7,23 @@ include Asciidoctor
 #
 # Turns
 #   added[6.0.0-beta1]
+#   coming[6.0.0-beta1]
+#   deprecated[6.0.0-beta1]
 # Into
 #   added::[6.0.0-beta1]
+#   coming::[6.0.0-beta1]
+#   deprecated::[6.0.0-beta1]
 # Because `::` is required by asciidoctor to invoke block macros but isn't
 # required by asciidoc.
 #
 # Turns
 #   words words added[6.0.0-beta1]
+#   words words changed[6.0.0-beta1]
+#   words words deprecated[6.0.0-beta1]
 # Into
 #   words words added:[6.0.0-beta1]
+#   words words changed:[6.0.0-beta1]
+#   words words deprecated:[6.0.0-beta1]
 # Because `:` is required by asciidoctor to invoke inline macros but isn't
 # required by asciidoc.
 #
@@ -140,12 +148,13 @@ class ElasticCompatPreprocessor < Extensions::Preprocessor
             @code_block_start = line
           end
         end
+        supported = 'added|coming|deprecated'
         # First convert the "block" version of these macros. We convert them
         # to block macros because they are at the start of the line....
-        line&.gsub!(/^(added)\[([^\]]*)\]/, '\1::[\2]')
+        line&.gsub!(/^(#{supported})\[([^\]]*)\]/, '\1::[\2]')
         # Then convert the "inline" version of these macros. We convert them
         # to inline macros because they are *not* at the start of the line....
-        line&.gsub!(/(added)\[([^\]]*)\]/, '\1:[\2]')
+        line&.gsub!(/(#{supported})\[([^\]]*)\]/, '\1:[\2]')
       end
     end
     reader
