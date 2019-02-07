@@ -7,11 +7,11 @@ include Asciidoctor
 #
 # Turns
 #   added[6.0.0-beta1]
-#   changed[6.0.0-beta1]
+#   coming[6.0.0-beta1]
 #   deprecated[6.0.0-beta1]
 # Into
 #   added::[6.0.0-beta1]
-#   changed::[6.0.0-beta1]
+#   coming::[6.0.0-beta1]
 #   deprecated::[6.0.0-beta1]
 # Because `::` is required by asciidoctor to invoke block macros but isn't
 # required by asciidoc.
