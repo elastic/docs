@@ -17,8 +17,10 @@ RUN install_packages \
   make \
   nginx \
   openssh-client \
+  openssh-server \
   perl-base \
   python \
+  socat \
   ruby \
   ruby-dev \
   unzip \

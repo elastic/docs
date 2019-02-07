@@ -30,6 +30,7 @@ from __future__ import print_function
 import logging
 from os import environ, getgid, getuid
 from os.path import basename, dirname, exists, isdir, join, realpath
+import re
 import subprocess
 from sys import platform, version_info
 import time
@@ -144,14 +145,47 @@ def run_build_docs(args):
         elif arg == '--rely_on_ssh_auth':
             if 'SSH_AUTH_SOCK' in environ:
                 # If we have SSH auth share it into the container.
-                if not platform.startswith('linux'):
-                    logger.warn('Attempting to share ssh auth but this is ' +
-                                'unlikely to work outside of linux.')
-                auth_sock = realpath(environ['SSH_AUTH_SOCK'])
-                auth_sock_dir = dirname(auth_sock)
-                docker_args.extend(
-                        ['-v', '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)])
-                docker_args.extend(['-e', 'SSH_AUTH_SOCK=%s' % auth_sock])
+                if platform.startswith('darwin'):
+                    logger.warn("Sharing auth socket over locally bound " +
+                                "port because mac docker doesn't support " +
+                                "unix sockets. This is much less secure " +
+                                "but is reasonably safe in single user " +
+                                "environments.")
+                    # Mac docker can't share the SSH_AUTH unix socket so we
+                    # try to rig up something over a private ip to share
+                    # the socket. This technique comes from
+                    # https://forums.docker.com/t/can-we-re-use-the-osx-ssh-agent-socket-in-a-container/8152/18
+                    # and we should discard it in favor of native support for
+                    # sharing sockets or ssh auth of any sort when
+                    # docker-for-mac gets such a feature
+                    cmd = [
+                            'socat', '-d', '-d',
+                            'TCP-LISTEN:0,reuseaddr,fork,bind=127.0.0.1',
+                            'UNIX-CLIENT:$SSH_AUTH_SOCK',
+                    ]
+                    socat = common_popen(cmd, stdin=subprocess.PIPE)
+                    port = None
+                    # Find the port
+                    line = decode(socat.stdout.readline())
+                    while line:
+                        line = line.rstrip()
+                        matcher = re.search('127\.0\.0\.1:(\d+)$', line)
+                        if matcher:
+                            port = int(matcher.group(1))
+                            break
+                        else:
+                            logger.warn("unexepected line %s" % line)
+                        line = decode(socat.stdout.readline())
+                    # Now that we have the port we leave the socat process
+                    # running forever.
+                    docker_args.extend(['-e', 'SSH_AUTH_SOCK=/tmp/socat_ssh_auth_from_%d' % port])
+                    # TODO kill socat when we die!?
+                else:
+                    auth_sock = realpath(environ['SSH_AUTH_SOCK'])
+                    auth_sock_dir = dirname(auth_sock)
+                    docker_args.extend(
+                            ['-v', '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)])
+                    docker_args.extend(['-e', 'SSH_AUTH_SOCK=%s' % auth_sock])
             known_hosts = realpath('%s/.ssh/known_hosts' % environ['HOME'])
             if exists(known_hosts):
                 # If we have known_hosts mount them into the container so it
