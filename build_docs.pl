@@ -52,11 +52,17 @@ GetOptions(
     'all', 'push', 'update!', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', 'no_fetch', #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
-    'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor'
+    'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
 ) || exit usage();
 
 our $Conf = LoadFile('conf.yaml');
-our $running_in_docker = _running_in_docker();
+# The script supports running outside of docker, in any docker container *and*
+# running in a docker container that we maintain. If we run in a docker
+# container that we maintain then the script will change how it functions
+# to support all of its command line arguments properly. At some point we
+# will drop support for running outside of our docker image and this will
+# always be true, but we aren't there yet.
+our $running_in_standard_docker = $Opts->{in_standard_docker};
 
 checkout_staging_or_master();
 update_self() if $Opts->{update};
@@ -115,7 +121,7 @@ sub build_local {
             $SIG{INT} = sub {
                 kill -9, $pid;
             };
-            if ( $Opts->{open} && not $running_in_docker ) {
+            if ( $Opts->{open} && not $running_in_standard_docker ) {
                 sleep 1;
                 say "Opening: " . $html;
                 say "Press Ctrl-C to exit the web server";
@@ -127,7 +133,7 @@ sub build_local {
             exit;
         }
         else {
-            if ( $running_in_docker ) {
+            if ( $running_in_standard_docker ) {
                 # We use nginx to serve files instead of the python built in web server
                 # when we're running inside docker because the python web server performs
                 # badly there. nginx is fine.
@@ -180,15 +186,6 @@ CONF
     else {
         say "See: $html";
     }
-}
-
-#===================================
-sub _running_in_docker {
-#===================================
-    my $root_cgroup = dir('/proc/1/cgroup');
-    return 0 unless ( -e $root_cgroup );
-    open(my $root_cgroup_file, $root_cgroup);
-    return grep {/docker/} <$root_cgroup_file>;
 }
 
 #===================================
@@ -620,7 +617,7 @@ sub init_env {
         . $ENV{PATH};
     print "New PATH=$ENV{PATH}\n";
 
-    if ( $running_in_docker ) {
+    if ( $running_in_standard_docker ) {
         # If we're in docker we're relying on closing stdin to cause an orderly
         # shutdown because it is really the only way for us to know for sure
         # that the python build_docs process that runs on the host is dead.
@@ -883,6 +880,8 @@ sub usage {
           --procs           Number of processes to run in parallel, defaults to 3
           --update          Update the docs checkout (losing any changes!)
           --verbose
+          --in_standard_docker
+                            Specified by build_docs when running in its container
 
 USAGE
 }
