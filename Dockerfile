@@ -4,7 +4,24 @@ FROM bitnami/minideb:stretch
 
 LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 
-# Used by the docs build or asciidoctor
+# Package inventory:
+# * To make life easier
+#   * bash
+# * Used by the docs build
+#   * libnss-wrapper
+#   * libxml2-utils
+#   * nginx
+#   * openssh-client (used by git)
+#   * openssh-server (used to forward ssh auth for git when running with --all on macOS)
+#   * perl-base
+#   * xsltproc
+# * To install rubygems for asciidoctor
+#   * build-essential
+#   * cmake
+#   * libxml2-dev
+#   * make
+#   * ruby
+#   * ruby-dev
 RUN install_packages \
   bash \
   build-essential \
@@ -20,7 +37,6 @@ RUN install_packages \
   openssh-server \
   perl-base \
   python \
-  socat \
   ruby \
   ruby-dev \
   unzip \
