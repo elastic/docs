@@ -99,7 +99,6 @@ def run_build_docs(args):
     open_browser = False
     args = Args(args)
     saw_out = False
-    expected_return_code = 0
     resource_count = 0
     arg = args.next_arg()
     while arg is not None:
@@ -130,10 +129,20 @@ def run_build_docs(args):
             build_docs_args.append('/out/%s' % basename(out_dir))
             saw_out = True
         elif arg == '--push':
-            git_config = '%s/.gitconfig' % environ['HOME']
-            if exists(git_config):
-                docker_args.extend(
-                        ['-v', '%s:/.gitconfig:ro,cached' % git_config])
+            author_name = from_env_or_git_config(
+                    'GIT_AUTHOR_NAME', 'user.name')
+            author_email = from_env_or_git_config(
+                    'GIT_AUTHOR_EMAIL', 'user.email')
+            committer_name = from_env_or_git_config(
+                    'GIT_COMMITTER_NAME', 'user.name')
+            committer_email = from_env_or_git_config(
+                    'GIT_COMMITTER_EMAIL', 'user.email')
+            docker_args.extend([
+                    '-e', 'GIT_AUTHOR_NAME=%s' % author_name,
+                    '-e', 'GIT_AUTHOR_EMAIL=%s' % author_email,
+                    '-e', 'GIT_COMMITTER_NAME=%s' % committer_name,
+                    '-e', 'GIT_COMMITTER_EMAIL=%s' % committer_email,
+            ])
         elif arg == '--reference':
             reference_dir = realpath(args.next_arg_or_err())
             if not exists(reference_dir):
@@ -169,8 +178,6 @@ def run_build_docs(args):
             ])
             build_docs_args.append('/resource_%d' % resource_count)
             resource_count += 1
-        elif arg == '--help':
-            expected_return_code = 1
         arg = args.next_arg()
 
     if not saw_out:
@@ -199,8 +206,7 @@ def run_build_docs(args):
     # stdin close which it will use as a signal to die.
     docker_run = common_popen(cmd, subprocess.PIPE)
     handle_popen(docker_run, handle_line)
-    if docker_run.returncode != expected_return_code:
-        subprocess.CalledProcessError(docker_run.returncode, args)
+    return docker_run.returncode
 
 
 class Args:
@@ -265,6 +271,18 @@ def decode(bytes_or_str):
     return bytes_or_str.decode('utf-8')
 
 
+def from_env_or_git_config(envname, gitname):
+    if envname in environ:
+        return environ[envname]
+    try:
+        return decode(
+                subprocess.check_output(['git', 'config', gitname])
+        ).rstrip()
+    except subprocess.CalledProcessError as e:
+        m = "specify the [%s] environment variable or configure [%s] in git"
+        raise ArgError(m % (envname, gitname))
+
+
 class ArgError(Exception):
     pass
 
@@ -273,7 +291,8 @@ if __name__ == '__main__':
     try:
         logging.basicConfig(level=logging.INFO)
         build_docker_image()
-        run_build_docs(argv[1:])
+        if not ['--just-build-image'] == argv[1:]:
+            exit(run_build_docs(argv[1:]))
     except ArgError as e:
         print(e)
         exit(1)
