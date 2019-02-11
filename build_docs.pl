@@ -332,6 +332,7 @@ sub check_kibana_links {
     };
 
     my $src_path = 'src/ui/public/documentation_links/documentation_links';
+    my $legacy_path = 'src/legacy/ui/public/documentation_links/documentation_links';
     my $repo     = ES::Repo->get_repo('kibana');
 
     my @branches = sort map { $_->basename }
@@ -342,8 +343,13 @@ sub check_kibana_links {
         next if $branch eq 'current' || $branch =~ /^\d/ && $branch lt 5;
         say "  Branch $branch";
         my $source = eval {
-            $repo->show_file( $branch, $src_path . ".js" )    # javascript
-        } || $repo->show_file( $branch, $src_path . ".ts" );    # or typescript
+            $repo->show_file( $branch, $src_path . ".js" )
+        } || eval {
+            $repo->show_file( $branch, $src_path . ".ts" )
+        } || eval {
+            $repo->show_file( $branch, $legacy_path . ".js" )
+        } ||
+            $repo->show_file( $branch, $legacy_path . ".ts" );
 
         $link_checker->check_source( $source, $extractor,
             "Kibana [$branch]: $src_path" );
