@@ -331,7 +331,7 @@ sub check_kibana_links {
 
     };
 
-    my $src_path = 'src/ui/public/documentation_links/documentation_links';
+    my $src_path = 'src/legacy/ui/public/documentation_links/documentation_links';
     my $repo     = ES::Repo->get_repo('kibana');
 
     my @branches = sort map { $_->basename }
