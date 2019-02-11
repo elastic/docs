@@ -81,7 +81,10 @@ def run_build_docs(args):
     docker_args.append('--rm')
     # Make sure we create files as the current user because that is what
     # folks that use build_docs.pl expect.
-    docker_args.extend(['--user', '%d:%d' % (getuid(), getgid())])
+    uid = getuid()
+    if uid == 0:
+        raise ArgError("This process isn't likely to suceed if run as root")
+    docker_args.extend(['--user', '%d:%d' % (uid, getgid())])
     # Running read-only with a proper tmp directory gives us a little
     # performance boost and it is simple enough to do.
     docker_args.extend(['--read-only', '--tmpfs', '/tmp'])
