@@ -599,13 +599,11 @@ sub init_env {
         file('resources/docbook-xsl-1.78.1/catalog.xml')->absolute,
         file('resources/docbook-xml-4.5/catalog.xml')->absolute;
 
-    print "Old PATH=$ENV{PATH}\n";
     $ENV{PATH}
         = dir('resources/asciidoc-8.6.8/')->absolute
         . ':' . dir('resources/asciidoctor/bin')->absolute
         . ":$FindBin::RealBin:"
         . $ENV{PATH};
-    print "New PATH=$ENV{PATH}\n";
 
     if ( $running_in_standard_docker ) {
         # If we're in docker we're relying on closing stdin to cause an orderly
