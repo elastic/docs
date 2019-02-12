@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+# Flush on every print even if we're writing to a pipe (like docker).
+$| = 1;
+
 use strict;
 use warnings;
 use v5.10;
@@ -39,6 +42,7 @@ use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
 use YAML qw(LoadFile);
 use Path::Class qw(dir file);
 use Browser::Open qw(open_browser);
+use Sys::Hostname;
 
 use ES::BranchTracker();
 use ES::Repo();
@@ -608,9 +612,24 @@ sub init_env {
     print "New PATH=$ENV{PATH}\n";
 
     if ( $running_in_standard_docker ) {
+        if (exists $ENV{SSH_AUTH_SOCK}
+                && $ENV{SSH_AUTH_SOCK} eq '/tmp/forwarded_ssh_auth') {
+            print "Waiting for ssh auth to be forwarded to " . hostname . "\n";
+            while (<>) {
+                # Read from stdin waiting for the signal that we're ready. We
+                # use stdin here because it prevents us from leaving the docker
+                # container running if something goes wrong with the forwarding
+                # process. The mechanism of action is that when something goes
+                # wrong build_docs will die, closing stdin. That will cause us
+                # to drop out of this loop and cause the process to terminate.
+                last if ($_ eq "ready\n");
+            }
+            die '/tmp/forwarded_ssh_auth is missing' unless (-e '/tmp/forwarded_ssh_auth');
+            print "Found ssh auth\n";
+        }
         # If we're in docker we're relying on closing stdin to cause an orderly
         # shutdown because it is really the only way for us to know for sure
-        # that the python build_docs process that runs on the host is dead.
+        # that the python build_docs process thats on the host is dead.
         # Since perl's threads are "not recommended" we fork early in the run
         # process and have the parent synchronously wait read from stdin. A few
         # things can happen here and each has a comment below:
@@ -622,10 +641,15 @@ sub init_env {
                 use POSIX ":sys_wait_h";
                 my $child_status = 'missing';
                 while ((my $child = waitpid(-1, WNOHANG)) > 0) {
-                    $child_status = $? if ( $child == $child_pid );
+                    my $status = $? >> 8;
+                    if ( $child == $child_pid ) {
+                        $child_status = $status;
+                    } else {
+                        # Some other subprocess died on us. The calling code
+                        # will handle it.
+                    }
                 }
-                die "Couldn't find child status" if ( $child_status eq 'missing');
-                exit $child_status >> 8;
+                exit $child_status unless ( $child_status eq 'missing');
             };
             $SIG{INT} = sub {
                 # We're interrupted. This'll happen if we somehow end up in
