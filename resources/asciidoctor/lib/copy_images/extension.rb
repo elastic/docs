@@ -31,7 +31,7 @@ class CopyImages < TreeProcessorScaffold
         block.parent &&
         block.parent.context == :colist &&
         (coids = block.attr 'coids')
-      block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
+      coids.scan(/CO(?:\d+)-(\d+)/) {
         copy_image block, "images/icons/callouts/#{$1}.#{extension}"
       }
     end
