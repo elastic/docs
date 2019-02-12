@@ -43,7 +43,8 @@ class ChangeAdmonishment < Extensions::Group
       # go with this funny compound pass thing.
       note = Block.new(parent, :pass, :content_model => :compound)
       note << Block.new(note, :pass,
-          :source => "<note revisionflag=\"#{@revisionflag}\" revision=\"#{version}\">")
+          :source => "<note revisionflag=\"#{@revisionflag}\" revision=\"#{version}\">",
+          :attributes => {'revisionflag' => @revisionflag})
       note << Block.new(note, :paragraph,
           :source => attrs[:passtext],
           :subs => Substitutors::NORMAL_SUBS)

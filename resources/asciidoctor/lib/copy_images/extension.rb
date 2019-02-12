@@ -27,12 +27,32 @@ class CopyImages < TreeProcessorScaffold
       uri = block.image_uri(block.attr 'target')
       return if Helpers.uriish? uri # Skip external images
       copy_image block, uri
-    elsif (extension = block.document.attr 'copy-callout-images') &&
-        block.parent &&
-        block.parent.context == :colist
-      id = block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
-        copy_image block, "images/icons/callouts/#{$1}.#{extension}"
-      }
+      return
+    end
+    callout_extension = block.document.attr 'copy-callout-images'
+    if callout_extension
+      if block.parent && block.parent.context == :colist
+        block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
+          copy_image block, "images/icons/callouts/#{$1}.#{callout_extension}"
+        }
+        return
+      end
+    end
+    admonition_extension = block.document.attr 'copy-admonition-images'
+    if admonition_extension
+      if block.context == :admonition
+        # The image for a standard admonition comes from the style
+        style = block.attr 'style'
+        return unless style
+        copy_image block, "images/icons/#{style.downcase(:ascii)}.#{admonition_extension}"
+        return
+      end
+      # The image for a change admonition comes from the revisionflag
+      revisionflag = block.attr 'revisionflag'
+      if revisionflag
+        copy_image block, "images/icons/#{revisionflag}.#{admonition_extension}"
+        return
+      end
     end
   end
 
