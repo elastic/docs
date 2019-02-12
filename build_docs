@@ -96,11 +96,37 @@ def run_build_docs(args):
 
     build_docs_args.append('--in_standard_docker')
 
+    mounted_doc_repo_roots = set()
+    mounted_doc_repo_names = set()
+
+    def mount_docs_repo_and_dockerify_path(repo_search_path, path):
+        """Adds a mount for the root of the repository into the docker
+        container and rewrites the path so that it is inside that mount.
+
+        If the repo happens to already be mounted we won't add two mounts.
+        """
+        repo_root = subprocess.check_output(
+                ['git', 'rev-parse', '--show-toplevel'],
+                cwd=repo_search_path)
+        repo_root = repo_root.decode('utf-8').strip()
+        repo_name = basename(repo_root)
+        if repo_root not in mounted_doc_repo_roots:
+            if repo_name in mounted_doc_repo_names:
+                raise ArgError("Can't mount two repos with the same " +
+                               "name [%s]" % repo_name)
+            mounted_doc_repo_roots.add(repo_root)
+            mounted_doc_repo_names.add(repo_name)
+            docker_args.extend([
+                '-v',
+                '%s:/doc/%s:ro,cached' % (repo_root, repo_name)
+            ])
+        build_docs_args.append(
+                '/doc/' + repo_name + path.replace(repo_root, ''))
+
     open_browser = False
     args = Args(args)
     saw_out = False
     expected_return_code = 0
-    resource_count = 0
     arg = args.next_arg()
     while arg is not None:
         build_docs_args.append(arg)
@@ -108,11 +134,7 @@ def run_build_docs(args):
             doc_file = realpath(args.next_arg_or_err())
             if not exists(doc_file):
                 raise ArgError("Can't find --doc %s" % doc_file)
-            repo_root = subprocess.check_output(
-                ['git', 'rev-parse', '--show-toplevel'],
-                cwd=dirname(doc_file)).decode('utf-8').strip()
-            docker_args.extend(['-v', repo_root + ':/doc:ro,cached'])
-            build_docs_args.append('/doc' + doc_file.replace(repo_root, ''))
+            mount_docs_repo_and_dockerify_path(dirname(doc_file), doc_file)
         elif arg == '--open':
             docker_args.extend(['--publish', '8000:8000/tcp'])
             # Ritual to make nginx run on the readonly filesystem
@@ -163,12 +185,7 @@ def run_build_docs(args):
             resource_dir = realpath(args.next_arg_or_err())
             if not isdir(resource_dir):
                 raise ArgError("Can't find --resource %s" % resource_dir)
-            docker_args.extend([
-                '-v',
-                '%s:/resource_%d:ro,cached' % (resource_dir, resource_count)
-            ])
-            build_docs_args.append('/resource_%d' % resource_count)
-            resource_count += 1
+            mount_docs_repo_and_dockerify_path(resource_dir, resource_dir)
         elif arg == '--help':
             expected_return_code = 1
         arg = args.next_arg()
