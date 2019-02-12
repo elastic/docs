@@ -35,7 +35,7 @@ use ES::Util qw(
     write_html_redirect
 );
 
-use Getopt::Long;
+use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
 use YAML qw(LoadFile);
 use Path::Class qw(dir file);
 use Browser::Open qw(open_browser);

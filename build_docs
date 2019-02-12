@@ -30,6 +30,7 @@ from __future__ import print_function
 import logging
 from os import environ, getgid, getuid
 from os.path import basename, dirname, exists, isdir, join, realpath
+import re
 import subprocess
 from sys import platform, version_info
 import time
@@ -222,13 +223,17 @@ def run_build_docs(args):
 
 class Args:
     def __init__(self, args):
-        # Replace equals delimited arguments with the space delimiated versions
-        # so it is simpler to iterate over them
+        # Normalize the args so it is simpler to iterate over them
         self.args = []
         for arg in args:
+            # Fail `-foo` style arguments
+            if re.match('^-[^-]+$', arg):
+                raise ArgError('Use [-%s] instead of [%s]' % (arg, arg))
+
+            # Replace `--foo=bar` style with `--foo bar` style
             split = arg.split('=')
             if len(split) > 2:
-                raise UserError('Invalid argument [%s]' % arg)
+                raise ArgError('Invalid argument [%s]' % arg)
             self.args.extend(split)
         self.current = 0
 
