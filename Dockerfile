@@ -42,8 +42,8 @@ RUN install_packages \
   unzip \
   xsltproc
 
-# We mount these directories with tmpfs so we can write to them while so they
-# have to be empty.
+# We mount these directories with tmpfs so we can write to them so they
+# have to be empty. So we delete them.
 RUN rm -rf /var/log/nginx && rm -rf /run
 
 RUN gem install --no-document \
