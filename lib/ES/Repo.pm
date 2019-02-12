@@ -69,7 +69,7 @@ sub update_from_remote {
     eval {
         unless ( $self->_try_to_fetch ) {
             my $url = $self->url;
-            say " - Cloning $name from <$url>";
+            printf(" - %20s: Cloning from <%s>\n", $name, $url);
             run 'git', 'clone', '--bare', $self->_reference_args, $url, $git_dir;
         }
         1;
@@ -84,12 +84,23 @@ sub _try_to_fetch {
     my $git_dir = $self->git_dir;
     return unless -e $git_dir;
 
+    my $alternates_file = $git_dir->file('objects', 'info', 'alternates');
+    if ( -e $alternates_file ) {
+        my $alternates = $alternates_file->slurp( iomode => '<:encoding(UTF-8)' );
+        chomp( $alternates );
+        unless ( -e $alternates ) {
+            printf(" - %20s: Missing reference. Deleting\n", $self->name);
+            $git_dir->rmtree;
+            return;
+        }
+    }
+
     my $remote = eval { run qw(git remote -v) } || '';
     $remote =~ /^origin\s+(\S+)/;
 
     my $origin = $1;
     unless ($origin) {
-        say " - Repo dir <$git_dir> exists but is not a repo. Deleting";
+        printf(" - %20s: Repo dir exists but is not a repo. Deleting\n", $self->name);
         $git_dir->rmtree;
         return;
     }
@@ -97,11 +108,11 @@ sub _try_to_fetch {
     my $name = $self->name;
     my $url  = $self->url;
     if ( $origin ne $url ) {
-        say " - Upstream has changed to <$url>. Deleting";
+        printf(" - %20s: Upstream has changed to <%s>. Deleting\n", $self->name, $url);
         $git_dir->rmtree;
         return;
     }
-    say " - Fetching: " . $self->name;
+    printf(" - %20s: Fetching\n", $self->name);
     run qw(git fetch --prune origin +refs/heads/*:refs/heads/*);
     return 1;
 }

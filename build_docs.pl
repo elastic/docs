@@ -38,7 +38,7 @@ use ES::Util qw(
     write_html_redirect
 );
 
-use Getopt::Long;
+use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
 use YAML qw(LoadFile);
 use Path::Class qw(dir file);
 use Browser::Open qw(open_browser);
@@ -498,7 +498,7 @@ sub init_repos {
     $tracker_path = "$target_repo_checkout/$tracker_path";
     eval {
         $target_repo->update_from_remote();
-        say " - Checking out: target_repo";
+        printf(" - %20s: Checking out\n", 'target_repo');
         $target_repo->checkout_to($target_repo_checkout);
         1;
     } or do {
