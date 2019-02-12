@@ -29,8 +29,9 @@ class CopyImages < TreeProcessorScaffold
       copy_image block, uri
     elsif (extension = block.document.attr 'copy-callout-images') &&
         block.parent &&
-        block.parent.context == :colist
-      id = block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
+        block.parent.context == :colist &&
+        (coids = block.attr 'coids')
+      block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
         copy_image block, "images/icons/callouts/#{$1}.#{extension}"
       }
     end

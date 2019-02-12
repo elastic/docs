@@ -357,6 +357,29 @@ RSpec.describe CopyImages do
     ])
   end
 
+  it "doesn't blow up when the callout can't be found" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'png'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1>
+      ----
+      <1> words
+      <2> doesn't get an id
+    ASCIIDOC
+    expected_warnings = <<~WARNINGS
+      WARN: <stdin>: line 6: no callout found for <2>
+      INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.png
+    WARNINGS
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["images/icons/callouts/1.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.png"],
+    ])
+  end
+
+
   it "doesn't copy callout images if the extension isn't set" do
     copied = []
     attributes = copy_attributes copied
