@@ -494,7 +494,7 @@ sub init_repos {
     $tracker_path = "$target_repo_checkout/$tracker_path";
     eval {
         $target_repo->update_from_remote();
-        say " - Checking out: target_repo";
+        printf(" - %20s: Checking out\n", 'target_repo');
         $target_repo->checkout_to($target_repo_checkout);
         1;
     } or do {
