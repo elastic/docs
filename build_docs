@@ -75,30 +75,8 @@ def build_docker_image():
 
 
 def run_build_docs(args):
-    docker_args = []
-    build_docs_args = []
-
-    # Remove the container immediately when we're done building the docs
-    docker_args.append('--rm')
-    # Make sure we create files as the current user because that is what
-    # folks that use build_docs.pl expect.
-    uid = getuid()
-    if uid == 0:
-        raise ArgError("This process isn't likely to suceed if run as root")
-    docker_args.extend(['--user', '%d:%d' % (uid, getgid())])
-    # Running read-only with a proper tmp directory gives us a little
-    # performance boost and it is simple enough to do.
-    docker_args.extend(['--read-only', '--tmpfs', '/tmp'])
-    # Mount the docs build code so we can run it!
-    docker_args.extend(['-v', '%s:/docs_build:cached' % DIR])
-    # Seccomp adds a *devestating* performance overhead if you happen
-    # to have it installed.
-    docker_args.extend(['--security-opt', 'seccomp=unconfined'])
-    # Keep stdin open so the docs build can use closing it as a signal that
-    # it needs to die.
-    docker_args.append('-i')
-
-    build_docs_args.append('--in_standard_docker')
+    docker_args = standard_docker_args()
+    build_docs_args = ['--in_standard_docker']
 
     mounted_doc_repo_roots = set()
     mounted_doc_repo_names = set()
@@ -421,15 +399,52 @@ def encode(str_to_write):
     return str_to_write.encode('utf-8')
 
 
+def standard_docker_args():
+    """Standard arguments used to launch docker from this script.
+    """
+    docker_args = []
+    # Remove the container immediately when we're done building the docs
+    docker_args.append('--rm')
+    # Make sure we create files as the current user because that is what
+    # folks that use build_docs.pl expect.
+    uid = getuid()
+    if uid == 0:
+        raise ArgError("This process isn't likely to suceed if run as root")
+    docker_args.extend(['--user', '%d:%d' % (uid, getgid())])
+    # Running read-only with a proper tmp directory gives us a little
+    # performance boost and it is simple enough to do.
+    docker_args.extend(['--read-only', '--tmpfs', '/tmp'])
+    # Mount the docs build code so we can run it!
+    docker_args.extend(['-v', '%s:/docs_build:cached' % DIR])
+    # Seccomp adds a *devestating* performance overhead if you happen
+    # to have it installed.
+    docker_args.extend(['--security-opt', 'seccomp=unconfined'])
+    # Keep stdin open so the docs build can use closing it as a signal that
+    # it needs to die.
+    docker_args.append('-i')
+    return docker_args
+
+
 class ArgError(Exception):
     pass
 
+
 if __name__ == '__main__':
-    from sys import argv
+    from sys import argv, stdout
     try:
         logging.basicConfig(level=logging.INFO)
         build_docker_image()
-        if not ['--just-build-image'] == argv[1:]:
+        if ['--self-test'] == argv[1:]:
+            cmd = ['docker', 'run']
+            cmd.extend(standard_docker_args())
+            if stdout.isatty():
+                cmd.append('-t')
+            cmd.extend(['elastic/docs_build', 'make'])
+            cmd.extend(['--no-builtin-rules'])
+            cmd.extend(['-C', '/docs_build', 'check'])
+            returncode = subprocess.call(cmd)
+            exit(returncode)
+        elif not ['--just-build-image'] == argv[1:]:
             exit(run_build_docs(argv[1:]))
     except ArgError as e:
         print(e)

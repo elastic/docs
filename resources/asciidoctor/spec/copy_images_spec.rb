@@ -17,10 +17,9 @@ RSpec.describe CopyImages do
     Extensions.unregister_all
   end
 
-  private
-  def copy_attributes copied
+  def copy_attributes(copied)
     return {
-      'copy_image' => Proc.new { |uri, source|
+      'copy_image' => proc { |uri, source|
         copied << [uri, source]
       }
     }
@@ -116,16 +115,16 @@ RSpec.describe CopyImages do
     input = <<~ASCIIDOC
       == Example
       image::https://f.cloud.github.com/assets/4320215/768165/19d8b1aa-e899-11e2-91bc-6b0553e8d722.png[]
-      ASCIIDOC
+    ASCIIDOC
     convert input, attributes
     expect(copied).to eq([])
   end
 
   it "can find files using a single valued resources attribute" do
-    Dir.mktmpdir {|tmp|
+    Dir.mktmpdir { |tmp|
       FileUtils.cp(
-          ::File.join(spec_dir, 'resources', 'copy_images', 'example1.png'),
-          ::File.join(tmp, 'tmp_example1.png')
+        ::File.join(spec_dir, 'resources', 'copy_images', 'example1.png'),
+        ::File.join(tmp, 'tmp_example1.png')
       )
 
       copied = []
@@ -144,10 +143,10 @@ RSpec.describe CopyImages do
   end
 
   it "can find files using a multi valued resources attribute" do
-    Dir.mktmpdir {|tmp|
+    Dir.mktmpdir { |tmp|
       FileUtils.cp(
-          ::File.join(spec_dir, 'resources', 'copy_images', 'example1.png'),
-          ::File.join(tmp, 'tmp_example1.png')
+        ::File.join(spec_dir, 'resources', 'copy_images', 'example1.png'),
+        ::File.join(tmp, 'tmp_example1.png')
       )
 
       copied = []
@@ -199,7 +198,7 @@ RSpec.describe CopyImages do
   end
 
   it "has a nice error message when it can't find a file with single valued resources attribute" do
-    Dir.mktmpdir {|tmp|
+    Dir.mktmpdir { |tmp|
       copied = []
       attributes = copy_attributes copied
       attributes['resources'] = tmp
@@ -218,7 +217,7 @@ RSpec.describe CopyImages do
   end
 
   it "has a nice error message when it can't find a file with multi valued resources attribute" do
-    Dir.mktmpdir {|tmp|
+    Dir.mktmpdir { |tmp|
       copied = []
       attributes = copy_attributes copied
       attributes['resources'] = "#{tmp},/dummy2"
@@ -428,7 +427,7 @@ RSpec.describe CopyImages do
       NOTE: Words words words.
     ASCIIDOC
     expected_warnings = <<~WARNINGS
-    INFO: <stdin>: line 1: copying #{spec_dir}/resources/copy_images/images/icons/note.gif
+      INFO: <stdin>: line 1: copying #{spec_dir}/resources/copy_images/images/icons/note.gif
     WARNINGS
     convert input, attributes, eq(expected_warnings.strip)
     expect(copied).to eq([
