@@ -95,10 +95,10 @@ class ElasticCompatPreprocessor < Extensions::Preprocessor
   SourceWithSubsRx = /^\["source", ?"[^"]+", ?subs="(#{CC_ANY}+)"\]$/
   CodeBlockRx = /^-----*$/
 
-  def process document, reader
+  def process(_document, reader)
     reader.instance_variable_set :@in_attribute_only_block, false
     reader.instance_variable_set :@code_block_start, nil
-    def reader.process_line line
+    def reader.process_line(line)
       return line unless @process_lines
 
       if @in_attribute_only_block

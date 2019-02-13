@@ -22,6 +22,8 @@ LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 #   * make
 #   * ruby
 #   * ruby-dev
+# * Used to check the docs build in CI
+#   * pycodestyle
 RUN install_packages \
   bash \
   build-essential \
@@ -36,6 +38,7 @@ RUN install_packages \
   openssh-client \
   openssh-server \
   perl-base \
+  pycodestyle \
   python \
   ruby \
   ruby-dev \
@@ -46,8 +49,20 @@ RUN install_packages \
 # have to be empty. So we delete them.
 RUN rm -rf /var/log/nginx && rm -rf /run
 
+# Gem inventory:
+# * Used by the docs build
+#   * asciidoctor
+#   * thread_safe
+# * Speculative
+#   * asciidoctor-diagram
+#   * asciimath
+# * Used to check the build in CI
+#   * rubocop
+#   * rspec
 RUN gem install --no-document \
   asciidoctor:1.5.8 \
   asciidoctor-diagram:1.5.12 \
   asciimath:1.0.8 \
+  rubocop:0.64.0 \
+  rspec:3.8.0 \
   thread_safe:0.3.6
