@@ -1,3 +1,4 @@
+require 'change_admonishment/extension'
 require 'copy_images/extension'
 require 'fileutils'
 require 'tmpdir'
@@ -6,6 +7,7 @@ RSpec.describe CopyImages do
   RSpec::Matchers.define_negated_matcher :not_match, :match
 
   before(:each) do
+    Extensions.register ChangeAdmonishment
     Extensions.register do
       tree_processor CopyImages
     end
@@ -371,6 +373,74 @@ RSpec.describe CopyImages do
       foo <1>
       ----
       <1> words
+    ASCIIDOC
+    convert input, attributes
+    expect(copied).to eq([])
+  end
+
+  ['note', 'tip', 'important', 'caution', 'warning'].each { |(name)|
+    it "copies images for the #{name} admonition when requested" do
+      copied = []
+      attributes = copy_attributes copied
+      attributes['copy-admonition-images'] = 'png'
+      input = <<~ASCIIDOC
+        #{name.upcase}: Words words words.
+      ASCIIDOC
+      expected_warnings = <<~WARNINGS
+        INFO: <stdin>: line 1: copying #{spec_dir}/resources/copy_images/images/icons/#{name}.png
+      WARNINGS
+      convert input, attributes, eq(expected_warnings.strip)
+      expect(copied).to eq([
+          ["images/icons/#{name}.png", "#{spec_dir}/resources/copy_images/images/icons/#{name}.png"],
+      ])
+    end
+  }
+
+  [
+      ['added', 'added'],
+      ['coming', 'changed'],
+      ['deprecated', 'deleted']
+  ].each { |(name, revisionflag)|
+    it "copies images for the block formatted #{name} change admonition when requested" do
+      copied = []
+      attributes = copy_attributes copied
+      attributes['copy-admonition-images'] = 'png'
+      input = <<~ASCIIDOC
+        #{name}::[some_version]
+      ASCIIDOC
+      # We can't get the location of the blocks because asciidoctor doesn't
+      # make it available to us here!
+      expected_warnings = <<~WARNINGS
+        INFO: copying #{spec_dir}/resources/copy_images/images/icons/#{revisionflag}.png
+      WARNINGS
+      convert input, attributes, eq(expected_warnings.strip)
+      expect(copied).to eq([
+          ["images/icons/#{revisionflag}.png", "#{spec_dir}/resources/copy_images/images/icons/#{revisionflag}.png"],
+      ])
+    end
+  }
+
+  it "copies images for admonitions when requested with a different file extension" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-admonition-images'] = 'gif'
+    input = <<~ASCIIDOC
+      NOTE: Words words words.
+    ASCIIDOC
+    expected_warnings = <<~WARNINGS
+    INFO: <stdin>: line 1: copying #{spec_dir}/resources/copy_images/images/icons/note.gif
+    WARNINGS
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["images/icons/note.gif", "#{spec_dir}/resources/copy_images/images/icons/note.gif"],
+    ])
+  end
+
+  it "doesn't copy images for admonitions if not requested" do
+    copied = []
+    attributes = copy_attributes copied
+    input = <<~ASCIIDOC
+      NOTE: Words words words.
     ASCIIDOC
     convert input, attributes
     expect(copied).to eq([])
