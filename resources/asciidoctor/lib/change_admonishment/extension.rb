@@ -16,7 +16,7 @@ include Asciidoctor
 #   Foo deprecated:[6.0.0-beta1]
 #
 class ChangeAdmonishment < Extensions::Group
-  def activate registry
+  def activate(registry)
     [
         [:added, 'added'],
         [:coming, 'changed'],
@@ -27,6 +27,8 @@ class ChangeAdmonishment < Extensions::Group
     }
   end
 
+  ##
+  # Block change admonishment.
   class ChangeAdmonishmentBlock < Extensions::BlockMacroProcessor
     use_dsl
     name_positional_attributes :version, :passtext
@@ -36,7 +38,7 @@ class ChangeAdmonishment < Extensions::Group
       @revisionflag = revisionflag
     end
 
-    def process parent, target, attrs
+    def process(parent, _target, attrs)
       version = attrs[:version]
       # We can *almost* go through the standard :admonition conversion but
       # that won't render the revisionflag or the revision. So we have to
@@ -44,7 +46,7 @@ class ChangeAdmonishment < Extensions::Group
       note = Block.new(parent, :pass, :content_model => :compound)
       note << Block.new(note, :pass,
           :source => "<note revisionflag=\"#{@revisionflag}\" revision=\"#{version}\">",
-          :attributes => {'revisionflag' => @revisionflag})
+          :attributes => { 'revisionflag' => @revisionflag })
       note << Block.new(note, :paragraph,
           :source => attrs[:passtext],
           :subs => Substitutors::NORMAL_SUBS)
@@ -52,6 +54,8 @@ class ChangeAdmonishment < Extensions::Group
     end
   end
 
+  ##
+  # Inline change admonishment.
   class ChangeAdmonishmentInline < Extensions::InlineMacroProcessor
     use_dsl
     name_positional_attributes :version, :text
@@ -62,7 +66,7 @@ class ChangeAdmonishment < Extensions::Group
       @revisionflag = revisionflag
     end
 
-    def process parent, target, attrs
+    def process(_parent, _target, attrs)
       if attrs[:text]
         <<~DOCBOOK
           <phrase revisionflag="#{@revisionflag}" revision="#{attrs[:version]}">
