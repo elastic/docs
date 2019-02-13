@@ -396,10 +396,10 @@ RSpec.describe CopyImages do
   }
 
   [
-      ['added', 'added'],
-      ['coming', 'changed'],
-      ['deprecated', 'deleted']
-  ].each { |(name, revisionflag)|
+      ['added', 'note'],
+      ['coming', 'note'],
+      ['deprecated', 'warning']
+  ].each { |(name, admonition)|
     it "copies images for the block formatted #{name} change admonition when requested" do
       copied = []
       attributes = copy_attributes copied
@@ -410,11 +410,11 @@ RSpec.describe CopyImages do
       # We can't get the location of the blocks because asciidoctor doesn't
       # make it available to us here!
       expected_warnings = <<~WARNINGS
-        INFO: copying #{spec_dir}/resources/copy_images/images/icons/#{revisionflag}.png
+        INFO: copying #{spec_dir}/resources/copy_images/images/icons/#{admonition}.png
       WARNINGS
       convert input, attributes, eq(expected_warnings.strip)
       expect(copied).to eq([
-          ["images/icons/#{revisionflag}.png", "#{spec_dir}/resources/copy_images/images/icons/#{revisionflag}.png"],
+          ["images/icons/#{admonition}.png", "#{spec_dir}/resources/copy_images/images/icons/#{admonition}.png"],
       ])
     end
   }

@@ -16,6 +16,11 @@ include Asciidoctor
 #
 class CopyImages < TreeProcessorScaffold
   include Logging
+  ADMONITION_IMAGE_FOR_REVISION_FLAG = {
+    'added' => 'note',
+    'changed' => 'note',
+    'deleted' => 'warning',
+  }
 
   def initialize(name)
     super
@@ -52,7 +57,12 @@ class CopyImages < TreeProcessorScaffold
       # The image for a change admonition comes from the revisionflag
       revisionflag = block.attr 'revisionflag'
       if revisionflag
-        copy_image block, "images/icons/#{revisionflag}.#{admonition_extension}"
+        admonition_image = ADMONITION_IMAGE_FOR_REVISION_FLAG[revisionflag]
+        if admonition_image
+          copy_image block, "images/icons/#{admonition_image}.#{admonition_extension}"
+        else
+          logger.warn message_with_context "unknow revisionflag #{revisionflag}", :source_location => block.source_location
+        end
         return
       end
     end
