@@ -30,6 +30,7 @@ from __future__ import print_function
 import logging
 from os import environ, getgid, getuid
 from os.path import basename, dirname, exists, isdir, join, realpath
+import re
 import subprocess
 from sys import platform, version_info
 import time
@@ -74,33 +75,40 @@ def build_docker_image():
 
 
 def run_build_docs(args):
-    docker_args = []
-    build_docs_args = []
+    docker_args = standard_docker_args()
+    build_docs_args = ['--in_standard_docker']
 
-    # Remove the container immediately when we're done building the docs
-    docker_args.append('--rm')
-    # Make sure we create files as the current user because that is what
-    # folks that use build_docs.pl expect.
-    docker_args.extend(['--user', '%d:%d' % (getuid(), getgid())])
-    # Running read-only with a proper tmp directory gives us a little
-    # performance boost and it is simple enough to do.
-    docker_args.extend(['--read-only', '--tmpfs', '/tmp'])
-    # Mount the docs build code so we can run it!
-    docker_args.extend(['-v', '%s:/docs_build:cached' % DIR])
-    # Seccomp adds a *devestating* performance overhead if you happen
-    # to have it installed.
-    docker_args.extend(['--security-opt', 'seccomp=unconfined'])
-    # Keep stdin open so the docs build can use closing it as a signal that
-    # it needs to die.
-    docker_args.append('-i')
+    mounted_doc_repo_roots = set()
+    mounted_doc_repo_names = set()
 
-    build_docs_args.append('--in_standard_docker')
+    def mount_docs_repo_and_dockerify_path(repo_search_path, path):
+        """Adds a mount for the root of the repository into the docker
+        container and rewrites the path so that it is inside that mount.
+
+        If the repo happens to already be mounted we won't add two mounts.
+        """
+        repo_root = subprocess.check_output(
+                ['git', 'rev-parse', '--show-toplevel'],
+                cwd=repo_search_path)
+        repo_root = repo_root.decode('utf-8').strip()
+        repo_name = basename(repo_root)
+        if repo_root not in mounted_doc_repo_roots:
+            if repo_name in mounted_doc_repo_names:
+                raise ArgError("Can't mount two repos with the same " +
+                               "name [%s]" % repo_name)
+            mounted_doc_repo_roots.add(repo_root)
+            mounted_doc_repo_names.add(repo_name)
+            docker_args.extend([
+                '-v',
+                '%s:/doc/%s:ro,cached' % (repo_root, repo_name)
+            ])
+        build_docs_args.append(
+                '/doc/' + repo_name + path.replace(repo_root, ''))
 
     open_browser = False
     args = Args(args)
     saw_out = False
-    expected_return_code = 0
-    resource_count = 0
+    should_forward_ssh_auth_into_container = False
     arg = args.next_arg()
     while arg is not None:
         build_docs_args.append(arg)
@@ -108,11 +116,7 @@ def run_build_docs(args):
             doc_file = realpath(args.next_arg_or_err())
             if not exists(doc_file):
                 raise ArgError("Can't find --doc %s" % doc_file)
-            repo_root = subprocess.check_output(
-                ['git', 'rev-parse', '--show-toplevel'],
-                cwd=dirname(doc_file)).decode('utf-8').strip()
-            docker_args.extend(['-v', repo_root + ':/doc:ro,cached'])
-            build_docs_args.append('/doc' + doc_file.replace(repo_root, ''))
+            mount_docs_repo_and_dockerify_path(dirname(doc_file), doc_file)
         elif arg == '--open':
             docker_args.extend(['--publish', '8000:8000/tcp'])
             # Ritual to make nginx run on the readonly filesystem
@@ -130,10 +134,20 @@ def run_build_docs(args):
             build_docs_args.append('/out/%s' % basename(out_dir))
             saw_out = True
         elif arg == '--push':
-            git_config = '%s/.gitconfig' % environ['HOME']
-            if exists(git_config):
-                docker_args.extend(
-                        ['-v', '%s:/.gitconfig:ro,cached' % git_config])
+            author_name = from_env_or_git_config(
+                    'GIT_AUTHOR_NAME', 'user.name')
+            author_email = from_env_or_git_config(
+                    'GIT_AUTHOR_EMAIL', 'user.email')
+            committer_name = from_env_or_git_config(
+                    'GIT_COMMITTER_NAME', 'user.name')
+            committer_email = from_env_or_git_config(
+                    'GIT_COMMITTER_EMAIL', 'user.email')
+            docker_args.extend([
+                    '-e', 'GIT_AUTHOR_NAME=%s' % author_name,
+                    '-e', 'GIT_AUTHOR_EMAIL=%s' % author_email,
+                    '-e', 'GIT_COMMITTER_NAME=%s' % committer_name,
+                    '-e', 'GIT_COMMITTER_EMAIL=%s' % committer_email,
+            ])
         elif arg == '--reference':
             reference_dir = realpath(args.next_arg_or_err())
             if not exists(reference_dir):
@@ -145,13 +159,20 @@ def run_build_docs(args):
             if 'SSH_AUTH_SOCK' in environ:
                 # If we have SSH auth share it into the container.
                 if not platform.startswith('linux'):
-                    logger.warn('Attempting to share ssh auth but this is ' +
-                                'unlikely to work outside of linux.')
-                auth_sock = realpath(environ['SSH_AUTH_SOCK'])
-                auth_sock_dir = dirname(auth_sock)
-                docker_args.extend(
-                        ['-v', '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)])
-                docker_args.extend(['-e', 'SSH_AUTH_SOCK=%s' % auth_sock])
+                    docker_args.extend(['--tmpfs', '/run'])
+                    docker_args.extend(['--tmpfs', '/root'])
+                    docker_args.extend(['--publish', '8022:22/tcp'])
+                    docker_args.extend(
+                            ['-e', 'SSH_AUTH_SOCK=/tmp/forwarded_ssh_auth'])
+                    should_forward_ssh_auth_into_container = True
+                else:
+                    auth_sock = realpath(environ['SSH_AUTH_SOCK'])
+                    auth_sock_dir = dirname(auth_sock)
+                    docker_args.extend([
+                            '-v',
+                            '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)
+                    ])
+                    docker_args.extend(['-e', 'SSH_AUTH_SOCK=%s' % auth_sock])
             known_hosts = realpath('%s/.ssh/known_hosts' % environ['HOME'])
             if exists(known_hosts):
                 # If we have known_hosts mount them into the container so it
@@ -163,22 +184,23 @@ def run_build_docs(args):
             resource_dir = realpath(args.next_arg_or_err())
             if not isdir(resource_dir):
                 raise ArgError("Can't find --resource %s" % resource_dir)
-            docker_args.extend([
-                '-v',
-                '%s:/resource_%d:ro,cached' % (resource_dir, resource_count)
-            ])
-            build_docs_args.append('/resource_%d' % resource_count)
-            resource_count += 1
-        elif arg == '--help':
-            expected_return_code = 1
+            mount_docs_repo_and_dockerify_path(resource_dir, resource_dir)
         arg = args.next_arg()
 
     if not saw_out:
         # If you don't specify --out then we dump the output into
         # $cwd/html_docsto keep backwards compatibility with build_docs.pl.
-        docker_args.extend(['-v',
-                            '%s:/out:delegated' % dirname(realpath('.'))])
+        docker_args.extend(['-v', '%s:/out:delegated' % realpath('.')])
         build_docs_args.extend(['--out', "/out/html_docs"])
+
+    cmd = []
+    cmd.extend(['docker', 'run'])
+    cmd.extend(docker_args)
+    cmd.extend(['elastic/docs_build', '/docs_build/build_docs.pl'])
+    cmd.extend(build_docs_args)
+    # Use a PIPE for stdin so if our process dies then the docs build  sees
+    # stdin close which it will use as a signal to die.
+    docker_run = common_popen(cmd, subprocess.PIPE)
 
     def handle_line(line):
         logger.info(line)
@@ -189,29 +211,119 @@ def run_build_docs(args):
                 # we'll get whatever the user set as their default browser.
                 environ['BROWSER'] = 'open'
             webbrowser.open('http://localhost:8000', new=1, autoraise=False)
+        if should_forward_ssh_auth_into_container:
+            match = re.match('Waiting for ssh auth to be forwarded to (.+)',
+                             line)
+            if match:
+                forward_ssh_auth_into_container(match.group(1), docker_run)
 
-    cmd = []
-    cmd.extend(['docker', 'run'])
-    cmd.extend(docker_args)
-    cmd.extend(['elastic/docs_build', '/docs_build/build_docs.pl'])
-    cmd.extend(build_docs_args)
-    # Use a PIPE for stdin so if our process dies then the docs build  sees
-    # stdin close which it will use as a signal to die.
-    docker_run = common_popen(cmd, subprocess.PIPE)
     handle_popen(docker_run, handle_line)
-    if docker_run.returncode != expected_return_code:
-        subprocess.CalledProcessError(docker_run.returncode, args)
+    return docker_run.returncode
+
+
+def forward_ssh_auth_into_container(container, docker_run):
+    """Forwards the authorized keys into the container by sshing into it.
+
+    This requires a few steps:
+    1. copy your public key into the docker container's authorized_keys and
+       start sshd.
+    2. ssh into the container, forwarding your SSH_AUTH_SOCKET
+    3. chmod the auth socket so it is usable by the docs user
+    4. symlink it into the spot where the perl script expects it to be
+    """
+    ssh_setup_logger = logging.getLogger('ssh setup')
+
+    def log_line(line):
+        ssh_setup_logger.info(line)
+
+    ssh_setup_logger.info('Getting public key to forward to container')
+    public_keys = []
+
+    def record_public_key(public_key):
+        public_keys.append(public_key)
+
+    cmd = ['ssh-add', '-L']
+    get_ssh_public_key = common_popen(cmd, subprocess.PIPE)
+    handle_popen(get_ssh_public_key, record_public_key)
+    keys = "\n".join(public_keys) + "\n"
+    if get_ssh_public_key.returncode != 0:
+        raise subprocess.CalledProcessError(get_ssh_public_key.returncode,
+                                            cmd, keys)
+
+    ssh_setup_logger.info('Setting up ssh on container')
+    cmd = [
+        'docker', 'exec',
+        # Override the default user back to root instead of the docs user
+        '-u', '0:0',
+        '-i',
+        container,
+        'bash', '-c',
+        'mkdir -m700 /root/.ssh && ' +
+        'cat > /root/.ssh/authorized_keys && ' +
+        'chmod 600 /root/.ssh/authorized_keys &&' +
+        'service ssh start'
+    ]
+    setup_ssh = common_popen(cmd, subprocess.PIPE)
+    setup_ssh.stdin.write(encode(keys))
+    setup_ssh.stdin.close()
+    line = decode(setup_ssh.stdout.readline()).rstrip()
+    ssh_setup_logger.info(line)
+    setup_ssh.wait()
+    if (setup_ssh.returncode != 0 or
+            line != 'Starting OpenBSD Secure Shell server: sshd.'):
+        handle_popen(setup_ssh, log_line)
+        raise subprocess.CalledProcessError(setup_ssh.returncode, cmd)
+
+    ssh_setup_logger.info(
+            "Forwarding auth socket. IMPORTANT - If this process takes more " +
+            "than a few seconds it has hung and should be manually aborted. " +
+            "I'm very sorry.")
+    cmd = [
+        'ssh',
+        '-o', 'StrictHostKeyChecking=no',
+        '-o', 'UserKnownHostsFile=/dev/null',
+        '-o', 'LogLevel=QUIET',
+        '-AT', 'root@localhost',
+        '-p', '8022'
+    ]
+    setup_auth_socket = common_popen(cmd, subprocess.PIPE)
+    setup_auth_socket.stdin.write(
+            encode('ln -s $SSH_AUTH_SOCK /tmp/forwarded_ssh_auth\n'))
+    setup_auth_socket.stdin.write(
+            encode('chmod 777 -R $(dirname $SSH_AUTH_SOCK)\n'))
+    setup_auth_socket.stdin.write(
+            encode('echo Done! SSH should work in the container now\n'))
+    setup_auth_socket.stdin.flush()
+    # We intentionally leave stdin open here to keep the auth socket in place
+    # for the duration of the run.
+    line = decode(setup_auth_socket.stdout.readline())
+    while line:
+        line = line.rstrip()
+        ssh_setup_logger.info(line)
+        if line == 'Done! SSH should work in the container now':
+            docker_run.stdin.write(encode('ready\n'))
+            docker_run.stdin.flush()
+            return
+        line = decode(setup_auth_socket.stdout.readline())
+    # The ssh connection terminated without giving our signal that it set up
+    # the forwarding successfully. So lets log it and tell the user
+    # we've failed.
+    raise subprocess.CalledProcessError(setup_auth_socket.returncode, cmd)
 
 
 class Args:
     def __init__(self, args):
-        # Replace equals delimited arguments with the space delimiated versions
-        # so it is simpler to iterate over them
+        # Normalize the args so it is simpler to iterate over them
         self.args = []
         for arg in args:
+            # Fail `-foo` style arguments
+            if re.match('^-[^-]+$', arg):
+                raise ArgError('Use [-%s] instead of [%s]' % (arg, arg))
+
+            # Replace `--foo=bar` style with `--foo bar` style
             split = arg.split('=')
             if len(split) > 2:
-                raise UserError('Invalid argument [%s]' % arg)
+                raise ArgError('Invalid argument [%s]' % arg)
             self.args.extend(split)
         self.current = 0
 
@@ -265,15 +377,75 @@ def decode(bytes_or_str):
     return bytes_or_str.decode('utf-8')
 
 
+def from_env_or_git_config(envname, gitname):
+    if envname in environ:
+        return environ[envname]
+    try:
+        return decode(
+                subprocess.check_output(['git', 'config', gitname])
+        ).rstrip()
+    except subprocess.CalledProcessError as e:
+        m = "specify the [%s] environment variable or configure [%s] in git"
+        raise ArgError(m % (envname, gitname))
+
+
+def encode(str_to_write):
+    """Encode a str to be written to popen's stdin. In python 2 the
+    parameter can be written as a string so we just return it. In python 3 we
+    need to encode it into a utf-8 bytes sequence.
+    """
+    if version_info[0] < 3:
+        return str_to_write
+    return str_to_write.encode('utf-8')
+
+
+def standard_docker_args():
+    """Standard arguments used to launch docker from this script.
+    """
+    docker_args = []
+    # Remove the container immediately when we're done building the docs
+    docker_args.append('--rm')
+    # Make sure we create files as the current user because that is what
+    # folks that use build_docs.pl expect.
+    uid = getuid()
+    if uid == 0:
+        raise ArgError("This process isn't likely to suceed if run as root")
+    docker_args.extend(['--user', '%d:%d' % (uid, getgid())])
+    # Running read-only with a proper tmp directory gives us a little
+    # performance boost and it is simple enough to do.
+    docker_args.extend(['--read-only', '--tmpfs', '/tmp'])
+    # Mount the docs build code so we can run it!
+    docker_args.extend(['-v', '%s:/docs_build:cached' % DIR])
+    # Seccomp adds a *devestating* performance overhead if you happen
+    # to have it installed.
+    docker_args.extend(['--security-opt', 'seccomp=unconfined'])
+    # Keep stdin open so the docs build can use closing it as a signal that
+    # it needs to die.
+    docker_args.append('-i')
+    return docker_args
+
+
 class ArgError(Exception):
     pass
 
+
 if __name__ == '__main__':
-    from sys import argv
+    from sys import argv, stdout
     try:
         logging.basicConfig(level=logging.INFO)
         build_docker_image()
-        run_build_docs(argv[1:])
+        if ['--self-test'] == argv[1:]:
+            cmd = ['docker', 'run']
+            cmd.extend(standard_docker_args())
+            if stdout.isatty():
+                cmd.append('-t')
+            cmd.extend(['elastic/docs_build', 'make'])
+            cmd.extend(['--no-builtin-rules'])
+            cmd.extend(['-C', '/docs_build', 'check'])
+            returncode = subprocess.call(cmd)
+            exit(returncode)
+        elif not ['--just-build-image'] == argv[1:]:
+            exit(run_build_docs(argv[1:]))
     except ArgError as e:
         print(e)
         exit(1)

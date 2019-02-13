@@ -17,30 +17,56 @@ include Asciidoctor
 class CopyImages < TreeProcessorScaffold
   include Logging
 
-  def initialize name
+  def initialize(name)
     super
     @copied = Set[]
   end
 
-  def process_block block
+  def process_block(block)
     if block.context == :image
       uri = block.image_uri(block.attr 'target')
       return if Helpers.uriish? uri # Skip external images
+
       copy_image block, uri
-    elsif (extension = block.document.attr 'copy-callout-images') &&
-        block.parent &&
-        block.parent.context == :colist &&
-        (coids = block.attr 'coids')
-      coids.scan(/CO(?:\d+)-(\d+)/) {
-        copy_image block, "images/icons/callouts/#{$1}.#{extension}"
-      }
+      return
+    end
+    callout_extension = block.document.attr 'copy-callout-images'
+    if callout_extension
+      if block.parent && block.parent.context == :colist
+        coids = block.attr('coids')
+        return unless coids
+
+        coids.scan(/CO(?:\d+)-(\d+)/) {
+          copy_image block, "images/icons/callouts/#{$1}.#{callout_extension}"
+        }
+        return
+      end
+    end
+    admonition_extension = block.document.attr 'copy-admonition-images'
+    if admonition_extension
+      if block.context == :admonition
+        # The image for a standard admonition comes from the style
+        style = block.attr 'style'
+        return unless style
+
+        copy_image block, "images/icons/#{style.downcase}.#{admonition_extension}"
+        return
+      end
+      # The image for a change admonition comes from the revisionflag
+      revisionflag = block.attr 'revisionflag'
+      if revisionflag
+        copy_image block, "images/icons/#{revisionflag}.#{admonition_extension}"
+        return
+      end
     end
   end
 
-  def copy_image block, uri
+  def copy_image(block, uri)
     return unless @copied.add? uri      # Skip images we've copied before
+
     source = find_source block, uri
     return unless source                # Skip images we can't find
+
     logger.info message_with_context "copying #{source}", :source_location => block.source_location
     copy_image_proc = block.document.attr 'copy_image'
     if copy_image_proc
@@ -59,12 +85,12 @@ class CopyImages < TreeProcessorScaffold
   # any referenced resources. This isn't super efficient but it is how a2x works
   # and we strive for compatibility.
   #
-  def find_source block, uri
+  def find_source(block, uri)
     to_check = [block.document.base_dir]
     checked = []
 
     resources = block.document.attr 'resources'
-    if resources and not resources.empty?
+    if resources && !resources.empty?
       begin
         to_check += CSV.parse_line(resources)
       rescue CSV::MalformedCSVError => error
@@ -77,8 +103,10 @@ class CopyImages < TreeProcessorScaffold
       checked << block.normalize_system_path(uri, dir)
       return checked.last if File.readable? checked.last
       next unless Dir.exist?(dir)
+
       Dir.new(dir).each { |f|
-        next if f == '.' || f == '..'
+        next if ['.', '..'].include? f
+
         f = File.join(dir, f)
         to_check << f if File.directory?(f)
       }
