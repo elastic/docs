@@ -131,7 +131,6 @@ def run_build_docs(args):
     args = Args(args)
     saw_out = False
     should_forward_ssh_auth_into_container = False
-    expected_return_code = 0
     arg = args.next_arg()
     while arg is not None:
         build_docs_args.append(arg)
@@ -157,10 +156,20 @@ def run_build_docs(args):
             build_docs_args.append('/out/%s' % basename(out_dir))
             saw_out = True
         elif arg == '--push':
-            git_config = '%s/.gitconfig' % environ['HOME']
-            if exists(git_config):
-                docker_args.extend(
-                        ['-v', '%s:/.gitconfig:ro,cached' % git_config])
+            author_name = from_env_or_git_config(
+                    'GIT_AUTHOR_NAME', 'user.name')
+            author_email = from_env_or_git_config(
+                    'GIT_AUTHOR_EMAIL', 'user.email')
+            committer_name = from_env_or_git_config(
+                    'GIT_COMMITTER_NAME', 'user.name')
+            committer_email = from_env_or_git_config(
+                    'GIT_COMMITTER_EMAIL', 'user.email')
+            docker_args.extend([
+                    '-e', 'GIT_AUTHOR_NAME=%s' % author_name,
+                    '-e', 'GIT_AUTHOR_EMAIL=%s' % author_email,
+                    '-e', 'GIT_COMMITTER_NAME=%s' % committer_name,
+                    '-e', 'GIT_COMMITTER_EMAIL=%s' % committer_email,
+            ])
         elif arg == '--reference':
             reference_dir = realpath(args.next_arg_or_err())
             if not exists(reference_dir):
@@ -198,8 +207,6 @@ def run_build_docs(args):
             if not isdir(resource_dir):
                 raise ArgError("Can't find --resource %s" % resource_dir)
             mount_docs_repo_and_dockerify_path(resource_dir, resource_dir)
-        elif arg == '--help':
-            expected_return_code = 1
         arg = args.next_arg()
 
     if not saw_out:
@@ -234,8 +241,7 @@ def run_build_docs(args):
                 forward_ssh_auth_into_container(match.group(1), docker_run)
 
     handle_popen(docker_run, handle_line)
-    if docker_run.returncode != expected_return_code:
-        subprocess.CalledProcessError(docker_run.returncode, cmd)
+    return docker_run.returncode
 
 
 def forward_ssh_auth_into_container(container, docker_run):
@@ -394,6 +400,18 @@ def decode(bytes_or_str):
     return bytes_or_str.decode('utf-8')
 
 
+def from_env_or_git_config(envname, gitname):
+    if envname in environ:
+        return environ[envname]
+    try:
+        return decode(
+                subprocess.check_output(['git', 'config', gitname])
+        ).rstrip()
+    except subprocess.CalledProcessError as e:
+        m = "specify the [%s] environment variable or configure [%s] in git"
+        raise ArgError(m % (envname, gitname))
+
+
 def encode(str_to_write):
     """Encode a str to be written to popen's stdin. In python 2 the
     parameter can be written as a string so we just return it. In python 3 we
@@ -412,7 +430,8 @@ if __name__ == '__main__':
     try:
         logging.basicConfig(level=logging.INFO)
         build_docker_image()
-        run_build_docs(argv[1:])
+        if not ['--just-build-image'] == argv[1:]:
+            exit(run_build_docs(argv[1:]))
     except ArgError as e:
         print(e)
         exit(1)
