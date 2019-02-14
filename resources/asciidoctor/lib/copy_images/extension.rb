@@ -16,6 +16,11 @@ include Asciidoctor
 #
 class CopyImages < TreeProcessorScaffold
   include Logging
+  ADMONITION_IMAGE_FOR_REVISION_FLAG = {
+    'added' => 'note',
+    'changed' => 'note',
+    'deleted' => 'warning',
+  }
 
   def initialize(name)
     super
@@ -33,7 +38,10 @@ class CopyImages < TreeProcessorScaffold
     callout_extension = block.document.attr 'copy-callout-images'
     if callout_extension
       if block.parent && block.parent.context == :colist
-        block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
+        coids = block.attr('coids')
+        return unless coids
+
+        coids.scan(/CO(?:\d+)-(\d+)/) {
           copy_image block, "images/icons/callouts/#{$1}.#{callout_extension}"
         }
         return
@@ -52,7 +60,12 @@ class CopyImages < TreeProcessorScaffold
       # The image for a change admonition comes from the revisionflag
       revisionflag = block.attr 'revisionflag'
       if revisionflag
-        copy_image block, "images/icons/#{revisionflag}.#{admonition_extension}"
+        admonition_image = ADMONITION_IMAGE_FOR_REVISION_FLAG[revisionflag]
+        if admonition_image
+          copy_image block, "images/icons/#{admonition_image}.#{admonition_extension}"
+        else
+          logger.warn message_with_context "unknow revisionflag #{revisionflag}", :source_location => block.source_location
+        end
         return
       end
     end
@@ -111,6 +124,14 @@ class CopyImages < TreeProcessorScaffold
 
     # We'll skip images we can't find but we should log something about it so
     # we can fix them.
+    checked.sort! { |lhs, rhs|
+      by_depth = lhs.scan(/\//).count <=> rhs.scan(/\//).count
+      if by_depth != 0
+        by_depth
+      else
+        lhs <=> rhs
+      end
+    }
     logger.warn message_with_context "can't read image at any of #{checked}", :source_location => block.source_location
     nil
   end
