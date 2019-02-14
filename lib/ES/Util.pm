@@ -64,6 +64,10 @@ sub build_chunked {
 
     my ( $output, $died );
     if ( $asciidoctor ) {
+        my $dest_xml = $index->basename;
+        $dest_xml =~ s/\.asciidoc$/\.xml/;
+        $dest_xml = $dest->file($dest_xml);
+
         %xsltopts = (%xsltopts,
                 'callout.graphics' => 1,
                 'navig.graphics'   => 1,
@@ -103,23 +107,23 @@ sub build_chunked {
                 $index
             );
             if ( !$lenient ) {
-                $output .= _xml_lint($dest);
+                $output .= _xml_lint($dest_xml);
             }
             $output .= run(
                 'xsltproc',
                 rawxsltopts(%xsltopts),
                 '--stringparam', 'base.dir', $chunks_path->absolute . '/',
                 file('resources/website_chunked.xsl')->absolute,
-                "$dest/index.xml"
+                $dest_xml
             );
-            unlink "$dest/index.xml";
+            unlink $dest_xml;
             1;
         } or do { $output = $@; $died = 1; };
     }
     else {
         eval {
             $output = run(
-                'a2x', '-v',    #'--keep',
+                'a2x', '-v',    '--keep',
                 '--icons',
                 ( map { ( '--resource' => $_ ) } @$resources ),
                 '-d' => 'book',
@@ -191,6 +195,10 @@ sub build_single {
 
     my ( $output, $died );
     if ( $asciidoctor ) {
+        my $dest_xml = $index->basename;
+        $dest_xml =~ s/\.asciidoc$/\.xml/;
+        $dest_xml = $dest->file($dest_xml);
+
         %xsltopts = (%xsltopts,
                 'callout.graphics' => 1,
                 'navig.graphics'   => 1,
@@ -228,16 +236,16 @@ sub build_single {
                 $index
             );
             if ( !$lenient ) {
-                $output .= _xml_lint($dest);
+                $output .= _xml_lint($dest_xml);
             }
             $output .= run(
                 'xsltproc',
                 rawxsltopts(%xsltopts),
                 '--output' => "$dest/index.html",
                 file('resources/website.xsl')->absolute,
-                "$dest/index.xml"
+                $dest_xml
             );
-            unlink "$dest/index.xml";
+            unlink $dest_xml;
             1;
         } or do { $output = $@; $died = 1; };
     }
@@ -302,13 +310,13 @@ sub _check_build_error {
 # to be safe and handle errors.
 sub _xml_lint {
 #===================================
-    my ( $dest ) = @_;
+    my ( $dest_xml ) = @_;
     return run(
             'xmllint',
             '--nonet',
             '--noout',
             '--valid',
-            "$dest/index.xml"
+            "$dest_xml"
     );
 }
 
