@@ -17,7 +17,7 @@ class EditMe < TreeProcessorScaffold
   end
 
   def process_block(block)
-    if [:preamble, :section, :floating_title].include? block.context
+    if %i[preamble section floating_title].include? block.context
       def block.title
         path = source_path
         url = @document.attributes['edit_url']
@@ -31,7 +31,7 @@ class EditMe < TreeProcessorScaffold
         url += path
         "#{super}<ulink role=\"edit_me\" url=\"#{url}\">Edit me</ulink>"
       end
-      if :preamble == block.context
+      if block.context == :preamble
         def block.source_path
           document.source_location.path
         end
