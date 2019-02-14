@@ -7,4 +7,4 @@ MAKEFLAGS += --silent
 .PHONY: check
 check:
 	rspec
-	rubocop --cache false lib spec
+	rubocop --cache false
