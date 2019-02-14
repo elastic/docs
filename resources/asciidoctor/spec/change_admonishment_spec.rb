@@ -31,26 +31,26 @@ RSpec.describe ChangeAdmonishment do
     end
 
     it "#{name}'s block version supports asciidoc in the passtext" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      #{name}::[some_version,See <<some-reference>>]
-      [[some-reference]]
-      === Some Reference
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <note revisionflag="#{revisionflag}" revision="some_version">
-      <simpara>See <xref linkend="some-reference"/></simpara>
-      </note>
-      <section id="some-reference">
-      <title>Some Reference</title>
+      actual = convert <<~ASCIIDOC
+        == Example
+        #{name}::[some_version,See <<some-reference>>]
+        [[some-reference]]
+        === Some Reference
+      ASCIIDOC
+      expected = <<~DOCBOOK
+        <chapter id="_example">
+        <title>Example</title>
+        <note revisionflag="#{revisionflag}" revision="some_version">
+        <simpara>See <xref linkend="some-reference"/></simpara>
+        </note>
+        <section id="some-reference">
+        <title>Some Reference</title>
 
-      </section>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
-  end
+        </section>
+        </chapter>
+      DOCBOOK
+      expect(actual).to eq(expected.strip)
+    end
 
     it "#{name}'s block version is not invoked without the ::" do
       actual = convert <<~ASCIIDOC
