@@ -104,6 +104,10 @@ sub build_local {
 
     _guess_opts_from_file($index);
 
+    if ( $Opts->{asciidoctor} && !$running_in_standard_docker ) {
+        die "--asciidoctor is only supported by build_docs and not by build_docs.pl";
+    }
+
     if ( $Opts->{single} ) {
         $dir->rmtree;
         $dir->mkpath;
@@ -605,7 +609,6 @@ sub init_env {
 
     $ENV{PATH}
         = dir('resources/asciidoc-8.6.8/')->absolute
-        . ':' . dir('resources/asciidoctor/bin')->absolute
         . ":$FindBin::RealBin:"
         . $ENV{PATH};
 
