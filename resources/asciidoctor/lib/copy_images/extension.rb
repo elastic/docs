@@ -124,6 +124,14 @@ class CopyImages < TreeProcessorScaffold
 
     # We'll skip images we can't find but we should log something about it so
     # we can fix them.
+    checked.sort! { |lhs, rhs|
+      by_depth = lhs.scan(/\//).count <=> rhs.scan(/\//).count
+      if by_depth != 0
+        by_depth
+      else
+        lhs <=> rhs
+      end
+    }
     logger.warn message_with_context "can't read image at any of #{checked}", :source_location => block.source_location
     nil
   end
