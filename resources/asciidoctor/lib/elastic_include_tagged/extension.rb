@@ -13,12 +13,12 @@ include Asciidoctor
 class ElasticIncludeTagged < Extensions::IncludeProcessor
   include Logging
 
-  def handles? target
+  def handles?(target)
     target.sub!(/^elastic-include-tagged:/, '')
   end
 
-  def process doc, reader, target, attrs
-    if attrs.size != 1 then
+  def process(_doc, reader, target, attrs)
+    if attrs.size != 1
       # NOCOMMIT test this
       logger.warn message_with_context %(elastic-include-tagged expects only a tag but got: #{attrs}), :source_location => reader.cursor
       return target
@@ -36,47 +36,45 @@ class ElasticIncludeTagged < Extensions::IncludeProcessor
     start_of_include = nil
     found_end = false
     begin
-      open(path, 'rb') do |file|
+      File.open(path, 'r') do |file|
         lineno = 0
         found_tag = false
         indentation = nil
         file.each_line do |line|
           lineno += 1
           line.force_encoding Encoding::UTF_8
-          if end_match =~ line then
+          if end_match =~ line
             found_end = true
             break
           end
-          if found_tag then
+          if found_tag
             line = line[indentation..-1]
-            if line then
-              included_lines << line
-            end
+            included_lines << line if line
             next
           end
-          if start_match =~ line then
-            found_tag = true
-            indentation = $1.size
-            start_of_include = lineno
-          end
+          next unless start_match =~ line
+
+          found_tag = true
+          indentation = $1.size
+          start_of_include = lineno
         end
       end
-    rescue => e
+    rescue IOError => e
       warn reader.cursor, "error including [#{e.message}]"
       return path
     end
-    if start_of_include == nil then
+    if start_of_include.nil?
       warn reader.cursor, "missing start tag [#{tag}]"
       return path
     end
-    if found_end == false then
+    if found_end == false
       warn Reader::Cursor.new(path, relpath, relpath, start_of_include),
           "missing end tag [#{tag}]"
     end
     reader.push_include included_lines, path, relpath, start_of_include, attrs
   end
 
-  def warn cursor, message
+  def warn(cursor, message)
     logger.warn message_with_context %(elastic-include-tagged #{message}), :source_location => cursor
   end
 end

@@ -1,4 +1,4 @@
-RSpec.shared_examples "doesn't break line numbers" do 
+RSpec.shared_examples "doesn't break line numbers" do
   it "doesn't break line numbers" do
     input = <<~ASCIIDOC
       ---

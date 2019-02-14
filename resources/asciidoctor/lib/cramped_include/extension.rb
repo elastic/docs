@@ -14,8 +14,8 @@ include Asciidoctor
 # include. In theory this *shouldn't* bother us because we don't include things
 # that are sensitive to the extra line.
 class CrampedInclude < Extensions::Preprocessor
-  def process document, reader
-    def reader.prepare_lines data, opts = {}
+  def process(_document, reader)
+    def reader.prepare_lines(data, opts = {})
       super << ''
     end
     reader
