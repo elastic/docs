@@ -38,7 +38,10 @@ class CopyImages < TreeProcessorScaffold
     callout_extension = block.document.attr 'copy-callout-images'
     if callout_extension
       if block.parent && block.parent.context == :colist
-        block.attr('coids').scan(/CO(?:\d+)-(\d+)/) {
+        coids = block.attr('coids')
+        return unless coids
+
+        coids.scan(/CO(?:\d+)-(\d+)/) {
           copy_image block, "images/icons/callouts/#{$1}.#{callout_extension}"
         }
         return

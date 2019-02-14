@@ -10,9 +10,9 @@ RSpec.describe ChangeAdmonishment do
   end
 
   [
-      ['added', 'added'],
-      ['coming', 'changed'],
-      ['deprecated', 'deleted']
+      %w[added added],
+      %w[coming changed],
+      %w[deprecated deleted],
   ].each { |(name, revisionflag)|
     it "#{name}'s block version creates a note" do
       actual = convert <<~ASCIIDOC

@@ -13,7 +13,7 @@ RSpec.describe EditMe do
 
   it "adds a link to the preface" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/'
+      'edit_url' => 'www.example.com/docs/',
     }
     input = <<~ASCIIDOC
       :preface-title: Preface
@@ -44,7 +44,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each chapter title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/'
+      'edit_url' => 'www.example.com/docs/',
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/chapter1.adoc[]
@@ -108,7 +108,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each section title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/'
+      'edit_url' => 'www.example.com/docs/',
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/section1.adoc[]
@@ -149,7 +149,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each appendix title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/'
+      'edit_url' => 'www.example.com/docs/',
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/appendix1.adoc[]
@@ -190,7 +190,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each glossary title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/'
+      'edit_url' => 'www.example.com/docs/',
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/glossary1.adoc[]
@@ -231,7 +231,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each bibliography title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/'
+      'edit_url' => 'www.example.com/docs/',
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/bibliography1.adoc[]
@@ -272,7 +272,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each dedication title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/'
+      'edit_url' => 'www.example.com/docs/',
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/dedication1.adoc[]
@@ -313,7 +313,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each colophon title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/'
+      'edit_url' => 'www.example.com/docs/',
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/colophon1.adoc[]
@@ -354,7 +354,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each floating title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/'
+      'edit_url' => 'www.example.com/docs/',
     }
     input = <<~ASCIIDOC
       == Chapter
