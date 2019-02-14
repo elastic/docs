@@ -21,7 +21,7 @@ RSpec.describe CopyImages do
     return {
       'copy_image' => proc { |uri, source|
         copied << [uri, source]
-      }
+      },
     }
   end
 
@@ -37,7 +37,7 @@ RSpec.describe CopyImages do
     convert input, attributes,
         eq("INFO: <stdin>: line 2: copying #{spec_dir}\/resources\/copy_images\/example1.png")
     expect(copied).to eq([
-        ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+        ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
     ])
   end
 
@@ -51,7 +51,7 @@ RSpec.describe CopyImages do
     convert input, attributes,
         eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
     expect(copied).to eq([
-        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
     ])
   end
 
@@ -65,7 +65,7 @@ RSpec.describe CopyImages do
     convert input, attributes,
         eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
     expect(copied).to eq([
-        ["copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+        ["copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
     ])
   end
 
@@ -137,7 +137,7 @@ RSpec.describe CopyImages do
       convert input, attributes,
           eq("INFO: <stdin>: line 2: copying #{tmp}/tmp_example1.png")
       expect(copied).to eq([
-          ["tmp_example1.png", "#{tmp}/tmp_example1.png"]
+          ["tmp_example1.png", "#{tmp}/tmp_example1.png"],
       ])
     }
   end
@@ -159,7 +159,7 @@ RSpec.describe CopyImages do
       convert input, attributes,
           eq("INFO: <stdin>: line 2: copying #{tmp}/tmp_example1.png")
       expect(copied).to eq([
-          ["tmp_example1.png", "#{tmp}/tmp_example1.png"]
+          ["tmp_example1.png", "#{tmp}/tmp_example1.png"],
       ])
     }
   end
@@ -175,7 +175,7 @@ RSpec.describe CopyImages do
     convert input, attributes,
         eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
     expect(copied).to eq([
-        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
     ])
   end
 
@@ -193,7 +193,7 @@ RSpec.describe CopyImages do
     LOG
     convert input, attributes, eq(expected_warnings.strip)
     expect(copied).to eq([
-        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
     ])
   end
 
@@ -377,7 +377,7 @@ RSpec.describe CopyImages do
     expect(copied).to eq([])
   end
 
-  ['note', 'tip', 'important', 'caution', 'warning'].each { |(name)|
+  %w[note tip important caution warning].each { |(name)|
     it "copies images for the #{name} admonition when requested" do
       copied = []
       attributes = copy_attributes copied
@@ -396,9 +396,9 @@ RSpec.describe CopyImages do
   }
 
   [
-      ['added', 'added'],
-      ['coming', 'changed'],
-      ['deprecated', 'deleted']
+      %w[added added],
+      %w[coming changed],
+      %w[deprecated deleted],
   ].each { |(name, revisionflag)|
     it "copies images for the block formatted #{name} change admonition when requested" do
       copied = []

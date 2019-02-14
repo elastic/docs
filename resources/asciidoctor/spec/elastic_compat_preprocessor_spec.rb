@@ -19,9 +19,9 @@ RSpec.describe ElasticCompatPreprocessor do
   include_examples "doesn't break line numbers"
 
   [
-      ['added', 'added'],
-      ['coming', 'changed'],
-      ['deprecated', 'deleted']
+      %w[added added],
+      %w[coming changed],
+      %w[deprecated deleted],
   ].each { |(name, revisionflag)|
     it "invokes the #{name} block macro when #{name}[version] starts a line" do
       actual = convert <<~ASCIIDOC
