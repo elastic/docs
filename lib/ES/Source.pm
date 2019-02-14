@@ -50,9 +50,10 @@ sub has_changed {
     my $self   = shift;
     my $title  = shift;
     my $branch = shift;
+    my $asciidoctor = shift;
     for my $source ( $self->_sources_for_branch($branch) ) {
         return 1
-            if $source->{repo}->has_changed( $title, $branch, $source->{path} );
+            if $source->{repo}->has_changed( $title, $branch, $source->{path}, $asciidoctor );
     }
     return;
 }
@@ -63,8 +64,9 @@ sub mark_done {
     my $self   = shift;
     my $title  = shift;
     my $branch = shift;
+    my $asciidoctor = shift;
     for my $source ( $self->_sources_for_branch($branch) ) {
-        $source->{repo}->mark_done( $title, $branch, $source->{path} );
+        $source->{repo}->mark_done( $title, $branch, $source->{path}, $asciidoctor );
     }
     return;
 }

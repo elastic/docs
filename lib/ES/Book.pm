@@ -114,6 +114,21 @@ sub new {
 
     my $lang = $args{lang} || 'en';
 
+    # be careful about true/false here so there are no surprises.
+    # otherwise someone is bound to set `asciidoctor` to `false`
+    # and perl will evaluate that to true....
+    my $asciidoctor = 0;
+    if (exists $args{asciidoctor}) {
+        $asciidoctor = $args{asciidoctor};
+        if ($asciidoctor eq 'true') {
+            $asciidoctor = 1;
+        } elsif ($asciidoctor eq 'false') {
+            $asciidoctor = 0;
+        } else {
+            die 'asciidoctor must be true or false but was ' . $asciidoctor;
+        }
+    }
+
     bless {
         title         => $title,
         dir           => $dir->subdir($prefix),
@@ -132,7 +147,7 @@ sub new {
         private       => $args{private} || '',
         noindex       => $args{noindex} || '',
         lang          => $lang,
-        asciidoctor   => $args{asciidoctor} || 0,
+        asciidoctor   => $asciidoctor,
     }, $class;
 }
 
@@ -153,7 +168,7 @@ sub build {
         $Opts->{procs},
         sub {
             my ( $pid, $error, $branch ) = @_;
-            $self->source->mark_done( $title, $branch );
+            $self->source->mark_done( $title, $branch, $self->asciidoctor );
         }
     );
 
@@ -219,7 +234,7 @@ sub _build_book {
            if -e $branch_dir
         && !$rebuild
         && !$template->md5_changed($branch_dir)
-        && !$source->has_changed( $self->title, $branch );
+        && !$source->has_changed( $self->title, $branch, $self->asciidoctor );
 
     my ( $checkout, $first_path ) = $source->prepare($branch);
 
