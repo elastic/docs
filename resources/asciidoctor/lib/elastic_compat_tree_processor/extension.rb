@@ -24,7 +24,7 @@ include Asciidoctor
 #   <2> The categories retrieved
 #
 class ElasticCompatTreeProcessor < TreeProcessorScaffold
-  def process_block block
+  def process_block(block)
     if block.context == :listing && block.style == "source" &&
           false == block.subs.include?(:specialcharacters)
       # callouts have to come *after* special characters
@@ -34,4 +34,3 @@ class ElasticCompatTreeProcessor < TreeProcessorScaffold
     end
   end
 end
-  

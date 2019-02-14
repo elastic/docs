@@ -17,23 +17,7 @@ on any other website without explicit permission.
 [float]
 == Requirements
 
-First, you need to make sure that you have the following installed:
-
-* `perl`     -- system `perl` is fine
-* `python`   -- system `python` is fine
-* `xmllint`
-* `xsltproc` -- if not already installed, see
-                http://www.sagehill.net/docbookxsl/InstallingAProcessor.html[Installing a Processor]
-
-TIP: Windows users are recommended to use http://www.cygwin.com/[Cygwin] (install `asciidoc` package and `libxslt`).
-
-=== Perl Modules
-
-You may need to install extra perl modules that do not come with your system's `perl` by default. For example, on Fedora 25, you will need to run:
-
-```
-sudo dnf install perl-Storable perl-Digest-MD5
-```
+You'll need `bash` and `docker`.
 
 [float]
 == Cloning the repository
@@ -54,7 +38,7 @@ this README as follows:
 [source,bash]
 ----------------------------
 cd docs/
-./build_docs.pl --doc README.asciidoc --open
+./build_docs --doc README.asciidoc --open
 ----------------------------
 
 This should convert `README.asciidoc` into HTML and open it
@@ -65,17 +49,9 @@ in your browser.
 
 [partintro]
 --
-The `build_docs.pl` executable can be used to build the documentation
+The `build_docs` executable can be used to build the documentation
 from a locally checked out repository, or to build all the
 documentation that will be uploaded to the website.
-
-Create a symbolic link to `build_docs.pl` to make it more convenient
-to use:
-
-[source,bash]
-----------------------------
-sudo ln -s `pwd`/build_docs.pl /usr/local/bin/build_docs.pl
-----------------------------
 --
 
 [[local]]
@@ -83,13 +59,13 @@ sudo ln -s `pwd`/build_docs.pl /usr/local/bin/build_docs.pl
 
 When you are making changes to documentation in a locally checked
 out repository, and you want to check that they are building
-correctly, use `build_docs.pl` with the `--doc` parameter to
+correctly, use `build_docs` with the `--doc` parameter to
 generate the HTML version of the docs:
 
 [source,bash]
 ----------------------------
 cd path/to/your/repo
-build_docs.pl --doc path/to/index.asciidoc
+~/path/to/docs/repo/build_docs --doc path/to/index.asciidoc
 ----------------------------
 
 To use simplified aliases for the build commands for each book, see
@@ -102,10 +78,11 @@ change the output directory with the `--out` parameter:
 
 [source,bash]
 ----------------------------
-build_docs.pl --doc path/to/index.asciidoc --out output/dir/
+build_docs --doc path/to/index.asciidoc --out output/dir/
 ----------------------------
 
-WARNING: The `output/dir/` will be deleted and recreated, so don't point it at a directory with contents that you want to keep.
+WARNING: The `output/dir/` will be deleted and recreated, so don't
+point it at a directory that contains anything you are fond of.
 
 === Viewing the docs
 
@@ -114,7 +91,7 @@ the build has finished, use the `--open` parameter:
 
 [source,bash]
 ----------------------------
-build_docs.pl --doc path/to/index.asciidoc --open
+build_docs --doc path/to/index.asciidoc --open
 ----------------------------
 
 === Single- or multi-page
@@ -125,7 +102,7 @@ file instead, use the `--single` parameter:
 
 [source,bash]
 ----------------------------
-build_docs.pl --doc path/to/index.asciidoc --single
+build_docs --doc path/to/index.asciidoc --single
 ----------------------------
 
 And if you want a table of contents added at the beginning
@@ -133,7 +110,7 @@ of the single page output, add the `--toc` parameter:
 
 [source,bash]
 ----------------------------
-build_docs.pl --doc path/to/index.asciidoc --single --toc
+build_docs --doc path/to/index.asciidoc --single --toc
 ----------------------------
 
 NOTE: The multi-page output always contains tables-of-content
@@ -149,12 +126,13 @@ By default, each _part_ (`= Part Title`) and _chapter_ (`== Chapter Title`) is
 ``chunked'' into a separate HTML file. However, for bigger books, such as the
 Elasticsearch reference  docs, this results in enormous pages.  These bigger
 books are also chunked at the first _section_ level (`=== Section One Title`).
-This behaviour is specified in the https://github.com/elastic/docs/blob/master/conf.yaml[`conf.yaml`] file, but can also be specified
-on the command line when building the docs locally:
+This behaviour is specified in the https://github.com/elastic/docs/blob/master/conf.yaml[`conf.yaml`]
+file, but must also be specified on the command line when building a single
+book:
 
 [source,bash]
 ----------------------------
-build_docs.pl --doc path/to/index.asciidoc --chunk 1
+build_docs --doc path/to/index.asciidoc --chunk 1
 ----------------------------
 
 == Correcting errors
@@ -189,12 +167,12 @@ all links exist, the entire book needs to be built in one go.  However, while
 you're writing docs it is useful to be able to build just a single `.asciidoc`
 page.
 
-You can do this by telling `build_docs.pl` to ignore errors with the `--lenient`
+You can do this by telling `build_docs` to ignore errors with the `--lenient`
 parameter:
 
 [source,bash]
 ----------------------------
-build_docs.pl --doc path/to/some/page.asciidoc --lenient --single --open
+build_docs --doc path/to/some/page.asciidoc --lenient --single --open
 ----------------------------
 
 If the page you are building contains links to content in other pages, the
@@ -217,7 +195,7 @@ You can build all the docs with:
 
 [source,bash]
 ----------------------------
-build_docs.pl --all
+build_docs --all
 ----------------------------
 
 The first time you run this will be slow as it needs to:
@@ -236,7 +214,7 @@ an error occurs during the cloning phase.
 
 Because the docs are built from the remote repositories, you will
 need to push your changes to the main repo before running
-`build_docs.pl --all`.
+`build_docs --all`.
 
 Assuming you have already checked that your docs build correctly
 using the <<local,local build process>>, the only other errors
@@ -794,7 +772,7 @@ no longer exist in the `current` branch, you can update
 all the links in the document to point to the older version,
 by just updating a single attribute.
 
-Cross document links are checked when `build_docs.pl` is
+Cross document links are checked when `build_docs` is
 run with the `--all` parameter.  See <<website>>.
 
 [[lists]]
@@ -1026,14 +1004,14 @@ footnote to a particular line of code:
 <1> Here's the explanation
 ==================================
 
-[[sense-snippets]]
-=== View in Sense
+[[console-snippets]]
+=== View in Console
 
-Code blocks can be followed by a ``View in Sense'' link which, when clicked,
-will open the code snippet in Sense.  The snippet can either be taken directly
-from the code block (`AUTOSENSE`), or be a link to a custom snippet.
+Code blocks can be followed by a ``View in Console'' link which, when clicked,
+will open the code snippet in Console.  The snippet can either be taken directly
+from the code block (`CONSOLE`), or be a link to a custom snippet.
 
-.Code block with AUTOSENSE link
+.Code block with CONSOLE link
 ==================================
 [source,asciidoc]
 --
@@ -1044,12 +1022,12 @@ GET /_search
     "query": "foo bar" \<1>
 }
 ----------------------------------
-// AUTOSENSE <1>
+// CONSOLE <1>
 
 \<1> Here's the explanation
 --
 ==================================
-<1> The `// AUTOSENSE` line must follow immediately after the code block, before any callouts.
+<1> The `// CONSOLE` line must follow immediately after the code block, before any callouts.
 
 [source,js]
 ----------------------------------
@@ -1058,39 +1036,39 @@ GET /_search
     "query": "foo bar" <1>
 }
 ----------------------------------
-// AUTOSENSE
+// CONSOLE
 
 <1> Here's the explanation
 
 [NOTE]
 ================================
-The ``View in Sense'' links will only work if the docs are viewed in web-browser mode, as follows:
+The ``View in Console'' links will only work if the docs are viewed in web-browser mode, as follows:
 
 [source,sh]
 ---------------
-build_docs.pl -d my_doc.asciidoc --open <1> --web <2>
+build_docs -d my_doc.asciidoc --open <1> --web <2>
 ---------------
 <1> The `--open` option usually opens the docs in the web browser, served directly from the file system.
-<2> The `--web` option will start a local web browser to serve the docs, which allows the Sense links to work correctly.
+<2> The `--web` option will start a local web browser to serve the docs, which allows the Console links to work correctly.
 
 The local web browser can be stopped with `Ctrl-C`.
 
 ================================
 
-==== Custom Sense snippets
+==== Custom Console snippets
 
 Sometimes you will want to show a small amount of code in the code block, but
-to provide a full recreation in the Sense snippet.  In this case, you need to:
+to provide a full recreation in the Console snippet.  In this case, you need to:
 
 * Save the snippet file in the `./snippets/` directory in the root docs directory.
 * Under the code block, specify the name of the snippet file with
 +
-    // SENSE: path/to/snippet.json
+    // CONSOLE: path/to/snippet.json
 
 For instance, to add a custom snippet to the file `./one/two/three.asciidoc`, save the snippet
-to `./snippets/one/two/three/example_1.json`, then add the `SENSE` link below the code block:
+to `./snippets/one/two/three/example_1.json`, then add the `CONSOLE` link below the code block:
 
-.Code block with custom SENSE link
+.Code block with custom CONSOLE link
 ==================================
 [source,asciidoc]
 --
@@ -1101,7 +1079,7 @@ GET /_search
     "query": "foo bar" \<1>
 }
 ----------------------------------
-// SENSE:one/two/three/example_1.json <1>
+// CONSOLE:one/two/three/example_1.json <1>
 
 \<1> Here's the explanation
 --
@@ -1566,7 +1544,7 @@ pass the `--chunk` parameter:
 
 [source,bash]
 ----------------------------------
-build_docs.pl --doc path/to/index.asciidoc --chunk 1
+build_docs --doc path/to/index.asciidoc --chunk 1
 ----------------------------------
 
 To enable section chunking when building docs <<website,for the website>>,

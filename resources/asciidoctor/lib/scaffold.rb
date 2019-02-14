@@ -5,16 +5,16 @@ include Asciidoctor
 ##
 # Scaffolding for TreeProcessor extensions to automatically iterate.
 class TreeProcessorScaffold < Extensions::TreeProcessor
-  def process_block document
+  def process_block(_document)
     raise ::NotImplementedError, %(TreeProcessorScaffold subclass must implement ##{__method__} method)
   end
 
-  def process document
+  def process(document)
     process_blocks document
     nil
   end
 
-  def process_blocks block
+  def process_blocks(block)
     process_block block
     for subblock in block.context == :dlist ? block.blocks.flatten : block.blocks
       # subblock can be nil for definition lists without a definition.
