@@ -36,7 +36,7 @@ class ElasticIncludeTagged < Extensions::IncludeProcessor
     start_of_include = nil
     found_end = false
     begin
-      open(path, 'rb') do |file|
+      File.open(path, 'r') do |file|
         lineno = 0
         found_tag = false
         indentation = nil
@@ -52,14 +52,14 @@ class ElasticIncludeTagged < Extensions::IncludeProcessor
             included_lines << line if line
             next
           end
-          if start_match =~ line
-            found_tag = true
-            indentation = $1.size
-            start_of_include = lineno
-          end
+          next unless start_match =~ line
+
+          found_tag = true
+          indentation = $1.size
+          start_of_include = lineno
         end
       end
-    rescue => e
+    rescue IOError => e
       warn reader.cursor, "error including [#{e.message}]"
       return path
     end

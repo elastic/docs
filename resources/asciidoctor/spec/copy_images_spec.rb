@@ -21,7 +21,7 @@ RSpec.describe CopyImages do
     return {
       'copy_image' => proc { |uri, source|
         copied << [uri, source]
-      }
+      },
     }
   end
 
@@ -37,7 +37,7 @@ RSpec.describe CopyImages do
     convert input, attributes,
         eq("INFO: <stdin>: line 2: copying #{spec_dir}\/resources\/copy_images\/example1.png")
     expect(copied).to eq([
-        ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+        ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
     ])
   end
 
@@ -51,7 +51,7 @@ RSpec.describe CopyImages do
     convert input, attributes,
         eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
     expect(copied).to eq([
-        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
     ])
   end
 
@@ -65,7 +65,7 @@ RSpec.describe CopyImages do
     convert input, attributes,
         eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
     expect(copied).to eq([
-        ["copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+        ["copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
     ])
   end
 
@@ -137,7 +137,7 @@ RSpec.describe CopyImages do
       convert input, attributes,
           eq("INFO: <stdin>: line 2: copying #{tmp}/tmp_example1.png")
       expect(copied).to eq([
-          ["tmp_example1.png", "#{tmp}/tmp_example1.png"]
+          ["tmp_example1.png", "#{tmp}/tmp_example1.png"],
       ])
     }
   end
@@ -159,7 +159,7 @@ RSpec.describe CopyImages do
       convert input, attributes,
           eq("INFO: <stdin>: line 2: copying #{tmp}/tmp_example1.png")
       expect(copied).to eq([
-          ["tmp_example1.png", "#{tmp}/tmp_example1.png"]
+          ["tmp_example1.png", "#{tmp}/tmp_example1.png"],
       ])
     }
   end
@@ -175,7 +175,7 @@ RSpec.describe CopyImages do
     convert input, attributes,
         eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
     expect(copied).to eq([
-        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
     ])
   end
 
@@ -193,7 +193,7 @@ RSpec.describe CopyImages do
     LOG
     convert input, attributes, eq(expected_warnings.strip)
     expect(copied).to eq([
-        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"]
+        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
     ])
   end
 
@@ -208,8 +208,8 @@ RSpec.describe CopyImages do
       ASCIIDOC
       convert input, attributes, match(/
           WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
+            "#{tmp}\/not_found.png",\s
             "#{spec_dir}\/not_found.png",\s
-            "#{tmp}\/not_found.png"
             .+
           \]/x).and(not_match(/INFO: <stdin>/))
       expect(copied).to eq([])
@@ -227,9 +227,9 @@ RSpec.describe CopyImages do
       ASCIIDOC
       convert input, attributes, match(/
           WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
-            "#{spec_dir}\/not_found.png",\s
+            "\/dummy2\/not_found.png",\s
             "#{tmp}\/not_found.png",\s
-            "\/dummy2\/not_found.png"
+            "#{spec_dir}\/not_found.png",\s
             .+
           \]/x).and(not_match(/INFO: <stdin>/))
       expect(copied).to eq([])
@@ -358,6 +358,28 @@ RSpec.describe CopyImages do
     ])
   end
 
+  it "doesn't blow up when the callout can't be found" do
+    copied = []
+    attributes = copy_attributes copied
+    attributes['copy-callout-images'] = 'png'
+    input = <<~ASCIIDOC
+      == Example
+      ----
+      foo <1>
+      ----
+      <1> words
+      <2> doesn't get an id
+    ASCIIDOC
+    expected_warnings = <<~WARNINGS
+      WARN: <stdin>: line 6: no callout found for <2>
+      INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.png
+    WARNINGS
+    convert input, attributes, eq(expected_warnings.strip)
+    expect(copied).to eq([
+        ["images/icons/callouts/1.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.png"],
+    ])
+  end
+
   it "doesn't copy callout images if the extension isn't set" do
     copied = []
     attributes = copy_attributes copied
@@ -377,7 +399,7 @@ RSpec.describe CopyImages do
     expect(copied).to eq([])
   end
 
-  ['note', 'tip', 'important', 'caution', 'warning'].each { |(name)|
+  %w[note tip important caution warning].each { |(name)|
     it "copies images for the #{name} admonition when requested" do
       copied = []
       attributes = copy_attributes copied
@@ -396,10 +418,10 @@ RSpec.describe CopyImages do
   }
 
   [
-      ['added', 'added'],
-      ['coming', 'changed'],
-      ['deprecated', 'deleted']
-  ].each { |(name, revisionflag)|
+      %w[added note],
+      %w[coming note],
+      %w[deprecated warning],
+  ].each { |(name, admonition)|
     it "copies images for the block formatted #{name} change admonition when requested" do
       copied = []
       attributes = copy_attributes copied
@@ -410,11 +432,11 @@ RSpec.describe CopyImages do
       # We can't get the location of the blocks because asciidoctor doesn't
       # make it available to us here!
       expected_warnings = <<~WARNINGS
-        INFO: copying #{spec_dir}/resources/copy_images/images/icons/#{revisionflag}.png
+        INFO: copying #{spec_dir}/resources/copy_images/images/icons/#{admonition}.png
       WARNINGS
       convert input, attributes, eq(expected_warnings.strip)
       expect(copied).to eq([
-          ["images/icons/#{revisionflag}.png", "#{spec_dir}/resources/copy_images/images/icons/#{revisionflag}.png"],
+          ["images/icons/#{admonition}.png", "#{spec_dir}/resources/copy_images/images/icons/#{admonition}.png"],
       ])
     end
   }
