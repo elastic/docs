@@ -208,8 +208,8 @@ RSpec.describe CopyImages do
       ASCIIDOC
       convert input, attributes, match(/
           WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
+            "#{tmp}\/not_found.png",\s
             "#{spec_dir}\/not_found.png",\s
-            "#{tmp}\/not_found.png"
             .+
           \]/x).and(not_match(/INFO: <stdin>/))
       expect(copied).to eq([])
@@ -227,9 +227,9 @@ RSpec.describe CopyImages do
       ASCIIDOC
       convert input, attributes, match(/
           WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
-            "#{spec_dir}\/not_found.png",\s
+            "\/dummy2\/not_found.png",\s
             "#{tmp}\/not_found.png",\s
-            "\/dummy2\/not_found.png"
+            "#{spec_dir}\/not_found.png",\s
             .+
           \]/x).and(not_match(/INFO: <stdin>/))
       expect(copied).to eq([])
