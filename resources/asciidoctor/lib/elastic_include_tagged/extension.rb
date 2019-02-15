@@ -1,6 +1,6 @@
-require 'asciidoctor/extensions'
+# frozen_string_literal: true
 
-include Asciidoctor
+require 'asciidoctor/extensions'
 
 # Extension to emulate Elastic's asciidoc customization to include tagged
 # portions of a file. While it was originally modeled after asciidoctor's
@@ -10,14 +10,15 @@ include Asciidoctor
 #
 #   include:elastic-include-tagged:{doc-tests}/RestClientDocumentation.java[rest-client-init]
 #
-class ElasticIncludeTagged < Extensions::IncludeProcessor
-  include Logging
+class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
+  include Asciidoctor::Logging
 
   def handles?(target)
-    target.sub!(/^elastic-include-tagged:/, '')
+    /^elastic-include-tagged:/.match target
   end
 
   def process(_doc, reader, target, attrs)
+    target = target.sub(/^elastic-include-tagged:/, '')
     if attrs.size != 1
       # NOCOMMIT test this
       logger.warn message_with_context %(elastic-include-tagged expects only a tag but got: #{attrs}), :source_location => reader.cursor
@@ -68,7 +69,7 @@ class ElasticIncludeTagged < Extensions::IncludeProcessor
       return path
     end
     if found_end == false
-      warn Reader::Cursor.new(path, relpath, relpath, start_of_include),
+      warn Asciidoctor::Reader::Cursor.new(path, relpath, relpath, start_of_include),
           "missing end tag [#{tag}]"
     end
     reader.push_include included_lines, path, relpath, start_of_include, attrs

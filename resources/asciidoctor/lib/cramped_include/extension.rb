@@ -1,7 +1,8 @@
+# frozen_string_literal: true
+
 require 'asciidoctor/extensions'
 
-include Asciidoctor
-
+##
 # Preprocessor to support more "cramped" include statements. Usually something
 # like
 #   include::resources/1.adoc[]
@@ -13,7 +14,8 @@ include Asciidoctor
 # this problem by adding an extra new line after every sequence of lines we
 # include. In theory this *shouldn't* bother us because we don't include things
 # that are sensitive to the extra line.
-class CrampedInclude < Extensions::Preprocessor
+#
+class CrampedInclude < Asciidoctor::Extensions::Preprocessor
   def process(_document, reader)
     def reader.prepare_lines(data, opts = {})
       super << ''

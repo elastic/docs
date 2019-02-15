@@ -1,14 +1,16 @@
+# frozen_string_literal: true
+
 require 'edit_me/extension'
 
 RSpec.describe EditMe do
   before(:each) do
-    Extensions.register do
+    Asciidoctor::Extensions.register do
       tree_processor EditMe
     end
   end
 
   after(:each) do
-    Extensions.unregister_all
+    Asciidoctor::Extensions.unregister_all
   end
 
   it "adds a link to the preface" do

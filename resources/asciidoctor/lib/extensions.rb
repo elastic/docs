@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative 'change_admonishment/extension'
 require_relative 'copy_images/extension'
 require_relative 'cramped_include/extension'

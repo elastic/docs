@@ -1,7 +1,8 @@
+# frozen_string_literal: true
+
 require 'asciidoctor/extensions'
 
-include Asciidoctor
-
+##
 # Preprocessor to turn Elastic's "wild west" formatted block extensions into
 # standard asciidoctor formatted extensions
 #
@@ -88,12 +89,12 @@ include Asciidoctor
 # Because Asciidoc permits these mismatches but asciidoctor does not. We'll
 # emit a warning because, permitted or not, they are bad style.
 #
-class ElasticCompatPreprocessor < Extensions::Preprocessor
-  include Logging
+class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
+  include Asciidoctor::Logging
 
-  IncludeTaggedDirectiveRx = /^include-tagged::([^\[][^\[]*)\[(#{CC_ANY}+)?\]$/
-  SourceWithSubsRx = /^\["source", ?"[^"]+", ?subs="(#{CC_ANY}+)"\]$/
-  CodeBlockRx = /^-----*$/
+  INCLUDE_TAGGED_DIRECTIVE_RX = /^include-tagged::([^\[][^\[]*)\[(#{Asciidoctor::CC_ANY}+)?\]$/
+  SOURCE_WITH_SUBS_RX = /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/
+  CODE_BLOCK_RX = /^-----*$/
 
   def process(_document, reader)
     reader.instance_variable_set :@in_attribute_only_block, false
@@ -102,42 +103,33 @@ class ElasticCompatPreprocessor < Extensions::Preprocessor
       return line unless @process_lines
 
       if @in_attribute_only_block
-        if line == '--'
-          @in_attribute_only_block = false
-          line.clear
-        else
-          line
-        end
-      elsif IncludeTaggedDirectiveRx =~ line
-        if preprocess_include_directive "elastic-include-tagged:#{$1}", $2
-          nil
-        else
-          # the line was not a valid include line and we've logged a warning
-          # about it so we should do the asciidoctor standard thing and keep
-          # it intact. This is how we do that.
-          @look_ahead += 1
-          line
-        end
+        return line unless line == '--'
+
+        @in_attribute_only_block = false
+        line.clear
+      elsif INCLUDE_TAGGED_DIRECTIVE_RX =~ line
+        return nil if preprocess_include_directive "elastic-include-tagged:#{$1}", $2
+
+        # the line was not a valid include line and we've logged a warning
+        # about it so we should do the asciidoctor standard thing and keep
+        # it intact. This is how we do that.
+        @look_ahead += 1
+        line
       elsif line == '--'
         lines = self.lines
         lines.shift
         while Asciidoctor::AttributeEntryRx =~ (check_line = lines.shift)
         end
-        if check_line == '--'
-          @in_attribute_only_block = true
-          line.clear
-        else
-          line
-        end
-      elsif SourceWithSubsRx =~ line
+        return line unless check_line == '--'
+
+        @in_attribute_only_block = true
+        line.clear
+      elsif SOURCE_WITH_SUBS_RX =~ line
         line = super
-        unless $1.include?('callouts')
-          line.sub! "subs=\"#{$1}\"", "subs=\"#{$1},callouts\""
-        end
-        line
+        line.sub! "subs=\"#{$1}\"", "subs=\"#{$1},callouts\"" unless $1.include? 'callouts'
       else
         line = super
-        if CodeBlockRx =~ line
+        if CODE_BLOCK_RX =~ line
           if @code_block_start
             if line != @code_block_start
               line.replace(@code_block_start)

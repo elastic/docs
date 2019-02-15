@@ -1,10 +1,11 @@
-require 'asciidoctor/extensions'
+# frozen_string_literal: true
 
-include Asciidoctor
+require 'asciidoctor/extensions'
 
 ##
 # Scaffolding for TreeProcessor extensions to automatically iterate.
-class TreeProcessorScaffold < Extensions::TreeProcessor
+#
+class TreeProcessorScaffold < Asciidoctor::Extensions::TreeProcessor
   def process_block(_document)
     raise ::NotImplementedError, %(TreeProcessorScaffold subclass must implement ##{__method__} method)
   end
@@ -16,7 +17,7 @@ class TreeProcessorScaffold < Extensions::TreeProcessor
 
   def process_blocks(block)
     process_block block
-    for subblock in block.context == :dlist ? block.blocks.flatten : block.blocks
+    (block.context == :dlist ? block.blocks.flatten : block.blocks).each do |subblock|
       # subblock can be nil for definition lists without a definition.
       # this is weird, but it is safe to skip nil here because subclasses
       # can't change it anyway.
