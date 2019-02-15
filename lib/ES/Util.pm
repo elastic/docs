@@ -123,7 +123,7 @@ sub build_chunked {
     else {
         eval {
             $output = run(
-                'a2x', '-v',    '--keep',
+                'a2x', '-v',    #'--keep',
                 '--icons',
                 ( map { ( '--resource' => $_ ) } @$resources ),
                 '-d' => 'book',
