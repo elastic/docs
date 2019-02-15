@@ -107,6 +107,7 @@ def run_build_docs(args):
 
     open_browser = False
     args = Args(args)
+    saw_doc = False
     saw_out = False
     should_forward_ssh_auth_into_container = False
     arg = args.next_arg()
@@ -117,6 +118,7 @@ def run_build_docs(args):
             if not exists(doc_file):
                 raise ArgError("Can't find --doc %s" % doc_file)
             mount_docs_repo_and_dockerify_path(dirname(doc_file), doc_file)
+            saw_doc = True
         elif arg == '--open':
             docker_args.extend(['--publish', '8000:8000/tcp'])
             # Ritual to make nginx run on the readonly filesystem
@@ -187,9 +189,9 @@ def run_build_docs(args):
             mount_docs_repo_and_dockerify_path(resource_dir, resource_dir)
         arg = args.next_arg()
 
-    if not saw_out:
+    if saw_doc and not saw_out:
         # If you don't specify --out then we dump the output into
-        # $cwd/html_docsto keep backwards compatibility with build_docs.pl.
+        # $pwd/html_docs to keep backwards compatibility with build_docs.pl.
         docker_args.extend(['-v', '%s:/out:delegated' % realpath('.')])
         build_docs_args.extend(['--out', "/out/html_docs"])
 
@@ -411,9 +413,6 @@ def standard_docker_args():
     if uid == 0:
         raise ArgError("This process isn't likely to suceed if run as root")
     docker_args.extend(['--user', '%d:%d' % (uid, getgid())])
-    # Running read-only with a proper tmp directory gives us a little
-    # performance boost and it is simple enough to do.
-    docker_args.extend(['--read-only', '--tmpfs', '/tmp'])
     # Mount the docs build code so we can run it!
     docker_args.extend(['-v', '%s:/docs_build:cached' % DIR])
     # Seccomp adds a *devestating* performance overhead if you happen
