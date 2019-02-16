@@ -246,13 +246,6 @@ sub build_all {
 #===================================
     die "--target_repo is required with --all" unless ( $Opts->{target_repo} );
 
-    unless ( $Opts->{rely_on_ssh_auth} ) {
-        say "Checking GitHub username and password (or auth token for multi-factor auth)";
-
-        ensure_creds_cache_enabled() || enable_creds_cache() || exit(1);
-        check_github_authed();
-    }
-
     my ($repos_dir, $temp_dir, $target_repo, $target_repo_checkout) = init_repos();
 
     my $build_dir = $Conf->{paths}{build}
@@ -519,7 +512,9 @@ sub init_repos {
     my $pm = proc_man( $Opts->{procs} * 3 );
     for my $name (@repo_names) {
         my $url = $conf->{$name};
-        $url =~ s|https://([^/]+)/|git\@$1:| if ( $Opts->{rely_on_ssh_auth} );
+        # We always use ssh-style urls regardless of conf.yaml so we can use
+        # our ssh key for the cloning.
+        $url =~ s|https://([^/]+)/|git\@$1:|;
         my $repo = ES::Repo->new(
             name      => $name,
             dir       => $repos_dir,
@@ -703,103 +698,6 @@ sub init_env {
 }
 
 #===================================
-sub check_github_authed {
-#===================================
-    my $fill = _github_creds_fill();
-
-    {
-        local $ENV{GIT_TERMINAL_PROMPT} = 0;
-        my $creds = git_creds( 'fill', $fill );
-        return if $creds =~ /password=\S+/;
-
-    }
-
-    my $creds = git_creds( 'fill', $fill );
-
-# restart after filling in the creds so that ^C or dieing later doesn't reset creds
-    if ( $creds =~ /password=\S+/ ) {
-        git_creds( 'approve', $creds );
-        restart();
-    }
-    die "GitHub username and password (or auth token) required to continue\n";
-}
-
-#===================================
-sub revoke_github_creds {
-#===================================
-    my $fill = _github_creds_fill();
-    {
-        local $ENV{GIT_TERMINAL_PROMPT} = 0;
-        my $creds = git_creds( 'fill', $fill );
-        return unless $creds =~ /password=\S+/;
-    }
-
-    my $creds = git_creds( 'reject', $fill );
-}
-
-#===================================
-sub _github_creds_fill {
-#===================================
-    return $Opts->{user}
-        ? "url=https://" . $Opts->{user} . '@github.com'
-        : 'url=https://github.com';
-}
-
-#===================================
-sub ensure_creds_cache_enabled {
-#===================================
-    local $ENV{GIT_TERMINAL_PROMPT} = 0;
-
-    # test if credential store enabled
-    git_creds( 'approve', "url=https://foo.com\nusername=foo\npassword=bar" );
-    my $creds = git_creds( 'fill', 'url=https://foo.com' );
-
-    if ( $creds =~ /password=bar/ ) {
-        git_creds( 'reject', 'url=https://foo.com' );
-        return 1;
-    }
-    return 0;
-}
-
-#===================================
-sub enable_creds_cache {
-#===================================
-    say <<"INFO";
-
-** GitHub doesn't have a credentials store enabled **
-
-I can enable the credentials-cache for you, which will cache
-your username and password for 24 hours.
-INFO
-
-    $|++;
-
-    print "Enter 'y' if you would like to proceed: ";
-    my $yes = <>;
-    if ( $yes && $yes =~ /\s*y/i ) {
-        say "Enabling credentials cache";
-        run( qw(git config --global --add credential.helper),
-            "cache --timeout 86400" );
-        return 1;
-    }
-    else {
-        say "Credentials cache not enabled";
-        return 0;
-    }
-
-}
-
-#===================================
-sub restart {
-#===================================
-    # reexecute script in case it has changed
-    my $bin = file($0)->absolute($Old_Pwd);
-    say "Restarting";
-    chdir $Old_Pwd;
-    exec( $^X, $bin, @Old_ARGV );
-}
-
-#===================================
 sub usage {
 #===================================
     say <<USAGE;
@@ -835,7 +733,7 @@ sub usage {
           --user            Specify which GitHub user to use, if not your own
           --reference       Directory of `--mirror` clones to use as a local cache
           --rely_on_ssh_auth
-                            Skip the git auth check and translate configured repos into ssh
+                            noop
           --rebuild         Rebuild all branches of every book regardless of what has changed
           --no_fetch        Skip fetching updates from source repos
 
