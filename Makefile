@@ -5,7 +5,10 @@ SHELL = /bin/bash -eux -o pipefail
 MAKEFLAGS += --silent
 
 .PHONY: check
-check: build_docs_check asciidoctor_check readme_check
+check: unit_test integration_test
+
+.PHONY: unit_test
+unit_test: build_docs_check asciidoctor_check
 
 .PHONY: build_docs_check
 build_docs_check:
@@ -15,10 +18,23 @@ build_docs_check:
 asciidoctor_check:
 	$(MAKE) -C resources/asciidoctor
 
-.PHONY: readme_check
-readme_check: /tmp/readme
-	[ -s /tmp/readme/index.html ]
-	[ -s /tmp/readme/_conditions_of_use.html ]
+.PHONY: integration_test
+integration_test: readme_asciidoc_check readme_asciidoctor_check
 
-/tmp/readme:
-	./build_docs.pl --in_standard_docker --doc README.asciidoc --out /tmp/readme
+.PHONY: readme_asciidoc_check
+readme_asciidoc_check: /tmp/readme_asciidoc
+	[ -s /tmp/readme_asciidoc/index.html ]
+	[ -s /tmp/readme_asciidoc/_conditions_of_use.html ]
+
+/tmp/readme_asciidoc:
+	./build_docs.pl --in_standard_docker \
+		--doc README.asciidoc --out /tmp/readme_asciidoc
+
+.PHONY: readme_asciidoctor_check
+readme_asciidoctor_check: /tmp/readme_asciidoctor
+	[ -s /tmp/readme_asciidoctor/index.html ]
+	[ -s /tmp/readme_asciidoctor/_conditions_of_use.html ]
+
+/tmp/readme_asciidoctor:
+	./build_docs.pl --in_standard_docker --asciidoctor \
+		--doc README.asciidoc --out /tmp/readme_asciidoctor
