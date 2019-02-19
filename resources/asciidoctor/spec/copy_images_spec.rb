@@ -1,4 +1,4 @@
-require 'change_admonishment/extension'
+require 'change_admonition/extension'
 require 'copy_images/extension'
 require 'fileutils'
 require 'tmpdir'
@@ -7,7 +7,7 @@ RSpec.describe CopyImages do
   RSpec::Matchers.define_negated_matcher :not_match, :match
 
   before(:each) do
-    Extensions.register ChangeAdmonishment
+    Extensions.register ChangeAdmonition
     Extensions.register do
       tree_processor CopyImages
     end

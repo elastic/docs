@@ -1,8 +1,8 @@
-require 'change_admonishment/extension'
+require 'change_admonition/extension'
 
-RSpec.describe ChangeAdmonishment do
+RSpec.describe ChangeAdmonition do
   before(:each) do
-    Extensions.register ChangeAdmonishment
+    Extensions.register ChangeAdmonition
   end
 
   after(:each) do
