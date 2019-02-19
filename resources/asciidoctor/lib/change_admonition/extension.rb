@@ -55,7 +55,7 @@ class ChangeAdmonition < Extensions::Group
   end
 
   ##
-  # Inline change admonishment.
+  # Inline change admonition.
   class ChangeAdmonitionInline < Extensions::InlineMacroProcessor
     use_dsl
     name_positional_attributes :version, :text
