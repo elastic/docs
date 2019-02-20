@@ -58,6 +58,7 @@ GetOptions(
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
 ) || exit usage();
+check_args();
 
 our $Conf = LoadFile('conf.yaml');
 # The script supports running outside of docker, in any docker container *and*
@@ -468,7 +469,7 @@ sub init_repos {
 
     my %child_dirs = map { $_ => 1 } $repos_dir->children;
 
-    my $temp_dir = $repos_dir->subdir('.temp');
+    my $temp_dir = $running_in_standard_docker ? dir('/tmp/docsbuild') : $repos_dir->subdir('.temp');
     $temp_dir->rmtree;
     $temp_dir->mkpath;
     delete $child_dirs{ $temp_dir->absolute };
@@ -797,6 +798,32 @@ sub restart {
     say "Restarting";
     chdir $Old_Pwd;
     exec( $^X, $bin, @Old_ARGV );
+}
+
+#===================================
+sub check_args {
+#===================================
+    if ( $Opts->{doc} ) {
+        die('--target_repo not compatible with --doc') if $Opts->{target_repo};
+        die('--push not compatible with --doc') if $Opts->{push};
+        die('--user not compatible with --doc') if $Opts->{user};
+        die('--reference not compatible with --doc') if $Opts->{reference};
+        die('--rely_on_ssh_auth not compatible with --doc') if $Opts->{rely_on_ssh_auth};
+        die('--rebuild not compatible with --doc') if $Opts->{rebuild};
+        die('--no_fetch not compatible with --doc') if $Opts->{no_fetch};
+    } else {
+        die('--single not compatible with --all') if $Opts->{single};
+        die('--pdf not compatible with --all') if $Opts->{pdf};
+        die('--toc not compatible with --all') if $Opts->{toc};
+        die('--out not compatible with --all') if $Opts->{out};
+        die('--chunk not compatible with --all') if $Opts->{chunk};
+        die('--lenient not compatible with --all') if $Opts->{lenient};
+        # Lang will be 'en' even if it isn't specified so we don't check it.
+        die('--resource not compatible with --all') if $Opts->{resource};
+        die('--skiplinkcheck not compatible with --all') if $Opts->{skiplinkcheck};
+        die('--linkcheckonly not compatible with --all') if $Opts->{linkcheckonly};
+        die('--asciidoctor not compatible with --all') if $Opts->{asciidoctor};
+    }
 }
 
 #===================================
