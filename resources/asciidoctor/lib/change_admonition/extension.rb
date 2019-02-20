@@ -15,21 +15,21 @@ include Asciidoctor
 #   Foo coming:[6.0.0-beta1]
 #   Foo deprecated:[6.0.0-beta1]
 #
-class ChangeAdmonishment < Extensions::Group
+class ChangeAdmonition < Extensions::Group
   def activate(registry)
     [
         [:added, 'added'],
         [:coming, 'changed'],
         [:deprecated, 'deleted'],
     ].each { |(name, revisionflag)|
-      registry.block_macro ChangeAdmonishmentBlock.new(revisionflag), name
-      registry.inline_macro ChangeAdmonishmentInline.new(revisionflag), name
+      registry.block_macro ChangeAdmonitionBlock.new(revisionflag), name
+      registry.inline_macro ChangeAdmonitionInline.new(revisionflag), name
     }
   end
 
   ##
-  # Block change admonishment.
-  class ChangeAdmonishmentBlock < Extensions::BlockMacroProcessor
+  # Block change admonition.
+  class ChangeAdmonitionBlock < Extensions::BlockMacroProcessor
     use_dsl
     name_positional_attributes :version, :passtext
 
@@ -55,8 +55,8 @@ class ChangeAdmonishment < Extensions::Group
   end
 
   ##
-  # Inline change admonishment.
-  class ChangeAdmonishmentInline < Extensions::InlineMacroProcessor
+  # Inline change admonition.
+  class ChangeAdmonitionInline < Extensions::InlineMacroProcessor
     use_dsl
     name_positional_attributes :version, :text
     with_format :short
