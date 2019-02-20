@@ -113,7 +113,33 @@ def run_build_docs(args):
     arg = args.next_arg()
     while arg is not None:
         build_docs_args.append(arg)
-        if arg == '--doc':
+        if arg == '--all':
+            if 'SSH_AUTH_SOCK' not in environ:
+                raise ArgError('--all requires an agent to be running and ' +
+                               'SSH_AUTH_SOCK to be set')
+            if not platform.startswith('linux'):
+                docker_args.extend(['--tmpfs', '/run'])
+                docker_args.extend(['--tmpfs', '/root'])
+                docker_args.extend(['--publish', '8022:22/tcp'])
+                docker_args.extend(
+                        ['-e', 'SSH_AUTH_SOCK=/tmp/forwarded_ssh_auth'])
+                should_forward_ssh_auth_into_container = True
+            else:
+                auth_sock = realpath(environ['SSH_AUTH_SOCK'])
+                auth_sock_dir = dirname(auth_sock)
+                docker_args.extend([
+                        '-v',
+                        '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)
+                ])
+                docker_args.extend(['-e', 'SSH_AUTH_SOCK=%s' % auth_sock])
+            known_hosts = realpath('%s/.ssh/known_hosts' % environ['HOME'])
+            if exists(known_hosts):
+                # If we have known_hosts mount them into the container so it
+                # won't ask about github
+                docker_args.extend([
+                        '-v',
+                        '%s:/tmp/.ssh/known_hosts:ro,cached' % known_hosts])
+        elif arg == '--doc':
             doc_file = realpath(args.next_arg_or_err())
             if not exists(doc_file):
                 raise ArgError("Can't find --doc %s" % doc_file)
@@ -157,31 +183,6 @@ def run_build_docs(args):
             docker_args.extend(['-v',
                                 '%s:/reference:ro,cached' % reference_dir])
             build_docs_args.append('/reference')
-        elif arg == '--rely_on_ssh_auth':
-            if 'SSH_AUTH_SOCK' in environ:
-                # If we have SSH auth share it into the container.
-                if not platform.startswith('linux'):
-                    docker_args.extend(['--tmpfs', '/run'])
-                    docker_args.extend(['--tmpfs', '/root'])
-                    docker_args.extend(['--publish', '8022:22/tcp'])
-                    docker_args.extend(
-                            ['-e', 'SSH_AUTH_SOCK=/tmp/forwarded_ssh_auth'])
-                    should_forward_ssh_auth_into_container = True
-                else:
-                    auth_sock = realpath(environ['SSH_AUTH_SOCK'])
-                    auth_sock_dir = dirname(auth_sock)
-                    docker_args.extend([
-                            '-v',
-                            '%s:%s:ro' % (auth_sock_dir, auth_sock_dir)
-                    ])
-                    docker_args.extend(['-e', 'SSH_AUTH_SOCK=%s' % auth_sock])
-            known_hosts = realpath('%s/.ssh/known_hosts' % environ['HOME'])
-            if exists(known_hosts):
-                # If we have known_hosts mount them into the container so it
-                # won't ask about github
-                docker_args.extend([
-                        '-v',
-                        '%s:/tmp/.ssh/known_hosts:ro,cached' % known_hosts])
         elif arg == '--resource':
             resource_dir = realpath(args.next_arg_or_err())
             if not isdir(resource_dir):
