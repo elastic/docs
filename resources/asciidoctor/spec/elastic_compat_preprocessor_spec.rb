@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'change_admonishment/extension'
+require 'change_admonition/extension'
 require 'elastic_compat_preprocessor/extension'
 require 'elastic_include_tagged/extension'
 require 'shared_examples/does_not_break_line_numbers'
 
 RSpec.describe ElasticCompatPreprocessor do
   before(:each) do
-    Asciidoctor::Extensions.register ChangeAdmonishment
+    Asciidoctor::Extensions.register ChangeAdmonition
     Asciidoctor::Extensions.register do
       preprocessor ElasticCompatPreprocessor
       include_processor ElasticIncludeTagged

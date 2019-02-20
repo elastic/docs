@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'change_admonishment/extension'
+require 'change_admonition/extension'
 require 'copy_images/extension'
 require 'fileutils'
 require 'tmpdir'
@@ -9,7 +9,7 @@ RSpec.describe CopyImages::CopyImages do
   RSpec::Matchers.define_negated_matcher :not_match, :match
 
   before(:each) do
-    Asciidoctor::Extensions.register ChangeAdmonishment
+    Asciidoctor::Extensions.register ChangeAdmonition
     Asciidoctor::Extensions.register do
       tree_processor CopyImages::CopyImages
     end

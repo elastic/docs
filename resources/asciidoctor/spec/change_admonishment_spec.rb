@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'change_admonishment/extension'
+require 'change_admonition/extension'
 
-RSpec.describe ChangeAdmonishment do
+RSpec.describe ChangeAdmonition do
   before(:each) do
-    Asciidoctor::Extensions.register ChangeAdmonishment
+    Asciidoctor::Extensions.register ChangeAdmonition
   end
 
   after(:each) do
