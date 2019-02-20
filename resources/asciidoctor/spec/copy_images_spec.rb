@@ -1,20 +1,22 @@
+# frozen_string_literal: true
+
 require 'change_admonition/extension'
 require 'copy_images/extension'
 require 'fileutils'
 require 'tmpdir'
 
-RSpec.describe CopyImages do
+RSpec.describe CopyImages::CopyImages do
   RSpec::Matchers.define_negated_matcher :not_match, :match
 
   before(:each) do
-    Extensions.register ChangeAdmonition
-    Extensions.register do
-      tree_processor CopyImages
+    Asciidoctor::Extensions.register ChangeAdmonition
+    Asciidoctor::Extensions.register do
+      tree_processor CopyImages::CopyImages
     end
   end
 
   after(:each) do
-    Extensions.unregister_all
+    Asciidoctor::Extensions.unregister_all
   end
 
   def copy_attributes(copied)
@@ -76,14 +78,14 @@ RSpec.describe CopyImages do
       == Example
       image::not_found.jpg[]
     ASCIIDOC
-    convert input, attributes, match(/
+    convert input, attributes, match(%r{
         WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
-          "#{spec_dir}\/not_found.jpg",\s
-          "#{spec_dir}\/resources\/not_found.jpg",\s
+          "#{spec_dir}/not_found.jpg",\s
+          "#{spec_dir}/resources/not_found.jpg",\s
           .+
-          "#{spec_dir}\/resources\/copy_images\/not_found.jpg"
+          "#{spec_dir}/resources/copy_images/not_found.jpg"
           .+
-        \]/x).and(not_match(/INFO: <stdin>/))
+        \]}x).and(not_match(/INFO: <stdin>/))
     expect(copied).to eq([])
   end
 
@@ -121,7 +123,7 @@ RSpec.describe CopyImages do
   end
 
   it "can find files using a single valued resources attribute" do
-    Dir.mktmpdir { |tmp|
+    Dir.mktmpdir do |tmp|
       FileUtils.cp(
         ::File.join(spec_dir, 'resources', 'copy_images', 'example1.png'),
         ::File.join(tmp, 'tmp_example1.png')
@@ -139,11 +141,11 @@ RSpec.describe CopyImages do
       expect(copied).to eq([
           ["tmp_example1.png", "#{tmp}/tmp_example1.png"],
       ])
-    }
+    end
   end
 
   it "can find files using a multi valued resources attribute" do
-    Dir.mktmpdir { |tmp|
+    Dir.mktmpdir do |tmp|
       FileUtils.cp(
         ::File.join(spec_dir, 'resources', 'copy_images', 'example1.png'),
         ::File.join(tmp, 'tmp_example1.png')
@@ -161,7 +163,7 @@ RSpec.describe CopyImages do
       expect(copied).to eq([
           ["tmp_example1.png", "#{tmp}/tmp_example1.png"],
       ])
-    }
+    end
   end
 
   it "doesn't mind an empty resources attribute" do
@@ -198,7 +200,7 @@ RSpec.describe CopyImages do
   end
 
   it "has a nice error message when it can't find a file with single valued resources attribute" do
-    Dir.mktmpdir { |tmp|
+    Dir.mktmpdir do |tmp|
       copied = []
       attributes = copy_attributes copied
       attributes['resources'] = tmp
@@ -206,18 +208,18 @@ RSpec.describe CopyImages do
         == Example
         image::not_found.png[]
       ASCIIDOC
-      convert input, attributes, match(/
+      convert input, attributes, match(%r{
           WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
-            "#{tmp}\/not_found.png",\s
-            "#{spec_dir}\/not_found.png",\s
+            "#{tmp}/not_found.png",\s
+            "#{spec_dir}/not_found.png",\s
             .+
-          \]/x).and(not_match(/INFO: <stdin>/))
+          \]}x).and(not_match(/INFO: <stdin>/))
       expect(copied).to eq([])
-    }
+    end
   end
 
   it "has a nice error message when it can't find a file with multi valued resources attribute" do
-    Dir.mktmpdir { |tmp|
+    Dir.mktmpdir do |tmp|
       copied = []
       attributes = copy_attributes copied
       attributes['resources'] = "#{tmp},/dummy2"
@@ -225,15 +227,15 @@ RSpec.describe CopyImages do
         == Example
         image::not_found.png[]
       ASCIIDOC
-      convert input, attributes, match(/
+      convert input, attributes, match(%r{
           WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
-            "\/dummy2\/not_found.png",\s
-            "#{tmp}\/not_found.png",\s
-            "#{spec_dir}\/not_found.png",\s
+            "/dummy2/not_found.png",\s
+            "#{tmp}/not_found.png",\s
+            "#{spec_dir}/not_found.png",\s
             .+
-          \]/x).and(not_match(/INFO: <stdin>/))
+          \]}x).and(not_match(/INFO: <stdin>/))
       expect(copied).to eq([])
-    }
+    end
   end
 
   it "copies images for callouts when requested (png)" do
@@ -291,14 +293,14 @@ RSpec.describe CopyImages do
       <1> words
       <2> words
     ASCIIDOC
-    convert input, attributes, match(/
+    convert input, attributes, match(%r{
     WARN:\ <stdin>:\ line\ 6:\ can't\ read\ image\ at\ any\ of\ \[
-      "#{spec_dir}\/images\/icons\/callouts\/2.gif",\s
-      "#{spec_dir}\/resources\/images\/icons\/callouts\/2.gif",\s
+      "#{spec_dir}/images/icons/callouts/2.gif",\s
+      "#{spec_dir}/resources/images/icons/callouts/2.gif",\s
       .+
-      "#{spec_dir}\/resources\/copy_images\/images\/icons\/callouts\/2.gif"
+      "#{spec_dir}/resources/copy_images/images/icons/callouts/2.gif"
       .+
-    \]/x).and(match(/INFO: <stdin>: line 5: copying #{spec_dir}\/resources\/copy_images\/images\/icons\/callouts\/1.gif/))
+    \]}x).and(match(%r{INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.gif}))
     expect(copied).to eq([
         ["images/icons/callouts/1.gif", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.gif"],
     ])
@@ -399,7 +401,7 @@ RSpec.describe CopyImages do
     expect(copied).to eq([])
   end
 
-  %w[note tip important caution warning].each { |(name)|
+  %w[note tip important caution warning].each do |(name)|
     it "copies images for the #{name} admonition when requested" do
       copied = []
       attributes = copy_attributes copied
@@ -415,13 +417,13 @@ RSpec.describe CopyImages do
           ["images/icons/#{name}.png", "#{spec_dir}/resources/copy_images/images/icons/#{name}.png"],
       ])
     end
-  }
+  end
 
   [
       %w[added note],
       %w[coming note],
       %w[deprecated warning],
-  ].each { |(name, admonition)|
+  ].each do |(name, admonition)|
     it "copies images for the block formatted #{name} change admonition when requested" do
       copied = []
       attributes = copy_attributes copied
@@ -439,7 +441,7 @@ RSpec.describe CopyImages do
           ["images/icons/#{admonition}.png", "#{spec_dir}/resources/copy_images/images/icons/#{admonition}.png"],
       ])
     end
-  }
+  end
 
   it "copies images for admonitions when requested with a different file extension" do
     copied = []

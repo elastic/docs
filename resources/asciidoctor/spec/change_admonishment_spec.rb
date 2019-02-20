@@ -1,19 +1,21 @@
+# frozen_string_literal: true
+
 require 'change_admonition/extension'
 
 RSpec.describe ChangeAdmonition do
   before(:each) do
-    Extensions.register ChangeAdmonition
+    Asciidoctor::Extensions.register ChangeAdmonition
   end
 
   after(:each) do
-    Extensions.unregister_all
+    Asciidoctor::Extensions.unregister_all
   end
 
   [
       %w[added added],
       %w[coming changed],
       %w[deprecated deleted],
-  ].each { |(name, revisionflag)|
+  ].each do |(name, revisionflag)|
     it "#{name}'s block version creates a note" do
       actual = convert <<~ASCIIDOC
         == Example
@@ -111,5 +113,5 @@ RSpec.describe ChangeAdmonition do
       DOCBOOK
       expect(actual).to eq(expected.strip)
     end
-  }
+  end
 end

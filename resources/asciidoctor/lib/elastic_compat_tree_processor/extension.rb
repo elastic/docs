@@ -1,6 +1,6 @@
-require_relative '../scaffold.rb'
+# frozen_string_literal: true
 
-include Asciidoctor
+require_relative '../scaffold.rb'
 
 # TreeProcessor extension to automatically escape special characters in code
 # listings and always shift "callouts" after "specialcharacters".

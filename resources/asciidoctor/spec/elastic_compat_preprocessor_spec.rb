@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'change_admonition/extension'
 require 'elastic_compat_preprocessor/extension'
 require 'elastic_include_tagged/extension'
@@ -5,15 +7,15 @@ require 'shared_examples/does_not_break_line_numbers'
 
 RSpec.describe ElasticCompatPreprocessor do
   before(:each) do
-    Extensions.register ChangeAdmonition
-    Extensions.register do
+    Asciidoctor::Extensions.register ChangeAdmonition
+    Asciidoctor::Extensions.register do
       preprocessor ElasticCompatPreprocessor
       include_processor ElasticIncludeTagged
     end
   end
 
   after(:each) do
-    Extensions.unregister_all
+    Asciidoctor::Extensions.unregister_all
   end
 
   include_examples "doesn't break line numbers"
@@ -22,7 +24,7 @@ RSpec.describe ElasticCompatPreprocessor do
       %w[added added],
       %w[coming changed],
       %w[deprecated deleted],
-  ].each { |(name, revisionflag)|
+  ].each do |(name, revisionflag)|
     it "invokes the #{name} block macro when #{name}[version] starts a line" do
       actual = convert <<~ASCIIDOC
         == Example
@@ -53,7 +55,7 @@ RSpec.describe ElasticCompatPreprocessor do
       DOCBOOK
       expect(actual).to eq(expected.strip)
     end
-  }
+  end
 
   it "invokes include-tagged::" do
     actual = convert <<~ASCIIDOC

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = ".rspec_status"
@@ -21,14 +23,13 @@ def convert(input, extra_attributes = {}, warnings_matcher = eq(''))
     'docdir' => File.dirname(__FILE__),
   }
   attributes.merge! extra_attributes
-  result = Asciidoctor.convert input, {
+  result = Asciidoctor.convert input,
       :safe       => :unsafe,  # Used to include "funny" files.
       :backend    => :docbook45,
       :logger     => logger,
       :doctype    => :book,
       :attributes => attributes,
-      :sourcemap  => true,
-  }
+      :sourcemap  => true
   warnings_string = logger.messages
         .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
         .join("\n")

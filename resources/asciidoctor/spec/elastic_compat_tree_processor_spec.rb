@@ -1,14 +1,16 @@
+# frozen_string_literal: true
+
 require 'elastic_compat_tree_processor/extension'
 
 RSpec.describe ElasticCompatTreeProcessor do
   before(:each) do
-    Extensions.register do
+    Asciidoctor::Extensions.register do
       treeprocessor ElasticCompatTreeProcessor
     end
   end
 
   after(:each) do
-    Extensions.unregister_all
+    Asciidoctor::Extensions.unregister_all
   end
 
   it "fixes up asciidoc style listings" do

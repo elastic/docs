@@ -1,14 +1,16 @@
+# frozen_string_literal: true
+
 require 'elastic_include_tagged/extension'
 
 RSpec.describe ElasticIncludeTagged do
   before(:each) do
-    Extensions.register do
+    Asciidoctor::Extensions.register do
       include_processor ElasticIncludeTagged
     end
   end
 
   after(:each) do
-    Extensions.unregister_all
+    Asciidoctor::Extensions.unregister_all
   end
 
   it "includes a tag" do
@@ -114,7 +116,7 @@ RSpec.describe ElasticIncludeTagged do
       <simpara>System.err.println("this tag doesn&#8217;t have any end");</simpara>
       </preface>
     DOCBOOK
-    actual = convert input, {}, match(/resources\/elastic_include_tagged\/Example.java: line \d+: elastic-include-tagged missing end tag \[missing-end\]/)
+    actual = convert input, {}, match(%r{resources/elastic_include_tagged/Example.java: line \d+: elastic-include-tagged missing end tag \[missing-end\]})
     expect(actual).to eq(expected.strip)
   end
 

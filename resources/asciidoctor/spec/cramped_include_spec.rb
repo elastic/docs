@@ -1,15 +1,17 @@
+# frozen_string_literal: true
+
 require 'cramped_include/extension'
 require 'shared_examples/does_not_break_line_numbers'
 
 RSpec.describe CrampedInclude do
   before(:each) do
-    Extensions.register do
+    Asciidoctor::Extensions.register do
       preprocessor CrampedInclude
     end
   end
 
   after(:each) do
-    Extensions.unregister_all
+    Asciidoctor::Extensions.unregister_all
   end
 
   include_examples "doesn't break line numbers"
