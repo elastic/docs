@@ -802,11 +802,12 @@ sub restart {
 #===================================
 sub usage {
 #===================================
+    my $name = $Opts->{in_standard_docker} ? 'build_docs' : $0;
     say <<USAGE;
 
     Build local docs:
 
-        $0 --doc path/to/index.asciidoc [opts]
+        $name --doc path/to/index.asciidoc [opts]
 
         Opts:
           --single          Generate a single HTML page, instead of
@@ -827,7 +828,7 @@ sub usage {
 
     Build docs from all repos in conf.yaml:
 
-        $0 --all --target_repo <target> [opts]
+        $name --all --target_repo <target> [opts]
 
         Opts:
           --target_repo     Repository to which to commit docs
@@ -848,4 +849,25 @@ sub usage {
                             Specified by build_docs when running in its container
 
 USAGE
+    if ( $Opts->{in_standard_docker} ) {
+        say <<USAGE;
+    Self Test:
+
+        $name --self-test <args to pass to make>
+
+    `--self-test` is a wrapper around `make` which is used exclusively for
+    testing. Like `make`, the current directory selects the `Makefile` and
+    you can make specific targets. Some examples:
+
+    Execute all tests:
+        $name --self-test
+
+    Execute all of the tests for our extensions to Asciidoctor:
+        $name --self-test -C resources/asciidoctor
+
+    Run rubocop on our extensions to Asciidoctor:
+        $name --self-test -C resources/asciidoctor rubocop
+    
+USAGE
+    }
 }

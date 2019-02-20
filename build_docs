@@ -434,14 +434,20 @@ if __name__ == '__main__':
     try:
         logging.basicConfig(level=logging.INFO)
         build_docker_image()
-        if ['--self-test'] == argv[1:]:
+        if len(argv) > 2 and '--self-test' == argv[1]:
+            cwd = realpath('.')
+            if not cwd.startswith(DIR):
+                raise ArgError(
+                    '--self-test must be invoked from within the repo')
+            docker_cwd = '/docs_build/' + cwd[len(DIR):]
             cmd = ['docker', 'run']
             cmd.extend(standard_docker_args())
+            cmd.extend(['--workdir', docker_cwd])
             if stdout.isatty():
                 cmd.append('-t')
             cmd.extend(['elastic/docs_build', 'make'])
             cmd.extend(['--no-builtin-rules'])
-            cmd.extend(['-C', '/docs_build', 'check'])
+            cmd.extend(argv[2:])
             returncode = subprocess.call(cmd)
             exit(returncode)
         elif not ['--just-build-image'] == argv[1:]:
