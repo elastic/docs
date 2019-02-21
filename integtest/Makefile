@@ -19,20 +19,13 @@ readme_expected_files: /tmp/readme_asciidoc
 	[ -s $^/images/icons/callouts/2.png ]
 	[ -s $^/snippets/blocks/1.json ]
 
-.PHONY: readme_same_files
-readme_same_files: /tmp/readme_asciidoc /tmp/readme_asciidoctor
-	# The `grep -v snippets` is a known issue to be resolved "soon"
+.PHONY: %_same_files
+%_same_files: /tmp/%_asciidoc /tmp/%_asciidoctor
 	diff \
-		<(cd /tmp/readme_asciidoc    && find * -type f | sort \
+		<(cd /tmp/$*_asciidoc    && find * -type f | sort \
 			| grep -v snippets/blocks \
 		) \
-		<(cd /tmp/readme_asciidoctor && find * -type f | sort)
-
-.PHONY: includes_same_files
-includes_same_files: /tmp/includes_asciidoc /tmp/includes_asciidoctor
-	diff \
-		<(cd /tmp/includes_asciidoc    && find * -type f | sort) \
-		<(cd /tmp/includes_asciidoctor && find * -type f | sort)
+		<(cd /tmp/$*_asciidoctor && find * -type f | sort)
 
 define BD=
 /docs_build/build_docs.pl --in_standard_docker --out $@
@@ -46,8 +39,10 @@ endef
 
 # These don't declare dependencies because we don't know in general which files
 # are needed to build which asciidoc files.
+.PRECIOUS: /tmp/%_asciidoc     # don't try to remove the directory. you can't
 /tmp/%_asciidoc:
 	$(BD) --doc $*.asciidoc
 
+.PRECIOUS: /tmp/%_asciidoctor  # don't try to remove the directory. you can't
 /tmp/%_asciidoctor:
 	$(BD) --asciidoctor --doc $*.asciidoc
