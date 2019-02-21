@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
 require 'cramped_include/extension'
+require 'elastic_compat_preprocessor/extension'
 require 'shared_examples/does_not_break_line_numbers'
 
 RSpec.describe CrampedInclude do
   before(:each) do
     Asciidoctor::Extensions.register do
       preprocessor CrampedInclude
+      preprocessor ElasticCompatPreprocessor
     end
   end
 

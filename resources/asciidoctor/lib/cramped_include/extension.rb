@@ -18,7 +18,7 @@ require 'asciidoctor/extensions'
 class CrampedInclude < Asciidoctor::Extensions::Preprocessor
   def process(_document, reader)
     def reader.prepare_lines(data, opts = {})
-      super << ''
+      super << +''
     end
     reader
   end
