@@ -2,12 +2,21 @@ SHELL = /bin/bash -eux -o pipefail
 MAKEFLAGS += --silent
 
 .PHONY: check
-check: readme_expected_files readme_same_files includes_same_files
+check: \
+	readme_expected_files readme_same_files \
+	includes_expected_files includes_same_files
+
+define STANDARD_EXPECTED_FILES=
+	[ -s $^/index.html ]
+	[ -s $^/docs.js ]
+	[ -s $^/styles.css ]
+	[ -s $^/template.md5 ]
+endef
 
 .PHONY: readme_expected_files
 readme_expected_files: /tmp/readme_asciidoc
+	$(STANDARD_EXPECTED_FILES)
 	# Checking for expected html files
-	[ -s $^/index.html ]
 	[ -s $^/_conditions_of_use.html ]
 	# Checking for copied images
 	[ -s $^/resources/cat.jpg ]
@@ -18,6 +27,10 @@ readme_expected_files: /tmp/readme_asciidoc
 	[ -s $^/images/icons/callouts/1.png ]
 	[ -s $^/images/icons/callouts/2.png ]
 	[ -s $^/snippets/blocks/1.json ]
+
+.PHONY: %_expected_files
+%_expected_files: /tmp/%_asciidoc
+	$(STANDARD_EXPECTED_FILES)
 
 .PHONY: %_same_files
 %_same_files: /tmp/%_asciidoc /tmp/%_asciidoctor
