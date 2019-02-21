@@ -2,7 +2,9 @@
 
 require 'change_admonition/extension'
 require 'elastic_compat_preprocessor/extension'
+require 'elastic_compat_tree_processor/extension'
 require 'elastic_include_tagged/extension'
+require 'open_in_widget/extension'
 require 'shared_examples/does_not_break_line_numbers'
 
 RSpec.describe ElasticCompatPreprocessor do
@@ -11,12 +13,16 @@ RSpec.describe ElasticCompatPreprocessor do
     Asciidoctor::Extensions.register do
       preprocessor ElasticCompatPreprocessor
       include_processor ElasticIncludeTagged
+      treeprocessor ElasticCompatTreeProcessor
+      treeprocessor OpenInWidget
     end
   end
 
   after(:each) do
     Asciidoctor::Extensions.unregister_all
   end
+
+  spec_dir = File.dirname(__FILE__)
 
   include_examples "doesn't break line numbers"
 
@@ -193,9 +199,9 @@ RSpec.describe ElasticCompatPreprocessor do
       <title>Example</title>
       <programlisting language="sh" linenumbering="unnumbered">wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip
       wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip.sha512
-      shasum -a 512 -c elasticsearch-{version}.zip.sha512 <1>
+      shasum -a 512 -c elasticsearch-{version}.zip.sha512 <co id="CO1-1"/>
       unzip elasticsearch-{version}.zip
-      cd elasticsearch-{version}/ <2></programlisting>
+      cd elasticsearch-{version}/ <co id="CO1-2"/></programlisting>
       <calloutlist>
       <callout arearefs="CO1-1">
       <para>Compares the SHA of the downloaded <literal>.zip</literal> archive and the published checksum, which should output
@@ -249,4 +255,61 @@ RSpec.describe ElasticCompatPreprocessor do
     DOCBOOK
     expect(actual).to eq(expected.strip)
   end
+
+  def stub_file_opts
+    return {
+      'copy_snippet' => proc { |uri, source| },
+      'write_snippet' => proc { |uri, source| },
+    }
+  end
+
+  [
+      %w[CONSOLE console],
+      %w[AUTOSENSE sense],
+      %w[KIBANA kibana],
+  ].each do |name, lang|
+    it "transforms #{name} comments into a listing with the #{lang} language" do
+      input = <<~ASCIIDOC
+        == Example
+        [source,js]
+        ----
+        foo
+        ----
+        // #{name}
+      ASCIIDOC
+      expected = <<~DOCBOOK
+        <chapter id="_example">
+        <title>Example</title>
+        <programlisting language="#{lang}" linenumbering="unnumbered"><ulink type="snippet" url="snippets/1.#{lang}"/>foo</programlisting>
+        </chapter>
+      DOCBOOK
+      actual = convert input, stub_file_opts, eq(
+        "INFO: <stdin>: line 3: writing snippet snippets/1.#{lang}"
+      )
+      expect(actual).to eq(expected.strip)
+    end
+  end
+
+  it "transforms SENSE comments into a listing with the SENSE language and a path" do
+  input = <<~ASCIIDOC
+    == Example
+    [source,js]
+    ----
+    foo
+    ----
+    // SENSE: snippet.sense
+  ASCIIDOC
+  expected = <<~DOCBOOK
+    <chapter id="_example">
+    <title>Example</title>
+    <programlisting language="sense" linenumbering="unnumbered"><ulink type="snippet" url="snippets/snippet.sense"/>foo</programlisting>
+    </chapter>
+  DOCBOOK
+  warnings = <<~WARNINGS
+    WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
+    INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.sense
+  WARNINGS
+  actual = convert input, stub_file_opts, eq(warnings.strip)
+  expect(actual).to eq(expected.strip)
+end
 end

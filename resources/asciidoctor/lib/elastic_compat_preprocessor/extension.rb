@@ -89,6 +89,24 @@ require 'asciidoctor/extensions'
 # Because Asciidoc permits these mismatches but asciidoctor does not. We'll
 # emit a warning because, permitted or not, they are bad style.
 #
+# With the help of ElasticCompatTreeProcessor turns
+#   [source,js]
+#   ----
+#   foo
+#   ----
+#   // CONSOLE
+#
+# Into
+#   [source,console]
+#   ----
+#   foo
+#   ----
+# Because Elastic has thousands of these constructs but Asciidoctor feels
+# strongly that comments should not convey meaning. This is a totally
+# reasonable stance and we should migrate away from these comments in new
+# docs when it is possible. But for now we have to support the comments as
+# well.
+#
 class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
   include Asciidoctor::Logging
 
@@ -140,6 +158,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
             @code_block_start = line
           end
         end
+
         supported = 'added|coming|deprecated'
         # First convert the "block" version of these macros. We convert them
         # to block macros because they are at the start of the line....
@@ -147,6 +166,13 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
         # Then convert the "inline" version of these macros. We convert them
         # to inline macros because they are *not* at the start of the line....
         line&.gsub!(/(#{supported})\[([^\]]*)\]/, '\1:[\2]')
+        # Transform Elastic's traditional comment based marking for
+        # AUTOSENSE/KIBANA/CONSOLE snippets into a marker that we can pick
+        # up during tree processing to turn the snippet into a marked up
+        # CONSOLE snippet. Asciidoctor really doesn't recommend this sort of
+        # thing but we have thousands of them and it'll take us some time to
+        # stop doing it.
+        line&.gsub!(%r{//\s*(?:AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)}, 'pass:[\0]')
       end
     end
     reader

@@ -47,6 +47,7 @@ sub apply {
     my $self = shift;
     my $dir  = shift;
     my $lang = shift || die "No lang specified";
+    my $asciidoctor = shift;
 
     my $map = $self->_map;
 
@@ -61,7 +62,7 @@ sub apply {
         $contents =~ s/\s*$/\n/;
 
         # Extract AUTOSENSE snippets
-        $contents = $self->_autosense_snippets( $file, $contents );
+        $contents = $self->_autosense_snippets( $file, $contents ) unless $asciidoctor;
 
         # Fill in template
         my @parts  = @{ $self->_parts };

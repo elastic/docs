@@ -38,12 +38,20 @@ expected_files_check: /tmp/readme_asciidoc
 
 .PHONY: same_files_check
 same_files_check: /tmp/readme_asciidoc /tmp/readme_asciidoctor
-	# The `grep -v snippets` is a known issue to be resolved "soon"
+	# The `grep -v`s are a known issue to be resolved "soon"
 	diff \
 		<(cd /tmp/readme_asciidoc    && find * -type f | sort \
-			| grep -v snippets/blocks \
+			| grep -v snippets/ \
 		) \
-		<(cd /tmp/readme_asciidoctor && find * -type f | sort)
+		<(cd /tmp/readme_asciidoctor && find * -type f | sort \
+			| grep -v snippets/ \
+		)
+	# Temporary assertions about the `grep -v`ed files that we'll
+	# generalize in a followup change. Asciidoc doesn't trim trailing
+	# newlines but AsciiDoctor does.
+	diff \
+		<(sed 's/[[:space:]]*$$//' /tmp/readme_asciidoc/snippets/blocks/1.json) \
+		/tmp/readme_asciidoctor/snippets/1.console
 
 /tmp/readme_asciidoc:
 	./build_docs.pl --in_standard_docker \
