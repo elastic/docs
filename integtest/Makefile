@@ -38,12 +38,14 @@ define BD=
 /docs_build/build_docs.pl --in_standard_docker --out $@
 endef
 
-/tmp/readme_asciidoc:
+/tmp/readme_asciidoc: /docs_build/README.asciidoc
 	$(BD) --doc /docs_build/README.asciidoc
 
-/tmp/readme_asciidoctor:
+/tmp/readme_asciidoctor: /docs_build/README.asciidoc
 	$(BD) --asciidoctor --doc /docs_build/README.asciidoc
 
+# These don't declare dependencies because we don't know in general which files
+# are needed to build which asciidoc files.
 /tmp/%_asciidoc:
 	$(BD) --doc $*.asciidoc
 
