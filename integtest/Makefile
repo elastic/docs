@@ -34,18 +34,18 @@ includes_same_files: /tmp/includes_asciidoc /tmp/includes_asciidoctor
 		<(cd /tmp/includes_asciidoc    && find * -type f | sort) \
 		<(cd /tmp/includes_asciidoctor && find * -type f | sort)
 
+define BD=
+/docs_build/build_docs.pl --in_standard_docker --out $@
+endef
+
 /tmp/readme_asciidoc:
-	/docs_build/build_docs.pl --in_standard_docker \
-		--doc /docs_build/README.asciidoc --out $@
+	$(BD) --doc /docs_build/README.asciidoc
 
 /tmp/readme_asciidoctor:
-	/docs_build/build_docs.pl --in_standard_docker --asciidoctor \
-		--doc /docs_build/README.asciidoc --out $@
+	$(BD) --asciidoctor --doc /docs_build/README.asciidoc
 
 /tmp/%_asciidoc:
-	/docs_build/build_docs.pl --in_standard_docker \
-		--doc $*.asciidoc --out $@
+	$(BD) --doc $*.asciidoc
 
 /tmp/%_asciidoctor:
-	/docs_build/build_docs.pl --in_standard_docker --asciidoctor \
-		--doc $*.asciidoc --out $@
+	$(BD) --asciidoctor --doc $*.asciidoc
