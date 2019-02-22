@@ -3,7 +3,7 @@ MAKEFLAGS += --silent
 
 .PHONY: check
 check: \
-    style \
+	style \
 	readme_expected_files readme_same_files \
 	includes_expected_files includes_same_files
 
