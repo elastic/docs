@@ -8,10 +8,10 @@ MAKEFLAGS += --silent
 check: unit_test integration_test
 
 .PHONY: unit_test
-unit_test: build_docs_check asciidoctor_check
+unit_test: style asciidoctor_check
 
-.PHONY: build_docs_check
-build_docs_check:
+.PHONY: style
+style: build_docs
 	pycodestyle build_docs
 
 .PHONY: asciidoctor_check
