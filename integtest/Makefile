@@ -3,8 +3,13 @@ MAKEFLAGS += --silent
 
 .PHONY: check
 check: \
+	style \
 	readme_expected_files readme_same_files \
 	includes_expected_files includes_same_files
+
+.PHONY: style
+style: html_diff
+	pycodestyle html_diff
 
 define STANDARD_EXPECTED_FILES=
 	[ -s $^/index.html ]
@@ -39,6 +44,11 @@ readme_expected_files: /tmp/readme_asciidoc
 			| grep -v snippets/blocks \
 		) \
 		<(cd /tmp/$*_asciidoctor && find * -type f | sort)
+	# The grep -v below are for known issues with asciidoctor
+	for file in $$(cd /tmp/$*_asciidoc && find * -type f -name '*.html' \
+			| grep -v 'blocks\|changes\|experimental\|multi-part'); do \
+		./html_diff /tmp/$*_asciidoc/$$file /tmp/$*_asciidoctor/$$file; \
+	done
 
 define BD=
 /docs_build/build_docs.pl --in_standard_docker --out $@

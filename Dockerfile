@@ -14,6 +14,7 @@ LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 #   * openssh-client (used by git)
 #   * openssh-server (used to forward ssh auth for git when running with --all on macOS)
 #   * perl-base
+#   * python (is python2)
 #   * xsltproc
 # * To install rubygems for asciidoctor
 #   * build-essential
@@ -23,7 +24,8 @@ LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 #   * ruby
 #   * ruby-dev
 # * Used to check the docs build in CI
-#   * pycodestyle
+#   * python3
+#   * python3-pip
 RUN install_packages \
   bash \
   build-essential \
@@ -38,8 +40,9 @@ RUN install_packages \
   openssh-client \
   openssh-server \
   perl-base \
-  pycodestyle \
   python \
+  python3 \
+  python3-pip \
   ruby \
   ruby-dev \
   unzip \
@@ -66,3 +69,13 @@ RUN gem install --no-document \
   rubocop:0.64.0 \
   rspec:3.8.0 \
   thread_safe:0.3.6
+
+# Wheel inventory:
+# * Used to test the docs build
+#   * beautifulsoup4
+#   * lxml
+#   * pycodestyle
+RUN pip3 install \
+  beautifulsoup4==4.7.1 \
+  lxml==4.3.1 \
+  pycodestyle==2.5.0
