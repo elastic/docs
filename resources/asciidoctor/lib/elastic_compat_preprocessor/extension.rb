@@ -110,9 +110,9 @@ require 'asciidoctor/extensions'
 class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
   include Asciidoctor::Logging
 
-  INCLUDE_TAGGED_DIRECTIVE_RX = /^include-tagged::([^\[][^\[]*)\[(#{Asciidoctor::CC_ANY}+)?\]$/
-  SOURCE_WITH_SUBS_RX = /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/
-  CODE_BLOCK_RX = /^-----*$/
+  INCLUDE_TAGGED_DIRECTIVE_RX = /^include-tagged::([^\[][^\[]*)\[(#{Asciidoctor::CC_ANY}+)?\]$/.freeze
+  SOURCE_WITH_SUBS_RX = /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/.freeze
+  CODE_BLOCK_RX = /^-----*$/.freeze
 
   def process(_document, reader)
     reader.instance_variable_set :@in_attribute_only_block, false
