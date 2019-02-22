@@ -24,7 +24,7 @@ module CopyImages
       'added' => 'note',
       'changed' => 'note',
       'deleted' => 'warning',
-    }
+    }.freeze
 
     def initialize(name)
       super
