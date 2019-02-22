@@ -18,11 +18,11 @@ require 'asciidoctor/extensions'
 class ChangeAdmonition < Asciidoctor::Extensions::Group
   def activate(registry)
     [
-        [:added, 'added'],
-        [:coming, 'changed'],
-        [:deprecated, 'deleted'],
-    ].each do |(name, revisionflag)|
-      registry.block_macro ChangeAdmonitionBlock.new(revisionflag), name
+        [:added, 'added', 'note'],
+        [:coming, 'changed', 'note'],
+        [:deprecated, 'deleted', 'warning'],
+    ].each do |(name, revisionflag, tag)|
+      registry.block_macro ChangeAdmonitionBlock.new(revisionflag, tag), name
       registry.inline_macro ChangeAdmonitionInline.new(revisionflag), name
     end
   end
@@ -33,9 +33,10 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
     use_dsl
     name_positional_attributes :version, :passtext
 
-    def initialize(revisionflag)
-      super
+    def initialize(revisionflag, tag)
+      super(nil)
       @revisionflag = revisionflag
+      @tag = tag
     end
 
     def process(parent, _target, attrs)
@@ -43,14 +44,14 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
       # We can *almost* go through the standard :admonition conversion but
       # that won't render the revisionflag or the revision. So we have to
       # go with this funny compound pass thing.
-      note = Asciidoctor::Block.new(parent, :pass, :content_model => :compound)
-      note << Asciidoctor::Block.new(note, :pass,
-          :source => "<note revisionflag=\"#{@revisionflag}\" revision=\"#{version}\">",
+      admon = Asciidoctor::Block.new(parent, :pass, :content_model => :compound)
+      admon << Asciidoctor::Block.new(admon, :pass,
+          :source => "<#{@tag} revisionflag=\"#{@revisionflag}\" revision=\"#{version}\">",
           :attributes => { 'revisionflag' => @revisionflag })
-      note << Asciidoctor::Block.new(note, :paragraph,
+      admon << Asciidoctor::Block.new(admon, :paragraph,
           :source => attrs[:passtext],
           :subs => Asciidoctor::Substitutors::NORMAL_SUBS)
-      note << Asciidoctor::Block.new(note, :pass, :source => "</note>")
+      admon << Asciidoctor::Block.new(admon, :pass, :source => "</#{@tag}>")
     end
   end
 
@@ -62,7 +63,7 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
     with_format :short
 
     def initialize(revisionflag)
-      super
+      super(nil)
       @revisionflag = revisionflag
     end
 
