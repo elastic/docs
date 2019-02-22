@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+
+from bs4 import BeautifulSoup, NavigableString
+import difflib
+import re
+
+
+def normalize_html(html):
+    """Normalizes html to remove expected differences between AsciiDoc's
+    output and Asciidoctor's output.
+    """
+    # Replace many whitespace characters with a single space in some elements
+    # kind of like a browser does.
+    soup = BeautifulSoup(html, 'lxml')
+    for e in soup.select(':not(script,pre,code,style)'):
+        for part in e:
+            if isinstance(part, NavigableString):
+                crunched = NavigableString(re.sub(r'\s+', ' ', part))
+                if crunched != part:
+                    part.replace_with(crunched)
+    # Format the html with indentation so we can *see* things
+    html = soup.prettify()
+    # Remove the zero width space that asciidoctor adds after each horizontal
+    # ellipsis. They don't hurt anything but asciidoc doesn't make them
+    html = html.replace('\u2026\u200b', '\u2026')
+    # Temporary workaround for known issues
+    html = html.replace('class="edit_me" href="/./', 'class="edit_me" href="')
+    html = re.sub(
+        r'(?m)^\s+<div class="console_widget" data-snippet="[^"]+">'
+        r'\s+</div>\n', '', html)
+    html = html.replace('\\&lt;1&gt;', '&lt;1&gt;')
+    return html
+
+
+def html_diff(lhs_name, lhs, rhs_name, rhs):
+    """Compare two html blobs, ignoring expected differences between AsciiDoc
+    and Asciidoctor. The result is a generator for lines in the diff report.
+    If it is entirely empty then there is no diff.
+    """
+    lhs_lines = normalize_html(lhs).splitlines()
+    rhs_lines = normalize_html(rhs).splitlines()
+    return difflib.unified_diff(
+            lhs_lines,
+            rhs_lines,
+            fromfile=lhs_name,
+            tofile=rhs_name,
+            lineterm='')
+
+
+def html_file_diff(lhs, rhs):
+    """Compare two html files, ignoring expected differences between AsciiDoc
+    and Asciidoctor. The result is a generator for lines in the diff report.
+    If it is entirely empty then there is no diff.
+    """
+    with open(lhs, encoding='utf-8') as lhs_file:
+        lhs_text = lhs_file.read()
+    with open(rhs, encoding='utf-8') as rhs_file:
+        rhs_text = rhs_file.read()
+    return html_diff(lhs, lhs_text, rhs, rhs_text)
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) != 3:
+        print("Expected exactly 2 arguments but got %s" % sys.argv[1:])
+        exit(1)
+    had_diff = False
+    for line in html_file_diff(sys.argv[1], sys.argv[2]):
+        had_diff = True
+        # print doesn't like to print utf-8 in all cases but buffer.write is ok
+        sys.stderr.buffer.write(line.encode('utf-8'))
+        sys.stderr.buffer.write("\n".encode('utf-8'))
+    exit(1 if had_diff else 0)
