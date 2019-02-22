@@ -64,7 +64,7 @@ class ElasticCompatTreeProcessor < TreeProcessorScaffold
     'CONSOLE' => 'console',
     'KIBANA' => 'kibana',
     'SENSE' => 'sense',
-  }
+  }.freeze
 
   def process_lang_override(block)
     next_block = block.next_adjacent_block

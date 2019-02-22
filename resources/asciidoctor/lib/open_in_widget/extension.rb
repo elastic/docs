@@ -39,7 +39,7 @@ require_relative '../scaffold.rb'
 class OpenInWidget < TreeProcessorScaffold
   include Asciidoctor::Logging
 
-  CALLOUT_SCAN_RX = / ?#{Asciidoctor::CalloutScanRx}/
+  CALLOUT_SCAN_RX = / ?#{Asciidoctor::CalloutScanRx}/.freeze
 
   def process_block(block)
     return unless block.context == :listing && block.style == 'source'
