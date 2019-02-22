@@ -18,6 +18,9 @@ require 'asciidoctor/extensions'
 class CrampedInclude < Asciidoctor::Extensions::Preprocessor
   def process(_document, reader)
     def reader.prepare_lines(data, opts = {})
+      # The + here is important because it makes the string mutable which is
+      # required by asciidoctor's reader in general and our compatibility
+      # preprocessor specifically.
       super << +''
     end
     reader
