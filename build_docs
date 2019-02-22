@@ -37,6 +37,7 @@ import time
 import webbrowser
 
 DOCKER_BUILD_QUIET_TIME = 3  # seconds
+SSH_AGENT_HELP = 'https://help.github.com/en/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent#adding-your-ssh-key-to-the-ssh-agent'  # noqa
 
 DIR = dirname(realpath(__file__))
 logger = logging.getLogger('build_docs')
@@ -250,6 +251,10 @@ def forward_ssh_auth_into_container(container, docker_run):
     handle_popen(get_ssh_public_key, record_public_key)
     keys = "\n".join(public_keys) + "\n"
     if get_ssh_public_key.returncode != 0:
+        if 'The agent has no identities.' in keys:
+            raise ArgError('-all requires an identity be registered with the '
+                           'ssh-agent on macOS. See ' + SSH_AGENT_HELP + ' '
+                           'for instructions.')
         raise subprocess.CalledProcessError(get_ssh_public_key.returncode,
                                             cmd, keys)
 
@@ -451,6 +456,8 @@ if __name__ == '__main__':
         exit(1)
     except subprocess.CalledProcessError as e:
         print(e)
+        if e.output:
+            print(e.output)
         exit(e.returncode)
     except KeyboardInterrupt:
         # Just quit if we get ctrl-c
