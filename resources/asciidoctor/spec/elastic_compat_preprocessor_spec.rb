@@ -55,6 +55,23 @@ RSpec.describe ElasticCompatPreprocessor do
       DOCBOOK
       expect(actual).to eq(expected.strip)
     end
+
+    it "doesn't mind skipped #{name} block macros" do
+    actual = convert <<~ASCIIDOC
+      == Example
+
+      ifeval::["true" == "false"]
+      #{name}[some_version]
+      #endif::[]
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_example">
+      <title>Example</title>
+
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
   end
 
   it "invokes include-tagged::" do
@@ -210,6 +227,33 @@ RSpec.describe ElasticCompatPreprocessor do
     expect(actual).to eq(expected.strip)
   end
 
+  it "doesn't mind skipped source blocks that are missing callouts" do
+    actual = convert <<~ASCIIDOC
+      == Example
+
+      ifeval::["true" == "false"]
+      ["source","sh",subs="attributes"]
+      --------------------------------------------
+      wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip
+      wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip.sha512
+      shasum -a 512 -c elasticsearch-{version}.zip.sha512 <1>
+      unzip elasticsearch-{version}.zip
+      cd elasticsearch-{version}/ <2>
+      --------------------------------------------
+      <1> Compares the SHA of the downloaded `.zip` archive and the published checksum, which should output
+          `elasticsearch-{version}.zip: OK`.
+      <2> This directory is known as `$ES_HOME`.
+      endif::[]
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_example">
+      <title>Example</title>
+
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
+
   it "fixes mismatched fencing on code blocks" do
     input = <<~ASCIIDOC
       == Example
@@ -224,6 +268,25 @@ RSpec.describe ElasticCompatPreprocessor do
       </chapter>
     DOCBOOK
     actual = convert input, {}, match(/<stdin>: line 4: code block end doesn't match start/)
+    expect(actual).to eq(expected.strip)
+  end
+
+  it "doesn't doesn't mind skipped mismatched code blocks" do
+    actual = convert <<~ASCIIDOC
+      == Example
+
+      ifeval::["true" == "false"]
+      ----
+      foo
+      --------
+      endif::[]
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_example">
+      <title>Example</title>
+
+      </chapter>
+    DOCBOOK
     expect(actual).to eq(expected.strip)
   end
 
