@@ -27,10 +27,10 @@ RSpec.describe ElasticCompatPreprocessor do
   include_examples "doesn't break line numbers"
 
   [
-      %w[added added],
-      %w[coming changed],
-      %w[deprecated deleted],
-  ].each do |(name, revisionflag)|
+      %w[added added note],
+      %w[coming changed note],
+      %w[deprecated deleted warning],
+  ].each do |(name, revisionflag, tag)|
     it "invokes the #{name} block macro when #{name}[version] starts a line" do
       actual = convert <<~ASCIIDOC
         == Example
@@ -39,9 +39,9 @@ RSpec.describe ElasticCompatPreprocessor do
       expected = <<~DOCBOOK
         <chapter id="_example">
         <title>Example</title>
-        <note revisionflag="#{revisionflag}" revision="some_version">
+        <#{tag} revisionflag="#{revisionflag}" revision="some_version">
         <simpara></simpara>
-        </note>
+        </#{tag}>
         </chapter>
       DOCBOOK
       expect(actual).to eq(expected.strip)

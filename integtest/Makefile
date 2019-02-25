@@ -48,7 +48,7 @@ readme_expected_files: /tmp/readme_asciidoc
 		)
 	# The grep -v below are for known issues with asciidoctor
 	for file in $$(cd /tmp/$*_asciidoc && find * -type f -name '*.html' \
-			| grep -v 'changes\|experimental\|multi-part'); do \
+			| grep -v 'changes\|experimental'); do \
 		./html_diff /tmp/$*_asciidoc/$$file /tmp/$*_asciidoctor/$$file; \
 	done
 

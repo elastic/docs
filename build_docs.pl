@@ -709,6 +709,8 @@ sub check_args {
         die('--rely_on_ssh_auth not compatible with --doc') if $Opts->{rely_on_ssh_auth};
         die('--rebuild not compatible with --doc') if $Opts->{rebuild};
         die('--no_fetch not compatible with --doc') if $Opts->{no_fetch};
+        die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
+        die('--linkcheckonly not compatible with --doc') if $Opts->{linkcheckonly};
     } else {
         die('--single not compatible with --all') if $Opts->{single};
         die('--pdf not compatible with --all') if $Opts->{pdf};
@@ -718,8 +720,6 @@ sub check_args {
         die('--lenient not compatible with --all') if $Opts->{lenient};
         # Lang will be 'en' even if it isn't specified so we don't check it.
         die('--resource not compatible with --all') if $Opts->{resource};
-        die('--skiplinkcheck not compatible with --all') if $Opts->{skiplinkcheck};
-        die('--linkcheckonly not compatible with --all') if $Opts->{linkcheckonly};
         die('--asciidoctor not compatible with --all') if $Opts->{asciidoctor};
     }
 }
@@ -744,8 +744,6 @@ sub usage {
           --lenient         Ignore linking errors
           --lang            Defaults to 'en'
           --resource        Path to image dir - may be repeated
-          --skiplinkcheck   Omit the step that checks for broken links
-          --linkcheckonly   Skips the documentation builds. Checks links only.
           --asciidoctor     Use asciidoctor instead of asciidoc.
 
         WARNING: Anything in the `out` dir will be deleted!
@@ -759,6 +757,8 @@ sub usage {
           --push            Commit the updated docs and push to origin
           --user            Specify which GitHub user to use, if not your own
           --reference       Directory of `--mirror` clones to use as a local cache
+          --skiplinkcheck   Omit the step that checks for broken links
+          --linkcheckonly   Skips the documentation builds. Checks links only.
           --rely_on_ssh_auth
                             noop
           --rebuild         Rebuild all branches of every book regardless of what has changed
