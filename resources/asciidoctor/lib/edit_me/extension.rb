@@ -26,7 +26,7 @@ class EditMe < TreeProcessorScaffold
       if repo_root
         repo_root = Pathname.new repo_root
         base_dir = Pathname.new @document.base_dir
-        url += "#{base_dir.relative_path_from(repo_root)}/"
+        url += "#{base_dir.relative_path_from(repo_root)}/" unless repo_root == base_dir
       end
       url += path
       "#{super}<ulink role=\"edit_me\" url=\"#{url}\">Edit me</ulink>"

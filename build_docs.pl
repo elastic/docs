@@ -200,27 +200,26 @@ sub _guess_opts_from_file {
 #===================================
     my $index = shift;
 
-    my $dir = $index->parent;
-    while ($dir ne '/') {
-        $dir = $dir->parent;
-        my $git_dir = $dir->subdir('.git');
-        if (-d $git_dir) {
-            $Opts->{root_dir} = $dir;
-            local $ENV{GIT_DIR} = $git_dir;
-            my $remotes = eval { run qw(git remote -v) } || '';
-            if ($remotes !~ /\s+(\S+[\/:]elastic\/\S+)/) {
-                say "Couldn't find edit url because there isn't an Elastic clone";
-                say "$remotes";
-                return;
-            }
-            my $remote = $1;
-            my $branch = eval {run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
-            $Opts->{edit_url} = ES::Repo::edit_url_for_url_and_branch($remote, $branch);
-            return;
-        }
+    my $original_pwd = Cwd::cwd();
+    chdir $index->parent;
+    my $toplevel = eval { run qw(git rev-parse --show-toplevel) };
+    chdir $original_pwd;
+    unless ( $toplevel ) {
+        say "Couldn't find edit url because the document doesn't look like it is in git";
+        $Opts->{root_dir} = $index->parent;
+        return;
     }
-    say "Couldn't find edit url because the document doesn't look like it is in git";
-    $Opts->{root_dir} = $index->parent;
+    $Opts->{root_dir} = $toplevel;
+    local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
+    my $remotes = eval { run qw(git remote -v) } || '';
+    if ($remotes !~ /\s+(\S+[\/:]elastic\/\S+)/) {
+        say "Couldn't find edit url because there isn't an Elastic clone";
+        say "$remotes";
+        return;
+    }
+    my $remote = $1;
+    my $branch = eval {run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
+    $Opts->{edit_url} = ES::Repo::edit_url_for_url_and_branch($remote, $branch);
 }
 
 #===================================
