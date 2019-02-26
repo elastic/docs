@@ -61,7 +61,7 @@ define BD_DUMMY=
 /docs_build/build_docs.pl --in_standard_docker --out /tmp/dummy
 endef
 
-define CHECK_IN=
+define CHECK_FILE=
 grep $(1) $(2) > /dev/null || { \
 	echo "Couldn't find $(1) in $(2)"; \
 	cat $(2); \
@@ -74,14 +74,14 @@ missing_include_fails_asciidoc: missing_include.asciidoc
 	set +e; \
 		$(BD_DUMMY) --doc missing_include.asciidoc > /tmp/out 2>&1; \
 		test $$? -eq 255
-	$(call CHECK_IN,'WARNING: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
+	$(call CHECK_FILE,'WARNING: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
 
 .PHONY: missing_include_fails_asciidoctor
 missing_include_fails_asciidoctor: missing_include.asciidoc
 	set +e; \
 		$(BD_DUMMY) --asciidoctor --doc missing_include.asciidoc > /tmp/out 2>&1; \
 		test $$? -eq 255
-	$(call CHECK_IN,'ERROR: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
+	$(call CHECK_FILE,'ERROR: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
 
 /tmp/readme_asciidoc: /docs_build/README.asciidoc
 	$(BD) --doc /docs_build/README.asciidoc
