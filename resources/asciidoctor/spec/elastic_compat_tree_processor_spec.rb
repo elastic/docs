@@ -76,15 +76,16 @@ RSpec.describe ElasticCompatTreeProcessor do
     %w[CONSOLE console],
     %w[AUTOSENSE sense],
     %w[KIBANA kibana],
-  ].each do |name, lang|
-    it "transforms legacy // #{name} commands into the #{lang} language" do
+    %w[SENSE:path/to/snippet.sense sense],
+  ].each do |command, lang|
+    it "transforms legacy // #{command} commands into the #{lang} language" do
       actual = convert <<~ASCIIDOC
         == Example
         [source,js]
         ----
         GET /
         ----
-        pass:[// #{name}]
+        pass:[// #{command}]
       ASCIIDOC
       expected = <<~DOCBOOK
         <chapter id="_example">
