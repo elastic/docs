@@ -142,11 +142,13 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
 
         @in_attribute_only_block = true
         line.clear
-      elsif SOURCE_WITH_SUBS_RX =~ line
-        line = super
-        line.sub! "subs=\"#{$1}\"", "subs=\"#{$1},callouts\"" unless $1.include? 'callouts'
       else
         line = super
+        return nil if line.nil?
+
+        if SOURCE_WITH_SUBS_RX =~ line
+          line.sub! "subs=\"#{$1}\"", "subs=\"#{$1},callouts\"" unless $1.include? 'callouts'
+        end
         if CODE_BLOCK_RX =~ line
           if @code_block_start
             if line != @code_block_start
