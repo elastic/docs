@@ -369,8 +369,8 @@ RSpec.describe ElasticCompatPreprocessor do
     </chapter>
   DOCBOOK
   warnings = <<~WARNINGS
-    WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
     INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.sense
+    WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
   WARNINGS
   actual = convert input, stub_file_opts, eq(warnings.strip)
   expect(actual).to eq(expected.strip)
