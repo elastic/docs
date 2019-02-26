@@ -136,7 +136,7 @@
     <div class="pre_wrapper">
       <xsl:apply-imports />
     </div>
-    <!-- Asciidoctor's COSOLE widget -->
+    <!-- Asciidoctor's CONSOLE widget -->
     <xsl:if test="@language = 'console' or @language = 'sense' or @language = 'kibana'">
       <div
         class="{@language}_widget"
@@ -144,7 +144,7 @@
     </xsl:if>
   </xsl:template>
 
-  <!-- Asciidoctor's COSOLE widget -->
+  <!-- Asciidoctor's CONSOLE widget -->
   <xsl:template match="programlisting/ulink[@type='snippet']">
     <!-- Throw away the link by not copying it. -->
   </xsl:template>
