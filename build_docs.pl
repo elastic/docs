@@ -212,7 +212,7 @@ sub _guess_opts_from_file {
     $Opts->{root_dir} = $toplevel;
     local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
     my $remotes = eval { run qw(git remote -v) } || '';
-    if ($remotes !~ /\s+(\S+[\/:]elastic\/\S+)/) {
+    if ($remotes !~ m|\s+(\S+[/:]elastic/\S+)|) {
         say "Couldn't find edit url because there isn't an Elastic clone";
         say "$remotes";
         return;
