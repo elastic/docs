@@ -57,10 +57,11 @@ GetOptions(
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
+    'conf=s',
 ) || exit usage();
 check_args();
 
-our $Conf = LoadFile('conf.yaml');
+our $Conf = LoadFile(pick_conf());
 # The script supports running outside of docker, in any docker container *and*
 # running in a docker container that we maintain. If we run in a docker
 # container that we maintain then the script will change how it functions
@@ -294,7 +295,7 @@ sub check_links {
 
     $link_checker->check;
 
-    check_kibana_links( $build_dir, $link_checker );
+    check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
     if ( $link_checker->has_bad ) {
         say $link_checker->report;
     }
@@ -725,6 +726,16 @@ sub check_args {
 }
 
 #===================================
+sub pick_conf {
+#===================================
+    return 'conf.yaml' unless $Opts->{conf};
+
+    my $conf = dir($Old_Pwd)->file($Opts->{conf});
+    return $conf if -e $conf;
+    die $Opts->{conf} . " doesn't exist";
+}
+
+#===================================
 sub usage {
 #===================================
     my $name = $Opts->{in_standard_docker} ? 'build_docs' : $0;
@@ -772,6 +783,7 @@ sub usage {
           --verbose
           --in_standard_docker
                             Specified by build_docs when running in its container
+          --conf <ymlfile>  Use your own configuration file, defaults to the bundled conf.yaml
 
 USAGE
     if ( $Opts->{in_standard_docker} ) {
