@@ -53,7 +53,7 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', 'no_fetch', #
+    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'no_fetch', #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
@@ -706,7 +706,6 @@ sub check_args {
         die('--push not compatible with --doc') if $Opts->{push};
         die('--user not compatible with --doc') if $Opts->{user};
         die('--reference not compatible with --doc') if $Opts->{reference};
-        die('--rely_on_ssh_auth not compatible with --doc') if $Opts->{rely_on_ssh_auth};
         die('--rebuild not compatible with --doc') if $Opts->{rebuild};
         die('--no_fetch not compatible with --doc') if $Opts->{no_fetch};
         die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
@@ -760,8 +759,6 @@ sub usage {
           --reference       Directory of `--mirror` clones to use as a local cache
           --skiplinkcheck   Omit the step that checks for broken links
           --linkcheckonly   Skips the documentation builds. Checks links only.
-          --rely_on_ssh_auth
-                            noop
           --rebuild         Rebuild all branches of every book regardless of what has changed
           --no_fetch        Skip fetching updates from source repos
 
