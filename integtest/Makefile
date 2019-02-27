@@ -5,6 +5,7 @@ MAKEFLAGS += --silent
 check: \
 	style \
 	readme_expected_files readme_same_files \
+	emdash_expected_files emdash_same_files \
 	includes_expected_files includes_same_files
 
 .PHONY: style
