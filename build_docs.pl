@@ -53,14 +53,15 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', 'no_fetch', #
+    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'no_fetch', #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
+    'conf=s',
 ) || exit usage();
 check_args();
 
-our $Conf = LoadFile('conf.yaml');
+our $Conf = LoadFile(pick_conf());
 # The script supports running outside of docker, in any docker container *and*
 # running in a docker container that we maintain. If we run in a docker
 # container that we maintain then the script will change how it functions
@@ -294,7 +295,7 @@ sub check_links {
 
     $link_checker->check;
 
-    check_kibana_links( $build_dir, $link_checker );
+    check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
     if ( $link_checker->has_bad ) {
         say $link_checker->report;
     }
@@ -706,7 +707,6 @@ sub check_args {
         die('--push not compatible with --doc') if $Opts->{push};
         die('--user not compatible with --doc') if $Opts->{user};
         die('--reference not compatible with --doc') if $Opts->{reference};
-        die('--rely_on_ssh_auth not compatible with --doc') if $Opts->{rely_on_ssh_auth};
         die('--rebuild not compatible with --doc') if $Opts->{rebuild};
         die('--no_fetch not compatible with --doc') if $Opts->{no_fetch};
         die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
@@ -725,13 +725,24 @@ sub check_args {
 }
 
 #===================================
+sub pick_conf {
+#===================================
+    return 'conf.yaml' unless $Opts->{conf};
+
+    my $conf = dir($Old_Pwd)->file($Opts->{conf});
+    return $conf if -e $conf;
+    die $Opts->{conf} . " doesn't exist";
+}
+
+#===================================
 sub usage {
 #===================================
+    my $name = $Opts->{in_standard_docker} ? 'build_docs' : $0;
     say <<USAGE;
 
     Build local docs:
 
-        $0 --doc path/to/index.asciidoc [opts]
+        $name --doc path/to/index.asciidoc [opts]
 
         Opts:
           --single          Generate a single HTML page, instead of
@@ -750,7 +761,7 @@ sub usage {
 
     Build docs from all repos in conf.yaml:
 
-        $0 --all --target_repo <target> [opts]
+        $name --all --target_repo <target> [opts]
 
         Opts:
           --target_repo     Repository to which to commit docs
@@ -759,8 +770,6 @@ sub usage {
           --reference       Directory of `--mirror` clones to use as a local cache
           --skiplinkcheck   Omit the step that checks for broken links
           --linkcheckonly   Skips the documentation builds. Checks links only.
-          --rely_on_ssh_auth
-                            noop
           --rebuild         Rebuild all branches of every book regardless of what has changed
           --no_fetch        Skip fetching updates from source repos
 
@@ -771,6 +780,28 @@ sub usage {
           --verbose
           --in_standard_docker
                             Specified by build_docs when running in its container
+          --conf <ymlfile>  Use your own configuration file, defaults to the bundled conf.yaml
 
 USAGE
+    if ( $Opts->{in_standard_docker} ) {
+        say <<USAGE;
+    Self Test:
+
+        $name --self-test <args to pass to make>
+
+    `--self-test` is a wrapper around `make` which is used exclusively for
+    testing. Like `make`, the current directory selects the `Makefile` and
+    you can make specific targets. Some examples:
+
+    Execute all tests:
+        $name --self-test
+
+    Execute all of the tests for our extensions to Asciidoctor:
+        $name --self-test -C resources/asciidoctor
+
+    Run rubocop on our extensions to Asciidoctor:
+        $name --self-test -C resources/asciidoctor rubocop
+    
+USAGE
+    }
 }
