@@ -53,7 +53,7 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'no_fetch', #
+    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'keep_hash', #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
@@ -490,6 +490,7 @@ sub init_repos {
         user      => $Opts->{user},
         url       => $Opts->{target_repo},
         reference => $reference_dir,
+        keep_hash => 0,
         # intentionally not passing the tracker because we don't want to use it
     );
     delete $child_dirs{ $target_repo->git_dir->absolute };
@@ -524,6 +525,7 @@ sub init_repos {
             user      => $Opts->{user},
             url       => $url,
             reference => $reference_dir,
+            keep_hash => $Opts->{keep_hash},
         );
         delete $child_dirs{ $repo->git_dir->absolute };
 
@@ -533,7 +535,7 @@ sub init_repos {
         else {
             $pm->start($name) and next;
             eval {
-                $repo->update_from_remote() unless $Opts->{no_fetch};
+                $repo->update_from_remote();
                 1;
             } or do {
                 # If creds are invalid, explicitly reject them to try to clear the cache
@@ -708,7 +710,7 @@ sub check_args {
         die('--user not compatible with --doc') if $Opts->{user};
         die('--reference not compatible with --doc') if $Opts->{reference};
         die('--rebuild not compatible with --doc') if $Opts->{rebuild};
-        die('--no_fetch not compatible with --doc') if $Opts->{no_fetch};
+        die('--keep_hash not compatible with --doc') if $Opts->{keep_hash};
         die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
         die('--linkcheckonly not compatible with --doc') if $Opts->{linkcheckonly};
     } else {
@@ -771,7 +773,7 @@ sub usage {
           --skiplinkcheck   Omit the step that checks for broken links
           --linkcheckonly   Skips the documentation builds. Checks links only.
           --rebuild         Rebuild all branches of every book regardless of what has changed
-          --no_fetch        Skip fetching updates from source repos
+          --keep_hash       Build docs from the same commit hash as last time
 
     General Opts:
           --staging         Use the template from the staging website

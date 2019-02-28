@@ -40,6 +40,7 @@ sub new {
         url           => $url,
         tracker       => $args{tracker},
         reference_dir => $reference_dir,
+        keep_hash     => $args{keep_hash},
     }, $class;
     if ( $self->tracker ) {
         # Only track repos that have a tracker. Other repos are for things like
@@ -134,10 +135,9 @@ sub has_changed {
     my $self = shift;
     my ( $title, $branch, $path, $asciidoctor ) = @_;
 
-    my $old
-        = $self->tracker->sha_for_branch( $self->name,
-        $self->_tracker_branch(@_) )
-        or return 1;
+    return 1 if $self->keep_hash;
+
+    my $old = $self->_last_commit(@_) or return 1;
 
     local $ENV{GIT_DIR} = $self->git_dir;
 
@@ -175,33 +175,16 @@ sub mark_done {
 }
 
 #===================================
-sub tree {
-#===================================
-    my $self = shift;
-    my ( $branch, $path ) = @_;
-
-    local $ENV{GIT_DIR} = $self->git_dir;
-
-    my @files;
-    eval {
-        @files = map { Path::Class::file($_) } split /\0/,
-            run( qw(git ls-tree -r --name-only -z), $branch, '--', $path );
-        1;
-    } or do {
-        my $error = $@;
-        die "Unknown branch <$branch> in repo <" . $self->name . ">"
-            if $error =~ /Not a valid object name/;
-        die $@;
-    };
-    return @files;
-}
-
-#===================================
 sub extract {
 #===================================
     my $self = shift;
     my ( $branch, $path, $dest ) = @_;
     local $ENV{GIT_DIR} = $self->git_dir;
+
+    unless ( $self->update ) {
+        $branch = $self->_last_commit(@_);
+        die "--keep_hash can't be performed if for new repos" unless $branch;
+    }
 
     $dest->mkpath;
     my $tar = $dest->file('.temp_git_archive.tar');
@@ -258,9 +241,10 @@ sub dump_recent_commits {
     my ( $self, $title, $branch, $src_path ) = @_;
     local $ENV{GIT_DIR} = $self->git_dir;
 
-    my $start = $self->tracker->sha_for_branch( $self->name,
-        $self->_tracker_branch( $title, $branch, $src_path ) );
-    my $rev_range = "$start...$branch";
+    my $start = $self->_last_commit( $title, $branch, $src_path );
+    my $end = $branch;
+    $end = $start if $self->keep_hash;
+    my $rev_range = "$start...$end";
 
     my $commits = eval {
         decode_utf8 run( 'git', 'log', $rev_range,
@@ -325,11 +309,20 @@ sub checkout_to {
 }
 
 #===================================
+sub _last_commit {
+#===================================
+    my $self = shift;
+    my $tracker_branch = $self->_tracker_branch(@_);
+    return $self->tracker->sha_for_branch($self->name, $tracker_branch);
+}
+
+#===================================
 sub name          { shift->{name} }
 sub git_dir       { shift->{git_dir} }
 sub url           { shift->{url} }
 sub tracker       { shift->{tracker} }
 sub reference_dir { shift->{reference_dir} }
+sub keep_hash     { shift->{keep_hash} }
 #===================================
 
 1
