@@ -13,8 +13,9 @@ check: \
 	minimal_expected_files minimal_same_files \
 	includes_expected_files includes_same_files \
 	readme_expected_files readme_same_files \
-	small_all_expected_files \
-	keep_hash_expected_files
+	simple_all_expected_files \
+	keep_hash_expected_files \
+	sub_dir_expected_files
 
 .PHONY: style
 style: html_diff
@@ -79,26 +80,16 @@ endef
 /tmp/%_asciidoctor:
 	$(BD) --asciidoctor --doc $*.asciidoc
 
-.PHONY: small_all_expected_files
-small_all_expected_files: /tmp/small_all
-	$(MINIMAL_EXPECTED_FILES)
-
-.PRECIOUS: /tmp/small_all
-/tmp/small_all:
-	$(BUILD_MINIMAL)
+.PHONY: simple_all_expected_files
+simple_all_expected_files:
+	# Test the simplest possible `--all` invocation
+	$(call BUILD_MINIMAL_ALL,/tmp/small_all)
+	$(call MINIMAL_ALL_EXPECTED_FILES,/tmp/small_all)
 
 .PHONY: keep_hash_expected_files
-keep_hash_expected_files: /tmp/keep_hash
-	# We expact the same files as the minimal because we won't have made
-	# any changes
-	$(MINIMAL_EXPECTED_FILES)
-
-.PRECIOUS: /tmp/keep_hash
-/tmp/keep_hash:
-	# Test the `--all --keep_hash` combination
-
-	# Build the "minimal" source file
-	$(BUILD_MINIMAL)
+keep_hash_expected_files:
+	# Test that `--all --keep_hash` doesn't pull new updates
+	$(call BUILD_MINIMAL_ALL,/tmp/keep_hash)
 
 	# REPLACE the minimal documentation in the source repo
 	cp ../README.asciidoc /tmp/source/index.asciidoc
@@ -109,19 +100,50 @@ keep_hash_expected_files: /tmp/keep_hash
 	# Rebuild the docs with --keep_hash which should ignore the replacement
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
 		--keep_hash \
-		--target_repo $@.git \
-		--conf small_conf.yaml
+		--target_repo /tmp/keep_hash.git \
+		--conf small_conf.yaml | tee /tmp/out
+	$(call GREP,'No changes to push',/tmp/out)
 
-define MINIMAL_EXPECTED_FILES=
-	# Checks that $^ contains the expected result of building the "minimal"
-	# source file
-	[ -s $^/html/branches.yaml ]
-	grep '<a class="ulink" href="test/current/index.html" target="_top">Test book</a>' $^/html/index.html > /dev/null
-	grep '<meta http-equiv="refresh" content="0; url=current/index.html">' $^/html/test/index.html > /dev/null
-	[ -s $^/html/test/current/index.html ]
+	# We expact the same files as the minimal because we the changes that we
+	# make shouldn't be included
+	$(call MINIMAL_ALL_EXPECTED_FILES,/tmp/keep_hash)
+
+.PHONY: sub_dir_expected_file
+sub_dir_expected_files:
+	# Test that `--all --sub_dir` substitutes a directory for a branch of
+	# a repo.
+
+	# We still need to build the source repo because the script wants to fetch
+	# it just in case we need another branch.
+	rm -rf /tmp/source
+	git init /tmp/source
+	cd /tmp/source && git commit --allow-empty -m "empty"
+
+	# Setup the directory we'd like to substitute
+	rm -rf /tmp/to_sub
+	mkdir /tmp/to_sub
+	cp minimal.asciidoc /tmp/to_sub/index.asciidoc
+
+	git init --bare /tmp/sub_dir.git
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo /tmp/sub_dir.git \
+		--conf small_conf.yaml \
+		--sub_dir source:master:/tmp/to_sub
+
+	$(call MINIMAL_ALL_EXPECTED_FILES,/tmp/sub_dir)
+
+
+define GREP=
+	# grep for a string in a file, outputting the whole file if there isn't
+	# a match.
+	grep $(1) $(2) > /dev/null || { \
+		echo "Couldn't find $(1) in $(2):"; \
+		cat $(2); \
+		false; \
+	}
 endef
 
-define BUILD_MINIMAL=
+define BUILD_MINIMAL_ALL=
 	# Builds `--all` docs using a "minimal" source file
 
 	# First build a repository to use as the source.
@@ -135,14 +157,20 @@ define BUILD_MINIMAL=
 	# Initialize a bare repository that the docs build process can use as a
 	# remote. It is used to pushing to github but it can push to a remote on
 	# the filesystem just fine.
-	git init --bare $@.git
+	git init --bare $(1).git
 
 	# Actually build the docs
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo $@.git \
+		--target_repo $(1).git \
 		--conf small_conf.yaml
-
-	# Check out the files we just built
-	git clone $@.git $@
 endef
 
+define MINIMAL_ALL_EXPECTED_FILES=
+	# Checks that $(1).git contains the expected result of building the
+	# "minimal" source file
+	git clone $(1).git $(1)
+	[ -s $(1)/html/branches.yaml ]
+	$(call GREP,'<a class="ulink" href="test/current/index.html" target="_top">Test book</a>',$(1)/html/index.html)
+	$(call GREP,'<meta http-equiv="refresh" content="0; url=current/index.html">',$(1)/html/test/index.html)
+	[ -s $(1)/html/test/current/index.html ]
+endef

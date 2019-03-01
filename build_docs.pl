@@ -721,6 +721,7 @@ sub check_args {
         die('--reference not compatible with --doc') if $Opts->{reference};
         die('--rebuild not compatible with --doc') if $Opts->{rebuild};
         die('--keep_hash not compatible with --doc') if $Opts->{keep_hash};
+        die('--sub_dir not compatible with --doc') if $Opts->{sub_dir};
         die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
         die('--linkcheckonly not compatible with --doc') if $Opts->{linkcheckonly};
     } else {
