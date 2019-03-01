@@ -197,7 +197,6 @@ sub extract {
 
     if ( $self->keep_hash ) {
         $branch = $self->_last_commit(@_);
-        say "ASDFADFADSF " . $self->name . " $branch\n";
         die "--keep_hash can't be performed for new repos" unless $branch;
     }
 
@@ -256,10 +255,17 @@ sub edit_url_for_url_and_branch {
 sub dump_recent_commits {
 #===================================
     my ( $self, $title, $branch, $src_path ) = @_;
-    local $ENV{GIT_DIR} = $self->git_dir;
 
+    my $description = $self->name . "/$title:$branch:$src_path";
+    if ( exists $self->{sub_dirs}->{$branch} ) {
+        return "Used " . $self->{sub_dirs}->{$branch} .
+                " for $description\n";
+    }
+
+    local $ENV{GIT_DIR} = $self->git_dir;
     my $start = $self->_last_commit( $title, $branch, $src_path );
     my $end = $branch;
+    say "ASDASDFSDSAF" . $self->name . "\n" if $self->keep_hash;
     $end = $start if $self->keep_hash;
     my $rev_range = "$start...$end";
 
@@ -276,8 +282,7 @@ sub dump_recent_commits {
             '-n', 10, '--abbrev-commit', '--date=relative', '--', $src_path );
     }
 
-    my $header
-        = "Recent commits in " . $self->name . "/$title:$branch:$src_path:";
+    my $header = "Recent commits in $description";
     return
           $header . "\n"
         . ( '-' x length($header) ) . "\n"
