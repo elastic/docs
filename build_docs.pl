@@ -565,7 +565,6 @@ sub init_repos {
         say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
-    
     return ($repos_dir, $temp_dir, $target_repo, $target_repo_checkout);
 }
 
