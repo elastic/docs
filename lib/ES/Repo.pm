@@ -191,6 +191,7 @@ sub extract {
 
     if ( exists $self->{sub_dirs}->{$branch} ) {
         return if -e $dest; # Already done!
+        say "ASDF symlinking $title $path $dest\n";
         symlink( $self->{sub_dirs}->{$branch}, $dest );
         return;
     }
@@ -202,6 +203,7 @@ sub extract {
 
     local $ENV{GIT_DIR} = $self->git_dir;
 
+    say "ASDF extracting $title $path $dest\n";
     $dest->mkpath;
     my $tar = $dest->file('.temp_git_archive.tar');
     die "File <$tar> already exists" if -e $tar;
@@ -265,7 +267,6 @@ sub dump_recent_commits {
     local $ENV{GIT_DIR} = $self->git_dir;
     my $start = $self->_last_commit( $title, $branch, $src_path );
     my $end = $branch;
-    say "ASDASDFSDSAF" . $self->name . "\n" if $self->keep_hash;
     $end = $start if $self->keep_hash;
     my $rev_range = "$start...$end";
 

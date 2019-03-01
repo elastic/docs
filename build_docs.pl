@@ -462,7 +462,9 @@ sub init_repos {
 
     my %child_dirs = map { $_ => 1 } $repos_dir->children;
 
-    my $temp_dir = $running_in_standard_docker ? dir('/tmp/docsbuild') : $repos_dir->subdir('.temp');
+    # NOCOMMIT
+    # my $temp_dir = $running_in_standard_docker ? dir('/tmp/docsbuild') : $repos_dir->subdir('.temp');
+    my $temp_dir = $repos_dir->subdir('.temp');
     $temp_dir->rmtree;
     $temp_dir->mkpath;
     delete $child_dirs{ $temp_dir->absolute };
