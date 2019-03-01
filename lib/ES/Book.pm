@@ -284,8 +284,7 @@ sub _build_book {
             );
             $self->_add_title_to_toc( $branch, $branch_dir );
         }
-        # NOCOMMIT
-        # $checkout->rmtree;
+        $checkout->rmtree;
         say " - Branch: $branch - Finished";
 
         1;
