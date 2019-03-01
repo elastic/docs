@@ -175,19 +175,17 @@ sub mark_done {
     my $self = shift;
     my ( $title, $branch, $path, $asciidoctor ) = @_;
 
+    my $new;
     if ( exists $self->{sub_dirs}->{$branch} ) {
-        say "Marking done with local";
-        $self->tracker->set_sha_for_branch( $self->name,
-            $self->_tracker_branch(@_), 'local' );
+        $new = 'local';
         return;
+    } elsif ( $self->keep_hash ) {
+        $new = $self->_last_commit($title, $branch, $path);
+    } else {
+        local $ENV{GIT_DIR} = $self->git_dir;
+        $new = sha_for($branch);
     }
-
-    return if $self->keep_hash;
-
-    local $ENV{GIT_DIR} = $self->git_dir;
-    my $new = sha_for($branch);
     $new .= '|asciidoctor' if $asciidoctor;
-    say "Marking done with $new";
 
     $self->tracker->set_sha_for_branch( $self->name,
         $self->_tracker_branch(@_), $new );
@@ -319,7 +317,6 @@ sub all_repo_branches {
         for my $branch ( sort keys %$shas ) {
             my $sha = $shas->{$branch};
             $sha =~ s/\|.+$//;  # Strip |asciidoctor if it is in the hash
-            say "Getting log for $sha";
             my $msg;
             if ( $sha eq 'local' ) {
                 $msg = 'local changes';
