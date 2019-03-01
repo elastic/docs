@@ -146,9 +146,9 @@ sub has_changed {
 
     return 1 if exists $self->{sub_dirs}->{$branch};
 
+    local $ENV{GIT_DIR} = $self->git_dir;
     my $old = $self->_last_commit_info(@_) or return 1;
 
-    local $ENV{GIT_DIR} = $self->git_dir;
     my $new;
     if ( $self->keep_hash ) {
         $new = $self->_last_commit(@_);
