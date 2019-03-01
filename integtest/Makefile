@@ -125,6 +125,7 @@ sub_dir_expected_files:
 	mkdir /tmp/to_sub
 	cp minimal.asciidoc /tmp/to_sub/index.asciidoc
 
+	rm -rf /tmp/sub_dir.git
 	git init --bare /tmp/sub_dir.git
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
 		--target_repo /tmp/sub_dir.git \
@@ -138,8 +139,9 @@ keep_hash_and_sub_dir_expected_files:
 	# not specified by --sub_dir but forces rebuilding all books that include
 	# --sub_dir.
 
-	$(call INIT_REPO_WITH_FILE,/tmp/source1,includes_source2.asciidoc,index.asciidoc)
+	$(call INIT_REPO_WITH_FILE,/tmp/source1,includes_source2.asciidoc,docs/index.asciidoc)
 	$(call INIT_REPO_WITH_FILE,/tmp/source2,included.asciidoc,index.asciidoc)
+	rm -rf /tmp/keep_hash_and_sub_dir.git
 	git init --bare /tmp/keep_hash_and_sub_dir.git
 
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
@@ -160,9 +162,9 @@ keep_hash_and_sub_dir_expected_files:
 
 	# Setup the directory we'd like to substitute
 	rm -rf /tmp/to_sub
-	mkdir /tmp/to_sub
-	cp includes_source2.asciidoc /tmp/to_sub/index.asciidoc
-	echo "extra extra extra" >> /tmp/to_sub/index.asciidoc
+	mkdir -p /tmp/to_sub/docs
+	cp includes_source2.asciidoc /tmp/to_sub/docs/index.asciidoc
+	echo "extra extra extra" >> /tmp/to_sub/docs/index.asciidoc
 
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
 		--target_repo /tmp/keep_hash_and_sub_dir.git \
@@ -198,6 +200,7 @@ define BUILD_MINIMAL_ALL=
 	# Initialize a bare repository that the docs build process can use as a
 	# remote. It is used to pushing to github but it can push to a remote on
 	# the filesystem just fine.
+	rm -rf $(1).git
 	git init --bare $(1).git
 
 	# Actually build the docs
@@ -221,6 +224,7 @@ define INIT_REPO_WITH_FILE=
 	# name $(3)
 	rm -rf $(1)
 	git init $(1)
+	mkdir -p $$(dirname $(1)/$(3))
 	cp $(2) $(1)/$(3)
 	cd $(1) && \
 		git add . && \

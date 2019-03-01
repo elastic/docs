@@ -175,10 +175,20 @@ sub mark_done {
     my $self = shift;
     my ( $title, $branch, $path, $asciidoctor ) = @_;
 
-    local $ENV{GIT_DIR} = $self->git_dir;
+    if ( exists $self->{sub_dirs}->{$branch} ) {
+        say "Marking done with local";
+        $self->tracker->set_sha_for_branch( $self->name,
+            $self->_tracker_branch(@_), 'local' );
+        return;
+    }
 
+    return if $self->keep_hash;
+
+    local $ENV{GIT_DIR} = $self->git_dir;
     my $new = sha_for($branch);
     $new .= '|asciidoctor' if $asciidoctor;
+    say "Marking done with $new";
+
     $self->tracker->set_sha_for_branch( $self->name,
         $self->_tracker_branch(@_), $new );
 }
@@ -190,9 +200,14 @@ sub extract {
     my ( $title, $branch, $path, $dest ) = @_;
 
     if ( exists $self->{sub_dirs}->{$branch} ) {
-        return if -e $dest; # Already done!
-        say "ASDF symlinking $title $path $dest\n";
-        symlink( $self->{sub_dirs}->{$branch}, $dest );
+        my $realpath = $self->{sub_dirs}->{$branch}->subdir($path);
+        my $realdest = $dest->subdir($path)->parent;
+        die "Can't find $realpath" unless -e $realpath;
+        $realdest->mkpath;
+        eval {
+            run qw(cp -r), $realpath, $realdest;
+            1;
+        } or die "Error copying from $realpath: $@";
         return;
     }
 
@@ -203,7 +218,6 @@ sub extract {
 
     local $ENV{GIT_DIR} = $self->git_dir;
 
-    say "ASDF extracting $title $path $dest\n";
     $dest->mkpath;
     my $tar = $dest->file('.temp_git_archive.tar');
     die "File <$tar> already exists" if -e $tar;
@@ -266,9 +280,7 @@ sub dump_recent_commits {
 
     local $ENV{GIT_DIR} = $self->git_dir;
     my $start = $self->_last_commit( $title, $branch, $src_path );
-    my $end = $branch;
-    $end = $start if $self->keep_hash;
-    my $rev_range = "$start...$end";
+    my $rev_range = $self->keep_hash ? $start : "$start...$branch";
 
     my $commits = eval {
         decode_utf8 run( 'git', 'log', $rev_range,
@@ -307,8 +319,14 @@ sub all_repo_branches {
         for my $branch ( sort keys %$shas ) {
             my $sha = $shas->{$branch};
             $sha =~ s/\|.+$//;  # Strip |asciidoctor if it is in the hash
-            my $log = run( qw(git log --oneline -1), $sha );
-            my ($msg) = ( $log =~ /^\w+\s+([^\n]+)/ );
+            say "Getting log for $sha";
+            my $msg;
+            if ( $sha eq 'local' ) {
+                $msg = 'local changes';
+            } else {
+                my $log = run( qw(git log --oneline -1), $sha );
+                ($msg) = ( $log =~ /^\w+\s+([^\n]+)/ );
+            } 
             push @out, sprintf "  %-35s %s   %s", $branch,
                 substr( $shas->{$branch}, 0, 8 ), $msg;
         }
