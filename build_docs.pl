@@ -53,7 +53,7 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'keep_hash', #
+    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'keep_hash', 'sub_dir=s@',
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
@@ -550,12 +550,23 @@ sub init_repos {
     }
     $pm->wait_all_children;
 
+    # Parse the --sub_dir options and attach the to the repo
+    my %sub_dirs = ();
+    foreach (@{ $Opts->{sub_dir} }) {
+        die "invalid --sub_dir $_"
+            unless /(?<repo>[^:]+):(?<branch>[^:]+):(?<dir>.+)/;
+        my $dir = dir($+{dir})->absolute;
+        die "--sub_dir $dir doesn't exist" unless -e $dir;
+        ES::Repo->get_repo($+{repo})->add_sub_dir($+{branch}, $dir);
+    }
+
     for ( keys %child_dirs ) {
         my $dir = dir($_);
         next unless -d $dir;
         say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
+    
     return ($repos_dir, $temp_dir, $target_repo, $target_repo_checkout);
 }
 
@@ -774,6 +785,8 @@ sub usage {
           --linkcheckonly   Skips the documentation builds. Checks links only.
           --rebuild         Rebuild all branches of every book regardless of what has changed
           --keep_hash       Build docs from the same commit hash as last time
+          --sub_dir         Use a directory as a branch of some repo
+                            (eg --sub_dir elasticsearch:master:~/Code/elasticsearch)
 
     General Opts:
           --staging         Use the template from the staging website

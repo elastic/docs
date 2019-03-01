@@ -90,6 +90,7 @@ sub dump_recent_commits {
 sub prepare {
 #===================================
     my $self   = shift;
+    my $title  = shift;
     my $branch = shift;
 
     my %entries;
@@ -101,7 +102,7 @@ sub prepare {
         my $prefix = $source->{prefix};
         my $path   = $source->{path};
 
-        $repo->extract( $branch, $path, $dest->subdir($prefix) );
+        $repo->extract( $title, $branch, $path, $dest->subdir($prefix) );
 
     }
     return ( $dest, $dest->subdir( $self->first->{prefix} ) );

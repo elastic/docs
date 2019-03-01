@@ -41,6 +41,7 @@ sub new {
         tracker       => $args{tracker},
         reference_dir => $reference_dir,
         keep_hash     => $args{keep_hash},
+        sub_dirs      => {},
     }, $class;
     if ( $self->tracker ) {
         # Only track repos that have a tracker. Other repos are for things like
@@ -130,14 +131,23 @@ sub _reference_args {
 }
 
 #===================================
+sub add_sub_dir {
+#===================================
+    my ( $self, $branch, $dir ) = @_;
+    $self->{sub_dirs}->{$branch} = $dir;
+    return ();
+}
+
+#===================================
 sub has_changed {
 #===================================
     my $self = shift;
     my ( $title, $branch, $path, $asciidoctor ) = @_;
 
-    return 1 if $self->keep_hash;
+    return 1 if exists $self->{sub_dirs}->{$branch};
+    return 0 if $self->keep_hash;
 
-    my $old = $self->_last_commit(@_) or return 1;
+    my $old = $self->_last_commit_info(@_) or return 1;
 
     local $ENV{GIT_DIR} = $self->git_dir;
 
@@ -171,20 +181,27 @@ sub mark_done {
     $new .= '|asciidoctor' if $asciidoctor;
     $self->tracker->set_sha_for_branch( $self->name,
         $self->_tracker_branch(@_), $new );
-
 }
 
 #===================================
 sub extract {
 #===================================
     my $self = shift;
-    my ( $branch, $path, $dest ) = @_;
-    local $ENV{GIT_DIR} = $self->git_dir;
+    my ( $title, $branch, $path, $dest ) = @_;
 
-    unless ( $self->update ) {
-        $branch = $self->_last_commit(@_);
-        die "--keep_hash can't be performed if for new repos" unless $branch;
+    if ( exists $self->{sub_dirs}->{$branch} ) {
+        return if -e $dest; # Already done!
+        symlink( $self->{sub_dirs}->{$branch}, $dest );
+        return;
     }
+
+    if ( $self->keep_hash ) {
+        $branch = $self->_last_commit(@_);
+        say "ASDFADFADSF " . $self->name . " $branch\n";
+        die "--keep_hash can't be performed for new repos" unless $branch;
+    }
+
+    local $ENV{GIT_DIR} = $self->git_dir;
 
     $dest->mkpath;
     my $tar = $dest->file('.temp_git_archive.tar');
@@ -300,6 +317,7 @@ sub checkout_to {
 #===================================
     my ( $self, $destination ) = @_;
 
+    die 'sub_dir not supported with checkout_to' if %{ $self->{sub_dirs}};
     my $name = $self->name;
     eval {
         run qw(git clone), $self->git_dir, $destination;
@@ -309,11 +327,26 @@ sub checkout_to {
 }
 
 #===================================
+# Information about the last commit, *not* including flags like `asciidoctor.`
+#===================================
 sub _last_commit {
 #===================================
     my $self = shift;
+    my $sha = $self->_last_commit_info(@_);
+    $sha =~ s/\|.+$//;  # Strip |asciidoctor if it is in the hash
+    return $sha;
+}
+
+#===================================
+# Information about the last commit, including flags like `asciidoctor.`
+#===================================
+sub _last_commit_info {
+#===================================
+    my $self = shift;
     my $tracker_branch = $self->_tracker_branch(@_);
-    return $self->tracker->sha_for_branch($self->name, $tracker_branch);
+    my $sha = $self->tracker->sha_for_branch($self->name, $tracker_branch);
+    $sha =~ s/\|.+$//;  # Strip |asciidoctor if it is in the hash
+    return $sha;
 }
 
 #===================================

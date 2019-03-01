@@ -29,7 +29,7 @@ from __future__ import print_function
 
 import logging
 from os import environ, getgid, getuid
-from os.path import basename, dirname, exists, isdir, join, realpath
+from os.path import basename, dirname, exists, expanduser, isdir, join, realpath
 import re
 import subprocess
 from sys import platform, version_info
@@ -103,8 +103,7 @@ def run_build_docs(args):
                 '-v',
                 '%s:/doc/%s:ro,cached' % (repo_root, repo_name)
             ])
-        build_docs_args.append(
-                '/doc/' + repo_name + path.replace(repo_root, ''))
+        return '/doc/' + repo_name + path.replace(repo_root, '')
 
     open_browser = False
     args = Args(args)
@@ -150,7 +149,8 @@ def run_build_docs(args):
             doc_file = realpath(args.next_arg_or_err())
             if not exists(doc_file):
                 raise ArgError("Can't find --doc %s" % doc_file)
-            mount_docs_repo_and_dockerify_path(dirname(doc_file), doc_file)
+            build_docs_args.append(mount_docs_repo_and_dockerify_path(
+                    dirname(doc_file), doc_file))
             saw_doc = True
         elif arg == '--open':
             docker_args.extend(['--publish', '8000:8000/tcp'])
@@ -194,7 +194,19 @@ def run_build_docs(args):
             resource_dir = realpath(args.next_arg_or_err())
             if not isdir(resource_dir):
                 raise ArgError("Can't find --resource %s" % resource_dir)
-            mount_docs_repo_and_dockerify_path(resource_dir, resource_dir)
+            build_docs_args.append(mount_docs_repo_and_dockerify_path(
+                    resource_dir, resource_dir))
+        elif arg == '--sub_dir':
+            sub = args.next_arg_or_err()
+            m = re.match('(?P<repo>[^:]+):(?P<branch>[^:]+):(?P<dir>.+)', sub)
+            if not m:
+                raise ArgError("Invalid --sub_dir %s" % sub)
+            sub_dir = realpath(expanduser(m.group('dir')))
+            if not exists(sub_dir):
+                raise ArgError("Can't find --sub_dir %s" % sub_dir)
+            mounted_path = mount_docs_repo_and_dockerify_path(sub_dir, sub_dir)
+            build_docs_args.append("%s:%s:%s" % (
+                    m.group('repo'), m.group('branch'), mounted_path))
         arg = args.next_arg()
 
     if saw_doc and not saw_out:
