@@ -200,6 +200,11 @@ sub extract {
     my ( $title, $branch, $path, $dest ) = @_;
 
     if ( exists $self->{sub_dirs}->{$branch} ) {
+        # Copies the $path from the subsitution diretory. It is tempting to
+        # just symlink the substitution directoriy into the destionation and
+        # call it a day and that *almost* works! The trouble is that we often
+        # use relative paths to include asciidoc files from other repositories
+        # and those relative paths don't work at all with symlinks.
         my $realpath = $self->{sub_dirs}->{$branch}->subdir($path);
         my $realdest = $dest->subdir($path)->parent;
         die "Can't find $realpath" unless -e $realpath;
