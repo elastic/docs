@@ -181,7 +181,6 @@ sub mark_done {
     my $new;
     if ( exists $self->{sub_dirs}->{$branch} ) {
         $new = 'local';
-        return;
     } elsif ( $self->keep_hash ) {
         $new = $self->_last_commit($title, $branch, $path);
     } else {
@@ -215,6 +214,7 @@ sub extract {
     if ( $self->keep_hash ) {
         $branch = $self->_last_commit(@_);
         die "--keep_hash can't be performed for new repos" unless $branch;
+        die "--keep_hash can't build on top of --sub_dir" if $branch eq 'local';
     }
 
     local $ENV{GIT_DIR} = $self->git_dir;
@@ -325,7 +325,7 @@ sub all_repo_branches {
                 $msg = 'local changes';
             } else {
                 my $log = run( qw(git log --oneline -1), $sha );
-                ($msg) = ( $log =~ /^\w+\s+([^\n]+)/ );
+                $msg = $log =~ /^\w+\s+([^\n]+)/;
             } 
             push @out, sprintf "  %-35s %s   %s", $branch,
                 substr( $shas->{$branch}, 0, 8 ), $msg;
