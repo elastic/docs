@@ -81,61 +81,68 @@ endef
 
 .PHONY: small_all_expected_files
 small_all_expected_files: /tmp/small_all
+	$(MINIMAL_EXPECTED_FILES)
+
+.PRECIOUS: /tmp/small_all
+/tmp/small_all:
+	$(BUILD_MINIMAL)
+
+.PHONY: keep_hash_expected_files
+keep_hash_expected_files: /tmp/keep_hash
+	# We expact the same files as the minimal because we won't have made
+	# any changes
+	$(MINIMAL_EXPECTED_FILES)
+
+.PRECIOUS: /tmp/keep_hash
+/tmp/keep_hash:
+	# Test the `--all --keep_hash` combination
+
+	# Build the "minimal" source file
+	$(BUILD_MINIMAL)
+
+	# REPLACE the minimal documentation in the source repo
+	cp ../README.asciidoc /tmp/source/index.asciidoc
+	cd /tmp/source && \
+		git add . && \
+		git commit -m 'README'
+
+	# Rebuild the docs with --keep_hash which should ignore the replacement
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--keep_hash \
+		--target_repo $@.git \
+		--conf small_conf.yaml
+
+define MINIMAL_EXPECTED_FILES=
+	# Checks that $^ contains the expected result of building the "minimal"
+	# source file
 	[ -s $^/html/branches.yaml ]
 	grep '<a class="ulink" href="test/current/index.html" target="_top">Test book</a>' $^/html/index.html > /dev/null
 	grep '<meta http-equiv="refresh" content="0; url=current/index.html">' $^/html/test/index.html > /dev/null
 	[ -s $^/html/test/current/index.html ]
-
-define BUILD_MINIMAL=
-# First build a repository to use as the source.
-rm -rf /tmp/source
-git init /tmp/source
-cp minimal.asciidoc /tmp/source/index.asciidoc
-cd /tmp/source && \
-	git add . && \
-	git commit -m 'minimal'
-
-# Initialize a bare repository that the docs build process can use as a
-# remote. It is used to pushing to github but it can push to a remote on
-# the filesystem just fine.
-git init --bare $@.git
-
-# Actually build the docs
-/docs_build/build_docs.pl --in_standard_docker --all --push \
-	--target_repo $@.git \
-	--conf small_conf.yaml
-
-# Check out the files we just built
-git clone $@.git $@
 endef
 
-.PRECIOUS: /tmp/small_all
-/tmp/small_all:
-	# Builds "--all" documentation specified by by the "small_conf.yaml" file.
-	$(BUILD_MINIMAL)
-	
+define BUILD_MINIMAL=
+	# Builds `--all` docs using a "minimal" source file
 
-# .PRECIOUS: /tmp/keep_hash
-# /tmp/keep_hash:
-# 	# Builds "--all" documentation specified by by the "small_conf.yaml" file.
+	# First build a repository to use as the source.
+	rm -rf /tmp/source
+	git init /tmp/source
+	cp minimal.asciidoc /tmp/source/index.asciidoc
+	cd /tmp/source && \
+		git add . && \
+		git commit -m 'minimal'
 
-# 	# First build a repository to use as the source.
-# 	rm -rf /tmp/source
-# 	git init /tmp/source
-# 	cp minimal.asciidoc /tmp/source/index.asciidoc
-# 	cd /tmp/source && \
-# 		git add . && \
-# 		git commit -m 'minimal'
+	# Initialize a bare repository that the docs build process can use as a
+	# remote. It is used to pushing to github but it can push to a remote on
+	# the filesystem just fine.
+	git init --bare $@.git
 
-# 	# Initialize a bare repository that the docs build process can use as a
-# 	# remote. It is used to pushing to github but it can push to a remote on
-# 	# the filesystem just fine.
-# 	git init --bare $^.git
+	# Actually build the docs
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $@.git \
+		--conf small_conf.yaml
 
-# 	# Actually build the docs
-# 	/docs_build/build_docs.pl --in_standard_docker --all --push \
-# 		--target_repo $^.git \
-# 		--conf small_conf.yaml
+	# Check out the files we just built
+	git clone $@.git $@
+endef
 
-# 	# Check out the files we just built
-# 	git clone $^.git $^
