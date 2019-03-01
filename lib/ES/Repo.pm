@@ -145,18 +145,21 @@ sub has_changed {
     my ( $title, $branch, $path, $asciidoctor ) = @_;
 
     return 1 if exists $self->{sub_dirs}->{$branch};
-    return 0 if $self->keep_hash;
 
     my $old = $self->_last_commit_info(@_) or return 1;
 
     local $ENV{GIT_DIR} = $self->git_dir;
-
-    my $new = sha_for($branch)
-        or die "Remote branch <origin/$branch> doesn't exist "
-        . "in repo "
-        . $self->name;
+    my $new;
+    if ( $self->keep_hash ) {
+        $new = $self->_last_commit(@_);
+    } else {
+        $new = sha_for($branch) or die(
+                "Remote branch <origin/$branch> doesn't exist in repo "
+                . $self->name);
+    }
     $new .= '|asciidoctor' if $asciidoctor;
 
+    return $old ne $new if $self->keep_hash;
     return if $old eq $new;
 
     my $changed;
@@ -366,7 +369,6 @@ sub _last_commit_info {
     my $self = shift;
     my $tracker_branch = $self->_tracker_branch(@_);
     my $sha = $self->tracker->sha_for_branch($self->name, $tracker_branch);
-    $sha =~ s/\|.+$//;  # Strip |asciidoctor if it is in the hash
     return $sha;
 }
 
